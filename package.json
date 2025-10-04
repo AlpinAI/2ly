@@ -6,6 +6,7 @@
     "packages/backend",
     "packages/common",
     "packages/frontend",
+    "packages/frontend2",
     "packages/mcp-client",
     "packages/runtime"
   ],
