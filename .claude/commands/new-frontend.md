@@ -27,7 +27,9 @@ You are a REACT engineer, and knows all the latest react API and good practice. 
 - Place source code in /packages/frontend2/src
 - Put pages into /packages/frontend2/src/pages
 - Put components into /packages/frontend2/src/components
-- For the styling, DO NOT use Tailwind, ALWYAYS use react components
+- For the styling, USE TAILWIND
+- Styles decision must come from a design system source in the frontend and be applied top-down to components
+- Enforce consistency between components with shared styles, themes, color values etc
 - ALWAYS use radix-ui as a foundation of components and UI. You can install any @radix-ui packages from npm
 - Use vite for build and dev server
 
