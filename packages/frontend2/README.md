@@ -10,13 +10,13 @@ This is a complete rewrite of the original frontend (`/packages/frontend`), desi
 
 - **React 19.2** - Latest React with improved concurrent features and performance
 - **React Router 7** - Client-side routing with modern data loading patterns
-- **TypeScript** - Full type safety across the application
-- **Tailwind CSS** - Utility-first CSS with design system integration
-- **Radix UI** - Unstyled, accessible UI primitives
-- **Vite** - Lightning-fast build tool and dev server
-- **Apollo Client 3.14** - GraphQL client with normalized caching, subscriptions, and React 19 support
-- **Zustand** - Lightweight state management for client state
-- **GraphQL Code Generator** - Auto-generate TypeScript types and React hooks
+- **TypeScript 5.5** - Full type safety across the application
+- **Tailwind CSS 3.4** - Utility-first CSS with design system integration
+- **Radix UI** - Unstyled, accessible UI primitives (latest versions, React 19 compatible)
+- **Vite 6.0** - Lightning-fast build tool and dev server
+- **Apollo Client 4.0.7** - Latest GraphQL client with React 19 support, normalized caching, and subscriptions
+- **Zustand 5.0** - Lightweight state management for client state
+- **GraphQL Code Generator 5.0** - Auto-generate TypeScript types with typed-document-node
 
 ### Design Philosophy
 
@@ -184,7 +184,8 @@ We use a **hybrid state management** approach that separates concerns:
 - ✅ WebSocket subscriptions (real-time monitoring)
 - ✅ Automatic refetching
 - ✅ Optimistic UI updates
-- ✅ Type-safe queries (generated hooks)
+- ✅ Type-safe queries with typed-document-node
+- ✅ React 19 compatible
 
 **Configuration**: `src/lib/apollo/`
 ```
@@ -194,12 +195,14 @@ apollo/
 └── ApolloProvider.tsx  # Provider wrapper
 ```
 
-**Generated Hooks** (via GraphQL Code Generator):
+**Apollo Client v4 Pattern** (Typed Document Nodes):
 ```tsx
-import { useGetRuntimesQuery } from '@/graphql/generated/graphql';
+import { useQuery } from '@apollo/client/react';
+import { GetRuntimesDocument } from '@/graphql/generated/graphql';
 
 function RuntimesList() {
-  const { data, loading, error } = useGetRuntimesQuery();
+  // Use typed document nodes with Apollo hooks
+  const { data, loading, error } = useQuery(GetRuntimesDocument);
 
   if (loading) return <Spinner />;
   if (error) return <Error message={error.message} />;
@@ -207,6 +210,12 @@ function RuntimesList() {
   return <div>{data?.workspace.map(ws => ...)}</div>;
 }
 ```
+
+**Why Typed Document Nodes?**
+- Official Apollo v4 approach ([docs](https://www.apollographql.com/docs/react/development-testing/graphql-codegen))
+- Better type inference than generated hooks
+- Smaller bundle size (no hook generation code)
+- More flexible and maintainable
 
 **How Normalized Cache Works**:
 ```
@@ -255,13 +264,15 @@ const { category, setCategory } = useToolFilters();
 
 **Workspace Store Example**:
 ```tsx
+import { useQuery } from '@apollo/client/react';
+import { GetMcpToolsDocument } from '@/graphql/generated/graphql';
 import { useWorkspaceId } from '@/stores/workspaceStore';
 
 function MyComponent() {
   const workspaceId = useWorkspaceId();
 
-  // Use in Apollo query
-  const { data } = useGetToolsQuery({
+  // Use typed document with Apollo query
+  const { data } = useQuery(GetMcpToolsDocument, {
     variables: { workspaceId },
     skip: !workspaceId, // Don't query without workspace
   });
@@ -270,7 +281,9 @@ function MyComponent() {
 
 ### GraphQL Code Generation
 
-**What**: Automatically generates TypeScript types and React hooks from GraphQL schema.
+**What**: Automatically generates TypeScript types and typed document nodes from GraphQL schema.
+
+**Apollo v4 Approach**: Uses `typed-document-node` instead of generated hooks for better type safety and smaller bundle size. ([Official Guide](https://www.apollographql.com/docs/react/development-testing/graphql-codegen))
 
 **Run codegen**:
 ```bash
@@ -282,14 +295,19 @@ npm run codegen:watch  # Watch mode
 - Schema source: `../backend/dist/apollo.schema.graphql`
 - Operations: `src/graphql/**/*.graphql`
 - Output: `src/graphql/generated/`
+- Plugins: `typescript` + `typescript-operations` + `typed-document-node`
 
 **Generated Files**:
 ```
 src/graphql/generated/
-├── graphql.ts        # All TypeScript types
-├── gql.ts            # GraphQL tag function
-└── index.ts          # Exports
+└── graphql.ts        # All TypeScript types + Typed Document Nodes
 ```
+
+**What's Generated**:
+- TypeScript types for all GraphQL schema types
+- TypeScript types for all operations (queries, mutations, subscriptions)
+- Typed document nodes (e.g., `GetRuntimesDocument`, `GetMcpToolsDocument`)
+- Full type safety with Apollo Client hooks
 
 **Writing Operations**:
 ```
@@ -306,13 +324,17 @@ src/graphql/
 
 ### Custom Hooks Pattern
 
-**Why**: Wrap generated Apollo hooks with custom logic.
+**Why**: Wrap Apollo Client hooks with custom logic for data transformation and business rules.
 
-**Pattern**: `src/hooks/`
+**Apollo v4 Pattern**: `src/hooks/`
 ```tsx
 // src/hooks/useRuntimes.ts
+import { useQuery } from '@apollo/client/react';
+import { GetRuntimesDocument } from '@/graphql/generated/graphql';
+
 export function useRuntimes() {
-  const { data, loading, error } = useGetRuntimesQuery({
+  // Use typed document node with Apollo hook
+  const { data, loading, error } = useQuery(GetRuntimesDocument, {
     pollInterval: 30_000, // Poll every 30s
   });
 
@@ -334,13 +356,17 @@ export function useRuntimes() {
 **Tool Catalog** (combines both):
 ```tsx
 // src/hooks/useToolCatalog.ts
+import { useQuery } from '@apollo/client/react';
+import { GetMcpToolsDocument } from '@/graphql/generated/graphql';
+import { useWorkspaceId, useToolFilters } from '@/stores';
+
 export function useToolCatalog() {
   // Zustand: Get workspace & filters (client state)
   const workspaceId = useWorkspaceId();
   const filters = useToolFilters();
 
-  // Apollo: Fetch tools (server state)
-  const { data, loading } = useGetMCPToolsQuery({
+  // Apollo: Fetch tools with typed document (server state)
+  const { data, loading } = useQuery(GetMcpToolsDocument, {
     variables: { workspaceId },
     skip: !workspaceId,
   });
@@ -520,6 +546,7 @@ This frontend is a complete rewrite, not an incremental update. Key differences:
 |----|----|----|
 | React 18 | React 19 | Latest features, better concurrent rendering |
 | React Router 6 | React Router 7 | Modern data loading patterns |
+| Apollo Client v3 | Apollo Client v4 | React 19 support, typed-document-node pattern |
 | Custom components | Radix UI | Accessibility out of the box |
 | Scattered styles | Design system | Consistency and maintainability |
 | Manual dark mode | Context-based | Cleaner, more maintainable |
@@ -540,12 +567,97 @@ This frontend is a complete rewrite, not an incremental update. Key differences:
 - Accessibility audit
 - Internationalization (i18n)
 
+## 🔧 Apollo Client v4 Integration
+
+This project uses **Apollo Client v4.0.7** with the official typed-document-node approach recommended by Apollo.
+
+### Key Technical Decisions
+
+**Why Apollo Client v4?**
+- Full React 19 support
+- Latest features and performance improvements
+- Active development and long-term support
+- Better TypeScript inference
+
+**Why Typed Document Nodes over Generated Hooks?**
+- **Official Apollo recommendation** for v4 ([docs](https://www.apollographql.com/docs/react/development-testing/graphql-codegen))
+- Smaller bundle size (no hook generation code)
+- Better type inference and editor support
+- More flexible - use any Apollo hook with typed documents
+- Easier to maintain
+
+### Code Generation Configuration
+
+**Plugins Used**:
+```typescript
+// codegen.ts
+plugins: [
+  'typescript',              // Schema types
+  'typescript-operations',   // Operation types
+  'typed-document-node',     // Typed document nodes
+]
+```
+
+**NOT Used** (deprecated for v4):
+- ❌ `typescript-react-apollo` - Generates hooks (not recommended for v4)
+- ❌ `client-preset` - Incompatible with Apollo Client
+
+### Migration Pattern
+
+**Old Pattern (v3 with generated hooks)**:
+```tsx
+import { useGetRuntimesQuery } from '@/graphql/generated/graphql';
+
+const { data } = useGetRuntimesQuery();
+```
+
+**New Pattern (v4 with typed documents)**:
+```tsx
+import { useQuery } from '@apollo/client/react';
+import { GetRuntimesDocument } from '@/graphql/generated/graphql';
+
+const { data } = useQuery(GetRuntimesDocument);
+```
+
+### Import Paths (Apollo v4)
+
+```tsx
+// Hooks
+import { useQuery, useMutation, useSubscription } from '@apollo/client/react';
+
+// Provider
+import { ApolloProvider } from '@apollo/client/react';
+
+// Error handling
+import { CombinedGraphQLErrors } from '@apollo/client/errors';
+
+// Core client
+import { ApolloClient, InMemoryCache } from '@apollo/client';
+```
+
+### Package Versions
+
+- `@apollo/client`: `^4.0.7`
+- `@graphql-typed-document-node/core`: `^3.2.0`
+- `@graphql-codegen/cli`: `^5.0.7`
+- `@graphql-codegen/typescript`: `^4.1.6`
+- `@graphql-codegen/typescript-operations`: `^5.0.2`
+- `@graphql-codegen/typed-document-node`: `^5.0.15`
+
 ## 📚 Additional Resources
 
+### Official Documentation
+- [Apollo Client v4 Docs](https://www.apollographql.com/docs/react/)
+- [Apollo Client + GraphQL Codegen Guide](https://www.apollographql.com/docs/react/development-testing/graphql-codegen)
+- [React 19 Release Notes](https://react.dev/blog/2024/12/05/react-19)
 - [Tailwind CSS Docs](https://tailwindcss.com)
 - [Radix UI Docs](https://www.radix-ui.com)
-- [React 19 Docs](https://react.dev)
 - [Vite Docs](https://vitejs.dev)
+- [Zustand Docs](https://zustand-demo.pmnd.rs/)
+
+### GraphQL & Apollo
+- [GraphQL Code Generator](https://the-guild.dev/graphql/codegen)
+- [Typed Document Node](https://the-guild.dev/graphql/codegen/plugins/typescript/typed-document-node)
 
 ## 🤝 Contributing
 
