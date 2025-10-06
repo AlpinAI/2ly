@@ -527,7 +527,7 @@ export const GetMcpToolsDocument = gql`
  *   },
  * });
  */
-export function useGetMcpToolsQuery(baseOptions: Apollo.QueryHookOptions<GetMcpToolsQuery, GetMcpToolsQueryVariables> & ({ variables: GetMcpToolsQueryVariables; skip?: boolean; } | { skip: boolean; }) ) {
+export function useGetMcpToolsQuery(baseOptions: Apollo.QueryHookOptions<GetMcpToolsQuery, GetMcpToolsQueryVariables>) {
         const options = {...defaultOptions, ...baseOptions}
         return Apollo.useQuery<GetMcpToolsQuery, GetMcpToolsQueryVariables>(GetMcpToolsDocument, options);
       }
@@ -535,13 +535,8 @@ export function useGetMcpToolsLazyQuery(baseOptions?: Apollo.LazyQueryHookOption
           const options = {...defaultOptions, ...baseOptions}
           return Apollo.useLazyQuery<GetMcpToolsQuery, GetMcpToolsQueryVariables>(GetMcpToolsDocument, options);
         }
-export function useGetMcpToolsSuspenseQuery(baseOptions?: Apollo.SkipToken | Apollo.SuspenseQueryHookOptions<GetMcpToolsQuery, GetMcpToolsQueryVariables>) {
-          const options = baseOptions === Apollo.skipToken ? baseOptions : {...defaultOptions, ...baseOptions}
-          return Apollo.useSuspenseQuery<GetMcpToolsQuery, GetMcpToolsQueryVariables>(GetMcpToolsDocument, options);
-        }
 export type GetMcpToolsQueryHookResult = ReturnType<typeof useGetMcpToolsQuery>;
 export type GetMcpToolsLazyQueryHookResult = ReturnType<typeof useGetMcpToolsLazyQuery>;
-export type GetMcpToolsSuspenseQueryHookResult = ReturnType<typeof useGetMcpToolsSuspenseQuery>;
 export type GetMcpToolsQueryResult = Apollo.QueryResult<GetMcpToolsQuery, GetMcpToolsQueryVariables>;
 export const GetRuntimesDocument = gql`
     query GetRuntimes {
@@ -587,13 +582,8 @@ export function useGetRuntimesLazyQuery(baseOptions?: Apollo.LazyQueryHookOption
           const options = {...defaultOptions, ...baseOptions}
           return Apollo.useLazyQuery<GetRuntimesQuery, GetRuntimesQueryVariables>(GetRuntimesDocument, options);
         }
-export function useGetRuntimesSuspenseQuery(baseOptions?: Apollo.SkipToken | Apollo.SuspenseQueryHookOptions<GetRuntimesQuery, GetRuntimesQueryVariables>) {
-          const options = baseOptions === Apollo.skipToken ? baseOptions : {...defaultOptions, ...baseOptions}
-          return Apollo.useSuspenseQuery<GetRuntimesQuery, GetRuntimesQueryVariables>(GetRuntimesDocument, options);
-        }
 export type GetRuntimesQueryHookResult = ReturnType<typeof useGetRuntimesQuery>;
 export type GetRuntimesLazyQueryHookResult = ReturnType<typeof useGetRuntimesLazyQuery>;
-export type GetRuntimesSuspenseQueryHookResult = ReturnType<typeof useGetRuntimesSuspenseQuery>;
 export type GetRuntimesQueryResult = Apollo.QueryResult<GetRuntimesQuery, GetRuntimesQueryVariables>;
 export const GetWorkspacesDocument = gql`
     query GetWorkspaces {
@@ -635,11 +625,6 @@ export function useGetWorkspacesLazyQuery(baseOptions?: Apollo.LazyQueryHookOpti
           const options = {...defaultOptions, ...baseOptions}
           return Apollo.useLazyQuery<GetWorkspacesQuery, GetWorkspacesQueryVariables>(GetWorkspacesDocument, options);
         }
-export function useGetWorkspacesSuspenseQuery(baseOptions?: Apollo.SkipToken | Apollo.SuspenseQueryHookOptions<GetWorkspacesQuery, GetWorkspacesQueryVariables>) {
-          const options = baseOptions === Apollo.skipToken ? baseOptions : {...defaultOptions, ...baseOptions}
-          return Apollo.useSuspenseQuery<GetWorkspacesQuery, GetWorkspacesQueryVariables>(GetWorkspacesDocument, options);
-        }
 export type GetWorkspacesQueryHookResult = ReturnType<typeof useGetWorkspacesQuery>;
 export type GetWorkspacesLazyQueryHookResult = ReturnType<typeof useGetWorkspacesLazyQuery>;
-export type GetWorkspacesSuspenseQueryHookResult = ReturnType<typeof useGetWorkspacesSuspenseQuery>;
 export type GetWorkspacesQueryResult = Apollo.QueryResult<GetWorkspacesQuery, GetWorkspacesQueryVariables>;

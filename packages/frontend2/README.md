@@ -8,13 +8,13 @@ This is a complete rewrite of the original frontend (`/packages/frontend`), desi
 
 ### Tech Stack
 
-- **React 19** - Latest React with concurrent features and optimized rendering
+- **React 19.2** - Latest React with improved concurrent features and performance
 - **React Router 7** - Client-side routing with modern data loading patterns
 - **TypeScript** - Full type safety across the application
 - **Tailwind CSS** - Utility-first CSS with design system integration
 - **Radix UI** - Unstyled, accessible UI primitives
 - **Vite** - Lightning-fast build tool and dev server
-- **Apollo Client 3** - GraphQL client with normalized caching and subscriptions
+- **Apollo Client 3.14** - GraphQL client with normalized caching, subscriptions, and React 19 support
 - **Zustand** - Lightweight state management for client state
 - **GraphQL Code Generator** - Auto-generate TypeScript types and React hooks
 
@@ -529,9 +529,9 @@ This frontend is a complete rewrite, not an incremental update. Key differences:
 ### Immediate Priorities
 1. **Add Radix UI components** - Button, Input, Card, Dialog, etc.
 2. **Authentication integration** - Connect to backend auth system
-3. **State management** - Add React Query for server state
-4. **Form validation** - Integrate with existing validation utils
-5. **Error boundaries** - Production-ready error handling
+3. **Form validation** - Integrate with existing validation utils
+4. **Error boundaries** - Production-ready error handling
+5. **Real-time subscriptions** - Implement GraphQL subscriptions for live updates
 
 ### Future Enhancements
 - Component library with Storybook

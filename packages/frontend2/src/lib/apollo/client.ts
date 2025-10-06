@@ -16,7 +16,7 @@
  * Import this client in ApolloProvider to wrap your app.
  */
 
-import { ApolloClient, InMemoryCache, NormalizedCacheObject } from '@apollo/client';
+import { ApolloClient, InMemoryCache } from '@apollo/client';
 import { link } from './links';
 
 /**
@@ -135,7 +135,7 @@ export const cache = new InMemoryCache({
  *
  * WHY: The configured client with all our links and cache.
  */
-export const apolloClient: ApolloClient<NormalizedCacheObject> = new ApolloClient({
+export const apolloClient = new ApolloClient({
   // WHY: Link chain (error handling, auth, transport selection)
   link,
 
@@ -148,7 +148,9 @@ export const apolloClient: ApolloClient<NormalizedCacheObject> = new ApolloClien
    * WHY: Enable Apollo DevTools in development for debugging.
    * Install: https://chrome.google.com/webstore/detail/apollo-client-devtools
    */
-  connectToDevTools: import.meta.env.DEV,
+  devtools: {
+    enabled: import.meta.env.DEV,
+  },
 
   /**
    * Default Options
@@ -185,10 +187,15 @@ export const apolloClient: ApolloClient<NormalizedCacheObject> = new ApolloClien
   },
 
   /**
-   * Name for DevTools
+   * Client Awareness - Identifies client in Apollo Studio
+   *
+   * WHY: Helps track which client (web, mobile, etc.) is making requests.
+   * Useful for monitoring and debugging in production.
    */
-  name: '2LY Frontend',
-  version: '2.0',
+  clientAwareness: {
+    name: '2LY Frontend',
+    version: '2.0',
+  },
 });
 
 /**

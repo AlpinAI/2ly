@@ -37,13 +37,13 @@ export function useRuntimes() {
   });
 
   // WHY: Transform/flatten the data structure for easier consumption
-  const runtimes = data?.workspace?.flatMap((ws) => ws.runtimes ?? []) ?? [];
+  const runtimes = data?.workspace?.flatMap((ws: any) => ws.runtimes ?? []) ?? [];
 
   // WHY: Calculate aggregate stats
   const stats = {
     total: runtimes.length,
-    active: runtimes.filter((r) => r.status === 'ACTIVE').length,
-    inactive: runtimes.filter((r) => r.status === 'INACTIVE').length,
+    active: runtimes.filter((r: any) => r.status === 'ACTIVE').length,
+    inactive: runtimes.filter((r: any) => r.status === 'INACTIVE').length,
   };
 
   return {

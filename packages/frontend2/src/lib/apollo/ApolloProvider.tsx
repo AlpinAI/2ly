@@ -35,7 +35,6 @@ interface ApolloProviderProps {
 export function ApolloProvider({ children }: ApolloProviderProps) {
   return (
     <BaseApolloProvider client={apolloClient}>
-      {/* @ts-expect-error - React type version mismatch in monorepo, safe to ignore */}
       {children}
     </BaseApolloProvider>
   );
@@ -44,13 +43,7 @@ export function ApolloProvider({ children }: ApolloProviderProps) {
 /**
  * Re-export Apollo Client utilities for convenience
  *
- * WHY: Allows imports from '@/lib/apollo/ApolloProvider' instead of '@apollo/client'
+ * WHY: Allows imports from '@/lib/apollo/ApolloProvider' instead from '@apollo/client/react'
  * Provides a single import point for Apollo-related functionality
  */
 export { useQuery, useMutation, useSubscription, useLazyQuery } from '@apollo/client';
-export type {
-  QueryHookOptions,
-  MutationHookOptions,
-  SubscriptionHookOptions,
-  LazyQueryHookOptions,
-} from '@apollo/client';

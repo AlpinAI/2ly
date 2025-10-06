@@ -174,7 +174,7 @@ export default function DashboardPage() {
             ) : (
               /* WHY: Display runtime list from Apollo cache */
               <div className="space-y-2">
-                {runtimes.map((runtime) => (
+                {runtimes.map((runtime: any) => (
                   <div
                     key={runtime.id}
                     className="flex items-center justify-between p-3 rounded-lg border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
