@@ -19,7 +19,7 @@
  */
 
 import React from 'react';
-import { ApolloProvider as BaseApolloProvider } from '@apollo/client';
+import { ApolloProvider as BaseApolloProvider } from '@apollo/client/react';
 import { apolloClient } from './client';
 
 interface ApolloProviderProps {
@@ -41,9 +41,11 @@ export function ApolloProvider({ children }: ApolloProviderProps) {
 }
 
 /**
- * Re-export Apollo Client utilities for convenience
+ * Re-export Apollo Client v4 hooks for convenience
  *
  * WHY: Allows imports from '@/lib/apollo/ApolloProvider' instead from '@apollo/client/react'
  * Provides a single import point for Apollo-related functionality
+ *
+ * APOLLO v4: Use these hooks with typed document nodes from codegen
  */
-export { useQuery, useMutation, useSubscription, useLazyQuery } from '@apollo/client';
+export { useQuery, useMutation, useSubscription, useLazyQuery } from '@apollo/client/react';

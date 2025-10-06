@@ -1,13 +1,18 @@
 /**
- * GraphQL Code Generator Configuration
+ * GraphQL Code Generator Configuration (Apollo Client v4)
  *
  * WHY: Automates TypeScript type generation from GraphQL schema and operations.
  * This ensures type safety between frontend and backend GraphQL APIs.
  *
+ * APOLLO v4 APPROACH:
+ * - Uses typed-document-node for type-safe queries (not generated hooks)
+ * - Use Apollo's useQuery/useMutation hooks with typed documents
+ * - Official Apollo recommendation: typescript + typescript-operations + typed-document-node
+ *
  * WHAT IT GENERATES:
  * 1. TypeScript types from GraphQL schema
- * 2. React hooks for queries, mutations, subscriptions (useGetAgentsQuery, etc.)
- * 3. TypeScript types for all GraphQL operations
+ * 2. TypeScript types for all GraphQL operations
+ * 3. Typed document nodes for type-safe Apollo Client usage
  *
  * HOW IT WORKS:
  * - Reads schema from backend: ../backend/dist/apollo.schema.graphql
@@ -31,26 +36,22 @@ const config: CodegenConfig = {
 
   // Output configuration
   generates: {
-    // Main generated file with all types and hooks
+    // Main generated file with all types and typed documents
     './src/graphql/generated/graphql.ts': {
-      // WHY: These plugins generate TypeScript types and React hooks
-      // Order matters: typescript → operations → react-apollo
+      // WHY: Apollo-recommended plugins for v4
+      // Order matters: typescript → operations → typed-document-node
       plugins: [
         'typescript', // Generate TypeScript types from schema
         'typescript-operations', // Generate types for operations
-        'typescript-react-apollo', // Generate React hooks (useQuery, useMutation, etc.)
+        'typed-document-node', // Generate typed document nodes for type-safe queries
       ],
 
-      // Configuration options
+      // Configuration options (Apollo-recommended)
       config: {
-        // WHY: Skip __typename in input types (cleaner type definitions)
-        skipTypename: true,
-
-        // WHY: Don't add undefined to optional types (stricter types)
+        // WHY: Type safety and Apollo Client v4 compatibility
         avoidOptionals: {
-          field: false,
-          inputValue: false,
-          object: false,
+          field: true, // Make fields non-optional
+          inputValue: false, // Keep input values optional
         },
 
         // WHY: Scalar type mappings
@@ -58,19 +59,17 @@ const config: CodegenConfig = {
           Date: 'Date', // Map GraphQL Date to TypeScript Date
         },
 
+        // WHY: Unknown for unconfigured scalars (type safety)
+        defaultScalarType: 'unknown',
+
+        // WHY: Always include __typename (Apollo cache needs it)
+        nonOptionalTypename: true,
+
+        // WHY: Don't add __typename to Query/Mutation/Subscription root types
+        skipTypeNameForRoot: true,
+
         // WHY: Use type imports for better tree-shaking
         useTypeImports: true,
-
-        // WHY: Enable React 19 compatibility
-        dedupeFragments: true,
-
-        // WHY: Strict null handling
-        maybeValue: 'T | null',
-
-        // WHY: React Apollo specific config
-        withHooks: true, // Generate React hooks
-        withComponent: false, // Don't generate React components (hooks only)
-        withHOC: false, // Don't generate HOCs (hooks only)
       },
     },
   },

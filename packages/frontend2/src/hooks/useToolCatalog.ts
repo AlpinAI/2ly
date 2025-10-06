@@ -35,7 +35,8 @@
  */
 
 import { useMemo } from 'react';
-import { useGetMcpToolsQuery } from '@/graphql/generated/graphql';
+import { useQuery } from '@apollo/client/react';
+import { GetMcpToolsDocument } from '@/graphql/generated/graphql';
 import { useToolFilters } from '@/stores/uiStore';
 import { useWorkspaceId } from '@/stores/workspaceStore';
 
@@ -46,8 +47,8 @@ export function useToolCatalog() {
   // WHY: Get filters from Zustand
   const filters = useToolFilters();
 
-  // WHY: Fetch tools from Apollo
-  const { data, loading, error, refetch } = useGetMcpToolsQuery({
+  // WHY: Fetch tools from Apollo with typed document
+  const { data, loading, error, refetch } = useQuery(GetMcpToolsDocument, {
     variables: {
       workspaceId: workspaceId ?? '', // Provide fallback for null
     },

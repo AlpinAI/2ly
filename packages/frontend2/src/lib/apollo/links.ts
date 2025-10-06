@@ -25,6 +25,7 @@ import {
 import { GraphQLWsLink } from '@apollo/client/link/subscriptions';
 import { getMainDefinition } from '@apollo/client/utilities';
 import { onError } from '@apollo/client/link/error';
+import { CombinedGraphQLErrors } from '@apollo/client/errors';
 import { createClient } from 'graphql-ws';
 
 /**
@@ -39,16 +40,22 @@ const WS_ENDPOINT =
   import.meta.env.VITE_GRAPHQL_WS_ENDPOINT || 'ws://localhost:3000/graphql';
 
 /**
- * Error Link - Global Error Handling
+ * Error Link - Global Error Handling (Apollo Client v4)
  *
  * WHY: Centralized error handling for all GraphQL operations.
  * Catches both GraphQL errors (from backend) and network errors.
  *
+ * APOLLO v4 CHANGE: Error handling API changed
+ * - Use CombinedGraphQLErrors.is(error) to check for GraphQL errors
+ * - Access errors via error.errors array
+ * - Otherwise it's a network error
+ *
  * USAGE: Logged errors can be sent to error monitoring (Sentry, etc.)
  */
-export const errorLink = onError(({ graphQLErrors, networkError, operation }) => {
-  if (graphQLErrors) {
-    graphQLErrors.forEach(({ message, locations, path, extensions }) => {
+export const errorLink = onError(({ error, operation }) => {
+  // WHY: Check if it's a GraphQL error with errors array
+  if (CombinedGraphQLErrors.is(error)) {
+    error.errors.forEach(({ message, locations, path, extensions }) => {
       console.error(
         `[GraphQL error]: Message: ${message}, Location: ${locations}, Path: ${path}`,
         extensions
@@ -60,10 +67,9 @@ export const errorLink = onError(({ graphQLErrors, networkError, operation }) =>
         console.warn('User is not authenticated. Redirecting to login...');
       }
     });
-  }
-
-  if (networkError) {
-    console.error(`[Network error ${operation.operationName}]:`, networkError);
+  } else {
+    // WHY: Otherwise it's a network error
+    console.error(`[Network error ${operation.operationName}]:`, error);
   }
 });
 

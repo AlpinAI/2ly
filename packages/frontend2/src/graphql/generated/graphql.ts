@@ -1,13 +1,11 @@
-import { gql } from '@apollo/client';
-import * as Apollo from '@apollo/client';
+import type { TypedDocumentNode as DocumentNode } from '@graphql-typed-document-node/core';
 export type Maybe<T> = T | null;
-export type InputMaybe<T> = T | null;
+export type InputMaybe<T> = Maybe<T>;
 export type Exact<T extends { [key: string]: unknown }> = { [K in keyof T]: T[K] };
 export type MakeOptional<T, K extends keyof T> = Omit<T, K> & { [SubKey in K]?: Maybe<T[SubKey]> };
 export type MakeMaybe<T, K extends keyof T> = Omit<T, K> & { [SubKey in K]: Maybe<T[SubKey]> };
 export type MakeEmpty<T extends { [key: string]: unknown }, K extends keyof T> = { [_ in K]?: never };
 export type Incremental<T> = T | { [P in keyof T]?: P extends ' $fragmentName' | '__typename' ? T[P] : never };
-const defaultOptions = {} as const;
 /** All built-in and custom scalars, mapped to their actual values */
 export type Scalars = {
   ID: { input: string; output: string; }
@@ -24,27 +22,31 @@ export enum ActiveStatus {
 }
 
 export type AuthPayload = {
+  __typename: 'AuthPayload';
   accessToken: Scalars['String']['output'];
-  errors?: Maybe<Array<Scalars['String']['output']>>;
+  errors: Maybe<Array<Scalars['String']['output']>>;
   expiresIn: Scalars['Int']['output'];
   refreshToken: Scalars['String']['output'];
   success: Scalars['Boolean']['output'];
-  tokens?: Maybe<AuthTokens>;
+  tokens: Maybe<AuthTokens>;
   user: User;
 };
 
 export type AuthTokens = {
+  __typename: 'AuthTokens';
   accessToken: Scalars['String']['output'];
   refreshToken: Scalars['String']['output'];
 };
 
 export type CallToolResult = {
+  __typename: 'CallToolResult';
   result: Scalars['String']['output'];
   success: Scalars['Boolean']['output'];
 };
 
 export type Infra = {
-  nats?: Maybe<Scalars['String']['output']>;
+  __typename: 'Infra';
+  nats: Maybe<Scalars['String']['output']>;
 };
 
 export type LoginInput = {
@@ -64,7 +66,8 @@ export type LogoutInput = {
 };
 
 export type LogoutPayload = {
-  errors?: Maybe<Array<Scalars['String']['output']>>;
+  __typename: 'LogoutPayload';
+  errors: Maybe<Array<Scalars['String']['output']>>;
   success: Scalars['Boolean']['output'];
 };
 
@@ -73,36 +76,39 @@ export type LogoutUserInput = {
 };
 
 export type McpRegistry2lyMetadata = {
+  __typename: 'MCPRegistry2lyMetadata';
   registryVersion: Scalars['String']['output'];
 };
 
 export type McpRegistryServer = {
-  ENV?: Maybe<Scalars['String']['output']>;
+  __typename: 'MCPRegistryServer';
+  ENV: Maybe<Scalars['String']['output']>;
   _2ly: McpRegistry2lyMetadata;
-  args?: Maybe<Scalars['String']['output']>;
-  command?: Maybe<Scalars['String']['output']>;
+  args: Maybe<Scalars['String']['output']>;
+  command: Maybe<Scalars['String']['output']>;
   config: Scalars['String']['output'];
   description: Scalars['String']['output'];
-  headers?: Maybe<Scalars['String']['output']>;
+  headers: Maybe<Scalars['String']['output']>;
   name: Scalars['String']['output'];
   repositoryUrl: Scalars['String']['output'];
-  serverUrl?: Maybe<Scalars['String']['output']>;
+  serverUrl: Maybe<Scalars['String']['output']>;
   transport: McpTransportType;
 };
 
 export type McpServer = {
+  __typename: 'MCPServer';
   ENV: Scalars['String']['output'];
   args: Scalars['String']['output'];
   command: Scalars['String']['output'];
   description: Scalars['String']['output'];
-  headers?: Maybe<Scalars['String']['output']>;
+  headers: Maybe<Scalars['String']['output']>;
   id: Scalars['ID']['output'];
   name: Scalars['String']['output'];
   repositoryUrl: Scalars['String']['output'];
-  runOn?: Maybe<McpServerRunOn>;
-  runtime?: Maybe<Runtime>;
+  runOn: Maybe<McpServerRunOn>;
+  runtime: Maybe<Runtime>;
   serverUrl: Scalars['String']['output'];
-  tools?: Maybe<Array<McpTool>>;
+  tools: Maybe<Array<McpTool>>;
   transport: McpTransportType;
   workspace: Workspace;
 };
@@ -114,6 +120,7 @@ export enum McpServerRunOn {
 }
 
 export type McpTool = {
+  __typename: 'MCPTool';
   annotations: Scalars['String']['output'];
   createdAt: Scalars['Date']['output'];
   description: Scalars['String']['output'];
@@ -122,7 +129,7 @@ export type McpTool = {
   lastSeenAt: Scalars['Date']['output'];
   mcpServer: McpServer;
   name: Scalars['String']['output'];
-  runtimes?: Maybe<Array<Runtime>>;
+  runtimes: Maybe<Array<Runtime>>;
   status: ActiveStatus;
   workspace: Workspace;
 };
@@ -133,6 +140,7 @@ export enum McpTransportType {
 }
 
 export type Mutation = {
+  __typename: 'Mutation';
   callMCPTool: CallToolResult;
   createMCPServer: McpServer;
   createRuntime: Runtime;
@@ -321,16 +329,17 @@ export type MutationUpdateWorkspaceArgs = {
 };
 
 export type Query = {
-  fetchMCPServerConfig?: Maybe<McpRegistryServer>;
+  __typename: 'Query';
+  fetchMCPServerConfig: Maybe<McpRegistryServer>;
   infra: Infra;
   isMCPAutoConfigEnabled: Scalars['Boolean']['output'];
-  mcpServers?: Maybe<Array<McpServer>>;
-  me?: Maybe<User>;
+  mcpServers: Maybe<Array<McpServer>>;
+  me: Maybe<User>;
   registry: Registry;
-  searchMCPServers?: Maybe<Array<McpRegistryServer>>;
-  system?: Maybe<System>;
-  workspace?: Maybe<Array<Workspace>>;
-  workspaceMCPTools?: Maybe<Workspace>;
+  searchMCPServers: Maybe<Array<McpRegistryServer>>;
+  system: Maybe<System>;
+  workspace: Maybe<Array<Workspace>>;
+  workspaceMCPTools: Maybe<Workspace>;
 };
 
 
@@ -353,8 +362,9 @@ export type RefreshTokenInput = {
 };
 
 export type RefreshTokenPayload = {
+  __typename: 'RefreshTokenPayload';
   accessToken: Scalars['String']['output'];
-  errors?: Maybe<Array<Scalars['String']['output']>>;
+  errors: Maybe<Array<Scalars['String']['output']>>;
   expiresIn: Scalars['Int']['output'];
   success: Scalars['Boolean']['output'];
 };
@@ -366,41 +376,45 @@ export type RegisterUserInput = {
 };
 
 export type RegisterUserPayload = {
-  errors?: Maybe<Array<Scalars['String']['output']>>;
+  __typename: 'RegisterUserPayload';
+  errors: Maybe<Array<Scalars['String']['output']>>;
   success: Scalars['Boolean']['output'];
-  tokens?: Maybe<AuthTokens>;
-  user?: Maybe<User>;
+  tokens: Maybe<AuthTokens>;
+  user: Maybe<User>;
 };
 
 export type Registry = {
+  __typename: 'Registry';
   description: Scalars['String']['output'];
-  servers?: Maybe<Array<McpRegistryServer>>;
+  servers: Maybe<Array<McpRegistryServer>>;
   version: Scalars['String']['output'];
 };
 
 export type Runtime = {
-  capabilities?: Maybe<Array<Scalars['String']['output']>>;
+  __typename: 'Runtime';
+  capabilities: Maybe<Array<Scalars['String']['output']>>;
   createdAt: Scalars['Date']['output'];
-  description?: Maybe<Scalars['String']['output']>;
-  hostIP?: Maybe<Scalars['String']['output']>;
-  hostname?: Maybe<Scalars['String']['output']>;
+  description: Maybe<Scalars['String']['output']>;
+  hostIP: Maybe<Scalars['String']['output']>;
+  hostname: Maybe<Scalars['String']['output']>;
   id: Scalars['ID']['output'];
-  lastSeenAt?: Maybe<Scalars['Date']['output']>;
-  mcpClientName?: Maybe<Scalars['String']['output']>;
-  mcpServers?: Maybe<Array<McpServer>>;
-  mcpToolCapabilities?: Maybe<Array<McpTool>>;
+  lastSeenAt: Maybe<Scalars['Date']['output']>;
+  mcpClientName: Maybe<Scalars['String']['output']>;
+  mcpServers: Maybe<Array<McpServer>>;
+  mcpToolCapabilities: Maybe<Array<McpTool>>;
   name: Scalars['String']['output'];
-  roots?: Maybe<Scalars['String']['output']>;
+  roots: Maybe<Scalars['String']['output']>;
   status: ActiveStatus;
   workspace: Workspace;
 };
 
 export type Subscription = {
-  mcpServers?: Maybe<Array<McpServer>>;
-  mcpTools?: Maybe<Array<Maybe<McpTool>>>;
-  runtimes?: Maybe<Array<Runtime>>;
-  toolCalls?: Maybe<Array<ToolCall>>;
-  workspaces?: Maybe<Array<Workspace>>;
+  __typename: 'Subscription';
+  mcpServers: Maybe<Array<McpServer>>;
+  mcpTools: Maybe<Array<Maybe<McpTool>>>;
+  runtimes: Maybe<Array<Runtime>>;
+  toolCalls: Maybe<Array<ToolCall>>;
+  workspaces: Maybe<Array<Workspace>>;
 };
 
 
@@ -424,24 +438,26 @@ export type SubscriptionToolCallsArgs = {
 };
 
 export type System = {
+  __typename: 'System';
   createdAt: Scalars['Date']['output'];
-  defaultWorkspace?: Maybe<Workspace>;
+  defaultWorkspace: Maybe<Workspace>;
   id: Scalars['ID']['output'];
   initialized: Scalars['Boolean']['output'];
   updatedAt: Scalars['Date']['output'];
 };
 
 export type ToolCall = {
+  __typename: 'ToolCall';
   calledAt: Scalars['Date']['output'];
   calledBy: Runtime;
-  completedAt?: Maybe<Scalars['Date']['output']>;
-  error?: Maybe<Scalars['String']['output']>;
-  executedBy?: Maybe<Runtime>;
+  completedAt: Maybe<Scalars['Date']['output']>;
+  error: Maybe<Scalars['String']['output']>;
+  executedBy: Maybe<Runtime>;
   id: Scalars['ID']['output'];
   mcpTool: McpTool;
   status: ToolCallStatus;
   toolInput: Scalars['String']['output'];
-  toolOutput?: Maybe<Scalars['String']['output']>;
+  toolOutput: Maybe<Scalars['String']['output']>;
 };
 
 export enum ToolCallStatus {
@@ -451,24 +467,26 @@ export enum ToolCallStatus {
 }
 
 export type User = {
-  adminOfWorkspaces?: Maybe<Array<Workspace>>;
+  __typename: 'User';
+  adminOfWorkspaces: Maybe<Array<Workspace>>;
   createdAt: Scalars['Date']['output'];
   email: Scalars['String']['output'];
   id: Scalars['ID']['output'];
-  lastLoginAt?: Maybe<Scalars['Date']['output']>;
-  membersOfWorkspaces?: Maybe<Array<Workspace>>;
+  lastLoginAt: Maybe<Scalars['Date']['output']>;
+  membersOfWorkspaces: Maybe<Array<Workspace>>;
   updatedAt: Scalars['Date']['output'];
 };
 
 export type Workspace = {
+  __typename: 'Workspace';
   createdAt: Scalars['Date']['output'];
-  defaultTestingRuntime?: Maybe<Runtime>;
-  globalRuntime?: Maybe<Runtime>;
+  defaultTestingRuntime: Maybe<Runtime>;
+  globalRuntime: Maybe<Runtime>;
   id: Scalars['ID']['output'];
-  mcpServers?: Maybe<Array<McpServer>>;
-  mcpTools?: Maybe<Array<McpTool>>;
+  mcpServers: Maybe<Array<McpServer>>;
+  mcpTools: Maybe<Array<McpTool>>;
   name: Scalars['String']['output'];
-  runtimes?: Maybe<Array<Runtime>>;
+  runtimes: Maybe<Array<Runtime>>;
 };
 
 export type GetMcpToolsQueryVariables = Exact<{
@@ -476,155 +494,19 @@ export type GetMcpToolsQueryVariables = Exact<{
 }>;
 
 
-export type GetMcpToolsQuery = { workspaceMCPTools?: { id: string, name: string, mcpTools?: Array<{ id: string, name: string, description: string, inputSchema: string, status: ActiveStatus, createdAt: Date, lastSeenAt: Date, mcpServer: { id: string, name: string } }> | null } | null };
+export type GetMcpToolsQuery = { workspaceMCPTools: { __typename: 'Workspace', id: string, name: string, mcpTools: Array<{ __typename: 'MCPTool', id: string, name: string, description: string, inputSchema: string, status: ActiveStatus, createdAt: Date, lastSeenAt: Date, mcpServer: { __typename: 'MCPServer', id: string, name: string } }> | null } | null };
 
 export type GetRuntimesQueryVariables = Exact<{ [key: string]: never; }>;
 
 
-export type GetRuntimesQuery = { workspace?: Array<{ id: string, name: string, runtimes?: Array<{ id: string, name: string, description?: string | null, status: ActiveStatus, createdAt: Date, lastSeenAt?: Date | null, capabilities?: Array<string> | null, hostIP?: string | null, hostname?: string | null, mcpClientName?: string | null }> | null }> | null };
+export type GetRuntimesQuery = { workspace: Array<{ __typename: 'Workspace', id: string, name: string, runtimes: Array<{ __typename: 'Runtime', id: string, name: string, description: string | null, status: ActiveStatus, createdAt: Date, lastSeenAt: Date | null, capabilities: Array<string> | null, hostIP: string | null, hostname: string | null, mcpClientName: string | null }> | null }> | null };
 
 export type GetWorkspacesQueryVariables = Exact<{ [key: string]: never; }>;
 
 
-export type GetWorkspacesQuery = { workspace?: Array<{ id: string, name: string, createdAt: Date }> | null, system?: { id: string, defaultWorkspace?: { id: string, name: string } | null } | null };
+export type GetWorkspacesQuery = { workspace: Array<{ __typename: 'Workspace', id: string, name: string, createdAt: Date }> | null, system: { __typename: 'System', id: string, defaultWorkspace: { __typename: 'Workspace', id: string, name: string } | null } | null };
 
 
-export const GetMcpToolsDocument = gql`
-    query GetMCPTools($workspaceId: ID!) {
-  workspaceMCPTools(workspaceId: $workspaceId) {
-    id
-    name
-    mcpTools {
-      id
-      name
-      description
-      inputSchema
-      status
-      createdAt
-      lastSeenAt
-      mcpServer {
-        id
-        name
-      }
-    }
-  }
-}
-    `;
-
-/**
- * __useGetMcpToolsQuery__
- *
- * To run a query within a React component, call `useGetMcpToolsQuery` and pass it any options that fit your needs.
- * When your component renders, `useGetMcpToolsQuery` returns an object from Apollo Client that contains loading, error, and data properties
- * you can use to render your UI.
- *
- * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
- *
- * @example
- * const { data, loading, error } = useGetMcpToolsQuery({
- *   variables: {
- *      workspaceId: // value for 'workspaceId'
- *   },
- * });
- */
-export function useGetMcpToolsQuery(baseOptions: Apollo.QueryHookOptions<GetMcpToolsQuery, GetMcpToolsQueryVariables>) {
-        const options = {...defaultOptions, ...baseOptions}
-        return Apollo.useQuery<GetMcpToolsQuery, GetMcpToolsQueryVariables>(GetMcpToolsDocument, options);
-      }
-export function useGetMcpToolsLazyQuery(baseOptions?: Apollo.LazyQueryHookOptions<GetMcpToolsQuery, GetMcpToolsQueryVariables>) {
-          const options = {...defaultOptions, ...baseOptions}
-          return Apollo.useLazyQuery<GetMcpToolsQuery, GetMcpToolsQueryVariables>(GetMcpToolsDocument, options);
-        }
-export type GetMcpToolsQueryHookResult = ReturnType<typeof useGetMcpToolsQuery>;
-export type GetMcpToolsLazyQueryHookResult = ReturnType<typeof useGetMcpToolsLazyQuery>;
-export type GetMcpToolsQueryResult = Apollo.QueryResult<GetMcpToolsQuery, GetMcpToolsQueryVariables>;
-export const GetRuntimesDocument = gql`
-    query GetRuntimes {
-  workspace {
-    id
-    name
-    runtimes {
-      id
-      name
-      description
-      status
-      createdAt
-      lastSeenAt
-      capabilities
-      hostIP
-      hostname
-      mcpClientName
-    }
-  }
-}
-    `;
-
-/**
- * __useGetRuntimesQuery__
- *
- * To run a query within a React component, call `useGetRuntimesQuery` and pass it any options that fit your needs.
- * When your component renders, `useGetRuntimesQuery` returns an object from Apollo Client that contains loading, error, and data properties
- * you can use to render your UI.
- *
- * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
- *
- * @example
- * const { data, loading, error } = useGetRuntimesQuery({
- *   variables: {
- *   },
- * });
- */
-export function useGetRuntimesQuery(baseOptions?: Apollo.QueryHookOptions<GetRuntimesQuery, GetRuntimesQueryVariables>) {
-        const options = {...defaultOptions, ...baseOptions}
-        return Apollo.useQuery<GetRuntimesQuery, GetRuntimesQueryVariables>(GetRuntimesDocument, options);
-      }
-export function useGetRuntimesLazyQuery(baseOptions?: Apollo.LazyQueryHookOptions<GetRuntimesQuery, GetRuntimesQueryVariables>) {
-          const options = {...defaultOptions, ...baseOptions}
-          return Apollo.useLazyQuery<GetRuntimesQuery, GetRuntimesQueryVariables>(GetRuntimesDocument, options);
-        }
-export type GetRuntimesQueryHookResult = ReturnType<typeof useGetRuntimesQuery>;
-export type GetRuntimesLazyQueryHookResult = ReturnType<typeof useGetRuntimesLazyQuery>;
-export type GetRuntimesQueryResult = Apollo.QueryResult<GetRuntimesQuery, GetRuntimesQueryVariables>;
-export const GetWorkspacesDocument = gql`
-    query GetWorkspaces {
-  workspace {
-    id
-    name
-    createdAt
-  }
-  system {
-    id
-    defaultWorkspace {
-      id
-      name
-    }
-  }
-}
-    `;
-
-/**
- * __useGetWorkspacesQuery__
- *
- * To run a query within a React component, call `useGetWorkspacesQuery` and pass it any options that fit your needs.
- * When your component renders, `useGetWorkspacesQuery` returns an object from Apollo Client that contains loading, error, and data properties
- * you can use to render your UI.
- *
- * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
- *
- * @example
- * const { data, loading, error } = useGetWorkspacesQuery({
- *   variables: {
- *   },
- * });
- */
-export function useGetWorkspacesQuery(baseOptions?: Apollo.QueryHookOptions<GetWorkspacesQuery, GetWorkspacesQueryVariables>) {
-        const options = {...defaultOptions, ...baseOptions}
-        return Apollo.useQuery<GetWorkspacesQuery, GetWorkspacesQueryVariables>(GetWorkspacesDocument, options);
-      }
-export function useGetWorkspacesLazyQuery(baseOptions?: Apollo.LazyQueryHookOptions<GetWorkspacesQuery, GetWorkspacesQueryVariables>) {
-          const options = {...defaultOptions, ...baseOptions}
-          return Apollo.useLazyQuery<GetWorkspacesQuery, GetWorkspacesQueryVariables>(GetWorkspacesDocument, options);
-        }
-export type GetWorkspacesQueryHookResult = ReturnType<typeof useGetWorkspacesQuery>;
-export type GetWorkspacesLazyQueryHookResult = ReturnType<typeof useGetWorkspacesLazyQuery>;
-export type GetWorkspacesQueryResult = Apollo.QueryResult<GetWorkspacesQuery, GetWorkspacesQueryVariables>;
+export const GetMcpToolsDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"GetMCPTools"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"workspaceId"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"workspaceMCPTools"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"workspaceId"},"value":{"kind":"Variable","name":{"kind":"Name","value":"workspaceId"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"mcpTools"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"description"}},{"kind":"Field","name":{"kind":"Name","value":"inputSchema"}},{"kind":"Field","name":{"kind":"Name","value":"status"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}},{"kind":"Field","name":{"kind":"Name","value":"lastSeenAt"}},{"kind":"Field","name":{"kind":"Name","value":"mcpServer"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}}]}}]}}]}}]}}]} as unknown as DocumentNode<GetMcpToolsQuery, GetMcpToolsQueryVariables>;
+export const GetRuntimesDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"GetRuntimes"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"workspace"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"runtimes"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"description"}},{"kind":"Field","name":{"kind":"Name","value":"status"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}},{"kind":"Field","name":{"kind":"Name","value":"lastSeenAt"}},{"kind":"Field","name":{"kind":"Name","value":"capabilities"}},{"kind":"Field","name":{"kind":"Name","value":"hostIP"}},{"kind":"Field","name":{"kind":"Name","value":"hostname"}},{"kind":"Field","name":{"kind":"Name","value":"mcpClientName"}}]}}]}}]}}]} as unknown as DocumentNode<GetRuntimesQuery, GetRuntimesQueryVariables>;
+export const GetWorkspacesDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"GetWorkspaces"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"workspace"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}}]}},{"kind":"Field","name":{"kind":"Name","value":"system"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"defaultWorkspace"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}}]}}]}}]}}]} as unknown as DocumentNode<GetWorkspacesQuery, GetWorkspacesQueryVariables>;

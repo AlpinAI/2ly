@@ -1,13 +1,13 @@
 /**
  * useRuntimes Hook
  *
- * WHY: Wrapper around generated Apollo hook with additional features:
+ * WHY: Wrapper around Apollo Client useQuery with typed document node
  * - Automatic error handling
  * - Loading states
  * - Data transformation
  * - Integration with Zustand filters (if needed)
  *
- * PATTERN: This demonstrates how to wrap generated hooks with custom logic.
+ * APOLLO v4 PATTERN: Use typed document nodes with Apollo's useQuery hook
  * Apply this pattern to other entities (agents, tools, etc.)
  *
  * USAGE:
@@ -23,11 +23,12 @@
  * ```
  */
 
-import { useGetRuntimesQuery } from '@/graphql/generated/graphql';
+import { useQuery } from '@apollo/client/react';
+import { GetRuntimesDocument } from '@/graphql/generated/graphql';
 
 export function useRuntimes() {
-  // WHY: Use generated Apollo hook
-  const { data, loading, error, refetch } = useGetRuntimesQuery({
+  // WHY: Use Apollo Client's useQuery with typed document node
+  const { data, loading, error, refetch } = useQuery(GetRuntimesDocument, {
     // WHY: Poll every 30 seconds for real-time-ish updates
     // TODO: Replace with subscription when backend implements it
     pollInterval: 30_000,
