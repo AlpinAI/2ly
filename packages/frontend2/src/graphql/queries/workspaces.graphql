@@ -1,0 +1,16 @@
+# Get all workspaces
+# WHY: Used in workspace selector to show available workspaces
+query GetWorkspaces {
+  workspace {
+    id
+    name
+    createdAt
+  }
+  system {
+    id
+    defaultWorkspace {
+      id
+      name
+    }
+  }
+}

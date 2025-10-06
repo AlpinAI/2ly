@@ -1,0 +1,21 @@
+# Get all MCP tools for a workspace
+# WHY: Tool catalog page showing available tools
+query GetMCPTools($workspaceId: ID!) {
+  workspaceMCPTools(workspaceId: $workspaceId) {
+    id
+    name
+    mcpTools {
+      id
+      name
+      description
+      inputSchema
+      status
+      createdAt
+      lastSeenAt
+      mcpServer {
+        id
+        name
+      }
+    }
+  }
+}
