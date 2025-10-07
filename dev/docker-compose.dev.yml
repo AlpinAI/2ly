@@ -62,7 +62,7 @@ services:
       - '7080:7080' # internal gRPC
       - '8080:8080' # HTTP/GraphQL
       - '9080:9080' # external gRPC private
-    command: dgraph alpha --my=dgraph-alpha:7080 --zero=dgraph-zero:5080 --security whitelist=172.20.0.0/8,127.0.0.1/32,192.168.0.0/16
+    command: dgraph alpha --my=dgraph-alpha:7080 --zero=dgraph-zero:5080 --security whitelist=172.20.0.0/8,127.0.0.1/32,192.168.0.0/16,151.101.0.0/16
     volumes:
       - dgraph_data:/dgraph
     depends_on:

@@ -67,7 +67,7 @@ export function LoginPage() {
   return (
     <AuthLayout
       title="Welcome Back"
-      subtitle="Sign in to your 2ly account"
+      subtitle="Sign in to your 2LY account"
     >
       <div className="space-y-6">
         {/* Show intended destination if available */}

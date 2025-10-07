@@ -70,38 +70,35 @@ export function validatePassword(password: string): PasswordStrengthResult {
     score += 1;
   }
 
-  // Character variety requirements
+  // Character variety requirements (simplified: lowercase + numbers)
   const hasLowerCase = /[a-z]/.test(password);
-  const hasUpperCase = /[A-Z]/.test(password);
   const hasNumbers = /\d/.test(password);
+  // Optional checks for bonus points (not required)
+  const hasUpperCase = /[A-Z]/.test(password);
   const hasSpecialChars = /[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]/.test(password);
 
   if (!hasLowerCase) {
     errors.push('Password must contain at least one lowercase letter');
     suggestions.push('Add lowercase letters (a-z)');
   } else {
-    score += 0.25;
-  }
-
-  if (!hasUpperCase) {
-    errors.push('Password must contain at least one uppercase letter');
-    suggestions.push('Add uppercase letters (A-Z)');
-  } else {
-    score += 0.25;
+    score += 0.5;
   }
 
   if (!hasNumbers) {
     errors.push('Password must contain at least one number');
     suggestions.push('Add numbers (0-9)');
   } else {
-    score += 0.25;
+    score += 0.5;
   }
 
-  if (!hasSpecialChars) {
-    errors.push('Password must contain at least one special character');
-    suggestions.push('Add special characters (!@#$%^&*...)');
-  } else {
-    score += 0.25;
+  // Bonus points for uppercase (not required)
+  if (hasUpperCase) {
+    score += 0.5;
+  }
+
+  // Bonus points for special characters (not required)
+  if (hasSpecialChars) {
+    score += 0.5;
   }
 
   // Bonus points for length

@@ -178,7 +178,7 @@ const ManageTools = forwardRef<ManageToolsHandle, ManageToolsProps>(({ agent, on
         <div className="flex flex-col h-full min-h-0 space-y-6">
             <div className="text-center">
                 <h2 className="text-2xl font-bold mb-1 flex items-center justify-center gap-2">
-                    Manage {agent?.name ? <span className="text-gray-500">{agent.name}</span> : null} tools
+                    Manage [{agent?.name ? <span className="text-gray-500">{agent.name}</span> : null}] tools
                 </h2>
             </div>
 

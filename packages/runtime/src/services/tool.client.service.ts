@@ -20,6 +20,7 @@ import { Subscription } from 'rxjs';
 
 @injectable()
 export class ToolClientService extends Service {
+  name = 'tool-client';
   private logger: pino.Logger;
   private natsSubscriptions: { unsubscribe: () => void; drain: () => Promise<void>; isClosed?: () => boolean }[] = [];
   private mcpServers: Map<string, ToolServerService> = new Map();
@@ -36,7 +37,7 @@ export class ToolClientService extends Service {
     @inject(AgentServerService) private agentServerService: AgentServerService,
   ) {
     super();
-    this.logger = this.loggerService.getLogger('tool.client');
+    this.logger = this.loggerService.getLogger(this.name);
   }
 
   protected async initialize() {
@@ -130,6 +131,7 @@ export class ToolClientService extends Service {
     // Stop MCP servers
     // -> will also drain the capabilities subscriptions
     for (const mcpServer of this.mcpServers.values()) {
+      console.log('Stopping MCP Server', mcpServer.getName());
       await this.stopService(mcpServer);
     }
     this.mcpServers.clear();

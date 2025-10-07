@@ -6,7 +6,6 @@ import {
   Settings,
   ChevronLeft,
   ChevronRight,
-  Boxes,
   Server,
   Play,
   ChevronDown,
@@ -107,13 +106,10 @@ const Sidebar: React.FC<SidebarProps> = ({ className }) => {
                 <ChevronRight className="h-5 w-5" />
               </button>
             ) : (
-              <Boxes className="h-6 w-6" />
+              <img src="/logo-2ly.png" alt="2LY Logo" className="h-8 w-8" />
             )
           ) : (
-            <>
-              <Boxes className="h-6 w-6" />
-              <span className="text-xl">2LY</span>
-            </>
+            <img src="/logo-2ly.png" alt="2LY Logo" className="h-10" />
           )}
         </div>
       </div>
@@ -132,7 +128,7 @@ const Sidebar: React.FC<SidebarProps> = ({ className }) => {
 
       <div className="flex-1 overflow-auto py-2 px-4">
         <nav className="flex flex-col gap-1">
-          <NavItem to="/mcp-servers" icon={<Server className="h-5 w-5" />} label="MCP Servers" collapsed={collapsed} />
+          <NavItem to="/mcp-servers" icon={<Server className="h-5 w-5" />} label="Tools Registry" collapsed={collapsed} />
           <NavItem to="/agents" icon={<Cpu className="h-5 w-5" />} label="Agents" collapsed={collapsed} />
           <NavItem to="/playground" icon={<FlaskConical className="h-5 w-5" />} label="Playground" collapsed={collapsed} />
           <NavItem to="/monitoring" icon={<LineChart className="h-5 w-5" />} label="Monitoring" collapsed={collapsed} />

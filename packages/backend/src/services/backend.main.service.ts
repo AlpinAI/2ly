@@ -140,11 +140,16 @@ export class MainService extends Service {
       console.log('processing shutdown...');
       this.logActiveServices();
     }, 2000);
+    const forceKill = setInterval(() => {
+      console.log('force killing...');
+      process.kill(process.pid, 'SIGKILL');
+    }, 10000);
     this.logger.info(`Graceful shutdown: ${signal}`);
     // the shutdown is expressed from the index consumer point of view
     // we might want to move the gracefull shutdown logic into index
     await this.stop('index');
     clearInterval(keepAlive);
+    clearInterval(forceKill);
     process.exit(0);
   }
 

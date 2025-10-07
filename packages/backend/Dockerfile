@@ -1,11 +1,8 @@
 # Dockerfile for 2LY Orchestrator
-FROM node:22-alpine
+# Stage 1: Build
+FROM node:22-alpine AS builder
 
-# Create app directory
 WORKDIR /app
-
-# Create logs directory
-RUN mkdir -p logs
 
 # Copy package files
 COPY package*.json ./
@@ -13,36 +10,37 @@ COPY tsconfig.json ./
 COPY packages/backend/ ./packages/backend/
 COPY packages/common/ ./packages/common/
 
-# Install dependencies
-RUN npm install
-
-# Install curl
-RUN apk add --no-cache curl
+# Install all dependencies (including dev for TypeScript compilation)
+RUN npm ci --quiet
 
 # Build the backend
 RUN npm run build -w @2ly/backend
 
-# Remove unnecessary node_modules now that we have a build
-RUN rm -rf node_modules
-RUN rm -rf packages/backend/node_modules
-RUN rm -rf packages/common/node_modules
+# Stage 2: Production
+FROM node:22-alpine
+
+WORKDIR /app
+
+# Install curl for healthcheck
+RUN apk add --no-cache curl
+
+# Copy only the built artifacts from builder
+COPY --from=builder /app/packages/backend/dist ./packages/backend/dist
+COPY --from=builder /app/packages/backend/keys ./packages/backend/keys
+
+# Create logs directory
+RUN mkdir -p logs
 
 # Create non-root user
 RUN addgroup -g 1001 -S orchestrator && \
-  adduser -S orchestrator -u 1001
+  adduser -S orchestrator -u 1001 && \
+  chown -R orchestrator:orchestrator /app
 
-# Change ownership of app directory
-RUN chown -R orchestrator:orchestrator /app
-
-# Switch to non-root user
 USER orchestrator
 
-# Expose any monitoring ports if needed
 EXPOSE 3000
 
-# Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
   CMD node -e "console.log('Health check - orchestrator running')" || exit 1
 
-# Start the application
 CMD ["node", "packages/backend/dist/index.js"]

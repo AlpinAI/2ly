@@ -36,7 +36,7 @@ const PasswordStrengthIndicator: React.FC<PasswordStrengthIndicatorProps> = ({
 
   const strengthProps = getPasswordStrengthProps(validationResult.score);
 
-  // Password requirements checklist
+  // Password requirements checklist (required only)
   const requirements = [
     {
       test: password.length >= 8,
@@ -47,16 +47,8 @@ const PasswordStrengthIndicator: React.FC<PasswordStrengthIndicatorProps> = ({
       text: 'Contains lowercase letter',
     },
     {
-      test: /[A-Z]/.test(password),
-      text: 'Contains uppercase letter',
-    },
-    {
       test: /\d/.test(password),
       text: 'Contains number',
-    },
-    {
-      test: /[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]/.test(password),
-      text: 'Contains special character',
     },
   ];
 

@@ -242,11 +242,11 @@ const MCPServersPage: React.FC = () => {
       <div className="space-y-6">
         <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
           <div>
-            <h1 className="text-2xl font-bold tracking-tight">MCP Servers</h1>
-            <p className="text-gray-500">Manage and configure your MCP servers.</p>
+            <h1 className="text-2xl font-bold tracking-tight">Tools Registry</h1>
+            <p className="text-gray-500">Manage and configure my tools.</p>
           </div>
           <Button leftIcon={<Plus className="h-4 w-4" />} onClick={() => navigate('/mcp-servers/new')}>
-            New MCP Server
+            Tools
           </Button>
         </div>
 
@@ -296,10 +296,10 @@ const MCPServersPage: React.FC = () => {
             renderMCPServersView()
           ) : (
             <div className="flex h-64 flex-col items-center justify-center rounded-lg border border-dashed border-gray-300 bg-gray-50 p-6 text-center">
-              <p className="mb-2 text-lg font-medium">No MCP servers found</p>
+              <p className="mb-2 text-lg font-medium">No server found</p>
               <p className="mb-4 text-gray-500">Try adjusting your search or filters.</p>
               <Button variant="outline" leftIcon={<Plus className="h-4 w-4" />} onClick={() => navigate('/mcp-servers/new')}>
-                Create New MCP Server
+                Add Tools
               </Button>
             </div>
           )
@@ -308,7 +308,7 @@ const MCPServersPage: React.FC = () => {
             renderMCPToolsView()
           ) : (
             <div className="flex h-64 flex-col items-center justify-center rounded-lg border border-dashed border-gray-300 bg-gray-50 p-6 text-center">
-              <p className="mb-2 text-lg font-medium">No MCP tools found</p>
+              <p className="mb-2 text-lg font-medium">No tool found</p>
               <p className="mb-4 text-gray-500">Try adjusting your search or filters.</p>
             </div>
           )

@@ -125,6 +125,11 @@ services:
       - 3001:3001
     volumes:
       - main-runtime_logs:/app/logs
+    depends_on:
+      nats:
+        condition: service_started
+      dgraph-alpha:
+        condition: service_healthy
     networks:
       - 2ly-network
     restart: unless-stopped

@@ -79,7 +79,7 @@ export function RegisterPage() {
               </div>
             </div>
             <div className="text-sm">
-              <p className="text-blue-700 font-medium">Welcome to 2ly!</p>
+              <p className="text-blue-700 font-medium">Welcome to 2LY!</p>
               <p className="text-blue-600 mt-1">
                 Create your account to start managing AI tools and workflows.
               </p>

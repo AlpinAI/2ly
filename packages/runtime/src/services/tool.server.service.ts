@@ -108,7 +108,46 @@ export class ToolServerService extends Service {
     this.logger.info('Stopping');
     this.tools.complete();
     await this.onShutdownCallback();
-    this.client.close();
+
+    // For STDIO, try graceful shutdown first
+    if (this.transport instanceof StdioClientTransport) {
+      const pid = this.transport.pid;
+      if (pid) {
+        try {
+          // Send SIGTERM for graceful shutdown
+          process.kill(pid, 'SIGTERM');
+          this.logger.debug(`Sent SIGTERM to process ${pid}`);
+
+          // Wait up to 1 second for graceful exit
+          const startTime = Date.now();
+          while (Date.now() - startTime < 1000) {
+            try {
+              // Check if process still exists (throws if not)
+              process.kill(pid, 0);
+              await new Promise(resolve => setTimeout(resolve, 50));
+            } catch {
+              // Process exited
+              this.logger.debug(`Process ${pid} exited gracefully`);
+              break;
+            }
+          }
+
+          // Force kill if still running
+          try {
+            process.kill(pid, 0);
+            this.logger.debug(`Process ${pid} still running, sending SIGKILL`);
+            process.kill(pid, 'SIGKILL');
+          } catch {
+            // Already exited
+          }
+        } catch (error) {
+          this.logger.debug(`Error during process cleanup: ${error}`);
+        }
+      }
+    }
+
+    await this.transport.close();
+    await this.client.close();
     this.logger.debug('Disconnected');
   }
 

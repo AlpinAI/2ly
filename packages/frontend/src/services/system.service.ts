@@ -21,7 +21,6 @@ export interface SystemInitConfig {
   adminPassword: string;
   systemName?: string;
   systemDescription?: string;
-  acceptTerms: boolean;
 }
 
 export interface InitializationResult {
@@ -283,11 +282,6 @@ export class SystemInitializationService {
       errors.push('Admin password is required');
     } else if (config.adminPassword.length < 8) {
       errors.push('Admin password must be at least 8 characters long');
-    }
-
-    // Terms acceptance validation
-    if (!config.acceptTerms) {
-      errors.push('You must accept the terms to initialize the system');
     }
 
     return {

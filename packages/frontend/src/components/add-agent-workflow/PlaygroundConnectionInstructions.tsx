@@ -32,7 +32,8 @@ const PlaygroundConnectionInstructions: React.FC = () => {
 
     return (
         <div className="space-y-3">
-            <h3 className="text-lg font-semibold text-gray-800">Give a name to your agent</h3>
+            <p>Use the Manual Creation option if you cannot connect an agent right now.</p>
+            <h3 className="text-lg font-semibold text-gray-800">How should we call your agent?</h3>
             <input
                 type="text"
                 value={agentName}

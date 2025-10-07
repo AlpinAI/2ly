@@ -20,6 +20,7 @@ import {
   InitializationResult,
   getSystemInitializationService,
 } from '../../services/system.service';
+import { validatePassword } from '../../utils/auth.utils';
 
 export interface WelcomeScreenProps {
   onInitializationComplete: (result: InitializationResult) => void;
@@ -29,7 +30,6 @@ export interface WelcomeScreenProps {
 export interface SystemInitConfig {
   adminEmail: string;
   adminPassword: string;
-  acceptTerms: boolean;
 }
 
 const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
@@ -45,7 +45,6 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
   const [systemConfig, setSystemConfig] = useState<SystemInitConfig>({
     adminEmail: '',
     adminPassword: '',
-    acceptTerms: false,
   });
 
   // Error handling
@@ -58,10 +57,10 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
     setSystemConfig(prev => ({ ...prev, ...updates }));
   }, []);
 
-  // Form validation
+  // Form validation - use same validation as registration
+  const passwordValidation = validatePassword(systemConfig.adminPassword);
   const canSubmit = systemConfig.adminEmail.trim() !== '' &&
-    systemConfig.adminPassword.trim().length >= 8 &&
-    systemConfig.acceptTerms;
+    passwordValidation.isValid;
 
   // Initialize system
   const handleInitializeSystem = useCallback(async () => {
@@ -82,7 +81,6 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
         const result = await systemService.initializeSystem({
           adminEmail: systemConfig.adminEmail,
           adminPassword: systemConfig.adminPassword,
-          acceptTerms: systemConfig.acceptTerms,
         });
 
         // Success - notify the parent component
@@ -148,9 +146,9 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
         <div className="relative">
           <div className="space-y-6">
             <div className="text-center">
-              <h2 className="text-3xl font-bold text-gray-900 mb-4">Welcome to 2ly Platform</h2>
+              <h2 className="text-3xl font-bold text-gray-900 mb-4">Welcome to 2LY Platform</h2>
               <p className="text-gray-600 leading-relaxed">
-                Create your administrator account to get started with your AI tool management platform.
+                Get started with your AI tool platform.
               </p>
             </div>
 
@@ -179,27 +177,14 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
                   type="password"
                   value={systemConfig.adminPassword}
                   onChange={(e) => updateSystemConfig({ adminPassword: e.target.value })}
-                  placeholder="Strong password (min. 8 characters)"
+                  placeholder="Create a password"
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   minLength={8}
                   required
                 />
                 <p className="text-xs text-gray-500 mt-1">
-                  Minimum 8 characters required
+                  At least 8 characters with lowercase letters and numbers
                 </p>
-              </div>
-
-              <div className="flex items-start space-x-3">
-                <input
-                  id="acceptTerms"
-                  type="checkbox"
-                  checked={systemConfig.acceptTerms}
-                  onChange={(e) => updateSystemConfig({ acceptTerms: e.target.checked })}
-                  className="mt-1 h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                />
-                <label htmlFor="acceptTerms" className="text-sm text-gray-700">
-                  I understand that this will create the first administrator account and initialize the system
-                </label>
               </div>
             </div>
 
@@ -209,7 +194,7 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
                 <div className="text-left">
                   <h3 className="text-sm font-medium text-blue-900">Getting Started</h3>
                   <p className="text-sm text-blue-700 mt-1">
-                    This will initialize your system and create your administrator account to manage the platform.
+                    This will initialize your first workspace and create your administrator account.
                   </p>
                 </div>
               </div>
@@ -221,7 +206,7 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
               isLoading={isInitializing}
               className="w-full"
             >
-              {isInitializing ? 'Initializing...' : 'Initialize System'}
+              {isInitializing ? 'Creating...' : 'Create Workspace'}
             </Button>
           </div>
         </div>

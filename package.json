@@ -12,7 +12,7 @@
   ],
   "scripts": {
     "build": "npm run build --workspaces --if-present",
-    "start": "npm run build && docker compose -f docker-compose.yml up -d --build",
+    "start": "docker compose -f docker-compose.yml up -d --pull=always",
     "start:dev": "npm run build && docker compose -f dev/docker-compose.dev.yml up -d --build",
     "clean:volumes": "docker compose down -v",
     "lint": "npm run lint --workspaces --if-present",

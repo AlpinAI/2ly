@@ -212,7 +212,7 @@ const InitializationSuccess: React.FC<InitializationSuccessProps> = ({
 
           <div className="mt-4 text-center">
             <p className="text-xs text-gray-500">
-              Welcome to 2ly! Your AI tool management platform is ready to use.
+              Welcome to 2LY! Your AI tool management platform is ready to use.
             </p>
           </div>
         </AuthFormCardFooter>

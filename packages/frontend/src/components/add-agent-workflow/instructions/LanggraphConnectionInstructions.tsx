@@ -28,7 +28,7 @@ async with MCPAdapter("${displayAgentName}"${natsServer ? `, options` : ''}) as 
         <div className="space-y-4">
             <h3 className="text-lg font-semibold mb-2">1. Install connector</h3>
             <CodeBox code={installCommand} language="bash" size="small" />
-            <p className="text-sm text-gray-700">Contains our MCPAdapter to quickly connect to 2ly.</p>
+            <p className="text-sm text-gray-700">Contains our MCP Adapter to connect to 2LY Runtime.</p>
 
             <h3 className="text-lg font-semibold mb-2">2. Use tools in LangGraph</h3>
             <CodeBox code={quickStartCode} language="python" size="small" />

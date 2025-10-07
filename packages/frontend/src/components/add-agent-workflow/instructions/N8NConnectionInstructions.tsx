@@ -17,7 +17,7 @@ const N8NConnectionInstructions: React.FC<{ agentName?: string }> = ({ agentName
                 <li><code className="px-1.5 py-0.5 bg-gray-100 rounded text-xs font-mono">Authentication</code>: None</li>
             </ul>
             <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 mt-4">
-                <p className="text-sm text-gray-700">Currently when connecting to 2LY in remote mode, you always connect to the "Main Runtime". We are working on supporting multi-agents from remote connection.</p>
+                <p className="text-sm text-gray-700">At this stage, only a single agent is supported on n8n — but we’re working on enabling multi-agent support for remote connections.</p>
             </div>
         </div>
     );

@@ -43,8 +43,8 @@ const AgentConnection: React.FC<AgentConnectionProps> = ({ onCanProceedChange, o
         }
     }, [newAgents, selectedAgent]);
 
-    const discoverTitle = newAgents.length > 0 ? 'New agent detected' : 'Waiting for your agent to start';
-    const discoverDescription = newAgents.length > 0 ? 'We have discovered the following agents: ' : 'We will show it here as soon as it connects';
+    const discoverTitle = newAgents.length > 0 ? 'New agent detected' : 'No agent detected';
+    const discoverDescription = newAgents.length > 0 ? 'We have discovered the following agents: ' : 'Looks like they\'re still undercover. Connect one, and it\'ll report in right here.';
 
     useEffect(() => {
         onCanProceedChange(isConnectingView ? selectedAgent !== null : false);
@@ -73,8 +73,8 @@ const AgentConnection: React.FC<AgentConnectionProps> = ({ onCanProceedChange, o
     return (
         <div className="w-full flex flex-col h-full min-h-0 agent-connection">
             <div className="text-center mb-6 shrink-0">
-                <h2 className="text-2xl font-bold mb-2">Connect your agent</h2>
-                <p className="text-gray-600">Choose the option that best fits your needs. You can always change this later.</p>
+                <h2 className="text-2xl font-bold mb-2">Select your integration</h2>
+                <p className="text-gray-600">Prefer to skip this step? Select <strong>Add Manually</strong> to continue onboarding without a framework</p>
             </div>
 
             <div className="relative flex-1 min-h-0 overflow-hidden">
@@ -104,7 +104,6 @@ const AgentConnection: React.FC<AgentConnectionProps> = ({ onCanProceedChange, o
                                             <img src={option.iconUrl} alt={`${option.title} logo`} className="w-10 h-10 rounded-lg" onError={handleIconError} />
                                         </div>
                                         <h3 className="text-lg font-semibold mb-2">{option.title}</h3>
-                                        <p className="text-sm text-gray-600 mb-4">{option.description}</p>
                                     </div>
                                     {isSelected && (
                                         <div className="absolute top-2 right-2">
@@ -156,7 +155,7 @@ const AgentConnection: React.FC<AgentConnectionProps> = ({ onCanProceedChange, o
                                 <div className="absolute rounded-full bg-purple-300 opacity-20 animate-ping" style={{ width: '8rem', height: '8rem', animationDelay: '800ms', animationDuration: '2.5s' }}></div>
 
                                 <div className="relative text-center">
-                                    <span className="text-4xl">🤖</span>
+                                    <span className="text-4xl">🕵️</span>
                                     <p className="mt-4 text-lg font-semibold text-gray-800">{discoverTitle}</p>
                                     <p className="text-sm text-gray-500">{discoverDescription}</p>
 
@@ -213,8 +212,10 @@ const AgentConnection: React.FC<AgentConnectionProps> = ({ onCanProceedChange, o
                     </div>
                 </div>
             </div>
-            <p className="text-sm text-gray-500 mt-6 shrink-0">Once you have selected a connected agent you'll be able to continue and add tools. <br />Use the Manual Creation option if you cannot connect an agent right now.</p>
-        </div>
+            <p className="text-sm text-gray-500 mt-6 shrink-0">Once your agent is connected, you'll be able to start adding tools right aways.
+                <br /><a href="https://docs.2ly.ai" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:text-blue-500 underline">Need help? Get more information from our documentation</a>
+            </p>
+        </div >
     );
 };
 

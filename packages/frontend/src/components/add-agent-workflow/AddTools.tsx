@@ -75,8 +75,8 @@ const AddTools: React.FC<AddToolsProps> = ({ onCanProceedChange, onSuccessExit }
     return (
         <div className="w-full space-y-6 flex flex-col add-tools">
             <div className="text-center">
-                <h2 className="text-2xl font-bold mb-2">Add Tools to your instance</h2>
-                <p className="text-gray-600">Pick a path below and let the magic begin ✨</p>
+                <h2 className="text-2xl font-bold mb-2">Select the tool category</h2>
+                <p className="text-gray-600">Choose an option below and start adding tools to your registry</p>
             </div>
 
             <div className="relative flex-1 min-h-0">
@@ -114,14 +114,6 @@ const AddTools: React.FC<AddToolsProps> = ({ onCanProceedChange, onSuccessExit }
                                     </div>
                                     <h3 className="text-lg font-semibold mb-2">{option.title}</h3>
                                     <p className="text-sm text-gray-600 mb-4">{option.description}</p>
-
-                                    <ul className="text-xs text-gray-500 space-y-1 list-none">
-                                        {option.features.map((feature, index) => (
-                                            <li key={index} className="flex items-center justify-center">
-                                                {feature}
-                                            </li>
-                                        ))}
-                                    </ul>
                                 </div>
 
                                 {activeType === option.id && (

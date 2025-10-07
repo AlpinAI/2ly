@@ -39,7 +39,7 @@ const WelcomeStep: React.FC<WelcomeStepProps> = ({ onNext }) => {
     return (
         <div className="space-y-6">
             <div className="text-center">
-                <h1 className="text-3xl font-bold mb-4">Welcome to 2ly</h1>
+                <h1 className="text-3xl font-bold mb-4">Welcome to 2LY</h1>
                 <p className="text-gray-600">
                     It looks like you are starting with a fresh 2ly instance. Let's set up your first workspace!
                 </p>

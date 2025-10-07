@@ -27,9 +27,9 @@ const JSONConnectionInstructions: React.FC<{ natsServer: string; agentName?: str
                 </p>
             </div>
 
-            <h3 className="text-lg font-semibold mb-2">1. Create configuration file</h3>
+            <h3 className="text-lg font-semibold mb-2">1. Create your configuration file</h3>
             <p className="text-sm text-gray-600 mb-2">
-                Locate the configuration file for your agent, like <code className="px-1.5 py-0.5 bg-gray-100 rounded text-xs font-mono">agent_config.json</code> and add the following server configuration:
+                Locate the configuration file for your agent, like <code className="px-1.5 py-0.5 bg-gray-100 rounded text-xs font-mono">config.json</code> and add the following server configuration:
             </p>
             <CodeBox code={jsonConfigExample} language="json" size="small" />
 

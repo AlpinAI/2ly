@@ -46,7 +46,12 @@ export abstract class Service {
       this.consumers.add(consumer);
       this.state = 'STARTING';
       Service.activeServices.add(this);
-      this.currentPromise = this.initialize();
+      this.currentPromise = this.initialize().catch((error) => {
+        this.state = 'STOPPED';
+        this.currentPromise = undefined;
+        Service.activeServices.delete(this);
+        throw error;
+      });
       try {
         await this.currentPromise;
       } catch (error) {
