@@ -5,15 +5,16 @@ export default defineConfig({
     test: {
         environment: 'node',
         dir: './',
-        setupFiles: [],
         include: [
             'packages/**/src/**/*.spec.ts',
             'packages/**/src/**/*.test.ts',
             'packages/**/__tests__/**/*.spec.ts',
-            'packages/**/__tests__/**/*.test.ts'
+            'packages/**/__tests__/**/*.test.ts',
+            'packages/backend/tests/**/*.spec.ts'
         ],
         environmentMatchGlobs: [
-            ['packages/frontend/**', 'jsdom']
+            ['packages/frontend/**', 'jsdom'],
+            ['packages/backend/tests/**/*.spec.ts', 'node']
         ],
         exclude: [
             '**/node_modules/**',
@@ -22,7 +23,10 @@ export default defineConfig({
             '.git',
             'packages/**/dist/**',
             'packages/doc/**',
-            'packages/**/tests/**'
+            'packages/frontend*/tests/**'
+        ],
+        globalSetup: [
+            'packages/backend/tests/setup.ts'
         ],
         globals: true,
         coverage: {

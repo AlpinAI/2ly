@@ -1,108 +1,47 @@
 import { test, expect } from '../../fixtures/database';
 
 /**
- * Backend API Tests - Clean Slate Strategy
+ * Clean Slate Strategy - Example Tests
  *
- * These tests verify basic backend API functionality with a fresh database.
- * Each test in this file runs with a completely empty database.
+ * This file demonstrates the "Clean Slate" testing strategy for Playwright e2e tests.
+ * Use this strategy when you need a completely fresh database state for each test.
+ *
+ * ⚠️ NOTE: Most backend API tests have been moved to packages/backend/tests/integration/
+ * This file serves as an example of the clean slate pattern for future UI tests.
  *
  * Strategy: Clean Slate
  * - Database is reset before EACH test
- * - Tests DO NOT run in parallel
+ * - Tests DO NOT run in parallel (workers: 1)
  * - Complete test isolation
+ * - Use for: Tests that modify data, require empty state, or test initial setup flows
+ *
+ * When to use this strategy:
+ * - Testing onboarding/setup flows
+ * - Testing data creation from empty state
+ * - Tests that need predictable, isolated state
+ * - Tests that would conflict with each other if run in parallel
  */
 
-const apiUrl = process.env.API_URL || 'http://localhost:3000';
-
-test.describe('Backend API Tests', () => {
-  // Reset database before each test in this file
+test.describe('Clean Slate Strategy Example', () => {
+  // Reset database before each test to ensure clean state
   test.beforeEach(async ({ resetDatabase }) => {
     await resetDatabase();
   });
 
-  test.describe('System Queries', () => {
-    test('should query system and return uninitialized state', async ({ graphql }) => {
-      const query = `
-        query GetSystem {
-          system {
-            id
-            initialized
-            createdAt
-            updatedAt
-          }
+  test('example: should verify fresh database state', async ({ graphql }) => {
+    const query = `
+      query GetWorkspaces {
+        workspace {
+          id
+          name
         }
-      `;
-
-      const result = await graphql(query);
-      // System might not exist yet (null) or exist but be uninitialized
-      if (result.system === null) {
-        expect(result.system).toBeNull();
-      } else {
-        expect(result.system.initialized).toBe(false);
-        expect(result.system.id).toBeDefined();
       }
-    });
+    `;
 
-    test('should handle GraphQL introspection query', async ({ graphql }) => {
-      const query = `
-        query IntrospectionQuery {
-          __schema {
-            queryType {
-              name
-            }
-            mutationType {
-              name
-            }
-          }
-        }
-      `;
+    const result = await graphql(query);
 
-      const result = await graphql(query);
-
-      expect(result.__schema.queryType.name).toBe('Query');
-      expect(result.__schema.mutationType.name).toBe('Mutation');
-    });
-
-    test('should return default workspace after reset', async ({
-      graphql,
-    }) => {
-      const query = `
-        query GetWorkspaces {
-          workspace {
-            id
-            name
-          }
-        }
-      `;
-
-      const result = await graphql(query);
-
-      // After reset, backend creates a default workspace during initialization
-      expect(result.workspace).toHaveLength(1);
-      expect(result.workspace[0].name).toBe('Default');
-      expect(result.workspace[0].id).toBeDefined();
-    });
-  });
-
-  test.describe('Health Checks', () => {
-    test('should respond to health check endpoint', async ({ request }) => {
-      const response = await request.get(`${apiUrl}/health`);
-
-      expect(response.ok()).toBeTruthy();
-
-      const body = await response.json();
-
-      expect(body).toHaveProperty('status');
-      expect(body.status).toBe('ok');
-    });
-
-    test('should have GraphQL endpoint available', async ({ graphql }) => {
-      // Simple ping query
-      const query = `query { __typename }`;
-
-      const result = await graphql(query);
-
-      expect(result.__typename).toBe('Query');
-    });
+    // After reset, backend creates a default workspace during initialization
+    expect(result.workspace).toHaveLength(1);
+    expect(result.workspace[0].name).toBe('Default');
   });
 });
