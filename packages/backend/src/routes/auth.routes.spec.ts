@@ -3,7 +3,8 @@ import Fastify, { FastifyInstance } from 'fastify';
 import { AuthRoutes } from './auth.routes';
 import type { AuthenticationService } from '../services/auth/auth.service';
 import type { PasswordPolicyService } from '../services/auth/password-policy.service';
-import { LoggerServiceMock, LoggerService } from '@2ly/common';
+import { LoggerService } from '@2ly/common';
+import { LoggerServiceMock } from '@2ly/common/test-helpers';
 
 // Mock services
 const mockAuthService = {

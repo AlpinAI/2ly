@@ -27,6 +27,9 @@
       ],
       "@2ly/common": [
         "packages/common/src"
+      ],
+      "@2ly/common/test-helpers": [
+        "packagse/common/src/test-helpers.ts"
       ]
     }
   },
