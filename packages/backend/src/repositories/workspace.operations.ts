@@ -42,6 +42,7 @@ export const QUERY_WORKSPACES = gql`
     queryWorkspace {
       id
       name
+      createdAt
       globalRuntime {
         id
         name

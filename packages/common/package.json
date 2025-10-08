@@ -11,13 +11,15 @@
     "types": "./dist/index.d.ts"
   },
   "scripts": {
+    "build": "tsc",
     "lint": "eslint \"{src,test}/**/*.{js,ts}\"",
     "format": "prettier --write \"{src,test}/**/*.*\" && rm -rf node_modules/.cache/prettier",
     "typecheck": "tsc --noEmit --skipLibCheck",
     "codegen": "graphql-codegen --config apollo.codegen.ts && graphql-codegen --config dgraph.codegen.ts"
   },
   "devDependencies": {
-    "@testcontainers/nats": "^11.5.1"
+    "@testcontainers/nats": "^11.7.1",
+    "testcontainers": "^11.7.1"
   },
   "overrides": {}
 }

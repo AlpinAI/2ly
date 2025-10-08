@@ -21,7 +21,8 @@ export default defineConfig({
             'dist',
             '.git',
             'packages/**/dist/**',
-            'packages/doc/**'
+            'packages/doc/**',
+            'packages/**/tests/**'
         ],
         globals: true,
         coverage: {
