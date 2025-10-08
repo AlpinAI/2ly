@@ -163,10 +163,8 @@ export class ToolClientService extends Service {
       await this.stopMCPServer(mcpServer);
     }
 
-
     await this.startService(mcpServerService);
     this.mcpServers.set(mcpServer.id, mcpServerService);
-
 
     // This getTools subscription will be completed when the MCP Server is stopped by the MCP Server Service
     mcpServerService.observeTools().subscribe((tools) => {
@@ -192,7 +190,7 @@ export class ToolClientService extends Service {
     }
 
     // When the MCP Server is stopped, we need to unsubscribe from the capabilities and clear the subscriptions
-    mcpServerService.onShutdown(async () => { });
+    mcpServerService.onShutdown(async () => {});
     this.logger.info(`MCPServer ${mcpServer.name} spawned`);
   }
 

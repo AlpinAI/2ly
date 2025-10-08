@@ -14,7 +14,7 @@ export class ToolServerService extends Service {
   private client: Client;
   private transport: Transport;
   private tools: BehaviorSubject<MCPTool[]> = new BehaviorSubject<MCPTool[]>([]);
-  private onShutdownCallback: () => Promise<void> = async () => { };
+  private onShutdownCallback: () => Promise<void> = async () => {};
 
   constructor(
     private logger: pino.Logger,
@@ -124,7 +124,7 @@ export class ToolServerService extends Service {
             try {
               // Check if process still exists (throws if not)
               process.kill(pid, 0);
-              await new Promise(resolve => setTimeout(resolve, 50));
+              await new Promise((resolve) => setTimeout(resolve, 50));
             } catch {
               // Process exited
               this.logger.debug(`Process ${pid} exited gracefully`);

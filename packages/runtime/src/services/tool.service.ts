@@ -79,9 +79,9 @@ export class ToolService extends Service {
 
       const validatedRoots = this.roots
         ? this.roots.split(',').map((root) => {
-          const [name, uri] = root.split(':');
-          return { name, uri: `file://${uri}` };
-        })
+            const [name, uri] = root.split(':');
+            return { name, uri: `file://${uri}` };
+          })
         : undefined;
 
       const message = SetRootsMessage.create({ RID: identity.RID, roots: validatedRoots! }) as SetRootsMessage;

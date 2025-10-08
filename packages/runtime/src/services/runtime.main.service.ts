@@ -54,8 +54,7 @@ export class MainService extends Service {
       try {
         await this.startService(this.natsService);
         await this.startService(this.identityService);
-      }
-      catch (error) {
+      } catch (error) {
         this.logger.error(`Failed to start nats or identity service: ${error}`);
         await this.reconnect();
         return;
@@ -98,7 +97,10 @@ export class MainService extends Service {
         // START PHASE
         await this.startService(this.healthService);
 
-        if (this.identityService.getAgentCapability() === true || this.identityService.getAgentCapability() === 'auto') {
+        if (
+          this.identityService.getAgentCapability() === true ||
+          this.identityService.getAgentCapability() === 'auto'
+        ) {
           this.logger.info(`Starting agent service`);
           await this.startService(this.agentService);
         }
@@ -237,9 +239,9 @@ export class MainService extends Service {
     const activeServices = Service.getActiveServices();
     if (activeServices.length > 0) {
       this.logger.warn('⚠️  Some services are still active after shutdown:');
-      activeServices.forEach(service => {
+      activeServices.forEach((service) => {
         this.logger.warn(
-          `   - Service "${service.name}" (${service.state}) is kept alive by consumers: [${service.consumers.join(', ')}]`
+          `   - Service "${service.name}" (${service.state}) is kept alive by consumers: [${service.consumers.join(', ')}]`,
         );
       });
     }

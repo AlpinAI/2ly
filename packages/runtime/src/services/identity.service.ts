@@ -11,7 +11,6 @@ export const TOOL_CAPABILITY = 'tool.capability';
 
 @injectable()
 export class IdentityService extends Service {
-
   name = 'identity';
 
   @inject(IDENTITY_NAME)
