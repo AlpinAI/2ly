@@ -4,7 +4,7 @@ import { AuthRoutes } from './auth.routes';
 import type { AuthenticationService } from '../services/auth/auth.service';
 import type { PasswordPolicyService } from '../services/auth/password-policy.service';
 import { LoggerService } from '@2ly/common';
-import { LoggerServiceMock } from '@2ly/common/test-helpers';
+import { LoggerServiceMock } from '@2ly/common/test/vitest';
 
 // Mock services
 const mockAuthService = {

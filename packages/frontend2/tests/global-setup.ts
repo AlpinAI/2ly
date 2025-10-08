@@ -9,7 +9,7 @@
  */
 
 import { chromium, FullConfig } from '@playwright/test';
-import { TestEnvironment } from '@2ly/common';
+import { TestEnvironment } from '@2ly/common/test/testcontainers';
 import { exec } from 'child_process';
 import { promisify } from 'util';
 import * as fs from 'fs';
@@ -65,12 +65,24 @@ async function globalSetup(config: FullConfig) {
     // Start Vite dev server for frontend
     console.log('🎨 Starting Vite dev server...');
 
+    // Prepare environment variables for Vite
+    const backendUrl = services.backend ? testEnv.getBackendUrl() : '';
+    const viteEnv: Record<string, string> = {};
+
+    if (services.backend) {
+      // Frontend expects VITE_GRAPHQL_HTTP_ENDPOINT and VITE_GRAPHQL_WS_ENDPOINT
+      viteEnv.VITE_GRAPHQL_HTTP_ENDPOINT = `${backendUrl}/graphql`;
+      viteEnv.VITE_GRAPHQL_WS_ENDPOINT = `${backendUrl.replace('http://', 'ws://')}/graphql`;
+
+      console.log('  Backend GraphQL HTTP:', viteEnv.VITE_GRAPHQL_HTTP_ENDPOINT);
+      console.log('  Backend GraphQL WS:', viteEnv.VITE_GRAPHQL_WS_ENDPOINT);
+    }
+
     const viteProcess = exec('npm run dev', {
       cwd: path.join(__dirname, '..'),
       env: {
         ...process.env,
-        // Pass backend URL to frontend if backend is started
-        ...(services.backend ? { VITE_API_URL: testEnv.getBackendUrl() } : {}),
+        ...viteEnv,
       },
     });
 

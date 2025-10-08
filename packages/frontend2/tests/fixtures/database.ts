@@ -21,6 +21,7 @@ export interface SeedData {
   }>;
   users?: Array<{
     email: string;
+    password: string;
     name?: string;
   }>;
   mcpServers?: Array<{
@@ -148,23 +149,27 @@ export const test = base.extend<DatabaseFixture>({
         }
       }
 
-      // Seed users
+      // Seed users (using registerUser to set passwords)
       if (data.users) {
         for (const user of data.users) {
           const mutation = `
-            mutation CreateUser($email: String!, $name: String) {
-              addUser(input: {
-                email: $email
-                name: $name
-              }) {
+            mutation RegisterUser($input: RegisterUserInput!) {
+              registerUser(input: $input) {
+                success
                 user {
                   id
                   email
                 }
+                errors
               }
             }
           `;
-          await graphql(mutation, user);
+          await graphql(mutation, {
+            input: {
+              email: user.email,
+              password: user.password,
+            },
+          });
         }
       }
 
@@ -330,6 +335,7 @@ export const seedPresets = {
     users: [
       {
         email: 'test@example.com',
+        password: 'testpassword123',
         name: 'Test User',
       },
     ],
@@ -339,6 +345,22 @@ export const seedPresets = {
         transport: 'STDIO' as const,
         command: 'npx',
         args: ['-y', '@modelcontextprotocol/server-filesystem', '/tmp'],
+      },
+    ],
+  },
+
+  /**
+   * Setup with test users for authentication tests
+   */
+  withUsers: {
+    users: [
+      {
+        email: 'user1@example.com',
+        password: 'password123',
+      },
+      {
+        email: 'user2@example.com',
+        password: 'password456',
       },
     ],
   },

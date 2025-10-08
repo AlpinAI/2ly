@@ -6,4 +6,3 @@ export * from './services';
 export * from './messages';
 export * from './graphql';
 export * from './types';
-export * from './test/testEnvironment';

@@ -2,7 +2,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { RuntimeService } from './runtime.service';
 import { ControllableAsyncIterator } from '../../../common/src/test/utils';
-import { NatsServiceMock } from '@2ly/common/test-helpers';
+import { NatsServiceMock } from '@2ly/common/test/vitest';
 import {
     UpdateMcpToolsMessage,
     RuntimeConnectMessage,

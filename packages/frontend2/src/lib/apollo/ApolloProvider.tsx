@@ -43,9 +43,25 @@ export function ApolloProvider({ children }: ApolloProviderProps) {
 /**
  * Re-export Apollo Client v4 hooks for convenience
  *
- * WHY: Allows imports from '@/lib/apollo/ApolloProvider' instead from '@apollo/client/react'
- * Provides a single import point for Apollo-related functionality
+ * ⚠️ DEPRECATED: DO NOT USE THESE RE-EXPORTS IN NEW CODE
  *
- * APOLLO v4: Use these hooks with typed document nodes from codegen
+ * PREFER: Import directly from '@apollo/client/react' instead
+ * ```tsx
+ * // ✅ Correct - Direct import
+ * import { useQuery, useMutation } from '@apollo/client/react';
+ *
+ * // ❌ Avoid - Jump import through re-export
+ * import { useQuery, useMutation } from '@/lib/apollo/ApolloProvider';
+ * ```
+ *
+ * WHY PREFER DIRECT IMPORTS:
+ * - Clearer dependency tracking
+ * - Better tree-shaking
+ * - Easier to find all usage with grep/search
+ * - Follows standard Apollo Client conventions
+ * - Less indirection = simpler mental model
+ *
+ * These re-exports are kept for backward compatibility only.
+ * See packages/frontend2/docs/CONVENTIONS.md for more details.
  */
 export { useQuery, useMutation, useSubscription, useLazyQuery } from '@apollo/client/react';

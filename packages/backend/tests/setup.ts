@@ -10,7 +10,7 @@
  * It ensures only ONE test environment is created for the entire test suite.
  */
 
-import { TestEnvironment } from '@2ly/common';
+import { TestEnvironment } from '@2ly/common/test/testcontainers';
 
 let testEnv: TestEnvironment;
 

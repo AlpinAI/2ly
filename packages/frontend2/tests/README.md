@@ -156,10 +156,10 @@ The test environment exposes these URLs:
 
 ### Using the Test Environment in Backend Tests
 
-The test environment setup is in `@2ly/common` and can be used for backend integration tests too:
+The test environment setup is in `@2ly/common/testcontainers` and can be used for backend integration tests too:
 
 ```typescript
-import { TestEnvironment } from '@2ly/common';
+import { TestEnvironment } from '@2ly/common/testcontainers';
 
 let testEnv: TestEnvironment;
 

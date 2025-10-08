@@ -39,6 +39,12 @@ const HTTP_ENDPOINT =
 const WS_ENDPOINT =
   import.meta.env.VITE_GRAPHQL_WS_ENDPOINT || 'ws://localhost:3000/graphql';
 
+// Log endpoints in development/test for debugging connection issues
+if (import.meta.env.DEV || import.meta.env.MODE === 'test') {
+  console.log('[Apollo] GraphQL HTTP Endpoint:', HTTP_ENDPOINT);
+  console.log('[Apollo] GraphQL WS Endpoint:', WS_ENDPOINT);
+}
+
 /**
  * Error Link - Global Error Handling (Apollo Client v4)
  *

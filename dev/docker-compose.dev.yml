@@ -116,6 +116,9 @@ services:
       interval: 5s
       timeout: 3s
       retries: 10
+    profiles:
+      - backend
+      - all
 
   # 2LY Tool Runtime
   main-runtime:
@@ -138,6 +141,9 @@ services:
     networks:
       - 2ly-network
     restart: unless-stopped
+    profiles:
+      - runtime
+      - all
 
   # 2LY Frontend
   frontend:
@@ -152,6 +158,9 @@ services:
     networks:
       - 2ly-network
     restart: unless-stopped
+    profiles:
+      - frontend
+      - all
 
   doc:
     build:

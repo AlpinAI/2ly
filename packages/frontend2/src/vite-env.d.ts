@@ -6,11 +6,12 @@
  */
 
 interface ImportMetaEnv {
-  readonly VITE_API_URL?: string;
-  readonly VITE_WS_URL?: string;
+  readonly VITE_GRAPHQL_HTTP_ENDPOINT?: string;
+  readonly VITE_GRAPHQL_WS_ENDPOINT?: string;
   readonly DEV: boolean;
   readonly PROD: boolean;
   readonly SSR: boolean;
+  readonly MODE: string;
 }
 
 interface ImportMeta {

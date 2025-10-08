@@ -1,18 +1,53 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Lock } from 'lucide-react';
+import { Lock, AlertCircle } from 'lucide-react';
+import { useMutation } from '@apollo/client/react';
 import { ThemeToggle } from '@/components/ThemeToggle';
+import { useAuth } from '@/contexts/AuthContext';
+import { LOGIN_MUTATION } from '@/graphql/mutations/auth';
 import { cn } from '@/lib/utils';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [rememberMe, setRememberMe] = useState(false);
+  const { login } = useAuth();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const [loginMutation, { loading, error }] = useMutation<{
+    login: {
+      success: boolean;
+      user?: { id: string; email: string };
+      tokens?: { accessToken: string; refreshToken: string };
+      errors?: string[];
+    };
+  }>(LOGIN_MUTATION, {
+    onCompleted: (data) => {
+      if (data.login.success && data.login.tokens && data.login.user) {
+        // Successfully logged in
+        login(data.login.tokens, data.login.user);
+      }
+    },
+    onError: (err) => {
+      console.error('Login error:', err);
+    },
+  });
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // TODO: Implement authentication
-    console.log('Login:', { email, password, rememberMe });
+
+    try {
+      await loginMutation({
+        variables: {
+          input: {
+            email,
+            password,
+          },
+        },
+      });
+    } catch (err) {
+      // Error is handled by onError callback
+      console.error('Login failed:', err);
+    }
   };
 
   return (
@@ -41,6 +76,16 @@ export default function LoginPage() {
             </h2>
 
             <form onSubmit={handleSubmit} className="space-y-6">
+              {/* Error Message */}
+              {error && (
+                <div className="flex items-center gap-2 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+                  <AlertCircle className="h-5 w-5 text-red-600 dark:text-red-400" />
+                  <p className="text-sm text-red-600 dark:text-red-400">
+                    {error.message || 'Login failed. Please check your credentials.'}
+                  </p>
+                </div>
+              )}
+
               {/* Email Field */}
               <div>
                 <label
@@ -113,17 +158,19 @@ export default function LoginPage() {
               {/* Submit Button */}
               <button
                 type="submit"
+                disabled={loading}
                 className={cn(
                   'w-full flex items-center justify-center gap-2',
                   'px-4 py-2 rounded-lg',
                   'bg-cyan-600 hover:bg-cyan-700',
                   'text-white font-medium',
                   'focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:ring-offset-2',
-                  'transition-colors'
+                  'transition-colors',
+                  'disabled:opacity-50 disabled:cursor-not-allowed'
                 )}
               >
                 <Lock className="h-4 w-4" />
-                Sign In
+                {loading ? 'Signing In...' : 'Sign In'}
               </button>
 
               {/* Register Link */}

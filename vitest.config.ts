@@ -50,7 +50,8 @@ export default defineConfig({
     },
     resolve: {
         alias: {
-            '@2ly/common/test-helpers': path.resolve(__dirname, 'packages/common/src/test-helpers.ts'),
+            '@2ly/common/test/testcontainers': path.resolve(__dirname, 'packages/common/src/test/testcontainers.ts'),
+            '@2ly/common/test/vitest': path.resolve(__dirname, 'packages/common/src/test/vitest.ts'),
             '@2ly/common': path.resolve(__dirname, 'packages/common/src/index.ts'),
             '@2ly/common/*': path.resolve(__dirname, 'packages/common/src/*')
 
