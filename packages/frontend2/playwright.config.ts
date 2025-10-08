@@ -18,9 +18,6 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 // Use environment variable for base URL, fallback to localhost:8888
 const BASE_URL = process.env.BASE_URL || 'http://localhost:8888';
 
-// Backend API URL (set by global setup)
-const API_URL = process.env.API_URL || 'http://localhost:3000';
-
 export default defineConfig({
   testDir: './tests',
 
@@ -69,42 +66,122 @@ export default defineConfig({
     actionTimeout: 10 * 1000, // 10 seconds
   },
 
-  // Configure projects for major browsers
+  // Configure projects for different test strategies
+  // Projects use dependencies to run sequentially and avoid database conflicts
   projects: [
+    // =============================================================================
+    // STRATEGY 1: Clean Slate Tests (Isolated, Fresh DB)
+    // =============================================================================
+    // Tests that need a completely empty database before each test
+    // Run sequentially (workers: 1) to prevent database race conditions
+    // Projects run in sequence via dependencies
     {
-      name: 'chromium',
+      name: 'clean-chromium',
+      testMatch: '**/tests/e2e/clean/**/*.spec.ts',
       use: {
         ...devices['Desktop Chrome'],
-        // Chromium-specific settings
         launchOptions: {
-          args: ['--disable-dev-shm-usage'], // Helps with Docker environments
+          args: ['--disable-dev-shm-usage'],
         },
       },
+      workers: 1,
+      fullyParallel: false,
     },
-
     {
-      name: 'firefox',
+      name: 'clean-firefox',
+      testMatch: '**/tests/e2e/clean/**/*.spec.ts',
       use: {
         ...devices['Desktop Firefox'],
       },
+      workers: 1,
+      fullyParallel: false,
+      dependencies: ['clean-chromium'], // Wait for clean-chromium to complete
     },
-
     {
-      name: 'webkit',
+      name: 'clean-webkit',
+      testMatch: '**/tests/e2e/clean/**/*.spec.ts',
       use: {
         ...devices['Desktop Safari'],
       },
+      workers: 1,
+      fullyParallel: false,
+      dependencies: ['clean-firefox'], // Wait for clean-firefox to complete
     },
 
-    // Test against mobile viewports (optional, commented out by default)
-    // {
-    //   name: 'Mobile Chrome',
-    //   use: { ...devices['Pixel 5'] },
-    // },
-    // {
-    //   name: 'Mobile Safari',
-    //   use: { ...devices['iPhone 12'] },
-    // },
+    // =============================================================================
+    // STRATEGY 2: Seeded Tests (Pre-populated DB)
+    // =============================================================================
+    // Tests that need database with predefined data (workspaces, users, etc.)
+    // Run sequentially per file (workers: 1), database is reset+seeded before each describe
+    // Projects run in sequence via dependencies
+    {
+      name: 'seeded-chromium',
+      testMatch: '**/tests/e2e/seeded/**/*.spec.ts',
+      use: {
+        ...devices['Desktop Chrome'],
+        launchOptions: {
+          args: ['--disable-dev-shm-usage'],
+        },
+      },
+      workers: 1,
+      fullyParallel: false,
+      dependencies: ['clean-webkit'], // Wait for all clean tests to complete
+    },
+    {
+      name: 'seeded-firefox',
+      testMatch: '**/tests/e2e/seeded/**/*.spec.ts',
+      use: {
+        ...devices['Desktop Firefox'],
+      },
+      workers: 1,
+      fullyParallel: false,
+      dependencies: ['seeded-chromium'], // Wait for seeded-chromium to complete
+    },
+    {
+      name: 'seeded-webkit',
+      testMatch: '**/tests/e2e/seeded/**/*.spec.ts',
+      use: {
+        ...devices['Desktop Safari'],
+      },
+      workers: 1,
+      fullyParallel: false,
+      dependencies: ['seeded-firefox'], // Wait for seeded-firefox to complete
+    },
+
+    // =============================================================================
+    // STRATEGY 3: Parallel Tests (UI-focused, Order-independent)
+    // =============================================================================
+    // Tests that run in parallel with pre-seeded database
+    // UI-focused tests that don't depend on specific data state
+    // Tests can run in any order
+    // Projects run in sequence via dependencies
+    {
+      name: 'parallel-chromium',
+      testMatch: '**/tests/e2e/parallel/**/*.spec.ts',
+      use: {
+        ...devices['Desktop Chrome'],
+        launchOptions: {
+          args: ['--disable-dev-shm-usage'],
+        },
+      },
+      dependencies: ['seeded-webkit'], // Wait for all seeded tests to complete
+    },
+    {
+      name: 'parallel-firefox',
+      testMatch: '**/tests/e2e/parallel/**/*.spec.ts',
+      use: {
+        ...devices['Desktop Firefox'],
+      },
+      dependencies: ['parallel-chromium'], // Wait for parallel-chromium to complete
+    },
+    {
+      name: 'parallel-webkit',
+      testMatch: '**/tests/e2e/parallel/**/*.spec.ts',
+      use: {
+        ...devices['Desktop Safari'],
+      },
+      dependencies: ['parallel-firefox'], // Wait for parallel-firefox to complete
+    },
   ],
 
   // Global setup and teardown

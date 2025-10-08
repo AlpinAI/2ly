@@ -19,9 +19,48 @@ The test setup automatically:
 - **Node.js** 18+
 - All dependencies installed (`npm install`)
 
+## Test Organization
+
+Tests are organized into **three strategies** based on database state requirements:
+
+### 📁 **1. Clean Slate Tests** (`e2e/clean/`)
+- Database reset **before each test**
+- Complete test isolation
+- Tests run **sequentially** (workers: 1)
+- **Use for:** Data mutations, creating/updating/deleting data
+
+```bash
+npm run test:e2e -- --project=clean-chromium
+```
+
+### 📁 **2. Seeded Tests** (`e2e/seeded/`)
+- Database reset + seeded **before each describe**
+- Tests are **read-only within describe**
+- Tests run **sequentially per file** (workers: 1)
+- Use `test.describe.configure({ mode: 'serial' })` within each describe
+- **Use for:** Query testing with known data, GraphQL testing
+
+```bash
+npm run test:e2e -- --project=seeded-chromium
+```
+
+### 📁 **3. Parallel Tests** (`e2e/parallel/`)
+- Database seeded **once before all tests**
+- Tests run in **full parallel**
+- Tests must be **order-independent**
+- **Use for:** UI/UX testing, visual tests, accessibility tests
+
+```bash
+npm run test:e2e -- --project=parallel-chromium
+```
+
+**📖 See [e2e/README.md](./e2e/README.md) for detailed documentation on each strategy.**
+
+---
+
 ## Running Tests
 
-### Run all tests
+### Run all tests (all strategies)
 ```bash
 npm run test:e2e
 ```
@@ -41,28 +80,50 @@ npm run test:e2e:headed
 npm run test:e2e:debug
 ```
 
-### Run specific test file
+### Run by test strategy
 ```bash
-npx playwright test tests/e2e/login.spec.ts
+# Clean slate tests (sequential execution)
+npm run test:e2e -- --project=clean-chromium
+
+# Seeded tests (sequential per file)
+npm run test:e2e -- --project=seeded-chromium
+
+# Parallel tests (full parallelization)
+npm run test:e2e -- --project=parallel-chromium
 ```
 
-### Run tests for specific browser
+### Run specific test file
 ```bash
-npx playwright test --project=chromium
-npx playwright test --project=firefox
-npx playwright test --project=webkit
+npx playwright test tests/e2e/clean/backend-api.spec.ts
+npx playwright test tests/e2e/seeded/workspace-management.spec.ts
+npx playwright test tests/e2e/parallel/workspace-ui.spec.ts
+```
+
+### Run specific browser project
+```bash
+npx playwright test --project=clean-chromium
+npx playwright test --project=seeded-firefox
+npx playwright test --project=parallel-webkit
 ```
 
 ## Test Structure
 
 ```
 tests/
-├── e2e/                    # End-to-end test specs
-│   └── login.spec.ts       # Example login page tests
-├── fixtures/               # Test fixtures and helpers
-├── global-setup.ts         # Starts test environment
-├── global-teardown.ts      # Cleans up test environment
-└── README.md               # This file
+├── e2e/                           # End-to-end test specs
+│   ├── clean/                     # Clean slate tests (sequential)
+│   │   ├── backend-api.spec.ts
+│   │   └── workspace-creation.spec.ts
+│   ├── seeded/                    # Seeded tests (sequential per file)
+│   │   └── workspace-management.spec.ts
+│   ├── parallel/                  # Parallel tests (full parallelization)
+│   │   └── workspace-ui.spec.ts
+│   └── README.md                  # Detailed strategy documentation
+├── fixtures/                      # Test fixtures and helpers
+│   └── database.ts                # Database fixture with reset/seed
+├── global-setup.ts                # Starts test environment
+├── global-teardown.ts             # Cleans up test environment
+└── README.md                      # This file
 ```
 
 ## Writing Tests

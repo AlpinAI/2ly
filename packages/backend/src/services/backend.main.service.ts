@@ -82,10 +82,10 @@ export class MainService extends Service {
         if (!this.apolloService.isRunning()) {
           throw new Error('Apollo is not running');
         }
-        res.status(200).send('OK');
+        res.status(200).send({ status: 'ok' });
       } catch (error) {
         this.logger.error(`Error during health check: ${error}`);
-        res.status(503).send('Service not running');
+        res.status(503).send({ status: 'error', message: 'Service not running' });
       }
     });
   }
