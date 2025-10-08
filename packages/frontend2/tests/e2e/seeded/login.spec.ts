@@ -63,10 +63,12 @@ test.describe('Login Flow', () => {
     // Submit the form
     await page.click('button[type="submit"]');
 
-    // Should show error message
-    await expect(page.locator('text=/Login failed|Invalid|error/i')).toBeVisible({
-      timeout: 5000,
-    });
+    // Should show error message (look for the error alert with the specific message)
+    const errorAlert = page.locator('[class*="bg-red"]');
+    await expect(errorAlert).toBeVisible({ timeout: 5000 });
+
+    // Verify error message text
+    await expect(errorAlert).toContainText(/Invalid email or password/i);
 
     // Should still be on login page
     expect(page.url()).toContain('/login');
@@ -82,10 +84,12 @@ test.describe('Login Flow', () => {
     // Submit the form
     await page.click('button[type="submit"]');
 
-    // Should show error message
-    await expect(page.locator('text=/Login failed|Invalid|error/i')).toBeVisible({
-      timeout: 5000,
-    });
+    // Should show error message (look for the error alert with the specific message)
+    const errorAlert = page.locator('[class*="bg-red"]');
+    await expect(errorAlert).toBeVisible({ timeout: 5000 });
+
+    // Verify error message text
+    await expect(errorAlert).toContainText(/Invalid email or password/i);
 
     // Should still be on login page
     expect(page.url()).toContain('/login');

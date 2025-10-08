@@ -11,6 +11,7 @@ export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [rememberMe, setRememberMe] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const { login } = useAuth();
 
   const [loginMutation, { loading, error }] = useMutation<{
@@ -24,16 +25,23 @@ export default function LoginPage() {
     onCompleted: (data) => {
       if (data.login.success && data.login.tokens && data.login.user) {
         // Successfully logged in
+        setErrorMessage(null);
         login(data.login.tokens, data.login.user);
+      } else if (!data.login.success) {
+        // Login failed - show error from response
+        const errorMsg = data.login.errors?.[0] || 'Invalid email or password';
+        setErrorMessage(errorMsg);
       }
     },
     onError: (err) => {
       console.error('Login error:', err);
+      setErrorMessage(err.message || 'Login failed. Please try again.');
     },
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setErrorMessage(null); // Clear any previous errors
 
     try {
       await loginMutation({
@@ -77,11 +85,11 @@ export default function LoginPage() {
 
             <form onSubmit={handleSubmit} className="space-y-6">
               {/* Error Message */}
-              {error && (
+              {errorMessage && (
                 <div className="flex items-center gap-2 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
                   <AlertCircle className="h-5 w-5 text-red-600 dark:text-red-400" />
                   <p className="text-sm text-red-600 dark:text-red-400">
-                    {error.message || 'Login failed. Please check your credentials.'}
+                    {errorMessage}
                   </p>
                 </div>
               )}
