@@ -30,6 +30,7 @@ interface TestEnvironmentState {
   dgraphUrl: string;
   backendUrl: string;
   frontendUrl: string;
+  frontendPort: number;
   frontendPid?: number;
 }
 
@@ -65,9 +66,14 @@ async function globalSetup(config: FullConfig) {
     // Start Vite dev server for frontend
     console.log('🎨 Starting Vite dev server...');
 
+    // Use a dedicated port for tests to avoid conflicts with local dev server
+    const testFrontendPort = 9999;
+
     // Prepare environment variables for Vite
     const backendUrl = services.backend ? testEnv.getBackendUrl() : '';
-    const viteEnv: Record<string, string> = {};
+    const viteEnv: Record<string, string> = {
+      PORT: testFrontendPort.toString(),
+    };
 
     if (services.backend) {
       // Frontend expects VITE_GRAPHQL_HTTP_ENDPOINT and VITE_GRAPHQL_WS_ENDPOINT
@@ -77,6 +83,8 @@ async function globalSetup(config: FullConfig) {
       console.log('  Backend GraphQL HTTP:', viteEnv.VITE_GRAPHQL_HTTP_ENDPOINT);
       console.log('  Backend GraphQL WS:', viteEnv.VITE_GRAPHQL_WS_ENDPOINT);
     }
+
+    console.log('  Test Frontend Port:', testFrontendPort);
 
     const viteProcess = exec('npm run dev', {
       cwd: path.join(__dirname, '..'),
@@ -96,8 +104,8 @@ async function globalSetup(config: FullConfig) {
         const output = data.toString();
         console.log('  [Vite]', output.trim());
 
-        // Vite is ready when we see the local URL
-        if (output.includes('Local:') || output.includes('localhost:8888')) {
+        // Vite is ready when we see the local URL with the test port
+        if (output.includes('Local:') || output.includes(`localhost:${testFrontendPort}`)) {
           clearTimeout(timeout);
           resolve();
         }
@@ -115,7 +123,7 @@ async function globalSetup(config: FullConfig) {
 
     console.log('✅ Vite dev server started!');
 
-    const frontendUrl = 'http://localhost:8888';
+    const frontendUrl = `http://localhost:${testFrontendPort}`;
 
     // Wait for frontend to be actually responsive
     console.log('🔍 Waiting for frontend to be responsive...');
@@ -146,6 +154,7 @@ async function globalSetup(config: FullConfig) {
       dgraphUrl: testEnv.getDgraphUrl(),
       backendUrl: services.backend ? testEnv.getBackendUrl() : '',
       frontendUrl,
+      frontendPort: testFrontendPort,
       frontendPid: viteProcess.pid,
     };
 
