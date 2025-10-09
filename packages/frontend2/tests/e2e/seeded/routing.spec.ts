@@ -289,7 +289,7 @@ test.describe('Routing and Navigation', () => {
       expect(page.url()).toContain('/register');
     });
 
-    test('should allow access to init page without authentication', async ({
+    test('should not allow access to init page without authentication', async ({
       page,
       resetDatabase,
       seedDatabase,
@@ -300,8 +300,8 @@ test.describe('Routing and Navigation', () => {
       await page.goto('/init');
 
       // Should be on init page
-      await expect(page.locator('h1')).toContainText('System Initialization');
-      expect(page.url()).toContain('/init');
+      await expect(page.locator('h2')).toContainText('Sign In');
+      expect(page.url()).toContain('/login');
     });
   });
 
@@ -314,21 +314,70 @@ test.describe('Routing and Navigation', () => {
       await resetDatabase();
       await seedDatabase(seedPresets.withUsers);
 
-      // Login and then reload to trigger loading state
+      // Set up interceptor BEFORE any navigation to delay refresh token mutation
+      await page.route('**/graphql', async (route) => {
+        const request = route.request();
+        const postData = request.postDataJSON();
+
+        // Check if this is a refreshToken mutation
+        if (postData?.operationName === 'RefreshToken' || postData?.query?.includes('refreshToken')) {
+          // Delay the refresh token response by 500ms
+          await new Promise(resolve => setTimeout(resolve, 500));
+        }
+
+        await route.continue();
+      });
+
+      // Login first
       await page.goto('/login');
       await page.fill('input[type="email"]', 'user1@example.com');
       await page.fill('input[type="password"]', 'password123');
       await page.click('button[type="submit"]');
       await page.waitForURL('/dashboard', { timeout: 5000 });
 
-      // Reload the page - should briefly show loading state
-      await page.reload();
+      // Manipulate the stored JWT token to be expired
+      await page.evaluate(() => {
+        const tokensJson = localStorage.getItem('2ly_auth_tokens');
+        if (tokensJson) {
+          const tokens = JSON.parse(tokensJson);
 
-      // The page should either show loading or dashboard (if loading was too fast)
-      const hasLoading = await page.locator('text=Loading').count();
-      const hasDashboard = await page.locator('text=Dashboard').count();
+          // Decode the access token payload
+          const parts = tokens.accessToken.split('.');
+          if (parts.length === 3) {
+            // Decode payload
+            const payload = JSON.parse(atob(parts[1].replace(/-/g, '+').replace(/_/g, '/')));
 
-      expect(hasLoading > 0 || hasDashboard > 0).toBeTruthy();
+            // Set expiry to 5 seconds ago
+            payload.exp = Math.floor(Date.now() / 1000) - 5;
+
+            // Re-encode the payload
+            const newPayload = btoa(JSON.stringify(payload))
+              .replace(/\+/g, '-')
+              .replace(/\//g, '_')
+              .replace(/=+$/, '');
+
+            // Reconstruct the token (signature will be invalid but we're only checking expiry)
+            tokens.accessToken = `${parts[0]}.${newPayload}.${parts[2]}`;
+
+            // Save back to localStorage
+            localStorage.setItem('2ly_auth_tokens', JSON.stringify(tokens));
+          }
+        }
+      });
+
+      const loading = page.locator('p:has-text("Loading...")');
+
+      // Reload and immediately check for loading state
+      const reloadPromise = page.reload();
+
+      // The loading should appear (because token is expired and refresh is delayed)
+      await expect(loading).toBeVisible({ timeout: 1000 });
+
+      // Wait for reload to complete
+      await reloadPromise;
+
+      // Loading should eventually disappear
+      await expect(loading).not.toBeVisible({ timeout: 5000 });
     });
   });
 });

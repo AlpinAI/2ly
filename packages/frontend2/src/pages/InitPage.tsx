@@ -18,7 +18,10 @@ import { INIT_SYSTEM_MUTATION } from '@/graphql/mutations/system';
 import { LOGIN_MUTATION } from '@/graphql/mutations/auth';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSystemInit } from '@/hooks/useSystemInit';
-import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 export default function InitPage() {
   const [email, setEmail] = useState('');
@@ -179,79 +182,47 @@ export default function InitPage() {
             <form onSubmit={handleSubmit} className="space-y-6">
               {/* Success Message */}
               {successMessage && (
-                <div className="flex items-center gap-2 p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
-                  <CheckCircle className="h-5 w-5 text-green-600 dark:text-green-400" />
-                  <p className="text-sm text-green-600 dark:text-green-400">
-                    {successMessage}
-                  </p>
-                </div>
+                <Alert variant="success">
+                  <CheckCircle className="h-4 w-4" />
+                  <AlertDescription>{successMessage}</AlertDescription>
+                </Alert>
               )}
 
               {/* Error Message */}
               {errorMessage && (
-                <div className="flex items-center gap-2 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
-                  <AlertCircle className="h-5 w-5 text-red-600 dark:text-red-400" />
-                  <p className="text-sm text-red-600 dark:text-red-400">
-                    {errorMessage}
-                  </p>
-                </div>
+                <Alert variant="destructive">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertDescription>{errorMessage}</AlertDescription>
+                </Alert>
               )}
 
               {/* Email Field */}
               <div>
-                <label
-                  htmlFor="email"
-                  className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
-                >
-                  Administrator Email
-                </label>
-                <input
+                <Label htmlFor="email">Administrator Email</Label>
+                <Input
                   id="email"
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
                   disabled={loading || !!successMessage}
-                  className={cn(
-                    'w-full px-4 py-2 rounded-lg',
-                    'bg-gray-100 dark:bg-gray-900',
-                    'border border-gray-300 dark:border-gray-700',
-                    'text-gray-900 dark:text-white',
-                    'placeholder-gray-500 dark:placeholder-gray-400',
-                    'focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent',
-                    'transition-colors',
-                    'disabled:opacity-50 disabled:cursor-not-allowed'
-                  )}
                   placeholder="admin@example.com"
+                  className="mt-2"
                 />
               </div>
 
               {/* Password Field */}
               <div>
-                <label
-                  htmlFor="password"
-                  className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
-                >
-                  Password
-                </label>
-                <input
+                <Label htmlFor="password">Password</Label>
+                <Input
                   id="password"
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
                   disabled={loading || !!successMessage}
-                  className={cn(
-                    'w-full px-4 py-2 rounded-lg',
-                    'bg-gray-100 dark:bg-gray-900',
-                    'border border-gray-300 dark:border-gray-700',
-                    'text-gray-900 dark:text-white',
-                    'placeholder-gray-500 dark:placeholder-gray-400',
-                    'focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent',
-                    'transition-colors',
-                    'disabled:opacity-50 disabled:cursor-not-allowed'
-                  )}
                   placeholder="Enter a secure password"
+                  className="mt-2"
                 />
 
                 {/* Password Validation Feedback */}
@@ -264,30 +235,16 @@ export default function InitPage() {
 
               {/* Confirm Password Field */}
               <div>
-                <label
-                  htmlFor="confirmPassword"
-                  className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
-                >
-                  Confirm Password
-                </label>
-                <input
+                <Label htmlFor="confirmPassword">Confirm Password</Label>
+                <Input
                   id="confirmPassword"
                   type="password"
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   required
                   disabled={loading || !!successMessage}
-                  className={cn(
-                    'w-full px-4 py-2 rounded-lg',
-                    'bg-gray-100 dark:bg-gray-900',
-                    'border border-gray-300 dark:border-gray-700',
-                    'text-gray-900 dark:text-white',
-                    'placeholder-gray-500 dark:placeholder-gray-400',
-                    'focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent',
-                    'transition-colors',
-                    'disabled:opacity-50 disabled:cursor-not-allowed'
-                  )}
                   placeholder="Confirm your password"
+                  className="mt-2"
                 />
 
                 {/* Password Match Indicator */}
@@ -312,22 +269,14 @@ export default function InitPage() {
               </div>
 
               {/* Submit Button */}
-              <button
+              <Button
                 type="submit"
                 disabled={!formIsValid || loading || !!successMessage}
-                className={cn(
-                  'w-full flex items-center justify-center gap-2',
-                  'px-4 py-2 rounded-lg',
-                  'bg-blue-600 hover:bg-blue-700',
-                  'text-white font-medium',
-                  'focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2',
-                  'transition-colors',
-                  'disabled:opacity-50 disabled:cursor-not-allowed'
-                )}
+                className="w-full"
               >
                 <Settings className="h-4 w-4" />
                 {loading ? 'Initializing System...' : 'Initialize System'}
-              </button>
+              </Button>
 
               {/* Info Text */}
               <div className="text-center">

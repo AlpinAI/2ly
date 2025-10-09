@@ -66,11 +66,8 @@ test.describe('Login', () => {
       await page.click('button[type="submit"]');
   
       // Should show error message (look for the error alert with the specific message)
-      const errorAlert = page.locator('[class*="bg-red"]');
+      const errorAlert = page.locator('[role="alert"]', { hasText: /Invalid email or password/i });
       await expect(errorAlert).toBeVisible({ timeout: 5000 });
-  
-      // Verify error message text
-      await expect(errorAlert).toContainText(/Invalid email or password/i);
   
       // Should still be on login page
       expect(page.url()).toContain('/login');
@@ -87,11 +84,8 @@ test.describe('Login', () => {
       await page.click('button[type="submit"]');
   
       // Should show error message (look for the error alert with the specific message)
-      const errorAlert = page.locator('[class*="bg-red"]');
+      const errorAlert = page.locator('[role="alert"]', { hasText: /Invalid email or password/i });
       await expect(errorAlert).toBeVisible({ timeout: 5000 });
-  
-      // Verify error message text
-      await expect(errorAlert).toContainText(/Invalid email or password/i);
   
       // Should still be on login page
       expect(page.url()).toContain('/login');
@@ -162,8 +156,8 @@ test.describe('Login', () => {
       await expect(page.locator('input#password')).toBeVisible();
       await expect(page.locator('input#confirmPassword')).toBeVisible();
   
-      // Should have terms checkbox
-      await expect(page.locator('input[type="checkbox"]')).toBeVisible();
+      // Should have terms checkbox (Radix Checkbox renders as button with role="checkbox")
+      await expect(page.locator('button[role="checkbox"]')).toBeVisible();
   
       // Should have submit button
       await expect(page.locator('button[type="submit"]')).toBeVisible();
@@ -202,7 +196,7 @@ test.describe('Login', () => {
       await page.fill('input[type="email"]', 'newuser@example.com');
       await page.fill('input#password', 'password123');
       await page.fill('input#confirmPassword', 'password123');
-      await page.check('input[type="checkbox"]');
+      await page.click('button[role="checkbox"]'); // Radix Checkbox uses button
   
       // Submit the form
       await page.click('button[type="submit"]');
@@ -221,17 +215,14 @@ test.describe('Login', () => {
       await page.fill('input[type="email"]', 'user1@example.com');
       await page.fill('input#password', 'password123');
       await page.fill('input#confirmPassword', 'password123');
-      await page.check('input[type="checkbox"]');
+      await page.click('button[role="checkbox"]'); // Radix Checkbox
   
       // Submit the form
       await page.click('button[type="submit"]');
-  
+
       // Should show error message
-      const errorAlert = page.locator('[class*="bg-red"]');
+      const errorAlert = page.locator('[role="alert"]', { hasText: /User with this email already exists/i });
       await expect(errorAlert).toBeVisible({ timeout: 5000 });
-  
-      // Verify error message text
-      await expect(errorAlert).toContainText(/User with this email already exists/i);
   
       // Should still be on register page
       expect(page.url()).toContain('/register');
@@ -244,7 +235,7 @@ test.describe('Login', () => {
       await page.fill('input[type="email"]', 'newuser2@example.com');
       await page.fill('input#password', 'password123');
       await page.fill('input#confirmPassword', 'password456');
-      await page.check('input[type="checkbox"]');
+      await page.click('button[role="checkbox"]'); // Radix Checkbox
   
       // Submit button should be disabled
       const submitButton = page.locator('button[type="submit"]');
@@ -266,7 +257,7 @@ test.describe('Login', () => {
       await page.fill('input[type="email"]', 'newuser3@example.com');
       await page.fill('input#password', 'passwordabc');
       await page.fill('input#confirmPassword', 'passwordabc');
-      await page.check('input[type="checkbox"]');
+      await page.click('button[role="checkbox"]'); // Radix Checkbox
   
       // Submit button should be disabled due to invalid password
       const submitButton = page.locator('button[type="submit"]');
@@ -286,7 +277,7 @@ test.describe('Login', () => {
       await page.fill('input[type="email"]', 'newuser4@example.com');
       await page.fill('input#password', '123456789');
       await page.fill('input#confirmPassword', '123456789');
-      await page.check('input[type="checkbox"]');
+      await page.click('button[role="checkbox"]'); // Radix Checkbox
   
       // Submit button should be disabled due to invalid password
       const submitButton = page.locator('button[type="submit"]');
@@ -306,7 +297,7 @@ test.describe('Login', () => {
       await page.fill('input[type="email"]', 'newuser5@example.com');
       await page.fill('input#password', 'pass1');
       await page.fill('input#confirmPassword', 'pass1');
-      await page.check('input[type="checkbox"]');
+      await page.click('button[role="checkbox"]'); // Radix Checkbox
   
       // Submit button should be disabled due to invalid password
       const submitButton = page.locator('button[type="submit"]');
@@ -339,7 +330,7 @@ test.describe('Login', () => {
       await page.fill('input[type="email"]', 'validuser@example.com');
       await page.fill('input#password', 'password123');
       await page.fill('input#confirmPassword', 'password123');
-      await page.check('input[type="checkbox"]');
+      await page.click('button[role="checkbox"]'); // Radix Checkbox
   
       // Submit button should be enabled
       const submitButton = page.locator('button[type="submit"]');

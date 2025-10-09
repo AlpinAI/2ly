@@ -5,7 +5,11 @@ import { useMutation } from '@apollo/client/react';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { useAuth } from '@/contexts/AuthContext';
 import { LOGIN_MUTATION } from '@/graphql/mutations/auth';
-import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -86,100 +90,58 @@ export default function LoginPage() {
             <form onSubmit={handleSubmit} className="space-y-6">
               {/* Error Message */}
               {errorMessage && (
-                <div className="flex items-center gap-2 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
-                  <AlertCircle className="h-5 w-5 text-red-600 dark:text-red-400" />
-                  <p className="text-sm text-red-600 dark:text-red-400">
-                    {errorMessage}
-                  </p>
-                </div>
+                <Alert variant="destructive">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertDescription>{errorMessage}</AlertDescription>
+                </Alert>
               )}
 
               {/* Email Field */}
               <div>
-                <label
-                  htmlFor="email"
-                  className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
-                >
-                  Email address
-                </label>
-                <input
+                <Label htmlFor="email">Email address</Label>
+                <Input
                   id="email"
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
-                  className={cn(
-                    'w-full px-4 py-2 rounded-lg',
-                    'bg-gray-100 dark:bg-gray-900',
-                    'border border-gray-300 dark:border-gray-700',
-                    'text-gray-900 dark:text-white',
-                    'placeholder-gray-500 dark:placeholder-gray-400',
-                    'focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent',
-                    'transition-colors'
-                  )}
                   placeholder="Enter your email"
+                  className="mt-2"
                 />
               </div>
 
               {/* Password Field */}
               <div>
-                <label
-                  htmlFor="password"
-                  className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
-                >
-                  Password
-                </label>
-                <input
+                <Label htmlFor="password">Password</Label>
+                <Input
                   id="password"
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
-                  className={cn(
-                    'w-full px-4 py-2 rounded-lg',
-                    'bg-gray-100 dark:bg-gray-900',
-                    'border border-gray-300 dark:border-gray-700',
-                    'text-gray-900 dark:text-white',
-                    'placeholder-gray-500 dark:placeholder-gray-400',
-                    'focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent',
-                    'transition-colors'
-                  )}
                   placeholder="Enter your password"
+                  className="mt-2"
                 />
               </div>
 
               {/* Remember Me */}
               <div className="flex items-center justify-between">
-                <label className="flex items-center">
-                  <input
-                    type="checkbox"
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <Checkbox
                     checked={rememberMe}
-                    onChange={(e) => setRememberMe(e.target.checked)}
-                    className="h-4 w-4 rounded border-gray-300 text-cyan-600 focus:ring-cyan-500"
+                    onCheckedChange={(checked) => setRememberMe(checked === true)}
                   />
-                  <span className="ml-2 text-sm text-gray-700 dark:text-gray-300">
+                  <span className="text-sm text-gray-700 dark:text-gray-300">
                     Remember me
                   </span>
                 </label>
               </div>
 
               {/* Submit Button */}
-              <button
-                type="submit"
-                disabled={loading}
-                className={cn(
-                  'w-full flex items-center justify-center gap-2',
-                  'px-4 py-2 rounded-lg',
-                  'bg-cyan-600 hover:bg-cyan-700',
-                  'text-white font-medium',
-                  'focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:ring-offset-2',
-                  'transition-colors',
-                  'disabled:opacity-50 disabled:cursor-not-allowed'
-                )}
-              >
+              <Button type="submit" disabled={loading} className="w-full">
                 <Lock className="h-4 w-4" />
                 {loading ? 'Signing In...' : 'Sign In'}
-              </button>
+              </Button>
 
               {/* Register Link */}
               <div className="text-center">
