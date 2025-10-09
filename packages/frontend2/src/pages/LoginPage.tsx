@@ -14,7 +14,7 @@ export default function LoginPage() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const { login } = useAuth();
 
-  const [loginMutation, { loading, error }] = useMutation<{
+  const [loginMutation, { loading }] = useMutation<{
     login: {
       success: boolean;
       user?: { id: string; email: string };

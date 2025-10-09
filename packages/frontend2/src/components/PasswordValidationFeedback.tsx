@@ -33,8 +33,6 @@ export function PasswordValidationFeedback({
     hasNumber: /[0-9]/.test(password),
   };
 
-  const allValid = validation.minLength && validation.hasLetter && validation.hasNumber;
-
   // Don't show if password is empty
   if (!password) {
     return null;

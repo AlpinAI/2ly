@@ -280,8 +280,6 @@ export class TestEnvironment {
     }
 
     this.log('Starting Backend...');
-    this.log('  nats', this.services.nats.clientUrl);
-    this.log('  dgraph', this.services.dgraphAlpha.graphqlUrl);
 
     const encryptionKey = 'test-encryption-key-for-playwright-integration-tests-minimum-32-chars';
 

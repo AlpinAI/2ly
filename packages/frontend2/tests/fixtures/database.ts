@@ -149,10 +149,27 @@ export const test = base.extend<DatabaseFixture>({
         }
       }
 
-      // Seed users (using registerUser to set passwords)
-      if (data.users) {
-        for (const user of data.users) {
-          const mutation = `
+      // Seed users
+      if (data.users && data.users.length > 0) {
+        // Use initSystem for the first user (this initializes the system)
+        const firstUser = data.users[0];
+        const initMutation = `
+          mutation InitSystem($email: String!, $adminPassword: String!) {
+            initSystem(email: $email, adminPassword: $adminPassword) {
+              id
+              initialized
+            }
+          }
+        `;
+        await graphql(initMutation, {
+          email: firstUser.email,
+          adminPassword: firstUser.password,
+        });
+
+        // Use registerUser for remaining users
+        for (let i = 1; i < data.users.length; i++) {
+          const user = data.users[i];
+          const registerMutation = `
             mutation RegisterUser($input: RegisterUserInput!) {
               registerUser(input: $input) {
                 success
@@ -164,7 +181,7 @@ export const test = base.extend<DatabaseFixture>({
               }
             }
           `;
-          await graphql(mutation, {
+          await graphql(registerMutation, {
             input: {
               email: user.email,
               password: user.password,

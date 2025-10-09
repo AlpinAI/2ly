@@ -35,10 +35,7 @@ export const LOGIN_MUTATION = gql`
  */
 export const LOGOUT_MUTATION = gql`
   mutation Logout($input: LogoutInput!) {
-    logout(input: $input) {
-      success
-      errors
-    }
+    logout(input: $input)
   }
 `;
 

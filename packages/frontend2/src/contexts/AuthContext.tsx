@@ -20,6 +20,7 @@ import {
 } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { resetApolloCache } from '@/lib/apollo/client';
+import { getRedirectIntent, clearRedirectIntent } from '@/components/ProtectedRoute';
 
 // ============================================================================
 // Types
@@ -98,8 +99,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
     localStorage.setItem(STORAGE_KEY_TOKENS, JSON.stringify(newTokens));
     localStorage.setItem(STORAGE_KEY_USER, JSON.stringify(newUser));
 
-    // Navigate to dashboard
-    navigate('/dashboard');
+    // Check for redirect intent and navigate there, otherwise go to dashboard
+    const redirectTo = getRedirectIntent() || '/dashboard';
+    navigate(redirectTo);
   };
 
   /**
@@ -113,6 +115,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
     // Clear localStorage
     localStorage.removeItem(STORAGE_KEY_TOKENS);
     localStorage.removeItem(STORAGE_KEY_USER);
+
+    // Clear any redirect intent
+    clearRedirectIntent();
 
     // Clear Apollo cache to prevent data leaks
     await resetApolloCache();
