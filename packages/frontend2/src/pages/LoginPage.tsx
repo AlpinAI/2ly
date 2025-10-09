@@ -8,13 +8,11 @@ import { LOGIN_MUTATION } from '@/graphql/mutations/auth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Checkbox } from '@/components/ui/checkbox';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [rememberMe, setRememberMe] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const { login } = useAuth();
 
@@ -122,19 +120,6 @@ export default function LoginPage() {
                   placeholder="Enter your password"
                   className="mt-2"
                 />
-              </div>
-
-              {/* Remember Me */}
-              <div className="flex items-center justify-between">
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <Checkbox
-                    checked={rememberMe}
-                    onCheckedChange={(checked) => setRememberMe(checked === true)}
-                  />
-                  <span className="text-sm text-gray-700 dark:text-gray-300">
-                    Remember me
-                  </span>
-                </label>
               </div>
 
               {/* Submit Button */}
