@@ -1,7 +1,11 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { UserPlus } from 'lucide-react';
+import { UserPlus, AlertCircle } from 'lucide-react';
+import { useMutation } from '@apollo/client/react';
 import { ThemeToggle } from '@/components/ThemeToggle';
+import { PasswordValidationFeedback, isPasswordValid } from '@/components/PasswordValidationFeedback';
+import { useAuth } from '@/contexts/AuthContext';
+import { REGISTER_MUTATION } from '@/graphql/mutations/auth';
 import { cn } from '@/lib/utils';
 
 export default function RegisterPage() {
@@ -9,11 +13,61 @@ export default function RegisterPage() {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [acceptTerms, setAcceptTerms] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const { login } = useAuth();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const [registerMutation, { loading }] = useMutation<{
+    registerUser: {
+      success: boolean;
+      user?: { id: string; email: string };
+      tokens?: { accessToken: string; refreshToken: string };
+      errors?: string[];
+    };
+  }>(REGISTER_MUTATION, {
+    onCompleted: (data) => {
+      if (data.registerUser.success && data.registerUser.tokens && data.registerUser.user) {
+        // Successfully registered
+        setErrorMessage(null);
+        login(data.registerUser.tokens, data.registerUser.user);
+      } else if (!data.registerUser.success) {
+        // Registration failed - show error from response
+        const errorMsg = data.registerUser.errors?.[0] || 'Registration failed';
+        setErrorMessage(errorMsg);
+      }
+    },
+    onError: (err) => {
+      console.error('Registration error:', err);
+      setErrorMessage(err.message || 'Registration failed. Please try again.');
+    },
+  });
+
+  // Form validation state
+  const passwordIsValid = password.length > 0 && isPasswordValid(password);
+  const passwordsMatch = password.length > 0 && confirmPassword.length > 0 && password === confirmPassword;
+  const formIsValid = passwordIsValid && passwordsMatch && acceptTerms;
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // TODO: Implement registration
-    console.log('Register:', { email, password, confirmPassword, acceptTerms });
+    setErrorMessage(null); // Clear any previous errors
+
+    // Double-check validation (button should already be disabled if invalid)
+    if (!formIsValid) {
+      return;
+    }
+
+    try {
+      await registerMutation({
+        variables: {
+          input: {
+            email,
+            password,
+          },
+        },
+      });
+    } catch (err) {
+      // Error is handled by onError callback
+      console.error('Registration failed:', err);
+    }
   };
 
   return (
@@ -42,6 +96,16 @@ export default function RegisterPage() {
             </h2>
 
             <form onSubmit={handleSubmit} className="space-y-6">
+              {/* Error Message */}
+              {errorMessage && (
+                <div className="flex items-center gap-2 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+                  <AlertCircle className="h-5 w-5 text-red-600 dark:text-red-400" />
+                  <p className="text-sm text-red-600 dark:text-red-400">
+                    {errorMessage}
+                  </p>
+                </div>
+              )}
+
               {/* Email Field */}
               <div>
                 <label
@@ -94,6 +158,7 @@ export default function RegisterPage() {
                   )}
                   placeholder="Create a strong password"
                 />
+                <PasswordValidationFeedback password={password} className="mt-3" />
               </div>
 
               {/* Confirm Password Field */}
@@ -121,6 +186,20 @@ export default function RegisterPage() {
                   )}
                   placeholder="Confirm your password"
                 />
+                {/* Password Match Indicator */}
+                {confirmPassword && (
+                  <p
+                    className={cn(
+                      'mt-2 text-xs',
+                      passwordsMatch
+                        ? 'text-green-600 dark:text-green-400'
+                        : 'text-red-600 dark:text-red-400'
+                    )}
+                    data-testid="password-match-indicator"
+                  >
+                    {passwordsMatch ? '✓ Passwords match' : '✗ Passwords do not match'}
+                  </p>
+                )}
               </div>
 
               {/* Terms Checkbox */}
@@ -155,7 +234,7 @@ export default function RegisterPage() {
               {/* Submit Button */}
               <button
                 type="submit"
-                disabled={!acceptTerms}
+                disabled={!formIsValid || loading}
                 className={cn(
                   'w-full flex items-center justify-center gap-2',
                   'px-4 py-2 rounded-lg',
@@ -167,7 +246,7 @@ export default function RegisterPage() {
                 )}
               >
                 <UserPlus className="h-4 w-4" />
-                Create Account
+                {loading ? 'Creating Account...' : 'Create Account'}
               </button>
 
               {/* Login Link */}
