@@ -38,7 +38,12 @@
     "publish:runtime:preview": "npm run publish:runtime:check && npm publish --tag beta -w @2ly/runtime",
     "test": "vitest --run",
     "test:watch": "vitest",
-    "test:cov": "vitest --run --coverage"
+    "test:cov": "vitest --run --coverage",
+    "test:integration": "vitest --run --config vitest.integration.config.ts",
+    "test:integration:watch": "vitest --config vitest.integration.config.ts",
+    "test:integration:cov": "vitest --run --coverage --config vitest.integration.config.ts",
+    "test:e2e": "npm run test:e2e -w @2ly/frontend2",
+    "test:e2e:chromium": "npm run test:e2e:chromium -w @2ly/frontend2"
   },
   "devDependencies": {
     "@graphql-codegen/cli": "^5.0.7",

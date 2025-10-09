@@ -2,10 +2,12 @@ import { defineConfig } from 'vitest/config';
 import path from 'path';
 
 /**
- * Vitest Configuration for Unit Tests
+ * Vitest Configuration for Integration Tests
  *
- * Unit tests run without testcontainers - they are fast and isolated.
- * For integration tests that need testcontainers, use vitest.integration.config.ts
+ * Integration tests require testcontainers setup (Dgraph, NATS, Backend)
+ * This includes:
+ * - *.integration.spec.ts files
+ * - Tests in packages/backend/tests/**
  */
 
 export default defineConfig({
@@ -13,10 +15,8 @@ export default defineConfig({
         environment: 'node',
         dir: './',
         include: [
-            'packages/**/src/**/*.spec.ts',
-            'packages/**/src/**/*.test.ts',
-            'packages/**/__tests__/**/*.spec.ts',
-            'packages/**/__tests__/**/*.test.ts'
+            'packages/**/src/**/*.integration.spec.ts',
+            'packages/backend/tests/**/*.spec.ts'
         ],
         exclude: [
             '**/node_modules/**',
@@ -25,19 +25,20 @@ export default defineConfig({
             '.git',
             'packages/**/dist/**',
             'packages/doc/**',
-            'packages/frontend*/tests/**',
-            'packages/**/src/**/*.integration.spec.ts',
-            'packages/backend/tests/**'
+            'packages/frontend*/tests/**'
         ],
-        environmentMatchGlobs: [
-            ['packages/frontend/**', 'jsdom']
+        globalSetup: [
+            'packages/backend/tests/setup.ts'
         ],
         globals: true,
+        // Longer timeout for integration tests with containers
+        testTimeout: 30000,
+        hookTimeout: 30000,
         coverage: {
             reporter: ['text', 'html', 'lcov'],
             provider: 'v8',
             all: true,
-            reportsDirectory: './coverage',
+            reportsDirectory: './coverage/integration',
             include: ['packages/**/src/**/*.{ts,tsx}'],
             exclude: [
                 '**/*.d.ts',

@@ -26,7 +26,9 @@
     "lint": "eslint \"{src,test}/**/*.{js,ts}\"",
     "format": "prettier --write \"{src,test}/**/*.*\" && rm -rf node_modules/.cache/prettier",
     "typecheck": "tsc --noEmit --skipLibCheck",
-    "generate-jwt-keys": "tsx scripts/generate-jwt-keys.ts"
+    "generate-jwt-keys": "tsx scripts/generate-jwt-keys.ts",
+    "test": "vitest --run",
+    "test:integration": "vitest --run --config ../../vitest.integration.config.ts packages/backend"
   },
   "dependencies": {
     "@apollo/server": "^4.12.2",

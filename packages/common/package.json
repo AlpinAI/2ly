@@ -31,7 +31,8 @@
     "lint": "eslint \"{src,test}/**/*.{js,ts}\"",
     "format": "prettier --write \"{src,test}/**/*.*\" && rm -rf node_modules/.cache/prettier",
     "typecheck": "tsc --noEmit --skipLibCheck",
-    "codegen": "graphql-codegen --config apollo.codegen.ts && graphql-codegen --config dgraph.codegen.ts"
+    "codegen": "graphql-codegen --config apollo.codegen.ts && graphql-codegen --config dgraph.codegen.ts",
+    "test": "vitest --run"
   },
   "devDependencies": {
     "@testcontainers/nats": "^11.7.1",

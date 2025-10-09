@@ -11,14 +11,15 @@
     "typecheck": "tsc --noEmit",
     "codegen": "graphql-codegen --config codegen.ts",
     "codegen:watch": "graphql-codegen --watch --config codegen.ts",
+    "test": "vitest --run",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
     "test:e2e:headed": "playwright test --headed",
     "test:e2e:debug": "playwright test --debug",
     "test:e2e:report": "playwright show-report playwright-report",
-    "test:e2e:chromium": "playwright test --project=chromium",
-    "test:e2e:firefox": "playwright test --project=firefox",
-    "test:e2e:webkit": "playwright test --project=webkit"
+    "test:e2e:chromium": "playwright test --project=clean-chromium --project=seeded-chromium --project=parallel-chromium",
+    "test:e2e:firefox": "playwright test --project=clean-firefox --project=seeded-firefox --project=parallel-firefox",
+    "test:e2e:webkit": "playwright test --project=clean-webkit --project=seeded-webkit --project=parallel-webkit"
   },
   "dependencies": {
     "@apollo/client": "^4.0.7",
