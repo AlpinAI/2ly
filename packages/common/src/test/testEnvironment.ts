@@ -304,6 +304,7 @@ export class TestEnvironment {
           DGRAPH_URL: 'dgraph-alpha:8080',
           NATS_SERVERS: 'nats:4222',
           EXPOSED_NATS_SERVERS: this.services.nats.clientUrl,
+          CORS_ORIGINS: 'http://localhost:8888,http://localhost:9999',
           ENCRYPTION_KEY: encryptionKey,
           ...this.config.backendEnv,
         })
