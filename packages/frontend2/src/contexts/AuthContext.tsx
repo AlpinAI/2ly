@@ -22,7 +22,7 @@ import {
 import { useNavigate } from 'react-router-dom';
 import { useMutation } from '@apollo/client/react';
 import { resetApolloCache } from '@/lib/apollo/client';
-import { getRedirectIntent, clearRedirectIntent } from '@/components/ProtectedRoute';
+import { getRedirectIntent, clearRedirectIntent } from '@/components/logic/ProtectedRoute';
 import { isTokenExpired } from '@/lib/jwt';
 import { REFRESH_TOKEN_MUTATION } from '@/graphql/mutations/auth';
 
