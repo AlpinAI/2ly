@@ -19,11 +19,18 @@ import { Label } from '@/components/ui/label';
 import { useWorkspaceId } from '@/stores/workspaceStore';
 import { SubscribeMcpRegistriesDocument, CreateMcpRegistryDocument, DeleteMcpRegistryDocument, SyncUpstreamRegistryDocument } from '@/graphql/generated/graphql';
 import type { SubscribeMcpRegistriesSubscription } from '@/graphql/generated/graphql';
+import type { components } from '@2ly/common';
+
+// Generated types from MCP Registry OpenAPI schema - available for future use
+// @ts-expect-error - Imported for documentation and future use
+type ServerJSON = components['schemas']['ServerJSON'];
+// @ts-expect-error - Imported for documentation and future use
+type ServerResponse = components['schemas']['ServerResponse'];
 
 const OFFICIAL_MCP_REGISTRY = {
   name: 'Official MCP Registry',
   upstreamUrl: 'https://registry.modelcontextprotocol.io/v0/servers',
-};
+} satisfies { name: string; upstreamUrl: string };
 
 export default function SettingsPage() {
   const workspaceId = useWorkspaceId();

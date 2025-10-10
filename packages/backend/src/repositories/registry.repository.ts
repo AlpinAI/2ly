@@ -3,6 +3,7 @@ import { readFileSync } from 'fs';
 import path from 'path';
 import { DGraphService } from '../services/dgraph.service';
 import { dgraphResolversTypes } from '@2ly/common';
+import type { components } from '@2ly/common';
 import {
   ADD_MCP_REGISTRY,
   GET_MCP_REGISTRY,
@@ -15,28 +16,9 @@ import {
   QUERY_REGISTRY_SERVER_BY_NAME,
 } from './registry.operations';
 
-interface UpstreamServer {
-  server?: {
-    name: string;
-    description?: string;
-    title?: string;
-    repository?: {
-      url: string;
-    };
-    version?: string;
-    packages?: any;
-    remotes?: any;
-  },
-  _meta?: any;
-}
-
-interface UpstreamResponse {
-  servers: UpstreamServer[];
-  metadata: {
-    count: number;
-    nextCursor?: string;
-  };
-}
+// Use generated types from MCP Registry OpenAPI schema
+type UpstreamResponse = components['schemas']['ServerListResponse'];
+type UpstreamServer = components['schemas']['ServerResponse'];
 
 @injectable()
 export class RegistryRepository {
@@ -125,20 +107,21 @@ export class RegistryRepository {
       }
 
       const data: UpstreamResponse = await response.json();
-      allServers = allServers.concat(data.servers);
+      allServers = allServers.concat(data.servers ?? []);
       cursor = data.metadata.nextCursor;
     } while (cursor);
 
     // Upsert each server
     const now = new Date().toISOString();
-    for (const server of allServers) {
-      if (!server.server) {
+    for (const serverResponse of allServers) {
+      const server = serverResponse.server;
+      if (!server) {
         continue;
       }
       // Check if server already exists
       const existingServers = await this.dgraphService.query<{
         queryMCPRegistryServer: dgraphResolversTypes.McpRegistryServer[];
-      }>(QUERY_REGISTRY_SERVER_BY_NAME, { name: server.server?.name });
+      }>(QUERY_REGISTRY_SERVER_BY_NAME, { name: server.name });
 
       const existingServer = existingServers?.queryMCPRegistryServer?.find(
         s => s.registry?.id === registryId
@@ -153,22 +136,22 @@ export class RegistryRepository {
       } else {
         // Create new server
         const variables: any = {
-          name: server.server.name,
-          description: server.server.description || '',
-          title: server.server.title || server.server.name,
-          repositoryUrl: server.server.repository?.url || '',
-          version: server.server.version || '0.0.0',
-          packages: JSON.stringify(server.server.packages || {}),
+          name: server.name,
+          description: server.description || '',
+          title: server.name,
+          repositoryUrl: server.repository?.url || '',
+          version: server.version || '0.0.0',
+          packages: JSON.stringify(server.packages || {}),
           registryId,
           now,
         };
 
         // Only add optional fields if they have values
-        if (server.server.remotes) {
-          variables.remotes = JSON.stringify(server.server.remotes);
+        if (server.remotes) {
+          variables.remotes = JSON.stringify(server.remotes);
         }
-        if (server._meta) {
-          variables._meta = JSON.stringify(server._meta);
+        if (serverResponse._meta) {
+          variables._meta = JSON.stringify(serverResponse._meta);
         }
 
         await this.dgraphService.mutation(UPSERT_REGISTRY_SERVER, variables);
