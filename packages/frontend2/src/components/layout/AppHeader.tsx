@@ -16,7 +16,6 @@
 import { Link } from 'react-router-dom';
 import { Bell, User as UserIcon, LogOut, Settings } from 'lucide-react';
 import { ThemeToggle } from '@/components/ThemeToggle';
-import { Search } from '@/components/ui/search';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
   DropdownMenu,
@@ -34,6 +33,7 @@ import {
 import { useAuth } from '@/contexts/AuthContext';
 import { useWorkspaceId } from '@/stores/workspaceStore';
 import { cn } from '@/lib/utils';
+import { CommandPalette } from '@/components/command-palette/CommandPalette';
 
 export function AppHeader() {
   const { user, logout } = useAuth();
@@ -53,31 +53,50 @@ export function AppHeader() {
   };
 
   return (
-    <header className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 sticky top-0 z-50">
-      <div className="px-6 py-4">
-        <div className="flex items-center justify-between gap-4">
-          {/* Left: Logo and Workspace */}
-          <div className="flex items-center gap-4 min-w-0">
-            <Link to="/app/overview" className="flex items-center gap-2 flex-shrink-0">
-              <h1 className="text-xl font-bold text-gray-900 dark:text-white">2LY</h1>
-            </Link>
-            {workspaceId && (
-              <span className="text-xs text-gray-500 dark:text-gray-400 truncate">
-                Workspace: {workspaceId}
-              </span>
-            )}
-          </div>
-
-          {/* Right: Search + Actions */}
-          <div className="flex items-center gap-2 flex-shrink-0">
-            {/* Search (hidden on mobile) */}
-            <div className="hidden md:block w-64 lg:w-80">
-              <Search
-                placeholder="Search..."
-                showShortcut
-                className="w-full"
-              />
+    <>
+      <CommandPalette />
+      <header className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 sticky top-0 z-50">
+        <div className="px-6 py-4">
+          <div className="flex items-center justify-between gap-4">
+            {/* Left: Logo and Workspace */}
+            <div className="flex items-center gap-4 min-w-0">
+              <Link to="/app/overview" className="flex items-center gap-2 flex-shrink-0">
+                <h1 className="text-xl font-bold text-gray-900 dark:text-white">2LY</h1>
+              </Link>
+              {workspaceId && (
+                <span className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                  Workspace: {workspaceId}
+                </span>
+              )}
             </div>
+
+            {/* Right: Search + Actions */}
+            <div className="flex items-center gap-2 flex-shrink-0">
+              {/* Command Palette Trigger Button (hidden on mobile) */}
+              <button
+                onClick={() => {
+                  // Trigger keyboard event to open command palette
+                  const event = new KeyboardEvent('keydown', {
+                    key: 'k',
+                    metaKey: true,
+                    bubbles: true
+                  });
+                  document.dispatchEvent(event);
+                }}
+                className={cn(
+                  'hidden md:flex items-center gap-2 px-3 h-10 w-64 lg:w-80',
+                  'rounded-lg border border-gray-300 dark:border-gray-600',
+                  'bg-white dark:bg-gray-800',
+                  'text-sm text-gray-500 dark:text-gray-400',
+                  'hover:border-gray-400 dark:hover:border-gray-500',
+                  'transition-colors'
+                )}
+              >
+                <span>Search...</span>
+                <kbd className="ml-auto inline-flex h-5 select-none items-center gap-1 rounded border bg-gray-100 dark:bg-gray-700 px-1.5 font-mono text-[10px] font-medium opacity-100">
+                  ⌘K
+                </kbd>
+              </button>
 
             {/* Notifications */}
             <Popover>
@@ -162,5 +181,6 @@ export function AppHeader() {
         </div>
       </div>
     </header>
+    </>
   );
 }

@@ -25,7 +25,6 @@
 import { Outlet } from 'react-router-dom';
 import { AppHeader } from './AppHeader';
 import { AppNavigation } from './AppNavigation';
-import { WorkspaceSwitcher } from '@/components/workspace/WorkspaceSwitcher';
 
 export function AppLayout() {
   return (
@@ -42,9 +41,6 @@ export function AppLayout() {
           <Outlet />
         </div>
       </main>
-
-      {/* Workspace Switcher (Cmd/Ctrl+K) */}
-      <WorkspaceSwitcher />
     </div>
   );
 }
