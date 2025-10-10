@@ -4,6 +4,7 @@ import { Lock, AlertCircle } from 'lucide-react';
 import { useMutation } from '@apollo/client/react';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { useAuth } from '@/contexts/AuthContext';
+import { useTheme } from '@/contexts/ThemeContext';
 import { LoginDocument } from '@/graphql/generated/graphql';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -15,6 +16,7 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const { login } = useAuth();
+  const { theme } = useTheme();
 
   const [loginMutation, { loading }] = useMutation<{
     login: {
@@ -71,9 +73,13 @@ export default function LoginPage() {
         <div className="w-full max-w-md">
           {/* Logo/Brand */}
           <div className="text-center mb-8">
-            <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-2">
-              2LY
-            </h1>
+            <div className="flex justify-center mb-4">
+              <img
+                src={theme === 'dark' ? '/logo-2ly-dark.png' : '/logo-2ly.png'}
+                alt="2LY"
+                className="h-16 w-auto"
+              />
+            </div>
             <p className="text-gray-600 dark:text-gray-400">
               AI Tool Management Platform
             </p>

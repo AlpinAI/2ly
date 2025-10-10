@@ -32,12 +32,14 @@ import {
 } from '@/components/ui/popover';
 import { useAuth } from '@/contexts/AuthContext';
 import { useWorkspaceId } from '@/stores/workspaceStore';
+import { useTheme } from '@/contexts/ThemeContext';
 import { cn } from '@/lib/utils';
 import { CommandPalette } from '@/components/command-palette/CommandPalette';
 
 export function AppHeader() {
   const { user, logout } = useAuth();
   const workspaceId = useWorkspaceId();
+  const { theme } = useTheme();
 
   // Extract user initials from email
   const getUserInitials = (email: string): string => {
@@ -61,13 +63,12 @@ export function AppHeader() {
             {/* Left: Logo and Workspace */}
             <div className="flex items-center gap-4 min-w-0">
               <Link to="/app/overview" className="flex items-center gap-2 flex-shrink-0">
-                <h1 className="text-xl font-bold text-gray-900 dark:text-white">2LY</h1>
+                <img
+                  src={theme === 'dark' ? '/logo-2ly-dark.png' : '/logo-2ly.png'}
+                  alt="2LY"
+                  className="h-8 w-auto"
+                />
               </Link>
-              {workspaceId && (
-                <span className="text-xs text-gray-500 dark:text-gray-400 truncate">
-                  Workspace: {workspaceId}
-                </span>
-              )}
             </div>
 
             {/* Right: Search + Actions */}

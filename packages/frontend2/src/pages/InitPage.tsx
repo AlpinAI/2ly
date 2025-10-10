@@ -16,6 +16,7 @@ import {
 } from '@/components/PasswordValidationFeedback';
 import { InitSystemDocument, LoginDocument } from '@/graphql/generated/graphql';
 import { useAuth } from '@/contexts/AuthContext';
+import { useTheme } from '@/contexts/ThemeContext';
 import { useSystemInit } from '@/hooks/useSystemInit';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -30,6 +31,7 @@ export default function InitPage() {
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const navigate = useNavigate();
   const { login } = useAuth();
+  const { theme } = useTheme();
   const { isInitialized, isLoading: isCheckingInit } = useSystemInit();
 
   // Redirect to dashboard if system is already initialized
@@ -158,12 +160,18 @@ export default function InitPage() {
         <div className="w-full max-w-md">
           {/* Logo/Brand */}
           <div className="text-center mb-8">
-            <div className="inline-flex items-center justify-center w-16 h-16 mb-4 rounded-full bg-blue-100 dark:bg-blue-900">
-              <Settings className="w-8 h-8 text-blue-600 dark:text-blue-400" />
+            <div className="flex justify-center mb-4">
+              <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-blue-100 dark:bg-blue-900">
+                <Settings className="w-8 h-8 text-blue-600 dark:text-blue-400" />
+              </div>
             </div>
-            <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-2">
-              2LY
-            </h1>
+            <div className="flex justify-center mb-2">
+              <img
+                src={theme === 'dark' ? '/logo-2ly-dark.png' : '/logo-2ly.png'}
+                alt="2LY"
+                className="h-12 w-auto"
+              />
+            </div>
             <p className="text-gray-600 dark:text-gray-400">
               AI Tool Management Platform
             </p>
