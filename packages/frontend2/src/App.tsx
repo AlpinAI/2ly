@@ -27,6 +27,7 @@ import AgentsPage from '@/pages/AgentsPage';
 import ToolsPage from '@/pages/ToolsPage';
 import SettingsPage from '@/pages/SettingsPage';
 import InitPage from '@/pages/InitPage';
+import BackendErrorPage from '@/pages/BackendErrorPage';
 import NotFoundPage from '@/pages/NotFoundPage';
 
 function App() {
@@ -53,6 +54,9 @@ function App() {
 
                 {/* System initialization (no auth required, but SystemInitChecker allows /init) */}
                 <Route path="/init" element={<InitPage />} />
+
+                {/* Backend error page (no auth required, SystemInitChecker handles this) */}
+                <Route path="/backend-error" element={<BackendErrorPage />} />
 
                 {/* Public routes (only accessible if system is initialized) */}
                 <Route path="/login" element={<LoginPage />} />

@@ -13,19 +13,20 @@
 import { ReactNode, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useSystemInit } from '@/hooks/useSystemInit';
+import BackendErrorPage from '@/pages/BackendErrorPage';
 
 interface SystemInitCheckerProps {
   children: ReactNode;
 }
 
 export function SystemInitChecker({ children }: SystemInitCheckerProps) {
-  const { isInitialized, isLoading } = useSystemInit();
+  const { isInitialized, isLoading, isBackendError } = useSystemInit();
   const navigate = useNavigate();
   const location = useLocation();
 
   useEffect(() => {
-    // Don't redirect if we're already on the init page
-    if (location.pathname === '/init') {
+    // Don't redirect if we're already on the init page or backend error page
+    if (location.pathname === '/init' || location.pathname === '/backend-error') {
       return;
     }
 
@@ -34,6 +35,11 @@ export function SystemInitChecker({ children }: SystemInitCheckerProps) {
       navigate('/init', { replace: true });
     }
   }, [isInitialized, isLoading, navigate, location.pathname]);
+
+  // Show backend error page if backend is unreachable
+  if (!isLoading && isBackendError) {
+    return <BackendErrorPage />;
+  }
 
   // Show loading state while checking system initialization
   if (isLoading) {
