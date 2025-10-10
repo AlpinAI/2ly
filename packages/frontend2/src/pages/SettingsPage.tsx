@@ -17,8 +17,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useWorkspaceId } from '@/stores/workspaceStore';
-import { SUBSCRIBE_MCP_REGISTRIES } from '@/graphql/subscriptions/registry';
-import { CREATE_MCP_REGISTRY, DELETE_MCP_REGISTRY, SYNC_UPSTREAM_REGISTRY } from '@/graphql/mutations/registry';
+import { SubscribeMcpRegistriesDocument, CreateMcpRegistryDocument, DeleteMcpRegistryDocument, SyncUpstreamRegistryDocument } from '@/graphql/generated/graphql';
 import type { SubscribeMcpRegistriesSubscription } from '@/graphql/generated/graphql';
 
 const OFFICIAL_MCP_REGISTRY = {
@@ -35,7 +34,7 @@ export default function SettingsPage() {
   console.log('[SettingsPage] Rendering with workspaceId:', workspaceId);
 
   // Subscribe to registries
-  const { data, loading, error } = useSubscription<SubscribeMcpRegistriesSubscription>(SUBSCRIBE_MCP_REGISTRIES, {
+  const { data, loading, error } = useSubscription<SubscribeMcpRegistriesSubscription>(SubscribeMcpRegistriesDocument, {
     variables: { workspaceId: workspaceId || '' },
     skip: !workspaceId,
     onError: (err) => {
@@ -46,7 +45,7 @@ export default function SettingsPage() {
   console.log('[SettingsPage] Subscription state:', { data, loading, error: error?.message });
 
   // Mutations
-  const [createRegistry, { loading: creating }] = useMutation(CREATE_MCP_REGISTRY, {
+  const [createRegistry, { loading: creating }] = useMutation(CreateMcpRegistryDocument, {
     onCompleted: () => {
       setName('');
       setUpstreamUrl('');
@@ -56,13 +55,13 @@ export default function SettingsPage() {
     },
   });
 
-  const [deleteRegistry] = useMutation(DELETE_MCP_REGISTRY, {
+  const [deleteRegistry] = useMutation(DeleteMcpRegistryDocument, {
     onError: (err) => {
       console.error('[SettingsPage] Delete registry error:', err);
     },
   });
 
-  const [syncRegistry] = useMutation(SYNC_UPSTREAM_REGISTRY, {
+  const [syncRegistry] = useMutation(SyncUpstreamRegistryDocument, {
     onCompleted: () => {
       setSyncingId(null);
     },

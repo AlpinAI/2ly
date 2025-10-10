@@ -1,0 +1,16 @@
+# Register Mutation
+# WHY: Create new user account.
+mutation Register($input: RegisterUserInput!) {
+  registerUser(input: $input) {
+    success
+    user {
+      id
+      email
+    }
+    tokens {
+      accessToken
+      refreshToken
+    }
+    errors
+  }
+}

@@ -24,7 +24,7 @@ import { useMutation } from '@apollo/client/react';
 import { resetApolloCache } from '@/lib/apollo/client';
 import { getRedirectIntent, clearRedirectIntent } from '@/components/logic/ProtectedRoute';
 import { isTokenExpired } from '@/lib/jwt';
-import { REFRESH_TOKEN_MUTATION } from '@/graphql/mutations/auth';
+import { RefreshTokenDocument } from '@/graphql/generated/graphql';
 
 // ============================================================================
 // Types
@@ -79,7 +79,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       accessToken?: string;
       errors?: string[];
     };
-  }>(REFRESH_TOKEN_MUTATION);
+  }>(RefreshTokenDocument);
 
   // Load auth state from localStorage on mount and validate tokens
   useEffect(() => {

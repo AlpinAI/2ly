@@ -5,7 +5,7 @@ import { useMutation } from '@apollo/client/react';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { PasswordValidationFeedback, isPasswordValid } from '@/components/PasswordValidationFeedback';
 import { useAuth } from '@/contexts/AuthContext';
-import { REGISTER_MUTATION } from '@/graphql/mutations/auth';
+import { RegisterDocument } from '@/graphql/generated/graphql';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -28,7 +28,7 @@ export default function RegisterPage() {
       tokens?: { accessToken: string; refreshToken: string };
       errors?: string[];
     };
-  }>(REGISTER_MUTATION, {
+  }>(RegisterDocument, {
     onCompleted: (data) => {
       if (data.registerUser.success && data.registerUser.tokens && data.registerUser.user) {
         // Successfully registered

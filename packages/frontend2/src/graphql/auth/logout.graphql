@@ -1,0 +1,5 @@
+# Logout Mutation
+# WHY: Invalidate refresh token on server.
+mutation Logout($input: LogoutInput!) {
+  logout(input: $input)
+}

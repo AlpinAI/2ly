@@ -14,8 +14,7 @@ import {
   PasswordValidationFeedback,
   isPasswordValid,
 } from '@/components/PasswordValidationFeedback';
-import { INIT_SYSTEM_MUTATION } from '@/graphql/mutations/system';
-import { LOGIN_MUTATION } from '@/graphql/mutations/auth';
+import { InitSystemDocument, LoginDocument } from '@/graphql/generated/graphql';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSystemInit } from '@/hooks/useSystemInit';
 import { Button } from '@/components/ui/button';
@@ -48,7 +47,7 @@ export default function InitPage() {
       tokens?: { accessToken: string; refreshToken: string };
       errors?: string[];
     };
-  }>(LOGIN_MUTATION, {
+  }>(LoginDocument, {
     onCompleted: (data) => {
       if (data.login.success && data.login.tokens && data.login.user) {
         // Auto-login successful, redirect to dashboard
@@ -72,7 +71,7 @@ export default function InitPage() {
       id: string;
       initialized: boolean;
     };
-  }>(INIT_SYSTEM_MUTATION, {
+  }>(InitSystemDocument, {
     onCompleted: async () => {
       // System initialized successfully
       setErrorMessage(null);
