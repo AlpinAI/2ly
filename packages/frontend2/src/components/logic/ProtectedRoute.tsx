@@ -25,10 +25,12 @@ export function ProtectedRoute({
   const { isAuthenticated, isLoading } = useAuth();
   const location = useLocation();
 
-  // Save intended destination before redirecting to login
+  // Save intended destination (including workspace) before redirecting to login
   useEffect(() => {
     if (!isAuthenticated && !isLoading && location.pathname !== '/login') {
-      sessionStorage.setItem(INTENT_STORAGE_KEY, location.pathname + location.search);
+      // Store full path including workspace ID for post-login redirect
+      const intendedPath = location.pathname + location.search;
+      sessionStorage.setItem(INTENT_STORAGE_KEY, intendedPath);
     }
   }, [isAuthenticated, isLoading, location]);
 

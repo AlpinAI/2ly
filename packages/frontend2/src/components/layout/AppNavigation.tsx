@@ -11,7 +11,7 @@
  * - Responsive behavior
  */
 
-import { useLocation, Link } from 'react-router-dom';
+import { useLocation, Link, useParams } from 'react-router-dom';
 import { Home, Bot, Wrench, Settings } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -24,40 +24,42 @@ interface NavItem {
 const navItems: NavItem[] = [
   {
     label: 'Overview',
-    path: '/app/overview',
+    path: 'overview',
     icon: Home,
   },
   {
     label: 'Agents',
-    path: '/app/agents',
+    path: 'agents',
     icon: Bot,
   },
   {
     label: 'Tools',
-    path: '/app/tools',
+    path: 'tools',
     icon: Wrench,
   },
   {
     label: 'Settings',
-    path: '/app/settings',
+    path: 'settings',
     icon: Settings,
   },
 ];
 
 export function AppNavigation() {
   const location = useLocation();
+  const { workspaceId } = useParams<{ workspaceId: string }>();
 
   return (
     <nav className="bg-gray-100 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700">
       <div className="px-6">
         <div className="flex space-x-1" role="navigation" aria-label="Main navigation">
           {navItems.map(({ label, path, icon: Icon }) => {
-            const isActive = location.pathname === path;
+            const fullPath = `/w/${workspaceId}/${path}`;
+            const isActive = location.pathname === fullPath;
 
             return (
               <Link
                 key={path}
-                to={path}
+                to={fullPath}
                 className={cn(
                   'flex items-center gap-2 px-4 py-3 text-sm font-medium transition-colors',
                   'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',

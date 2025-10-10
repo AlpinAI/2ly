@@ -17,6 +17,8 @@ import { ApolloProvider } from '@/lib/apollo/ApolloProvider';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { SystemInitChecker } from '@/components/logic/SystemInitChecker';
 import { ProtectedRoute } from '@/components/logic/ProtectedRoute';
+import { WorkspaceLoader } from '@/components/logic/WorkspaceLoader';
+import { WorkspaceRedirect } from '@/components/logic/WorkspaceRedirect';
 import { AppLayout } from '@/components/layout/AppLayout';
 import LoginPage from '@/pages/LoginPage';
 import RegisterPage from '@/pages/RegisterPage';
@@ -35,11 +37,19 @@ function App() {
           <SystemInitChecker>
             <AuthProvider>
               <Routes>
-                {/* Root redirects to app (will be caught by ProtectedRoute if not authenticated) */}
-                <Route path="/" element={<Navigate to="/app/overview" replace />} />
+                {/* Root redirects to default workspace */}
+                <Route
+                  path="/"
+                  element={
+                    <ProtectedRoute>
+                      <WorkspaceRedirect />
+                    </ProtectedRoute>
+                  }
+                />
 
-                {/* Legacy redirect for /dashboard */}
-                <Route path="/dashboard" element={<Navigate to="/app/overview" replace />} />
+                {/* Legacy redirects */}
+                <Route path="/dashboard" element={<Navigate to="/" replace />} />
+                <Route path="/app/*" element={<Navigate to="/" replace />} />
 
                 {/* System initialization (no auth required, but SystemInitChecker allows /init) */}
                 <Route path="/init" element={<InitPage />} />
@@ -48,12 +58,14 @@ function App() {
                 <Route path="/login" element={<LoginPage />} />
                 <Route path="/register" element={<RegisterPage />} />
 
-                {/* Protected app routes with layout (require system init + auth) */}
+                {/* Protected workspace routes with layout (require system init + auth) */}
                 <Route
-                  path="/app"
+                  path="/w/:workspaceId"
                   element={
                     <ProtectedRoute>
-                      <AppLayout />
+                      <WorkspaceLoader>
+                        <AppLayout />
+                      </WorkspaceLoader>
                     </ProtectedRoute>
                   }
                 >
@@ -63,8 +75,8 @@ function App() {
                   <Route path="tools" element={<ToolsPage />} />
                   <Route path="settings" element={<SettingsPage />} />
 
-                  {/* Redirect /app to /app/overview */}
-                  <Route index element={<Navigate to="/app/overview" replace />} />
+                  {/* Redirect /w/:workspaceId to /w/:workspaceId/overview */}
+                  <Route index element={<Navigate to="overview" replace />} />
                 </Route>
 
                 {/* 404 page */}

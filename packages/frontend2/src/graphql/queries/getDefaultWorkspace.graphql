@@ -1,0 +1,12 @@
+# Get Default Workspace
+# WHY: Used by WorkspaceRedirect to navigate to the user's default workspace.
+
+query GetDefaultWorkspace {
+  system {
+    id
+    defaultWorkspace {
+      id
+      name
+    }
+  }
+}

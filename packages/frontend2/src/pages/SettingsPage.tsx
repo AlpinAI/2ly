@@ -16,22 +16,34 @@ import { Loader2, AlertCircle, Plus, Trash2, RefreshCw, Database } from 'lucide-
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { useWorkspaceId } from '@/stores/workspaceStore';
 import { SUBSCRIBE_MCP_REGISTRIES } from '@/graphql/subscriptions/registry';
 import { CREATE_MCP_REGISTRY, DELETE_MCP_REGISTRY, SYNC_UPSTREAM_REGISTRY } from '@/graphql/mutations/registry';
 import type { SubscribeMcpRegistriesSubscription } from '@/graphql/generated/graphql';
 
-// TODO: Replace with actual workspace ID from Zustand store
-const WORKSPACE_ID = '0x24a39';
+const OFFICIAL_MCP_REGISTRY = {
+  name: 'Official MCP Registry',
+  upstreamUrl: 'https://registry.modelcontextprotocol.io/v0/servers',
+};
 
 export default function SettingsPage() {
+  const workspaceId = useWorkspaceId();
   const [name, setName] = useState('');
   const [upstreamUrl, setUpstreamUrl] = useState('');
   const [syncingId, setSyncingId] = useState<string | null>(null);
 
+  console.log('[SettingsPage] Rendering with workspaceId:', workspaceId);
+
   // Subscribe to registries
   const { data, loading, error } = useSubscription<SubscribeMcpRegistriesSubscription>(SUBSCRIBE_MCP_REGISTRIES, {
-    variables: { workspaceId: WORKSPACE_ID },
+    variables: { workspaceId: workspaceId || '' },
+    skip: !workspaceId,
+    onError: (err) => {
+      console.error('[SettingsPage] Subscription error:', err);
+    },
   });
+
+  console.log('[SettingsPage] Subscription state:', { data, loading, error: error?.message });
 
   // Mutations
   const [createRegistry, { loading: creating }] = useMutation(CREATE_MCP_REGISTRY, {
@@ -39,30 +51,55 @@ export default function SettingsPage() {
       setName('');
       setUpstreamUrl('');
     },
+    onError: (err) => {
+      console.error('[SettingsPage] Create registry error:', err);
+    },
   });
 
-  const [deleteRegistry] = useMutation(DELETE_MCP_REGISTRY);
+  const [deleteRegistry] = useMutation(DELETE_MCP_REGISTRY, {
+    onError: (err) => {
+      console.error('[SettingsPage] Delete registry error:', err);
+    },
+  });
 
   const [syncRegistry] = useMutation(SYNC_UPSTREAM_REGISTRY, {
     onCompleted: () => {
       setSyncingId(null);
     },
-    onError: () => {
+    onError: (err) => {
+      console.error('[SettingsPage] Sync registry error:', err);
       setSyncingId(null);
     },
   });
 
   const registries = data?.mcpRegistries || [];
 
+  // Check if official MCP registry is already added
+  const hasOfficialRegistry = registries.some(
+    (reg) => reg.upstreamUrl === OFFICIAL_MCP_REGISTRY.upstreamUrl
+  );
+
   const handleCreateRegistry = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name.trim() || !upstreamUrl.trim()) return;
+    if (!name.trim() || !upstreamUrl.trim() || !workspaceId) return;
 
     await createRegistry({
       variables: {
-        workspaceId: WORKSPACE_ID,
+        workspaceId,
         name: name.trim(),
         upstreamUrl: upstreamUrl.trim(),
+      },
+    });
+  };
+
+  const handleAddOfficialRegistry = async () => {
+    if (!workspaceId) return;
+
+    await createRegistry({
+      variables: {
+        workspaceId,
+        name: OFFICIAL_MCP_REGISTRY.name,
+        upstreamUrl: OFFICIAL_MCP_REGISTRY.upstreamUrl,
       },
     });
   };
@@ -79,9 +116,9 @@ export default function SettingsPage() {
     await syncRegistry({ variables: { registryId: id } });
   };
 
-  const formatDate = (dateString: string | null | undefined) => {
-    if (!dateString) return 'Never';
-    return new Date(dateString).toLocaleString();
+  const formatDate = (dateValue: Date | string | null | undefined) => {
+    if (!dateValue) return 'Never';
+    return new Date(dateValue).toLocaleString();
   };
 
   return (
@@ -102,6 +139,33 @@ export default function SettingsPage() {
         <p className="text-sm text-gray-600 dark:text-gray-400 mb-6">
           Connect to upstream MCP registries to sync available servers and tools.
         </p>
+
+        {/* Quick Add Official Registry */}
+        <div className="mb-6">
+          <Button
+            onClick={handleAddOfficialRegistry}
+            disabled={creating || hasOfficialRegistry || !workspaceId}
+            variant="outline"
+            className="w-full md:w-auto"
+          >
+            {hasOfficialRegistry ? (
+              <>
+                <Database className="h-4 w-4" />
+                Official MCP Registry Added
+              </>
+            ) : (
+              <>
+                <Plus className="h-4 w-4" />
+                Add Official MCP Registry
+              </>
+            )}
+          </Button>
+          {hasOfficialRegistry && (
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+              The official MCP registry is already configured.
+            </p>
+          )}
+        </div>
 
         {/* Error State */}
         {error && (

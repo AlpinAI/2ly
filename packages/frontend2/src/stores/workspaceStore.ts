@@ -49,6 +49,9 @@ interface WorkspaceState {
 
   // Clear workspace selection
   clearWorkspace: () => void;
+
+  // Sync workspace from URL (used by WorkspaceLoader)
+  syncFromUrl: (workspaceId: string) => void;
 }
 
 /**
@@ -77,6 +80,16 @@ export const useWorkspaceStore = create<WorkspaceState>()(
 
           // TODO: Trigger Apollo to refetch workspace-scoped queries
           // This could be done via Apollo Client's refetchQueries
+        },
+
+        // WHY separate from setWorkspace: URL is source of truth
+        // This method doesn't trigger navigation, just syncs state
+        syncFromUrl: (workspaceId) => {
+          set({ selectedWorkspace: workspaceId });
+
+          if (import.meta.env.DEV) {
+            console.log('[Workspace] Synced from URL:', workspaceId);
+          }
         },
 
         clearWorkspace: () => set({ selectedWorkspace: null }),

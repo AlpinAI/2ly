@@ -380,7 +380,6 @@ export const resolvers = (container: Container = defaultContainer): apolloResolv
       },
       mcpRegistries: {
         subscribe: (_parent: unknown, { workspaceId }: { workspaceId: string }) => {
-          console.log('subscribe mcpRegistries');
           const observable = workspaceRepository.observeMCPRegistries(workspaceId);
           return observableToAsyncGenerator(observable, 'mcpRegistries');
         },

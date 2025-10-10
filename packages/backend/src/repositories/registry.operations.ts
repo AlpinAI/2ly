@@ -137,7 +137,6 @@ export const UPSERT_REGISTRY_SERVER = gql`
         lastSeenAt: $now
         registry: { id: $registryId }
       }
-      upsert: true
     ) {
       mCPRegistryServer {
         id

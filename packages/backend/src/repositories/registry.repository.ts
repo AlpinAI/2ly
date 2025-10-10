@@ -16,15 +16,17 @@ import {
 } from './registry.operations';
 
 interface UpstreamServer {
-  name: string;
-  description?: string;
-  title?: string;
-  repository?: {
-    url: string;
-  };
-  version?: string;
-  packages?: any;
-  remotes?: any;
+  server?: {
+    name: string;
+    description?: string;
+    title?: string;
+    repository?: {
+      url: string;
+    };
+    version?: string;
+    packages?: any;
+    remotes?: any;
+  },
   _meta?: any;
 }
 
@@ -130,12 +132,15 @@ export class RegistryRepository {
     // Upsert each server
     const now = new Date().toISOString();
     for (const server of allServers) {
+      if (!server.server) {
+        continue;
+      }
       // Check if server already exists
       const existingServers = await this.dgraphService.query<{
         queryMCPRegistryServer: dgraphResolversTypes.McpRegistryServer[];
-      }>(QUERY_REGISTRY_SERVER_BY_NAME, { name: server.name });
+      }>(QUERY_REGISTRY_SERVER_BY_NAME, { name: server.server?.name });
 
-      const existingServer = existingServers.queryMCPRegistryServer?.find(
+      const existingServer = existingServers?.queryMCPRegistryServer?.find(
         s => s.registry?.id === registryId
       );
 
@@ -147,18 +152,26 @@ export class RegistryRepository {
         });
       } else {
         // Create new server
-        await this.dgraphService.mutation(UPSERT_REGISTRY_SERVER, {
-          name: server.name,
-          description: server.description || '',
-          title: server.title || server.name,
-          repositoryUrl: server.repository?.url || '',
-          version: server.version || '0.0.0',
-          packages: JSON.stringify(server.packages || {}),
-          remotes: server.remotes ? JSON.stringify(server.remotes) : null,
-          _meta: server._meta ? JSON.stringify(server._meta) : null,
+        const variables: any = {
+          name: server.server.name,
+          description: server.server.description || '',
+          title: server.server.title || server.server.name,
+          repositoryUrl: server.server.repository?.url || '',
+          version: server.server.version || '0.0.0',
+          packages: JSON.stringify(server.server.packages || {}),
           registryId,
           now,
-        });
+        };
+
+        // Only add optional fields if they have values
+        if (server.server.remotes) {
+          variables.remotes = JSON.stringify(server.server.remotes);
+        }
+        if (server._meta) {
+          variables._meta = JSON.stringify(server._meta);
+        }
+
+        await this.dgraphService.mutation(UPSERT_REGISTRY_SERVER, variables);
       }
     }
 
