@@ -2,8 +2,7 @@ import { injectable, inject } from 'inversify';
 import { readFileSync } from 'fs';
 import path from 'path';
 import { DGraphService } from '../services/dgraph.service';
-import { dgraphResolversTypes } from '@2ly/common';
-import type { components } from '@2ly/common';
+import { dgraphResolversTypes, mcpRegistry } from '@2ly/common';
 import {
   ADD_MCP_REGISTRY,
   GET_MCP_REGISTRY,
@@ -17,8 +16,8 @@ import {
 } from './registry.operations';
 
 // Use generated types from MCP Registry OpenAPI schema
-type UpstreamResponse = components['schemas']['ServerListResponse'];
-type UpstreamServer = components['schemas']['ServerResponse'];
+type UpstreamResponse = mcpRegistry.components['schemas']['ServerListResponse'];
+type UpstreamServer = mcpRegistry.components['schemas']['ServerResponse'];
 
 @injectable()
 export class RegistryRepository {
