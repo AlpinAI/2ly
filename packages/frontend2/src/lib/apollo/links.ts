@@ -37,7 +37,7 @@ import { createClient } from 'graphql-ws';
 const HTTP_ENDPOINT =
   import.meta.env.VITE_GRAPHQL_HTTP_ENDPOINT || 'http://localhost:3000/graphql';
 const WS_ENDPOINT =
-  import.meta.env.VITE_GRAPHQL_WS_ENDPOINT || 'ws://localhost:3000/graphql';
+  import.meta.env.VITE_GRAPHQL_WS_ENDPOINT || 'ws://localhost:3000/graphql-ws';
 
 // Log endpoints in development/test for debugging connection issues
 if (import.meta.env.DEV || import.meta.env.MODE === 'test') {

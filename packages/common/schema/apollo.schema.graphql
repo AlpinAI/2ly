@@ -35,6 +35,7 @@ type Workspace {
   mcpServers: [MCPServer!]
   mcpTools: [MCPTool!]
   runtimes: [Runtime!]
+  mcpRegistries: [MCPRegistry!]
   globalRuntime: Runtime
   defaultTestingRuntime: Runtime
 }
@@ -166,6 +167,31 @@ type MCPRegistry2lyMetadata {
   registryVersion: String!
 }
 
+type MCPRegistry {
+  id: ID!
+  name: String!
+  upstreamUrl: String!
+  createdAt: Date!
+  lastSyncAt: Date
+  workspace: Workspace!
+  servers: [MCPRegistryUpstreamServer!]
+}
+
+type MCPRegistryUpstreamServer {
+  id: ID!
+  name: String!
+  description: String!
+  title: String!
+  repositoryUrl: String!
+  version: String!
+  packages: String!
+  remotes: String
+  _meta: String
+  createdAt: Date!
+  lastSeenAt: Date!
+  registry: MCPRegistry!
+}
+
 type Query {
   workspace: [Workspace!]
   mcpServers: [MCPServer!]
@@ -176,6 +202,7 @@ type Query {
   fetchMCPServerConfig(repositoryUrl: String!): MCPRegistryServer
   workspaceMCPTools(workspaceId: ID!): Workspace
   isMCPAutoConfigEnabled: Boolean!
+  mcpRegistries(workspaceId: ID!): [MCPRegistry!]
   # Authentication queries
   me: User
 }
@@ -229,6 +256,11 @@ type Mutation {
   setGlobalRuntime(id: ID!, runtimeId: ID!): Workspace!
   unsetGlobalRuntime(id: ID!): Workspace!
   updateMCPServerRunOn(mcpServerId: ID!, runOn: MCPServerRunOn!, runtimeId: ID): MCPServer!
+
+  # Registry mutations
+  createMCPRegistry(workspaceId: ID!, name: String!, upstreamUrl: String!): MCPRegistry!
+  deleteMCPRegistry(id: ID!): MCPRegistry!
+  syncUpstreamRegistry(registryId: ID!): MCPRegistry!
 
   # Playground mutations
   callMCPTool(toolId: ID!, input: String!): CallToolResult!
@@ -315,5 +347,6 @@ type Subscription {
   runtimes(workspaceId: ID!): [Runtime!]
   mcpServers(workspaceId: ID!): [MCPServer!]
   mcpTools(workspaceId: ID!): [MCPTool]
+  mcpRegistries(workspaceId: ID!): [MCPRegistry!]
   toolCalls(workspaceId: ID!): [ToolCall!]
 }

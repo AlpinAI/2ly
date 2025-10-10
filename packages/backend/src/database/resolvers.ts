@@ -99,6 +99,9 @@ export const resolvers = (container: Container = defaultContainer): apolloResolv
       isMCPAutoConfigEnabled: async () => {
         return mcpAutoConfigService.isConfigured();
       },
+      mcpRegistries: async (_parent: unknown, { workspaceId }: { workspaceId: string }) => {
+        return registryRepository.findByWorkspace(workspaceId);
+      },
       // Authentication queries
       ...authResolvers.Query,
     },
@@ -327,6 +330,19 @@ export const resolvers = (container: Container = defaultContainer): apolloResolv
           }
         }
       },
+      createMCPRegistry: async (
+        _parent: unknown,
+        { workspaceId, name, upstreamUrl }: { workspaceId: string; name: string; upstreamUrl: string },
+      ) => {
+        console.log('create mcp registry', workspaceId, name, upstreamUrl);
+        return registryRepository.createRegistry(workspaceId, name, upstreamUrl);
+      },
+      deleteMCPRegistry: async (_parent: unknown, { id }: { id: string }) => {
+        return registryRepository.deleteRegistry(id);
+      },
+      syncUpstreamRegistry: async (_parent: unknown, { registryId }: { registryId: string }) => {
+        return registryRepository.syncUpstream(registryId);
+      },
     },
     Runtime: {},
     MCPServer: {},
@@ -360,6 +376,13 @@ export const resolvers = (container: Container = defaultContainer): apolloResolv
         subscribe: (_parent: unknown, { workspaceId }: { workspaceId: string }) => {
           const observable = monitoringRepository.observeToolCalls(workspaceId);
           return observableToAsyncGenerator(observable, 'toolCalls');
+        },
+      },
+      mcpRegistries: {
+        subscribe: (_parent: unknown, { workspaceId }: { workspaceId: string }) => {
+          console.log('subscribe mcpRegistries');
+          const observable = workspaceRepository.observeMCPRegistries(workspaceId);
+          return observableToAsyncGenerator(observable, 'mcpRegistries');
         },
       },
     },

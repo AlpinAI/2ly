@@ -13,10 +13,13 @@ import {
   UNSET_DEFAULT_TESTING_RUNTIME,
   UNSET_GLOBAL_RUNTIME,
 } from './workspace.operations';
+import {
+  QUERY_WORKSPACE_WITH_REGISTRIES
+} from './registry.operations';
 import { GET_RUNTIME } from './runtime.operations';
 import { QUERY_SYSTEM } from './system.operations';
 import { Observable } from 'rxjs';
-import { map } from 'rxjs/operators';
+import { map, tap } from 'rxjs/operators';
 import { createSubscriptionFromQuery } from '../helpers';
 
 @injectable()
@@ -134,5 +137,12 @@ export class WorkspaceRepository {
     const query = createSubscriptionFromQuery(QUERY_WORKSPACES);
     return this.dgraphService
       .observe<apolloResolversTypes.Workspace[]>(query, {}, 'queryWorkspace', true);
+  }
+
+  observeMCPRegistries(workspaceId: string): Observable<apolloResolversTypes.McpRegistry[]> {
+    const query = createSubscriptionFromQuery(QUERY_WORKSPACE_WITH_REGISTRIES);
+    return this.dgraphService
+      .observe<{ mcpRegistries: apolloResolversTypes.McpRegistry[] }>(query, { workspaceId }, 'getWorkspace', true)
+      .pipe(map((workspace) => workspace?.mcpRegistries || []));
   }
 }

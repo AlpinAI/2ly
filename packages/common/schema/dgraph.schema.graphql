@@ -34,6 +34,7 @@ type Workspace @withSubscription {
   mcpServers: [MCPServer!] @hasInverse(field: workspace)
   mcpTools: [MCPTool!] @hasInverse(field: workspace)
   runtimes: [Runtime!] @hasInverse(field: workspace)
+  mcpRegistries: [MCPRegistry!] @hasInverse(field: workspace)
   admins: [User!] @hasInverse(field: adminOfWorkspaces)
   users: [User!] @hasInverse(field: membersOfWorkspaces)
   system: System! @hasInverse(field: workspaces)
@@ -139,4 +140,29 @@ type ToolCall {
   mcpTool: MCPTool! @hasInverse(field: toolCalls)
   calledBy: Runtime! @hasInverse(field: toolCalls)
   executedBy: Runtime @hasInverse(field: toolResponses)
+}
+
+type MCPRegistry @withSubscription {
+  id: ID!
+  name: String! @search(by: [hash])
+  upstreamUrl: String!
+  createdAt: DateTime!
+  lastSyncAt: DateTime
+  workspace: Workspace! @hasInverse(field: mcpRegistries)
+  servers: [MCPRegistryServer!] @hasInverse(field: registry)
+}
+
+type MCPRegistryServer @withSubscription {
+  id: ID!
+  name: String! @search(by: [hash])
+  description: String!
+  title: String!
+  repositoryUrl: String!
+  version: String!
+  packages: String!
+  remotes: String
+  _meta: String
+  createdAt: DateTime!
+  lastSeenAt: DateTime!
+  registry: MCPRegistry! @hasInverse(field: servers)
 }
