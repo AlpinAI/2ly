@@ -17,9 +17,13 @@ import { ApolloProvider } from '@/lib/apollo/ApolloProvider';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { SystemInitChecker } from '@/components/logic/SystemInitChecker';
 import { ProtectedRoute } from '@/components/logic/ProtectedRoute';
+import { AppLayout } from '@/components/layout/AppLayout';
 import LoginPage from '@/pages/LoginPage';
 import RegisterPage from '@/pages/RegisterPage';
 import DashboardPage from '@/pages/DashboardPage';
+import AgentsPage from '@/pages/AgentsPage';
+import ToolsPage from '@/pages/ToolsPage';
+import SettingsPage from '@/pages/SettingsPage';
 import InitPage from '@/pages/InitPage';
 import NotFoundPage from '@/pages/NotFoundPage';
 
@@ -31,8 +35,11 @@ function App() {
           <SystemInitChecker>
             <AuthProvider>
               <Routes>
-                {/* Root redirects to dashboard (will be caught by ProtectedRoute if not authenticated) */}
-                <Route path="/" element={<Navigate to="/dashboard" replace />} />
+                {/* Root redirects to app (will be caught by ProtectedRoute if not authenticated) */}
+                <Route path="/" element={<Navigate to="/app/overview" replace />} />
+
+                {/* Legacy redirect for /dashboard */}
+                <Route path="/dashboard" element={<Navigate to="/app/overview" replace />} />
 
                 {/* System initialization (no auth required, but SystemInitChecker allows /init) */}
                 <Route path="/init" element={<InitPage />} />
@@ -41,15 +48,24 @@ function App() {
                 <Route path="/login" element={<LoginPage />} />
                 <Route path="/register" element={<RegisterPage />} />
 
-                {/* Protected routes (require system init + auth) */}
+                {/* Protected app routes with layout (require system init + auth) */}
                 <Route
-                  path="/dashboard"
+                  path="/app"
                   element={
                     <ProtectedRoute>
-                      <DashboardPage />
+                      <AppLayout />
                     </ProtectedRoute>
                   }
-                />
+                >
+                  {/* Nested routes - AppLayout provides header + navigation */}
+                  <Route path="overview" element={<DashboardPage />} />
+                  <Route path="agents" element={<AgentsPage />} />
+                  <Route path="tools" element={<ToolsPage />} />
+                  <Route path="settings" element={<SettingsPage />} />
+
+                  {/* Redirect /app to /app/overview */}
+                  <Route index element={<Navigate to="/app/overview" replace />} />
+                </Route>
 
                 {/* 404 page */}
                 <Route path="*" element={<NotFoundPage />} />
