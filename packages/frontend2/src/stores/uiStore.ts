@@ -33,6 +33,7 @@
 
 import { create } from 'zustand';
 import { devtools, persist } from 'zustand/middleware';
+import { shallow } from 'zustand/shallow';
 
 /**
  * UI State Interface
@@ -44,6 +45,8 @@ interface UIState {
   // Modal States
   deployModalOpen: boolean;
   setDeployModalOpen: (open: boolean) => void;
+  addToolWorkflowOpen: boolean;
+  setAddToolWorkflowOpen: (open: boolean) => void;
 
   // Tool Catalog Filters
   toolCategoryFilter: string;
@@ -86,6 +89,8 @@ export const useUIStore = create<UIState>()(
         // Initial State - Modals
         deployModalOpen: false,
         setDeployModalOpen: (open) => set({ deployModalOpen: open }),
+        addToolWorkflowOpen: false,
+        setAddToolWorkflowOpen: (open) => set({ addToolWorkflowOpen: open }),
 
         // Initial State - Tool Catalog Filters
         toolCategoryFilter: 'all',
@@ -124,12 +129,12 @@ export const useUIStore = create<UIState>()(
           activeSection: state.activeSection,
           activeSubSection: state.activeSubSection,
         }),
-      }
+      },
     ),
     {
       name: '2LY UI Store', // Name in Redux DevTools
-    }
-  )
+    },
+  ),
 );
 
 /**
@@ -148,26 +153,44 @@ export const useUIStore = create<UIState>()(
  * ```
  */
 export const useDeployModal = () =>
-  useUIStore((state) => ({
-    open: state.deployModalOpen,
-    setOpen: state.setDeployModalOpen,
-  }));
+  useUIStore(
+    (state) => ({
+      open: state.deployModalOpen,
+      setOpen: state.setDeployModalOpen,
+    }),
+    shallow,
+  );
 
 export const useToolFilters = () =>
-  useUIStore((state) => ({
-    category: state.toolCategoryFilter,
-    setCategory: state.setToolCategoryFilter,
-    search: state.toolSearchQuery,
-    setSearch: state.setToolSearchQuery,
-    sortBy: state.toolSortBy,
-    setSortBy: state.setToolSortBy,
-    reset: state.resetFilters,
-  }));
+  useUIStore(
+    (state) => ({
+      category: state.toolCategoryFilter,
+      setCategory: state.setToolCategoryFilter,
+      search: state.toolSearchQuery,
+      setSearch: state.setToolSearchQuery,
+      sortBy: state.toolSortBy,
+      setSortBy: state.setToolSortBy,
+      reset: state.resetFilters,
+    }),
+    shallow,
+  );
 
 export const useNavigation = () =>
-  useUIStore((state) => ({
-    activeSection: state.activeSection,
-    setActiveSection: state.setActiveSection,
-    activeSubSection: state.activeSubSection,
-    setActiveSubSection: state.setActiveSubSection,
-  }));
+  useUIStore(
+    (state) => ({
+      activeSection: state.activeSection,
+      setActiveSection: state.setActiveSection,
+      activeSubSection: state.activeSubSection,
+      setActiveSubSection: state.setActiveSubSection,
+    }),
+    shallow,
+  );
+
+export const useAddToolWorkflow = () =>
+  useUIStore(
+    (state) => ({
+      open: state.addToolWorkflowOpen,
+      setOpen: state.setAddToolWorkflowOpen,
+    }),
+    shallow,
+  );

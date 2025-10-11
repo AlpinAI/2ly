@@ -45,8 +45,6 @@ export default function SettingsPage() {
     },
   });
 
-  console.log('[SettingsPage] Subscription state:', { data, loading, error: error?.message });
-
   // Mutations
   const [createRegistry, { loading: creating }] = useMutation(CreateMcpRegistryDocument, {
     onError: (err) => {

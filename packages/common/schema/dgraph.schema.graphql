@@ -7,6 +7,7 @@ enum ActiveStatus {
 
 enum MCPTransportType {
   STDIO
+  SSE
   STREAM
 }
 
@@ -42,17 +43,43 @@ type Workspace @withSubscription {
   defaultTestingRuntime: Runtime
 }
 
+type MCPRegistry @withSubscription {
+  id: ID!
+  name: String! @search(by: [hash])
+  upstreamUrl: String!
+  createdAt: DateTime!
+  lastSyncAt: DateTime
+  workspace: Workspace! @hasInverse(field: mcpRegistries)
+  servers: [MCPRegistryServer!] @hasInverse(field: registry)
+}
+
+type MCPRegistryServer @withSubscription {
+  id: ID!
+  name: String! @search(by: [hash])
+  description: String!
+  title: String!
+  repositoryUrl: String!
+  version: String!
+  packages: String!
+  remotes: String
+  _meta: String
+  createdAt: DateTime!
+  lastSeenAt: DateTime!
+  registry: MCPRegistry! @hasInverse(field: servers)
+  deployements: [MCPServer!]
+}
+
 type MCPServer @withSubscription {
   id: ID!
   name: String! @search(by: [hash])
   description: String!
   repositoryUrl: String!
   transport: MCPTransportType!
-  command: String!
-  args: String!
-  ENV: String!
-  serverUrl: String!
-  headers: String
+  # The `config` represents the configuration of the server
+  # When the transport is set to STDIO, the config follows the schema of MCPRegistryServer.packages.*
+  # When the transport is set to SSE or STREAM, the config follows the schema of MCPRegistryServer.remotes.*
+  # The values of each part of the config are encapsulated, following the Argument and KeyValueInput component schemas
+  config: String!
   tools: [MCPTool!] @hasInverse(field: mcpServer)
   runOn: MCPServerRunOn @search
   # an MCP server can run either on a specific runtime - or if no value is provided it will be launch on the agent runtime which requires the capability
@@ -140,29 +167,4 @@ type ToolCall {
   mcpTool: MCPTool! @hasInverse(field: toolCalls)
   calledBy: Runtime! @hasInverse(field: toolCalls)
   executedBy: Runtime @hasInverse(field: toolResponses)
-}
-
-type MCPRegistry @withSubscription {
-  id: ID!
-  name: String! @search(by: [hash])
-  upstreamUrl: String!
-  createdAt: DateTime!
-  lastSyncAt: DateTime
-  workspace: Workspace! @hasInverse(field: mcpRegistries)
-  servers: [MCPRegistryServer!] @hasInverse(field: registry)
-}
-
-type MCPRegistryServer @withSubscription {
-  id: ID!
-  name: String! @search(by: [hash])
-  description: String!
-  title: String!
-  repositoryUrl: String!
-  version: String!
-  packages: String!
-  remotes: String
-  _meta: String
-  createdAt: DateTime!
-  lastSeenAt: DateTime!
-  registry: MCPRegistry! @hasInverse(field: servers)
 }

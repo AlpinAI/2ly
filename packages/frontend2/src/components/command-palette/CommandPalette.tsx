@@ -23,9 +23,10 @@ import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@apollo/client/react';
 import { Command } from 'cmdk';
 import * as Dialog from '@radix-ui/react-dialog';
-import { Search, Layers, Palette, Moon, Sun, Check } from 'lucide-react';
+import { Search, Layers, Palette, Moon, Sun, Check, Plus } from 'lucide-react';
 import { useWorkspaceId } from '@/stores/workspaceStore';
 import { useTheme } from '@/contexts/ThemeContext';
+import { useUIStore } from '@/stores/uiStore';
 import { GetWorkspacesDocument, type GetWorkspacesQuery } from '@/graphql/generated/graphql';
 
 type CommandMode = 'main' | 'search' | 'workspace' | 'theme';
@@ -37,6 +38,7 @@ export function CommandPalette() {
   const navigate = useNavigate();
   const currentWorkspaceId = useWorkspaceId();
   const { theme, setTheme } = useTheme();
+  const setAddToolWorkflowOpen = useUIStore((state) => state.setAddToolWorkflowOpen);
 
   const { data, loading } = useQuery(GetWorkspacesDocument);
 
@@ -68,6 +70,11 @@ export function CommandPalette() {
 
   const handleSelectTheme = (selectedTheme: 'light' | 'dark') => {
     setTheme(selectedTheme);
+    setOpen(false);
+  };
+
+  const handleAddTool = () => {
+    setAddToolWorkflowOpen(true);
     setOpen(false);
   };
 
@@ -136,9 +143,7 @@ export function CommandPalette() {
                     <Search className="h-4 w-4" />
                     <div className="flex flex-1 items-center justify-between">
                       <span className="font-medium">Search</span>
-                      <span className="text-xs text-gray-500 dark:text-gray-400">
-                        Find anything...
-                      </span>
+                      <span className="text-xs text-gray-500 dark:text-gray-400">Find anything...</span>
                     </div>
                   </Command.Item>
 
@@ -150,9 +155,19 @@ export function CommandPalette() {
                     <Layers className="h-4 w-4" />
                     <div className="flex flex-1 items-center justify-between">
                       <span className="font-medium">Switch Workspace</span>
-                      <span className="text-xs text-gray-500 dark:text-gray-400">
-                        Change your workspace
-                      </span>
+                      <span className="text-xs text-gray-500 dark:text-gray-400">Change your workspace</span>
+                    </div>
+                  </Command.Item>
+
+                  <Command.Item
+                    value="add-tool"
+                    onSelect={handleAddTool}
+                    className="relative flex cursor-pointer select-none items-center gap-3 rounded-sm px-3 py-2 text-sm outline-none data-[selected=true]:bg-blue-100 data-[selected=true]:text-blue-900 dark:data-[selected=true]:bg-blue-900 dark:data-[selected=true]:text-blue-100"
+                  >
+                    <Plus className="h-4 w-4" />
+                    <div className="flex flex-1 items-center justify-between">
+                      <span className="font-medium">Add Tool</span>
+                      <span className="text-xs text-gray-500 dark:text-gray-400">Browse and install MCP tools</span>
                     </div>
                   </Command.Item>
 
@@ -164,9 +179,7 @@ export function CommandPalette() {
                     <Palette className="h-4 w-4" />
                     <div className="flex flex-1 items-center justify-between">
                       <span className="font-medium">Change Theme</span>
-                      <span className="text-xs text-gray-500 dark:text-gray-400">
-                        Toggle dark/light mode
-                      </span>
+                      <span className="text-xs text-gray-500 dark:text-gray-400">Toggle dark/light mode</span>
                     </div>
                   </Command.Item>
                 </Command.Group>
@@ -201,9 +214,7 @@ export function CommandPalette() {
                       <div className="flex flex-1 items-center gap-2">
                         <span className="font-medium">{workspace.name}</span>
                         {workspace.id === currentWorkspaceId && (
-                          <span className="rounded-full bg-blue-500 px-2 py-0.5 text-xs text-white">
-                            Current
-                          </span>
+                          <span className="rounded-full bg-blue-500 px-2 py-0.5 text-xs text-white">Current</span>
                         )}
                         {workspace.id === data?.system?.defaultWorkspace?.id && (
                           <span className="rounded-full bg-gray-200 px-2 py-0.5 text-xs text-gray-700 dark:bg-gray-700 dark:text-gray-300">
@@ -248,7 +259,9 @@ export function CommandPalette() {
 
             <div className="border-t border-gray-200 px-3 py-2 text-xs text-gray-500 dark:border-gray-700 dark:text-gray-400">
               <div className="flex items-center justify-between">
-                <span>Press <kbd className="rounded bg-gray-100 px-1.5 py-0.5 font-mono dark:bg-gray-700">⌘K</kbd> to toggle</span>
+                <span>
+                  Press <kbd className="rounded bg-gray-100 px-1.5 py-0.5 font-mono dark:bg-gray-700">⌘K</kbd> to toggle
+                </span>
                 {mode !== 'main' && (
                   <button
                     onClick={() => setMode('main')}
