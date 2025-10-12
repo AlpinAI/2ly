@@ -34,6 +34,7 @@ export type McpRegistry = {
 export type McpRegistryServer = {
   _meta?: Maybe<Scalars['String']['output']>;
   createdAt: Scalars['DateTime']['output'];
+  deployements?: Maybe<Array<McpServer>>;
   description: Scalars['String']['output'];
   id: Scalars['ID']['output'];
   lastSeenAt: Scalars['DateTime']['output'];
@@ -47,17 +48,13 @@ export type McpRegistryServer = {
 };
 
 export type McpServer = {
-  ENV: Scalars['String']['output'];
-  args: Scalars['String']['output'];
-  command: Scalars['String']['output'];
+  config: Scalars['String']['output'];
   description: Scalars['String']['output'];
-  headers?: Maybe<Scalars['String']['output']>;
   id: Scalars['ID']['output'];
   name: Scalars['String']['output'];
   repositoryUrl: Scalars['String']['output'];
   runOn?: Maybe<McpServerRunOn>;
   runtime?: Maybe<Runtime>;
-  serverUrl: Scalars['String']['output'];
   tools?: Maybe<Array<McpTool>>;
   transport: McpTransportType;
   workspace: Workspace;
@@ -85,6 +82,7 @@ export type McpTool = {
 };
 
 export enum McpTransportType {
+  Sse = 'SSE',
   Stdio = 'STDIO',
   Stream = 'STREAM'
 }
@@ -312,6 +310,7 @@ export type McpRegistryResolvers<ContextType = any, ParentType extends Resolvers
 export type McpRegistryServerResolvers<ContextType = any, ParentType extends ResolversParentTypes['MCPRegistryServer'] = ResolversParentTypes['MCPRegistryServer']> = ResolversObject<{
   _meta?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   createdAt?: Resolver<ResolversTypes['DateTime'], ParentType, ContextType>;
+  deployements?: Resolver<Maybe<Array<ResolversTypes['MCPServer']>>, ParentType, ContextType>;
   description?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
   lastSeenAt?: Resolver<ResolversTypes['DateTime'], ParentType, ContextType>;
@@ -326,17 +325,13 @@ export type McpRegistryServerResolvers<ContextType = any, ParentType extends Res
 }>;
 
 export type McpServerResolvers<ContextType = any, ParentType extends ResolversParentTypes['MCPServer'] = ResolversParentTypes['MCPServer']> = ResolversObject<{
-  ENV?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
-  args?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
-  command?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  config?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   description?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
-  headers?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
   name?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   repositoryUrl?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   runOn?: Resolver<Maybe<ResolversTypes['MCPServerRunOn']>, ParentType, ContextType>;
   runtime?: Resolver<Maybe<ResolversTypes['Runtime']>, ParentType, ContextType>;
-  serverUrl?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   tools?: Resolver<Maybe<Array<ResolversTypes['MCPTool']>>, ParentType, ContextType>;
   transport?: Resolver<ResolversTypes['MCPTransportType'], ParentType, ContextType>;
   workspace?: Resolver<ResolversTypes['Workspace'], ParentType, ContextType>;

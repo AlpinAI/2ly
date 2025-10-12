@@ -152,6 +152,7 @@ export type McpTool = {
 };
 
 export enum McpTransportType {
+  Sse = 'SSE',
   Stdio = 'STDIO',
   Stream = 'STREAM'
 }

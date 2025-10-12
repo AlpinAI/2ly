@@ -33,7 +33,6 @@
 
 import { create } from 'zustand';
 import { devtools, persist } from 'zustand/middleware';
-import { shallow } from 'zustand/shallow';
 
 /**
  * UI State Interface
@@ -153,44 +152,32 @@ export const useUIStore = create<UIState>()(
  * ```
  */
 export const useDeployModal = () =>
-  useUIStore(
-    (state) => ({
-      open: state.deployModalOpen,
-      setOpen: state.setDeployModalOpen,
-    }),
-    shallow,
-  );
+  useUIStore((state) => ({
+    open: state.deployModalOpen,
+    setOpen: state.setDeployModalOpen,
+  }));
 
 export const useToolFilters = () =>
-  useUIStore(
-    (state) => ({
-      category: state.toolCategoryFilter,
-      setCategory: state.setToolCategoryFilter,
-      search: state.toolSearchQuery,
-      setSearch: state.setToolSearchQuery,
-      sortBy: state.toolSortBy,
-      setSortBy: state.setToolSortBy,
-      reset: state.resetFilters,
-    }),
-    shallow,
-  );
+  useUIStore((state) => ({
+    category: state.toolCategoryFilter,
+    setCategory: state.setToolCategoryFilter,
+    search: state.toolSearchQuery,
+    setSearch: state.setToolSearchQuery,
+    sortBy: state.toolSortBy,
+    setSortBy: state.setToolSortBy,
+    reset: state.resetFilters,
+  }));
 
 export const useNavigation = () =>
-  useUIStore(
-    (state) => ({
-      activeSection: state.activeSection,
-      setActiveSection: state.setActiveSection,
-      activeSubSection: state.activeSubSection,
-      setActiveSubSection: state.setActiveSubSection,
-    }),
-    shallow,
-  );
+  useUIStore((state) => ({
+    activeSection: state.activeSection,
+    setActiveSection: state.setActiveSection,
+    activeSubSection: state.activeSubSection,
+    setActiveSubSection: state.setActiveSubSection,
+  }));
 
 export const useAddToolWorkflow = () =>
-  useUIStore(
-    (state) => ({
-      open: state.addToolWorkflowOpen,
-      setOpen: state.setAddToolWorkflowOpen,
-    }),
-    shallow,
-  );
+  useUIStore((state) => ({
+    open: state.addToolWorkflowOpen,
+    setOpen: state.setAddToolWorkflowOpen,
+  }));
