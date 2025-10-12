@@ -17,6 +17,7 @@ import { useEffect, useState, useRef } from 'react';
 import { X, ChevronLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { MCPServerBrowser } from './MCPServerBrowser';
+import { MCPServerConfigure } from './MCPServerConfigure';
 import type { SubscribeMcpRegistriesSubscription } from '@/graphql/generated/graphql';
 
 // Extract server type
@@ -304,24 +305,22 @@ export function AddToolWorkflow({ isOpen, onClose }: AddToolWorkflowProps) {
             <MCPServerBrowser onConfigure={handleServerConfigure} />
           </div>
 
-          {/* Step 3: Configuration (Placeholder for now) */}
+          {/* Step 3: Configuration */}
           <div className="flex-shrink-0 w-full overflow-y-auto">
-            <div className="p-6 max-w-4xl mx-auto">
-              <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-6">
-                <h4 className="text-lg font-semibold text-yellow-900 dark:text-yellow-100 mb-2">
-                  Configuration Coming Soon
-                </h4>
-                <p className="text-sm text-yellow-800 dark:text-yellow-200">
-                  The server configuration flow will be implemented in the next step.
-                </p>
-                {selectedServer && (
-                  <div className="mt-4 text-sm text-yellow-800 dark:text-yellow-200">
-                    <p className="font-medium">Selected Server:</p>
-                    <p>{selectedServer.title || selectedServer.name}</p>
-                  </div>
-                )}
+            {selectedServer ? (
+              <MCPServerConfigure selectedServer={selectedServer} onBack={handleBack} onSuccess={onClose} />
+            ) : (
+              <div className="p-6 max-w-4xl mx-auto">
+                <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-6">
+                  <h4 className="text-lg font-semibold text-yellow-900 dark:text-yellow-100 mb-2">
+                    No Server Selected
+                  </h4>
+                  <p className="text-sm text-yellow-800 dark:text-yellow-200">
+                    Please go back and select a server to configure.
+                  </p>
+                </div>
               </div>
-            </div>
+            )}
           </div>
         </div>
       </div>
