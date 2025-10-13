@@ -27,18 +27,18 @@ import { MCPServerCard } from './MCPServerCard';
 import type { SubscribeMcpRegistriesSubscription } from '@/graphql/generated/graphql';
 
 // Extract server type
-type MCPRegistryUpstreamServer = NonNullable<
+type MCPRegistryServer = NonNullable<
   NonNullable<SubscribeMcpRegistriesSubscription['mcpRegistries']>[number]['servers']
 >[number];
 
 export interface ServerVersionGroup {
   name: string;
-  latestVersion: MCPRegistryUpstreamServer;
-  olderVersions: MCPRegistryUpstreamServer[];
+  latestVersion: MCPRegistryServer;
+  olderVersions: MCPRegistryServer[];
 }
 
 interface MCPServerBrowserProps {
-  onConfigure: (server: MCPRegistryUpstreamServer) => void;
+  onConfigure: (server: MCPRegistryServer) => void;
 }
 
 const TRANSPORT_TYPES = ['All', 'STDIO', 'SSE', 'STREAM'];
@@ -47,7 +47,7 @@ const ITEMS_PER_PAGE = 20;
 /**
  * Parse _meta JSON and check if this is the latest version
  */
-const isLatestVersion = (server: MCPRegistryUpstreamServer): boolean => {
+const isLatestVersion = (server: MCPRegistryServer): boolean => {
   try {
     if (!server._meta) return false;
     const meta = JSON.parse(server._meta);
@@ -60,7 +60,7 @@ const isLatestVersion = (server: MCPRegistryUpstreamServer): boolean => {
 /**
  * Parse _meta JSON and check if this is the active version
  */
-const isActive = (server: MCPRegistryUpstreamServer): boolean => {
+const isActive = (server: MCPRegistryServer): boolean => {
   try {
     if (!server._meta) return false;
     const meta = JSON.parse(server._meta);
@@ -73,7 +73,7 @@ const isActive = (server: MCPRegistryUpstreamServer): boolean => {
 /**
  * Group servers by name, separating latest from older versions
  */
-const groupServersByName = (servers: MCPRegistryUpstreamServer[]): ServerVersionGroup[] => {
+const groupServersByName = (servers: MCPRegistryServer[]): ServerVersionGroup[] => {
   const groups = new Map<string, ServerVersionGroup>();
 
   for (const server of servers) {

@@ -81,7 +81,7 @@ export type McpRegistry = {
   id: Scalars['ID']['output'];
   lastSyncAt: Maybe<Scalars['Date']['output']>;
   name: Scalars['String']['output'];
-  servers: Maybe<Array<McpRegistryUpstreamServer>>;
+  servers: Maybe<Array<McpRegistryServer>>;
   upstreamUrl: Scalars['String']['output'];
   workspace: Workspace;
 };
@@ -91,8 +91,8 @@ export type McpRegistry2lyMetadata = {
   registryVersion: Scalars['String']['output'];
 };
 
-export type McpRegistryUpstreamServer = {
-  __typename: 'MCPRegistryUpstreamServer';
+export type McpRegistryServer = {
+  __typename: 'MCPRegistryServer';
   _meta: Maybe<Scalars['String']['output']>;
   createdAt: Scalars['Date']['output'];
   description: Scalars['String']['output'];
@@ -559,21 +559,21 @@ export type GetMcpRegistriesQueryVariables = Exact<{
 }>;
 
 
-export type GetMcpRegistriesQuery = { mcpRegistries: Array<{ __typename: 'MCPRegistry', id: string, name: string, upstreamUrl: string, createdAt: Date, lastSyncAt: Date | null, servers: Array<{ __typename: 'MCPRegistryUpstreamServer', id: string, name: string, description: string, title: string, repositoryUrl: string, version: string, packages: string | null, remotes: string | null, _meta: string | null, createdAt: Date, lastSeenAt: Date }> | null }> | null };
+export type GetMcpRegistriesQuery = { mcpRegistries: Array<{ __typename: 'MCPRegistry', id: string, name: string, upstreamUrl: string, createdAt: Date, lastSyncAt: Date | null, servers: Array<{ __typename: 'MCPRegistryServer', id: string, name: string, description: string, title: string, repositoryUrl: string, version: string, packages: string | null, remotes: string | null, _meta: string | null, createdAt: Date, lastSeenAt: Date }> | null }> | null };
 
 export type SubscribeMcpRegistriesSubscriptionVariables = Exact<{
   workspaceId: Scalars['ID']['input'];
 }>;
 
 
-export type SubscribeMcpRegistriesSubscription = { mcpRegistries: Array<{ __typename: 'MCPRegistry', id: string, name: string, upstreamUrl: string, createdAt: Date, lastSyncAt: Date | null, servers: Array<{ __typename: 'MCPRegistryUpstreamServer', id: string, name: string, description: string, title: string, repositoryUrl: string, version: string, packages: string | null, remotes: string | null, _meta: string | null, createdAt: Date, lastSeenAt: Date }> | null }> | null };
+export type SubscribeMcpRegistriesSubscription = { mcpRegistries: Array<{ __typename: 'MCPRegistry', id: string, name: string, upstreamUrl: string, createdAt: Date, lastSyncAt: Date | null, servers: Array<{ __typename: 'MCPRegistryServer', id: string, name: string, description: string, title: string, repositoryUrl: string, version: string, packages: string | null, remotes: string | null, _meta: string | null, createdAt: Date, lastSeenAt: Date }> | null }> | null };
 
 export type SyncUpstreamRegistryMutationVariables = Exact<{
   registryId: Scalars['ID']['input'];
 }>;
 
 
-export type SyncUpstreamRegistryMutation = { syncUpstreamRegistry: { __typename: 'MCPRegistry', id: string, name: string, upstreamUrl: string, lastSyncAt: Date | null, servers: Array<{ __typename: 'MCPRegistryUpstreamServer', id: string, name: string, description: string, title: string, repositoryUrl: string, version: string, packages: string | null, remotes: string | null, _meta: string | null, createdAt: Date, lastSeenAt: Date }> | null } };
+export type SyncUpstreamRegistryMutation = { syncUpstreamRegistry: { __typename: 'MCPRegistry', id: string, name: string, upstreamUrl: string, lastSyncAt: Date | null, servers: Array<{ __typename: 'MCPRegistryServer', id: string, name: string, description: string, title: string, repositoryUrl: string, version: string, packages: string | null, remotes: string | null, _meta: string | null, createdAt: Date, lastSeenAt: Date }> | null } };
 
 export type GetRuntimesQueryVariables = Exact<{ [key: string]: never; }>;
 

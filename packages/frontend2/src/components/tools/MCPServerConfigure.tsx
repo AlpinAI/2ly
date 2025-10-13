@@ -35,12 +35,12 @@ import { SubscribeRuntimesDocument } from '@/graphql/generated/graphql';
 import type { SubscribeMcpRegistriesSubscription } from '@/graphql/generated/graphql';
 
 // Extract server type
-type MCPRegistryUpstreamServer = NonNullable<
+type MCPRegistryServer = NonNullable<
   NonNullable<SubscribeMcpRegistriesSubscription['mcpRegistries']>[number]['servers']
 >[number];
 
 interface MCPServerConfigureProps {
-  selectedServer: MCPRegistryUpstreamServer;
+  selectedServer: MCPRegistryServer;
   onBack: () => void;
   onSuccess?: () => void;
 }

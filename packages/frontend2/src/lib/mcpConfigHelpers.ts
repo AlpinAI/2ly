@@ -5,7 +5,7 @@
  * dynamic form fields. Handles packages (NPM, PyPI, Docker, OCI) and remotes (STREAM, SSE).
  *
  * ARCHITECTURE:
- * - Parse JSON strings from MCPRegistryUpstreamServer
+ * - Parse JSON strings from MCPRegistryServer
  * - Extract configurable fields (env vars, args, headers, query params)
  * - Enrich configurations with user-provided values while preserving schema shape
  * - Support STDIO, SSE, and STREAM transports
@@ -15,7 +15,7 @@ import type { SubscribeMcpRegistriesSubscription } from '@/graphql/generated/gra
 import { mcpRegistry } from '@2ly/common';
 
 // Extract server type
-type MCPRegistryUpstreamServer = NonNullable<
+type MCPRegistryServer = NonNullable<
   NonNullable<SubscribeMcpRegistriesSubscription['mcpRegistries']>[number]['servers']
 >[number];
 
@@ -65,7 +65,7 @@ export function isConfigSupported(option: ConfigOption): boolean {
 /**
  * Extract all configuration options from a server
  */
-export function extractConfigOptions(server: MCPRegistryUpstreamServer): ConfigOption[] {
+export function extractConfigOptions(server: MCPRegistryServer): ConfigOption[] {
   const options: ConfigOption[] = [];
 
   // Parse packages
@@ -293,7 +293,7 @@ export function extractConfigurableFields(option: ConfigOption): ConfigField[] {
  * Returns a config object following the MCP registry Package or Transport schema.
  */
 export function enrichConfigWithValues(
-  server: MCPRegistryUpstreamServer,
+  server: MCPRegistryServer,
   option: ConfigOption,
   fields: ConfigField[],
   customName?: string,
@@ -375,7 +375,7 @@ export function enrichConfigWithValues(
 /**
  * Get display name for a server (prefers title over name)
  */
-export function getServerDisplayName(server: MCPRegistryUpstreamServer): string {
+export function getServerDisplayName(server: MCPRegistryServer): string {
   return server.title || server.name;
 }
 

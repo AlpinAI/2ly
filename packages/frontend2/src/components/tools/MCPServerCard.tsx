@@ -27,19 +27,19 @@ import type { ServerVersionGroup } from './MCPServerBrowser';
 import type { SubscribeMcpRegistriesSubscription } from '@/graphql/generated/graphql';
 
 // Extract the server type from the subscription
-type MCPRegistryUpstreamServer = NonNullable<
+type MCPRegistryServer = NonNullable<
   NonNullable<SubscribeMcpRegistriesSubscription['mcpRegistries']>[number]['servers']
 >[number];
 
 interface MCPServerCardProps {
   serverGroup: ServerVersionGroup;
-  onConfigure: (server: MCPRegistryUpstreamServer) => void;
+  onConfigure: (server: MCPRegistryServer) => void;
 }
 
 /**
  * Extracts transport type from packages or remotes JSON
  */
-const getTransportType = (server: MCPRegistryUpstreamServer): string => {
+const getTransportType = (server: MCPRegistryServer): string => {
   try {
     // Try packages first
     if (server.packages) {
@@ -64,7 +64,7 @@ const getTransportType = (server: MCPRegistryUpstreamServer): string => {
 /**
  * Gets display name, preferring title over name
  */
-const getDisplayName = (server: MCPRegistryUpstreamServer): string => {
+const getDisplayName = (server: MCPRegistryServer): string => {
   return server.title || server.name;
 };
 

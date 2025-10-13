@@ -13,12 +13,12 @@ import { MCPServerBrowser } from './MCPServerBrowser';
 import type { SubscribeMcpRegistriesSubscription } from '@/graphql/generated/graphql';
 
 // Extract server type
-type MCPRegistryUpstreamServer = NonNullable<
+type MCPRegistryServer = NonNullable<
   NonNullable<SubscribeMcpRegistriesSubscription['mcpRegistries']>[number]['servers']
 >[number];
 
 export function ToolBrowserContent() {
-  const handleConfigure = (server: MCPRegistryUpstreamServer) => {
+  const handleConfigure = (server: MCPRegistryServer) => {
     // For now, just log - full configuration will be implemented next
     console.log('Configure server:', server);
     // TODO: Implement configuration flow

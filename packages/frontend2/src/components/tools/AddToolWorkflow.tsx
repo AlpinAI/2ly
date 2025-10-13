@@ -21,7 +21,7 @@ import { MCPServerConfigure } from './MCPServerConfigure';
 import type { SubscribeMcpRegistriesSubscription } from '@/graphql/generated/graphql';
 
 // Extract server type
-type MCPRegistryUpstreamServer = NonNullable<
+type MCPRegistryServer = NonNullable<
   NonNullable<SubscribeMcpRegistriesSubscription['mcpRegistries']>[number]['servers']
 >[number];
 
@@ -78,7 +78,7 @@ export function AddToolWorkflow({ isOpen, onClose }: AddToolWorkflowProps) {
   const [topOffset, setTopOffset] = useState(0);
   const [currentStep, setCurrentStep] = useState<WorkflowStep>('selection');
   const [selectedCategory, setSelectedCategory] = useState<ToolCategory | null>(null);
-  const [selectedServer, setSelectedServer] = useState<MCPRegistryUpstreamServer | null>(null);
+  const [selectedServer, setSelectedServer] = useState<MCPRegistryServer | null>(null);
 
   const panelRef = useRef<HTMLDivElement>(null);
   const animationTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -181,7 +181,7 @@ export function AddToolWorkflow({ isOpen, onClose }: AddToolWorkflowProps) {
     }
   };
 
-  const handleServerConfigure = (server: MCPRegistryUpstreamServer) => {
+  const handleServerConfigure = (server: MCPRegistryServer) => {
     setSelectedServer(server);
     setCurrentStep('mcp-config');
   };
