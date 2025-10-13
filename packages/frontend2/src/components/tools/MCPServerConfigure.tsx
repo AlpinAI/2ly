@@ -18,6 +18,7 @@ import { gql } from '@apollo/client';
 import { ExternalLink, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { cn } from '@/lib/utils';
 import { useWorkspaceId } from '@/stores/workspaceStore';
@@ -388,6 +389,21 @@ export function MCPServerConfigure({ selectedServer, onBack, onSuccess }: MCPSer
                 ))}
               </select>
             </div>
+
+            {/* Custom Name Input */}
+            <div className="space-y-2">
+              <Label htmlFor="custom-name">Server Name</Label>
+              <Input
+                id="custom-name"
+                type="text"
+                value={customName}
+                onChange={(e) => setCustomName(e.target.value)}
+                placeholder={serverDisplayName}
+              />
+              <p className="text-xs text-gray-500 dark:text-gray-400">
+                Give this server configuration a meaningful name (defaults to the server&apos;s registry name)
+              </p>
+            </div>
           </div>
 
           {/* Scrollable Form Area */}
@@ -401,14 +417,22 @@ export function MCPServerConfigure({ selectedServer, onBack, onSuccess }: MCPSer
                 <p className="text-xs text-gray-500 dark:text-gray-500">You can test it directly!</p>
               </div>
             ) : (
-              fields.map((field) => (
-                <ConfigFieldInput
-                  key={field.name}
-                  field={field}
-                  value={field.value || ''}
-                  onChange={(value) => handleFieldChange(field.name, value)}
-                />
-              ))
+              <>
+                <div className="pb-2 border-b border-gray-200 dark:border-gray-700">
+                  <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300">Server Configuration</h4>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                    Configure the parameters for this server
+                  </p>
+                </div>
+                {fields.map((field) => (
+                  <ConfigFieldInput
+                    key={field.name}
+                    field={field}
+                    value={field.value || ''}
+                    onChange={(value) => handleFieldChange(field.name, value)}
+                  />
+                ))}
+              </>
             )}
           </div>
 

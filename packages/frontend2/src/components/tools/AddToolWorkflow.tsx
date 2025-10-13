@@ -189,7 +189,7 @@ export function AddToolWorkflow({ isOpen, onClose }: AddToolWorkflowProps) {
   const getStepTitle = (): string => {
     if (currentStep === 'selection') return 'Add Tools';
     if (currentStep === 'mcp-browser') return 'Browse MCP Servers';
-    if (currentStep === 'mcp-config') return `Configure: ${selectedServer?.title || selectedServer?.name}`;
+    if (currentStep === 'mcp-config') return `Configure MCP Server`;
     return 'Add Tools';
   };
 
