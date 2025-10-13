@@ -1,6 +1,4 @@
 import { injectable, inject } from 'inversify';
-import { readFileSync } from 'fs';
-import path from 'path';
 import { DGraphService } from '../services/dgraph.service';
 import { dgraphResolversTypes, mcpRegistry } from '@2ly/common';
 import {
@@ -22,17 +20,6 @@ type UpstreamServer = mcpRegistry.components['schemas']['ServerResponse'];
 @injectable()
 export class RegistryRepository {
   constructor(@inject(DGraphService) private readonly dgraphService: DGraphService) { }
-
-  getDefaultRegistryPath(): string {
-    return path.join(__dirname, '..', 'data', 'mcp-server-catalog.json');
-  }
-
-  async getRegistry(path: string, type: 'local' | 'remote'): Promise<string> {
-    if (type === 'local') {
-      return readFileSync(path, 'utf-8');
-    }
-    return fetch(path).then(res => res.text());
-  }
 
   async createRegistry(workspaceId: string, name: string, upstreamUrl: string): Promise<dgraphResolversTypes.McpRegistry> {
     const now = new Date().toISOString();

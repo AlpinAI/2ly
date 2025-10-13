@@ -19,7 +19,7 @@
     "lint": "npm run lint --workspaces --if-present",
     "typecheck": "npm run typecheck --workspaces --if-present",
     "format": "npm run format --workspaces --if-present",
-    "codegen": "npm run codegen -w @2ly/common",
+    "codegen": "npm run codegen -w @2ly/common && npm run codegen -w @2ly/frontend2",
     "codegen:mcp-registry": "npm run codegen:mcp-registry -w @2ly/common",
     "dev:backend": "npm run dev -w @2ly/backend",
     "dev:frontend": "npm run dev -w @2ly/frontend",

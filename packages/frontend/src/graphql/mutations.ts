@@ -6,11 +6,7 @@ export const CREATE_MCP_SERVER_MUTATION = gql`
     $description: String!
     $repositoryUrl: String!
     $transport: MCPTransportType!
-    $command: String!
-    $args: String!
-    $ENV: String!
-    $serverUrl: String!
-    $headers: String
+    $config: String!
     $workspaceId: ID!
   ) {
     createMCPServer(
@@ -18,11 +14,7 @@ export const CREATE_MCP_SERVER_MUTATION = gql`
       description: $description
       repositoryUrl: $repositoryUrl
       transport: $transport
-      command: $command
-      args: $args
-      ENV: $ENV
-      serverUrl: $serverUrl
-      headers: $headers
+      config: $config
       workspaceId: $workspaceId
     ) {
       id
@@ -30,11 +22,7 @@ export const CREATE_MCP_SERVER_MUTATION = gql`
       description
       repositoryUrl
       transport
-      command
-      args
-      ENV
-      serverUrl
-      headers
+      config
       runOn
     }
   }
@@ -72,11 +60,7 @@ export const UPDATE_MCP_SERVER_MUTATION = gql`
     $description: String!
     $repositoryUrl: String!
     $transport: MCPTransportType!
-    $command: String!
-    $args: String!
-    $ENV: String!
-    $serverUrl: String!
-    $headers: String
+    $config: String!
     $runOn: MCPServerRunOn
   ) {
     updateMCPServer(
@@ -85,11 +69,7 @@ export const UPDATE_MCP_SERVER_MUTATION = gql`
       description: $description
       repositoryUrl: $repositoryUrl
       transport: $transport
-      command: $command
-      args: $args
-      ENV: $ENV
-      serverUrl: $serverUrl
-      headers: $headers
+      config: $config
       runOn: $runOn
     ) {
       id
@@ -97,11 +77,7 @@ export const UPDATE_MCP_SERVER_MUTATION = gql`
       description
       repositoryUrl
       transport
-      command
-      args
-      ENV
-      serverUrl
-      headers
+      config
       runOn
     }
   }
@@ -124,11 +100,7 @@ export const DELETE_MCP_SERVER_MUTATION = gql`
       description
       repositoryUrl
       transport
-      command
-      args
-      ENV
-      serverUrl
-      headers
+      config
       runOn
     }
   }

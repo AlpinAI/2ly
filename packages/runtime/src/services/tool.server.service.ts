@@ -1,12 +1,16 @@
 import { injectable } from 'inversify';
 import pino from 'pino';
-import { Service, dgraphResolversTypes, MCPTool } from '@2ly/common';
+import { Service, dgraphResolversTypes, MCPTool, mcpRegistry } from '@2ly/common';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StdioClientTransport, getDefaultEnvironment } from '@modelcontextprotocol/sdk/client/stdio.js';
 import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/streamableHttp.js';
+import { SSEClientTransport } from '@modelcontextprotocol/sdk/client/sse.js';
 import { Transport } from '@modelcontextprotocol/sdk/shared/transport.js';
 import { Observable, BehaviorSubject } from 'rxjs';
 import { ListRootsRequestSchema, ToolListChangedNotificationSchema } from '@modelcontextprotocol/sdk/types.js';
+
+type ServerPackage = mcpRegistry.components['schemas']['Package'];
+type ServerTransport = mcpRegistry.components['schemas']['Transport'];
 
 @injectable()
 export class ToolServerService extends Service {
@@ -46,44 +50,177 @@ export class ToolServerService extends Service {
       };
     });
 
-    if (this.config.transport === dgraphResolversTypes.McpTransportType.Stdio) {
-      this.logger.info(`Setting STDIO transport with command: ${this.config.command} and args: ${this.config.args}`);
+    // Parse the config field which contains a single Package or Transport object
+    let parsedConfig: ServerPackage | ServerTransport;
+    try {
+      parsedConfig = JSON.parse(this.config.config);
+      this.logger.debug(`Parsed config: ${JSON.stringify(parsedConfig, null, 2)}`);
+    } catch (error) {
+      throw new Error(`Failed to parse config for ${this.config.name}: ${error}`);
+    }
+
+    // STDIO transport: config contains a Package object with packageArguments, environmentVariables, etc.
+    if (this.config.transport === dgraphResolversTypes.McpTransportType.Stdio && 'identifier' in parsedConfig) {
+      this.logger.info(`Setting STDIO transport for ${this.config.name}`);
+
+      // Extract command and args from Package config
+      const identifier = parsedConfig.identifier || '';
+      const packageArgs = parsedConfig.packageArguments || [];
+      const runtimeArgs = parsedConfig.runtimeArguments || [];
+      const envVars = parsedConfig.environmentVariables || [];
+      const registryType = parsedConfig.registryType || '';
+      console.log('identifier', identifier);
+      console.log('registryType', registryType);
+
+      // Validate identifier
+      if (!identifier) {
+        throw new Error(`Package identifier is required for ${this.config.name}`);
+      }
+
+      // Determine base command from registry type
+      let command: string;
+      const supportedTypes = ['npm', 'pypi', 'nuget', 'oci'];
+      console.log('analyzing registry type:', registryType);
+      switch (registryType) {
+        case 'npm':
+          command = 'npx';
+          break;
+        case 'pypi':
+          command = 'uvx';
+          break;
+        case 'nuget':
+          command = 'dnx';
+          break;
+        case 'oci':
+          command = 'docker';
+          break;
+        default:
+          throw new Error(`Unsupported registry type: ${registryType}. Supported types: ${supportedTypes.join(', ')}`);
+      }
+      console.log('command:', command);
+      // Build args array: [runtimeArgs, identifier, packageArgs]
+      const args: string[] = [];
+      console.log('analyzing runtime arguments', runtimeArgs);
+      // Process runtime arguments (before identifier)
+      runtimeArgs.forEach((arg: any) => {
+        if (arg.name) {
+          // Named argument: --name value
+          args.push(`--${arg.name}`);
+          if (arg.value) {
+            args.push(String(arg.value));
+          }
+        } else if (arg.value) {
+          // Positional argument
+          args.push(String(arg.value));
+        }
+      });
+
+      // Add docker 'run' subcommand for OCI containers
+      if (registryType === 'oci') {
+        args.push('run');
+      }
+
+      // Add package identifier
+      // - some package prefix the identifier with npm: -> which must be removed
+      const normalizedIdentifier = identifier.replace(/^npm:/, '');
+      args.push(normalizedIdentifier);
+      console.log('analyzing package arguments', packageArgs);
+      // Process package arguments (after identifier)
+      packageArgs.forEach((arg: any) => {
+        if (arg.type === 'named' && arg.name) {
+          // Named argument: --name value
+          args.push(`--${arg.name}`);
+          if (arg.value) {
+            args.push(String(arg.value));
+          } else if (arg.valueHint) {
+            this.logger.warn(`Missing value for named argument --${arg.name}, expected: ${arg.valueHint}`);
+          }
+        } else if (arg.value) {
+          // Positional argument (default or explicit type="positional")
+          args.push(String(arg.value));
+        } else if (arg.isRequired && arg.valueHint) {
+          this.logger.warn(`Missing required positional argument: ${arg.valueHint}`);
+        }
+      });
+      console.log('args', args);
+      // Build environment variables
       const defaultEnv = getDefaultEnvironment();
-      this.logger.debug(`Default environment: ${JSON.stringify(defaultEnv, null, 2)}`);
+      const env = envVars.reduce(
+        (acc: Record<string, string>, envVar: any) => {
+          if (envVar.name && envVar.value) {
+            acc[envVar.name] = envVar.value;
+          }
+          return acc;
+        },
+        { ...defaultEnv },
+      );
+
+      console.log(`STDIO command: ${command}, args: ${args.join(' ')}`);
+      console.log(`Environment: ${JSON.stringify(env, null, 2)}`);
+
+      this.logger.info(`STDIO command: ${command}, args: ${args.join(' ')}`);
+      this.logger.debug(`Environment: ${JSON.stringify(env, null, 2)}`);
 
       this.transport = new StdioClientTransport({
-        command: this.config.command,
-        args: this.config.args.split(' '),
-        env: this.config.ENV.split(' ').reduce((acc, curr) => {
-          const [key, value] = curr.split('=');
-          acc[key] = value;
-          return acc;
-        }, defaultEnv),
+        command,
+        args,
+        env,
       });
-    } else if (this.config.transport === dgraphResolversTypes.McpTransportType.Stream) {
-      this.logger.info(`Setting Streamable HTTP transport with server URL: ${this.config.serverUrl}`);
-      this.logger.debug(`Headers: ${this.config.headers}`);
+    }
+    // SSE transport: config contains a Transport object with type="sse", url, headers
+    else if (this.config.transport === dgraphResolversTypes.McpTransportType.Sse) {
+      this.logger.info(`Setting SSE transport for ${this.config.name}`);
 
-      const parseHeaders = (headers: string) => {
-        return headers.split('\n').reduce((acc, curr) => {
-          const words = curr.trim().split(': ');
-          if (words.length === 0) {
-            return acc;
-          }
-          acc.set(words[0].replace(/:$/, ''), words.slice(1).join(' '));
-          return acc;
-        }, new Map<string, string>());
+      const url = parsedConfig.url || '';
+      const headers = parsedConfig.headers || [];
+
+      // Build headers map
+      const headerMap = new Map<string, string>();
+      headers.forEach((header: any) => {
+        if (header.name && header.value) {
+          headerMap.set(header.name, header.value);
+        }
+      });
+
+      this.logger.info(`SSE URL: ${url}`);
+      this.logger.debug(`Headers: ${JSON.stringify(Array.from(headerMap.entries()))}`);
+
+      // SSEClientTransport options
+      const options = {
+        requestInit: {
+          headers: Object.fromEntries(headerMap),
+        },
       };
+
+      this.transport = new SSEClientTransport(new URL(url), options);
+    }
+    // STREAM transport: config contains a Transport object with type="streamableHttp", url, headers
+    else if (this.config.transport === dgraphResolversTypes.McpTransportType.Stream) {
+      this.logger.info(`Setting STREAM transport for ${this.config.name}`);
+
+      const url = parsedConfig.url || '';
+      const headers = parsedConfig.headers || [];
+
+      // Build headers map
+      const headerMap = new Map<string, string>();
+      headers.forEach((header: any) => {
+        if (header.name && header.value) {
+          headerMap.set(header.name, header.value);
+        }
+      });
+
+      this.logger.info(`STREAM URL: ${url}`);
+      this.logger.debug(`Headers: ${JSON.stringify(Array.from(headerMap.entries()))}`);
 
       const requestInit: RequestInit = {
-        headers: Object.fromEntries(parseHeaders(this.config.headers ?? '')),
+        headers: Object.fromEntries(headerMap),
       };
 
-      this.transport = new StreamableHTTPClientTransport(new URL(this.config.serverUrl), {
+      this.transport = new StreamableHTTPClientTransport(new URL(url), {
         requestInit,
       });
     } else {
-      throw new Error(`Unknown MCP server type: ${this.config.transport}, only STDIO and STREAM are supported`);
+      throw new Error(`Unknown MCP server type: ${this.config.transport}, only STDIO, SSE and STREAM are supported`);
     }
   }
 
@@ -167,7 +304,7 @@ export class ToolServerService extends Service {
   }
 
   getConfigSignature(): string {
-    return `${this.config.transport} ${this.config.command} ${this.config.args} ${this.config.ENV} ${this.config.serverUrl}`;
+    return `${this.config.transport} ${this.config.config}`;
   }
 
   updateRoots(roots: { name: string; uri: string }[]) {

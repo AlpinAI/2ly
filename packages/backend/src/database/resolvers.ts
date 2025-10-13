@@ -48,23 +48,7 @@ export const resolvers = (container: Container = defaultContainer): apolloResolv
   return {
     Date: GraphQLDateTime,
     Query: {
-      registry: async () => {
-        if (!cachedRegistryContent) {
-          try {
-            cachedRegistryContent = await registryRepository.getRegistry(registryRepository.getDefaultRegistryPath(), 'local');
-          } catch (error: unknown) {
-            throw new Error('REGISTRY_READ_ERROR', { cause: error instanceof Error ? error : new Error(String(error)) });
-          }
-        }
-        const registry = JSON.parse(cachedRegistryContent);
-        registry.servers = registry.servers.map((server: apolloResolversTypes.McpRegistryServer) => {
-          return {
-            ...server,
-            config: server.config ? JSON.stringify(server.config) : '{}',
-          };
-        });
-        return registry;
-      },
+
       workspace: async () => {
         return workspaceRepository.findAll();
       },
@@ -75,7 +59,9 @@ export const resolvers = (container: Container = defaultContainer): apolloResolv
         try {
           return await mcpAutoConfigService.findMCPServerForProblem(query, 3);
         } catch (error: unknown) {
-          throw new Error('SEARCH_MCP_SERVERS_ERROR', { cause: error instanceof Error ? error : new Error(String(error)) });
+          throw new Error('SEARCH_MCP_SERVERS_ERROR', {
+            cause: error instanceof Error ? error : new Error(String(error)),
+          });
         }
       },
       fetchMCPServerConfig: async (_parent: unknown, { repositoryUrl }: { repositoryUrl: string }) => {
@@ -111,11 +97,7 @@ export const resolvers = (container: Container = defaultContainer): apolloResolv
 
       updateMCPServerRunOn: async (
         _parent: unknown,
-        {
-          mcpServerId,
-          runOn,
-          runtimeId,
-        }: { mcpServerId: string; runOn: MCP_SERVER_RUN_ON; runtimeId?: string | null },
+        { mcpServerId, runOn, runtimeId }: { mcpServerId: string; runOn: MCP_SERVER_RUN_ON; runtimeId?: string | null },
       ) => {
         await mcpServerRepository.updateRunOn(mcpServerId, runOn);
         if (runOn !== 'EDGE') {
@@ -133,23 +115,15 @@ export const resolvers = (container: Container = defaultContainer): apolloResolv
           description,
           repositoryUrl,
           transport,
-          command,
-          args,
-          ENV,
-          serverUrl,
-          headers,
+          config,
           runOn,
           workspaceId,
         }: {
           name: string;
           description: string;
           repositoryUrl: string;
-          transport: 'STREAM' | 'STDIO';
-          command: string;
-          args: string;
-          ENV: string;
-          serverUrl: string;
-          headers?: string | null;
+          transport: 'STREAM' | 'STDIO' | 'SSE';
+          config: string;
           runOn?: MCP_SERVER_RUN_ON | null;
           workspaceId: string;
         },
@@ -159,11 +133,7 @@ export const resolvers = (container: Container = defaultContainer): apolloResolv
           description,
           repositoryUrl,
           transport,
-          command,
-          args,
-          ENV,
-          serverUrl,
-          headers ?? null,
+          config,
           runOn ?? null,
           workspaceId,
         );
@@ -255,39 +225,19 @@ export const resolvers = (container: Container = defaultContainer): apolloResolv
           description,
           repositoryUrl,
           transport,
-          command,
-          args,
-          ENV,
-          serverUrl,
-          headers,
+          config,
           runOn,
         }: {
           id: string;
           name: string;
           description: string;
           repositoryUrl: string;
-          transport: 'STREAM' | 'STDIO';
-          command: string;
-          args: string;
-          ENV: string;
-          serverUrl: string;
-          headers?: string | null;
+          transport: 'STREAM' | 'STDIO' | 'SSE';
+          config: string;
           runOn?: MCP_SERVER_RUN_ON | null;
         },
       ) => {
-        return mcpServerRepository.update(
-          id,
-          name,
-          description,
-          repositoryUrl,
-          transport,
-          command,
-          args,
-          ENV,
-          serverUrl,
-          headers ?? null,
-          runOn ?? null,
-        );
+        return mcpServerRepository.update(id, name, description, repositoryUrl, transport, config, runOn ?? null);
       },
       deleteMCPServer: async (_parent: unknown, { id }: { id: string }) => {
         return mcpServerRepository.delete(id);
@@ -311,23 +261,17 @@ export const resolvers = (container: Container = defaultContainer): apolloResolv
         await workspaceRepository.unsetDefaultTestingRuntime(id);
         return workspaceRepository.findById(id);
       },
-      initSystem: async (
-        _parent: unknown,
-        { adminPassword, email }: { adminPassword: string; email: string },
-      ) => {
+      initSystem: async (_parent: unknown, { adminPassword, email }: { adminPassword: string; email: string }) => {
         return systemRepository.initSystem(adminPassword, email);
       },
-      callMCPTool: async (
-        _parent: unknown,
-        { toolId, input }: { toolId: string; input: string },
-      ) => {
+      callMCPTool: async (_parent: unknown, { toolId, input }: { toolId: string; input: string }) => {
         try {
           return runtimeRepository.callMCPTool(toolId, input);
         } catch (error: unknown) {
           return {
             success: false,
             result: 'Failed to call MCP tool: ' + (error instanceof Error ? error.message : String(error)),
-          }
+          };
         }
       },
       createMCPRegistry: async (

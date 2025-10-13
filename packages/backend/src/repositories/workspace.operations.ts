@@ -98,10 +98,7 @@ export const QUERY_WORKSPACE_WITH_MCP_SERVERS = gql`
         description
         repositoryUrl
         transport
-        command
-        args
-        ENV
-        serverUrl
+        config
         runOn
         tools {
           id

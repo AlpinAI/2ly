@@ -13,12 +13,11 @@
  */
 
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
-import { useMutation, useSubscription, useQuery } from '@apollo/client/react';
+import { useMutation, useSubscription } from '@apollo/client/react';
 import { gql } from '@apollo/client';
 import { ExternalLink, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
-import { Input } from '@/components/ui/input';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { cn } from '@/lib/utils';
 import { useWorkspaceId } from '@/stores/workspaceStore';
@@ -27,12 +26,12 @@ import { ConfigFieldInput } from './ConfigFieldInput';
 import {
   extractConfigOptions,
   extractConfigurableFields,
-  mapToServerInput,
+  enrichConfigWithValues,
   getServerDisplayName,
   validateFields,
   type ConfigField,
 } from '@/lib/mcpConfigHelpers';
-import { GetRuntimesDocument } from '@/graphql/generated/graphql';
+import { SubscribeRuntimesDocument } from '@/graphql/generated/graphql';
 import type { SubscribeMcpRegistriesSubscription } from '@/graphql/generated/graphql';
 
 // Extract server type
@@ -56,11 +55,7 @@ const CREATE_MCP_SERVER = gql`
     $description: String!
     $repositoryUrl: String!
     $transport: MCPTransportType!
-    $command: String!
-    $args: String!
-    $ENV: String!
-    $serverUrl: String!
-    $headers: String
+    $config: String!
   ) {
     createMCPServer(
       workspaceId: $workspaceId
@@ -68,11 +63,7 @@ const CREATE_MCP_SERVER = gql`
       description: $description
       repositoryUrl: $repositoryUrl
       transport: $transport
-      command: $command
-      args: $args
-      ENV: $ENV
-      serverUrl: $serverUrl
-      headers: $headers
+      config: $config
     ) {
       id
       name
@@ -87,22 +78,9 @@ const CREATE_MCP_SERVER = gql`
   }
 `;
 
-const UPDATE_MCP_SERVER_RUNTIME = gql`
-  mutation LinkMCPServerToRuntime($mcpServerId: ID!, $runtimeId: ID!) {
-    linkMCPServerToRuntime(mcpServerId: $mcpServerId, runtimeId: $runtimeId) {
-      id
-      runOn
-      runtime {
-        id
-        name
-      }
-    }
-  }
-`;
-
-const UNLINK_MCP_SERVER_RUNTIME = gql`
-  mutation UnlinkMCPServerFromRuntime($mcpServerId: ID!) {
-    unlinkMCPServerFromRuntime(mcpServerId: $mcpServerId) {
+const UPDATE_MCP_SERVER_RUN_ON = gql`
+  mutation UpdateMCPServerRunOn($mcpServerId: ID!, $runOn: MCPServerRunOn!, $runtimeId: ID) {
+    updateMCPServerRunOn(mcpServerId: $mcpServerId, runOn: $runOn, runtimeId: $runtimeId) {
       id
       runOn
       runtime {
@@ -135,6 +113,10 @@ const SUBSCRIBE_MCP_SERVERS = gql`
 `;
 
 export function MCPServerConfigure({ selectedServer, onBack, onSuccess }: MCPServerConfigureProps) {
+  console.log('selectedServer', selectedServer);
+  if (selectedServer.packages) console.log('packages', JSON.parse(selectedServer.packages));
+  if (selectedServer.remotes) console.log('remotes', JSON.parse(selectedServer.remotes));
+
   const workspaceId = useWorkspaceId();
 
   // Config state
@@ -155,12 +137,12 @@ export function MCPServerConfigure({ selectedServer, onBack, onSuccess }: MCPSer
 
   // GraphQL mutations
   const [createServer] = useMutation(CREATE_MCP_SERVER);
-  const [linkServerToRuntime] = useMutation(UPDATE_MCP_SERVER_RUNTIME);
-  const [unlinkServerFromRuntime] = useMutation(UNLINK_MCP_SERVER_RUNTIME);
+  const [updateServerRunOn] = useMutation(UPDATE_MCP_SERVER_RUN_ON);
   const [deleteServer] = useMutation(DELETE_MCP_SERVER);
 
-  // Get runtimes
-  const { data: runtimesData } = useQuery(GetRuntimesDocument, {
+  // Subscribe to runtimes for real-time updates
+  const { data: runtimesData } = useSubscription(SubscribeRuntimesDocument, {
+    variables: { workspaceId: workspaceId || '' },
     skip: !workspaceId,
   });
 
@@ -180,9 +162,9 @@ export function MCPServerConfigure({ selectedServer, onBack, onSuccess }: MCPSer
     return configOptions.find((opt) => opt.id === selectedOptionId);
   }, [configOptions, selectedOptionId]);
 
-  // Get runtimes list
+  // Get runtimes list from subscription
   const runtimes = useMemo(() => {
-    return runtimesData?.workspace?.flatMap((ws) => ws.runtimes || []) || [];
+    return runtimesData?.runtimes || [];
   }, [runtimesData]);
 
   // Get default runtime
@@ -240,16 +222,17 @@ export function MCPServerConfigure({ selectedServer, onBack, onSuccess }: MCPSer
       setDiscoveredTools(server.tools.map((t: any) => ({ id: t.id, name: t.name })));
       setTestStatus('success');
 
-      // Unlink server from runtime (makes it global)
-      unlinkServerFromRuntime({
+      // Set server to GLOBAL mode (makes it available workspace-wide)
+      updateServerRunOn({
         variables: {
           mcpServerId: testServerId,
+          runOn: 'GLOBAL',
         },
       }).catch((err) => {
-        console.error('Failed to persist server:', err);
+        console.error('Failed to set server to GLOBAL:', err);
       });
     }
-  }, [serversData, testServerId, testStatus, unlinkServerFromRuntime]);
+  }, [serversData, testServerId, testStatus, updateServerRunOn]);
 
   // Handle field value change
   const handleFieldChange = useCallback((fieldName: string, value: string) => {
@@ -272,8 +255,8 @@ export function MCPServerConfigure({ selectedServer, onBack, onSuccess }: MCPSer
     setDiscoveredTools([]);
 
     try {
-      // Map config to server input
-      const input = mapToServerInput(selectedServer, selectedOption, fields, customName);
+      // Enrich config with user-provided values
+      const input = enrichConfigWithValues(selectedServer, selectedOption, fields, customName);
 
       // Create server
       const { data } = await createServer({
@@ -283,11 +266,7 @@ export function MCPServerConfigure({ selectedServer, onBack, onSuccess }: MCPSer
           description: input.description,
           repositoryUrl: input.repositoryUrl,
           transport: input.transport,
-          command: input.command,
-          args: input.args,
-          ENV: input.ENV,
-          serverUrl: input.serverUrl,
-          headers: input.headers,
+          config: input.config,
         },
       });
 
@@ -298,10 +277,11 @@ export function MCPServerConfigure({ selectedServer, onBack, onSuccess }: MCPSer
 
       setTestServerId(serverId);
 
-      // Link to selected runtime for testing
-      await linkServerToRuntime({
+      // Set server to run on EDGE with selected runtime for testing
+      await updateServerRunOn({
         variables: {
           mcpServerId: serverId,
+          runOn: 'EDGE',
           runtimeId: selectedRuntimeId,
         },
       });
@@ -328,7 +308,7 @@ export function MCPServerConfigure({ selectedServer, onBack, onSuccess }: MCPSer
     fields,
     customName,
     createServer,
-    linkServerToRuntime,
+    updateServerRunOn,
     deleteServer,
   ]);
 

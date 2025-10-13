@@ -23,9 +23,10 @@ export interface SeedData {
   }>;
   mcpServers?: Array<{
     name: string;
+    description?: string;
+    repositoryUrl?: string;
     transport: 'STDIO' | 'SSE' | 'STREAM';
-    command?: string;
-    args?: string[];
+    config: string; // JSON string containing Package or Transport config
   }>;
 }
 
@@ -54,10 +55,7 @@ function getApiUrl(): string {
 /**
  * Execute a GraphQL query against the backend
  */
-export async function graphql<T = any>(
-  query: string,
-  variables?: Record<string, any>
-): Promise<T> {
+export async function graphql<T = any>(query: string, variables?: Record<string, any>): Promise<T> {
   const response = await fetch(`${getApiUrl()}/graphql`, {
     method: 'POST',
     headers: {
@@ -144,24 +142,33 @@ export async function seedDatabase(data: SeedData): Promise<void> {
       const mutation = `
         mutation CreateMCPServer(
           $name: String!
-          $transport: MCPTransport!
-          $command: String
-          $args: [String!]
+          $description: String!
+          $repositoryUrl: String!
+          $transport: MCPTransportType!
+          $config: String!
+          $workspaceId: ID!
         ) {
-          addMCPServer(input: {
+          createMCPServer(
             name: $name
+            description: $description
+            repositoryUrl: $repositoryUrl
             transport: $transport
-            command: $command
-            args: $args
-          }) {
-            mCPServer {
-              id
-              name
-            }
+            config: $config
+            workspaceId: $workspaceId
+          ) {
+            id
+            name
           }
         }
       `;
-      await graphql(mutation, server);
+      await graphql(mutation, {
+        name: server.name,
+        description: server.description || '',
+        repositoryUrl: server.repositoryUrl || 'https://github.com/example/server',
+        transport: server.transport,
+        config: server.config,
+        workspaceId: 'default', // TODO: Get actual workspace ID
+      });
     }
   }
 
@@ -272,15 +279,32 @@ export const seedPresets = {
     mcpServers: [
       {
         name: 'Filesystem Server',
+        description: 'File system operations',
+        repositoryUrl: 'https://github.com/modelcontextprotocol/server-filesystem',
         transport: 'STDIO' as const,
-        command: 'npx',
-        args: ['-y', '@modelcontextprotocol/server-filesystem', '/tmp'],
+        config: JSON.stringify({
+          identifier: 'npm:@modelcontextprotocol/server-filesystem',
+          packageArguments: [
+            {
+              name: 'path',
+              type: 'string',
+              value: '/tmp',
+              isRequired: true,
+            },
+          ],
+          environmentVariables: [],
+        }),
       },
       {
         name: 'GitHub Server',
+        description: 'GitHub integration',
+        repositoryUrl: 'https://github.com/modelcontextprotocol/server-github',
         transport: 'STDIO' as const,
-        command: 'npx',
-        args: ['-y', '@modelcontextprotocol/server-github'],
+        config: JSON.stringify({
+          identifier: 'npm:@modelcontextprotocol/server-github',
+          packageArguments: [],
+          environmentVariables: [],
+        }),
       },
     ],
   },
@@ -304,9 +328,21 @@ export const seedPresets = {
     mcpServers: [
       {
         name: 'Filesystem Server',
+        description: 'File system operations',
+        repositoryUrl: 'https://github.com/modelcontextprotocol/server-filesystem',
         transport: 'STDIO' as const,
-        command: 'npx',
-        args: ['-y', '@modelcontextprotocol/server-filesystem', '/tmp'],
+        config: JSON.stringify({
+          identifier: 'npm:@modelcontextprotocol/server-filesystem',
+          packageArguments: [
+            {
+              name: 'path',
+              type: 'string',
+              value: '/tmp',
+              isRequired: true,
+            },
+          ],
+          environmentVariables: [],
+        }),
       },
     ],
   },

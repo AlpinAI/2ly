@@ -1,19 +1,20 @@
 /**
  * useRuntimes Hook
  *
- * WHY: Wrapper around Apollo Client useQuery with typed document node
+ * WHY: Wrapper around Apollo Client useSubscription with typed document node
+ * - Real-time runtime updates via GraphQL subscription
  * - Automatic error handling
  * - Loading states
  * - Data transformation
  * - Integration with Zustand filters (if needed)
  *
- * APOLLO v4 PATTERN: Use typed document nodes with Apollo's useQuery hook
+ * APOLLO v4 PATTERN: Use typed document nodes with Apollo's useSubscription hook
  * Apply this pattern to other entities (agents, tools, etc.)
  *
  * USAGE:
  * ```tsx
  * function RuntimesList() {
- *   const { runtimes, loading, error, refetch } = useRuntimes();
+ *   const { runtimes, loading, error } = useRuntimes();
  *
  *   if (loading) return <Spinner />;
  *   if (error) return <Error message={error.message} />;
@@ -23,28 +24,28 @@
  * ```
  */
 
-import { useQuery } from '@apollo/client/react';
-import { GetRuntimesDocument } from '@/graphql/generated/graphql';
+import { useSubscription } from '@apollo/client/react';
+import { SubscribeRuntimesDocument } from '@/graphql/generated/graphql';
+import { useWorkspaceId } from '@/stores/workspaceStore';
 
 export function useRuntimes() {
-  // WHY: Use Apollo Client's useQuery with typed document node
-  const { data, loading, error, refetch } = useQuery(GetRuntimesDocument, {
-    // WHY: Poll every 30 seconds for real-time-ish updates
-    // TODO: Replace with subscription when backend implements it
-    pollInterval: 30_000,
+  const workspaceId = useWorkspaceId();
 
-    // WHY: Show cached data immediately while fetching fresh data
-    fetchPolicy: 'cache-and-network',
+  // WHY: Use Apollo Client's useSubscription for real-time updates
+  // No more polling! Backend pushes changes immediately.
+  const { data, loading, error } = useSubscription(SubscribeRuntimesDocument, {
+    variables: { workspaceId: workspaceId || '' },
+    skip: !workspaceId,
   });
 
-  // WHY: Transform/flatten the data structure for easier consumption
-  const runtimes = data?.workspace?.flatMap((ws: any) => ws.runtimes ?? []) ?? [];
+  // WHY: Extract runtimes from subscription data
+  const runtimes = data?.runtimes ?? [];
 
   // WHY: Calculate aggregate stats
   const stats = {
     total: runtimes.length,
-    active: runtimes.filter((r: any) => r.status === 'ACTIVE').length,
-    inactive: runtimes.filter((r: any) => r.status === 'INACTIVE').length,
+    active: runtimes.filter((r) => r.status === 'ACTIVE').length,
+    inactive: runtimes.filter((r) => r.status === 'INACTIVE').length,
   };
 
   return {
@@ -52,6 +53,5 @@ export function useRuntimes() {
     stats,
     loading,
     error,
-    refetch,
   };
 }

@@ -86,16 +86,11 @@ export type McpRegistry2lyMetadata = {
 };
 
 export type McpRegistryServer = {
-  ENV?: Maybe<Scalars['String']['output']>;
   _2ly: McpRegistry2lyMetadata;
-  args?: Maybe<Scalars['String']['output']>;
-  command?: Maybe<Scalars['String']['output']>;
   config: Scalars['String']['output'];
   description: Scalars['String']['output'];
-  headers?: Maybe<Scalars['String']['output']>;
   name: Scalars['String']['output'];
   repositoryUrl: Scalars['String']['output'];
-  serverUrl?: Maybe<Scalars['String']['output']>;
   transport: McpTransportType;
 };
 
@@ -106,7 +101,7 @@ export type McpRegistryUpstreamServer = {
   id: Scalars['ID']['output'];
   lastSeenAt: Scalars['Date']['output'];
   name: Scalars['String']['output'];
-  packages: Scalars['String']['output'];
+  packages?: Maybe<Scalars['String']['output']>;
   registry: McpRegistry;
   remotes?: Maybe<Scalars['String']['output']>;
   repositoryUrl: Scalars['String']['output'];
@@ -115,17 +110,13 @@ export type McpRegistryUpstreamServer = {
 };
 
 export type McpServer = {
-  ENV: Scalars['String']['output'];
-  args: Scalars['String']['output'];
-  command: Scalars['String']['output'];
+  config: Scalars['String']['output'];
   description: Scalars['String']['output'];
-  headers?: Maybe<Scalars['String']['output']>;
   id: Scalars['ID']['output'];
   name: Scalars['String']['output'];
   repositoryUrl: Scalars['String']['output'];
   runOn?: Maybe<McpServerRunOn>;
   runtime?: Maybe<Runtime>;
-  serverUrl: Scalars['String']['output'];
   tools?: Maybe<Array<McpTool>>;
   transport: McpTransportType;
   workspace: Workspace;
@@ -203,15 +194,11 @@ export type MutationCreateMcpRegistryArgs = {
 
 
 export type MutationCreateMcpServerArgs = {
-  ENV: Scalars['String']['input'];
-  args: Scalars['String']['input'];
-  command: Scalars['String']['input'];
+  config: Scalars['String']['input'];
   description: Scalars['String']['input'];
-  headers?: InputMaybe<Scalars['String']['input']>;
   name: Scalars['String']['input'];
   repositoryUrl: Scalars['String']['input'];
   runOn?: InputMaybe<McpServerRunOn>;
-  serverUrl: Scalars['String']['input'];
   transport: McpTransportType;
   workspaceId: Scalars['ID']['input'];
 };
@@ -332,16 +319,12 @@ export type MutationUnsetGlobalRuntimeArgs = {
 
 
 export type MutationUpdateMcpServerArgs = {
-  ENV: Scalars['String']['input'];
-  args: Scalars['String']['input'];
-  command: Scalars['String']['input'];
+  config: Scalars['String']['input'];
   description: Scalars['String']['input'];
-  headers?: InputMaybe<Scalars['String']['input']>;
   id: Scalars['ID']['input'];
   name: Scalars['String']['input'];
   repositoryUrl: Scalars['String']['input'];
   runOn?: InputMaybe<McpServerRunOn>;
-  serverUrl: Scalars['String']['input'];
   transport: McpTransportType;
 };
 
@@ -731,16 +714,11 @@ export type McpRegistry2lyMetadataResolvers<ContextType = object, ParentType ext
 };
 
 export type McpRegistryServerResolvers<ContextType = object, ParentType extends ResolversParentTypes['MCPRegistryServer'] = ResolversParentTypes['MCPRegistryServer']> = {
-  ENV?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   _2ly?: Resolver<ResolversTypes['MCPRegistry2lyMetadata'], ParentType, ContextType>;
-  args?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
-  command?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   config?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   description?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
-  headers?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   name?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   repositoryUrl?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
-  serverUrl?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   transport?: Resolver<ResolversTypes['MCPTransportType'], ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 };
@@ -752,7 +730,7 @@ export type McpRegistryUpstreamServerResolvers<ContextType = object, ParentType 
   id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
   lastSeenAt?: Resolver<ResolversTypes['Date'], ParentType, ContextType>;
   name?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
-  packages?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  packages?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   registry?: Resolver<ResolversTypes['MCPRegistry'], ParentType, ContextType>;
   remotes?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   repositoryUrl?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
@@ -762,17 +740,13 @@ export type McpRegistryUpstreamServerResolvers<ContextType = object, ParentType 
 };
 
 export type McpServerResolvers<ContextType = object, ParentType extends ResolversParentTypes['MCPServer'] = ResolversParentTypes['MCPServer']> = {
-  ENV?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
-  args?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
-  command?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  config?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   description?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
-  headers?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
   name?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   repositoryUrl?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   runOn?: Resolver<Maybe<ResolversTypes['MCPServerRunOn']>, ParentType, ContextType>;
   runtime?: Resolver<Maybe<ResolversTypes['Runtime']>, ParentType, ContextType>;
-  serverUrl?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   tools?: Resolver<Maybe<Array<ResolversTypes['MCPTool']>>, ParentType, ContextType>;
   transport?: Resolver<ResolversTypes['MCPTransportType'], ParentType, ContextType>;
   workspace?: Resolver<ResolversTypes['Workspace'], ParentType, ContextType>;
@@ -797,7 +771,7 @@ export type McpToolResolvers<ContextType = object, ParentType extends ResolversP
 export type MutationResolvers<ContextType = object, ParentType extends ResolversParentTypes['Mutation'] = ResolversParentTypes['Mutation']> = {
   callMCPTool?: Resolver<ResolversTypes['CallToolResult'], ParentType, ContextType, RequireFields<MutationCallMcpToolArgs, 'input' | 'toolId'>>;
   createMCPRegistry?: Resolver<ResolversTypes['MCPRegistry'], ParentType, ContextType, RequireFields<MutationCreateMcpRegistryArgs, 'name' | 'upstreamUrl' | 'workspaceId'>>;
-  createMCPServer?: Resolver<ResolversTypes['MCPServer'], ParentType, ContextType, RequireFields<MutationCreateMcpServerArgs, 'ENV' | 'args' | 'command' | 'description' | 'name' | 'repositoryUrl' | 'serverUrl' | 'transport' | 'workspaceId'>>;
+  createMCPServer?: Resolver<ResolversTypes['MCPServer'], ParentType, ContextType, RequireFields<MutationCreateMcpServerArgs, 'config' | 'description' | 'name' | 'repositoryUrl' | 'transport' | 'workspaceId'>>;
   createRuntime?: Resolver<ResolversTypes['Runtime'], ParentType, ContextType, RequireFields<MutationCreateRuntimeArgs, 'capabilities' | 'description' | 'name' | 'workspaceId'>>;
   deleteMCPRegistry?: Resolver<ResolversTypes['MCPRegistry'], ParentType, ContextType, RequireFields<MutationDeleteMcpRegistryArgs, 'id'>>;
   deleteMCPServer?: Resolver<ResolversTypes['MCPServer'], ParentType, ContextType, RequireFields<MutationDeleteMcpServerArgs, 'id'>>;
@@ -819,7 +793,7 @@ export type MutationResolvers<ContextType = object, ParentType extends Resolvers
   unlinkMCPToolFromRuntime?: Resolver<ResolversTypes['Runtime'], ParentType, ContextType, RequireFields<MutationUnlinkMcpToolFromRuntimeArgs, 'mcpToolId' | 'runtimeId'>>;
   unsetDefaultTestingRuntime?: Resolver<ResolversTypes['Workspace'], ParentType, ContextType, RequireFields<MutationUnsetDefaultTestingRuntimeArgs, 'id'>>;
   unsetGlobalRuntime?: Resolver<ResolversTypes['Workspace'], ParentType, ContextType, RequireFields<MutationUnsetGlobalRuntimeArgs, 'id'>>;
-  updateMCPServer?: Resolver<ResolversTypes['MCPServer'], ParentType, ContextType, RequireFields<MutationUpdateMcpServerArgs, 'ENV' | 'args' | 'command' | 'description' | 'id' | 'name' | 'repositoryUrl' | 'serverUrl' | 'transport'>>;
+  updateMCPServer?: Resolver<ResolversTypes['MCPServer'], ParentType, ContextType, RequireFields<MutationUpdateMcpServerArgs, 'config' | 'description' | 'id' | 'name' | 'repositoryUrl' | 'transport'>>;
   updateMCPServerRunOn?: Resolver<ResolversTypes['MCPServer'], ParentType, ContextType, RequireFields<MutationUpdateMcpServerRunOnArgs, 'mcpServerId' | 'runOn'>>;
   updateRuntime?: Resolver<ResolversTypes['Runtime'], ParentType, ContextType, RequireFields<MutationUpdateRuntimeArgs, 'description' | 'id' | 'name'>>;
   updateWorkspace?: Resolver<ResolversTypes['Workspace'], ParentType, ContextType, RequireFields<MutationUpdateWorkspaceArgs, 'id' | 'name'>>;

@@ -10,11 +10,6 @@ export const REGISTRY_QUERY = gql`
         description
         repositoryUrl
         transport
-        command
-        args
-        ENV
-        serverUrl
-        headers
         config
       }
     }
@@ -28,11 +23,6 @@ export const SEARCH_MCP_SERVERS_QUERY = gql`
       description
       repositoryUrl
       transport
-      command
-      args
-      ENV
-      serverUrl
-      headers
       config
       runOn
     }
@@ -46,11 +36,6 @@ export const FETCH_MCP_SERVER_CONFIG_QUERY = gql`
       description
       repositoryUrl
       transport
-      command
-      args
-      ENV
-      serverUrl
-      headers
       config
       runOn
     }

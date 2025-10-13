@@ -157,9 +157,9 @@ export class MainService extends Service {
     const activeServices = Service.getActiveServices();
     if (activeServices.length > 0) {
       this.logger.warn('⚠️  Some services are still active after shutdown:');
-      activeServices.forEach(service => {
+      activeServices.forEach((service) => {
         this.logger.warn(
-          `   - Service "${service.name}" (${service.state}) is kept alive by consumers: [${service.consumers.join(', ')}]`
+          `   - Service "${service.name}" (${service.state}) is kept alive by consumers: [${service.consumers.join(', ')}]`,
         );
       });
     }

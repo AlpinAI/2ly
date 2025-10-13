@@ -47,11 +47,7 @@ type MCPServer {
   description: String!
   repositoryUrl: String!
   transport: MCPTransportType!
-  command: String!
-  args: String!
-  ENV: String!
-  serverUrl: String!
-  headers: String
+  config: String!
   tools: [MCPTool!]
   runOn: MCPServerRunOn
   runtime: Runtime
@@ -144,26 +140,6 @@ input LogoutInput {
   refreshToken: String!
 }
 
-type Registry {
-  version: String!
-  description: String!
-  servers: [MCPRegistryServer!]
-}
-
-type MCPRegistryServer {
-  _2ly: MCPRegistry2lyMetadata!
-  name: String!
-  description: String!
-  repositoryUrl: String!
-  transport: MCPTransportType!
-  command: String
-  args: String
-  ENV: String
-  serverUrl: String
-  headers: String
-  config: String!
-}
-
 type MCPRegistry2lyMetadata {
   registryVersion: String!
 }
@@ -185,7 +161,7 @@ type MCPRegistryUpstreamServer {
   title: String!
   repositoryUrl: String!
   version: String!
-  packages: String!
+  packages: String
   remotes: String
   _meta: String
   createdAt: Date!
@@ -198,7 +174,6 @@ type Query {
   mcpServers: [MCPServer!]
   system: System
   infra: Infra!
-  registry: Registry!
   searchMCPServers(query: String!): [MCPRegistryServer!]
   fetchMCPServerConfig(repositoryUrl: String!): MCPRegistryServer
   workspaceMCPTools(workspaceId: ID!): Workspace
@@ -214,17 +189,12 @@ type CallToolResult {
 }
 
 type Mutation {
-
   createMCPServer(
     name: String!
     description: String!
     repositoryUrl: String!
     transport: MCPTransportType!
-    command: String!
-    args: String!
-    ENV: String!
-    serverUrl: String!
-    headers: String
+    config: String!
     runOn: MCPServerRunOn
     workspaceId: ID!
   ): MCPServer!
@@ -234,11 +204,7 @@ type Mutation {
     description: String!
     repositoryUrl: String!
     transport: MCPTransportType!
-    command: String!
-    args: String!
-    ENV: String!
-    serverUrl: String!
-    headers: String
+    config: String!
     runOn: MCPServerRunOn
   ): MCPServer!
   linkMCPServerToRuntime(mcpServerId: ID!, runtimeId: ID!): MCPServer!

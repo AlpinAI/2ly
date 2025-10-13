@@ -7,74 +7,21 @@
  * ARCHITECTURE:
  * - Parse JSON strings from MCPRegistryUpstreamServer
  * - Extract configurable fields (env vars, args, headers, query params)
- * - Map form data to GraphQL mutation inputs
+ * - Enrich configurations with user-provided values while preserving schema shape
  * - Support STDIO, SSE, and STREAM transports
  */
 
 import type { SubscribeMcpRegistriesSubscription } from '@/graphql/generated/graphql';
+import { mcpRegistry } from '@2ly/common';
 
 // Extract server type
 type MCPRegistryUpstreamServer = NonNullable<
   NonNullable<SubscribeMcpRegistriesSubscription['mcpRegistries']>[number]['servers']
 >[number];
 
-// Package configuration from registry
-interface PackageConfig {
-  identifier: string;
-  version: string;
-  registryType: 'npm' | 'pypi' | 'docker' | 'oci';
-  registryBaseUrl?: string;
-  runtimeHint?: string;
-  transport?: {
-    type: string;
-  };
-  packageArguments?: Array<{
-    name?: string;
-    description?: string;
-    format: 'string' | 'boolean';
-    type?: 'positional' | 'named';
-    isRequired?: boolean;
-    isSecret?: boolean;
-    default?: string | boolean;
-    value?: string | boolean;
-  }>;
-  environmentVariables?: Array<{
-    name: string;
-    description?: string;
-    format: 'string' | 'boolean';
-    isRequired?: boolean;
-    isSecret?: boolean;
-    default?: string | boolean;
-    value?: string | boolean;
-    choices?: Array<string | boolean>;
-  }>;
-}
-
-// Remote configuration from registry
-interface RemoteConfig {
-  type: 'streamable' | 'sse';
-  url?: string;
-  headers?: Array<{
-    name: string;
-    description?: string;
-    format: 'string' | 'boolean';
-    isRequired?: boolean;
-    isSecret?: boolean;
-    default?: string | boolean;
-    value?: string | boolean;
-    choices?: Array<string | boolean>;
-  }>;
-  queryVariables?: Array<{
-    name: string;
-    description?: string;
-    format: 'string' | 'boolean';
-    isRequired?: boolean;
-    isSecret?: boolean;
-    default?: string | boolean;
-    value?: string | boolean;
-    choices?: Array<string | boolean>;
-  }>;
-}
+// Use official MCP Registry schema types
+type Package = mcpRegistry.components['schemas']['Package'];
+type Transport = mcpRegistry.components['schemas']['Transport'];
 
 // Configuration option for dropdown
 export interface ConfigOption {
@@ -82,7 +29,7 @@ export interface ConfigOption {
   label: string;
   type: 'package' | 'remote';
   transport: 'STDIO' | 'SSE' | 'STREAM';
-  config: PackageConfig | RemoteConfig;
+  config: Package | Transport;
   isSupported: boolean;
 }
 
@@ -124,7 +71,7 @@ export function extractConfigOptions(server: MCPRegistryUpstreamServer): ConfigO
   // Parse packages
   try {
     if (server.packages) {
-      const packages = JSON.parse(server.packages) as PackageConfig[];
+      const packages = JSON.parse(server.packages) as Package[];
       if (Array.isArray(packages)) {
         packages.forEach((pkg, index) => {
           const transport = pkg.transport?.type?.toUpperCase() || 'STDIO';
@@ -149,10 +96,15 @@ export function extractConfigOptions(server: MCPRegistryUpstreamServer): ConfigO
   // Parse remotes
   try {
     if (server.remotes) {
-      const remotes = JSON.parse(server.remotes) as RemoteConfig[];
+      const remotes = JSON.parse(server.remotes) as Transport[];
       if (Array.isArray(remotes)) {
         remotes.forEach((remote, index) => {
-          const transport = remote.type === 'streamable' ? 'STREAM' : remote.type === 'sse' ? 'SSE' : 'STREAM';
+          const transport =
+            remote.type === 'streamable' || remote.type === 'streamableHttp'
+              ? 'STREAM'
+              : remote.type === 'sse'
+                ? 'SSE'
+                : 'STREAM';
           const label = `${transport}: Remote ${remote.url || ''}`;
           const isSupported = isTransportSupported(transport);
 
@@ -181,7 +133,7 @@ export function extractConfigurableFields(option: ConfigOption): ConfigField[] {
   const fields: ConfigField[] = [];
 
   if (option.type === 'package') {
-    const pkg = option.config as PackageConfig;
+    const pkg = option.config as Package;
 
     // Environment variables
     pkg.environmentVariables?.forEach((env) => {
@@ -254,8 +206,38 @@ export function extractConfigurableFields(option: ConfigOption): ConfigField[] {
         });
       }
     });
+
+    // Runtime arguments (if present)
+    pkg.runtimeArguments?.forEach((arg) => {
+      const argName = arg.name || `runtime-arg-${fields.length}`;
+      if (arg.format === 'boolean') {
+        fields.push({
+          name: argName,
+          label: argName,
+          description: arg.description,
+          type: 'boolean',
+          context: 'arg',
+          required: arg.isRequired || false,
+          secret: false,
+          default: String(arg.default ?? 'false'),
+          value: String(arg.value ?? arg.default ?? 'false'),
+        });
+      } else {
+        fields.push({
+          name: argName,
+          label: argName,
+          description: arg.description,
+          type: 'string',
+          context: 'arg',
+          required: arg.isRequired || false,
+          secret: arg.isSecret || false,
+          default: String(arg.default ?? ''),
+          value: String(arg.value ?? arg.default ?? ''),
+        });
+      }
+    });
   } else if (option.type === 'remote') {
-    const remote = option.config as RemoteConfig;
+    const remote = option.config as Transport;
 
     // Headers
     remote.headers?.forEach((header) => {
@@ -298,151 +280,87 @@ export function extractConfigurableFields(option: ConfigOption): ConfigField[] {
         });
       }
     });
-
-    // Query variables
-    remote.queryVariables?.forEach((query) => {
-      if (query.format === 'boolean') {
-        fields.push({
-          name: query.name,
-          label: query.name,
-          description: query.description,
-          type: 'boolean',
-          context: 'query',
-          required: query.isRequired || false,
-          secret: false,
-          default: String(query.default ?? 'false'),
-          value: String(query.value ?? query.default ?? 'false'),
-        });
-      } else {
-        fields.push({
-          name: query.name,
-          label: query.name,
-          description: query.description,
-          type: 'string',
-          context: 'query',
-          required: query.isRequired || false,
-          secret: query.isSecret || false,
-          default: String(query.default ?? ''),
-          value: String(query.value ?? query.default ?? ''),
-        });
-      }
-    });
   }
 
   return fields;
 }
 
 /**
- * Map configuration to GraphQL mutation input
+ * Enrich configuration with user-provided values while preserving the official MCP registry schema shape.
+ * IMPORTANT: This function ONLY adds the "value" property to configurable fields.
+ * It does NOT change the shape of the config - all other properties are preserved exactly as they are.
+ *
+ * Returns a config object following the MCP registry Package or Transport schema.
  */
-export function mapToServerInput(
+export function enrichConfigWithValues(
   server: MCPRegistryUpstreamServer,
   option: ConfigOption,
   fields: ConfigField[],
-  customName?: string
+  customName?: string,
 ): {
   name: string;
   description: string;
   repositoryUrl: string;
   transport: 'STDIO' | 'SSE' | 'STREAM';
-  command: string;
-  args: string;
-  ENV: string;
-  serverUrl: string;
-  headers: string;
+  config: string; // JSON string containing Package or Transport config
 } {
   const name = customName || server.title || server.name;
   const description = server.description || '';
   const repositoryUrl = server.repositoryUrl || '';
   const transport = option.transport;
 
-  let command = '';
-  let args = '';
-  let ENV = '';
-  let serverUrl = '';
-  let headers = '';
+  // Deep clone the config to avoid mutating the original
+  const configObj = JSON.parse(JSON.stringify(option.config));
 
   if (option.type === 'package') {
-    const pkg = option.config as PackageConfig;
+    const pkg = configObj as Package;
 
-    // Build command based on registry type
-    switch (pkg.registryType) {
-      case 'npm':
-        command = 'npx';
-        args = `${pkg.identifier}@${pkg.version}`;
-        break;
-      case 'pypi':
-        command = 'uvx';
-        args = pkg.identifier;
-        break;
-      case 'docker':
-        command = 'docker';
-        args = `run -i --rm ${pkg.identifier}:${pkg.version}`;
-        break;
-      case 'oci':
-        command = 'docker';
-        args = `run -i --rm ${pkg.registryBaseUrl}/${pkg.identifier}:${pkg.version}`;
-        break;
-    }
-
-    // Add package arguments
-    const argFields = fields.filter((f) => f.context === 'arg');
-    const argStrings: string[] = [];
-    pkg.packageArguments?.forEach((arg, index) => {
-      const field = argFields.find((f) => f.name === (arg.name || `arg-${index}`));
-      const value = field?.value || String(arg.default ?? '');
-      if (value) {
-        if (arg.type === 'positional') {
-          argStrings.push(value);
-        } else if (arg.type === 'named' && arg.name) {
-          argStrings.push(`--${arg.name}=${value}`);
-        }
-      }
-    });
-    if (argStrings.length > 0) {
-      args += ' ' + argStrings.join(' ');
-    }
-
-    // Build environment variables
-    const envFields = fields.filter((f) => f.context === 'env');
-    const envStrings: string[] = [];
-    envFields.forEach((field) => {
-      const value = field.value || field.default || '';
-      if (value) {
-        envStrings.push(`${field.name}=${value}`);
-      }
-    });
-    ENV = envStrings.join('\n');
-  } else if (option.type === 'remote') {
-    const remote = option.config as RemoteConfig;
-    serverUrl = remote.url || '';
-
-    // Build headers
-    const headerFields = fields.filter((f) => f.context === 'header');
-    const headerStrings: string[] = [];
-    headerFields.forEach((field) => {
-      const value = field.value || field.default || '';
-      if (value) {
-        headerStrings.push(`${field.name}: ${value}`);
-      }
-    });
-    headers = headerStrings.join('\n');
-
-    // Build query parameters (append to serverUrl)
-    const queryFields = fields.filter((f) => f.context === 'query');
-    if (queryFields.length > 0) {
-      const queryParams: string[] = [];
-      queryFields.forEach((field) => {
-        const value = field.value || field.default || '';
-        if (value) {
-          queryParams.push(`${field.name}=${encodeURIComponent(value)}`);
+    // Enrich package arguments with values
+    if (pkg.packageArguments) {
+      pkg.packageArguments.forEach((arg) => {
+        const argName = arg.name || '';
+        const field = fields.find((f) => f.context === 'arg' && f.name === argName);
+        if (field) {
+          arg.value = field.value || String(arg.default ?? '');
         }
       });
-      if (queryParams.length > 0) {
-        const separator = serverUrl.includes('?') ? '&' : '?';
-        serverUrl += separator + queryParams.join('&');
-      }
     }
+
+    // Enrich runtime arguments with values
+    if (pkg.runtimeArguments) {
+      pkg.runtimeArguments.forEach((arg) => {
+        const argName = arg.name || '';
+        const field = fields.find((f) => f.context === 'arg' && f.name === argName);
+        if (field) {
+          arg.value = field.value || String(arg.default ?? '');
+        }
+      });
+    }
+
+    // Enrich environment variables with values
+    if (pkg.environmentVariables) {
+      pkg.environmentVariables.forEach((env) => {
+        const field = fields.find((f) => f.context === 'env' && f.name === env.name);
+        if (field) {
+          env.value = field.value || String(env.default ?? '');
+        }
+      });
+    }
+  } else if (option.type === 'remote') {
+    const remote = configObj as Transport;
+
+    // Enrich headers with values
+    if (remote.headers) {
+      remote.headers.forEach((header) => {
+        const field = fields.find((f) => f.context === 'header' && f.name === header.name);
+        if (field) {
+          header.value = field.value || String(header.default ?? '');
+        }
+      });
+    }
+
+    // Note: Query parameters are typically handled via URL modification
+    // but we preserve the Transport schema structure exactly
   }
 
   return {
@@ -450,11 +368,7 @@ export function mapToServerInput(
     description,
     repositoryUrl,
     transport,
-    command,
-    args,
-    ENV,
-    serverUrl,
-    headers,
+    config: JSON.stringify(configObj),
   };
 }
 

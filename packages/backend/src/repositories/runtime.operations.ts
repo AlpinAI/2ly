@@ -40,9 +40,7 @@ export const ADD_RUNTIME = gql`
 
 export const UPDATE_RUNTIME = gql`
   mutation updateRuntime($id: ID!, $name: String!, $description: String!) {
-    updateRuntime(
-      input: { filter: { id: [$id] }, set: { name: $name, description: $description } }
-    ) {
+    updateRuntime(input: { filter: { id: [$id] }, set: { name: $name, description: $description } }) {
       runtime {
         id
         name
@@ -81,19 +79,14 @@ export const DELETE_RUNTIME = gql`
 
 export const ADD_MCPSERVER_TO_RUNTIME = gql`
   mutation updateRuntime($runtimeId: ID!, $mcpServerId: ID!) {
-    updateRuntime(
-      input: { filter: { id: [$runtimeId] }, set: { mcpServers: { id: $mcpServerId } } }
-    ) {
+    updateRuntime(input: { filter: { id: [$runtimeId] }, set: { mcpServers: { id: $mcpServerId } } }) {
       runtime {
         id
         mcpServers {
           id
           description
           transport
-          command
-          args
-          ENV
-          serverUrl
+          config
         }
       }
     }
@@ -134,11 +127,7 @@ export const GET_RUNTIME_EDGE_MCP_SERVERS = gql`
         name
         description
         transport
-        command
-        args
-        ENV
-        serverUrl
-        headers
+        config
         runOn
         tools {
           id
@@ -163,11 +152,7 @@ export const GET_RUNTIME_AGENT_MCP_SERVERS = gql`
           name
           description
           transport
-          command
-          args
-          ENV
-          serverUrl
-          headers
+          config
           runOn
           tools {
             id
@@ -191,11 +176,7 @@ export const GET_RUNTIME_GLOBAL_MCP_SERVERS = gql`
         name
         description
         transport
-        command
-        args
-        ENV
-        serverUrl
-        headers
+        config
         runOn
         tools {
           id
@@ -426,12 +407,9 @@ export const SET_MCP_CLIENT_NAME = gql`
   }
 `;
 
-
 export const LINK_MCP_TOOL = gql`
   mutation linkMCPTool($mcpToolId: ID!, $runtimeId: ID!) {
-    updateRuntime(
-      input: { filter: { id: [$runtimeId] }, set: { mcpToolCapabilities: { id: $mcpToolId } } }
-    ) {
+    updateRuntime(input: { filter: { id: [$runtimeId] }, set: { mcpToolCapabilities: { id: $mcpToolId } } }) {
       runtime {
         id
         name
@@ -447,9 +425,7 @@ export const LINK_MCP_TOOL = gql`
 
 export const UNLINK_MCP_TOOL = gql`
   mutation unlinkMCPTool($mcpToolId: ID!, $runtimeId: ID!) {
-    updateRuntime(
-      input: { filter: { id: [$runtimeId] }, remove: { mcpToolCapabilities: { id: $mcpToolId } } }
-    ) {
+    updateRuntime(input: { filter: { id: [$runtimeId] }, remove: { mcpToolCapabilities: { id: $mcpToolId } } }) {
       runtime {
         id
         name

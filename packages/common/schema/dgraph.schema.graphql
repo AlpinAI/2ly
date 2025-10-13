@@ -75,10 +75,20 @@ type MCPServer @withSubscription {
   description: String!
   repositoryUrl: String!
   transport: MCPTransportType!
-  # The `config` represents the configuration of the server
-  # When the transport is set to STDIO, the config follows the schema of MCPRegistryServer.packages.*
-  # When the transport is set to SSE or STREAM, the config follows the schema of MCPRegistryServer.remotes.*
-  # The values of each part of the config are encapsulated, following the Argument and KeyValueInput component schemas
+  # The `config` field contains THE SINGLE SELECTED configuration for this MCP server deployment.
+  # It is NOT an array - it's the one chosen package or remote configuration.
+  #
+  # When transport is STDIO: config contains a single Package object following the
+  # Package schema from the MCP registry (with identifier, packageArguments, runtimeArguments,
+  # environmentVariables, etc.)
+  #
+  # When transport is SSE or STREAM: config contains a single Transport object following
+  # the Transport schema from the MCP registry (with type, url, headers, etc.)
+  # Note: SSE and STREAM both use the Transport schema, differentiated by the "type" field
+  # ("sse" for SSE transport, "streamableHttp" for STREAM transport)
+  #
+  # The config values come from selecting ONE item from either MCPRegistryServer.packages
+  # or MCPRegistryServer.remotes during the server configuration workflow.
   config: String!
   tools: [MCPTool!] @hasInverse(field: mcpServer)
   runOn: MCPServerRunOn @search

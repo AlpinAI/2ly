@@ -16,7 +16,7 @@ import {
 
 @injectable()
 export class MCPServerRepository {
-  constructor(@inject(DGraphService) private readonly dgraphService: DGraphService) { }
+  constructor(@inject(DGraphService) private readonly dgraphService: DGraphService) {}
 
   async findAll(): Promise<dgraphResolversTypes.McpServer[]> {
     const res = await this.dgraphService.query<{
@@ -29,12 +29,8 @@ export class MCPServerRepository {
     name: string,
     description: string,
     repositoryUrl: string,
-    transport: 'STREAM' | 'STDIO',
-    command: string,
-    args: string,
-    ENV: string,
-    serverUrl: string,
-    headers: string | null,
+    transport: 'STREAM' | 'STDIO' | 'SSE',
+    config: string,
     runOn: MCP_SERVER_RUN_ON | null,
     workspaceId: string,
   ): Promise<dgraphResolversTypes.McpServer> {
@@ -45,11 +41,7 @@ export class MCPServerRepository {
       description,
       repositoryUrl,
       transport,
-      command,
-      args,
-      ENV,
-      serverUrl,
-      headers,
+      config,
       workspaceId,
       runOn,
     });
@@ -61,12 +53,8 @@ export class MCPServerRepository {
     name: string,
     description: string,
     repositoryUrl: string,
-    transport: 'STREAM' | 'STDIO',
-    command: string,
-    args: string,
-    ENV: string,
-    serverUrl: string,
-    headers: string | null,
+    transport: 'STREAM' | 'STDIO' | 'SSE',
+    config: string,
     runOn: MCP_SERVER_RUN_ON | null,
   ): Promise<dgraphResolversTypes.McpServer> {
     const res = await this.dgraphService.mutation<{
@@ -77,11 +65,7 @@ export class MCPServerRepository {
       description,
       repositoryUrl,
       transport,
-      command,
-      args,
-      ENV,
-      serverUrl,
-      headers,
+      config,
       runOn,
     });
     return res.updateMCPServer.mCPServer[0];
