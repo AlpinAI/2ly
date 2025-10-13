@@ -16,10 +16,7 @@ import { test, expect } from '../../fixtures/database';
 test.describe('System Initialization', () => {
   test.describe.configure({ mode: 'serial' });
 
-  test('should display init form when system is not initialized', async ({
-    page,
-    resetDatabase,
-  }) => {
+  test('should display init form when system is not initialized', async ({ page, resetDatabase }) => {
     await resetDatabase();
 
     // Navigate to init page
@@ -36,15 +33,10 @@ test.describe('System Initialization', () => {
 
     // Should have submit button
     await expect(page.locator('button[type="submit"]')).toBeVisible();
-    await expect(page.locator('button[type="submit"]')).toContainText(
-      'Initialize System'
-    );
+    await expect(page.locator('button[type="submit"]')).toContainText('Initialize System');
   });
 
-  test('should initialize system and auto-login user', async ({
-    page,
-    resetDatabase,
-  }) => {
+  test('should initialize system and auto-login user', async ({ page, resetDatabase }) => {
     await resetDatabase();
 
     // Navigate to init page
@@ -58,65 +50,45 @@ test.describe('System Initialization', () => {
     // Submit the form
     await page.click('button[type="submit"]');
 
-    // Should auto-login and redirect to dashboard
+    // Should auto-login and redirect to workspace
     // Note: Success alert may not be visible due to fast redirect
-    await page.waitForURL('/dashboard', { timeout: 10000 });
-    expect(page.url()).toContain('/dashboard');
+    await page.waitForURL(/\/w\/.+\/overview/, { timeout: 10000 });
+    expect(page.url()).toMatch(/\/w\/.+\/overview/);
 
-    // User should be logged in (dashboard should be accessible)
+    // User should be logged in (workspace should be accessible)
     // Not redirected back to login
     await page.waitForTimeout(1000);
-    expect(page.url()).toContain('/dashboard');
+    expect(page.url()).toMatch(/\/w\/.+\/overview/);
   });
 
-  test('should show password validation feedback', async ({
-    page,
-    resetDatabase,
-  }) => {
+  test('should show password validation feedback', async ({ page, resetDatabase }) => {
     await resetDatabase();
 
     await page.goto('/init');
 
     // Password validation should not be visible initially
-    await expect(
-      page.locator('[data-testid="password-validation-feedback"]')
-    ).not.toBeVisible();
+    await expect(page.locator('[data-testid="password-validation-feedback"]')).not.toBeVisible();
 
     // Type a weak password
     await page.fill('input#password', 'abc');
 
     // Password validation feedback should now be visible
-    await expect(
-      page.locator('[data-testid="password-validation-feedback"]')
-    ).toBeVisible();
+    await expect(page.locator('[data-testid="password-validation-feedback"]')).toBeVisible();
 
     // Should show requirements not met
-    await expect(
-      page.locator('[data-testid="validation-min-length"]')
-    ).toHaveAttribute('data-valid', 'false');
-    await expect(
-      page.locator('[data-testid="validation-has-number"]')
-    ).toHaveAttribute('data-valid', 'false');
+    await expect(page.locator('[data-testid="validation-min-length"]')).toHaveAttribute('data-valid', 'false');
+    await expect(page.locator('[data-testid="validation-has-number"]')).toHaveAttribute('data-valid', 'false');
 
     // Type a valid password
     await page.fill('input#password', 'admin123');
 
     // Should show all requirements as met
-    await expect(
-      page.locator('[data-testid="validation-min-length"]')
-    ).toHaveAttribute('data-valid', 'true');
-    await expect(
-      page.locator('[data-testid="validation-has-letter"]')
-    ).toHaveAttribute('data-valid', 'true');
-    await expect(
-      page.locator('[data-testid="validation-has-number"]')
-    ).toHaveAttribute('data-valid', 'true');
+    await expect(page.locator('[data-testid="validation-min-length"]')).toHaveAttribute('data-valid', 'true');
+    await expect(page.locator('[data-testid="validation-has-letter"]')).toHaveAttribute('data-valid', 'true');
+    await expect(page.locator('[data-testid="validation-has-number"]')).toHaveAttribute('data-valid', 'true');
   });
 
-  test('should show password match indicator', async ({
-    page,
-    resetDatabase,
-  }) => {
+  test('should show password match indicator', async ({ page, resetDatabase }) => {
     await resetDatabase();
 
     await page.goto('/init');
@@ -128,9 +100,7 @@ test.describe('System Initialization', () => {
     await page.fill('input#confirmPassword', 'admin456');
 
     // Should show password mismatch
-    const matchIndicator = page.locator(
-      '[data-testid="password-match-indicator"]'
-    );
+    const matchIndicator = page.locator('[data-testid="password-match-indicator"]');
     await expect(matchIndicator).toBeVisible();
     await expect(matchIndicator).toContainText(/do not match/i);
 
@@ -142,10 +112,7 @@ test.describe('System Initialization', () => {
     await expect(matchIndicator).not.toContainText(/do not match/i);
   });
 
-  test('should disable submit button when validation fails', async ({
-    page,
-    resetDatabase,
-  }) => {
+  test('should disable submit button when validation fails', async ({ page, resetDatabase }) => {
     await resetDatabase();
 
     await page.goto('/init');
@@ -170,11 +137,7 @@ test.describe('System Initialization', () => {
     await expect(submitButton).toBeEnabled();
   });
 
-  test('should redirect to dashboard if system already initialized', async ({
-    page,
-    resetDatabase,
-    seedDatabase,
-  }) => {
+  test('should redirect to root if system already initialized', async ({ page, resetDatabase, seedDatabase }) => {
     // Initialize system by seeding with users
     await resetDatabase();
     await seedDatabase({
@@ -189,12 +152,12 @@ test.describe('System Initialization', () => {
     // Try to navigate to init page
     await page.goto('/init');
 
-    // Should be redirected to dashboard
-    await page.waitForURL('/dashboard', { timeout: 5000 });
-    expect(page.url()).toContain('/dashboard');
+    // Should be redirected to root (which redirects to login since not authenticated)
+    await page.waitForURL('/login', { timeout: 5000 });
+    expect(page.url()).toContain('/login');
   });
 
-  test('should redirect to login when accessing dashboard without auth after init redirect', async ({
+  test('should redirect to login when accessing init page without auth after system initialized', async ({
     page,
     resetDatabase,
     seedDatabase,
@@ -210,10 +173,10 @@ test.describe('System Initialization', () => {
       ],
     });
 
-    // Try to access init page (will redirect to dashboard)
+    // Try to access init page (will redirect to root)
     await page.goto('/init');
 
-    // Will redirect to dashboard, then to login (not authenticated)
+    // Will redirect to root, then to login (not authenticated)
     await page.waitForURL('/login', { timeout: 5000 });
     expect(page.url()).toContain('/login');
   });

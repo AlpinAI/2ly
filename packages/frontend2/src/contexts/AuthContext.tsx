@@ -12,13 +12,7 @@
  * - Automatic token validation and refresh on mount
  */
 
-import {
-  createContext,
-  useContext,
-  useState,
-  useEffect,
-  ReactNode,
-} from 'react';
+import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useMutation } from '@apollo/client/react';
 import { resetApolloCache } from '@/lib/apollo/client';
@@ -164,8 +158,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
     localStorage.setItem(STORAGE_KEY_TOKENS, JSON.stringify(newTokens));
     localStorage.setItem(STORAGE_KEY_USER, JSON.stringify(newUser));
 
-    // Check for redirect intent and navigate there, otherwise go to dashboard
-    const redirectTo = getRedirectIntent() || '/dashboard';
+    // Check for redirect intent and navigate there, otherwise go to root (which redirects to default workspace)
+    const redirectTo = getRedirectIntent() || '/';
     navigate(redirectTo);
   };
 

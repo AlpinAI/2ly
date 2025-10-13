@@ -10,10 +10,7 @@ import { useNavigate } from 'react-router-dom';
 import { Settings, AlertCircle, CheckCircle } from 'lucide-react';
 import { useMutation } from '@apollo/client/react';
 import { ThemeToggle } from '@/components/ThemeToggle';
-import {
-  PasswordValidationFeedback,
-  isPasswordValid,
-} from '@/components/PasswordValidationFeedback';
+import { PasswordValidationFeedback, isPasswordValid } from '@/components/PasswordValidationFeedback';
 import { InitSystemDocument, LoginDocument } from '@/graphql/generated/graphql';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/contexts/ThemeContext';
@@ -34,10 +31,10 @@ export default function InitPage() {
   const { theme } = useTheme();
   const { isInitialized, isLoading: isCheckingInit } = useSystemInit();
 
-  // Redirect to dashboard if system is already initialized
+  // Redirect to root (which redirects to default workspace) if system is already initialized
   useEffect(() => {
     if (!isCheckingInit && isInitialized === true) {
-      navigate('/dashboard', { replace: true });
+      navigate('/', { replace: true });
     }
   }, [isInitialized, isCheckingInit, navigate]);
 
@@ -59,9 +56,7 @@ export default function InitPage() {
     onError: (err) => {
       console.error('Auto-login error:', err);
       // Still show success but redirect to login instead
-      setSuccessMessage(
-        'System initialized successfully! Please log in.'
-      );
+      setSuccessMessage('System initialized successfully! Please log in.');
       setTimeout(() => {
         navigate('/login');
       }, 2000);
@@ -77,9 +72,7 @@ export default function InitPage() {
     onCompleted: async () => {
       // System initialized successfully
       setErrorMessage(null);
-      setSuccessMessage(
-        'System initialized successfully! Logging you in...'
-      );
+      setSuccessMessage('System initialized successfully! Logging you in...');
 
       // Auto-login the user with the credentials they just created
       try {
@@ -98,18 +91,13 @@ export default function InitPage() {
     },
     onError: (err) => {
       console.error('System initialization error:', err);
-      setErrorMessage(
-        err.message || 'System initialization failed. Please try again.'
-      );
+      setErrorMessage(err.message || 'System initialization failed. Please try again.');
     },
   });
 
   // Form validation state
   const passwordIsValid = password.length > 0 && isPasswordValid(password);
-  const passwordsMatch =
-    password.length > 0 &&
-    confirmPassword.length > 0 &&
-    password === confirmPassword;
+  const passwordsMatch = password.length > 0 && confirmPassword.length > 0 && password === confirmPassword;
   const formIsValid = email.length > 0 && passwordIsValid && passwordsMatch;
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -141,9 +129,7 @@ export default function InitPage() {
       <div className="flex h-screen items-center justify-center">
         <div className="text-center">
           <div className="mb-4 inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-blue-500 border-r-transparent"></div>
-          <p className="text-gray-600 dark:text-gray-400">
-            Checking system status...
-          </p>
+          <p className="text-gray-600 dark:text-gray-400">Checking system status...</p>
         </div>
       </div>
     );
@@ -166,22 +152,14 @@ export default function InitPage() {
               </div>
             </div>
             <div className="flex justify-center mb-2">
-              <img
-                src={theme === 'dark' ? '/logo-2ly-dark.png' : '/logo-2ly.png'}
-                alt="2LY"
-                className="h-12 w-auto"
-              />
+              <img src={theme === 'dark' ? '/logo-2ly-dark.png' : '/logo-2ly.png'} alt="2LY" className="h-12 w-auto" />
             </div>
-            <p className="text-gray-600 dark:text-gray-400">
-              AI Tool Management Platform
-            </p>
+            <p className="text-gray-600 dark:text-gray-400">AI Tool Management Platform</p>
           </div>
 
           {/* Initialization Card */}
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-8">
-            <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
-              System Initialization
-            </h2>
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">System Initialization</h2>
             <p className="text-sm text-gray-600 dark:text-gray-400 mb-6">
               Create your administrator account to initialize the system
             </p>
@@ -256,10 +234,7 @@ export default function InitPage() {
 
                 {/* Password Match Indicator */}
                 {confirmPassword && (
-                  <div
-                    className="mt-2 text-sm"
-                    data-testid="password-match-indicator"
-                  >
+                  <div className="mt-2 text-sm" data-testid="password-match-indicator">
                     {passwordsMatch ? (
                       <p className="text-green-600 dark:text-green-400 flex items-center gap-1">
                         <CheckCircle className="h-4 w-4" />
@@ -276,11 +251,7 @@ export default function InitPage() {
               </div>
 
               {/* Submit Button */}
-              <Button
-                type="submit"
-                disabled={!formIsValid || loading || !!successMessage}
-                className="w-full"
-              >
+              <Button type="submit" disabled={!formIsValid || loading || !!successMessage} className="w-full">
                 <Settings className="h-4 w-4" />
                 {loading ? 'Initializing System...' : 'Initialize System'}
               </Button>
@@ -288,9 +259,8 @@ export default function InitPage() {
               {/* Info Text */}
               <div className="text-center">
                 <p className="text-xs text-gray-600 dark:text-gray-400">
-                  This will create your administrator account and initialize the
-                  system. You'll be able to log in after initialization is
-                  complete.
+                  This will create your administrator account and initialize the system. You'll be able to log in after
+                  initialization is complete.
                 </p>
               </div>
             </form>

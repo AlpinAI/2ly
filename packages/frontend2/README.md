@@ -467,10 +467,17 @@ The `.vscode/settings.json` configures Tailwind to work with:
 - Link to login
 - Theme toggle in top right
 
-### DashboardPage (`/dashboard`)
+### Workspace Routes (`/w/:workspaceId/*`)
+The application uses workspace-based routing:
+- **Root path (`/`)**: Redirects to default workspace via `WorkspaceRedirect` component
+- **Workspace Overview (`/w/:workspaceId/overview`)**: Main dashboard view for a workspace
+- **Workspace Agents (`/w/:workspaceId/agents`)**: Agent management
+- **Workspace Tools (`/w/:workspaceId/tools`)**: Tool catalog
+- **Workspace Settings (`/w/:workspaceId/settings`)**: Workspace configuration
+
+All workspace routes include:
 - Top navigation with user actions
 - Secondary navigation tabs
-- Stats grid
 - Theme toggle
 
 ## 🔧 Configuration Files

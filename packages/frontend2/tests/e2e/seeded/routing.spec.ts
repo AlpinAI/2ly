@@ -15,9 +15,9 @@ import { test, expect, seedPresets } from '../../fixtures/database';
  */
 
 test.describe('Routing and Navigation', () => {
-  test.describe.configure({mode: 'serial'});
+  test.describe.configure({ mode: 'serial' });
   test.describe('Authentication Guards', () => {
-    test('should redirect unauthenticated user to login when accessing dashboard', async ({
+    test('should redirect unauthenticated user to login when accessing protected route', async ({
       page,
       resetDatabase,
       seedDatabase,
@@ -25,19 +25,15 @@ test.describe('Routing and Navigation', () => {
       await resetDatabase();
       await seedDatabase(seedPresets.withUsers);
 
-      // Try to access dashboard without being logged in
-      await page.goto('/dashboard');
+      // Try to access root without being logged in (root is protected and redirects to workspace)
+      await page.goto('/');
 
       // Should be redirected to login
       await page.waitForURL('/login', { timeout: 5000 });
       expect(page.url()).toContain('/login');
     });
 
-    test('should allow authenticated user to access dashboard', async ({
-      page,
-      resetDatabase,
-      seedDatabase,
-    }) => {
+    test('should allow authenticated user to access workspace', async ({ page, resetDatabase, seedDatabase }) => {
       await resetDatabase();
       await seedDatabase(seedPresets.withUsers);
 
@@ -46,13 +42,15 @@ test.describe('Routing and Navigation', () => {
       await page.fill('input[type="email"]', 'user1@example.com');
       await page.fill('input[type="password"]', 'password123');
       await page.click('button[type="submit"]');
-      await page.waitForURL('/dashboard', { timeout: 5000 });
 
-      // Should be on dashboard
-      expect(page.url()).toContain('/dashboard');
+      // Should redirect to workspace (wait for URL pattern /w/:id/overview)
+      await page.waitForURL(/\/w\/.+\/overview/, { timeout: 5000 });
+
+      // Should be on workspace overview page
+      expect(page.url()).toMatch(/\/w\/.+\/overview/);
     });
 
-    test('should redirect root path to dashboard for authenticated users', async ({
+    test('should redirect root path to workspace for authenticated users', async ({
       page,
       resetDatabase,
       seedDatabase,
@@ -65,14 +63,14 @@ test.describe('Routing and Navigation', () => {
       await page.fill('input[type="email"]', 'user1@example.com');
       await page.fill('input[type="password"]', 'password123');
       await page.click('button[type="submit"]');
-      await page.waitForURL('/dashboard', { timeout: 5000 });
+      await page.waitForURL(/\/w\/.+\/overview/, { timeout: 5000 });
 
       // Navigate to root
       await page.goto('/');
 
-      // Should redirect to dashboard
-      await page.waitForURL('/dashboard', { timeout: 5000 });
-      expect(page.url()).toContain('/dashboard');
+      // Should redirect to workspace
+      await page.waitForURL(/\/w\/.+\/overview/, { timeout: 5000 });
+      expect(page.url()).toMatch(/\/w\/.+\/overview/);
     });
 
     test('should redirect root path to login for unauthenticated users', async ({
@@ -93,16 +91,12 @@ test.describe('Routing and Navigation', () => {
   });
 
   test.describe('Redirect Intent Preservation', () => {
-    test('should preserve intended destination after login', async ({
-      page,
-      resetDatabase,
-      seedDatabase,
-    }) => {
+    test('should preserve intended destination after login', async ({ page, resetDatabase, seedDatabase }) => {
       await resetDatabase();
       await seedDatabase(seedPresets.withUsers);
 
-      // Try to access dashboard without being logged in
-      await page.goto('/dashboard');
+      // Try to access root without being logged in
+      await page.goto('/');
 
       // Should be redirected to login
       await page.waitForURL('/login', { timeout: 5000 });
@@ -112,12 +106,12 @@ test.describe('Routing and Navigation', () => {
       await page.fill('input[type="password"]', 'password123');
       await page.click('button[type="submit"]');
 
-      // Should redirect back to dashboard (the intended destination)
-      await page.waitForURL('/dashboard', { timeout: 5000 });
-      expect(page.url()).toContain('/dashboard');
+      // Should redirect to workspace (the intended destination)
+      await page.waitForURL(/\/w\/.+\/overview/, { timeout: 5000 });
+      expect(page.url()).toMatch(/\/w\/.+\/overview/);
     });
 
-    test('should redirect to dashboard when logging in directly (no intent)', async ({
+    test('should redirect to workspace when logging in directly (no intent)', async ({
       page,
       resetDatabase,
       seedDatabase,
@@ -133,32 +127,28 @@ test.describe('Routing and Navigation', () => {
       await page.fill('input[type="password"]', 'password123');
       await page.click('button[type="submit"]');
 
-      // Should redirect to dashboard (default)
-      await page.waitForURL('/dashboard', { timeout: 5000 });
-      expect(page.url()).toContain('/dashboard');
+      // Should redirect to workspace (default)
+      await page.waitForURL(/\/w\/.+\/overview/, { timeout: 5000 });
+      expect(page.url()).toMatch(/\/w\/.+\/overview/);
     });
 
-    test('should clear redirect intent on logout', async ({
-      page,
-      resetDatabase,
-      seedDatabase,
-    }) => {
+    test('should clear redirect intent on logout', async ({ page, resetDatabase, seedDatabase }) => {
       await resetDatabase();
       await seedDatabase(seedPresets.withUsers);
 
-      // Try to access dashboard, get redirected to login
-      await page.goto('/dashboard');
+      // Try to access root, get redirected to login
+      await page.goto('/');
       await page.waitForURL('/login', { timeout: 5000 });
 
       // Login
       await page.fill('input[type="email"]', 'user1@example.com');
       await page.fill('input[type="password"]', 'password123');
       await page.click('button[type="submit"]');
-      await page.waitForURL('/dashboard', { timeout: 5000 });
+      await page.waitForURL(/\/w\/.+\/overview/, { timeout: 5000 });
 
       // Logout (if logout button exists)
       const logoutButton = page.locator('button:has-text("Sign Out"), button:has-text("Logout")');
-      if (await logoutButton.count() > 0) {
+      if ((await logoutButton.count()) > 0) {
         await logoutButton.first().click();
         await page.waitForURL('/login', { timeout: 5000 });
       } else {
@@ -175,18 +165,14 @@ test.describe('Routing and Navigation', () => {
       await page.fill('input[type="password"]', 'password123');
       await page.click('button[type="submit"]');
 
-      // Should go to dashboard (not preserve old intent)
-      await page.waitForURL('/dashboard', { timeout: 5000 });
-      expect(page.url()).toContain('/dashboard');
+      // Should go to workspace (not preserve old intent)
+      await page.waitForURL(/\/w\/.+\/overview/, { timeout: 5000 });
+      expect(page.url()).toMatch(/\/w\/.+\/overview/);
     });
   });
 
   test.describe('404 Page', () => {
-    test('should show 404 page for non-existent routes', async ({
-      page,
-      resetDatabase,
-      seedDatabase,
-    }) => {
+    test('should show 404 page for non-existent routes', async ({ page, resetDatabase, seedDatabase }) => {
       await resetDatabase();
       await seedDatabase(seedPresets.withUsers);
 
@@ -198,28 +184,20 @@ test.describe('Routing and Navigation', () => {
       await expect(page.locator('h2')).toContainText('Page Not Found');
     });
 
-    test('should have link to dashboard on 404 page', async ({
-      page,
-      resetDatabase,
-      seedDatabase,
-    }) => {
+    test('should have link to home on 404 page', async ({ page, resetDatabase, seedDatabase }) => {
       await resetDatabase();
       await seedDatabase(seedPresets.withUsers);
 
       // Navigate to a non-existent route
       await page.goto('/non-existent-route');
 
-      // Should have a link to dashboard
-      const dashboardLink = page.locator('a[href="/dashboard"]');
-      await expect(dashboardLink).toBeVisible();
-      await expect(dashboardLink).toContainText(/Dashboard/i);
+      // Should have a link to home
+      const homeLink = page.locator('a[href="/"]');
+      await expect(homeLink).toBeVisible();
+      await expect(homeLink).toContainText(/Home/i);
     });
 
-    test('should allow navigation from 404 page to dashboard', async ({
-      page,
-      resetDatabase,
-      seedDatabase,
-    }) => {
+    test('should allow navigation from 404 page to workspace', async ({ page, resetDatabase, seedDatabase }) => {
       await resetDatabase();
       await seedDatabase(seedPresets.withUsers);
 
@@ -228,24 +206,20 @@ test.describe('Routing and Navigation', () => {
       await page.fill('input[type="email"]', 'user1@example.com');
       await page.fill('input[type="password"]', 'password123');
       await page.click('button[type="submit"]');
-      await page.waitForURL('/dashboard', { timeout: 5000 });
+      await page.waitForURL(/\/w\/.+\/overview/, { timeout: 5000 });
 
       // Navigate to 404 page
       await page.goto('/another-non-existent-route');
 
-      // Click dashboard link
-      await page.click('a[href="/dashboard"]');
+      // Click home link
+      await page.click('a[href="/"]');
 
-      // Should navigate to dashboard
-      await page.waitForURL('/dashboard', { timeout: 5000 });
-      expect(page.url()).toContain('/dashboard');
+      // Should navigate to workspace
+      await page.waitForURL(/\/w\/.+\/overview/, { timeout: 5000 });
+      expect(page.url()).toMatch(/\/w\/.+\/overview/);
     });
 
-    test('should have back button on 404 page', async ({
-      page,
-      resetDatabase,
-      seedDatabase,
-    }) => {
+    test('should have back button on 404 page', async ({ page, resetDatabase, seedDatabase }) => {
       await resetDatabase();
       await seedDatabase(seedPresets.withUsers);
 
@@ -259,11 +233,7 @@ test.describe('Routing and Navigation', () => {
   });
 
   test.describe('Public Routes', () => {
-    test('should allow access to login page without authentication', async ({
-      page,
-      resetDatabase,
-      seedDatabase,
-    }) => {
+    test('should allow access to login page without authentication', async ({ page, resetDatabase, seedDatabase }) => {
       await resetDatabase();
       await seedDatabase(seedPresets.withUsers);
 
@@ -306,11 +276,7 @@ test.describe('Routing and Navigation', () => {
   });
 
   test.describe('Loading States', () => {
-    test('should show loading state while checking authentication', async ({
-      page,
-      resetDatabase,
-      seedDatabase,
-    }) => {
+    test('should show loading state while checking authentication', async ({ page, resetDatabase, seedDatabase }) => {
       await resetDatabase();
       await seedDatabase(seedPresets.withUsers);
 
@@ -322,7 +288,7 @@ test.describe('Routing and Navigation', () => {
         // Check if this is a refreshToken mutation
         if (postData?.operationName === 'RefreshToken' || postData?.query?.includes('refreshToken')) {
           // Delay the refresh token response by 500ms
-          await new Promise(resolve => setTimeout(resolve, 500));
+          await new Promise((resolve) => setTimeout(resolve, 500));
         }
 
         await route.continue();
@@ -333,7 +299,7 @@ test.describe('Routing and Navigation', () => {
       await page.fill('input[type="email"]', 'user1@example.com');
       await page.fill('input[type="password"]', 'password123');
       await page.click('button[type="submit"]');
-      await page.waitForURL('/dashboard', { timeout: 5000 });
+      await page.waitForURL(/\/w\/.+\/overview/, { timeout: 5000 });
 
       // Manipulate the stored JWT token to be expired
       await page.evaluate(() => {
@@ -351,10 +317,7 @@ test.describe('Routing and Navigation', () => {
             payload.exp = Math.floor(Date.now() / 1000) - 5;
 
             // Re-encode the payload
-            const newPayload = btoa(JSON.stringify(payload))
-              .replace(/\+/g, '-')
-              .replace(/\//g, '_')
-              .replace(/=+$/, '');
+            const newPayload = btoa(JSON.stringify(payload)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
 
             // Reconstruct the token (signature will be invalid but we're only checking expiry)
             tokens.accessToken = `${parts[0]}.${newPayload}.${parts[2]}`;
