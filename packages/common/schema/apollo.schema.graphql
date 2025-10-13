@@ -174,8 +174,6 @@ type Query {
   mcpServers: [MCPServer!]
   system: System
   infra: Infra!
-  searchMCPServers(query: String!): [MCPRegistryServer!]
-  fetchMCPServerConfig(repositoryUrl: String!): MCPRegistryServer
   workspaceMCPTools(workspaceId: ID!): Workspace
   isMCPAutoConfigEnabled: Boolean!
   mcpRegistries(workspaceId: ID!): [MCPRegistry!]

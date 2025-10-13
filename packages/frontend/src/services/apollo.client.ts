@@ -231,12 +231,6 @@ export const client = new ApolloClient({
       if (object.__typename === 'Subscription' || object.__typename === 'Mutation') {
         return undefined;
       }
-      if (object.__typename === 'MCPRegistryServer') {
-        return object.name as string;
-      }
-      if (object.__typename === 'Registry') {
-        return object.version as string;
-      }
       if (!object.id) {
         console.warn('No id found for object', object);
       }

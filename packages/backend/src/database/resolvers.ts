@@ -55,18 +55,6 @@ export const resolvers = (container: Container = defaultContainer): apolloResolv
       mcpServers: async () => {
         return mcpServerRepository.findAll();
       },
-      searchMCPServers: async (_parent: unknown, { query }: { query: string }) => {
-        try {
-          return await mcpAutoConfigService.findMCPServerForProblem(query, 3);
-        } catch (error: unknown) {
-          throw new Error('SEARCH_MCP_SERVERS_ERROR', {
-            cause: error instanceof Error ? error : new Error(String(error)),
-          });
-        }
-      },
-      fetchMCPServerConfig: async (_parent: unknown, { repositoryUrl }: { repositoryUrl: string }) => {
-        return mcpAutoConfigService.fetchMCPServerConfig(repositoryUrl);
-      },
       system: async () => {
         return systemRepository.getSystem();
       },

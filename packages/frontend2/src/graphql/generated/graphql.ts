@@ -91,16 +91,6 @@ export type McpRegistry2lyMetadata = {
   registryVersion: Scalars['String']['output'];
 };
 
-export type McpRegistryServer = {
-  __typename: 'MCPRegistryServer';
-  _2ly: McpRegistry2lyMetadata;
-  config: Scalars['String']['output'];
-  description: Scalars['String']['output'];
-  name: Scalars['String']['output'];
-  repositoryUrl: Scalars['String']['output'];
-  transport: McpTransportType;
-};
-
 export type McpRegistryUpstreamServer = {
   __typename: 'MCPRegistryUpstreamServer';
   _meta: Maybe<Scalars['String']['output']>;
@@ -361,32 +351,19 @@ export type MutationUpdateWorkspaceArgs = {
 
 export type Query = {
   __typename: 'Query';
-  fetchMCPServerConfig: Maybe<McpRegistryServer>;
   infra: Infra;
   isMCPAutoConfigEnabled: Scalars['Boolean']['output'];
   mcpRegistries: Maybe<Array<McpRegistry>>;
   mcpServers: Maybe<Array<McpServer>>;
   me: Maybe<User>;
-  registry: Registry;
-  searchMCPServers: Maybe<Array<McpRegistryServer>>;
   system: Maybe<System>;
   workspace: Maybe<Array<Workspace>>;
   workspaceMCPTools: Maybe<Workspace>;
 };
 
 
-export type QueryFetchMcpServerConfigArgs = {
-  repositoryUrl: Scalars['String']['input'];
-};
-
-
 export type QueryMcpRegistriesArgs = {
   workspaceId: Scalars['ID']['input'];
-};
-
-
-export type QuerySearchMcpServersArgs = {
-  query: Scalars['String']['input'];
 };
 
 
@@ -418,13 +395,6 @@ export type RegisterUserPayload = {
   success: Scalars['Boolean']['output'];
   tokens: Maybe<AuthTokens>;
   user: Maybe<User>;
-};
-
-export type Registry = {
-  __typename: 'Registry';
-  description: Scalars['String']['output'];
-  servers: Maybe<Array<McpRegistryServer>>;
-  version: Scalars['String']['output'];
 };
 
 export type Runtime = {

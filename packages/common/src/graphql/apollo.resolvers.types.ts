@@ -85,15 +85,6 @@ export type McpRegistry2lyMetadata = {
   registryVersion: Scalars['String']['output'];
 };
 
-export type McpRegistryServer = {
-  _2ly: McpRegistry2lyMetadata;
-  config: Scalars['String']['output'];
-  description: Scalars['String']['output'];
-  name: Scalars['String']['output'];
-  repositoryUrl: Scalars['String']['output'];
-  transport: McpTransportType;
-};
-
 export type McpRegistryUpstreamServer = {
   _meta?: Maybe<Scalars['String']['output']>;
   createdAt: Scalars['Date']['output'];
@@ -349,32 +340,19 @@ export type MutationUpdateWorkspaceArgs = {
 };
 
 export type Query = {
-  fetchMCPServerConfig?: Maybe<McpRegistryServer>;
   infra: Infra;
   isMCPAutoConfigEnabled: Scalars['Boolean']['output'];
   mcpRegistries?: Maybe<Array<McpRegistry>>;
   mcpServers?: Maybe<Array<McpServer>>;
   me?: Maybe<User>;
-  registry: Registry;
-  searchMCPServers?: Maybe<Array<McpRegistryServer>>;
   system?: Maybe<System>;
   workspace?: Maybe<Array<Workspace>>;
   workspaceMCPTools?: Maybe<Workspace>;
 };
 
 
-export type QueryFetchMcpServerConfigArgs = {
-  repositoryUrl: Scalars['String']['input'];
-};
-
-
 export type QueryMcpRegistriesArgs = {
   workspaceId: Scalars['ID']['input'];
-};
-
-
-export type QuerySearchMcpServersArgs = {
-  query: Scalars['String']['input'];
 };
 
 
@@ -404,12 +382,6 @@ export type RegisterUserPayload = {
   success: Scalars['Boolean']['output'];
   tokens?: Maybe<AuthTokens>;
   user?: Maybe<User>;
-};
-
-export type Registry = {
-  description: Scalars['String']['output'];
-  servers?: Maybe<Array<McpRegistryServer>>;
-  version: Scalars['String']['output'];
 };
 
 export type Runtime = {
@@ -599,7 +571,6 @@ export type ResolversTypes = {
   LogoutUserInput: LogoutUserInput;
   MCPRegistry: ResolverTypeWrapper<McpRegistry>;
   MCPRegistry2lyMetadata: ResolverTypeWrapper<McpRegistry2lyMetadata>;
-  MCPRegistryServer: ResolverTypeWrapper<McpRegistryServer>;
   MCPRegistryUpstreamServer: ResolverTypeWrapper<McpRegistryUpstreamServer>;
   MCPServer: ResolverTypeWrapper<McpServer>;
   MCPServerRunOn: McpServerRunOn;
@@ -611,7 +582,6 @@ export type ResolversTypes = {
   RefreshTokenPayload: ResolverTypeWrapper<RefreshTokenPayload>;
   RegisterUserInput: RegisterUserInput;
   RegisterUserPayload: ResolverTypeWrapper<RegisterUserPayload>;
-  Registry: ResolverTypeWrapper<Registry>;
   Runtime: ResolverTypeWrapper<Runtime>;
   String: ResolverTypeWrapper<Scalars['String']['output']>;
   Subscription: ResolverTypeWrapper<{}>;
@@ -639,7 +609,6 @@ export type ResolversParentTypes = {
   LogoutUserInput: LogoutUserInput;
   MCPRegistry: McpRegistry;
   MCPRegistry2lyMetadata: McpRegistry2lyMetadata;
-  MCPRegistryServer: McpRegistryServer;
   MCPRegistryUpstreamServer: McpRegistryUpstreamServer;
   MCPServer: McpServer;
   MCPTool: McpTool;
@@ -649,7 +618,6 @@ export type ResolversParentTypes = {
   RefreshTokenPayload: RefreshTokenPayload;
   RegisterUserInput: RegisterUserInput;
   RegisterUserPayload: RegisterUserPayload;
-  Registry: Registry;
   Runtime: Runtime;
   String: Scalars['String']['output'];
   Subscription: {};
@@ -710,16 +678,6 @@ export type McpRegistryResolvers<ContextType = object, ParentType extends Resolv
 
 export type McpRegistry2lyMetadataResolvers<ContextType = object, ParentType extends ResolversParentTypes['MCPRegistry2lyMetadata'] = ResolversParentTypes['MCPRegistry2lyMetadata']> = {
   registryVersion?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
-  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
-};
-
-export type McpRegistryServerResolvers<ContextType = object, ParentType extends ResolversParentTypes['MCPRegistryServer'] = ResolversParentTypes['MCPRegistryServer']> = {
-  _2ly?: Resolver<ResolversTypes['MCPRegistry2lyMetadata'], ParentType, ContextType>;
-  config?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
-  description?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
-  name?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
-  repositoryUrl?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
-  transport?: Resolver<ResolversTypes['MCPTransportType'], ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 };
 
@@ -800,14 +758,11 @@ export type MutationResolvers<ContextType = object, ParentType extends Resolvers
 };
 
 export type QueryResolvers<ContextType = object, ParentType extends ResolversParentTypes['Query'] = ResolversParentTypes['Query']> = {
-  fetchMCPServerConfig?: Resolver<Maybe<ResolversTypes['MCPRegistryServer']>, ParentType, ContextType, RequireFields<QueryFetchMcpServerConfigArgs, 'repositoryUrl'>>;
   infra?: Resolver<ResolversTypes['Infra'], ParentType, ContextType>;
   isMCPAutoConfigEnabled?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
   mcpRegistries?: Resolver<Maybe<Array<ResolversTypes['MCPRegistry']>>, ParentType, ContextType, RequireFields<QueryMcpRegistriesArgs, 'workspaceId'>>;
   mcpServers?: Resolver<Maybe<Array<ResolversTypes['MCPServer']>>, ParentType, ContextType>;
   me?: Resolver<Maybe<ResolversTypes['User']>, ParentType, ContextType>;
-  registry?: Resolver<ResolversTypes['Registry'], ParentType, ContextType>;
-  searchMCPServers?: Resolver<Maybe<Array<ResolversTypes['MCPRegistryServer']>>, ParentType, ContextType, RequireFields<QuerySearchMcpServersArgs, 'query'>>;
   system?: Resolver<Maybe<ResolversTypes['System']>, ParentType, ContextType>;
   workspace?: Resolver<Maybe<Array<ResolversTypes['Workspace']>>, ParentType, ContextType>;
   workspaceMCPTools?: Resolver<Maybe<ResolversTypes['Workspace']>, ParentType, ContextType, RequireFields<QueryWorkspaceMcpToolsArgs, 'workspaceId'>>;
@@ -826,13 +781,6 @@ export type RegisterUserPayloadResolvers<ContextType = object, ParentType extend
   success?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
   tokens?: Resolver<Maybe<ResolversTypes['AuthTokens']>, ParentType, ContextType>;
   user?: Resolver<Maybe<ResolversTypes['User']>, ParentType, ContextType>;
-  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
-};
-
-export type RegistryResolvers<ContextType = object, ParentType extends ResolversParentTypes['Registry'] = ResolversParentTypes['Registry']> = {
-  description?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
-  servers?: Resolver<Maybe<Array<ResolversTypes['MCPRegistryServer']>>, ParentType, ContextType>;
-  version?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 };
 
@@ -919,7 +867,6 @@ export type Resolvers<ContextType = object> = {
   LogoutPayload?: LogoutPayloadResolvers<ContextType>;
   MCPRegistry?: McpRegistryResolvers<ContextType>;
   MCPRegistry2lyMetadata?: McpRegistry2lyMetadataResolvers<ContextType>;
-  MCPRegistryServer?: McpRegistryServerResolvers<ContextType>;
   MCPRegistryUpstreamServer?: McpRegistryUpstreamServerResolvers<ContextType>;
   MCPServer?: McpServerResolvers<ContextType>;
   MCPTool?: McpToolResolvers<ContextType>;
@@ -927,7 +874,6 @@ export type Resolvers<ContextType = object> = {
   Query?: QueryResolvers<ContextType>;
   RefreshTokenPayload?: RefreshTokenPayloadResolvers<ContextType>;
   RegisterUserPayload?: RegisterUserPayloadResolvers<ContextType>;
-  Registry?: RegistryResolvers<ContextType>;
   Runtime?: RuntimeResolvers<ContextType>;
   Subscription?: SubscriptionResolvers<ContextType>;
   System?: SystemResolvers<ContextType>;
