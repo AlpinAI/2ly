@@ -16,6 +16,7 @@ import { graphql, resetDatabase, request } from '../fixtures/database';
 const apiUrl = process.env.API_URL || 'http://localhost:3000';
 
 describe('Backend API Tests', () => {
+
   // Reset database before each test in this file
   beforeEach(async () => {
     await resetDatabase();

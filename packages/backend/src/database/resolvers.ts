@@ -17,8 +17,6 @@ import { createAuthResolvers } from '../resolvers/auth.resolver';
 import { AuthenticationService, JwtService, PasswordPolicyService } from '../services/auth';
 import { Container } from 'inversify';
 
-let cachedRegistryContent: string | undefined;
-
 const observableToAsyncGenerator = <T, K extends string>(
   observable: Observable<T>,
   key: K,

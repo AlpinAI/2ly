@@ -31,7 +31,6 @@ import {
 } from '../repositories';
 import { JwtService, AuthenticationService, AccountSecurityService, PasswordPolicyService } from '../services/auth';
 import { SecurityMiddleware, RateLimitMiddleware, GraphQLAuthMiddleware } from '../middleware';
-import { AuthRoutes } from '../routes/auth.routes';
 import { MCPServerAutoConfigService, AZURE_ENDPOINT, AZURE_API_KEY, BRAVE_SEARCH_API_KEY } from '../services/mcp-auto-config.service';
 import pino from 'pino';
 import { MonitoringService } from '../services/monitoring.service';
@@ -96,9 +95,6 @@ const start = () => {
   container.bind(SecurityMiddleware).toSelf().inSingletonScope();
   container.bind(RateLimitMiddleware).toSelf().inSingletonScope();
   container.bind(GraphQLAuthMiddleware).toSelf().inSingletonScope();
-
-  // Init routes
-  container.bind(AuthRoutes).toSelf().inSingletonScope();
 
   // Init MCP server auto config service
   container.bind(AZURE_ENDPOINT).toConstantValue(process.env.AZURE_ENDPOINT || 'https://models.inference.ai.azure.com');

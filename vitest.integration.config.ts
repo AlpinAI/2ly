@@ -31,6 +31,7 @@ export default defineConfig({
             'packages/backend/tests/setup.ts'
         ],
         globals: true,
+        fileParallelism: false,
         // Longer timeout for integration tests with containers
         testTimeout: 30000,
         hookTimeout: 30000,
@@ -61,5 +62,5 @@ export default defineConfig({
             '@2ly/common/*': path.resolve(__dirname, 'packages/common/src/*')
 
         }
-    }
+    },
 });
