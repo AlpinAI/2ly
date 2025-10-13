@@ -17,9 +17,11 @@ import { useMutation, useSubscription } from '@apollo/client/react';
 import { gql } from '@apollo/client';
 import { ExternalLink, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { SplitButton } from '@/components/ui/split-button';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { DropdownMenuRadioGroup, DropdownMenuRadioItem } from '@/components/ui/dropdown-menu';
 import { cn } from '@/lib/utils';
 import { useWorkspaceId } from '@/stores/workspaceStore';
 import { TestPanel, type TestStatus } from './TestPanel';
@@ -342,56 +344,57 @@ export function MCPServerConfigure({ selectedServer, onBack, onSuccess }: MCPSer
         {/* Left Panel: Configuration */}
         <div className="flex flex-col bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
           {/* Fixed Header */}
-          <div className="p-6 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shrink-0">
-            <div className="flex items-start justify-between mb-4">
-              <div className="flex-1 min-w-0">
-                <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-1 truncate">
-                  {serverDisplayName}
-                </h3>
-                {selectedServer.repositoryUrl && (
-                  <a
-                    href={selectedServer.repositoryUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1 text-sm text-cyan-600 dark:text-cyan-400 hover:underline"
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    <ExternalLink className="h-3 w-3" />
-                    View Repository
-                  </a>
-                )}
-              </div>
-            </div>
+          <div className="p-4 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shrink-0 space-y-2">
+            {/* Config Type Dropdown as Title */}
+            <select
+              id="config-type"
+              value={selectedOptionId}
+              onChange={(e) => setSelectedOptionId(e.target.value)}
+              className={cn(
+                'flex h-10 w-full rounded-lg border border-input bg-background px-3 py-2',
+                'text-base font-semibold text-gray-900 dark:text-white',
+                'ring-offset-background',
+                'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
+                'disabled:cursor-not-allowed disabled:opacity-50',
+              )}
+            >
+              {configOptions.map((option) => (
+                <option key={option.id} value={option.id} disabled={!option.isSupported}>
+                  {option.label}
+                  {!option.isSupported && ' (Not supported)'}
+                </option>
+              ))}
+            </select>
 
+            {/* Description */}
             {selectedServer.description && (
-              <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">{selectedServer.description}</p>
+              <p className="text-sm text-gray-600 dark:text-gray-400 line-clamp-2">{selectedServer.description}</p>
             )}
 
-            {/* Config Type Dropdown */}
-            <div className="space-y-2">
-              <Label htmlFor="config-type">Configuration Type</Label>
-              <select
-                id="config-type"
-                value={selectedOptionId}
-                onChange={(e) => setSelectedOptionId(e.target.value)}
-                className={cn(
-                  'flex h-10 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm',
-                  'ring-offset-background',
-                  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
-                  'disabled:cursor-not-allowed disabled:opacity-50',
-                )}
+            {/* Repository Link */}
+            {selectedServer.repositoryUrl && (
+              <a
+                href={selectedServer.repositoryUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1 text-sm text-cyan-600 dark:text-cyan-400 hover:underline"
+                onClick={(e) => e.stopPropagation()}
               >
-                {configOptions.map((option) => (
-                  <option key={option.id} value={option.id} disabled={!option.isSupported}>
-                    {option.label}
-                    {!option.isSupported && ' (Not supported)'}
-                  </option>
-                ))}
-              </select>
+                <ExternalLink className="h-3 w-3" />
+                View Repository
+              </a>
+            )}
+          </div>
+
+          {/* Scrollable Form Area */}
+          <div className="flex-1 min-h-0 overflow-y-auto p-4 space-y-4">
+            {/* Section Header */}
+            <div className="pb-2 border-b border-gray-200 dark:border-gray-700">
+              <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300">Server Configuration</h4>
             </div>
 
-            {/* Custom Name Input */}
-            <div className="space-y-2">
+            {/* Server Name Input - Always visible */}
+            <div className="space-y-1.5">
               <Label htmlFor="custom-name">Server Name</Label>
               <Input
                 id="custom-name"
@@ -400,86 +403,68 @@ export function MCPServerConfigure({ selectedServer, onBack, onSuccess }: MCPSer
                 onChange={(e) => setCustomName(e.target.value)}
                 placeholder={serverDisplayName}
               />
-              <p className="text-xs text-gray-500 dark:text-gray-400">
-                Give this server configuration a meaningful name (defaults to the server&apos;s registry name)
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                Give this server configuration a meaningful name
               </p>
             </div>
-          </div>
 
-          {/* Scrollable Form Area */}
-          <div className="flex-1 min-h-0 overflow-y-auto p-6 space-y-4">
+            {/* Dynamic Configuration Fields */}
             {fields.length === 0 ? (
-              <div className="text-center py-8">
-                <div className="text-4xl mb-3">✨</div>
-                <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">
-                  This server has no configuration options.
-                </p>
-                <p className="text-xs text-gray-500 dark:text-gray-500">You can test it directly!</p>
+              <div className="text-center py-6">
+                <div className="text-3xl mb-2">✨</div>
+                <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">No additional configuration needed</p>
+                <p className="text-xs text-gray-500 dark:text-gray-500">You can test this server directly</p>
               </div>
             ) : (
-              <>
-                <div className="pb-2 border-b border-gray-200 dark:border-gray-700">
-                  <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300">Server Configuration</h4>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                    Configure the parameters for this server
-                  </p>
-                </div>
-                {fields.map((field) => (
-                  <ConfigFieldInput
-                    key={field.name}
-                    field={field}
-                    value={field.value || ''}
-                    onChange={(value) => handleFieldChange(field.name, value)}
-                  />
-                ))}
-              </>
+              fields.map((field) => (
+                <ConfigFieldInput
+                  key={field.name}
+                  field={field}
+                  value={field.value || ''}
+                  onChange={(value) => handleFieldChange(field.name, value)}
+                />
+              ))
             )}
           </div>
 
           {/* Fixed Footer */}
-          <div className="p-6 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shrink-0 space-y-4">
-            {/* Runtime Selector */}
-            <div className="space-y-2">
-              <Label htmlFor="runtime">Test Runtime</Label>
-              <select
-                id="runtime"
-                value={selectedRuntimeId}
-                onChange={(e) => setSelectedRuntimeId(e.target.value)}
-                className={cn(
-                  'flex h-10 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm',
-                  'ring-offset-background',
-                  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
-                  'disabled:cursor-not-allowed disabled:opacity-50',
-                )}
-              >
-                {runtimes.length === 0 ? (
-                  <option value="">No runtimes available</option>
+          <div className="p-4 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shrink-0 space-y-3">
+            {/* Test Server Split Button */}
+            <SplitButton
+              primaryLabel={
+                testStatus === 'running' ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Testing...
+                  </>
                 ) : (
-                  runtimes.map((runtime) => (
-                    <option key={runtime.id} value={runtime.id} disabled={runtime.status !== 'ACTIVE'}>
-                      {runtime.name}
-                      {runtime.id === defaultRuntimeId && ' (Default)'}
-                      {runtime.status !== 'ACTIVE' && ' (Offline)'}
-                    </option>
-                  ))
-                )}
-              </select>
-            </div>
+                  'Test Server'
+                )
+              }
+              onPrimaryAction={handleTestServer}
+              primaryDisabled={!isFormValid || testStatus === 'running'}
+              dropdownContent={
+                <DropdownMenuRadioGroup value={selectedRuntimeId} onValueChange={setSelectedRuntimeId}>
+                  {runtimes.length === 0 ? (
+                    <div className="px-2 py-1.5 text-sm text-gray-500">No runtimes available</div>
+                  ) : (
+                    runtimes.map((runtime) => (
+                      <DropdownMenuRadioItem key={runtime.id} value={runtime.id} disabled={runtime.status !== 'ACTIVE'}>
+                        {runtime.name}
+                        {runtime.id === defaultRuntimeId && ' (Default)'}
+                        {runtime.status !== 'ACTIVE' && ' (Offline)'}
+                      </DropdownMenuRadioItem>
+                    ))
+                  )}
+                </DropdownMenuRadioGroup>
+              }
+              dropdownAriaLabel="Select runtime"
+              className="w-full"
+            />
 
-            {/* Test Button */}
-            <Button onClick={handleTestServer} disabled={!isFormValid || testStatus === 'running'} className="w-full">
-              {testStatus === 'running' ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Testing...
-                </>
-              ) : (
-                'Test Server'
-              )}
-            </Button>
-
+            {/* Validation Alert */}
             {!isFormValid && selectedOption && (
-              <Alert variant="destructive">
+              <Alert variant="destructive" className="py-2">
                 <AlertDescription className="text-xs">Please fill all required fields before testing</AlertDescription>
               </Alert>
             )}

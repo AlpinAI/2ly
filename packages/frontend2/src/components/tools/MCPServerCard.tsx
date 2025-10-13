@@ -13,16 +13,10 @@
  */
 
 import { useState } from 'react';
-import { ExternalLink, ChevronDown, Check } from 'lucide-react';
+import { ExternalLink, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { cn } from '@/lib/utils';
+import { SplitButton } from '@/components/ui/split-button';
+import { DropdownMenuItem, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import type { ServerVersionGroup } from './MCPServerBrowser';
 import type { SubscribeMcpRegistriesSubscription } from '@/graphql/generated/graphql';
 
@@ -114,29 +108,14 @@ export function MCPServerCard({ serverGroup, onConfigure }: MCPServerCardProps) 
           </a>
         )}
 
-        {/* Split Button: Configure + Version Dropdown */}
-        <div className="flex ml-auto">
-          <Button
+        {/* Configure Button - Split when older versions exist */}
+        {hasOlderVersions ? (
+          <SplitButton
             size="sm"
-            onClick={() => onConfigure(latestVersion)}
-            className={cn(hasOlderVersions && 'rounded-r-none border-r-0')}
-          >
-            Configure
-          </Button>
-
-          {hasOlderVersions && (
-            <DropdownMenu open={dropdownOpen} onOpenChange={setDropdownOpen}>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  size="sm"
-                  variant="default"
-                  className="rounded-l-none border-l border-l-white/20 px-2"
-                  aria-label="Select version"
-                >
-                  <ChevronDown className="h-3 w-3" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="min-w-[180px]">
+            primaryLabel="Configure"
+            onPrimaryAction={() => onConfigure(latestVersion)}
+            dropdownContent={
+              <>
                 <DropdownMenuItem onClick={() => onConfigure(latestVersion)}>
                   <Check className="h-4 w-4 mr-2" />
                   Latest (v{latestVersion.version})
@@ -153,10 +132,18 @@ export function MCPServerCard({ serverGroup, onConfigure }: MCPServerCardProps) 
                     <span className="w-6" /> {/* Spacer for alignment */}v{version.version}
                   </DropdownMenuItem>
                 ))}
-              </DropdownMenuContent>
-            </DropdownMenu>
-          )}
-        </div>
+              </>
+            }
+            dropdownOpen={dropdownOpen}
+            onDropdownOpenChange={setDropdownOpen}
+            dropdownAriaLabel="Select version"
+            className="ml-auto"
+          />
+        ) : (
+          <Button size="sm" onClick={() => onConfigure(latestVersion)} className="ml-auto">
+            Configure
+          </Button>
+        )}
       </div>
     </div>
   );
