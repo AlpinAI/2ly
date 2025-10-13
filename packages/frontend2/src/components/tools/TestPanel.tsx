@@ -23,18 +23,26 @@ interface TestPanelProps {
   tools?: Array<{ id: string; name: string }>;
   error?: string;
   onRetry?: () => void;
+  onConfigureAnother?: () => void;
+  onFinish?: () => void;
 }
 
-export function TestPanel({ status, serverName, tools = [], error, onRetry }: TestPanelProps) {
+export function TestPanel({
+  status,
+  serverName,
+  tools = [],
+  error,
+  onRetry,
+  onConfigureAnother,
+  onFinish,
+}: TestPanelProps) {
   const renderContent = () => {
     switch (status) {
       case 'idle':
         return (
           <div className="flex flex-col items-center justify-center h-full text-center px-6">
             <div className="text-6xl mb-4">🧩</div>
-            <h4 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-2">
-              Ready to test
-            </h4>
+            <h4 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-2">Ready to test</h4>
             <p className="text-sm text-gray-600 dark:text-gray-400 max-w-md">
               Configure your server and click "Test Server" to discover available tools
             </p>
@@ -75,12 +83,8 @@ export function TestPanel({ status, serverName, tools = [], error, onRetry }: Te
             {/* Content */}
             <div className="relative text-center z-10">
               <div className="text-5xl mb-4">🧩</div>
-              <h4 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-2">
-                Testing {serverName}
-              </h4>
-              <p className="text-sm text-gray-600 dark:text-gray-400">
-                Starting the server and discovering tools...
-              </p>
+              <h4 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-2">Testing {serverName}</h4>
+              <p className="text-sm text-gray-600 dark:text-gray-400">Starting the server and discovering tools...</p>
             </div>
           </div>
         );
@@ -100,9 +104,7 @@ export function TestPanel({ status, serverName, tools = [], error, onRetry }: Te
                     key={tool.id}
                     className="px-4 py-2 bg-white/70 dark:bg-gray-800/70 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm"
                   >
-                    <div className="text-sm font-medium text-gray-900 dark:text-white truncate">
-                      {tool.name}
-                    </div>
+                    <div className="text-sm font-medium text-gray-900 dark:text-white truncate">{tool.name}</div>
                   </div>
                 ))}
                 {tools.length > 3 && (
@@ -123,12 +125,10 @@ export function TestPanel({ status, serverName, tools = [], error, onRetry }: Te
         return (
           <div className="flex flex-col items-center justify-center h-full px-6 text-center">
             <Clock className="h-16 w-16 text-yellow-600 dark:text-yellow-400 mb-4" />
-            <h4 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-2">
-              No tools discovered yet
-            </h4>
+            <h4 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-2">No tools discovered yet</h4>
             <p className="text-sm text-gray-600 dark:text-gray-400 mb-4 max-w-md">
-              The server didn't expose any tools within 20 seconds. This might mean the configuration is
-              incorrect or the server needs more time.
+              The server didn't expose any tools within 20 seconds. This might mean the configuration is incorrect or
+              the server needs more time.
             </p>
             {onRetry && (
               <Button onClick={onRetry} variant="outline">
@@ -142,9 +142,7 @@ export function TestPanel({ status, serverName, tools = [], error, onRetry }: Te
         return (
           <div className="flex flex-col items-center justify-center h-full px-6 text-center">
             <AlertCircle className="h-16 w-16 text-red-600 dark:text-red-400 mb-4" />
-            <h4 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-2">
-              Test failed
-            </h4>
+            <h4 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-2">Test failed</h4>
             <p className="text-sm text-gray-600 dark:text-gray-400 mb-4 max-w-md">
               {error || 'An unexpected error occurred while testing the server.'}
             </p>
@@ -162,13 +160,27 @@ export function TestPanel({ status, serverName, tools = [], error, onRetry }: Te
   };
 
   return (
-    <div className="relative h-full rounded-xl border border-cyan-100 dark:border-cyan-900/30 bg-gradient-to-br from-cyan-50 to-indigo-50 dark:from-cyan-950/20 dark:to-indigo-950/20 overflow-hidden">
+    <div className="relative h-full rounded-xl border border-cyan-100 dark:border-cyan-900/30 bg-gradient-to-br from-cyan-50 to-indigo-50 dark:from-cyan-950/20 dark:to-indigo-950/20 overflow-hidden flex flex-col">
       {/* Decorative blur circles */}
-      <div className="absolute -bottom-6 -left-6 w-24 h-24 bg-gradient-to-tr from-yellow-200 to-pink-200 dark:from-yellow-600/30 dark:to-pink-600/30 rounded-full blur-2xl opacity-60" />
-      <div className="absolute -top-6 -right-6 w-24 h-24 bg-gradient-to-tr from-cyan-200 to-violet-200 dark:from-cyan-600/30 dark:to-violet-600/30 rounded-full blur-2xl opacity-60" />
+      <div className="absolute -bottom-6 -left-6 w-24 h-24 bg-gradient-to-tr from-yellow-200 to-pink-200 dark:from-yellow-600/30 dark:to-pink-600/30 rounded-full blur-2xl opacity-60 pointer-events-none" />
+      <div className="absolute -top-6 -right-6 w-24 h-24 bg-gradient-to-tr from-cyan-200 to-violet-200 dark:from-cyan-600/30 dark:to-violet-600/30 rounded-full blur-2xl opacity-60 pointer-events-none" />
 
       {/* Content */}
-      <div className="relative h-full">{renderContent()}</div>
+      <div className="relative flex-1 min-h-0">{renderContent()}</div>
+
+      {/* Success Actions - Inside Card */}
+      {status === 'success' && (onConfigureAnother || onFinish) && (
+        <div className="relative z-10 p-4 border-t border-cyan-200 dark:border-cyan-800/50 bg-white/50 dark:bg-gray-900/30 backdrop-blur-sm">
+          <div className={`flex gap-2 ${onFinish ? 'justify-between' : 'justify-end'}`}>
+            {onConfigureAnother && (
+              <Button variant="outline" onClick={onConfigureAnother}>
+                Configure another server
+              </Button>
+            )}
+            {onFinish && <Button onClick={onFinish}>Finish</Button>}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

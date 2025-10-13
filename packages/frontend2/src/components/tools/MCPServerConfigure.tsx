@@ -474,19 +474,11 @@ export function MCPServerConfigure({ selectedServer, onBack, onSuccess }: MCPSer
             tools={discoveredTools}
             error={testError}
             onRetry={handleRetry}
+            onConfigureAnother={testStatus === 'success' ? onBack : undefined}
+            onFinish={testStatus === 'success' && onSuccess ? onSuccess : undefined}
           />
         </div>
       </div>
-
-      {/* Success Actions */}
-      {testStatus === 'success' && (
-        <div className="mt-6 flex justify-between items-center">
-          <Button variant="outline" onClick={onBack}>
-            Configure another server
-          </Button>
-          {onSuccess && <Button onClick={onSuccess}>Finish</Button>}
-        </div>
-      )}
     </div>
   );
 }
