@@ -1,4 +1,6 @@
 /// <reference types="vite/client" />
+/// <reference types="vitest/globals" />
+/// <reference types="@testing-library/jest-dom" />
 
 /**
  * WHY: Vite type definitions for import.meta.env

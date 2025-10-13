@@ -22,6 +22,7 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { DropdownMenuRadioGroup, DropdownMenuRadioItem } from '@/components/ui/dropdown-menu';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
 import { useWorkspaceId } from '@/stores/workspaceStore';
 import { TestPanel, type TestStatus } from './TestPanel';
@@ -346,25 +347,19 @@ export function MCPServerConfigure({ selectedServer, onBack, onSuccess }: MCPSer
           {/* Fixed Header */}
           <div className="p-4 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shrink-0 space-y-2">
             {/* Config Type Dropdown as Title */}
-            <select
-              id="config-type"
-              value={selectedOptionId}
-              onChange={(e) => setSelectedOptionId(e.target.value)}
-              className={cn(
-                'flex h-10 w-full rounded-lg border border-input bg-background px-3 py-2',
-                'text-base font-semibold text-gray-900 dark:text-white',
-                'ring-offset-background',
-                'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
-                'disabled:cursor-not-allowed disabled:opacity-50',
-              )}
-            >
-              {configOptions.map((option) => (
-                <option key={option.id} value={option.id} disabled={!option.isSupported}>
-                  {option.label}
-                  {!option.isSupported && ' (Not supported)'}
-                </option>
-              ))}
-            </select>
+            <Select value={selectedOptionId} onValueChange={setSelectedOptionId}>
+              <SelectTrigger id="config-type" className={cn('text-base font-semibold text-gray-900 dark:text-white')}>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {configOptions.map((option) => (
+                  <SelectItem key={option.id} value={option.id} disabled={!option.isSupported}>
+                    {option.label}
+                    {!option.isSupported && ' (Not supported)'}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
 
             {/* Description */}
             {selectedServer.description && (
