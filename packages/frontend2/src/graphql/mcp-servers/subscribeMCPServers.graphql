@@ -1,0 +1,12 @@
+# Subscribe to MCP Servers
+# WHY: Real-time monitoring of MCP servers for tool discovery during configuration testing
+subscription SubscribeMCPServers($workspaceId: ID!) {
+  mcpServers(workspaceId: $workspaceId) {
+    id
+    name
+    tools {
+      id
+      name
+    }
+  }
+}

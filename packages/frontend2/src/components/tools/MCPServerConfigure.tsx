@@ -14,7 +14,6 @@
 
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { useMutation, useSubscription } from '@apollo/client/react';
-import { gql } from '@apollo/client';
 import { ExternalLink, Loader2 } from 'lucide-react';
 import { SplitButton } from '@/components/ui/split-button';
 import { Label } from '@/components/ui/label';
@@ -34,7 +33,14 @@ import {
   validateFields,
   type ConfigField,
 } from '@/lib/mcpConfigHelpers';
-import { SubscribeRuntimesDocument } from '@/graphql/generated/graphql';
+import {
+  SubscribeRuntimesDocument,
+  CreateMcpServerDocument,
+  UpdateMcpServerRunOnDocument,
+  DeleteMcpServerDocument,
+  SubscribeMcpServersDocument,
+  McpServerRunOn,
+} from '@/graphql/generated/graphql';
 import type { SubscribeMcpRegistriesSubscription } from '@/graphql/generated/graphql';
 
 // Extract server type
@@ -49,71 +55,6 @@ interface MCPServerConfigureProps {
 }
 
 const TEST_TIMEOUT_MS = 20000; // 20 seconds
-
-// GraphQL Mutations
-const CREATE_MCP_SERVER = gql`
-  mutation CreateMCPServer(
-    $workspaceId: ID!
-    $name: String!
-    $description: String!
-    $repositoryUrl: String!
-    $transport: MCPTransportType!
-    $config: String!
-  ) {
-    createMCPServer(
-      workspaceId: $workspaceId
-      name: $name
-      description: $description
-      repositoryUrl: $repositoryUrl
-      transport: $transport
-      config: $config
-    ) {
-      id
-      name
-      description
-      transport
-      runOn
-      runtime {
-        id
-        name
-      }
-    }
-  }
-`;
-
-const UPDATE_MCP_SERVER_RUN_ON = gql`
-  mutation UpdateMCPServerRunOn($mcpServerId: ID!, $runOn: MCPServerRunOn!, $runtimeId: ID) {
-    updateMCPServerRunOn(mcpServerId: $mcpServerId, runOn: $runOn, runtimeId: $runtimeId) {
-      id
-      runOn
-      runtime {
-        id
-        name
-      }
-    }
-  }
-`;
-
-const DELETE_MCP_SERVER = gql`
-  mutation DeleteMCPServer($id: ID!) {
-    deleteMCPServer(id: $id) {
-      id
-    }
-  }
-`;
-
-const SUBSCRIBE_MCP_SERVERS = gql`
-  subscription SubscribeMCPServers($workspaceId: ID!) {
-    mcpServers(workspaceId: $workspaceId) {
-      id
-      name
-      tools {
-        id
-        name
-      }
-    }
-  }
-`;
 
 export function MCPServerConfigure({ selectedServer, onBack, onSuccess }: MCPServerConfigureProps) {
   console.log('selectedServer', selectedServer);
@@ -139,9 +80,9 @@ export function MCPServerConfigure({ selectedServer, onBack, onSuccess }: MCPSer
   const testTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // GraphQL mutations
-  const [createServer] = useMutation(CREATE_MCP_SERVER);
-  const [updateServerRunOn] = useMutation(UPDATE_MCP_SERVER_RUN_ON);
-  const [deleteServer] = useMutation(DELETE_MCP_SERVER);
+  const [createServer] = useMutation(CreateMcpServerDocument);
+  const [updateServerRunOn] = useMutation(UpdateMcpServerRunOnDocument);
+  const [deleteServer] = useMutation(DeleteMcpServerDocument);
 
   // Subscribe to runtimes for real-time updates
   const { data: runtimesData } = useSubscription(SubscribeRuntimesDocument, {
@@ -150,7 +91,7 @@ export function MCPServerConfigure({ selectedServer, onBack, onSuccess }: MCPSer
   });
 
   // Subscribe to MCP servers for tool discovery
-  const { data: serversData } = useSubscription(SUBSCRIBE_MCP_SERVERS, {
+  const { data: serversData } = useSubscription(SubscribeMcpServersDocument, {
     variables: { workspaceId: workspaceId || '' },
     skip: !workspaceId || !testServerId,
   });
@@ -215,21 +156,21 @@ export function MCPServerConfigure({ selectedServer, onBack, onSuccess }: MCPSer
   useEffect(() => {
     if (!testServerId || testStatus !== 'running') return;
 
-    const server = (serversData as any)?.mcpServers?.find((s: any) => s.id === testServerId);
+    const server = serversData?.mcpServers?.find((s) => s.id === testServerId);
     if (server?.tools && server.tools.length > 0) {
       // Tools discovered!
       if (testTimeoutRef.current) {
         clearTimeout(testTimeoutRef.current);
         testTimeoutRef.current = null;
       }
-      setDiscoveredTools(server.tools.map((t: any) => ({ id: t.id, name: t.name })));
+      setDiscoveredTools(server.tools.map((t) => ({ id: t.id, name: t.name })));
       setTestStatus('success');
 
       // Set server to GLOBAL mode (makes it available workspace-wide)
       updateServerRunOn({
         variables: {
           mcpServerId: testServerId,
-          runOn: 'GLOBAL',
+          runOn: McpServerRunOn.Global,
         },
       }).catch((err) => {
         console.error('Failed to set server to GLOBAL:', err);
@@ -273,7 +214,7 @@ export function MCPServerConfigure({ selectedServer, onBack, onSuccess }: MCPSer
         },
       });
 
-      const serverId = (data as any)?.createMCPServer?.id;
+      const serverId = data?.createMCPServer?.id;
       if (!serverId) {
         throw new Error('Failed to create server');
       }
@@ -284,7 +225,7 @@ export function MCPServerConfigure({ selectedServer, onBack, onSuccess }: MCPSer
       await updateServerRunOn({
         variables: {
           mcpServerId: serverId,
-          runOn: 'EDGE',
+          runOn: McpServerRunOn.Edge,
           runtimeId: selectedRuntimeId,
         },
       });

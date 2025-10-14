@@ -11,7 +11,7 @@
  * - Support STDIO, SSE, and STREAM transports
  */
 
-import type { SubscribeMcpRegistriesSubscription } from '@/graphql/generated/graphql';
+import type { SubscribeMcpRegistriesSubscription, McpTransportType } from '@/graphql/generated/graphql';
 import { mcpRegistry } from '@2ly/common';
 
 // Extract server type
@@ -28,7 +28,7 @@ export interface ConfigOption {
   id: string;
   label: string;
   type: 'package' | 'remote';
-  transport: 'STDIO' | 'SSE' | 'STREAM';
+  transport: McpTransportType;
   config: Package | Transport;
   isSupported: boolean;
 }
@@ -82,7 +82,7 @@ export function extractConfigOptions(server: MCPRegistryServer): ConfigOption[] 
             id: `pkg-${index}-${pkg.identifier}-${pkg.version}`,
             label,
             type: 'package',
-            transport: transport as 'STDIO' | 'SSE' | 'STREAM',
+            transport: transport as McpTransportType,
             config: pkg,
             isSupported,
           });
@@ -112,7 +112,7 @@ export function extractConfigOptions(server: MCPRegistryServer): ConfigOption[] 
             id: `remote-${index}-${remote.type}`,
             label,
             type: 'remote',
-            transport: transport as 'STDIO' | 'SSE' | 'STREAM',
+            transport: transport as McpTransportType,
             config: remote,
             isSupported,
           });
@@ -301,7 +301,7 @@ export function enrichConfigWithValues(
   name: string;
   description: string;
   repositoryUrl: string;
-  transport: 'STDIO' | 'SSE' | 'STREAM';
+  transport: McpTransportType;
   config: string; // JSON string containing Package or Transport config
 } {
   const name = customName || server.title || server.name;

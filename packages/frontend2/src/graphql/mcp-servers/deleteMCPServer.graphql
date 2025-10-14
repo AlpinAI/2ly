@@ -1,0 +1,7 @@
+# Delete MCP Server Mutation
+# WHY: Remove an MCP server configuration from the workspace
+mutation DeleteMCPServer($id: ID!) {
+  deleteMCPServer(id: $id) {
+    id
+  }
+}
