@@ -12,7 +12,7 @@
  */
 
 import { useLocation, Link, useParams } from 'react-router-dom';
-import { Home, Bot, Wrench, Settings } from 'lucide-react';
+import { Home, Bot, Wrench, Server, Settings } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface NavItem {
@@ -36,6 +36,11 @@ const navItems: NavItem[] = [
     label: 'Tools',
     path: 'tools',
     icon: Wrench,
+  },
+  {
+    label: 'Servers',
+    path: 'servers',
+    icon: Server,
   },
   {
     label: 'Settings',
@@ -66,7 +71,7 @@ export function AppNavigation() {
                   'rounded-t-md',
                   isActive
                     ? 'text-cyan-600 border-b-2 border-cyan-600 bg-white/50 dark:bg-gray-800/50'
-                    : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-white/30 dark:hover:bg-gray-800/30'
+                    : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-white/30 dark:hover:bg-gray-800/30',
                 )}
                 aria-current={isActive ? 'page' : undefined}
               >

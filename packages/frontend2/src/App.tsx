@@ -25,6 +25,7 @@ import RegisterPage from '@/pages/RegisterPage';
 import DashboardPage from '@/pages/DashboardPage';
 import AgentsPage from '@/pages/AgentsPage';
 import ToolsPage from '@/pages/ToolsPage';
+import ServersPage from '@/pages/ServersPage';
 import SettingsPage from '@/pages/SettingsPage';
 import InitPage from '@/pages/InitPage';
 import BackendErrorPage from '@/pages/BackendErrorPage';
@@ -77,6 +78,7 @@ function App() {
                   <Route path="overview" element={<DashboardPage />} />
                   <Route path="agents" element={<AgentsPage />} />
                   <Route path="tools" element={<ToolsPage />} />
+                  <Route path="servers" element={<ServersPage />} />
                   <Route path="settings" element={<SettingsPage />} />
 
                   {/* Redirect /w/:workspaceId to /w/:workspaceId/overview */}

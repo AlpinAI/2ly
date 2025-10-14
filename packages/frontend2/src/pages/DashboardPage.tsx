@@ -48,7 +48,7 @@ export default function DashboardPage() {
 
       {/* Stats Grid - Real data from Apollo */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
-        {/* WHY: Total Runtimes from Apollo (useRuntimes hook) */}
+        {/* WHY: Total Runtimes from Zustand */}
         <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6 shadow-sm">
           <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">Total Runtimes</p>
           {loading ? (

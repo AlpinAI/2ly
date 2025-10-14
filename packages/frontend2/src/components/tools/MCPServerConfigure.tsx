@@ -57,10 +57,6 @@ interface MCPServerConfigureProps {
 const TEST_TIMEOUT_MS = 20000; // 20 seconds
 
 export function MCPServerConfigure({ selectedServer, onBack, onSuccess }: MCPServerConfigureProps) {
-  console.log('selectedServer', selectedServer);
-  if (selectedServer.packages) console.log('packages', JSON.parse(selectedServer.packages));
-  if (selectedServer.remotes) console.log('remotes', JSON.parse(selectedServer.remotes));
-
   const workspaceId = useWorkspaceId();
   const { runtimes } = useRuntimeData();
 
@@ -84,7 +80,7 @@ export function MCPServerConfigure({ selectedServer, onBack, onSuccess }: MCPSer
   const [createServer] = useMutation(CreateMcpServerDocument);
   const [updateServerRunOn] = useMutation(UpdateMcpServerRunOnDocument);
   const [deleteServer] = useMutation(DeleteMcpServerDocument);
-
+  
   // Subscribe to MCP servers for tool discovery
   const { data: serversData } = useSubscription(SubscribeMcpServersDocument, {
     variables: { workspaceId: workspaceId || '' },
@@ -177,8 +173,9 @@ export function MCPServerConfigure({ selectedServer, onBack, onSuccess }: MCPSer
   const isFormValid = useMemo(() => {
     if (!selectedOption) return false;
     if (!selectedRuntimeId) return false;
+    if (!customName || customName.trim() === '') return false;
     return validateFields(fields);
-  }, [selectedOption, selectedRuntimeId, fields]);
+  }, [selectedOption, selectedRuntimeId, customName, fields]);
 
   // Handle test server
   const handleTestServer = useCallback(async () => {

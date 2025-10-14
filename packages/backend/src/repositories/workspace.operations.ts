@@ -145,6 +145,15 @@ export const QUERY_WORKSPACE_WITH_MCP_TOOLS = gql`
         lastSeenAt
         mcpServer {
           id
+          name
+          description
+          repositoryUrl
+        }
+        runtimes {
+          id
+          name
+          status
+          capabilities
         }
       }
     }

@@ -35,7 +35,7 @@ export function useMCPServers() {
   // No more polling! Backend pushes changes immediately.
   const { data, loading, error } = useSubscription(SubscribeMcpServersDocument, {
     variables: { workspaceId: workspaceId || '' },
-    skip: !workspaceId,
+    skip: !workspaceId
   });
 
   // WHY: Extract servers from subscription data
