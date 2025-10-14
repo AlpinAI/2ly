@@ -356,6 +356,11 @@ export type QueryMcpRegistriesArgs = {
 };
 
 
+export type QueryMcpServersArgs = {
+  workspaceId: Scalars['ID']['input'];
+};
+
+
 export type QueryWorkspaceMcpToolsArgs = {
   workspaceId: Scalars['ID']['input'];
 };
@@ -761,7 +766,7 @@ export type QueryResolvers<ContextType = object, ParentType extends ResolversPar
   infra?: Resolver<ResolversTypes['Infra'], ParentType, ContextType>;
   isMCPAutoConfigEnabled?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
   mcpRegistries?: Resolver<Maybe<Array<ResolversTypes['MCPRegistry']>>, ParentType, ContextType, RequireFields<QueryMcpRegistriesArgs, 'workspaceId'>>;
-  mcpServers?: Resolver<Maybe<Array<ResolversTypes['MCPServer']>>, ParentType, ContextType>;
+  mcpServers?: Resolver<Maybe<Array<ResolversTypes['MCPServer']>>, ParentType, ContextType, RequireFields<QueryMcpServersArgs, 'workspaceId'>>;
   me?: Resolver<Maybe<ResolversTypes['User']>, ParentType, ContextType>;
   system?: Resolver<Maybe<ResolversTypes['System']>, ParentType, ContextType>;
   workspace?: Resolver<Maybe<Array<ResolversTypes['Workspace']>>, ParentType, ContextType>;

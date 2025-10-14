@@ -24,24 +24,44 @@
  * ```
  */
 
-import { useSubscription } from '@apollo/client/react';
-import { SubscribeMcpServersDocument } from '@/graphql/generated/graphql';
+import { useQuery, useSubscription } from '@apollo/client/react';
+import { SubscribeMcpServersDocument, GetMcpServersDocument } from '@/graphql/generated/graphql';
 import { useWorkspaceId } from '@/stores/workspaceStore';
 
 export function useMCPServers() {
   const workspaceId = useWorkspaceId();
 
-  // WHY: Use Apollo Client's useSubscription for real-time updates
-  // No more polling! Backend pushes changes immediately.
-  const { data, loading, error } = useSubscription(SubscribeMcpServersDocument, {
+  // 1️⃣ Read cached servers first (fetchPolicy: cache-only)
+  const { data: queryData, loading: queryLoading, error: queryError } = useQuery(
+    GetMcpServersDocument,
+    {
+      variables: { workspaceId: workspaceId || '' },
+      skip: !workspaceId,
+      fetchPolicy: 'cache-only', // use cache if available, otherwise fetch
+    }
+  );
+
+  // 2️⃣ Start subscription for live updates
+  useSubscription(SubscribeMcpServersDocument, {
     variables: { workspaceId: workspaceId || '' },
-    skip: !workspaceId
+    skip: !workspaceId,
+    onData: ({ client, data }) => {
+      const newServers = data?.data?.mcpServers;
+      if (newServers) {
+        // 3️⃣ Merge subscription updates into Apollo cache
+        client.writeQuery({
+          query: GetMcpServersDocument,
+          variables: { workspaceId: workspaceId || '' },
+          data: { mcpServers: newServers },
+        });
+      }
+    },
   });
 
-  // WHY: Extract servers from subscription data
-  const servers = data?.mcpServers ?? [];
+  // 4️⃣ Extract servers from query cache (initial data + subscription updates)
+  const servers = queryData?.mcpServers ?? [];
 
-  // WHY: Calculate aggregate stats
+  // 5️⃣ Aggregate stats
   const stats = {
     total: servers.length,
     withTools: servers.filter((s) => s.tools && s.tools.length > 0).length,
@@ -51,7 +71,7 @@ export function useMCPServers() {
   return {
     servers,
     stats,
-    loading,
-    error,
+    loading: queryLoading,
+    error: queryError,
   };
 }
