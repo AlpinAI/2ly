@@ -1,5 +1,5 @@
 import { ConsumerConfig, ConsumerCreateOptions, JetStreamClient, JetStreamManager, RetentionPolicy, StorageType, StreamConfig, StreamInfo, ConsumerInfo } from "@nats-io/jetstream";
-import { WithRequired } from "node_modules/@nats-io/nats-core/lib/util";
+import { WithRequired } from "@nats-io/nats-core/internal";
 
 /**
  * This class is a first-attempt to create a stream utility for 2ly. Not yet used.

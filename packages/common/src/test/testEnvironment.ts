@@ -142,7 +142,7 @@ export class TestEnvironment {
     // Start services in dependency order
     const natsContainer = await this.startNats();
     const dgraphZero = await this.startDgraphZero();
-    const dgraphAlpha = await this.startDgraphAlpha(dgraphZero);
+    const dgraphAlpha = await this.startDgraphAlpha();
 
     this.services = {
       nats: natsContainer,
@@ -230,9 +230,7 @@ export class TestEnvironment {
   /**
    * Start Dgraph Alpha (data node)
    */
-  private async startDgraphAlpha(
-    dgraphZero: TestEnvironmentServices['dgraphZero']
-  ): Promise<TestEnvironmentServices['dgraphAlpha']> {
+  private async startDgraphAlpha(): Promise<TestEnvironmentServices['dgraphAlpha']> {
     this.log('Starting Dgraph Alpha...');
 
     const container = await new GenericContainer('dgraph/dgraph:latest')

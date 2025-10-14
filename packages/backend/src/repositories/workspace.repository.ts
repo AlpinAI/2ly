@@ -19,7 +19,7 @@ import {
 import { GET_RUNTIME } from './runtime.operations';
 import { QUERY_SYSTEM } from './system.operations';
 import { Observable } from 'rxjs';
-import { map, tap } from 'rxjs/operators';
+import { map } from 'rxjs/operators';
 import { createSubscriptionFromQuery } from '../helpers';
 
 @injectable()

@@ -121,7 +121,7 @@ export class RegistryRepository {
         });
       } else {
         // Create new server
-        const variables: any = {
+        const variables: Partial<dgraphResolversTypes.McpRegistryServer> & { registryId: string, now: string } = {
           name: server.name,
           description: server.description || '',
           title: server.name,

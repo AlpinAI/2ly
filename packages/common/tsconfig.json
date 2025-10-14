@@ -5,6 +5,8 @@
   "compilerOptions": {
     "outDir": "dist",
     "declaration": true,
-    "skipLibCheck": true
+    "skipLibCheck": true,
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true
   }
 }

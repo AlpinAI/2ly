@@ -1,4 +1,3 @@
-import { STATE } from '@2ly/common';
 import { inject, injectable } from 'inversify';
 import { LoggerService, Service } from '@2ly/common';
 import pino from 'pino';
