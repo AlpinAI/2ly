@@ -2,11 +2,11 @@
  * MCPServerBrowser Component
  *
  * WHY: Displays searchable, filterable list of MCP registry servers.
- * Shows real data from workspace registries via GraphQL subscription.
+ * Shows real data from workspace registries via useMCPRegistries hook.
  * Groups multiple versions of same server, displaying only latest by default.
  *
  * ARCHITECTURE:
- * - Subscribes to mcpRegistries for real-time updates
+ * - Uses useMCPRegistries hook for real-time updates
  * - Flattens servers from all registries
  * - Groups servers by name, separating latest from older versions
  * - Client-side search and filtering
@@ -15,25 +15,23 @@
  */
 
 import { useState, useMemo } from 'react';
-import { useSubscription } from '@apollo/client/react';
 import { Search } from '@/components/ui/search';
 import { Button } from '@/components/ui/button';
 import { Loader2, AlertCircle } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { cn } from '@/lib/utils';
-import { useWorkspaceId } from '@/stores/workspaceStore';
-import { SubscribeMcpRegistriesDocument } from '@/graphql/generated/graphql';
+import { useMCPRegistries } from '@/hooks/useMCPRegistries';
 import { MCPServerCard } from './MCPServerCard';
-import type { SubscribeMcpRegistriesSubscription } from '@/graphql/generated/graphql';
 import { mcpRegistry } from '@2ly/common';
+import { SubscribeMcpRegistriesSubscription } from '@/graphql/generated/graphql';
 
 // Use official MCP Registry schema types
 type Package = mcpRegistry.components['schemas']['Package'];
 type Transport = mcpRegistry.components['schemas']['Transport'];
 
-// Extract server type
+// Extract server type from GraphQL subscription
 type MCPRegistryServer = NonNullable<
-  NonNullable<SubscribeMcpRegistriesSubscription['mcpRegistries']>[number]['servers']
+NonNullable<SubscribeMcpRegistriesSubscription['mcpRegistries']>[number]['servers']
 >[number];
 
 export interface ServerVersionGroup {
@@ -129,21 +127,17 @@ const groupServersByName = (servers: MCPRegistryServer[]): ServerVersionGroup[] 
 };
 
 export function MCPServerBrowser({ onConfigure }: MCPServerBrowserProps) {
-  const workspaceId = useWorkspaceId();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedTransport, setSelectedTransport] = useState('All');
   const [visibleCount, setVisibleCount] = useState(ITEMS_PER_PAGE);
 
-  // Subscribe to registries with servers
-  const { data, loading, error } = useSubscription(SubscribeMcpRegistriesDocument, {
-    variables: { workspaceId: workspaceId || '' },
-    skip: !workspaceId,
-  });
+  // Get registries data via hook
+  const { registries, loading, error } = useMCPRegistries();
 
   // Flatten all servers from all registries
   const allServers = useMemo(() => {
-    return data?.mcpRegistries?.flatMap((registry) => registry.servers?.filter((s) => isActive(s)) || []) || [];
-  }, [data]);
+    return registries?.flatMap((registry) => registry.servers?.filter((s) => isActive(s)) || []) || [];
+  }, [registries]);
 
   // Group servers by name (latest + older versions)
   const groupedServers = useMemo(() => {

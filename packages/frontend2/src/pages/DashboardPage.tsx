@@ -1,29 +1,29 @@
 /**
  * DashboardPage Component
  *
- * WHY: Demonstrates Apollo Client + Zustand integration in a real page.
+ * WHY: Demonstrates centralized runtime management via Zustand store.
  *
  * WHAT IT SHOWS:
- * 1. Apollo Client usage via custom hooks (useRuntimes)
- * 2. Zustand workspace state (useWorkspaceId)
+ * 1. Runtime data from Zustand store (centralized subscription)
+ * 2. Real-time updates without duplicate subscriptions
  * 3. Loading and error states
- * 4. Real-time data with polling
+ * 4. Clean separation of concerns
  *
  * ARCHITECTURE:
- * - Server state (runtimes) comes from Apollo Client (GraphQL backend)
- * - Client state (workspace selection) comes from Zustand
- * - Custom hooks combine both sources
+ * - Runtime data comes from Zustand store (updated via subscription in WorkspaceLoader)
+ * - No direct Apollo Client usage in components
+ * - ErrorBoundary handles subscription errors
  * - Uses AppLayout (header + navigation provided automatically)
  */
 
 import { Loader2, AlertCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { useRuntimes } from '@/hooks/useRuntimes';
+import { useRuntimeData } from '@/stores/runtimeStore';
 
 export default function DashboardPage() {
-  // WHY: Get runtimes from Apollo (server state)
-  // This hook polls every 30s for updates
-  const { runtimes, stats, loading, error } = useRuntimes();
+  // WHY: Get runtimes from Zustand store (centralized runtime management)
+  // Data is updated in real-time via subscription in WorkspaceLoader
+  const { runtimes, stats, loading, error } = useRuntimeData();
 
   return (
     <div>

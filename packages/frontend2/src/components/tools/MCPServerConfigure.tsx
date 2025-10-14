@@ -23,6 +23,7 @@ import { DropdownMenuRadioGroup, DropdownMenuRadioItem } from '@/components/ui/d
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
 import { useWorkspaceId } from '@/stores/workspaceStore';
+import { useRuntimeData } from '@/stores/runtimeStore';
 import { TestPanel, type TestStatus } from './TestPanel';
 import { ConfigFieldInput } from './ConfigFieldInput';
 import {
@@ -34,7 +35,6 @@ import {
   type ConfigField,
 } from '@/lib/mcpConfigHelpers';
 import {
-  SubscribeRuntimesDocument,
   CreateMcpServerDocument,
   UpdateMcpServerRunOnDocument,
   DeleteMcpServerDocument,
@@ -62,6 +62,7 @@ export function MCPServerConfigure({ selectedServer, onBack, onSuccess }: MCPSer
   if (selectedServer.remotes) console.log('remotes', JSON.parse(selectedServer.remotes));
 
   const workspaceId = useWorkspaceId();
+  const { runtimes } = useRuntimeData();
 
   // Config state
   const [selectedOptionId, setSelectedOptionId] = useState<string>('');
@@ -84,12 +85,6 @@ export function MCPServerConfigure({ selectedServer, onBack, onSuccess }: MCPSer
   const [updateServerRunOn] = useMutation(UpdateMcpServerRunOnDocument);
   const [deleteServer] = useMutation(DeleteMcpServerDocument);
 
-  // Subscribe to runtimes for real-time updates
-  const { data: runtimesData } = useSubscription(SubscribeRuntimesDocument, {
-    variables: { workspaceId: workspaceId || '' },
-    skip: !workspaceId,
-  });
-
   // Subscribe to MCP servers for tool discovery
   const { data: serversData } = useSubscription(SubscribeMcpServersDocument, {
     variables: { workspaceId: workspaceId || '' },
@@ -105,11 +100,6 @@ export function MCPServerConfigure({ selectedServer, onBack, onSuccess }: MCPSer
   const selectedOption = useMemo(() => {
     return configOptions.find((opt) => opt.id === selectedOptionId);
   }, [configOptions, selectedOptionId]);
-
-  // Get runtimes list from subscription
-  const runtimes = useMemo(() => {
-    return runtimesData?.runtimes || [];
-  }, [runtimesData]);
 
   // Get default runtime
   const defaultRuntimeId = useMemo(() => {

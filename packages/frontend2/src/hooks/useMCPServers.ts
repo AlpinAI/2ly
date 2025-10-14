@@ -1,55 +1,55 @@
 /**
- * useRuntimes Hook
+ * useMCPServers Hook
  *
  * WHY: Wrapper around Apollo Client useSubscription with typed document node
- * - Real-time runtime updates via GraphQL subscription
+ * - Real-time MCP server updates via GraphQL subscription
  * - Automatic error handling
  * - Loading states
  * - Data transformation
- * - Integration with Zustand filters (if needed)
+ * - Apollo cache deduplication
  *
  * APOLLO v4 PATTERN: Use typed document nodes with Apollo's useSubscription hook
  * Apply this pattern to other entities (agents, tools, etc.)
  *
  * USAGE:
  * ```tsx
- * function RuntimesList() {
- *   const { runtimes, loading, error } = useRuntimes();
+ * function MCPServersList() {
+ *   const { servers, loading, error } = useMCPServers();
  *
  *   if (loading) return <Spinner />;
  *   if (error) return <Error message={error.message} />;
  *
- *   return <div>{runtimes.map(r => <RuntimeCard key={r.id} runtime={r} />)}</div>;
+ *   return <div>{servers.map(s => <MCPServerCard key={s.id} server={s} />)}</div>;
  * }
  * ```
  */
 
 import { useSubscription } from '@apollo/client/react';
-import { SubscribeRuntimesDocument } from '@/graphql/generated/graphql';
+import { SubscribeMcpServersDocument } from '@/graphql/generated/graphql';
 import { useWorkspaceId } from '@/stores/workspaceStore';
 
-export function useRuntimes() {
+export function useMCPServers() {
   const workspaceId = useWorkspaceId();
 
   // WHY: Use Apollo Client's useSubscription for real-time updates
   // No more polling! Backend pushes changes immediately.
-  const { data, loading, error } = useSubscription(SubscribeRuntimesDocument, {
+  const { data, loading, error } = useSubscription(SubscribeMcpServersDocument, {
     variables: { workspaceId: workspaceId || '' },
     skip: !workspaceId,
   });
 
-  // WHY: Extract runtimes from subscription data
-  const runtimes = data?.runtimes ?? [];
+  // WHY: Extract servers from subscription data
+  const servers = data?.mcpServers ?? [];
 
   // WHY: Calculate aggregate stats
   const stats = {
-    total: runtimes.length,
-    active: runtimes.filter((r) => r.status === 'ACTIVE').length,
-    inactive: runtimes.filter((r) => r.status === 'INACTIVE').length,
+    total: servers.length,
+    withTools: servers.filter((s) => s.tools && s.tools.length > 0).length,
+    withoutTools: servers.filter((s) => !s.tools || s.tools.length === 0).length,
   };
 
   return {
-    runtimes,
+    servers,
     stats,
     loading,
     error,

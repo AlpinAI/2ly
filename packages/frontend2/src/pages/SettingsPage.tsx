@@ -6,21 +6,20 @@
  *
  * ARCHITECTURE:
  * - Uses AppLayout (header + navigation are automatic)
- * - Apollo subscriptions for real-time registry updates
+ * - useMCPRegistries hook for real-time registry updates
  * - Follows same patterns as DashboardPage
  * - Composed of smaller, focused components from /components/settings/
  */
 
 import { useState } from 'react';
-import { useMutation, useSubscription } from '@apollo/client/react';
+import { useMutation } from '@apollo/client/react';
 import { useWorkspaceId } from '@/stores/workspaceStore';
+import { useMCPRegistries } from '@/hooks/useMCPRegistries';
 import {
-  SubscribeMcpRegistriesDocument,
   CreateMcpRegistryDocument,
   DeleteMcpRegistryDocument,
   SyncUpstreamRegistryDocument,
 } from '@/graphql/generated/graphql';
-import type { SubscribeMcpRegistriesSubscription } from '@/graphql/generated/graphql';
 import { McpRegistrySection } from '@/components/settings/McpRegistrySection';
 
 
@@ -30,14 +29,8 @@ export default function SettingsPage() {
 
   console.log('[SettingsPage] Rendering with workspaceId:', workspaceId);
 
-  // Subscribe to registries
-  const { data, loading, error } = useSubscription<SubscribeMcpRegistriesSubscription>(SubscribeMcpRegistriesDocument, {
-    variables: { workspaceId: workspaceId || '' },
-    skip: !workspaceId,
-    onError: (err) => {
-      console.error('[SettingsPage] Subscription error:', err);
-    },
-  });
+  // Get registries data via hook
+  const { registries, loading, error } = useMCPRegistries();
 
   // Mutations
   const [createRegistry, { loading: creating }] = useMutation(CreateMcpRegistryDocument, {
@@ -61,8 +54,6 @@ export default function SettingsPage() {
       setSyncingId(null);
     },
   });
-
-  const registries = data?.mcpRegistries || [];
 
   const handleCreateRegistry = async (name: string, upstreamUrl: string) => {
     if (!workspaceId) return;

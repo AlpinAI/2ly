@@ -3,13 +3,15 @@
  *
  * WHY: Validates and syncs workspace from URL to Zustand store.
  * Ensures user has access to the workspace before rendering children.
+ * Also initializes runtime subscription for centralized runtime management.
  *
  * FLOW:
  * 1. Read workspaceId from URL params
  * 2. Sync to Zustand store (via useWorkspaceFromUrl)
  * 3. Validate workspace access via GraphQL
- * 4. Show loading state or error
- * 5. Render children when valid
+ * 4. Initialize runtime subscription and update store
+ * 5. Show loading state or error
+ * 6. Render children when valid
  *
  * USAGE:
  * ```tsx
@@ -17,11 +19,13 @@
  * ```
  */
 
-import { ReactNode } from 'react';
+import { ReactNode, useEffect } from 'react';
 import { Navigate } from 'react-router-dom';
-import { useQuery } from '@apollo/client/react';
+import { useQuery, useSubscription } from '@apollo/client/react';
 import { useWorkspaceFromUrl } from '@/hooks/useWorkspaceFromUrl';
-import { ValidateWorkspaceDocument } from '@/graphql/generated/graphql';
+import { ValidateWorkspaceDocument, SubscribeRuntimesDocument, Runtime } from '@/graphql/generated/graphql';
+import { useRuntimeStore } from '@/stores/runtimeStore';
+import { SubscriptionErrorBoundary } from './SubscriptionErrorBoundary';
 
 interface WorkspaceLoaderProps {
   children: ReactNode;
@@ -29,6 +33,10 @@ interface WorkspaceLoaderProps {
 
 export function WorkspaceLoader({ children }: WorkspaceLoaderProps) {
   const workspaceId = useWorkspaceFromUrl();
+  const setRuntimes = useRuntimeStore((state) => state.setRuntimes);
+  const setLoading = useRuntimeStore((state) => state.setLoading);
+  const setError = useRuntimeStore((state) => state.setError);
+  const reset = useRuntimeStore((state) => state.reset);
 
   // Query to validate workspace access
   const { data, loading, error } = useQuery(ValidateWorkspaceDocument, {
@@ -36,13 +44,43 @@ export function WorkspaceLoader({ children }: WorkspaceLoaderProps) {
     skip: !workspaceId,
   });
 
+  // Runtime subscription - only start after workspace is validated
+  const { loading: runtimeLoading, error: runtimeError } = useSubscription(
+    SubscribeRuntimesDocument,
+    {
+      variables: { workspaceId: workspaceId || '' },
+      skip: !workspaceId || loading || !!error || !data?.workspaceMCPTools,
+      onData: ({ data: subscriptionData }) => {
+        if (subscriptionData?.data?.runtimes) {
+          setRuntimes(subscriptionData.data.runtimes as Runtime[]);
+        }
+      },
+      onError: (subscriptionError) => {
+        console.error('[WorkspaceLoader] Runtime subscription error:', subscriptionError);
+        setError(subscriptionError);
+      },
+    }
+  );
+
+  // Reset runtime store when workspace changes
+  useEffect(() => {
+    if (workspaceId) {
+      reset();
+    }
+  }, [workspaceId, reset]);
+
+  // Set loading state based on both queries
+  useEffect(() => {
+    setLoading(loading || runtimeLoading);
+  }, [loading, runtimeLoading, setLoading]);
+
   // No workspace ID in URL - redirect to root
   if (!workspaceId) {
     return <Navigate to="/" replace />;
   }
 
   // Loading state
-  if (loading) {
+  if (loading || runtimeLoading) {
     return (
       <div className="flex h-screen items-center justify-center">
         <div className="text-center">
@@ -59,6 +97,15 @@ export function WorkspaceLoader({ children }: WorkspaceLoaderProps) {
     return <Navigate to="/" replace />;
   }
 
-  // Valid workspace - render children
-  return <>{children}</>;
+  // Runtime subscription error - let ErrorBoundary handle it
+  if (runtimeError) {
+    throw runtimeError;
+  }
+
+  // Valid workspace - render children with error boundary
+  return (
+    <SubscriptionErrorBoundary>
+      {children}
+    </SubscriptionErrorBoundary>
+  );
 }
