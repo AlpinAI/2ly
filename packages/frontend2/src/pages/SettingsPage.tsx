@@ -21,7 +21,6 @@ import {
   SyncUpstreamRegistryDocument,
 } from '@/graphql/generated/graphql';
 import type { SubscribeMcpRegistriesSubscription } from '@/graphql/generated/graphql';
-import { mcpRegistry } from '@2ly/common';
 import { McpRegistrySection } from '@/components/settings/McpRegistrySection';
 
 

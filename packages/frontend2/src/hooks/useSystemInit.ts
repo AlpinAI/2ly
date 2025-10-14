@@ -56,8 +56,7 @@ export function useSystemInit(): UseSystemInitResult {
         error.message.includes('Failed to fetch') ||
         error.message.includes('ERR_NETWORK') ||
         error.message.includes('ERR_CONNECTION_REFUSED') ||
-        error.message.includes('ERR_CONNECTION_TIMED_OUT') ||
-        error.networkError !== undefined;
+        error.message.includes('ERR_CONNECTION_TIMED_OUT');
 
       if (isNetworkError) {
         // Backend is unreachable - don't assume initialization status

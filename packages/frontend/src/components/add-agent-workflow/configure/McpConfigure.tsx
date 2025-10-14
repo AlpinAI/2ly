@@ -6,6 +6,7 @@ import MCPQuickConfig from './MCPQuickConfig';
 import { useWorkspace } from '../../../contexts/useWorkspace';
 import { client, observe } from '../../../services/apollo.client';
 import { CREATE_MCP_SERVER_MUTATION, DELETE_MCP_SERVER_MUTATION, MCP_SERVERS_SUBSCRIPTION, UPDATE_MCP_SERVER_RUN_ON_MUTATION } from '../../../graphql';
+import { buildConfigFromFormData } from '../../../utils/mcpServerConfig';
 
 // Extended type for frontend form data that includes config properties
 interface McpServerFormData extends Partial<apolloResolversTypes.McpServer> {
@@ -772,6 +773,16 @@ const McpConfigure: React.FC<McpConfigureProps> = ({ onSuccessExit }) => {
             setTestingServerName(nameForDisplay);
             let serverId = createdServerId;
             if (!serverId) {
+                // Build config from form data
+                const config = buildConfigFromFormData({
+                    command: createData.command,
+                    args: createData.args,
+                    ENV: createData.ENV,
+                    serverUrl: createData.serverUrl,
+                    headers: createData.headers,
+                    transport: createData.transport!,
+                });
+                
                 const createResult = await client.mutate({
                     mutation: CREATE_MCP_SERVER_MUTATION,
                     variables: {
@@ -779,11 +790,7 @@ const McpConfigure: React.FC<McpConfigureProps> = ({ onSuccessExit }) => {
                         description: createData.description,
                         repositoryUrl: createData.repositoryUrl,
                         transport: createData.transport,
-                        command: createData.command,
-                        args: createData.args,
-                        ENV: createData.ENV,
-                        serverUrl: createData.serverUrl,
-                        headers: createData.headers,
+                        config: config,
                         workspaceId: currentWorkspace.id,
                     },
                 });

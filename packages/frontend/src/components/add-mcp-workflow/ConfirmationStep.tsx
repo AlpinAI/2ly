@@ -4,6 +4,7 @@ import { apolloResolversTypes, MCP_SERVER_RUN_ON } from '@2ly/common';
 import { client, observe } from '../../services/apollo.client';
 import { CREATE_MCP_SERVER_MUTATION, MCP_SERVERS_SUBSCRIPTION, UPDATE_MCP_SERVER_RUN_ON_MUTATION } from '../../graphql';
 import { useRuntimes } from '../../hooks/useRuntimes';
+import { buildConfigFromFormData } from '../../utils/mcpServerConfig';
 
 interface ConfirmationStepProps {
     formData: Partial<apolloResolversTypes.McpServer> & { config?: string | false };
@@ -62,6 +63,16 @@ const ConfirmationStep: React.FC<ConfirmationStepProps> = ({
     const createMcpServer = useCallback(async (): Promise<string> => {
         setCreateStepStatus('in-progress');
         try {
+            // Build config from form data
+            const config = buildConfigFromFormData({
+                command: formData.command,
+                args: formData.args,
+                ENV: formData.ENV,
+                serverUrl: formData.serverUrl,
+                headers: formData.headers,
+                transport: formData.transport!,
+            });
+            
             const createResult = await client.mutate({
                 mutation: CREATE_MCP_SERVER_MUTATION,
                 variables: {
@@ -69,11 +80,7 @@ const ConfirmationStep: React.FC<ConfirmationStepProps> = ({
                     description: formData.description,
                     repositoryUrl: formData.repositoryUrl,
                     transport: formData.transport,
-                    command: formData.command,
-                    args: formData.args,
-                    ENV: formData.ENV,
-                    serverUrl: formData.serverUrl,
-                    headers: formData.headers,
+                    config: config,
                     workspaceId: currentWorkspace.id,
                 },
             });

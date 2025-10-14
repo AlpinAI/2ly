@@ -65,9 +65,9 @@ export class ToolServerService extends Service {
 
       // Extract command and args from Package config
       const identifier = parsedConfig.identifier || '';
-      const packageArgs = parsedConfig.packageArguments || [];
-      const runtimeArgs = parsedConfig.runtimeArguments || [];
-      const envVars = parsedConfig.environmentVariables || [];
+      const packageArgs = (parsedConfig.packageArguments || []) as mcpRegistry.components['schemas']['Argument'][];
+      const runtimeArgs = (parsedConfig.runtimeArguments || []) as mcpRegistry.components['schemas']['Argument'][];
+      const envVars = (parsedConfig.environmentVariables || []) as mcpRegistry.components['schemas']['KeyValueInput'][];
       const registryType = parsedConfig.registryType || '';
       console.log('identifier', identifier);
       console.log('registryType', registryType);
@@ -97,12 +97,10 @@ export class ToolServerService extends Service {
         default:
           throw new Error(`Unsupported registry type: ${registryType}. Supported types: ${supportedTypes.join(', ')}`);
       }
-      console.log('command:', command);
       // Build args array: [runtimeArgs, identifier, packageArgs]
       const args: string[] = [];
-      console.log('analyzing runtime arguments', runtimeArgs);
       // Process runtime arguments (before identifier)
-      runtimeArgs.forEach((arg: any) => {
+      runtimeArgs.forEach((arg: mcpRegistry.components['schemas']['Argument']) => {
         if (arg.name) {
           // Named argument: --name value
           args.push(`--${arg.name}`);
@@ -124,9 +122,8 @@ export class ToolServerService extends Service {
       // - some package prefix the identifier with npm: -> which must be removed
       const normalizedIdentifier = identifier.replace(/^npm:/, '');
       args.push(normalizedIdentifier);
-      console.log('analyzing package arguments', packageArgs);
       // Process package arguments (after identifier)
-      packageArgs.forEach((arg: any) => {
+      packageArgs.forEach((arg) => {
         if (arg.type === 'named' && arg.name) {
           // Named argument: --name value
           args.push(`--${arg.name}`);
@@ -146,7 +143,7 @@ export class ToolServerService extends Service {
       // Build environment variables
       const defaultEnv = getDefaultEnvironment();
       const env = envVars.reduce(
-        (acc: Record<string, string>, envVar: any) => {
+        (acc, envVar) => {
           if (envVar.name && envVar.value) {
             acc[envVar.name] = envVar.value;
           }
@@ -171,12 +168,12 @@ export class ToolServerService extends Service {
     else if (this.config.transport === dgraphResolversTypes.McpTransportType.Sse) {
       this.logger.info(`Setting SSE transport for ${this.config.name}`);
 
-      const url = parsedConfig.url || '';
-      const headers = parsedConfig.headers || [];
+      const url = (parsedConfig as ServerTransport).url || '';
+      const headers = (parsedConfig as ServerTransport).headers || [];
 
       // Build headers map
       const headerMap = new Map<string, string>();
-      headers.forEach((header: any) => {
+      headers.forEach((header) => {
         if (header.name && header.value) {
           headerMap.set(header.name, header.value);
         }
@@ -198,12 +195,12 @@ export class ToolServerService extends Service {
     else if (this.config.transport === dgraphResolversTypes.McpTransportType.Stream) {
       this.logger.info(`Setting STREAM transport for ${this.config.name}`);
 
-      const url = parsedConfig.url || '';
-      const headers = parsedConfig.headers || [];
+      const url = (parsedConfig as ServerTransport).url || '';
+      const headers = (parsedConfig as ServerTransport).headers || [];
 
       // Build headers map
       const headerMap = new Map<string, string>();
-      headers.forEach((header: any) => {
+      headers.forEach((header) => {
         if (header.name && header.value) {
           headerMap.set(header.name, header.value);
         }

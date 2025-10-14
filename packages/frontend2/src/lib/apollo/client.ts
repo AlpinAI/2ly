@@ -65,6 +65,7 @@ export const cache = new InMemoryCache({
          */
         agents: {
           // WHY: Merge strategy for pagination or refetching
+          // eslint-disable-next-line @typescript-eslint/no-unused-vars
           merge(_existing = [], incoming) {
             return incoming; // Replace (for now)
             // TODO: Implement pagination merging if needed
@@ -75,18 +76,21 @@ export const cache = new InMemoryCache({
          * WHY: Similar pattern for other list queries
          */
         mcpServers: {
+          // eslint-disable-next-line @typescript-eslint/no-unused-vars
           merge(_existing = [], incoming) {
             return incoming;
           },
         },
 
         mcpTools: {
+          // eslint-disable-next-line @typescript-eslint/no-unused-vars
           merge(_existing = [], incoming) {
             return incoming;
           },
         },
 
         runtimes: {
+          // eslint-disable-next-line @typescript-eslint/no-unused-vars
           merge(_existing = [], incoming) {
             return incoming;
           },

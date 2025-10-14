@@ -8,6 +8,7 @@ import { apolloResolversTypes, MCP_SERVER_RUN_ON } from '@2ly/common';
 import { useMutation } from '@apollo/client';
 import { UPDATE_MCP_SERVER_RUN_ON_MUTATION, LINK_MCP_SERVER_TO_RUNTIME_MUTATION, UNLINK_MCP_SERVER_FROM_RUNTIME_MUTATION } from '../../graphql';
 import { cn, formatRelativeTime } from '../../utils/helpers';
+import { parseMcpServerConfig } from '../../utils/mcpServerConfig';
 
 interface MCPServerCardProps {
   server: apolloResolversTypes.McpServer;
@@ -28,6 +29,8 @@ const MCPServerCard: React.FC<MCPServerCardProps> = ({
   onDuplicate,
   className,
 }) => {
+  // Parse the server config to extract additional properties
+  const serverWithConfig = parseMcpServerConfig(server);
   const [isToolsExpanded, setIsToolsExpanded] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [selectedRunOn, setSelectedRunOn] = useState<MCP_SERVER_RUN_ON | undefined>(server.runOn || 'GLOBAL');
@@ -93,23 +96,23 @@ const MCPServerCard: React.FC<MCPServerCardProps> = ({
                 <>
                   <div className="rounded-md bg-gray-50 p-2 text-xs">
                     <span className="block text-gray-500">Command</span>
-                    <span className="font-medium font-mono break-all">{server.command}</span>
+                    <span className="font-medium font-mono break-all">{serverWithConfig.command}</span>
                   </div>
                   <div className="rounded-md bg-gray-50 p-2 text-xs">
                     <span className="block text-gray-500">Arguments</span>
-                    <span className="font-medium font-mono break-all">{server.args || 'None'}</span>
+                    <span className="font-medium font-mono break-all">{serverWithConfig.args || 'None'}</span>
                   </div>
-                  {server.ENV && (
+                  {serverWithConfig.ENV && (
                     <div className="rounded-md bg-gray-50 p-2 text-xs">
                       <span className="block text-gray-500">Environment Variables</span>
-                      <span className="font-medium font-mono break-all">{server.ENV}</span>
+                      <span className="font-medium font-mono break-all">{serverWithConfig.ENV}</span>
                     </div>
                   )}
                 </>
               ) : (
                 <div className="rounded-md bg-gray-50 p-2 text-xs">
                   <span className="block text-gray-500">Server URL</span>
-                  <span className="font-medium font-mono break-all">{server.serverUrl || 'None'}</span>
+                  <span className="font-medium font-mono break-all">{serverWithConfig.serverUrl || 'None'}</span>
                 </div>
               )}
 
@@ -187,10 +190,10 @@ const MCPServerCard: React.FC<MCPServerCardProps> = ({
                 </div>
               )}
 
-              {server.serverUrl && (
+              {serverWithConfig.serverUrl && (
                 <div className="flex items-center gap-2 text-xs text-gray-600">
                   <Server className="h-3 w-3" />
-                  <span className="truncate">{server.serverUrl}</span>
+                  <span className="truncate">{serverWithConfig.serverUrl}</span>
                 </div>
               )}
 
