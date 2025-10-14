@@ -24,7 +24,7 @@
  */
 
 import * as React from 'react';
-import { X } from 'lucide-react';
+import { X, List } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
@@ -69,7 +69,9 @@ export function MasterDetailLayout({ table, detail, className, onCloseDetail }: 
             ) : (
               <div className="h-full flex items-center justify-center p-6">
                 <div className="text-center">
-                  <div className="text-5xl mb-3">👈</div>
+                  <div className="flex justify-center mb-3">
+                    <List className="h-12 w-12 text-muted-foreground" />
+                  </div>
                   <p className="text-sm text-muted-foreground">
                     Select an item to view details
                   </p>
