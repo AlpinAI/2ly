@@ -44,9 +44,7 @@ export function AppLayout() {
 
       {/* Main Content */}
       <main className="p-6">
-        <div className="max-w-7xl mx-auto">
-          <Outlet />
-        </div>
+        <Outlet />
       </main>
 
       {/* Global Add Tool Workflow - accessible from any page */}
