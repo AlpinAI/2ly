@@ -144,6 +144,8 @@ export const wsLink = new GraphQLWsLink(
 
     // WHY: Keep connection alive (prevent timeout)
     keepAlive: 10_000, // 10 seconds
+  // TODO: address this issue at the monorepo level  
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   }) as any // Type assertion to handle duplicate graphql-ws versions in monorepo
 );
 

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { test as base } from '@playwright/test';
 
 /**
@@ -71,6 +72,7 @@ export const test = base.extend<DatabaseFixture>({
    * GraphQL client fixture
    * Provides a simple function to execute GraphQL queries
    */
+  // eslint-disable-next-line no-empty-pattern
   graphql: async ({ }, use) => {
     const apiUrl = process.env.API_URL || 'http://localhost:3000';
 
@@ -102,7 +104,8 @@ export const test = base.extend<DatabaseFixture>({
    * Reset database fixture
    * Drops all data from the database via backend reset endpoint
    */
-  resetDatabase: async ({ graphql }, use) => {
+  // eslint-disable-next-line no-empty-pattern
+  resetDatabase: async ({ }, use) => {
     const reset = async () => {
       const apiUrl = process.env.API_URL || 'http://localhost:3000';
       const resetUrl = `${apiUrl}/reset`;

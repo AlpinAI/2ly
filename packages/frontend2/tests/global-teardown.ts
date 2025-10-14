@@ -27,7 +27,8 @@ interface TestEnvironmentState {
   frontendPid?: number;
 }
 
-async function globalTeardown(config: FullConfig) {
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+async function globalTeardown(_config: FullConfig) {
   console.log('🧹 Cleaning up test environment...');
 
   try {
@@ -59,6 +60,7 @@ async function globalTeardown(config: FullConfig) {
     }
 
     // Stop test environment containers
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const testEnv: TestEnvironment | undefined = (global as any).__TEST_ENVIRONMENT__;
 
     if (testEnv) {

@@ -21,5 +21,5 @@ Execute the lint and typecheck scripts and systematically fix any issues, ensuri
    - Re-run tests after each fix
 
 4. **Stop when 10+ files have been modified**
-   - When you changed more than 10 files stop
+   - When you changed more than 20 files stop
    - Give back control to a human for review

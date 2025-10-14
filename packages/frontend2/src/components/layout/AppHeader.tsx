@@ -31,14 +31,12 @@ import {
   PopoverTrigger,
 } from '@/components/ui/popover';
 import { useAuth } from '@/contexts/AuthContext';
-import { useWorkspaceId } from '@/stores/workspaceStore';
 import { useTheme } from '@/contexts/ThemeContext';
 import { cn } from '@/lib/utils';
 import { CommandPalette } from '@/components/command-palette/CommandPalette';
 
 export function AppHeader() {
   const { user, logout } = useAuth();
-  const workspaceId = useWorkspaceId();
   const { theme } = useTheme();
 
   // Extract user initials from email

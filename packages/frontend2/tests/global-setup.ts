@@ -11,12 +11,12 @@
 import { chromium, FullConfig } from '@playwright/test';
 import { TestEnvironment } from '@2ly/common/test/testcontainers';
 import { exec } from 'child_process';
-import { promisify } from 'util';
+// import { promisify } from 'util';
 import * as fs from 'fs';
 import * as path from 'path';
 import { fileURLToPath } from 'url';
 
-const execAsync = promisify(exec);
+// const execAsync = promisify(exec);
 
 // Get current directory in ES module
 const __filename = fileURLToPath(import.meta.url);
@@ -34,7 +34,8 @@ interface TestEnvironmentState {
   frontendPid?: number;
 }
 
-async function globalSetup(config: FullConfig) {
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+async function globalSetup(_config: FullConfig) {
   console.log('🚀 Starting test environment...');
 
   // Initialize test environment
@@ -171,6 +172,7 @@ async function globalSetup(config: FullConfig) {
 
     // Note: We don't call testEnv.stop() here - that happens in global-teardown
     // We also keep a reference by storing it in a global variable
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (global as any).__TEST_ENVIRONMENT__ = testEnv;
   } catch (error) {
     console.error('❌ Failed to start test environment:', error);

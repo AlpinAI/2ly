@@ -24,11 +24,6 @@ import type { SubscribeMcpRegistriesSubscription } from '@/graphql/generated/gra
 import { mcpRegistry } from '@2ly/common';
 import { McpRegistrySection } from '@/components/settings/McpRegistrySection';
 
-// Generated types from MCP Registry OpenAPI schema - available for future use
-// @ts-expect-error - Imported for documentation and future use
-type ServerJSON = mcpRegistry.components['schemas']['ServerJSON'];
-// @ts-expect-error - Imported for documentation and future use
-type ServerResponse = mcpRegistry.components['schemas']['ServerResponse'];
 
 export default function SettingsPage() {
   const workspaceId = useWorkspaceId();

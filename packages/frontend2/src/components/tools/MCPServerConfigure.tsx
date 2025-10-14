@@ -16,7 +16,6 @@ import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { useMutation, useSubscription } from '@apollo/client/react';
 import { gql } from '@apollo/client';
 import { ExternalLink, Loader2 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
 import { SplitButton } from '@/components/ui/split-button';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';

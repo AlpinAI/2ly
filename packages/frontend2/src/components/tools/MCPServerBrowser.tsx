@@ -25,6 +25,11 @@ import { useWorkspaceId } from '@/stores/workspaceStore';
 import { SubscribeMcpRegistriesDocument } from '@/graphql/generated/graphql';
 import { MCPServerCard } from './MCPServerCard';
 import type { SubscribeMcpRegistriesSubscription } from '@/graphql/generated/graphql';
+import { mcpRegistry } from '@2ly/common';
+
+// Use official MCP Registry schema types
+type Package = mcpRegistry.components['schemas']['Package'];
+type Transport = mcpRegistry.components['schemas']['Transport'];
 
 // Extract server type
 type MCPRegistryServer = NonNullable<
@@ -169,17 +174,17 @@ export function MCPServerBrowser({ onConfigure }: MCPServerBrowserProps) {
         try {
           // Check packages
           if (server.packages) {
-            const packages = JSON.parse(server.packages);
+            const packages = JSON.parse(server.packages) as Package[];
             if (Array.isArray(packages)) {
-              const hasMatch = packages.some((pkg: any) => pkg.transport?.type?.toUpperCase() === selectedTransport);
+              const hasMatch = packages.some((pkg) => pkg.transport?.type?.toUpperCase() === selectedTransport);
               if (hasMatch) return true;
             }
           }
           // Check remotes
           if (server.remotes) {
-            const remotes = JSON.parse(server.remotes);
+            const remotes = JSON.parse(server.remotes) as Transport[];
             if (Array.isArray(remotes)) {
-              const hasMatch = remotes.some((remote: any) => remote.type?.toUpperCase() === selectedTransport);
+              const hasMatch = remotes.some((remote) => remote.type?.toUpperCase() === selectedTransport);
               if (hasMatch) return true;
             }
           }
