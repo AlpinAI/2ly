@@ -126,7 +126,7 @@ export function ServerTable({
       </div>
 
       {/* Table */}
-      <div className="flex-1 overflow-auto">
+      <div className="flex-1 flex flex-col min-h-0">
         {loading ? (
           <div className="flex items-center justify-center h-full">
             <p className="text-sm text-muted-foreground">Loading servers...</p>
@@ -140,74 +140,77 @@ export function ServerTable({
             </div>
           </div>
         ) : (
-          <table className="w-full">
-            <thead className="bg-gray-50 dark:bg-gray-900 sticky top-0">
-              <tr>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  Name
-                </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  Transport
-                </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  Run On
-                </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  Tools
-                </th>
-              </tr>
-            </thead>
-            <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-              {servers.map((server) => (
-                <tr
-                  key={server.id}
-                  onClick={() => onSelectServer(server.id)}
-                  className={`cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors ${
-                    selectedServerId === server.id
-                      ? 'bg-cyan-50 dark:bg-cyan-900/20 border-l-4 border-cyan-500'
-                      : ''
-                  }`}
-                >
-                  <td className="px-4 py-3 text-sm">
-                    <div className="font-medium text-gray-900 dark:text-white">
-                      {server.name}
-                    </div>
-                    <div className="text-xs text-gray-500 dark:text-gray-400 truncate max-w-xs">
-                      {server.description}
-                    </div>
-                  </td>
-                  <td className="px-4 py-3 text-sm text-gray-700 dark:text-gray-300">
-                    <span className="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300">
-                      {server.transport}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3 text-sm text-gray-700 dark:text-gray-300">
-                    {server.runOn ? (
-                      <span className="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-purple-100 dark:bg-purple-900/30 text-purple-800 dark:text-purple-300">
-                        {server.runOn}
-                      </span>
-                    ) : (
-                      <span className="text-gray-400 dark:text-gray-500">-</span>
-                    )}
-                  </td>
-                  <td className="px-4 py-3 text-sm text-gray-700 dark:text-gray-300">
-                    {server.tools?.length || 0}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          <>
+            <div className="flex-1 overflow-auto">
+              <table className="w-full">
+                <thead className="bg-gray-50 dark:bg-gray-900 sticky top-0">
+                  <tr>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                      Name
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                      Transport
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                      Run On
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                      Tools
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                  {servers.map((server) => (
+                    <tr
+                      key={server.id}
+                      onClick={() => onSelectServer(server.id)}
+                      className={`cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors ${
+                        selectedServerId === server.id
+                          ? 'bg-cyan-50 dark:bg-cyan-900/20 border-l-4 border-cyan-500'
+                          : ''
+                      }`}
+                    >
+                      <td className="px-4 py-3 text-sm">
+                        <div className="font-medium text-gray-900 dark:text-white">
+                          {server.name}
+                        </div>
+                        <div className="text-xs text-gray-500 dark:text-gray-400 truncate max-w-xs">
+                          {server.description}
+                        </div>
+                      </td>
+                      <td className="px-4 py-3 text-sm text-gray-700 dark:text-gray-300">
+                        <span className="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300">
+                          {server.transport}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 text-sm text-gray-700 dark:text-gray-300">
+                        {server.runOn ? (
+                          <span className="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-purple-100 dark:bg-purple-900/30 text-purple-800 dark:text-purple-300">
+                            {server.runOn}
+                          </span>
+                        ) : (
+                          <span className="text-gray-400 dark:text-gray-500">-</span>
+                        )}
+                      </td>
+                      <td className="px-4 py-3 text-sm text-gray-700 dark:text-gray-300">
+                        {server.tools?.length || 0}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            
+            {/* Footer with count - now at bottom of table panel */}
+            <div className="px-4 py-2 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900">
+              <p className="text-xs text-gray-500 dark:text-gray-400">
+                Showing {servers.length} {servers.length === 1 ? 'server' : 'servers'}
+              </p>
+            </div>
+          </>
         )}
       </div>
 
-      {/* Footer with count */}
-      {!loading && servers.length > 0 && (
-        <div className="px-4 py-2 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900">
-          <p className="text-xs text-gray-500 dark:text-gray-400">
-            Showing {servers.length} {servers.length === 1 ? 'server' : 'servers'}
-          </p>
-        </div>
-      )}
     </div>
   );
 }

@@ -23,7 +23,8 @@
  * ```
  */
 
-import { Outlet } from 'react-router-dom';
+import { useEffect } from 'react';
+import { Outlet, useLocation } from 'react-router-dom';
 import { AppHeader } from './app-header';
 import { AppNavigation } from './app-navigation';
 import { AddToolWorkflow } from '@/components/tools/add-tool-workflow';
@@ -33,9 +34,15 @@ export function AppLayout() {
   // Use individual selectors to avoid object reference issues
   const isOpen = useUIStore((state) => state.addToolWorkflowOpen);
   const setOpen = useUIStore((state) => state.setAddToolWorkflowOpen);
+  const location = useLocation();
+
+  // Close dialog when navigating to a different page
+  useEffect(() => {
+    setOpen(false);
+  }, [location.pathname, setOpen]);
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors font-mono">
+    <div className="h-screen bg-gray-50 dark:bg-gray-900 transition-colors font-mono flex flex-col">
       {/* Header */}
       <AppHeader />
 
@@ -43,7 +50,7 @@ export function AppLayout() {
       <AppNavigation />
 
       {/* Main Content */}
-      <main className="p-6">
+      <main className="flex-1 p-6 min-h-0">
         <Outlet />
       </main>
 

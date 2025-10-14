@@ -13,7 +13,7 @@
  */
 
 import { Button } from '@/components/ui/button';
-import { AlertCircle, CheckCircle, Clock } from 'lucide-react';
+import { AlertCircle, CheckCircle, Clock, FlaskConical } from 'lucide-react';
 
 export type TestStatus = 'idle' | 'running' | 'success' | 'timeout' | 'error';
 
@@ -41,7 +41,7 @@ export function TestPanel({
       case 'idle':
         return (
           <div className="flex flex-col items-center justify-center h-full text-center px-6">
-            <div className="text-6xl mb-4">🧩</div>
+            <FlaskConical className="h-16 w-16 text-cyan-600 dark:text-cyan-400 mb-4" />
             <h4 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-2">Ready to test</h4>
             <p className="text-sm text-gray-600 dark:text-gray-400 max-w-md">
               Configure your server and click "Test Server" to discover available tools
@@ -82,7 +82,7 @@ export function TestPanel({
 
             {/* Content */}
             <div className="relative text-center z-10">
-              <div className="text-5xl mb-4">🧩</div>
+              <FlaskConical className="h-12 w-12 text-cyan-600 dark:text-cyan-400 mb-4" />
               <h4 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-2">Testing {serverName}</h4>
               <p className="text-sm text-gray-600 dark:text-gray-400">Starting the server and discovering tools...</p>
             </div>

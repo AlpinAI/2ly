@@ -37,19 +37,19 @@ export interface MasterDetailLayoutProps {
 
 export function MasterDetailLayout({ table, detail, className, onCloseDetail }: MasterDetailLayoutProps) {
   return (
-    <div className={cn('flex-1 flex flex-col min-h-0', className)}>
+    <div className={cn('h-full flex flex-col min-h-0', className)}>
       {/* Grid container that fills remaining height and full width */}
-      <div className="flex-1 grid grid-cols-1 lg:grid-cols-3 gap-6 min-h-0">
+      <div className="h-full grid grid-cols-1 lg:grid-cols-3 gap-6 min-h-0">
         {/* Left Panel - Table (2/3 width on large screens) */}
         <div className="lg:col-span-2 flex flex-col min-h-0">
-          <div className="flex-1 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm flex flex-col overflow-hidden">
+          <div className="h-full bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm overflow-auto">
             {table}
           </div>
         </div>
 
         {/* Right Panel - Detail (1/3 width on large screens) */}
         <div className="lg:col-span-1 flex flex-col min-h-0">
-          <div className="relative flex-1 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm flex flex-col overflow-hidden">
+          <div className="relative h-full bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm overflow-auto">
             {detail ? (
               <>
                 {/* Close button - positioned absolutely in top-right */}
@@ -67,7 +67,7 @@ export function MasterDetailLayout({ table, detail, className, onCloseDetail }: 
                 {detail}
               </>
             ) : (
-              <div className="flex-1 flex items-center justify-center p-6">
+              <div className="h-full flex items-center justify-center p-6">
                 <div className="text-center">
                   <div className="text-5xl mb-3">👈</div>
                   <p className="text-sm text-muted-foreground">
