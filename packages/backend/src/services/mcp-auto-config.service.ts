@@ -338,11 +338,13 @@ Return ONLY valid JSON following this format.`;
                 name: server.name,
                 description: server.description,
                 repositoryUrl: repositoryUrl,
-                transport: server.transport,
-                config: JSON.stringify(server.config), // Stringify the single config object
-                _2ly: {
-                  registryVersion: '1.0.0',
-                },
+                packages: JSON.stringify(server.config), // Store config as packages JSON
+                title: server.name,
+                version: '1.0.0',
+                createdAt: new Date(),
+                lastSeenAt: new Date(),
+                id: '', // Will be set by the database
+                registry: {} as any, // Will be set by the database
               };
             } catch (parseError) {
               console.error('Error parsing JSON configuration:', parseError);
