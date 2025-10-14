@@ -17,7 +17,7 @@ import { ExternalLink, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { SplitButton } from '@/components/ui/split-button';
 import { DropdownMenuItem, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
-import type { ServerVersionGroup } from './MCPServerBrowser';
+import type { ServerVersionGroup } from './mcp-server-browser';
 import type { SubscribeMcpRegistriesSubscription } from '@/graphql/generated/graphql';
 
 // Extract the server type from the subscription

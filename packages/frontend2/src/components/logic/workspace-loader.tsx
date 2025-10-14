@@ -25,7 +25,7 @@ import { useQuery, useSubscription } from '@apollo/client/react';
 import { useWorkspaceFromUrl } from '@/hooks/useWorkspaceFromUrl';
 import { ValidateWorkspaceDocument, SubscribeRuntimesDocument, Runtime } from '@/graphql/generated/graphql';
 import { useRuntimeStore } from '@/stores/runtimeStore';
-import { SubscriptionErrorBoundary } from './SubscriptionErrorBoundary';
+import { SubscriptionErrorBoundary } from './subscription-error-boundary';
 
 interface WorkspaceLoaderProps {
   children: ReactNode;

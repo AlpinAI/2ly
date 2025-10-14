@@ -16,8 +16,8 @@
 import { useEffect, useState, useRef } from 'react';
 import { X, ChevronLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { MCPServerBrowser } from './MCPServerBrowser';
-import { MCPServerConfigure } from './MCPServerConfigure';
+import { MCPServerBrowser } from './mcp-server-browser';
+import { MCPServerConfigure } from './mcp-server-configure';
 import type { SubscribeMcpRegistriesSubscription } from '@/graphql/generated/graphql';
 
 // Extract server type

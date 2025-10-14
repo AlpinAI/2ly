@@ -15,7 +15,7 @@
 
 import { Link } from 'react-router-dom';
 import { Bell, User as UserIcon, LogOut, Settings } from 'lucide-react';
-import { ThemeToggle } from '@/components/ThemeToggle';
+import { ThemeToggle } from '@/components/theme-toggle';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
   DropdownMenu,
@@ -33,7 +33,7 @@ import {
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import { cn } from '@/lib/utils';
-import { CommandPalette } from '@/components/command-palette/CommandPalette';
+import { CommandPalette } from '@/components/command-palette/command-palette';
 
 export function AppHeader() {
   const { user, logout } = useAuth();

@@ -10,7 +10,7 @@
  */
 
 import { Loader2 } from 'lucide-react';
-import { RegistryCard, type Registry } from './RegistryCard';
+import { RegistryCard, type Registry } from './registry-card';
 
 interface RegistryListProps {
   registries: Registry[];

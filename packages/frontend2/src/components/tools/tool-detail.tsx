@@ -12,7 +12,7 @@
  */
 
 import { ExternalLink, Wrench, Server, Bot } from 'lucide-react';
-import { ToolTester } from './ToolTester';
+import { ToolTester } from './tool-tester';
 import type { SubscribeMcpToolsSubscription } from '@/graphql/generated/graphql';
 
 type McpTool = NonNullable<NonNullable<SubscribeMcpToolsSubscription['mcpTools']>[number]>;

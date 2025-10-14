@@ -18,7 +18,7 @@
  */
 
 import { Search } from '@/components/ui/search';
-import { CheckboxDropdown } from '@/components/ui/CheckboxDropdown';
+import { CheckboxDropdown } from '@/components/ui/checkbox-dropdown';
 import { Button } from '@/components/ui/button';
 import { X } from 'lucide-react';
 import type { SubscribeRuntimesSubscription } from '@/graphql/generated/graphql';

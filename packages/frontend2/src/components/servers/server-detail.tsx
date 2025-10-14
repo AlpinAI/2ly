@@ -16,7 +16,7 @@
  */
 
 import { ExternalLink, Server } from 'lucide-react';
-import { SecretValue } from '@/components/ui/SecretValue';
+import { SecretValue } from '@/components/ui/secret-value';
 import type { SubscribeMcpServersSubscription } from '@/graphql/generated/graphql';
 
 type McpServer = NonNullable<SubscribeMcpServersSubscription['mcpServers']>[number];

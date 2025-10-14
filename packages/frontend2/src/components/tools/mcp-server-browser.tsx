@@ -21,7 +21,7 @@ import { Loader2, AlertCircle } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { cn } from '@/lib/utils';
 import { useMCPRegistries } from '@/hooks/useMCPRegistries';
-import { MCPServerCard } from './MCPServerCard';
+import { MCPServerCard } from './mcp-server-card';
 import { mcpRegistry } from '@2ly/common';
 import { SubscribeMcpRegistriesSubscription } from '@/graphql/generated/graphql';
 

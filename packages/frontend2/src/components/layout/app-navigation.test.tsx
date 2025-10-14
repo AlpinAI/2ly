@@ -7,7 +7,7 @@
 import { describe, it, expect } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { BrowserRouter, MemoryRouter } from 'react-router-dom';
-import { AppNavigation } from './AppNavigation';
+import { AppNavigation } from './app-navigation';
 
 describe('AppNavigation', () => {
   it('renders all navigation items', () => {

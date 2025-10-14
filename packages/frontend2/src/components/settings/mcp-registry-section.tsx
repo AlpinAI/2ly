@@ -12,10 +12,10 @@
  */
 
 import { Database, AlertCircle } from 'lucide-react';
-import { OfficialRegistryButton, OFFICIAL_MCP_REGISTRY } from './OfficialRegistryButton';
-import { RegistryForm } from './RegistryForm';
-import { RegistryList } from './RegistryList';
-import type { Registry } from './RegistryCard';
+import { OfficialRegistryButton, OFFICIAL_MCP_REGISTRY } from './official-registry-button';
+import { RegistryForm } from './registry-form';
+import { RegistryList } from './registry-list';
+import type { Registry } from './registry-card';
 
 interface McpRegistrySectionProps {
   registries: Registry[];

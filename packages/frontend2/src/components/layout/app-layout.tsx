@@ -24,9 +24,9 @@
  */
 
 import { Outlet } from 'react-router-dom';
-import { AppHeader } from './AppHeader';
-import { AppNavigation } from './AppNavigation';
-import { AddToolWorkflow } from '@/components/tools/AddToolWorkflow';
+import { AppHeader } from './app-header';
+import { AppNavigation } from './app-navigation';
+import { AddToolWorkflow } from '@/components/tools/add-tool-workflow';
 import { useUIStore } from '@/stores/uiStore';
 
 export function AppLayout() {

@@ -16,7 +16,7 @@ import { createContext, useContext, useState, useEffect, ReactNode } from 'react
 import { useNavigate } from 'react-router-dom';
 import { useMutation } from '@apollo/client/react';
 import { resetApolloCache } from '@/lib/apollo/client';
-import { getRedirectIntent, clearRedirectIntent } from '@/components/logic/ProtectedRoute';
+import { getRedirectIntent, clearRedirectIntent } from '@/components/logic/protected-route';
 import { isTokenExpired } from '@/lib/jwt';
 import { RefreshTokenDocument } from '@/graphql/generated/graphql';
 

@@ -20,7 +20,7 @@ import {
   DeleteMcpRegistryDocument,
   SyncUpstreamRegistryDocument,
 } from '@/graphql/generated/graphql';
-import { McpRegistrySection } from '@/components/settings/McpRegistrySection';
+import { McpRegistrySection } from '@/components/settings/mcp-registry-section';
 
 
 export default function SettingsPage() {

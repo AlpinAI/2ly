@@ -9,7 +9,7 @@
  * - Can be deprecated in favor of direct MCPServerBrowser usage
  */
 
-import { MCPServerBrowser } from './MCPServerBrowser';
+import { MCPServerBrowser } from './mcp-server-browser';
 import type { SubscribeMcpRegistriesSubscription } from '@/graphql/generated/graphql';
 
 // Extract server type

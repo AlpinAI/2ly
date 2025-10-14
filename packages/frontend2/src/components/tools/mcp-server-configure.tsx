@@ -24,8 +24,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { cn } from '@/lib/utils';
 import { useWorkspaceId } from '@/stores/workspaceStore';
 import { useRuntimeData } from '@/stores/runtimeStore';
-import { TestPanel, type TestStatus } from './TestPanel';
-import { ConfigFieldInput } from './ConfigFieldInput';
+import { TestPanel, type TestStatus } from './test-panel';
+import { ConfigFieldInput } from './config-field-input';
 import {
   extractConfigOptions,
   extractConfigurableFields,

@@ -17,9 +17,9 @@
  */
 
 import { useState, useMemo } from 'react';
-import { MasterDetailLayout } from '@/components/layout/MasterDetailLayout';
-import { AgentTable } from '@/components/agents/AgentTable';
-import { AgentDetail } from '@/components/agents/AgentDetail';
+import { MasterDetailLayout } from '@/components/layout/master-detail-layout';
+import { AgentTable } from '@/components/agents/agent-table';
+import { AgentDetail } from '@/components/agents/agent-detail';
 import { useAgents } from '@/hooks/useAgents';
 import { useMCPServers } from '@/hooks/useMCPServers';
 import { useRuntimeData } from '@/stores/runtimeStore';

@@ -20,9 +20,9 @@
 import { useState, useMemo } from 'react';
 import { Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { MasterDetailLayout } from '@/components/layout/MasterDetailLayout';
-import { ToolTable } from '@/components/tools/ToolTable';
-import { ToolDetail } from '@/components/tools/ToolDetail';
+import { MasterDetailLayout } from '@/components/layout/master-detail-layout';
+import { ToolTable } from '@/components/tools/tool-table';
+import { ToolDetail } from '@/components/tools/tool-detail';
 import { useMCPTools } from '@/hooks/useMCPTools';
 import { useMCPServers } from '@/hooks/useMCPServers';
 import { useAgents } from '@/hooks/useAgents';

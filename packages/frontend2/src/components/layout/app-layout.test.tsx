@@ -7,7 +7,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import { AppLayout } from './AppLayout';
+import { AppLayout } from './app-layout';
 import { ThemeProvider } from '@/contexts/ThemeContext';
 
 // Mock the auth context
