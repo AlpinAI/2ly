@@ -25,6 +25,7 @@
  */
 
 import { useQuery, useSubscription } from '@apollo/client/react';
+import { useMemo } from 'react';
 import { SubscribeMcpServersDocument, GetMcpServersDocument } from '@/graphql/generated/graphql';
 import { useWorkspaceId } from '@/stores/workspaceStore';
 
@@ -61,12 +62,12 @@ export function useMCPServers() {
   // 4️⃣ Extract servers from query cache (initial data + subscription updates)
   const servers = queryData?.mcpServers ?? [];
 
-  // 5️⃣ Aggregate stats
-  const stats = {
+  // 5️⃣ Aggregate stats (memoized to prevent recreating on every render)
+  const stats = useMemo(() => ({
     total: servers.length,
     withTools: servers.filter((s) => s.tools && s.tools.length > 0).length,
     withoutTools: servers.filter((s) => !s.tools || s.tools.length === 0).length,
-  };
+  }), [servers]);
 
   return {
     servers,

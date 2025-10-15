@@ -134,6 +134,13 @@ export class WorkspaceRepository {
       .pipe(map((workspace) => workspace.mcpServers || []));
   }
 
+  async findMCPToolsByWorkspace(workspaceId: string): Promise<apolloResolversTypes.McpTool[]> {
+    const res = await this.dgraphService.query<{
+      getWorkspace: { mcpTools: apolloResolversTypes.McpTool[] };
+    }>(QUERY_WORKSPACE_WITH_MCP_TOOLS, { workspaceId });
+    return res.getWorkspace.mcpTools || [];
+  }
+
   observeMCPTools(workspaceId: string): Observable<apolloResolversTypes.McpTool[]> {
     const query = createSubscriptionFromQuery(QUERY_WORKSPACE_WITH_MCP_TOOLS);
     return this.dgraphService

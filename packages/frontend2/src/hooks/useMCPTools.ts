@@ -1,11 +1,11 @@
 /**
  * useMCPTools Hook
  *
- * WHY: Fetches MCP tools with real-time updates and client-side filtering.
+ * WHY: Fetches MCP tools with cache-and-network fetch policy and client-side filtering.
  * Used by Tools Page to display and filter tool list.
  *
  * PATTERN: Similar to useMCPServers
- * - useSubscription for real-time updates
+ * - useQuery with cache-and-network for optimal performance
  * - useMemo for client-side filtering
  * - Multi-select filters for servers and agents
  *
@@ -24,9 +24,9 @@
  * ```
  */
 
-import { useMemo, useState } from 'react';
-import { useSubscription } from '@apollo/client/react';
-import { SubscribeMcpToolsDocument } from '@/graphql/generated/graphql';
+import { useMemo, useState, useCallback } from 'react';
+import { useQuery } from '@apollo/client/react';
+import { GetMcpToolsDocument } from '@/graphql/generated/graphql';
 import { useWorkspaceId } from '@/stores/workspaceStore';
 
 export function useMCPTools() {
@@ -37,10 +37,11 @@ export function useMCPTools() {
   const [selectedServerIds, setSelectedServerIds] = useState<string[]>([]);
   const [selectedAgentIds, setSelectedAgentIds] = useState<string[]>([]);
 
-  // Fetch tools with subscription
-  const { data, loading, error } = useSubscription(SubscribeMcpToolsDocument, {
+  // Fetch tools with query
+  const { data, loading, error } = useQuery(GetMcpToolsDocument, {
     variables: { workspaceId: workspaceId || '' },
     skip: !workspaceId,
+    fetchPolicy: 'cache-and-network',
   });
 
   const allTools = (data?.mcpTools ?? []).filter((tool): tool is NonNullable<typeof tool> => tool !== null);
@@ -81,24 +82,33 @@ export function useMCPTools() {
     inactive: allTools.filter((t) => t.status === 'INACTIVE').length,
   };
 
+  // Memoize the reset function to prevent recreating it on every render
+  const resetFilters = useCallback(() => {
+    setSearchTerm('');
+    setSelectedServerIds([]);
+    setSelectedAgentIds([]);
+  }, []);
+
+  // Memoize the filters object to prevent recreating it on every render
+  const filters = useMemo(() => ({
+    search: searchTerm,
+    setSearch: setSearchTerm,
+    serverIds: selectedServerIds,
+    setServerIds: setSelectedServerIds,
+    agentIds: selectedAgentIds,
+    setAgentIds: setSelectedAgentIds,
+    reset: resetFilters,
+  }), [searchTerm, selectedServerIds, selectedAgentIds, resetFilters]);
+
+  // Memoize the stats object to prevent recreating it on every render
+  const memoizedStats = useMemo(() => stats, [stats.total, stats.filtered, stats.active, stats.inactive]);
+
   return {
     tools: allTools,
     filteredTools,
     loading,
     error,
-    stats,
-    filters: {
-      search: searchTerm,
-      setSearch: setSearchTerm,
-      serverIds: selectedServerIds,
-      setServerIds: setSelectedServerIds,
-      agentIds: selectedAgentIds,
-      setAgentIds: setSelectedAgentIds,
-      reset: () => {
-        setSearchTerm('');
-        setSelectedServerIds([]);
-        setSelectedAgentIds([]);
-      },
-    },
+    stats: memoizedStats,
+    filters,
   };
 }

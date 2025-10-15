@@ -40,7 +40,6 @@ frontend2/
 │   │   └── workspaceStore.ts
 │   ├── hooks/            # Custom React hooks
 │   │   ├── useRuntimes.ts
-│   │   └── useToolCatalog.ts
 │   ├── lib/              # Utility functions and helpers
 │   │   ├── utils.ts      # cn() for class merging
 │   │   └── apollo/       # Apollo Client configuration

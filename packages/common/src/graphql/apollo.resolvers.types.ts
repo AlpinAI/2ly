@@ -380,6 +380,7 @@ export type Query = {
   isMCPAutoConfigEnabled: Scalars['Boolean']['output'];
   mcpRegistries?: Maybe<Array<McpRegistry>>;
   mcpServers?: Maybe<Array<McpServer>>;
+  mcpTools?: Maybe<Array<McpTool>>;
   me?: Maybe<User>;
   system?: Maybe<System>;
   workspace?: Maybe<Array<Workspace>>;
@@ -393,6 +394,11 @@ export type QueryMcpRegistriesArgs = {
 
 
 export type QueryMcpServersArgs = {
+  workspaceId: Scalars['ID']['input'];
+};
+
+
+export type QueryMcpToolsArgs = {
   workspaceId: Scalars['ID']['input'];
 };
 
@@ -444,7 +450,6 @@ export type Runtime = {
 
 export type Subscription = {
   mcpServers?: Maybe<Array<McpServer>>;
-  mcpTools?: Maybe<Array<Maybe<McpTool>>>;
   runtimes?: Maybe<Array<Runtime>>;
   toolCalls?: Maybe<Array<ToolCall>>;
   workspace?: Maybe<Workspace>;
@@ -453,11 +458,6 @@ export type Subscription = {
 
 
 export type SubscriptionMcpServersArgs = {
-  workspaceId: Scalars['ID']['input'];
-};
-
-
-export type SubscriptionMcpToolsArgs = {
   workspaceId: Scalars['ID']['input'];
 };
 
@@ -821,6 +821,7 @@ export type QueryResolvers<ContextType = object, ParentType extends ResolversPar
   isMCPAutoConfigEnabled?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
   mcpRegistries?: Resolver<Maybe<Array<ResolversTypes['MCPRegistry']>>, ParentType, ContextType, RequireFields<QueryMcpRegistriesArgs, 'workspaceId'>>;
   mcpServers?: Resolver<Maybe<Array<ResolversTypes['MCPServer']>>, ParentType, ContextType, RequireFields<QueryMcpServersArgs, 'workspaceId'>>;
+  mcpTools?: Resolver<Maybe<Array<ResolversTypes['MCPTool']>>, ParentType, ContextType, RequireFields<QueryMcpToolsArgs, 'workspaceId'>>;
   me?: Resolver<Maybe<ResolversTypes['User']>, ParentType, ContextType>;
   system?: Resolver<Maybe<ResolversTypes['System']>, ParentType, ContextType>;
   workspace?: Resolver<Maybe<Array<ResolversTypes['Workspace']>>, ParentType, ContextType>;
@@ -863,7 +864,6 @@ export type RuntimeResolvers<ContextType = object, ParentType extends ResolversP
 
 export type SubscriptionResolvers<ContextType = object, ParentType extends ResolversParentTypes['Subscription'] = ResolversParentTypes['Subscription']> = {
   mcpServers?: SubscriptionResolver<Maybe<Array<ResolversTypes['MCPServer']>>, "mcpServers", ParentType, ContextType, RequireFields<SubscriptionMcpServersArgs, 'workspaceId'>>;
-  mcpTools?: SubscriptionResolver<Maybe<Array<Maybe<ResolversTypes['MCPTool']>>>, "mcpTools", ParentType, ContextType, RequireFields<SubscriptionMcpToolsArgs, 'workspaceId'>>;
   runtimes?: SubscriptionResolver<Maybe<Array<ResolversTypes['Runtime']>>, "runtimes", ParentType, ContextType, RequireFields<SubscriptionRuntimesArgs, 'workspaceId'>>;
   toolCalls?: SubscriptionResolver<Maybe<Array<ResolversTypes['ToolCall']>>, "toolCalls", ParentType, ContextType, RequireFields<SubscriptionToolCallsArgs, 'workspaceId'>>;
   workspace?: SubscriptionResolver<Maybe<ResolversTypes['Workspace']>, "workspace", ParentType, ContextType, RequireFields<SubscriptionWorkspaceArgs, 'workspaceId'>>;

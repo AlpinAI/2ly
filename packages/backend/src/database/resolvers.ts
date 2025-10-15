@@ -53,6 +53,9 @@ export const resolvers = (container: Container = defaultContainer): apolloResolv
       mcpServers: async () => {
         return mcpServerRepository.findAll();
       },
+      mcpTools: async (_parent: unknown, { workspaceId }: { workspaceId: string }) => {
+        return workspaceRepository.findMCPToolsByWorkspace(workspaceId);
+      },
       system: async () => {
         return systemRepository.getSystem();
       },
@@ -311,12 +314,6 @@ export const resolvers = (container: Container = defaultContainer): apolloResolv
         subscribe: (_parent: unknown, { workspaceId }: { workspaceId: string }) => {
           const observable = workspaceRepository.observeMCPServers(workspaceId);
           return observableToAsyncGenerator(observable, 'mcpServers');
-        },
-      },
-      mcpTools: {
-        subscribe: (_parent: unknown, { workspaceId }: { workspaceId: string }) => {
-          const observable = workspaceRepository.observeMCPTools(workspaceId);
-          return observableToAsyncGenerator(observable, 'mcpTools');
         },
       },
       workspaces: {
