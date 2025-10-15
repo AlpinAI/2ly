@@ -134,7 +134,12 @@ export function MCPServerConfigure({ selectedServer, onBack, onSuccess }: MCPSer
   // Initialize custom name
   useEffect(() => {
     if (!customName) {
-      setCustomName(getServerDisplayName(selectedServer));
+      const displayName = getServerDisplayName(selectedServer);
+      // Strip namespace (anything before the /)
+      const nameWithoutNamespace = displayName.includes('/') 
+        ? displayName.split('/').pop() || displayName
+        : displayName;
+      setCustomName(nameWithoutNamespace);
     }
   }, [selectedServer, customName]);
 
