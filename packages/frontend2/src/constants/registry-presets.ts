@@ -21,7 +21,7 @@ export interface RegistryPreset {
 
 export const REGISTRY_PRESETS: RegistryPreset[] = [
   {
-    name: 'Official MCP Registry',
+    name: 'Official Registry',
     upstreamUrl: 'https://registry.modelcontextprotocol.io/v0/servers',
   },
   {

@@ -21,7 +21,7 @@
  * ```
  */
 
-import { Plus } from 'lucide-react';
+import { RefreshCw } from 'lucide-react';
 import { SplitButton } from '@/components/ui/split-button';
 import { DropdownMenuItem } from '@/components/ui/dropdown-menu';
 import { REGISTRY_PRESETS, OFFICIAL_REGISTRY } from '@/constants/registry-presets';
@@ -49,7 +49,7 @@ export function RegistrySplitButton({
     <SplitButton
       primaryLabel={
         <>
-          <Plus className="mr-2 h-4 w-4" />
+          <RefreshCw className="mr-2 h-4 w-4" />
           {OFFICIAL_REGISTRY.name}
         </>
       }
