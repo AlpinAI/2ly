@@ -162,7 +162,7 @@ export function OnboardingCard({ step, isCurrentStep = false }: OnboardingCardPr
                 disabled
               >
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Syncing ({serverCount} servers found)
+                Syncing {serverCount > 0 ? `(${serverCount} servers found)` : '...'}
               </Button>
             ) : (
               <RegistrySplitButton
