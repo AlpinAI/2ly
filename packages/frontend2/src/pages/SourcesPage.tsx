@@ -17,12 +17,15 @@
  */
 
 import { useState, useMemo } from 'react';
+import { Plus } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import { MasterDetailLayout } from '@/components/layout/master-detail-layout';
 import { ServerTable } from '@/components/servers/server-table';
 import { ServerDetail } from '@/components/servers/server-detail';
 import { useMCPServers } from '@/hooks/useMCPServers';
 import { useAgents } from '@/hooks/useAgents';
 import { useRuntimeData } from '@/stores/runtimeStore';
+import { useUIStore } from '@/stores/uiStore';
 
 export default function SourcesPage() {
   const [selectedServerId, setSelectedServerId] = useState<string | null>(null);
@@ -31,6 +34,10 @@ export default function SourcesPage() {
   const { runtimes } = useRuntimeData();
   const { servers, loading, error } = useMCPServers();
   const { agents } = useAgents(runtimes);
+
+  // UI store for opening add tool workflow
+  const setAddToolWorkflowOpen = useUIStore((state) => state.setAddToolWorkflowOpen);
+  const setAddToolWorkflowInitialStep = useUIStore((state) => state.setAddToolWorkflowInitialStep);
 
   // Get selected server
   const selectedServer = useMemo(() => {
@@ -46,6 +53,12 @@ export default function SourcesPage() {
     }));
   }, [agents]);
 
+  // Handle add MCP server button click
+  const handleAddMCPServer = () => {
+    setAddToolWorkflowInitialStep('mcp-browser');
+    setAddToolWorkflowOpen(true);
+  };
+
   if (error) {
     return (
       <div className="flex items-center justify-center h-full">
@@ -60,11 +73,17 @@ export default function SourcesPage() {
   return (
     <div className="h-full flex flex-col">
       {/* Page Header */}
-      <div className="mb-6">
-        <h2 className="text-3xl font-bold text-gray-900 dark:text-white">Sources</h2>
-        <p className="text-gray-500 dark:text-gray-400 mt-1">
-          Manage MCP sources and their configurations
-        </p>
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <h2 className="text-3xl font-bold text-gray-900 dark:text-white">Sources</h2>
+          <p className="text-gray-500 dark:text-gray-400 mt-1">
+            Manage MCP sources and their configurations
+          </p>
+        </div>
+        <Button onClick={handleAddMCPServer} className="gap-2">
+          <Plus className="h-4 w-4" />
+          Add MCP Server
+        </Button>
       </div>
 
       {/* Master-Detail Layout */}

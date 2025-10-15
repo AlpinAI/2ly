@@ -46,6 +46,8 @@ interface UIState {
   setDeployModalOpen: (open: boolean) => void;
   addToolWorkflowOpen: boolean;
   setAddToolWorkflowOpen: (open: boolean) => void;
+  addToolWorkflowInitialStep: 'selection' | 'mcp-browser' | 'mcp-config' | null;
+  setAddToolWorkflowInitialStep: (step: 'selection' | 'mcp-browser' | 'mcp-config' | null) => void;
   manageToolsDialogOpen: boolean;
   setManageToolsDialogOpen: (open: boolean) => void;
   selectedToolSetForManagement: string | null;
@@ -94,6 +96,8 @@ export const useUIStore = create<UIState>()(
         setDeployModalOpen: (open) => set({ deployModalOpen: open }),
         addToolWorkflowOpen: false,
         setAddToolWorkflowOpen: (open) => set({ addToolWorkflowOpen: open }),
+        addToolWorkflowInitialStep: null,
+        setAddToolWorkflowInitialStep: (step) => set({ addToolWorkflowInitialStep: step }),
         manageToolsDialogOpen: false,
         setManageToolsDialogOpen: (open) => set({ manageToolsDialogOpen: open }),
         selectedToolSetForManagement: null,

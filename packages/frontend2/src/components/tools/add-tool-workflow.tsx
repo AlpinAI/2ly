@@ -28,6 +28,7 @@ type MCPRegistryServer = NonNullable<
 interface AddToolWorkflowProps {
   isOpen: boolean;
   onClose: () => void;
+  initialStep?: WorkflowStep;
 }
 
 type WorkflowStep = 'selection' | 'mcp-browser' | 'mcp-config';
@@ -72,7 +73,7 @@ const TOOL_CATEGORIES: CategoryOption[] = [
   },
 ];
 
-export function AddToolWorkflow({ isOpen, onClose }: AddToolWorkflowProps) {
+export function AddToolWorkflow({ isOpen, onClose, initialStep }: AddToolWorkflowProps) {
   const [shouldRender, setShouldRender] = useState(false);
   const [isAnimating, setIsAnimating] = useState(false);
   const [topOffset, setTopOffset] = useState(0);
@@ -113,6 +114,17 @@ export function AddToolWorkflow({ isOpen, onClose }: AddToolWorkflowProps) {
       setIsAnimating(false);
       setShouldRender(true);
 
+      // Set initial step and category based on initialStep prop
+      if (initialStep) {
+        setCurrentStep(initialStep);
+        if (initialStep === 'mcp-browser') {
+          setSelectedCategory('mcp');
+        }
+      } else {
+        setCurrentStep('selection');
+        setSelectedCategory(null);
+      }
+
       requestAnimationFrame(() => {
         requestAnimationFrame(() => {
           setIsAnimating(true);
@@ -136,7 +148,7 @@ export function AddToolWorkflow({ isOpen, onClose }: AddToolWorkflowProps) {
         animationTimeoutRef.current = null;
       }
     };
-  }, [isOpen]);
+  }, [isOpen, initialStep]);
 
   // Prevent body scroll when panel is open
   useEffect(() => {

@@ -35,12 +35,15 @@ export function AppLayout() {
   // Use individual selectors to avoid object reference issues
   const isOpen = useUIStore((state) => state.addToolWorkflowOpen);
   const setOpen = useUIStore((state) => state.setAddToolWorkflowOpen);
+  const initialStep = useUIStore((state) => state.addToolWorkflowInitialStep);
+  const setInitialStep = useUIStore((state) => state.setAddToolWorkflowInitialStep);
   const location = useLocation();
 
   // Close dialog when navigating to a different page
   useEffect(() => {
     setOpen(false);
-  }, [location.pathname, setOpen]);
+    setInitialStep(null);
+  }, [location.pathname, setOpen, setInitialStep]);
 
   return (
     <div className="h-screen bg-gray-50 dark:bg-gray-900 transition-colors font-mono flex flex-col">
@@ -56,7 +59,14 @@ export function AppLayout() {
       </main>
 
       {/* Global Add Tool Workflow - accessible from any page */}
-      <AddToolWorkflow isOpen={isOpen} onClose={() => setOpen(false)} />
+      <AddToolWorkflow 
+        isOpen={isOpen} 
+        onClose={() => {
+          setOpen(false);
+          setInitialStep(null);
+        }} 
+        initialStep={initialStep || undefined}
+      />
 
       {/* Toast notifications */}
       <Toaster />
