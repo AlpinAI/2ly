@@ -27,8 +27,8 @@ import {
   Bot, 
   Plus, 
   ExternalLink,
-  Copy,
-  Check
+  Check,
+  RefreshCw
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -119,6 +119,22 @@ export function OnboardingCard({ step, onComplete }: OnboardingCardProps) {
       case ONBOARDING_STEPS.CHOOSE_REGISTRY: {
         const { registries } = useMCPRegistries();
         const existingUrls = registries.map(r => r.upstreamUrl);
+        const firstRegistry = registries[0];
+        
+        if (isCompleted && firstRegistry) {
+          return (
+            <div className="space-y-3">
+              <div className="rounded-lg bg-green-50 dark:bg-green-900/20 p-3">
+                <p className="text-sm text-green-800 dark:text-green-200">
+                <span className="flex items-center">
+                  <RefreshCw className="mr-2 h-4 w-4" />
+                  <span className="font-medium">{firstRegistry.name}</span>
+                </span>
+                </p>
+              </div>
+            </div>
+          );
+        }
         
         return (
           <div className="space-y-3">
@@ -153,33 +169,22 @@ export function OnboardingCard({ step, onComplete }: OnboardingCardProps) {
         
       case ONBOARDING_STEPS.CONNECT_AGENT:
         return (
-          <div className="space-y-3">
-            <div className="rounded-lg bg-gray-50 dark:bg-gray-800 p-3">
-              <p className="text-sm font-medium text-gray-900 dark:text-white mb-2">
-                Run this command in your terminal:
-              </p>
-              <div className="flex items-center gap-2">
-                <code className="flex-1 text-xs bg-white dark:bg-gray-900 px-2 py-1 rounded border">
-                  npx @2ly/runtime --workspace-id={workspaceId} --capabilities=agent
-                </code>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={handleCopyCommand}
-                  className="flex-shrink-0"
-                >
-                  {copiedCommand ? (
-                    <Check className="h-4 w-4" />
-                  ) : (
-                    <Copy className="h-4 w-4" />
-                  )}
-                </Button>
-              </div>
-            </div>
-            <p className="text-xs text-gray-500 dark:text-gray-400">
-              This will connect an agent runtime to your workspace with the necessary capabilities.
-            </p>
-          </div>
+          <Button
+            onClick={handleCopyCommand}
+            className="w-full"
+          >
+            {copiedCommand ? (
+              <>
+                <Check className="mr-2 h-4 w-4" />
+                Copied!
+              </>
+            ) : (
+              <>
+                <ExternalLink className="mr-2 h-4 w-4" />
+                Get instructions
+              </>
+            )}
+          </Button>
         );
         
       default:
@@ -234,11 +239,9 @@ export function OnboardingCard({ step, onComplete }: OnboardingCardProps) {
       </div>
       
       {/* Step-specific content */}
-      {!isCompleted && (
-        <div className="mt-4">
-          {renderStepContent()}
-        </div>
-      )}
+      <div className="mt-4">
+        {renderStepContent()}
+      </div>
     </div>
   );
 }
