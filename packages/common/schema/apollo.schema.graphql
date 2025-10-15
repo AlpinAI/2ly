@@ -109,10 +109,9 @@ type OnboardingStep {
   stepId: String!
   type: OnboardingStepType!
   status: OnboardingStepStatus!
-  completedAt: Date
-  dismissedAt: Date
   priority: Int
   createdAt: Date!
+  updatedAt: Date
 }
 
 type ToolCall {

@@ -8,10 +8,9 @@ subscription SubscribeWorkspace($workspaceId: ID!) {
       stepId
       type
       status
-      completedAt
-      dismissedAt
       priority
       createdAt
+      updatedAt
     }
   }
 }

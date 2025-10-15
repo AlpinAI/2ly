@@ -7,7 +7,7 @@ import {
   QUERY_WORKSPACE_WITH_REGISTRIES,
   DELETE_REGISTRY_SERVERS,
   DELETE_MCP_REGISTRY,
-  UPSERT_REGISTRY_SERVER,
+  ADD_REGISTRY_SERVER,
   UPDATE_REGISTRY_LAST_SYNC,
   UPDATE_REGISTRY_SERVER_LAST_SEEN,
   QUERY_REGISTRY_SERVER_BY_NAME,
@@ -140,7 +140,7 @@ export class RegistryRepository {
           variables._meta = JSON.stringify(serverResponse._meta);
         }
 
-        await this.dgraphService.mutation(UPSERT_REGISTRY_SERVER, variables);
+        await this.dgraphService.mutation(ADD_REGISTRY_SERVER, variables);
       }
     }
 

@@ -12,9 +12,9 @@ query GetDefaultWorkspace {
         stepId
         type
         status
-        completedAt
         priority
         createdAt
+        updatedAt
       }
     }
   }

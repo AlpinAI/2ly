@@ -110,8 +110,8 @@ export const DELETE_MCP_REGISTRY = gql`
   }
 `;
 
-export const UPSERT_REGISTRY_SERVER = gql`
-  mutation upsertRegistryServer(
+export const ADD_REGISTRY_SERVER = gql`
+  mutation addRegistryServer(
     $name: String!
     $description: String!
     $title: String!

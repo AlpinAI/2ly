@@ -184,10 +184,9 @@ type OnboardingStep {
   stepId: String! @search(by: [hash])
   type: OnboardingStepType!
   status: OnboardingStepStatus!
-  completedAt: DateTime
-  dismissedAt: DateTime
   priority: Int
   createdAt: DateTime!
+  updatedAt: DateTime
 }
 
 type ToolCall {

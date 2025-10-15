@@ -72,7 +72,11 @@ export function useOnboarding() {
     
     try {
       await completeStepMutation({
-        variables: { workspaceId, stepId },
+        variables: { 
+          workspaceId, 
+          stepId, 
+          now: new Date().toISOString() 
+        },
       });
     } catch (error) {
       console.error('[useOnboarding] Failed to complete step:', error);

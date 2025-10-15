@@ -12,10 +12,10 @@ import {
   SET_GLOBAL_RUNTIME,
   UNSET_DEFAULT_TESTING_RUNTIME,
   UNSET_GLOBAL_RUNTIME,
-  COMPLETE_ONBOARDING_STEP,
-  DISMISS_ONBOARDING_STEP,
   CREATE_ONBOARDING_STEP,
   LINK_ONBOARDING_STEP_TO_WORKSPACE,
+  QUERY_ONBOARDING_STEP_BY_STEP_ID,
+  UPDATE_ONBOARDING_STEP_STATUS,
 } from './workspace.operations';
 import {
   QUERY_WORKSPACE_WITH_REGISTRIES
@@ -189,31 +189,54 @@ export class WorkspaceRepository {
     }
   }
 
-  async completeOnboardingStep(workspaceId: string, stepId: string): Promise<apolloResolversTypes.Workspace> {
+  async completeOnboardingStep(workspaceId: string, stepId: string): Promise<void> {
     const now = new Date().toISOString();
-    const res = await this.dgraphService.mutation<{
-      updateWorkspace: { workspace: apolloResolversTypes.Workspace[] };
-    }>(COMPLETE_ONBOARDING_STEP, {
-      workspaceId,
-      stepId,
+    
+    // First, query for the onboarding step by stepId to get the dgraph ID
+    const stepQuery = await this.dgraphService.query<{
+      queryOnboardingStep: { id: string; stepId: string; status: string }[];
+    }>(QUERY_ONBOARDING_STEP_BY_STEP_ID, { stepId });
+    
+    const step = stepQuery.queryOnboardingStep?.[0];
+    if (!step) {
+      throw new Error(`Onboarding step with stepId '${stepId}' not found`);
+    }
+    
+    // Update the onboarding step status to COMPLETED
+    await this.dgraphService.mutation<{
+      updateOnboardingStep: { onboardingStep: { id: string }[] };
+    }>(UPDATE_ONBOARDING_STEP_STATUS, {
+      id: step.id,
+      status: 'COMPLETED',
       now,
     });
-    return res.updateWorkspace.workspace[0];
   }
 
-  async dismissOnboardingStep(workspaceId: string, stepId: string): Promise<apolloResolversTypes.Workspace> {
+  async dismissOnboardingStep(workspaceId: string, stepId: string): Promise<void> {
     const now = new Date().toISOString();
-    const res = await this.dgraphService.mutation<{
-      updateWorkspace: { workspace: apolloResolversTypes.Workspace[] };
-    }>(DISMISS_ONBOARDING_STEP, {
-      workspaceId,
-      stepId,
+    
+    // First, query for the onboarding step by stepId to get the dgraph ID
+    const stepQuery = await this.dgraphService.query<{
+      queryOnboardingStep: { id: string; stepId: string; status: string }[];
+    }>(QUERY_ONBOARDING_STEP_BY_STEP_ID, { stepId });
+    
+    const step = stepQuery.queryOnboardingStep?.[0];
+    if (!step) {
+      throw new Error(`Onboarding step with stepId '${stepId}' not found`);
+    }
+    
+    // Update the onboarding step status to DISMISSED
+    await this.dgraphService.mutation<{
+      updateOnboardingStep: { onboardingStep: { id: string }[] };
+    }>(UPDATE_ONBOARDING_STEP_STATUS, {
+      id: step.id,
+      status: 'DISMISSED',
       now,
     });
-    return res.updateWorkspace.workspace[0];
   }
 
   async checkAndCompleteStep(workspaceId: string, stepId: string): Promise<void> {
+    console.log('checkAndCompleteStep', workspaceId, stepId);
     // Get current workspace state
     const workspace = await this.dgraphService.query<{
       getWorkspace: {
@@ -227,6 +250,7 @@ export class WorkspaceRepository {
     // Check if step is already completed
     const step = workspace.getWorkspace.onboardingSteps?.find(s => s.stepId === stepId);
     if (step?.status === 'COMPLETED') {
+      console.log('step is already completed', stepId);
       return; // Already completed
     }
 
@@ -234,8 +258,11 @@ export class WorkspaceRepository {
 
     switch (stepId) {
       case 'choose-mcp-registry':
-        shouldComplete = (workspace.getWorkspace.mcpRegistries?.length || 0) > 0;
-        break;
+        { const mcpRegistries = await this.dgraphService.query<{
+          getWorkspace: { mcpRegistries: { id: string }[] };
+        }>(QUERY_WORKSPACE_WITH_REGISTRIES, { workspaceId });
+        shouldComplete = (mcpRegistries.getWorkspace.mcpRegistries?.length || 0) > 0;
+        break; }
       case 'install-mcp-server':
         shouldComplete = (workspace.getWorkspace.mcpServers?.length || 0) > 0;
         break;
@@ -247,6 +274,8 @@ export class WorkspaceRepository {
       default:
         return; // Unknown step
     }
+
+    console.log('shouldComplete', shouldComplete);
 
     if (shouldComplete) {
       await this.completeOnboardingStep(workspaceId, stepId);

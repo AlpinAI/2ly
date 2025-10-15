@@ -7,10 +7,9 @@ mutation DismissOnboardingStep($workspaceId: ID!, $stepId: String!) {
       stepId
       type
       status
-      completedAt
-      dismissedAt
       priority
       createdAt
+      updatedAt
     }
   }
 }

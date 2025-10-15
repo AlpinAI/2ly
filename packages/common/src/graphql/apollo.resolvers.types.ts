@@ -354,14 +354,13 @@ export type MutationUpdateWorkspaceArgs = {
 };
 
 export type OnboardingStep = {
-  completedAt?: Maybe<Scalars['Date']['output']>;
   createdAt: Scalars['Date']['output'];
-  dismissedAt?: Maybe<Scalars['Date']['output']>;
   id: Scalars['ID']['output'];
   priority?: Maybe<Scalars['Int']['output']>;
   status: OnboardingStepStatus;
   stepId: Scalars['String']['output'];
   type: OnboardingStepType;
+  updatedAt?: Maybe<Scalars['Date']['output']>;
 };
 
 export enum OnboardingStepStatus {
@@ -807,14 +806,13 @@ export type MutationResolvers<ContextType = object, ParentType extends Resolvers
 };
 
 export type OnboardingStepResolvers<ContextType = object, ParentType extends ResolversParentTypes['OnboardingStep'] = ResolversParentTypes['OnboardingStep']> = {
-  completedAt?: Resolver<Maybe<ResolversTypes['Date']>, ParentType, ContextType>;
   createdAt?: Resolver<ResolversTypes['Date'], ParentType, ContextType>;
-  dismissedAt?: Resolver<Maybe<ResolversTypes['Date']>, ParentType, ContextType>;
   id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
   priority?: Resolver<Maybe<ResolversTypes['Int']>, ParentType, ContextType>;
   status?: Resolver<ResolversTypes['OnboardingStepStatus'], ParentType, ContextType>;
   stepId?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   type?: Resolver<ResolversTypes['OnboardingStepType'], ParentType, ContextType>;
+  updatedAt?: Resolver<Maybe<ResolversTypes['Date']>, ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 };
 
