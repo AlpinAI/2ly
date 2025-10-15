@@ -33,9 +33,11 @@ import type { OnboardingStep } from '@/graphql/generated/graphql';
 
 interface OnboardingSectionProps {
   steps: OnboardingStep[];
+  isComplete: boolean;
+  onHide: () => void;
 }
 
-export function OnboardingSection({ steps }: OnboardingSectionProps) {
+export function OnboardingSection({ steps, isComplete, onHide }: OnboardingSectionProps) {
   if (steps.length === 0) {
     return null;
   }
@@ -46,12 +48,22 @@ export function OnboardingSection({ steps }: OnboardingSectionProps) {
   return (
     <div className="mb-8">
       <div className="mb-6">
-        <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
-          Get Started with 2LY
-        </h2>
-        <p className="text-gray-600 dark:text-gray-400 mt-1">
-          Complete these steps to set up your workspace and start using MCP tools.
-        </p>
+        <div className="flex items-start justify-between">
+          <div>
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+              Get Started with 2LY
+            </h2>
+            <p className="text-gray-600 dark:text-gray-400 mt-1">
+              Complete these steps to set up your workspace and start using MCP tools.
+            </p>
+          </div>
+          <button
+            onClick={onHide}
+            className="text-sm text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-colors"
+          >
+            {isComplete ? 'Close onboarding' : 'Dismiss onboarding'}
+          </button>
+        </div>
       </div>
       
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

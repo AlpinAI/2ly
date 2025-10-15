@@ -31,7 +31,7 @@
  * ```
  */
 
-import { useMemo, useRef, useEffect } from 'react';
+import { useMemo, useRef, useEffect, useState } from 'react';
 import { useMutation } from '@apollo/client/react';
 import { useWorkspaceId } from '@/stores/workspaceStore';
 import { useWorkspaceStore } from '@/stores/workspaceStore';
@@ -71,6 +71,11 @@ export function useOnboarding() {
     }
   }, [isOnboardingComplete]);
 
+  // Track UI visibility state
+  const [isOnboardingVisible, setIsOnboardingVisible] = useState(
+    !isOnboardingComplete || hasSeenIncompleteRef.current
+  );
+
   const visibleSteps = useMemo(() =>
     hasSeenIncompleteRef.current ? onboardingTypeSteps : [],
     [hasSeenIncompleteRef.current, onboardingTypeSteps]
@@ -107,16 +112,23 @@ export function useOnboarding() {
       console.error('[useOnboarding] Failed to dismiss step:', error);
     }
   };
+
+  const hideOnboarding = () => {
+    setIsOnboardingVisible(false);
+    hasSeenIncompleteRef.current = false;
+  };
   
   return {
     // Data
     visibleSteps,
     allSteps: onboardingSteps,
     isOnboardingComplete,
+    isOnboardingVisible,
     
     // Actions
     completeStep,
     dismissStep,
     getStep,
+    hideOnboarding,
   };
 }
