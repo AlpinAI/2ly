@@ -27,7 +27,8 @@ import {
   Plus, 
   ExternalLink,
   Check,
-  RefreshCw
+  RefreshCw,
+  Loader2
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -39,6 +40,7 @@ import { RegistrySplitButton } from '@/components/registry/registry-split-button
 import { useMCPRegistries } from '@/hooks/useMCPRegistries';
 import { useRegistryAutoSync } from '@/hooks/useRegistryAutoSync';
 import { useMCPServers } from '@/hooks/useMCPServers';
+import { useRegistrySyncStore } from '@/stores/registrySyncStore';
 import type { OnboardingStep } from '@/graphql/generated/graphql';
 
 interface OnboardingCardProps {
@@ -47,14 +49,16 @@ interface OnboardingCardProps {
   isCurrentStep?: boolean;
 }
 
-export function OnboardingCard({ step, onComplete, isCurrentStep = false }: OnboardingCardProps) {
+export function OnboardingCard({ step, isCurrentStep = false }: OnboardingCardProps) {
   const workspaceId = useWorkspaceId();
   const setAddToolWorkflowOpen = useUIStore((state) => state.setAddToolWorkflowOpen);
   const [isAddingRegistry, setIsAddingRegistry] = useState(false);
   const [copiedCommand, setCopiedCommand] = useState(false);
+  const [pendingRegistryId, setPendingRegistryId] = useState<string | null>(null);
   
   const [createRegistry] = useMutation(CreateMcpRegistryDocument);
   const { autoSyncRegistry } = useRegistryAutoSync();
+  const { isSyncing } = useRegistrySyncStore();
   
   const metadata = STEP_METADATA[step.stepId];
   const isCompleted = step.status === 'COMPLETED';
@@ -90,10 +94,12 @@ export function OnboardingCard({ step, onComplete, isCurrentStep = false }: Onbo
       // Auto-sync the newly created registry
       const registryId = result.data?.createMCPRegistry?.id;
       if (registryId) {
+        setPendingRegistryId(registryId);
         await autoSyncRegistry(registryId);
       }
       
-      onComplete?.();
+      // Don't call onComplete here - completion will come via workspace subscription
+      // once backend marks the step complete after sync
     } catch (error) {
       console.error('Failed to add registry:', error);
     } finally {
@@ -136,15 +142,34 @@ export function OnboardingCard({ step, onComplete, isCurrentStep = false }: Onbo
           );
         }
         
+        const isSyncingNow = pendingRegistryId ? isSyncing(pendingRegistryId) : false;
+        
+        // Find the pending registry to get server count
+        const pendingRegistry = pendingRegistryId 
+          ? registries.find(r => r.id === pendingRegistryId) 
+          : null;
+        const serverCount = pendingRegistry?.servers?.length || 0;
+        
         return (
           <div className="space-y-3">
-            <RegistrySplitButton
-              onSelectRegistry={handleAddRegistry}
-              isLoading={isAddingRegistry}
-              existingRegistryUrls={existingUrls}
-              className="w-full"
-              variant={isCurrentStep ? "default" : "outline"}
-            />
+            {isSyncingNow ? (
+              <Button
+                className="w-full"
+                variant={isCurrentStep ? "default" : "outline"}
+                disabled
+              >
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Syncing ({serverCount} servers found)
+              </Button>
+            ) : (
+              <RegistrySplitButton
+                onSelectRegistry={handleAddRegistry}
+                isLoading={isAddingRegistry}
+                existingRegistryUrls={existingUrls}
+                className="w-full"
+                variant={isCurrentStep ? "default" : "outline"}
+              />
+            )}
           </div>
         );
       }

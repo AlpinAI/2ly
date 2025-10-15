@@ -36,7 +36,7 @@ export class RegistryRepository {
       now,
     });
     const created = res.addMCPRegistry.mCPRegistry[0];
-    await this.workspaceRepository.checkAndCompleteStep(workspaceId, 'choose-mcp-registry');
+    // Don't complete onboarding step here - wait until sync is finished
     return created;
   }
 
@@ -157,6 +157,12 @@ export class RegistryRepository {
       id: registryId,
       lastSyncAt: now,
     });
+
+    // Complete onboarding step after successful sync
+    const workspaceId = registryData.workspace?.id;
+    if (workspaceId) {
+      await this.workspaceRepository.checkAndCompleteStep(workspaceId, 'choose-mcp-registry');
+    }
 
     return updateRes.updateMCPRegistry.mCPRegistry[0];
   }

@@ -31,7 +31,7 @@
  * ```
  */
 
-import { useMemo } from 'react';
+import { useMemo, useRef, useEffect } from 'react';
 import { useMutation } from '@apollo/client/react';
 import { useWorkspaceId } from '@/stores/workspaceStore';
 import { useWorkspaceStore } from '@/stores/workspaceStore';
@@ -62,10 +62,18 @@ export function useOnboarding() {
     [onboardingTypeSteps]
   );
   
-  // Show all steps until onboarding is complete
-  const visibleSteps = useMemo(() => 
-    isOnboardingComplete ? [] : onboardingTypeSteps,
-    [isOnboardingComplete, onboardingTypeSteps]
+  // Track if onboarding was ever incomplete (starts true)
+  const hasSeenIncompleteRef = useRef(!isOnboardingComplete);
+
+  useEffect(() => {
+    if (!isOnboardingComplete) {
+      hasSeenIncompleteRef.current = true;
+    }
+  }, [isOnboardingComplete]);
+
+  const visibleSteps = useMemo(() =>
+    hasSeenIncompleteRef.current ? onboardingTypeSteps : [],
+    [hasSeenIncompleteRef.current, onboardingTypeSteps]
   );
   
   // Get step by ID
