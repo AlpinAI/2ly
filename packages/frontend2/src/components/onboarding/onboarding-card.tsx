@@ -144,14 +144,6 @@ export function OnboardingCard({ step, onComplete }: OnboardingCardProps) {
               existingRegistryUrls={existingUrls}
               className="w-full"
             />
-            <Button
-              variant="outline"
-              onClick={() => navigate(`/w/${workspaceId}/settings`)}
-              className="w-full"
-            >
-              <ExternalLink className="mr-2 h-4 w-4" />
-              Go to Settings
-            </Button>
           </div>
         );
       }
