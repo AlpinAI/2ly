@@ -82,7 +82,7 @@ export function TestPanel({
 
             {/* Content */}
             <div className="relative text-center z-10">
-              <FlaskConical className="h-12 w-12 text-cyan-600 dark:text-cyan-400 mb-4" />
+              <FlaskConical className="h-12 w-12 text-cyan-600 dark:text-cyan-400 mb-4 mx-auto" />
               <h4 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-2">Testing {serverName}</h4>
               <p className="text-sm text-gray-600 dark:text-gray-400">Starting the server and discovering tools...</p>
             </div>
