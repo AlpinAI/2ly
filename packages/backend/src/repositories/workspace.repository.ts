@@ -264,13 +264,21 @@ export class WorkspaceRepository {
         shouldComplete = (mcpRegistries.getWorkspace.mcpRegistries?.length || 0) > 0;
         break; }
       case 'install-mcp-server':
-        shouldComplete = (workspace.getWorkspace.mcpServers?.length || 0) > 0;
-        break;
+        { const servers = await this.dgraphService.query<{
+          getWorkspace: { mcpServers: { id: string }[] };
+        }>(QUERY_WORKSPACE_WITH_MCP_SERVERS, { workspaceId });
+        shouldComplete = (servers.getWorkspace.mcpServers?.length || 0) > 0;
+        break; }
       case 'connect-agent':
-        shouldComplete = (workspace.getWorkspace.runtimes?.some(r => 
-          r.capabilities?.includes('agent') || r.capabilities?.includes('AGENT')
-        ) || false);
-        break;
+        { const runtimes = await this.dgraphService.query<{
+          getWorkspace: { runtimes: { capabilities: string[] }[] };
+        }>(QUERY_WORKSPACE_WITH_RUNTIMES, { workspaceId });
+        shouldComplete = (
+          runtimes.getWorkspace.runtimes?.some(r =>
+            (r.capabilities || []).some(c => c.toUpperCase() === 'AGENT')
+          ) || false
+        );
+        break; }
       default:
         return; // Unknown step
     }
