@@ -28,6 +28,7 @@ import { Outlet, useLocation } from 'react-router-dom';
 import { AppHeader } from './app-header';
 import { AppNavigation } from './app-navigation';
 import { AddToolWorkflow } from '@/components/tools/add-tool-workflow';
+import { Toaster } from '@/components/ui/toaster';
 import { useUIStore } from '@/stores/uiStore';
 
 export function AppLayout() {
@@ -56,6 +57,9 @@ export function AppLayout() {
 
       {/* Global Add Tool Workflow - accessible from any page */}
       <AddToolWorkflow isOpen={isOpen} onClose={() => setOpen(false)} />
+
+      {/* Toast notifications */}
+      <Toaster />
     </div>
   );
 }

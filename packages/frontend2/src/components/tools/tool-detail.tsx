@@ -11,17 +11,72 @@
  * - ToolTester component for testing
  */
 
-import { ExternalLink, Wrench, Server, Bot } from 'lucide-react';
+import { ExternalLink, Wrench, Server, Bot, Plus, X } from 'lucide-react';
+import { useState, useMemo } from 'react';
+import { useMutation } from '@apollo/client/react';
 import { ToolTester } from './tool-tester';
-import type { SubscribeMcpToolsSubscription } from '@/graphql/generated/graphql';
+import { LinkToolDialog } from './link-tool-dialog';
+import { Button } from '@/components/ui/button';
+import { useRuntimeData } from '@/stores/runtimeStore';
+import { useToast } from '@/hooks/use-toast';
+import type { GetMcpToolsQuery } from '@/graphql/generated/graphql';
+import { UnlinkMcpToolFromRuntimeDocument } from '@/graphql/generated/graphql';
 
-type McpTool = NonNullable<NonNullable<SubscribeMcpToolsSubscription['mcpTools']>[number]>;
+type McpTool = NonNullable<NonNullable<GetMcpToolsQuery['mcpTools']>[number]>;
 
 export interface ToolDetailProps {
   tool: McpTool;
 }
 
 export function ToolDetail({ tool }: ToolDetailProps) {
+  const { runtimes } = useRuntimeData();
+  const { toast } = useToast();
+  const [loadingStates, setLoadingStates] = useState<Record<string, boolean>>({});
+  const [linkDialogOpen, setLinkDialogOpen] = useState(false);
+
+  // Mutations
+  const [unlinkTool] = useMutation(UnlinkMcpToolFromRuntimeDocument);
+
+  // Get available agents (runtimes with 'agent' capability)
+  const availableAgents = useMemo(() => {
+    return runtimes.filter((runtime) => runtime.capabilities?.includes('agent'));
+  }, [runtimes]);
+
+  // Get agents not yet linked to this tool
+  const unlinkedAgents = useMemo(() => {
+    const linkedAgentIds = new Set(tool.runtimes?.map((r) => r.id) || []);
+    return availableAgents.filter((agent) => !linkedAgentIds.has(agent.id));
+  }, [availableAgents, tool.runtimes]);
+
+  // Handle unlinking tool from agent
+  const handleUnlinkTool = async (agentId: string) => {
+    setLoadingStates((prev) => ({ ...prev, [agentId]: true }));
+    
+    try {
+      await unlinkTool({
+        variables: {
+          mcpToolId: tool.id,
+          runtimeId: agentId,
+        },
+        refetchQueries: ['GetMCPTools'], // Force refresh tools query
+      });
+      
+      toast({
+        title: 'Tool unlinked successfully',
+        description: `Tool has been unlinked from the agent.`,
+      });
+    } catch (error) {
+      console.error('Error unlinking tool:', error);
+      toast({
+        title: 'Failed to unlink tool',
+        description: error instanceof Error ? error.message : 'An unexpected error occurred',
+        variant: 'destructive',
+      });
+    } finally {
+      setLoadingStates((prev) => ({ ...prev, [agentId]: false }));
+    }
+  };
+
   return (
     <div className="flex flex-col h-full overflow-auto">
       {/* Header */}
@@ -80,9 +135,21 @@ export function ToolDetail({ tool }: ToolDetailProps) {
 
         {/* Agents */}
         <div>
-          <h4 className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">
-            Available on Agents ({tool.runtimes?.length || 0})
-          </h4>
+          <div className="flex items-center justify-between mb-2">
+            <h4 className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+              Available on Agents ({tool.runtimes?.length || 0})
+            </h4>
+            {unlinkedAgents.length > 0 && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-6 w-6 p-0 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                onClick={() => setLinkDialogOpen(true)}
+              >
+                <Plus className="h-4 w-4" />
+              </Button>
+            )}
+          </div>
           {tool.runtimes && tool.runtimes.length > 0 ? (
             <ul className="space-y-1">
               {tool.runtimes.map((runtime) => (
@@ -94,15 +161,30 @@ export function ToolDetail({ tool }: ToolDetailProps) {
                   <div className="flex-1">
                     <p className="text-sm font-medium text-gray-900 dark:text-white">{runtime.name}</p>
                   </div>
-                  <span
-                    className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
-                      runtime.status === 'ACTIVE'
-                        ? 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300'
-                        : 'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-300'
-                    }`}
-                  >
-                    {runtime.status}
-                  </span>
+                  <div className="flex items-center gap-2">
+                    <span
+                      className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
+                        runtime.status === 'ACTIVE'
+                          ? 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300'
+                          : 'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-300'
+                      }`}
+                    >
+                      {runtime.status}
+                    </span>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-6 w-6 p-0 text-gray-400 hover:text-red-600 dark:hover:text-red-400"
+                      onClick={() => handleUnlinkTool(runtime.id)}
+                      disabled={loadingStates[runtime.id]}
+                    >
+                      {loadingStates[runtime.id] ? (
+                        <div className="h-3 w-3 animate-spin rounded-full border-2 border-gray-300 border-t-gray-600" />
+                      ) : (
+                        <X className="h-3 w-3" />
+                      )}
+                    </Button>
+                  </div>
                 </li>
               ))}
             </ul>
@@ -116,6 +198,13 @@ export function ToolDetail({ tool }: ToolDetailProps) {
           <ToolTester toolId={tool.id} toolName={tool.name} inputSchema={tool.inputSchema} />
         </div>
       </div>
+
+      {/* Link Tool Dialog */}
+      <LinkToolDialog
+        open={linkDialogOpen}
+        onOpenChange={setLinkDialogOpen}
+        tool={tool}
+      />
     </div>
   );
 }
