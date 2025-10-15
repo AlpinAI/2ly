@@ -124,7 +124,7 @@ export function OnboardingCard({ step, onComplete, isCurrentStep = false }: Onbo
         if (isCompleted && firstRegistry) {
           return (
             <div className="space-y-3">
-              <div className="rounded-lg bg-green-50 dark:bg-green-900/20 p-3">
+              <div className="rounded-lg bg-green-400/20 dark:bg-green-900/20 p-3">
                 <p className="text-sm text-green-800 dark:text-green-200">
                 <span className="flex items-center">
                   <RefreshCw className="mr-2 h-4 w-4" />
@@ -156,11 +156,13 @@ export function OnboardingCard({ step, onComplete, isCurrentStep = false }: Onbo
         if (isCompleted && firstServer) {
           return (
             <div className="space-y-3">
-              <div className="rounded-lg bg-green-50 dark:bg-green-900/20 p-3">
+              <div className="rounded-lg bg-green-400/20 dark:bg-green-900/20 p-3">
                 <p className="text-sm text-green-800 dark:text-green-200">
                   <span className="flex items-center">
                     <Server className="mr-2 h-4 w-4" />
-                    <span className="font-medium">{firstServer.name}</span>
+                    <span className="font-medium truncate max-w-xs overflow-hidden whitespace-nowrap" title={firstServer.name}>
+                      {firstServer.name}
+                    </span>
                   </span>
                 </p>
               </div>
@@ -230,7 +232,7 @@ export function OnboardingCard({ step, onComplete, isCurrentStep = false }: Onbo
         <div className={cn(
           "flex h-12 w-12 items-center justify-center rounded-lg",
           isCompleted
-            ? "bg-green-100 text-green-600 dark:bg-green-900/30 dark:text-green-400"
+            ? "bg-green-400/20 text-green-600 dark:bg-green-900/30 dark:text-green-400"
             : "bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400"
         )}>
           {isCompleted ? <CheckCircle className="h-6 w-6" /> : getIcon()}
