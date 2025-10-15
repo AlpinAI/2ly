@@ -18,7 +18,6 @@
 
 import { useState } from 'react';
 import { useMutation } from '@apollo/client/react';
-import { useNavigate } from 'react-router-dom';
 import { 
   CheckCircle, 
   Circle, 
@@ -44,10 +43,10 @@ import type { OnboardingStep } from '@/graphql/generated/graphql';
 interface OnboardingCardProps {
   step: OnboardingStep;
   onComplete?: () => void;
+  isCurrentStep?: boolean;
 }
 
-export function OnboardingCard({ step, onComplete }: OnboardingCardProps) {
-  const navigate = useNavigate();
+export function OnboardingCard({ step, onComplete, isCurrentStep = false }: OnboardingCardProps) {
   const workspaceId = useWorkspaceId();
   const setAddToolWorkflowOpen = useUIStore((state) => state.setAddToolWorkflowOpen);
   const [isAddingRegistry, setIsAddingRegistry] = useState(false);
@@ -143,6 +142,7 @@ export function OnboardingCard({ step, onComplete }: OnboardingCardProps) {
               isLoading={isAddingRegistry}
               existingRegistryUrls={existingUrls}
               className="w-full"
+              variant={isCurrentStep ? "default" : "outline"}
             />
           </div>
         );
@@ -153,6 +153,7 @@ export function OnboardingCard({ step, onComplete }: OnboardingCardProps) {
           <Button
             onClick={() => setAddToolWorkflowOpen(true)}
             className="w-full"
+            variant={isCurrentStep ? "default" : "outline"}
           >
             <Plus className="mr-2 h-4 w-4" />
             Browse MCP Servers
@@ -164,6 +165,7 @@ export function OnboardingCard({ step, onComplete }: OnboardingCardProps) {
           <Button
             onClick={handleCopyCommand}
             className="w-full"
+            variant={isCurrentStep ? "default" : "outline"}
           >
             {copiedCommand ? (
               <>

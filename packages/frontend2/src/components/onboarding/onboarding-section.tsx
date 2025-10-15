@@ -40,6 +40,9 @@ export function OnboardingSection({ steps }: OnboardingSectionProps) {
     return null;
   }
   
+  // Find the current step (first PENDING step by priority)
+  const currentStep = steps.find(step => step.status === 'PENDING');
+  
   return (
     <div className="mb-8">
       <div className="mb-6">
@@ -53,7 +56,11 @@ export function OnboardingSection({ steps }: OnboardingSectionProps) {
       
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {steps.map((step) => (
-          <OnboardingCard key={step.id} step={step} />
+          <OnboardingCard 
+            key={step.id} 
+            step={step} 
+            isCurrentStep={step.id === currentStep?.id}
+          />
         ))}
       </div>
     </div>

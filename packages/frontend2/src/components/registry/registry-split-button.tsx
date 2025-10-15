@@ -31,6 +31,7 @@ interface RegistrySplitButtonProps {
   isLoading: boolean;
   existingRegistryUrls: string[];
   className?: string;
+  variant?: 'default' | 'outline' | 'secondary' | 'ghost' | 'link' | 'destructive';
 }
 
 export function RegistrySplitButton({
@@ -38,6 +39,7 @@ export function RegistrySplitButton({
   isLoading,
   existingRegistryUrls,
   className,
+  variant = 'default',
 }: RegistrySplitButtonProps) {
   const handlePrimaryAction = () => {
     onSelectRegistry(OFFICIAL_REGISTRY.name, OFFICIAL_REGISTRY.upstreamUrl);
@@ -77,6 +79,7 @@ export function RegistrySplitButton({
         </>
       }
       className={className}
+      variant={variant}
     />
   );
 }
