@@ -38,6 +38,7 @@ import { STEP_METADATA, ONBOARDING_STEPS } from '@/constants/onboarding-steps';
 import { RegistrySplitButton } from '@/components/registry/registry-split-button';
 import { useMCPRegistries } from '@/hooks/useMCPRegistries';
 import { useRegistryAutoSync } from '@/hooks/useRegistryAutoSync';
+import { useMCPServers } from '@/hooks/useMCPServers';
 import type { OnboardingStep } from '@/graphql/generated/graphql';
 
 interface OnboardingCardProps {
@@ -148,7 +149,25 @@ export function OnboardingCard({ step, onComplete, isCurrentStep = false }: Onbo
         );
       }
         
-      case ONBOARDING_STEPS.INSTALL_SERVER:
+      case ONBOARDING_STEPS.INSTALL_SERVER: {
+        const { servers } = useMCPServers();
+        const firstServer = servers[0];
+
+        if (isCompleted && firstServer) {
+          return (
+            <div className="space-y-3">
+              <div className="rounded-lg bg-green-50 dark:bg-green-900/20 p-3">
+                <p className="text-sm text-green-800 dark:text-green-200">
+                  <span className="flex items-center">
+                    <Server className="mr-2 h-4 w-4" />
+                    <span className="font-medium">{firstServer.name}</span>
+                  </span>
+                </p>
+              </div>
+            </div>
+          );
+        }
+
         return (
           <Button
             onClick={() => setAddToolWorkflowOpen(true)}
@@ -159,6 +178,7 @@ export function OnboardingCard({ step, onComplete, isCurrentStep = false }: Onbo
             Browse MCP Servers
           </Button>
         );
+      }
         
       case ONBOARDING_STEPS.CONNECT_AGENT:
         return (
@@ -190,7 +210,7 @@ export function OnboardingCard({ step, onComplete, isCurrentStep = false }: Onbo
     <div className={cn(
       "relative rounded-lg border p-6 transition-all duration-200",
       isCompleted 
-        ? "border-green-200 bg-green-50 dark:border-green-800 dark:bg-green-900/20 opacity-60" 
+        ? "border-green-200 bg-green-50 dark:border-green-800 dark:bg-green-900/20" 
         : "border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800 hover:shadow-md"
     )}>
       {/* Step number badge */}
