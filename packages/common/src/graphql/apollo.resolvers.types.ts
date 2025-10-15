@@ -444,18 +444,12 @@ export type Runtime = {
 };
 
 export type Subscription = {
-  mcpRegistries?: Maybe<Array<McpRegistry>>;
   mcpServers?: Maybe<Array<McpServer>>;
   mcpTools?: Maybe<Array<Maybe<McpTool>>>;
   runtimes?: Maybe<Array<Runtime>>;
   toolCalls?: Maybe<Array<ToolCall>>;
   workspace?: Maybe<Workspace>;
   workspaces?: Maybe<Array<Workspace>>;
-};
-
-
-export type SubscriptionMcpRegistriesArgs = {
-  workspaceId: Scalars['ID']['input'];
 };
 
 
@@ -870,7 +864,6 @@ export type RuntimeResolvers<ContextType = object, ParentType extends ResolversP
 };
 
 export type SubscriptionResolvers<ContextType = object, ParentType extends ResolversParentTypes['Subscription'] = ResolversParentTypes['Subscription']> = {
-  mcpRegistries?: SubscriptionResolver<Maybe<Array<ResolversTypes['MCPRegistry']>>, "mcpRegistries", ParentType, ContextType, RequireFields<SubscriptionMcpRegistriesArgs, 'workspaceId'>>;
   mcpServers?: SubscriptionResolver<Maybe<Array<ResolversTypes['MCPServer']>>, "mcpServers", ParentType, ContextType, RequireFields<SubscriptionMcpServersArgs, 'workspaceId'>>;
   mcpTools?: SubscriptionResolver<Maybe<Array<Maybe<ResolversTypes['MCPTool']>>>, "mcpTools", ParentType, ContextType, RequireFields<SubscriptionMcpToolsArgs, 'workspaceId'>>;
   runtimes?: SubscriptionResolver<Maybe<Array<ResolversTypes['Runtime']>>, "runtimes", ParentType, ContextType, RequireFields<SubscriptionRuntimesArgs, 'workspaceId'>>;

@@ -18,11 +18,11 @@ import { X, ChevronLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { MCPServerBrowser } from './mcp-server-browser';
 import { MCPServerConfigure } from './mcp-server-configure';
-import type { SubscribeMcpRegistriesSubscription } from '@/graphql/generated/graphql';
+import type { GetMcpRegistriesQuery } from '@/graphql/generated/graphql';
 
 // Extract server type
 type MCPRegistryServer = NonNullable<
-  NonNullable<SubscribeMcpRegistriesSubscription['mcpRegistries']>[number]['servers']
+  NonNullable<GetMcpRegistriesQuery['mcpRegistries']>[number]['servers']
 >[number];
 
 interface AddToolWorkflowProps {

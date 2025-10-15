@@ -147,12 +147,6 @@ export class WorkspaceRepository {
       .observe<apolloResolversTypes.Workspace[]>(query, {}, 'queryWorkspace', true);
   }
 
-  observeMCPRegistries(workspaceId: string): Observable<apolloResolversTypes.McpRegistry[]> {
-    const query = createSubscriptionFromQuery(QUERY_WORKSPACE_WITH_REGISTRIES);
-    return this.dgraphService
-      .observe<{ mcpRegistries: apolloResolversTypes.McpRegistry[] }>(query, { workspaceId }, 'getWorkspace', true)
-      .pipe(map((workspace) => workspace?.mcpRegistries || []));
-  }
 
   observeWorkspace(workspaceId: string): Observable<apolloResolversTypes.Workspace> {
     const query = createSubscriptionFromQuery(QUERY_WORKSPACE);

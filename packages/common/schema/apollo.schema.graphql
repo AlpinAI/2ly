@@ -341,6 +341,5 @@ type Subscription {
   runtimes(workspaceId: ID!): [Runtime!]
   mcpServers(workspaceId: ID!): [MCPServer!]
   mcpTools(workspaceId: ID!): [MCPTool]
-  mcpRegistries(workspaceId: ID!): [MCPRegistry!]
   toolCalls(workspaceId: ID!): [ToolCall!]
 }

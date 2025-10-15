@@ -10,11 +10,11 @@
  */
 
 import { MCPServerBrowser } from './mcp-server-browser';
-import type { SubscribeMcpRegistriesSubscription } from '@/graphql/generated/graphql';
+import type { GetMcpRegistriesQuery } from '@/graphql/generated/graphql';
 
 // Extract server type
 type MCPRegistryServer = NonNullable<
-  NonNullable<SubscribeMcpRegistriesSubscription['mcpRegistries']>[number]['servers']
+  NonNullable<GetMcpRegistriesQuery['mcpRegistries']>[number]['servers']
 >[number];
 
 export function ToolBrowserContent() {

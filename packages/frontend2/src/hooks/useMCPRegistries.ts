@@ -24,23 +24,22 @@
  * ```
  */
 
-import { useSubscription } from '@apollo/client/react';
-import { SubscribeMcpRegistriesDocument } from '@/graphql/generated/graphql';
+import { useQuery } from '@apollo/client/react';
+import { GetMcpRegistriesDocument } from '@/graphql/generated/graphql';
 import { useWorkspaceId } from '@/stores/workspaceStore';
 
 export function useMCPRegistries() {
   const workspaceId = useWorkspaceId();
 
-  // WHY: Use Apollo Client's useSubscription for real-time updates
-  // No more polling! Backend pushes changes immediately.
-  const { data, loading, error } = useSubscription(SubscribeMcpRegistriesDocument, {
+  // WHY: Use Apollo Client's useQuery with cache-first policy
+  // Efficient caching reduces server load and improves performance.
+  const { data, loading, error } = useQuery(GetMcpRegistriesDocument, {
     variables: { workspaceId: workspaceId || '' },
     skip: !workspaceId,
-    shouldResubscribe: true,
-    fetchPolicy: 'no-cache'
+    fetchPolicy: 'cache-and-network'
   });
 
-  // WHY: Extract registries from subscription data
+  // WHY: Extract registries from query data
   const registries = data?.mcpRegistries ?? [];
 
   // WHY: Calculate aggregate stats

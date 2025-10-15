@@ -23,7 +23,7 @@ import { cn } from '@/lib/utils';
 import { useMCPRegistries } from '@/hooks/useMCPRegistries';
 import { MCPServerCard } from './mcp-server-card';
 import { mcpRegistry } from '@2ly/common';
-import { SubscribeMcpRegistriesSubscription } from '@/graphql/generated/graphql';
+import { GetMcpRegistriesQuery } from '@/graphql/generated/graphql';
 
 // Use official MCP Registry schema types
 type Package = mcpRegistry.components['schemas']['Package'];
@@ -31,7 +31,7 @@ type Transport = mcpRegistry.components['schemas']['Transport'];
 
 // Extract server type from GraphQL subscription
 type MCPRegistryServer = NonNullable<
-NonNullable<SubscribeMcpRegistriesSubscription['mcpRegistries']>[number]['servers']
+NonNullable<GetMcpRegistriesQuery['mcpRegistries']>[number]['servers']
 >[number];
 
 export interface ServerVersionGroup {

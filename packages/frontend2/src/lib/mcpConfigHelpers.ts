@@ -11,12 +11,12 @@
  * - Support STDIO, SSE, and STREAM transports
  */
 
-import type { SubscribeMcpRegistriesSubscription, McpTransportType } from '@/graphql/generated/graphql';
+import type { GetMcpRegistriesQuery, McpTransportType } from '@/graphql/generated/graphql';
 import { mcpRegistry } from '@2ly/common';
 
 // Extract server type
 type MCPRegistryServer = NonNullable<
-  NonNullable<SubscribeMcpRegistriesSubscription['mcpRegistries']>[number]['servers']
+  NonNullable<GetMcpRegistriesQuery['mcpRegistries']>[number]['servers']
 >[number];
 
 // Use official MCP Registry schema types
