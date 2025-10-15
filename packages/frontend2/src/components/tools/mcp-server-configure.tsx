@@ -25,7 +25,7 @@ import { cn } from '@/lib/utils';
 import { useWorkspaceId } from '@/stores/workspaceStore';
 import { useRuntimeData } from '@/stores/runtimeStore';
 import { TestPanel, type TestStatus } from './test-panel';
-import { ConfigFieldInput } from './config-field-input';
+import { ConfigEditor } from '@/components/servers/config-editor';
 import {
   extractConfigOptions,
   extractConfigurableFields,
@@ -336,22 +336,11 @@ export function MCPServerConfigure({ selectedServer, onBack, onSuccess }: MCPSer
             </div>
 
             {/* Dynamic Configuration Fields */}
-            {fields.length === 0 ? (
-              <div className="text-center py-6">
-                <div className="text-3xl mb-2">✨</div>
-                <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">No additional configuration needed</p>
-                <p className="text-xs text-gray-500 dark:text-gray-500">You can test this server directly</p>
-              </div>
-            ) : (
-              fields.map((field) => (
-                <ConfigFieldInput
-                  key={field.name}
-                  field={field}
-                  value={field.value || ''}
-                  onChange={(value) => handleFieldChange(field.name, value)}
-                />
-              ))
-            )}
+            <ConfigEditor
+              fields={fields}
+              onFieldChange={handleFieldChange}
+              emptyMessage="No additional configuration needed"
+            />
           </div>
 
           {/* Fixed Footer */}
