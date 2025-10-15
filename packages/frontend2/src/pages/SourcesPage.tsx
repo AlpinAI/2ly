@@ -1,19 +1,19 @@
 /**
- * Servers Page
+ * Sources Page
  *
- * WHY: Manage and view MCP servers with detailed configuration.
- * Shows server list with filters and detail panel.
+ * WHY: Manage and view MCP sources with detailed configuration.
+ * Shows source list with filters and detail panel.
  *
  * LAYOUT:
- * - 2/3: Server table with search and filters
- * - 1/3: Server detail panel
+ * - 2/3: Source table with search and filters
+ * - 1/3: Source detail panel
  *
  * FEATURES:
- * - Real-time server updates (subscription)
+ * - Real-time source updates (subscription)
  * - Search by name/description
- * - Filter by transport, runOn, agent
- * - Click server to view details
- * - Show server configuration with masked secrets
+ * - Filter by transport, runOn, tool set
+ * - Click source to view details
+ * - Show source configuration with masked secrets
  */
 
 import { useState, useMemo } from 'react';
@@ -24,7 +24,7 @@ import { useMCPServers } from '@/hooks/useMCPServers';
 import { useAgents } from '@/hooks/useAgents';
 import { useRuntimeData } from '@/stores/runtimeStore';
 
-export default function ServersPage() {
+export default function SourcesPage() {
   const [selectedServerId, setSelectedServerId] = useState<string | null>(null);
 
   // Fetch servers and agents
@@ -50,7 +50,7 @@ export default function ServersPage() {
     return (
       <div className="flex items-center justify-center h-full">
         <div className="text-center">
-          <p className="text-red-600 dark:text-red-400">Error loading servers</p>
+          <p className="text-red-600 dark:text-red-400">Error loading sources</p>
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">{error.message}</p>
         </div>
       </div>
@@ -61,9 +61,9 @@ export default function ServersPage() {
     <div className="h-full flex flex-col">
       {/* Page Header */}
       <div className="mb-6">
-        <h2 className="text-3xl font-bold text-gray-900 dark:text-white">Servers</h2>
+        <h2 className="text-3xl font-bold text-gray-900 dark:text-white">Sources</h2>
         <p className="text-gray-500 dark:text-gray-400 mt-1">
-          Manage MCP servers and their configurations
+          Manage MCP sources and their configurations
         </p>
       </div>
 

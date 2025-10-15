@@ -18,8 +18,9 @@ describe('AppNavigation', () => {
     );
 
     expect(screen.getByText('Overview')).toBeDefined();
-    expect(screen.getByText('Agents')).toBeDefined();
+    expect(screen.getByText('Tool Sets')).toBeDefined();
     expect(screen.getByText('Tools')).toBeDefined();
+    expect(screen.getByText('Sources')).toBeDefined();
     expect(screen.getByText('Settings')).toBeDefined();
   });
 
@@ -42,8 +43,8 @@ describe('AppNavigation', () => {
       </MemoryRouter>
     );
 
-    const agentsLink = screen.getByText('Agents').closest('a');
-    expect(agentsLink?.getAttribute('aria-current')).toBeNull();
+    const toolSetsLink = screen.getByText('Tool Sets').closest('a');
+    expect(toolSetsLink?.getAttribute('aria-current')).toBeNull();
   });
 
   it('renders with proper ARIA navigation role', () => {
@@ -68,9 +69,9 @@ describe('AppNavigation', () => {
       </BrowserRouter>
     );
 
-    // Should have 4 SVG icons (one for each nav item)
+    // Should have 5 SVG icons (one for each nav item)
     const icons = container.querySelectorAll('svg');
-    expect(icons.length).toBeGreaterThanOrEqual(4);
+    expect(icons.length).toBe(5);
   });
 
   it('has correct links for each tab', () => {
@@ -81,13 +82,15 @@ describe('AppNavigation', () => {
     );
 
     const overviewLink = screen.getByText('Overview').closest('a');
-    const agentsLink = screen.getByText('Agents').closest('a');
+    const toolSetsLink = screen.getByText('Tool Sets').closest('a');
     const toolsLink = screen.getByText('Tools').closest('a');
+    const sourcesLink = screen.getByText('Sources').closest('a');
     const settingsLink = screen.getByText('Settings').closest('a');
 
     expect(overviewLink?.getAttribute('href')).toBe('/app/overview');
-    expect(agentsLink?.getAttribute('href')).toBe('/app/agents');
+    expect(toolSetsLink?.getAttribute('href')).toBe('/app/toolsets');
     expect(toolsLink?.getAttribute('href')).toBe('/app/tools');
+    expect(sourcesLink?.getAttribute('href')).toBe('/app/sources');
     expect(settingsLink?.getAttribute('href')).toBe('/app/settings');
   });
 });

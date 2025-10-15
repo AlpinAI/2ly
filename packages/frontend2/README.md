@@ -471,8 +471,9 @@ The `.vscode/settings.json` configures Tailwind to work with:
 The application uses workspace-based routing:
 - **Root path (`/`)**: Redirects to default workspace via `WorkspaceRedirect` component
 - **Workspace Overview (`/w/:workspaceId/overview`)**: Main dashboard view for a workspace
-- **Workspace Agents (`/w/:workspaceId/agents`)**: Agent management
+- **Workspace Tool Sets (`/w/:workspaceId/toolsets`)**: Tool set management
 - **Workspace Tools (`/w/:workspaceId/tools`)**: Tool catalog
+- **Workspace Sources (`/w/:workspaceId/sources`)**: Source management
 - **Workspace Settings (`/w/:workspaceId/settings`)**: Workspace configuration
 
 All workspace routes include:

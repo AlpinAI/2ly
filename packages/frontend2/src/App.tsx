@@ -23,9 +23,9 @@ import { AppLayout } from '@/components/layout/app-layout';
 import LoginPage from '@/pages/LoginPage';
 import RegisterPage from '@/pages/RegisterPage';
 import DashboardPage from '@/pages/DashboardPage';
-import AgentsPage from '@/pages/AgentsPage';
+import ToolSetsPage from '@/pages/ToolSetsPage';
 import ToolsPage from '@/pages/ToolsPage';
-import ServersPage from '@/pages/ServersPage';
+import SourcesPage from '@/pages/SourcesPage';
 import SettingsPage from '@/pages/SettingsPage';
 import InitPage from '@/pages/InitPage';
 import BackendErrorPage from '@/pages/BackendErrorPage';
@@ -76,9 +76,9 @@ function App() {
                 >
                   {/* Nested routes - AppLayout provides header + navigation */}
                   <Route path="overview" element={<DashboardPage />} />
-                  <Route path="agents" element={<AgentsPage />} />
+                  <Route path="toolsets" element={<ToolSetsPage />} />
                   <Route path="tools" element={<ToolsPage />} />
-                  <Route path="servers" element={<ServersPage />} />
+                  <Route path="sources" element={<SourcesPage />} />
                   <Route path="settings" element={<SettingsPage />} />
 
                   {/* Redirect /w/:workspaceId to /w/:workspaceId/overview */}

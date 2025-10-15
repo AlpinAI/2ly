@@ -45,7 +45,7 @@ describe('AppLayout', () => {
 
     // Check for nav items from AppNavigation
     expect(screen.getByText('Overview')).toBeDefined();
-    expect(screen.getByText('Agents')).toBeDefined();
+    expect(screen.getByText('Tool Sets')).toBeDefined();
   });
 
   it('renders children via Outlet', () => {

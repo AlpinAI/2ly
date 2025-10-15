@@ -18,7 +18,7 @@
  * ```tsx
  * <Route path="/app" element={<AppLayout />}>
  *   <Route path="overview" element={<DashboardPage />} />
- *   <Route path="agents" element={<AgentsPage />} />
+ *   <Route path="toolsets" element={<ToolSetsPage />} />
  * </Route>
  * ```
  */
