@@ -139,7 +139,7 @@ export function ToolTable({
                     >
                       <td className="px-4 py-3 text-sm">
                         <div className="font-medium text-gray-900 dark:text-white">{tool.name}</div>
-                        <div className="text-xs text-gray-500 dark:text-gray-400 truncate max-w-md">{tool.description}</div>
+                        <div className="text-xs text-gray-500 dark:text-gray-400 line-clamp-2 max-w-md">{tool.description}</div>
                       </td>
                       <td className="px-4 py-3 text-sm text-gray-700 dark:text-gray-300">{tool.mcpServer.name}</td>
                       <td className="px-4 py-3 text-sm text-gray-700 dark:text-gray-300">{tool.runtimes?.length || 0}</td>

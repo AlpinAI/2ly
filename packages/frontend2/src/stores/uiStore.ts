@@ -46,6 +46,10 @@ interface UIState {
   setDeployModalOpen: (open: boolean) => void;
   addToolWorkflowOpen: boolean;
   setAddToolWorkflowOpen: (open: boolean) => void;
+  manageToolsDialogOpen: boolean;
+  setManageToolsDialogOpen: (open: boolean) => void;
+  selectedToolSetForManagement: string | null;
+  setSelectedToolSetForManagement: (id: string | null) => void;
 
   // Tool Catalog Filters
   toolCategoryFilter: string;
@@ -90,6 +94,10 @@ export const useUIStore = create<UIState>()(
         setDeployModalOpen: (open) => set({ deployModalOpen: open }),
         addToolWorkflowOpen: false,
         setAddToolWorkflowOpen: (open) => set({ addToolWorkflowOpen: open }),
+        manageToolsDialogOpen: false,
+        setManageToolsDialogOpen: (open) => set({ manageToolsDialogOpen: open }),
+        selectedToolSetForManagement: null,
+        setSelectedToolSetForManagement: (id) => set({ selectedToolSetForManagement: id }),
 
         // Initial State - Tool Catalog Filters
         toolCategoryFilter: 'all',
@@ -181,3 +189,17 @@ export const useAddToolWorkflow = () =>
     open: state.addToolWorkflowOpen,
     setOpen: state.setAddToolWorkflowOpen,
   }));
+
+export const useManageToolsDialog = () => {
+  const open = useUIStore((state) => state.manageToolsDialogOpen);
+  const setOpen = useUIStore((state) => state.setManageToolsDialogOpen);
+  const selectedToolSetId = useUIStore((state) => state.selectedToolSetForManagement);
+  const setSelectedToolSetId = useUIStore((state) => state.setSelectedToolSetForManagement);
+  
+  return {
+    open,
+    setOpen,
+    selectedToolSetId,
+    setSelectedToolSetId,
+  };
+};

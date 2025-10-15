@@ -32,7 +32,7 @@ export function ToolDetail({ tool }: ToolDetailProps) {
           </div>
           <div className="flex-1 min-w-0">
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white truncate">{tool.name}</h3>
-            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{tool.description}</p>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1 line-clamp-4">{tool.description}</p>
           </div>
         </div>
       </div>
