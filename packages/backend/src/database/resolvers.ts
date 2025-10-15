@@ -114,7 +114,7 @@ export const resolvers = (container: Container = defaultContainer): apolloResolv
           workspaceId: string;
         },
       ) => {
-        const server = await mcpServerRepository.create(
+        return mcpServerRepository.create(
           name,
           description,
           repositoryUrl,
@@ -123,11 +123,6 @@ export const resolvers = (container: Container = defaultContainer): apolloResolv
           runOn ?? null,
           workspaceId,
         );
-        
-        // Check if onboarding step should be completed
-        await workspaceRepository.checkAndCompleteStep(workspaceId, 'install-mcp-server');
-        
-        return server;
       },
       createRuntime: async (
         _parent: unknown,
@@ -270,12 +265,7 @@ export const resolvers = (container: Container = defaultContainer): apolloResolv
         { workspaceId, name, upstreamUrl }: { workspaceId: string; name: string; upstreamUrl: string },
       ) => {
         console.log('create mcp registry', workspaceId, name, upstreamUrl);
-        const registry = await registryRepository.createRegistry(workspaceId, name, upstreamUrl);
-        
-        // Check if onboarding step should be completed
-        await workspaceRepository.checkAndCompleteStep(workspaceId, 'choose-mcp-registry');
-        
-        return registry;
+        return registryRepository.createRegistry(workspaceId, name, upstreamUrl);
       },
       deleteMCPRegistry: async (_parent: unknown, { id }: { id: string }) => {
         return registryRepository.deleteRegistry(id);

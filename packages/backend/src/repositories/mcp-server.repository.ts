@@ -13,10 +13,14 @@ import {
   UNLINK_RUNTIME,
   GET_MCPSERVER,
 } from './mcp-server.operations';
+import { WorkspaceRepository } from './workspace.repository';
 
 @injectable()
 export class MCPServerRepository {
-  constructor(@inject(DGraphService) private readonly dgraphService: DGraphService) {}
+  constructor(
+    @inject(DGraphService) private readonly dgraphService: DGraphService,
+    @inject(WorkspaceRepository) private readonly workspaceRepository: WorkspaceRepository,
+  ) {}
 
   async findAll(): Promise<dgraphResolversTypes.McpServer[]> {
     const res = await this.dgraphService.query<{
@@ -45,7 +49,9 @@ export class MCPServerRepository {
       workspaceId,
       runOn,
     });
-    return res.addMCPServer.mCPServer[0];
+    const created = res.addMCPServer.mCPServer[0];
+    await this.workspaceRepository.checkAndCompleteStep(workspaceId, 'install-mcp-server');
+    return created;
   }
 
   async update(

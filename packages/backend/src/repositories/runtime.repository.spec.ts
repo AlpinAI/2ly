@@ -6,11 +6,15 @@ import { dgraphResolversTypes } from '@2ly/common';
 import { MCPToolRepository } from './mcp-tool.repository';
 import { LoggerService } from '@2ly/common';
 import { Subject } from 'rxjs';
+import type { NatsService } from '@2ly/common';
+import type { WorkspaceRepository } from './workspace.repository';
 
 describe('RuntimeRepository', () => {
     let dgraphService: DgraphServiceMock;
     let mcpToolRepository: MCPToolRepository;
     let loggerService: LoggerService;
+    let natsService: NatsService;
+    let workspaceRepository: WorkspaceRepository;
     let runtimeRepository: RuntimeRepository;
 
     beforeEach(() => {
@@ -24,10 +28,19 @@ describe('RuntimeRepository', () => {
                 warn: vi.fn(),
             }),
         } as unknown as LoggerService;
+        natsService = {
+            request: vi.fn(),
+            publishEphemeral: vi.fn(),
+        } as unknown as NatsService;
+        workspaceRepository = {
+            checkAndCompleteStep: vi.fn().mockResolvedValue(undefined),
+        } as unknown as WorkspaceRepository;
         runtimeRepository = new RuntimeRepository(
             dgraphService as unknown as DGraphService,
             mcpToolRepository,
             loggerService,
+            natsService,
+            workspaceRepository,
         );
     });
 
@@ -303,6 +316,17 @@ describe('RuntimeRepository', () => {
             { id: 'r1', capabilities }
         );
         expect(result.id).toBe('r1');
+    });
+
+    it('setCapabilities completes connect-agent when agent present', async () => {
+        const runtime = { id: 'r1', capabilities: ['agent'] } as unknown as dgraphResolversTypes.Runtime;
+        dgraphService.mutation.mockResolvedValue({ updateRuntime: { runtime: [runtime] } });
+        dgraphService.query.mockResolvedValue({ getRuntime: { id: 'r1', workspace: { id: 'w1' } } });
+
+        const result = await runtimeRepository.setCapabilities('r1', ['agent']);
+
+        expect(result.id).toBe('r1');
+        expect((workspaceRepository.checkAndCompleteStep as unknown as ReturnType<typeof vi.fn>)).toHaveBeenCalledWith('w1', 'connect-agent');
     });
 
     it('setCapabilities throws error for invalid capability', async () => {

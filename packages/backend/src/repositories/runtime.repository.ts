@@ -30,6 +30,7 @@ import { createSubscriptionFromQuery, escapeValue } from '../helpers';
 import { MCPToolRepository } from './mcp-tool.repository';
 import pino from 'pino';
 import { QUERY_WORKSPACE, SET_DEFAULT_TESTING_RUNTIME } from './workspace.operations';
+import { WorkspaceRepository } from './workspace.repository';
 
 @injectable()
 export class RuntimeRepository {
@@ -39,6 +40,7 @@ export class RuntimeRepository {
     @inject(MCPToolRepository) private readonly mcpToolRepository: MCPToolRepository,
     @inject(LoggerService) private readonly loggerService: LoggerService,
     @inject(NatsService) private readonly natsService: NatsService,
+    @inject(WorkspaceRepository) private readonly workspaceRepository: WorkspaceRepository,
   ) {
     this.logger = this.loggerService.getLogger('runtime-repository');
   }
@@ -311,7 +313,16 @@ export class RuntimeRepository {
       id,
       capabilities,
     });
-    return res.updateRuntime.runtime[0];
+    const updated = res.updateRuntime.runtime[0];
+    const hasAgent = capabilities.some((c) => c.toLowerCase() === 'agent');
+    if (hasAgent) {
+      const runtime = await this.getRuntime(id);
+      const workspaceId = runtime.workspace?.id;
+      if (workspaceId) {
+        await this.workspaceRepository.checkAndCompleteStep(workspaceId, 'connect-agent');
+      }
+    }
+    return updated;
   }
 
   async findByName(workspaceId: string, name: string): Promise<dgraphResolversTypes.Runtime | undefined> {

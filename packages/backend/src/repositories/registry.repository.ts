@@ -12,6 +12,7 @@ import {
   UPDATE_REGISTRY_SERVER_LAST_SEEN,
   QUERY_REGISTRY_SERVER_BY_NAME,
 } from './registry.operations';
+import { WorkspaceRepository } from './workspace.repository';
 
 // Use generated types from MCP Registry OpenAPI schema
 type UpstreamResponse = mcpRegistry.components['schemas']['ServerListResponse'];
@@ -19,7 +20,10 @@ type UpstreamServer = mcpRegistry.components['schemas']['ServerResponse'];
 
 @injectable()
 export class RegistryRepository {
-  constructor(@inject(DGraphService) private readonly dgraphService: DGraphService) { }
+  constructor(
+    @inject(DGraphService) private readonly dgraphService: DGraphService,
+    @inject(WorkspaceRepository) private readonly workspaceRepository: WorkspaceRepository,
+  ) { }
 
   async createRegistry(workspaceId: string, name: string, upstreamUrl: string): Promise<dgraphResolversTypes.McpRegistry> {
     const now = new Date().toISOString();
@@ -31,7 +35,9 @@ export class RegistryRepository {
       workspaceId,
       now,
     });
-    return res.addMCPRegistry.mCPRegistry[0];
+    const created = res.addMCPRegistry.mCPRegistry[0];
+    await this.workspaceRepository.checkAndCompleteStep(workspaceId, 'choose-mcp-registry');
+    return created;
   }
 
   async findByWorkspace(workspaceId: string): Promise<dgraphResolversTypes.McpRegistry[]> {

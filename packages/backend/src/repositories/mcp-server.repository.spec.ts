@@ -1,16 +1,22 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { MCPServerRepository } from './mcp-server.repository';
 import type { DGraphService } from '../services/dgraph.service';
 import { DgraphServiceMock } from '../services/dgraph.service.mock';
 import { dgraphResolversTypes } from '@2ly/common';
+import type { WorkspaceRepository } from './workspace.repository';
 
 describe('MCPServerRepository', () => {
   let dgraphService: DgraphServiceMock;
   let mcpServerRepository: MCPServerRepository;
+  let workspaceRepository: WorkspaceRepository;
 
   beforeEach(() => {
     dgraphService = new DgraphServiceMock();
-    mcpServerRepository = new MCPServerRepository(dgraphService as unknown as DGraphService);
+    workspaceRepository = { checkAndCompleteStep: vi.fn().mockResolvedValue(undefined) } as unknown as WorkspaceRepository;
+    mcpServerRepository = new MCPServerRepository(
+      dgraphService as unknown as DGraphService,
+      workspaceRepository,
+    );
   });
 
   it('findAll returns all MCP servers', async () => {
@@ -69,6 +75,7 @@ describe('MCPServerRepository', () => {
       runOn: 'EDGE',
     });
     expect(result.id).toBe('s1');
+    expect((workspaceRepository.checkAndCompleteStep as unknown as ReturnType<typeof vi.fn>)).toHaveBeenCalledWith('w1', 'install-mcp-server');
   });
 
   it('update updates existing MCP server', async () => {
