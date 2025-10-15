@@ -14,13 +14,14 @@
 import { Database, AlertCircle } from 'lucide-react';
 import { RegistryForm } from './registry-form';
 import { RegistryList } from './registry-list';
+import { RegistrySplitButton } from '@/components/registry/registry-split-button';
 import type { Registry } from './registry-card';
 
 interface McpRegistrySectionProps {
   registries: Registry[];
   loading: boolean;
   error?: Error | null;
-  syncingId: string | null;
+  isSyncing: (id: string) => boolean;
   onCreateRegistry: (name: string, upstreamUrl: string) => Promise<void>;
   onSyncRegistry: (id: string) => Promise<void>;
   onDeleteRegistry: (id: string) => Promise<void>;
@@ -32,7 +33,7 @@ export function McpRegistrySection({
   registries,
   loading,
   error,
-  syncingId,
+  isSyncing,
   onCreateRegistry,
   onSyncRegistry,
   onDeleteRegistry,
@@ -68,14 +69,31 @@ export function McpRegistrySection({
         </div>
       )}
 
-      {/* Add Registry Form */}
-      <RegistryForm onSubmit={onCreateRegistry} isLoading={isCreating} />
+      {/* Quick Add Split Button */}
+      <div className="mb-6">
+        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+          Quick Add Registry
+        </label>
+        <RegistrySplitButton
+          onSelectRegistry={onCreateRegistry}
+          isLoading={isCreating}
+          existingRegistryUrls={registries.map(r => r.upstreamUrl)}
+        />
+      </div>
+
+      {/* Custom Registry Form */}
+      <div className="mb-6">
+        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+          Add Custom Registry
+        </label>
+        <RegistryForm onSubmit={onCreateRegistry} isLoading={isCreating} />
+      </div>
 
       {/* Registries List */}
       <RegistryList
         registries={registries}
         loading={loading}
-        syncingId={syncingId}
+        isSyncing={isSyncing}
         onSync={onSyncRegistry}
         onDelete={onDeleteRegistry}
       />

@@ -36,17 +36,15 @@ import { useWorkspaceId } from '@/stores/workspaceStore';
 import { useUIStore } from '@/stores/uiStore';
 import { CreateMcpRegistryDocument } from '@/graphql/generated/graphql';
 import { STEP_METADATA, ONBOARDING_STEPS } from '@/constants/onboarding-steps';
+import { RegistrySplitButton } from '@/components/registry/registry-split-button';
+import { useMCPRegistries } from '@/hooks/useMCPRegistries';
+import { useRegistryAutoSync } from '@/hooks/useRegistryAutoSync';
 import type { OnboardingStep } from '@/graphql/generated/graphql';
 
 interface OnboardingCardProps {
   step: OnboardingStep;
   onComplete?: () => void;
 }
-
-const OFFICIAL_MCP_REGISTRY = {
-  name: 'Official MCP Registry',
-  upstreamUrl: 'https://registry.modelcontextprotocol.io/v0/servers',
-};
 
 export function OnboardingCard({ step, onComplete }: OnboardingCardProps) {
   const navigate = useNavigate();
@@ -56,6 +54,7 @@ export function OnboardingCard({ step, onComplete }: OnboardingCardProps) {
   const [copiedCommand, setCopiedCommand] = useState(false);
   
   const [createRegistry] = useMutation(CreateMcpRegistryDocument);
+  const { autoSyncRegistry } = useRegistryAutoSync();
   
   const metadata = STEP_METADATA[step.stepId];
   const isCompleted = step.status === 'COMPLETED';
@@ -74,22 +73,29 @@ export function OnboardingCard({ step, onComplete }: OnboardingCardProps) {
     }
   };
   
-  // Handle adding official registry
-  const handleAddOfficialRegistry = async () => {
+  // Handle adding registry with auto-sync
+  const handleAddRegistry = async (name: string, upstreamUrl: string) => {
     if (!workspaceId) return;
     
     setIsAddingRegistry(true);
     try {
-      await createRegistry({
+      const result = await createRegistry({
         variables: {
           workspaceId,
-          name: OFFICIAL_MCP_REGISTRY.name,
-          upstreamUrl: OFFICIAL_MCP_REGISTRY.upstreamUrl,
+          name,
+          upstreamUrl,
         },
       });
+      
+      // Auto-sync the newly created registry
+      const registryId = result.data?.createMCPRegistry?.id;
+      if (registryId) {
+        await autoSyncRegistry(registryId);
+      }
+      
       onComplete?.();
     } catch (error) {
-      console.error('Failed to add official registry:', error);
+      console.error('Failed to add registry:', error);
     } finally {
       setIsAddingRegistry(false);
     }
@@ -110,36 +116,29 @@ export function OnboardingCard({ step, onComplete }: OnboardingCardProps) {
   // Render step-specific content
   const renderStepContent = () => {
     switch (step.stepId) {
-      case ONBOARDING_STEPS.CHOOSE_REGISTRY:
+      case ONBOARDING_STEPS.CHOOSE_REGISTRY: {
+        const { registries } = useMCPRegistries();
+        const existingUrls = registries.map(r => r.upstreamUrl);
+        
         return (
           <div className="space-y-3">
-            <Button
-              onClick={handleAddOfficialRegistry}
-              disabled={isAddingRegistry}
+            <RegistrySplitButton
+              onSelectRegistry={handleAddRegistry}
+              isLoading={isAddingRegistry}
+              existingRegistryUrls={existingUrls}
               className="w-full"
-            >
-              {isAddingRegistry ? (
-                <>
-                  <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-white border-r-transparent" />
-                  Adding Registry...
-                </>
-              ) : (
-                <>
-                  <Plus className="mr-2 h-4 w-4" />
-                  Add Official Registry
-                </>
-              )}
-            </Button>
+            />
             <Button
               variant="outline"
               onClick={() => navigate(`/w/${workspaceId}/settings`)}
               className="w-full"
             >
               <ExternalLink className="mr-2 h-4 w-4" />
-              Browse Registries
+              Go to Settings
             </Button>
           </div>
         );
+      }
         
       case ONBOARDING_STEPS.INSTALL_SERVER:
         return (

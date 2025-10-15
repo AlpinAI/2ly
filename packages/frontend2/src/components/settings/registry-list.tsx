@@ -15,12 +15,12 @@ import { RegistryCard, type Registry } from './registry-card';
 interface RegistryListProps {
   registries: Registry[];
   loading: boolean;
-  syncingId: string | null;
+  isSyncing: (id: string) => boolean;
   onSync: (id: string) => Promise<void>;
   onDelete: (id: string) => Promise<void>;
 }
 
-export function RegistryList({ registries, loading, syncingId, onSync, onDelete }: RegistryListProps) {
+export function RegistryList({ registries, loading, isSyncing, onSync, onDelete }: RegistryListProps) {
   if (loading && registries.length === 0) {
     return (
       <div className="flex items-center justify-center py-8">
@@ -48,7 +48,7 @@ export function RegistryList({ registries, loading, syncingId, onSync, onDelete 
           registry={registry}
           onSync={onSync}
           onDelete={onDelete}
-          isSyncing={syncingId === registry.id}
+          isSyncing={isSyncing(registry.id)}
         />
       ))}
     </div>

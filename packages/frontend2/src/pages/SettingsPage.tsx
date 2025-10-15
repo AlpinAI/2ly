@@ -11,10 +11,10 @@
  * - Composed of smaller, focused components from /components/settings/
  */
 
-import { useState } from 'react';
 import { useMutation } from '@apollo/client/react';
 import { useWorkspaceId } from '@/stores/workspaceStore';
 import { useMCPRegistries } from '@/hooks/useMCPRegistries';
+import { useRegistrySyncStore } from '@/stores/registrySyncStore';
 import {
   CreateMcpRegistryDocument,
   DeleteMcpRegistryDocument,
@@ -25,7 +25,7 @@ import { McpRegistrySection } from '@/components/settings/mcp-registry-section';
 
 export default function SettingsPage() {
   const workspaceId = useWorkspaceId();
-  const [syncingId, setSyncingId] = useState<string | null>(null);
+  const { startSync, endSync, updateLastSyncTime, isSyncing } = useRegistrySyncStore();
 
   console.log('[SettingsPage] Rendering with workspaceId:', workspaceId);
 
@@ -45,15 +45,7 @@ export default function SettingsPage() {
     },
   });
 
-  const [syncRegistry] = useMutation(SyncUpstreamRegistryDocument, {
-    onCompleted: () => {
-      setSyncingId(null);
-    },
-    onError: (err) => {
-      console.error('[SettingsPage] Sync registry error:', err);
-      setSyncingId(null);
-    },
-  });
+  const [syncRegistry] = useMutation(SyncUpstreamRegistryDocument);
 
   const handleCreateRegistry = async (name: string, upstreamUrl: string) => {
     if (!workspaceId) return;
@@ -72,8 +64,15 @@ export default function SettingsPage() {
   };
 
   const handleSyncRegistry = async (id: string) => {
-    setSyncingId(id);
-    await syncRegistry({ variables: { registryId: id } });
+    if (isSyncing(id)) return; // Prevent duplicate sync
+    
+    startSync(id);
+    try {
+      await syncRegistry({ variables: { registryId: id } });
+      updateLastSyncTime(id, new Date());
+    } finally {
+      endSync(id);
+    }
   };
 
   return (
@@ -85,7 +84,7 @@ export default function SettingsPage() {
         registries={registries}
         loading={loading}
         error={error}
-        syncingId={syncingId}
+        isSyncing={isSyncing}
         onCreateRegistry={handleCreateRegistry}
         onSyncRegistry={handleSyncRegistry}
         onDeleteRegistry={handleDeleteRegistry}

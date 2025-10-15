@@ -36,6 +36,8 @@ export function useMCPRegistries() {
   const { data, loading, error } = useSubscription(SubscribeMcpRegistriesDocument, {
     variables: { workspaceId: workspaceId || '' },
     skip: !workspaceId,
+    shouldResubscribe: true,
+    fetchPolicy: 'no-cache'
   });
 
   // WHY: Extract registries from subscription data

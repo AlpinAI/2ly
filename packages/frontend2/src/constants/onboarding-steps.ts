@@ -34,7 +34,7 @@ export interface StepMetadata {
 export const STEP_METADATA: Record<string, StepMetadata> = {
   [ONBOARDING_STEPS.CHOOSE_REGISTRY]: {
     title: 'Choose an MCP Registry',
-    description: 'Connect to the official MCP registry to browse available servers and tools.',
+    description: 'Enable the servers from the registry to be configured',
     icon: 'database',
   },
   [ONBOARDING_STEPS.INSTALL_SERVER]: {
