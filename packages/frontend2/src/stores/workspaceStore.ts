@@ -36,6 +36,7 @@
 
 import { create } from 'zustand';
 import { devtools, persist } from 'zustand/middleware';
+import type { OnboardingStep } from '@/graphql/generated/graphql';
 
 /**
  * Workspace State Interface
@@ -43,9 +44,15 @@ import { devtools, persist } from 'zustand/middleware';
 interface WorkspaceState {
   // Currently selected workspace ID
   selectedWorkspace: string | null;
+  
+  // Onboarding steps for current workspace
+  onboardingSteps: OnboardingStep[];
 
   // Set workspace (also triggers refetch of workspace-scoped queries)
   setWorkspace: (workspaceId: string) => void;
+  
+  // Set onboarding steps (updated via subscription)
+  setOnboardingSteps: (steps: OnboardingStep[]) => void;
 
   // Clear workspace selection
   clearWorkspace: () => void;
@@ -68,6 +75,9 @@ export const useWorkspaceStore = create<WorkspaceState>()(
         // WHY null: No workspace selected by default
         // User must select from available workspaces
         selectedWorkspace: null,
+        
+        // WHY empty array: No onboarding steps until workspace is loaded
+        onboardingSteps: [],
 
         // Actions
         setWorkspace: (workspaceId) => {
@@ -92,7 +102,9 @@ export const useWorkspaceStore = create<WorkspaceState>()(
           }
         },
 
-        clearWorkspace: () => set({ selectedWorkspace: null }),
+        setOnboardingSteps: (steps) => set({ onboardingSteps: steps }),
+        
+        clearWorkspace: () => set({ selectedWorkspace: null, onboardingSteps: [] }),
       }),
       {
         name: '2ly-workspace', // localStorage key

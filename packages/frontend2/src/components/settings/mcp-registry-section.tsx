@@ -12,7 +12,6 @@
  */
 
 import { Database, AlertCircle } from 'lucide-react';
-import { OfficialRegistryButton, OFFICIAL_MCP_REGISTRY } from './official-registry-button';
 import { RegistryForm } from './registry-form';
 import { RegistryList } from './registry-list';
 import type { Registry } from './registry-card';
@@ -38,12 +37,7 @@ export function McpRegistrySection({
   onSyncRegistry,
   onDeleteRegistry,
   isCreating,
-  workspaceId,
 }: McpRegistrySectionProps) {
-  // Check if official MCP registry is already added
-  const hasOfficialRegistry = registries.some(
-    (reg) => reg.upstreamUrl === OFFICIAL_MCP_REGISTRY.upstreamUrl
-  );
 
   return (
     <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6 shadow-sm mb-6">
@@ -58,14 +52,6 @@ export function McpRegistrySection({
       <p className="text-sm text-gray-600 dark:text-gray-400 mb-6">
         Connect to upstream MCP registries to sync available servers and tools.
       </p>
-
-      {/* Quick Add Official Registry */}
-      <OfficialRegistryButton
-        onAdd={onCreateRegistry}
-        isAdded={hasOfficialRegistry}
-        isLoading={isCreating}
-        disabled={!workspaceId}
-      />
 
       {/* Error State */}
       {error && (

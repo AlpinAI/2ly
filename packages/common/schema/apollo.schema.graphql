@@ -39,6 +39,7 @@ type Workspace {
   mcpRegistries: [MCPRegistry!]
   globalRuntime: Runtime
   defaultTestingRuntime: Runtime
+  onboardingSteps: [OnboardingStep!]
 }
 
 type MCPServer {
@@ -85,10 +86,33 @@ type Runtime {
   mcpClientName: String
 }
 
+enum OnboardingStepType {
+  ONBOARDING
+  ANNOUNCEMENT
+  LEARNING
+}
+
+enum OnboardingStepStatus {
+  PENDING
+  COMPLETED
+  DISMISSED
+}
+
 enum ToolCallStatus {
   PENDING
   COMPLETED
   FAILED
+}
+
+type OnboardingStep {
+  id: ID!
+  stepId: String!
+  type: OnboardingStepType!
+  status: OnboardingStepStatus!
+  completedAt: Date
+  dismissedAt: Date
+  priority: Int
+  createdAt: Date!
 }
 
 type ToolCall {
@@ -230,6 +254,10 @@ type Mutation {
   # Playground mutations
   callMCPTool(toolId: ID!, input: String!): CallToolResult!
 
+  # Onboarding mutations
+  completeOnboardingStep(workspaceId: ID!, stepId: String!): Workspace!
+  dismissOnboardingStep(workspaceId: ID!, stepId: String!): Workspace!
+
   # Authentication mutations
   registerUser(input: RegisterUserInput!): RegisterUserPayload!
   loginUser(input: LoginUserInput!): AuthPayload!
@@ -309,6 +337,7 @@ input LogoutInput {
 
 type Subscription {
   workspaces: [Workspace!]
+  workspace(workspaceId: ID!): Workspace
   runtimes(workspaceId: ID!): [Runtime!]
   mcpServers(workspaceId: ID!): [MCPServer!]
   mcpTools(workspaceId: ID!): [MCPTool]

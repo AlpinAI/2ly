@@ -41,6 +41,7 @@ type Workspace @withSubscription {
   system: System! @hasInverse(field: workspaces)
   globalRuntime: Runtime
   defaultTestingRuntime: Runtime
+  onboardingSteps: [OnboardingStep!]
 }
 
 type MCPRegistry @withSubscription {
@@ -160,10 +161,33 @@ type Session @withSubscription {
   isActive: Boolean! @search
 }
 
+enum OnboardingStepType {
+  ONBOARDING
+  ANNOUNCEMENT
+  LEARNING
+}
+
+enum OnboardingStepStatus {
+  PENDING
+  COMPLETED
+  DISMISSED
+}
+
 enum ToolCallStatus {
   PENDING
   COMPLETED
   FAILED
+}
+
+type OnboardingStep {
+  id: ID!
+  stepId: String! @search(by: [hash])
+  type: OnboardingStepType!
+  status: OnboardingStepStatus!
+  completedAt: DateTime
+  dismissedAt: DateTime
+  priority: Int
+  createdAt: DateTime!
 }
 
 type ToolCall {

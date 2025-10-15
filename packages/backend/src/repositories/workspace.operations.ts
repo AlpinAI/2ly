@@ -25,6 +25,7 @@ export const QUERY_WORKSPACE = gql`
     getWorkspace(id: $workspaceId) {
       id
       name
+      createdAt
       globalRuntime {
         id
         name
@@ -32,6 +33,16 @@ export const QUERY_WORKSPACE = gql`
       defaultTestingRuntime {
         id
         name
+      }
+      onboardingSteps {
+        id
+        stepId
+        type
+        status
+        completedAt
+        dismissedAt
+        priority
+        createdAt
       }
     }
   }
@@ -207,6 +218,141 @@ export const UNSET_GLOBAL_RUNTIME = gql`
     updateWorkspace(input: { filter: { id: [$id] }, set: { globalRuntime: null } }) {
       workspace {
         id
+      }
+    }
+  }
+`;
+
+export const COMPLETE_ONBOARDING_STEP = gql`
+  mutation completeOnboardingStep($workspaceId: ID!, $stepId: String!, $now: DateTime!) {
+    upsertOnboardingStep(input: {
+      filter: { stepId: { eq: $stepId } }
+      set: {
+        stepId: $stepId
+        type: ONBOARDING
+        status: COMPLETED
+        completedAt: $now
+        createdAt: $now
+        priority: 1
+      }
+    }) {
+      onboardingStep {
+        id
+        stepId
+        type
+        status
+        completedAt
+        priority
+        createdAt
+      }
+    }
+    updateWorkspace(input: { 
+      filter: { id: [$workspaceId] }
+      set: { onboardingSteps: { stepId: $stepId } }
+    }) {
+      workspace {
+        id
+        name
+        onboardingSteps {
+          id
+          stepId
+          type
+          status
+          completedAt
+          dismissedAt
+          priority
+          createdAt
+        }
+      }
+    }
+  }
+`;
+
+export const DISMISS_ONBOARDING_STEP = gql`
+  mutation dismissOnboardingStep($workspaceId: ID!, $stepId: String!, $now: DateTime!) {
+    upsertOnboardingStep(input: {
+      filter: { stepId: { eq: $stepId } }
+      set: {
+        stepId: $stepId
+        type: ONBOARDING
+        status: DISMISSED
+        dismissedAt: $now
+        createdAt: $now
+        priority: 1
+      }
+    }) {
+      onboardingStep {
+        id
+        stepId
+        type
+        status
+        dismissedAt
+        priority
+        createdAt
+      }
+    }
+    updateWorkspace(input: { 
+      filter: { id: [$workspaceId] }
+      set: { onboardingSteps: { stepId: $stepId } }
+    }) {
+      workspace {
+        id
+        name
+        onboardingSteps {
+          id
+          stepId
+          type
+          status
+          completedAt
+          dismissedAt
+          priority
+          createdAt
+        }
+      }
+    }
+  }
+`;
+
+export const CREATE_ONBOARDING_STEP = gql`
+  mutation createOnboardingStep($stepId: String!, $type: OnboardingStepType!, $priority: Int!, $now: DateTime!) {
+    addOnboardingStep(input: {
+      stepId: $stepId
+      type: $type
+      status: PENDING
+      priority: $priority
+      createdAt: $now
+    }) {
+      onboardingStep {
+        id
+        stepId
+        type
+        status
+        priority
+        createdAt
+      }
+    }
+  }
+`;
+
+export const LINK_ONBOARDING_STEP_TO_WORKSPACE = gql`
+  mutation linkOnboardingStepToWorkspace($workspaceId: ID!, $stepId: ID!) {
+    updateWorkspace(input: { 
+      filter: { id: [$workspaceId] }
+      set: { onboardingSteps: { id: $stepId } }
+    }) {
+      workspace {
+        id
+        name
+        onboardingSteps {
+          id
+          stepId
+          type
+          status
+          completedAt
+          dismissedAt
+          priority
+          createdAt
+        }
       }
     }
   }

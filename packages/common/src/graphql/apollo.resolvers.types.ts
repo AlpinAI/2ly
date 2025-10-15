@@ -141,6 +141,7 @@ export enum McpTransportType {
 
 export type Mutation = {
   callMCPTool: CallToolResult;
+  completeOnboardingStep: Workspace;
   createMCPRegistry: McpRegistry;
   createMCPServer: McpServer;
   createRuntime: Runtime;
@@ -148,6 +149,7 @@ export type Mutation = {
   deleteMCPServer: McpServer;
   deleteMCPTool: McpTool;
   deleteRuntime: Runtime;
+  dismissOnboardingStep: Workspace;
   initSystem: System;
   linkMCPServerToRuntime: McpServer;
   linkMCPToolToRuntime: Runtime;
@@ -174,6 +176,12 @@ export type Mutation = {
 export type MutationCallMcpToolArgs = {
   input: Scalars['String']['input'];
   toolId: Scalars['ID']['input'];
+};
+
+
+export type MutationCompleteOnboardingStepArgs = {
+  stepId: Scalars['String']['input'];
+  workspaceId: Scalars['ID']['input'];
 };
 
 
@@ -220,6 +228,12 @@ export type MutationDeleteMcpToolArgs = {
 
 export type MutationDeleteRuntimeArgs = {
   id: Scalars['ID']['input'];
+};
+
+
+export type MutationDismissOnboardingStepArgs = {
+  stepId: Scalars['String']['input'];
+  workspaceId: Scalars['ID']['input'];
 };
 
 
@@ -339,6 +353,29 @@ export type MutationUpdateWorkspaceArgs = {
   name: Scalars['String']['input'];
 };
 
+export type OnboardingStep = {
+  completedAt?: Maybe<Scalars['Date']['output']>;
+  createdAt: Scalars['Date']['output'];
+  dismissedAt?: Maybe<Scalars['Date']['output']>;
+  id: Scalars['ID']['output'];
+  priority?: Maybe<Scalars['Int']['output']>;
+  status: OnboardingStepStatus;
+  stepId: Scalars['String']['output'];
+  type: OnboardingStepType;
+};
+
+export enum OnboardingStepStatus {
+  Completed = 'COMPLETED',
+  Dismissed = 'DISMISSED',
+  Pending = 'PENDING'
+}
+
+export enum OnboardingStepType {
+  Announcement = 'ANNOUNCEMENT',
+  Learning = 'LEARNING',
+  Onboarding = 'ONBOARDING'
+}
+
 export type Query = {
   infra: Infra;
   isMCPAutoConfigEnabled: Scalars['Boolean']['output'];
@@ -412,6 +449,7 @@ export type Subscription = {
   mcpTools?: Maybe<Array<Maybe<McpTool>>>;
   runtimes?: Maybe<Array<Runtime>>;
   toolCalls?: Maybe<Array<ToolCall>>;
+  workspace?: Maybe<Workspace>;
   workspaces?: Maybe<Array<Workspace>>;
 };
 
@@ -437,6 +475,11 @@ export type SubscriptionRuntimesArgs = {
 
 
 export type SubscriptionToolCallsArgs = {
+  workspaceId: Scalars['ID']['input'];
+};
+
+
+export type SubscriptionWorkspaceArgs = {
   workspaceId: Scalars['ID']['input'];
 };
 
@@ -486,6 +529,7 @@ export type Workspace = {
   mcpServers?: Maybe<Array<McpServer>>;
   mcpTools?: Maybe<Array<McpTool>>;
   name: Scalars['String']['output'];
+  onboardingSteps?: Maybe<Array<OnboardingStep>>;
   runtimes?: Maybe<Array<Runtime>>;
 };
 
@@ -582,6 +626,9 @@ export type ResolversTypes = {
   MCPTool: ResolverTypeWrapper<McpTool>;
   MCPTransportType: McpTransportType;
   Mutation: ResolverTypeWrapper<{}>;
+  OnboardingStep: ResolverTypeWrapper<OnboardingStep>;
+  OnboardingStepStatus: OnboardingStepStatus;
+  OnboardingStepType: OnboardingStepType;
   Query: ResolverTypeWrapper<{}>;
   RefreshTokenInput: RefreshTokenInput;
   RefreshTokenPayload: ResolverTypeWrapper<RefreshTokenPayload>;
@@ -618,6 +665,7 @@ export type ResolversParentTypes = {
   MCPServer: McpServer;
   MCPTool: McpTool;
   Mutation: {};
+  OnboardingStep: OnboardingStep;
   Query: {};
   RefreshTokenInput: RefreshTokenInput;
   RefreshTokenPayload: RefreshTokenPayload;
@@ -733,6 +781,7 @@ export type McpToolResolvers<ContextType = object, ParentType extends ResolversP
 
 export type MutationResolvers<ContextType = object, ParentType extends ResolversParentTypes['Mutation'] = ResolversParentTypes['Mutation']> = {
   callMCPTool?: Resolver<ResolversTypes['CallToolResult'], ParentType, ContextType, RequireFields<MutationCallMcpToolArgs, 'input' | 'toolId'>>;
+  completeOnboardingStep?: Resolver<ResolversTypes['Workspace'], ParentType, ContextType, RequireFields<MutationCompleteOnboardingStepArgs, 'stepId' | 'workspaceId'>>;
   createMCPRegistry?: Resolver<ResolversTypes['MCPRegistry'], ParentType, ContextType, RequireFields<MutationCreateMcpRegistryArgs, 'name' | 'upstreamUrl' | 'workspaceId'>>;
   createMCPServer?: Resolver<ResolversTypes['MCPServer'], ParentType, ContextType, RequireFields<MutationCreateMcpServerArgs, 'config' | 'description' | 'name' | 'repositoryUrl' | 'transport' | 'workspaceId'>>;
   createRuntime?: Resolver<ResolversTypes['Runtime'], ParentType, ContextType, RequireFields<MutationCreateRuntimeArgs, 'capabilities' | 'description' | 'name' | 'workspaceId'>>;
@@ -740,6 +789,7 @@ export type MutationResolvers<ContextType = object, ParentType extends Resolvers
   deleteMCPServer?: Resolver<ResolversTypes['MCPServer'], ParentType, ContextType, RequireFields<MutationDeleteMcpServerArgs, 'id'>>;
   deleteMCPTool?: Resolver<ResolversTypes['MCPTool'], ParentType, ContextType, RequireFields<MutationDeleteMcpToolArgs, 'id'>>;
   deleteRuntime?: Resolver<ResolversTypes['Runtime'], ParentType, ContextType, RequireFields<MutationDeleteRuntimeArgs, 'id'>>;
+  dismissOnboardingStep?: Resolver<ResolversTypes['Workspace'], ParentType, ContextType, RequireFields<MutationDismissOnboardingStepArgs, 'stepId' | 'workspaceId'>>;
   initSystem?: Resolver<ResolversTypes['System'], ParentType, ContextType, RequireFields<MutationInitSystemArgs, 'adminPassword' | 'email'>>;
   linkMCPServerToRuntime?: Resolver<ResolversTypes['MCPServer'], ParentType, ContextType, RequireFields<MutationLinkMcpServerToRuntimeArgs, 'mcpServerId' | 'runtimeId'>>;
   linkMCPToolToRuntime?: Resolver<ResolversTypes['Runtime'], ParentType, ContextType, RequireFields<MutationLinkMcpToolToRuntimeArgs, 'mcpToolId' | 'runtimeId'>>;
@@ -760,6 +810,18 @@ export type MutationResolvers<ContextType = object, ParentType extends Resolvers
   updateMCPServerRunOn?: Resolver<ResolversTypes['MCPServer'], ParentType, ContextType, RequireFields<MutationUpdateMcpServerRunOnArgs, 'mcpServerId' | 'runOn'>>;
   updateRuntime?: Resolver<ResolversTypes['Runtime'], ParentType, ContextType, RequireFields<MutationUpdateRuntimeArgs, 'description' | 'id' | 'name'>>;
   updateWorkspace?: Resolver<ResolversTypes['Workspace'], ParentType, ContextType, RequireFields<MutationUpdateWorkspaceArgs, 'id' | 'name'>>;
+};
+
+export type OnboardingStepResolvers<ContextType = object, ParentType extends ResolversParentTypes['OnboardingStep'] = ResolversParentTypes['OnboardingStep']> = {
+  completedAt?: Resolver<Maybe<ResolversTypes['Date']>, ParentType, ContextType>;
+  createdAt?: Resolver<ResolversTypes['Date'], ParentType, ContextType>;
+  dismissedAt?: Resolver<Maybe<ResolversTypes['Date']>, ParentType, ContextType>;
+  id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
+  priority?: Resolver<Maybe<ResolversTypes['Int']>, ParentType, ContextType>;
+  status?: Resolver<ResolversTypes['OnboardingStepStatus'], ParentType, ContextType>;
+  stepId?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  type?: Resolver<ResolversTypes['OnboardingStepType'], ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 };
 
 export type QueryResolvers<ContextType = object, ParentType extends ResolversParentTypes['Query'] = ResolversParentTypes['Query']> = {
@@ -813,6 +875,7 @@ export type SubscriptionResolvers<ContextType = object, ParentType extends Resol
   mcpTools?: SubscriptionResolver<Maybe<Array<Maybe<ResolversTypes['MCPTool']>>>, "mcpTools", ParentType, ContextType, RequireFields<SubscriptionMcpToolsArgs, 'workspaceId'>>;
   runtimes?: SubscriptionResolver<Maybe<Array<ResolversTypes['Runtime']>>, "runtimes", ParentType, ContextType, RequireFields<SubscriptionRuntimesArgs, 'workspaceId'>>;
   toolCalls?: SubscriptionResolver<Maybe<Array<ResolversTypes['ToolCall']>>, "toolCalls", ParentType, ContextType, RequireFields<SubscriptionToolCallsArgs, 'workspaceId'>>;
+  workspace?: SubscriptionResolver<Maybe<ResolversTypes['Workspace']>, "workspace", ParentType, ContextType, RequireFields<SubscriptionWorkspaceArgs, 'workspaceId'>>;
   workspaces?: SubscriptionResolver<Maybe<Array<ResolversTypes['Workspace']>>, "workspaces", ParentType, ContextType>;
 };
 
@@ -859,6 +922,7 @@ export type WorkspaceResolvers<ContextType = object, ParentType extends Resolver
   mcpServers?: Resolver<Maybe<Array<ResolversTypes['MCPServer']>>, ParentType, ContextType>;
   mcpTools?: Resolver<Maybe<Array<ResolversTypes['MCPTool']>>, ParentType, ContextType>;
   name?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  onboardingSteps?: Resolver<Maybe<Array<ResolversTypes['OnboardingStep']>>, ParentType, ContextType>;
   runtimes?: Resolver<Maybe<Array<ResolversTypes['Runtime']>>, ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 };
@@ -876,6 +940,7 @@ export type Resolvers<ContextType = object> = {
   MCPServer?: McpServerResolvers<ContextType>;
   MCPTool?: McpToolResolvers<ContextType>;
   Mutation?: MutationResolvers<ContextType>;
+  OnboardingStep?: OnboardingStepResolvers<ContextType>;
   Query?: QueryResolvers<ContextType>;
   RefreshTokenPayload?: RefreshTokenPayloadResolvers<ContextType>;
   RegisterUserPayload?: RegisterUserPayloadResolvers<ContextType>;

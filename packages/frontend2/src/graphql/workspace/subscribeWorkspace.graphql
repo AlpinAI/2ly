@@ -1,0 +1,17 @@
+subscription SubscribeWorkspace($workspaceId: ID!) {
+  workspace(workspaceId: $workspaceId) {
+    id
+    name
+    createdAt
+    onboardingSteps {
+      id
+      stepId
+      type
+      status
+      completedAt
+      dismissedAt
+      priority
+      createdAt
+    }
+  }
+}

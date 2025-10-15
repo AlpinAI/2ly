@@ -12,6 +12,10 @@ import {
   SET_GLOBAL_RUNTIME,
   UNSET_DEFAULT_TESTING_RUNTIME,
   UNSET_GLOBAL_RUNTIME,
+  COMPLETE_ONBOARDING_STEP,
+  DISMISS_ONBOARDING_STEP,
+  CREATE_ONBOARDING_STEP,
+  LINK_ONBOARDING_STEP_TO_WORKSPACE,
 } from './workspace.operations';
 import {
   QUERY_WORKSPACE_WITH_REGISTRIES
@@ -21,6 +25,7 @@ import { QUERY_SYSTEM } from './system.operations';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { createSubscriptionFromQuery } from '../helpers';
+import { INITIAL_ONBOARDING_STEPS } from './onboarding-step-definitions';
 
 @injectable()
 export class WorkspaceRepository {
@@ -47,6 +52,9 @@ export class WorkspaceRepository {
       adminId,
     });
     const workspace = res.addWorkspace.workspace[0];
+
+    // Initialize onboarding steps for new workspace
+    await this.initializeOnboardingSteps(workspace.id);
 
     return workspace;
   }
@@ -144,5 +152,110 @@ export class WorkspaceRepository {
     return this.dgraphService
       .observe<{ mcpRegistries: apolloResolversTypes.McpRegistry[] }>(query, { workspaceId }, 'getWorkspace', true)
       .pipe(map((workspace) => workspace?.mcpRegistries || []));
+  }
+
+  observeWorkspace(workspaceId: string): Observable<apolloResolversTypes.Workspace> {
+    const query = createSubscriptionFromQuery(QUERY_WORKSPACE);
+    return this.dgraphService
+      .observe<apolloResolversTypes.Workspace>(query, { workspaceId }, 'getWorkspace', true);
+  }
+
+  async initializeOnboardingSteps(workspaceId: string): Promise<void> {
+    const now = new Date().toISOString();
+    
+    // Get existing onboarding steps to avoid duplicates
+    const workspace = await this.dgraphService.query<{
+      getWorkspace: { onboardingSteps: { stepId: string }[] };
+    }>(QUERY_WORKSPACE, { workspaceId });
+    
+    const existingStepIds = new Set(workspace.getWorkspace.onboardingSteps?.map(s => s.stepId) || []);
+    
+    // Create only missing steps
+    for (const stepDef of INITIAL_ONBOARDING_STEPS) {
+      if (!existingStepIds.has(stepDef.stepId)) {
+        // First create the onboarding step
+        const createResult = await this.dgraphService.mutation<{
+          addOnboardingStep: { onboardingStep: { id: string }[] };
+        }>(CREATE_ONBOARDING_STEP, {
+          stepId: stepDef.stepId,
+          type: stepDef.type,
+          priority: stepDef.priority,
+          now,
+        });
+        
+        // Then link it to the workspace using the actual ID
+        const stepId = createResult.addOnboardingStep.onboardingStep[0].id;
+        await this.dgraphService.mutation<{
+          updateWorkspace: { workspace: { id: string }[] };
+        }>(LINK_ONBOARDING_STEP_TO_WORKSPACE, {
+          workspaceId,
+          stepId,
+        });
+      }
+    }
+  }
+
+  async completeOnboardingStep(workspaceId: string, stepId: string): Promise<apolloResolversTypes.Workspace> {
+    const now = new Date().toISOString();
+    const res = await this.dgraphService.mutation<{
+      updateWorkspace: { workspace: apolloResolversTypes.Workspace[] };
+    }>(COMPLETE_ONBOARDING_STEP, {
+      workspaceId,
+      stepId,
+      now,
+    });
+    return res.updateWorkspace.workspace[0];
+  }
+
+  async dismissOnboardingStep(workspaceId: string, stepId: string): Promise<apolloResolversTypes.Workspace> {
+    const now = new Date().toISOString();
+    const res = await this.dgraphService.mutation<{
+      updateWorkspace: { workspace: apolloResolversTypes.Workspace[] };
+    }>(DISMISS_ONBOARDING_STEP, {
+      workspaceId,
+      stepId,
+      now,
+    });
+    return res.updateWorkspace.workspace[0];
+  }
+
+  async checkAndCompleteStep(workspaceId: string, stepId: string): Promise<void> {
+    // Get current workspace state
+    const workspace = await this.dgraphService.query<{
+      getWorkspace: {
+        onboardingSteps: { stepId: string; status: string }[];
+        mcpRegistries: { id: string }[];
+        mcpServers: { id: string }[];
+        runtimes: { capabilities: string[] }[];
+      };
+    }>(QUERY_WORKSPACE, { workspaceId });
+
+    // Check if step is already completed
+    const step = workspace.getWorkspace.onboardingSteps?.find(s => s.stepId === stepId);
+    if (step?.status === 'COMPLETED') {
+      return; // Already completed
+    }
+
+    let shouldComplete = false;
+
+    switch (stepId) {
+      case 'choose-mcp-registry':
+        shouldComplete = (workspace.getWorkspace.mcpRegistries?.length || 0) > 0;
+        break;
+      case 'install-mcp-server':
+        shouldComplete = (workspace.getWorkspace.mcpServers?.length || 0) > 0;
+        break;
+      case 'connect-agent':
+        shouldComplete = (workspace.getWorkspace.runtimes?.some(r => 
+          r.capabilities?.includes('agent') || r.capabilities?.includes('AGENT')
+        ) || false);
+        break;
+      default:
+        return; // Unknown step
+    }
+
+    if (shouldComplete) {
+      await this.completeOnboardingStep(workspaceId, stepId);
+    }
   }
 }

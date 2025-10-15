@@ -114,7 +114,7 @@ export const resolvers = (container: Container = defaultContainer): apolloResolv
           workspaceId: string;
         },
       ) => {
-        return mcpServerRepository.create(
+        const server = await mcpServerRepository.create(
           name,
           description,
           repositoryUrl,
@@ -123,6 +123,11 @@ export const resolvers = (container: Container = defaultContainer): apolloResolv
           runOn ?? null,
           workspaceId,
         );
+        
+        // Check if onboarding step should be completed
+        await workspaceRepository.checkAndCompleteStep(workspaceId, 'install-mcp-server');
+        
+        return server;
       },
       createRuntime: async (
         _parent: unknown,
@@ -265,7 +270,12 @@ export const resolvers = (container: Container = defaultContainer): apolloResolv
         { workspaceId, name, upstreamUrl }: { workspaceId: string; name: string; upstreamUrl: string },
       ) => {
         console.log('create mcp registry', workspaceId, name, upstreamUrl);
-        return registryRepository.createRegistry(workspaceId, name, upstreamUrl);
+        const registry = await registryRepository.createRegistry(workspaceId, name, upstreamUrl);
+        
+        // Check if onboarding step should be completed
+        await workspaceRepository.checkAndCompleteStep(workspaceId, 'choose-mcp-registry');
+        
+        return registry;
       },
       deleteMCPRegistry: async (_parent: unknown, { id }: { id: string }) => {
         return registryRepository.deleteRegistry(id);
@@ -273,11 +283,32 @@ export const resolvers = (container: Container = defaultContainer): apolloResolv
       syncUpstreamRegistry: async (_parent: unknown, { registryId }: { registryId: string }) => {
         return registryRepository.syncUpstream(registryId);
       },
+
+      // Onboarding mutations
+      completeOnboardingStep: async (
+        _parent: unknown,
+        { workspaceId, stepId }: { workspaceId: string; stepId: string },
+      ) => {
+        return workspaceRepository.completeOnboardingStep(workspaceId, stepId);
+      },
+
+      dismissOnboardingStep: async (
+        _parent: unknown,
+        { workspaceId, stepId }: { workspaceId: string; stepId: string },
+      ) => {
+        return workspaceRepository.dismissOnboardingStep(workspaceId, stepId);
+      },
     },
     Runtime: {},
     MCPServer: {},
     MCPTool: {},
     Subscription: {
+      workspace: {
+        subscribe: (_parent: unknown, { workspaceId }: { workspaceId: string }) => {
+          const observable = workspaceRepository.observeWorkspace(workspaceId);
+          return observableToAsyncGenerator(observable, 'workspace');
+        },
+      },
       runtimes: {
         subscribe: (_parent: unknown, { workspaceId }: { workspaceId: string }) => {
           const observable = workspaceRepository.observeRuntimes(workspaceId);

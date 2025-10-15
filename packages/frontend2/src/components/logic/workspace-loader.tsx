@@ -23,8 +23,9 @@ import { ReactNode, useEffect } from 'react';
 import { Navigate } from 'react-router-dom';
 import { useQuery, useSubscription } from '@apollo/client/react';
 import { useWorkspaceFromUrl } from '@/hooks/useWorkspaceFromUrl';
-import { ValidateWorkspaceDocument, SubscribeRuntimesDocument, Runtime } from '@/graphql/generated/graphql';
+import { ValidateWorkspaceDocument, SubscribeRuntimesDocument, SubscribeWorkspaceDocument, Runtime } from '@/graphql/generated/graphql';
 import { useRuntimeStore } from '@/stores/runtimeStore';
+import { useWorkspaceStore } from '@/stores/workspaceStore';
 import { SubscriptionErrorBoundary } from './subscription-error-boundary';
 
 interface WorkspaceLoaderProps {
@@ -37,12 +38,33 @@ export function WorkspaceLoader({ children }: WorkspaceLoaderProps) {
   const setLoading = useRuntimeStore((state) => state.setLoading);
   const setError = useRuntimeStore((state) => state.setError);
   const reset = useRuntimeStore((state) => state.reset);
+  const setOnboardingSteps = useWorkspaceStore((state) => state.setOnboardingSteps);
 
   // Query to validate workspace access
   const { data, loading, error } = useQuery(ValidateWorkspaceDocument, {
     variables: { workspaceId: workspaceId || '' },
     skip: !workspaceId,
   });
+
+  // Workspace subscription - get workspace data including onboarding steps
+  const { loading: workspaceLoading, error: workspaceError } = useSubscription(
+    SubscribeWorkspaceDocument,
+    {
+      variables: { workspaceId: workspaceId || '' },
+      skip: !workspaceId || loading || !!error || !data?.workspaceMCPTools,
+      onData: ({ data: subscriptionData }) => {
+        if (subscriptionData?.data?.workspace) {
+          const workspace = subscriptionData.data.workspace;
+          // Update onboarding steps in workspace store
+          setOnboardingSteps(workspace.onboardingSteps || []);
+        }
+      },
+      onError: (subscriptionError) => {
+        console.error('[WorkspaceLoader] Workspace subscription error:', subscriptionError);
+        setError(subscriptionError);
+      },
+    }
+  );
 
   // Runtime subscription - only start after workspace is validated
   const { loading: runtimeLoading, error: runtimeError } = useSubscription(
@@ -69,10 +91,10 @@ export function WorkspaceLoader({ children }: WorkspaceLoaderProps) {
     }
   }, [workspaceId, reset]);
 
-  // Set loading state based on both queries
+  // Set loading state based on all queries
   useEffect(() => {
-    setLoading(loading || runtimeLoading);
-  }, [loading, runtimeLoading, setLoading]);
+    setLoading(loading || workspaceLoading || runtimeLoading);
+  }, [loading, workspaceLoading, runtimeLoading, setLoading]);
 
   // No workspace ID in URL - redirect to root
   if (!workspaceId) {
@@ -80,7 +102,7 @@ export function WorkspaceLoader({ children }: WorkspaceLoaderProps) {
   }
 
   // Loading state
-  if (loading || runtimeLoading) {
+  if (loading || workspaceLoading || runtimeLoading) {
     return (
       <div className="flex h-screen items-center justify-center">
         <div className="text-center">
@@ -97,9 +119,9 @@ export function WorkspaceLoader({ children }: WorkspaceLoaderProps) {
     return <Navigate to="/" replace />;
   }
 
-  // Runtime subscription error - let ErrorBoundary handle it
-  if (runtimeError) {
-    throw runtimeError;
+  // Subscription errors - let ErrorBoundary handle them
+  if (workspaceError || runtimeError) {
+    throw workspaceError || runtimeError;
   }
 
   // Valid workspace - render children with error boundary

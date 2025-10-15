@@ -1,0 +1,16 @@
+mutation CompleteOnboardingStep($workspaceId: ID!, $stepId: String!) {
+  completeOnboardingStep(workspaceId: $workspaceId, stepId: $stepId) {
+    id
+    name
+    onboardingSteps {
+      id
+      stepId
+      type
+      status
+      completedAt
+      dismissedAt
+      priority
+      createdAt
+    }
+  }
+}

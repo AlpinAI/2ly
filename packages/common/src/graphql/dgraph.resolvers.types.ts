@@ -87,6 +87,29 @@ export enum McpTransportType {
   Stream = 'STREAM'
 }
 
+export type OnboardingStep = {
+  completedAt?: Maybe<Scalars['DateTime']['output']>;
+  createdAt: Scalars['DateTime']['output'];
+  dismissedAt?: Maybe<Scalars['DateTime']['output']>;
+  id: Scalars['ID']['output'];
+  priority?: Maybe<Scalars['Int']['output']>;
+  status: OnboardingStepStatus;
+  stepId: Scalars['String']['output'];
+  type: OnboardingStepType;
+};
+
+export enum OnboardingStepStatus {
+  Completed = 'COMPLETED',
+  Dismissed = 'DISMISSED',
+  Pending = 'PENDING'
+}
+
+export enum OnboardingStepType {
+  Announcement = 'ANNOUNCEMENT',
+  Learning = 'LEARNING',
+  Onboarding = 'ONBOARDING'
+}
+
 export type Runtime = {
   capabilities?: Maybe<Array<Scalars['String']['output']>>;
   createdAt: Scalars['DateTime']['output'];
@@ -175,6 +198,7 @@ export type Workspace = {
   mcpServers?: Maybe<Array<McpServer>>;
   mcpTools?: Maybe<Array<McpTool>>;
   name: Scalars['String']['output'];
+  onboardingSteps?: Maybe<Array<OnboardingStep>>;
   runtimes?: Maybe<Array<Runtime>>;
   system: System;
   users?: Maybe<Array<User>>;
@@ -263,6 +287,9 @@ export type ResolversTypes = ResolversObject<{
   MCPServerRunOn: McpServerRunOn;
   MCPTool: ResolverTypeWrapper<McpTool>;
   MCPTransportType: McpTransportType;
+  OnboardingStep: ResolverTypeWrapper<OnboardingStep>;
+  OnboardingStepStatus: OnboardingStepStatus;
+  OnboardingStepType: OnboardingStepType;
   Runtime: ResolverTypeWrapper<Runtime>;
   Session: ResolverTypeWrapper<Session>;
   String: ResolverTypeWrapper<Scalars['String']['output']>;
@@ -283,6 +310,7 @@ export type ResolversParentTypes = ResolversObject<{
   MCPRegistryServer: McpRegistryServer;
   MCPServer: McpServer;
   MCPTool: McpTool;
+  OnboardingStep: OnboardingStep;
   Runtime: Runtime;
   Session: Session;
   String: Scalars['String']['output'];
@@ -351,6 +379,18 @@ export type McpToolResolvers<ContextType = any, ParentType extends ResolversPare
   status?: Resolver<ResolversTypes['ActiveStatus'], ParentType, ContextType>;
   toolCalls?: Resolver<Maybe<Array<ResolversTypes['ToolCall']>>, ParentType, ContextType>;
   workspace?: Resolver<ResolversTypes['Workspace'], ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+}>;
+
+export type OnboardingStepResolvers<ContextType = any, ParentType extends ResolversParentTypes['OnboardingStep'] = ResolversParentTypes['OnboardingStep']> = ResolversObject<{
+  completedAt?: Resolver<Maybe<ResolversTypes['DateTime']>, ParentType, ContextType>;
+  createdAt?: Resolver<ResolversTypes['DateTime'], ParentType, ContextType>;
+  dismissedAt?: Resolver<Maybe<ResolversTypes['DateTime']>, ParentType, ContextType>;
+  id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
+  priority?: Resolver<Maybe<ResolversTypes['Int']>, ParentType, ContextType>;
+  status?: Resolver<ResolversTypes['OnboardingStepStatus'], ParentType, ContextType>;
+  stepId?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  type?: Resolver<ResolversTypes['OnboardingStepType'], ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
@@ -441,6 +481,7 @@ export type WorkspaceResolvers<ContextType = any, ParentType extends ResolversPa
   mcpServers?: Resolver<Maybe<Array<ResolversTypes['MCPServer']>>, ParentType, ContextType>;
   mcpTools?: Resolver<Maybe<Array<ResolversTypes['MCPTool']>>, ParentType, ContextType>;
   name?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  onboardingSteps?: Resolver<Maybe<Array<ResolversTypes['OnboardingStep']>>, ParentType, ContextType>;
   runtimes?: Resolver<Maybe<Array<ResolversTypes['Runtime']>>, ParentType, ContextType>;
   system?: Resolver<ResolversTypes['System'], ParentType, ContextType>;
   users?: Resolver<Maybe<Array<ResolversTypes['User']>>, ParentType, ContextType>;
@@ -453,6 +494,7 @@ export type Resolvers<ContextType = any> = ResolversObject<{
   MCPRegistryServer?: McpRegistryServerResolvers<ContextType>;
   MCPServer?: McpServerResolvers<ContextType>;
   MCPTool?: McpToolResolvers<ContextType>;
+  OnboardingStep?: OnboardingStepResolvers<ContextType>;
   Runtime?: RuntimeResolvers<ContextType>;
   Session?: SessionResolvers<ContextType>;
   System?: SystemResolvers<ContextType>;

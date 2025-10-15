@@ -1,0 +1,16 @@
+mutation DismissOnboardingStep($workspaceId: ID!, $stepId: String!) {
+  dismissOnboardingStep(workspaceId: $workspaceId, stepId: $stepId) {
+    id
+    name
+    onboardingSteps {
+      id
+      stepId
+      type
+      status
+      completedAt
+      dismissedAt
+      priority
+      createdAt
+    }
+  }
+}

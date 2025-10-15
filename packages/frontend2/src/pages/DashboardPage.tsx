@@ -19,14 +19,24 @@
 import { Loader2, AlertCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useRuntimeData } from '@/stores/runtimeStore';
+import { useOnboarding } from '@/hooks/useOnboarding';
+import { OnboardingSection } from '@/components/onboarding/onboarding-section';
 
 export default function DashboardPage() {
   // WHY: Get runtimes from Zustand store (centralized runtime management)
   // Data is updated in real-time via subscription in WorkspaceLoader
   const { runtimes, stats, loading, error } = useRuntimeData();
+  
+  // WHY: Get onboarding steps for new users
+  const { pendingSteps } = useOnboarding();
 
   return (
     <div className="max-w-7xl mx-auto">
+      {/* Onboarding Section - only shown with pending steps */}
+      {pendingSteps.length > 0 && (
+        <OnboardingSection steps={pendingSteps} />
+      )}
+      
       <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-6">
         Dashboard Overview
       </h2>
