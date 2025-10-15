@@ -46,17 +46,31 @@ export function OnboardingSection({ steps, isComplete, onHide }: OnboardingSecti
   const currentStep = steps.find(step => step.status === 'PENDING');
   
   return (
-    <div className="mb-8">
-      <div className="mb-6">
-        <div className="flex items-start justify-between">
-          <div>
-            <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
-              Get Started with 2LY
-            </h2>
-            <p className="text-gray-600 dark:text-gray-400 mt-1">
-              Complete these steps to set up your workspace and start using MCP tools.
-            </p>
-          </div>
+    <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center px-4">
+      <div className="w-full max-w-[500px] xl:max-w-7xl">
+        {/* Centered Title */}
+        <div className="mb-8 text-center">
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+            Get Started with 2LY
+          </h2>
+          <p className="text-gray-600 dark:text-gray-400 mt-1">
+            Complete these steps to set up your workspace and start using MCP tools.
+          </p>
+        </div>
+        
+        {/* Cards Grid - 1 column or 3 columns, no 2+1 */}
+        <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 mb-8 xl:mb-48">
+          {steps.map((step) => (
+            <OnboardingCard 
+              key={step.id} 
+              step={step} 
+              isCurrentStep={step.id === currentStep?.id}
+            />
+          ))}
+        </div>
+        
+        {/* Centered Dismiss Button */}
+        <div className="flex justify-center">
           <button
             onClick={onHide}
             className="text-sm text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-colors"
@@ -64,16 +78,6 @@ export function OnboardingSection({ steps, isComplete, onHide }: OnboardingSecti
             {isComplete ? 'Close onboarding' : 'Dismiss onboarding'}
           </button>
         </div>
-      </div>
-      
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {steps.map((step) => (
-          <OnboardingCard 
-            key={step.id} 
-            step={step} 
-            isCurrentStep={step.id === currentStep?.id}
-          />
-        ))}
       </div>
     </div>
   );
