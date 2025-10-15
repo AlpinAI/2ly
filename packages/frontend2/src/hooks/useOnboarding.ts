@@ -5,7 +5,7 @@
  * Centralizes onboarding logic and provides computed values for UI.
  *
  * WHAT IT PROVIDES:
- * - Pending onboarding steps (filtered and sorted)
+ * - Visible onboarding steps (all steps until onboarding is complete)
  * - All onboarding steps
  * - Mutation handlers for completing/dismissing steps
  * - Computed state for UI components
@@ -13,11 +13,11 @@
  * USAGE:
  * ```tsx
  * function OnboardingSection() {
- *   const { pendingSteps, completeStep, dismissStep } = useOnboarding();
+ *   const { visibleSteps, completeStep, dismissStep } = useOnboarding();
  *   
  *   return (
  *     <div>
- *       {pendingSteps.map(step => (
+ *       {visibleSteps.map(step => (
  *         <OnboardingCard 
  *           key={step.id} 
  *           step={step}
@@ -48,18 +48,24 @@ export function useOnboarding() {
   const [completeStepMutation] = useMutation(CompleteOnboardingStepDocument);
   const [dismissStepMutation] = useMutation(DismissOnboardingStepDocument);
   
-  // Filter and sort pending onboarding steps
-  const pendingSteps = useMemo(() => 
+  // Filter and sort onboarding type steps
+  const onboardingTypeSteps = useMemo(() => 
     onboardingSteps
-      .filter(step => step.status === 'PENDING' && step.type === 'ONBOARDING')
+      .filter(step => step.type === 'ONBOARDING')
       .sort((a, b) => (a.priority || 0) - (b.priority || 0)),
     [onboardingSteps]
   );
   
   // Check if onboarding is complete
   const isOnboardingComplete = useMemo(() => 
-    pendingSteps.length === 0,
-    [pendingSteps.length]
+    onboardingTypeSteps.every(step => step.status === 'COMPLETED'),
+    [onboardingTypeSteps]
+  );
+  
+  // Show all steps until onboarding is complete
+  const visibleSteps = useMemo(() => 
+    isOnboardingComplete ? [] : onboardingTypeSteps,
+    [isOnboardingComplete, onboardingTypeSteps]
   );
   
   // Get step by ID
@@ -74,8 +80,7 @@ export function useOnboarding() {
       await completeStepMutation({
         variables: { 
           workspaceId, 
-          stepId, 
-          now: new Date().toISOString() 
+          stepId
         },
       });
     } catch (error) {
@@ -97,7 +102,7 @@ export function useOnboarding() {
   
   return {
     // Data
-    pendingSteps,
+    visibleSteps,
     allSteps: onboardingSteps,
     isOnboardingComplete,
     

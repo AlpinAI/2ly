@@ -28,13 +28,13 @@ export default function DashboardPage() {
   const { runtimes, stats, loading, error } = useRuntimeData();
   
   // WHY: Get onboarding steps for new users
-  const { pendingSteps } = useOnboarding();
+  const { visibleSteps } = useOnboarding();
 
   return (
     <div className="max-w-7xl mx-auto">
-      {/* Onboarding Section - only shown with pending steps */}
-      {pendingSteps.length > 0 && (
-        <OnboardingSection steps={pendingSteps} />
+      {/* Onboarding Section - only shown with visible steps */}
+      {visibleSteps.length > 0 && (
+        <OnboardingSection steps={visibleSteps} />
       )}
       
       <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-6">
