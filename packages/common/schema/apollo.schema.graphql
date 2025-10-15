@@ -254,8 +254,8 @@ type Mutation {
   callMCPTool(toolId: ID!, input: String!): CallToolResult!
 
   # Onboarding mutations
-  completeOnboardingStep(workspaceId: ID!, stepId: String!): Workspace!
-  dismissOnboardingStep(workspaceId: ID!, stepId: String!): Workspace!
+  completeOnboardingStep(workspaceId: ID!, stepId: String!): Boolean!
+  dismissOnboardingStep(workspaceId: ID!, stepId: String!): Boolean!
 
   # Authentication mutations
   registerUser(input: RegisterUserInput!): RegisterUserPayload!

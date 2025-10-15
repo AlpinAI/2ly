@@ -289,14 +289,16 @@ export const resolvers = (container: Container = defaultContainer): apolloResolv
         _parent: unknown,
         { workspaceId, stepId }: { workspaceId: string; stepId: string },
       ) => {
-        return workspaceRepository.completeOnboardingStep(workspaceId, stepId);
+        await workspaceRepository.completeOnboardingStep(workspaceId, stepId);
+        return true;
       },
 
       dismissOnboardingStep: async (
         _parent: unknown,
         { workspaceId, stepId }: { workspaceId: string; stepId: string },
       ) => {
-        return workspaceRepository.dismissOnboardingStep(workspaceId, stepId);
+        await workspaceRepository.dismissOnboardingStep(workspaceId, stepId);
+        return true;
       },
     },
     Runtime: {},
