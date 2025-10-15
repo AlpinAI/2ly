@@ -41,6 +41,8 @@ import { useMCPRegistries } from '@/hooks/useMCPRegistries';
 import { useRegistryAutoSync } from '@/hooks/useRegistryAutoSync';
 import { useMCPServers } from '@/hooks/useMCPServers';
 import { useRegistrySyncStore } from '@/stores/registrySyncStore';
+import { useRuntimeData } from '@/stores/runtimeStore';
+import { useAgents } from '@/hooks/useAgents';
 import type { OnboardingStep } from '@/graphql/generated/graphql';
 
 interface OnboardingCardProps {
@@ -207,7 +209,28 @@ export function OnboardingCard({ step, isCurrentStep = false }: OnboardingCardPr
         );
       }
         
-      case ONBOARDING_STEPS.CONNECT_AGENT:
+      case ONBOARDING_STEPS.CONNECT_AGENT: {
+        const { runtimes } = useRuntimeData();
+        const { agents } = useAgents(runtimes);
+        const firstAgent = agents[0];
+
+        if (isCompleted && firstAgent) {
+          return (
+            <div className="space-y-3">
+              <div className="rounded-lg bg-green-400/20 dark:bg-green-900/20 p-3">
+                <p className="text-sm text-green-800 dark:text-green-200">
+                  <span className="flex items-center">
+                    <Bot className="mr-2 h-4 w-4" />
+                    <span className="font-medium truncate max-w-xs overflow-hidden whitespace-nowrap" title={firstAgent.name}>
+                      {firstAgent.name}
+                    </span>
+                  </span>
+                </p>
+              </div>
+            </div>
+          );
+        }
+
         return (
           <Button
             onClick={handleCopyCommand}
@@ -227,6 +250,7 @@ export function OnboardingCard({ step, isCurrentStep = false }: OnboardingCardPr
             )}
           </Button>
         );
+      }
         
       default:
         return null;
