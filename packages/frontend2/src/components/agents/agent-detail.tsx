@@ -9,12 +9,11 @@
  * - Status
  * - Capabilities
  * - Host information
- * - Connected MCP Servers (with links)
  * - Available Tools (with links)
  * - Last seen timestamp
  */
 
-import { Bot, Server, Wrench, Clock, Cpu, Settings } from 'lucide-react';
+import { Bot, Wrench, Clock, Cpu, Settings } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useManageToolsDialog } from '@/stores/uiStore';
 import type { SubscribeRuntimesSubscription } from '@/graphql/generated/graphql';
@@ -131,28 +130,6 @@ export function AgentDetail({ agent }: AgentDetailProps) {
             </div>
           )}
 
-          {/* MCP Servers */}
-          <div>
-            <h4 className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2 flex items-center gap-1">
-              <Server className="h-3 w-3" />
-              MCP Servers ({agent.mcpServers?.length || 0})
-            </h4>
-            {agent.mcpServers && agent.mcpServers.length > 0 ? (
-              <ul className="space-y-1">
-                {agent.mcpServers.map((server) => (
-                  <li
-                    key={server.id}
-                    className="flex items-center gap-2 bg-white dark:bg-gray-800 px-3 py-2 rounded border border-gray-200 dark:border-gray-700"
-                  >
-                    <Server className="h-4 w-4 text-gray-400 flex-shrink-0" />
-                    <span className="text-sm text-gray-900 dark:text-white truncate">{server.name}</span>
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <p className="text-sm text-gray-400 dark:text-gray-500">No servers connected</p>
-            )}
-          </div>
 
           {/* Tools */}
           <div>
