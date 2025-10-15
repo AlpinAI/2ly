@@ -28,7 +28,7 @@ import { useQuery } from '@apollo/client/react';
 import { GetMcpRegistriesDocument } from '@/graphql/generated/graphql';
 import { useWorkspaceId } from '@/stores/workspaceStore';
 
-export function useMCPRegistries() {
+export function useMCPRegistries(pollInterval = 0) {
   const workspaceId = useWorkspaceId();
 
   // WHY: Use Apollo Client's useQuery with cache-first policy
@@ -36,7 +36,8 @@ export function useMCPRegistries() {
   const { data, loading, error } = useQuery(GetMcpRegistriesDocument, {
     variables: { workspaceId: workspaceId || '' },
     skip: !workspaceId,
-    fetchPolicy: 'cache-and-network'
+    fetchPolicy: 'cache-and-network',
+    pollInterval,
   });
 
   // WHY: Extract registries from query data

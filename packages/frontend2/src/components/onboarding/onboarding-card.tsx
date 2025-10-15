@@ -125,7 +125,10 @@ export function OnboardingCard({ step, isCurrentStep = false }: OnboardingCardPr
   const renderStepContent = () => {
     switch (step.stepId) {
       case ONBOARDING_STEPS.CHOOSE_REGISTRY: {
-        const { registries } = useMCPRegistries();
+        const isSyncingNow = pendingRegistryId ? isSyncing(pendingRegistryId) : false;
+        const pollInterval = isSyncingNow ? 3000 : 0;
+        
+        const { registries } = useMCPRegistries(pollInterval);
         const existingUrls = registries.map(r => r.upstreamUrl);
         const firstRegistry = registries[0];
         
@@ -143,8 +146,6 @@ export function OnboardingCard({ step, isCurrentStep = false }: OnboardingCardPr
             </div>
           );
         }
-        
-        const isSyncingNow = pendingRegistryId ? isSyncing(pendingRegistryId) : false;
         
         // Find the pending registry to get server count
         const pendingRegistry = pendingRegistryId 
