@@ -26,10 +26,10 @@ import { useManageToolsDialog } from '@/stores/uiStore';
 import { useRuntimeData } from '@/stores/runtimeStore';
 import { useMCPServers } from '@/hooks/useMCPServers';
 import { useMCPTools } from '@/hooks/useMCPTools';
-import { LinkMcpToolToRuntimeDocument, UnlinkMcpToolFromRuntimeDocument, type SubscribeMcpToolsSubscription } from '@/graphql/generated/graphql';
+import { LinkMcpToolToRuntimeDocument, UnlinkMcpToolFromRuntimeDocument, type GetMcpToolsQuery } from '@/graphql/generated/graphql';
 import { cn } from '@/lib/utils';
 
-type McpTool = NonNullable<NonNullable<SubscribeMcpToolsSubscription['mcpTools']>[number]>;
+type McpTool = NonNullable<NonNullable<GetMcpToolsQuery['mcpTools']>[number]>;
 
 interface GroupedServer {
   id: string;

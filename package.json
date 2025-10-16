@@ -73,6 +73,7 @@
   },
   "dependencies": {
     "@graphql-tools/schema": "^10.0.23",
+    "@modelcontextprotocol/sdk": "^1.12.1",
     "@nats-io/jetstream": "^3.1.0",
     "@nats-io/kv": "^3.1.0",
     "@nats-io/nats-core": "^3.1.0",
@@ -83,6 +84,7 @@
     "graphql-scalars": "^1.24.2",
     "graphql-ws": "^6.0.5",
     "nats": "^2.29.3",
+    "pino": "^9.7.0",
     "rxjs": "^7.8.1",
     "rxjs-for-await": "^1.0.0",
     "uuid": "^11.1.0",

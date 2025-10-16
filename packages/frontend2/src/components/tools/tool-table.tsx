@@ -21,9 +21,9 @@ import { Search } from '@/components/ui/search';
 import { CheckboxDropdown } from '@/components/ui/checkbox-dropdown';
 import { Button } from '@/components/ui/button';
 import { X } from 'lucide-react';
-import type { SubscribeMcpToolsSubscription } from '@/graphql/generated/graphql';
+import type { GetMcpToolsQuery } from '@/graphql/generated/graphql';
 
-type McpTool = NonNullable<NonNullable<SubscribeMcpToolsSubscription['mcpTools']>[number]>;
+type McpTool = NonNullable<NonNullable<GetMcpToolsQuery['mcpTools']>[number]>;
 
 export interface ToolTableProps {
   tools: McpTool[];

@@ -34,9 +34,9 @@ This project is a monorepo with the following packages:
 
 ```bash
 # Clone the repository (HTTPS)
-git clone https://github.com/2ly-ai/2ly.git
+git clone https://github.com/AlpinAI/2ly.git
 # Or with SSH (if you have SSH keys configured)
-# git clone git@github.com:2ly-ai/2ly.git
+# git clone git@github.com:AlpinAI/2ly.git
 
 # Enter the project
 cd 2ly

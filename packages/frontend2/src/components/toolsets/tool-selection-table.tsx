@@ -18,9 +18,9 @@ import { ChevronDown, ChevronRight, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { cn } from '@/lib/utils';
-import type { SubscribeMcpToolsSubscription } from '@/graphql/generated/graphql';
+import type { GetMcpToolsQuery } from '@/graphql/generated/graphql';
 
-type McpTool = NonNullable<NonNullable<SubscribeMcpToolsSubscription['mcpTools']>[number]>;
+type McpTool = NonNullable<NonNullable<GetMcpToolsQuery['mcpTools']>[number]>;
 
 interface GroupedServer {
   id: string;
