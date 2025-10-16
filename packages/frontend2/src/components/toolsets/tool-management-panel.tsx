@@ -12,6 +12,8 @@
  * - Save/Cancel actions with optimistic updates
  * - Loading and error states
  * - Real-time updates via GraphQL subscriptions
+ * - Self-contained: manages own state via UIStore
+ * - Auto-closes on navigation via useCloseOnNavigation hook
  */
 
 import { useState, useEffect, useMemo, useCallback } from 'react';
@@ -26,6 +28,7 @@ import { useManageToolsDialog } from '@/stores/uiStore';
 import { useRuntimeData } from '@/stores/runtimeStore';
 import { useMCPServers } from '@/hooks/useMCPServers';
 import { useMCPTools } from '@/hooks/useMCPTools';
+import { useCloseOnNavigation } from '@/hooks/useCloseOnNavigation';
 import {
   LinkMcpToolToRuntimeDocument,
   UnlinkMcpToolFromRuntimeDocument,
@@ -43,7 +46,7 @@ interface GroupedServer {
 }
 
 export function ToolManagementPanel() {
-  const { open, setOpen, selectedToolSetId } = useManageToolsDialog();
+  const { open, setOpen, selectedToolSetId, setSelectedToolSetId } = useManageToolsDialog();
   const { runtimes } = useRuntimeData();
   const { servers } = useMCPServers();
   const { filteredTools, loading: toolsLoading } = useMCPTools();
@@ -59,6 +62,16 @@ export function ToolManagementPanel() {
   // Mutations
   const [linkTool] = useMutation(LinkMcpToolToRuntimeDocument);
   const [unlinkTool] = useMutation(UnlinkMcpToolFromRuntimeDocument);
+
+  // Close handler with cleanup
+  const handleClose = useCallback(() => {
+    setOpen(false);
+    setSelectedToolSetId(null);
+    // Note: other state resets happen in the useEffect below
+  }, [setOpen, setSelectedToolSetId]);
+
+  // Auto-close on navigation
+  useCloseOnNavigation(handleClose);
 
   // Get selected tool set
   const selectedToolSet = useMemo(() => {
@@ -232,8 +245,8 @@ export function ToolManagementPanel() {
 
   const handleCancel = useCallback(() => {
     setSelectedToolIds(new Set(baselineToolIds));
-    setOpen(false);
-  }, [baselineToolIds, setOpen]);
+    handleClose();
+  }, [baselineToolIds, handleClose]);
 
   const hasChanges = useMemo(() => {
     if (selectedToolIds.size !== baselineToolIds.size) return true;

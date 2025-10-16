@@ -8,8 +8,14 @@
  * - AppHeader (logo, search, notifications, user menu, theme)
  * - AppNavigation (horizontal menu bar)
  * - Content area with React Router Outlet
- * - Global AddToolWorkflow (accessible from any page)
+ * - Global bottom panels (AddToolWorkflow, ToolManagementPanel)
+ * - Toast notifications
  * - Responsive container with max-width
+ *
+ * ARCHITECTURE:
+ * - Pure layout component (no state management)
+ * - All panels are self-contained and manage their own state
+ * - Auto-close on navigation handled by individual components
  *
  * USAGE:
  * Wrap this around protected routes in App.tsx
@@ -23,28 +29,14 @@
  * ```
  */
 
-import { useEffect } from 'react';
-import { Outlet, useLocation } from 'react-router-dom';
+import { Outlet } from 'react-router-dom';
 import { AppHeader } from './app-header';
 import { AppNavigation } from './app-navigation';
 import { AddToolWorkflow } from '@/components/tools/add-tool-workflow';
 import { ToolManagementPanel } from '@/components/toolsets/tool-management-panel';
 import { Toaster } from '@/components/ui/toaster';
-import { useUIStore } from '@/stores/uiStore';
 
 export function AppLayout() {
-  // Use individual selectors to avoid object reference issues
-  const isOpen = useUIStore((state) => state.addToolWorkflowOpen);
-  const setOpen = useUIStore((state) => state.setAddToolWorkflowOpen);
-  const initialStep = useUIStore((state) => state.addToolWorkflowInitialStep);
-  const setInitialStep = useUIStore((state) => state.setAddToolWorkflowInitialStep);
-  const location = useLocation();
-
-  // Close dialog when navigating to a different page
-  useEffect(() => {
-    setOpen(false);
-    setInitialStep(null);
-  }, [location.pathname, setOpen, setInitialStep]);
 
   return (
     <div className="h-screen bg-gray-50 dark:bg-gray-900 transition-colors font-mono flex flex-col">
@@ -59,17 +51,8 @@ export function AppLayout() {
         <Outlet />
       </main>
 
-      {/* Global Add Tool Workflow - accessible from any page */}
-      <AddToolWorkflow
-        isOpen={isOpen}
-        onClose={() => {
-          setOpen(false);
-          setInitialStep(null);
-        }}
-        initialStep={initialStep || undefined}
-      />
-
-      {/* Global Tool Management Panel - accessible from any page */}
+      {/* Global bottom panels - self-contained, accessible from any page */}
+      <AddToolWorkflow />
       <ToolManagementPanel />
 
       {/* Toast notifications */}

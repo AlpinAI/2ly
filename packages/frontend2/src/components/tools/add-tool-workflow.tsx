@@ -11,26 +11,24 @@
  * - Category selection → MCP Browser → Configuration
  * - Closes with X button or ESC key
  * - Positioned directly below navigation menu
+ * - Self-contained: manages own state via UIStore
+ * - Auto-closes on navigation via useCloseOnNavigation hook
  */
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { X, ChevronLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { BottomPanel } from '@/components/ui/bottom-panel';
 import { MCPServerBrowser } from './mcp-server-browser';
 import { MCPServerConfigure } from './mcp-server-configure';
+import { useUIStore } from '@/stores/uiStore';
+import { useCloseOnNavigation } from '@/hooks/useCloseOnNavigation';
 import type { GetMcpRegistriesQuery } from '@/graphql/generated/graphql';
 
 // Extract server type
 type MCPRegistryServer = NonNullable<
   NonNullable<GetMcpRegistriesQuery['mcpRegistries']>[number]['servers']
 >[number];
-
-interface AddToolWorkflowProps {
-  isOpen: boolean;
-  onClose: () => void;
-  initialStep?: WorkflowStep;
-}
 
 type WorkflowStep = 'selection' | 'mcp-browser' | 'mcp-config';
 type ToolCategory = 'mcp' | 'api' | 'code';
@@ -43,6 +41,9 @@ interface CategoryOption {
   features: string[];
   comingSoon?: boolean;
 }
+
+// Export WorkflowStep type for UIStore
+export type { WorkflowStep };
 
 const TOOL_CATEGORIES: CategoryOption[] = [
   {
@@ -74,15 +75,35 @@ const TOOL_CATEGORIES: CategoryOption[] = [
   },
 ];
 
-export function AddToolWorkflow({ isOpen, onClose, initialStep }: AddToolWorkflowProps) {
+export function AddToolWorkflow() {
+  // Read from UIStore
+  const isOpen = useUIStore((state) => state.addToolWorkflowOpen);
+  const setOpen = useUIStore((state) => state.setAddToolWorkflowOpen);
+  const initialStep = useUIStore((state) => state.addToolWorkflowInitialStep);
+  const setInitialStep = useUIStore((state) => state.setAddToolWorkflowInitialStep);
+
+  // Local workflow state
   const [currentStep, setCurrentStep] = useState<WorkflowStep>('selection');
   const [selectedCategory, setSelectedCategory] = useState<ToolCategory | null>(null);
   const [selectedServer, setSelectedServer] = useState<MCPRegistryServer | null>(null);
 
+  // Close handler with cleanup
+  const handleClose = useCallback(() => {
+    setOpen(false);
+    setInitialStep(null);
+    // Reset workflow state
+    setCurrentStep('selection');
+    setSelectedCategory(null);
+    setSelectedServer(null);
+  }, [setOpen, setInitialStep]);
+
+  // Auto-close on navigation
+  useCloseOnNavigation(handleClose);
+
   // Set initial step and reset state when opening/closing
   useEffect(() => {
     if (isOpen) {
-      // Set initial step and category based on initialStep prop
+      // Set initial step and category based on initialStep from store
       if (initialStep) {
         setCurrentStep(initialStep);
         if (initialStep === 'mcp-browser') {
@@ -139,12 +160,12 @@ export function AddToolWorkflow({ isOpen, onClose, initialStep }: AddToolWorkflo
     if (currentStep !== 'selection') {
       handleBack();
     } else {
-      onClose();
+      handleClose();
     }
   };
 
   return (
-    <BottomPanel isOpen={isOpen} onClose={onClose} onEscape={handleEscape}>
+    <BottomPanel isOpen={isOpen} onClose={handleClose} onEscape={handleEscape}>
       {/* Panel Header - natural height, no flex grow */}
       <div className="flex-shrink-0 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 px-6 py-4 flex items-center justify-between">
         <div className="flex items-center gap-3">
@@ -155,7 +176,7 @@ export function AddToolWorkflow({ isOpen, onClose, initialStep }: AddToolWorkflo
           )}
           <h3 className="text-2xl font-bold text-gray-900 dark:text-white">{getStepTitle()}</h3>
         </div>
-        <Button variant="ghost" size="icon" onClick={onClose} className="rounded-full" aria-label="Close">
+        <Button variant="ghost" size="icon" onClick={handleClose} className="rounded-full" aria-label="Close">
           <X className="h-5 w-5" />
         </Button>
       </div>
@@ -241,7 +262,7 @@ export function AddToolWorkflow({ isOpen, onClose, initialStep }: AddToolWorkflo
           {/* Step 3: Configuration */}
           <div className="flex-shrink-0 w-full overflow-y-auto">
             {selectedServer ? (
-              <MCPServerConfigure selectedServer={selectedServer} onBack={handleBack} onSuccess={onClose} />
+              <MCPServerConfigure selectedServer={selectedServer} onBack={handleBack} onSuccess={handleClose} />
             ) : (
               <div className="p-6 max-w-4xl mx-auto">
                 <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-6">
