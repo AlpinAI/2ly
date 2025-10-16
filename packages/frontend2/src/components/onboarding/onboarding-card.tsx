@@ -167,6 +167,10 @@ export function OnboardingCard({ step, isCurrentStep = false }: OnboardingCardPr
             ) : (
               <RegistrySplitButton
                 onSelectRegistry={handleAddRegistry}
+                onCustomClick={() => {
+                  // In onboarding, we encourage using preset registries
+                  // Users can add custom registries later from Settings
+                }}
                 isLoading={isAddingRegistry}
                 existingRegistryUrls={existingUrls}
                 className="w-full"

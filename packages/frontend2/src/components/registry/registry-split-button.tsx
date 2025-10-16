@@ -21,13 +21,14 @@
  * ```
  */
 
-import { RefreshCw } from 'lucide-react';
+import { RefreshCw, Plus } from 'lucide-react';
 import { SplitButton } from '@/components/ui/split-button';
-import { DropdownMenuItem } from '@/components/ui/dropdown-menu';
+import { DropdownMenuItem, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import { REGISTRY_PRESETS, OFFICIAL_REGISTRY } from '@/constants/registry-presets';
 
 interface RegistrySplitButtonProps {
   onSelectRegistry: (name: string, upstreamUrl: string) => void;
+  onCustomClick: () => void;
   isLoading: boolean;
   existingRegistryUrls: string[];
   className?: string;
@@ -36,6 +37,7 @@ interface RegistrySplitButtonProps {
 
 export function RegistrySplitButton({
   onSelectRegistry,
+  onCustomClick,
   isLoading,
   existingRegistryUrls,
   className,
@@ -76,6 +78,11 @@ export function RegistrySplitButton({
               </DropdownMenuItem>
             );
           })}
+          <DropdownMenuSeparator />
+          <DropdownMenuItem onClick={onCustomClick} disabled={isLoading}>
+            <Plus className="h-4 w-4" />
+            Custom MCP Registry
+          </DropdownMenuItem>
         </>
       }
       className={className}

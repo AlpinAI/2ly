@@ -11,11 +11,13 @@
  * - Composed of smaller, focused components from /components/settings/
  */
 
+import { useState } from 'react';
 import { Database, Users, Cpu, Key } from 'lucide-react';
 import { useMutation } from '@apollo/client/react';
 import { useWorkspaceId } from '@/stores/workspaceStore';
 import { useMCPRegistries } from '@/hooks/useMCPRegistries';
 import { useRegistrySyncStore } from '@/stores/registrySyncStore';
+import { useRegistryAutoSync } from '@/hooks/useRegistryAutoSync';
 import {
   CreateMcpRegistryDocument,
   DeleteMcpRegistryDocument,
@@ -31,20 +33,25 @@ import { ApiKeysSection } from '@/components/settings/api-keys-section';
 export default function SettingsPage() {
   const workspaceId = useWorkspaceId();
   const { startSync, endSync, updateLastSyncTime, isSyncing } = useRegistrySyncStore();
+  const { autoSyncRegistry } = useRegistryAutoSync();
+  const [syncingRegistryId, setSyncingRegistryId] = useState<string | null>(null);
 
   console.log('[SettingsPage] Rendering with workspaceId:', workspaceId);
 
-  // Get registries data via hook
-  const { registries, loading, error } = useMCPRegistries();
+  // Get registries data via hook - poll during sync to show server count updates
+  const pollInterval = syncingRegistryId && isSyncing(syncingRegistryId) ? 3000 : 0;
+  const { registries, loading, error } = useMCPRegistries(pollInterval);
 
   // Mutations
   const [createRegistry, { loading: creating }] = useMutation(CreateMcpRegistryDocument, {
+    refetchQueries: ['GetMCPRegistries'],
     onError: (err) => {
       console.error('[SettingsPage] Create registry error:', err);
     },
   });
 
   const [deleteRegistry] = useMutation(DeleteMcpRegistryDocument, {
+    refetchQueries: ['GetMCPRegistries'],
     onError: (err) => {
       console.error('[SettingsPage] Delete registry error:', err);
     },
@@ -55,13 +62,26 @@ export default function SettingsPage() {
   const handleCreateRegistry = async (name: string, upstreamUrl: string) => {
     if (!workspaceId) return;
 
-    await createRegistry({
-      variables: {
-        workspaceId,
-        name,
-        upstreamUrl,
-      },
-    });
+    try {
+      const result = await createRegistry({
+        variables: {
+          workspaceId,
+          name,
+          upstreamUrl,
+        },
+      });
+
+      // Auto-sync the newly created registry
+      const registryId = result.data?.createMCPRegistry?.id;
+      if (registryId) {
+        setSyncingRegistryId(registryId);
+        await autoSyncRegistry(registryId);
+        setSyncingRegistryId(null);
+      }
+    } catch (error) {
+      console.error('[SettingsPage] Failed to create and sync registry:', error);
+      setSyncingRegistryId(null);
+    }
   };
 
   const handleDeleteRegistry = async (id: string) => {

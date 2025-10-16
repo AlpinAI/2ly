@@ -44,6 +44,7 @@ export interface SplitButtonProps {
 
   // Dropdown
   dropdownContent: React.ReactNode;
+  dropdownDisabled?: boolean;
   dropdownOpen?: boolean;
   onDropdownOpenChange?: (open: boolean) => void;
   dropdownAlign?: 'start' | 'center' | 'end';
@@ -63,6 +64,7 @@ export function SplitButton({
   onPrimaryAction,
   primaryDisabled = false,
   dropdownContent,
+  dropdownDisabled = false,
   dropdownOpen,
   onDropdownOpenChange,
   dropdownAlign = 'end',
@@ -73,14 +75,14 @@ export function SplitButton({
   dropdownAriaLabel = 'Show options',
 }: SplitButtonProps) {
   return (
-    <div className={cn('flex', className)}>
+    <div className={cn('inline-flex', className)}>
       {/* Primary Action Button */}
       <Button
         variant={variant}
         size={size}
         onClick={onPrimaryAction}
         disabled={primaryDisabled}
-        className="flex-1 rounded-r-none border-r-0"
+        className="rounded-r-none border-r-0"
         aria-label={primaryAriaLabel}
       >
         {primaryLabel}
@@ -92,7 +94,7 @@ export function SplitButton({
           <Button
             variant={variant}
             size={size}
-            disabled={primaryDisabled}
+            disabled={dropdownDisabled}
             className={cn(
               'rounded-l-none px-2',
               variant === 'default' && 'border-l border-l-white/20',
