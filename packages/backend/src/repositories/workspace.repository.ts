@@ -8,9 +8,7 @@ import {
   QUERY_WORKSPACE_WITH_RUNTIMES,
   QUERY_WORKSPACE_WITH_MCP_SERVERS,
   QUERY_WORKSPACE_WITH_MCP_TOOLS,
-  SET_DEFAULT_TESTING_RUNTIME,
   SET_GLOBAL_RUNTIME,
-  UNSET_DEFAULT_TESTING_RUNTIME,
   UNSET_GLOBAL_RUNTIME,
   CREATE_ONBOARDING_STEP,
   LINK_ONBOARDING_STEP_TO_WORKSPACE,
@@ -82,24 +80,6 @@ export class WorkspaceRepository {
     return res.updateWorkspace.workspace[0];
   }
 
-  async setDefaultTestingRuntime(runtimeId: string): Promise<void> {
-    const runtime = await this.dgraphService.query<{ getRuntime: dgraphResolversTypes.Runtime }>(GET_RUNTIME, { id: runtimeId });
-    if (!runtime.getRuntime.workspace) {
-      throw new Error('Runtime is not linked to a workspace');
-    }
-    const workspaceId = runtime.getRuntime.workspace.id;
-    await this.dgraphService.mutation<{
-      updateWorkspace: { workspace: apolloResolversTypes.Workspace[] };
-    }>(SET_DEFAULT_TESTING_RUNTIME, { id: workspaceId, runtimeId: runtimeId });
-    return;
-  }
-
-  async unsetDefaultTestingRuntime(workspaceId: string): Promise<void> {
-    await this.dgraphService.mutation<{
-      updateWorkspace: { workspace: apolloResolversTypes.Workspace[] };
-    }>(UNSET_DEFAULT_TESTING_RUNTIME, { id: workspaceId });
-    return;
-  }
 
   async setGlobalRuntime(runtimeId: string): Promise<void> {
     const runtime = await this.dgraphService.query<{ getRuntime: dgraphResolversTypes.Runtime }>(GET_RUNTIME, { id: runtimeId });

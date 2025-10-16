@@ -44,12 +44,10 @@ describe('RuntimeRepository', () => {
         );
     });
 
-    it('create creates runtime and sets as default testing if none exists', async () => {
+    it('create creates runtime', async () => {
         const runtime = { id: 'r1', name: 'Test Runtime' } as unknown as dgraphResolversTypes.Runtime;
-        const workspace = { id: 'w1', defaultTestingRuntime: null } as unknown as dgraphResolversTypes.Workspace;
 
         dgraphService.mutation.mockResolvedValue({ addRuntime: { runtime: [runtime] } });
-        dgraphService.query.mockResolvedValue({ getWorkspace: workspace });
 
         const result = await runtimeRepository.create('Test Runtime', 'Description', 'ACTIVE', 'w1', ['tool']);
 

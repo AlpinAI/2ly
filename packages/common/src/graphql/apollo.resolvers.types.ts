@@ -159,12 +159,10 @@ export type Mutation = {
   logoutUser: LogoutPayload;
   refreshToken: RefreshTokenPayload;
   registerUser: RegisterUserPayload;
-  setDefaultTestingRuntime: Workspace;
   setGlobalRuntime: Workspace;
   syncUpstreamRegistry: McpRegistry;
   unlinkMCPServerFromRuntime: McpServer;
   unlinkMCPToolFromRuntime: Runtime;
-  unsetDefaultTestingRuntime: Workspace;
   unsetGlobalRuntime: Workspace;
   updateMCPServer: McpServer;
   updateMCPServerRunOn: McpServer;
@@ -285,12 +283,6 @@ export type MutationRegisterUserArgs = {
 };
 
 
-export type MutationSetDefaultTestingRuntimeArgs = {
-  id: Scalars['ID']['input'];
-  runtimeId: Scalars['ID']['input'];
-};
-
-
 export type MutationSetGlobalRuntimeArgs = {
   id: Scalars['ID']['input'];
   runtimeId: Scalars['ID']['input'];
@@ -310,11 +302,6 @@ export type MutationUnlinkMcpServerFromRuntimeArgs = {
 export type MutationUnlinkMcpToolFromRuntimeArgs = {
   mcpToolId: Scalars['ID']['input'];
   runtimeId: Scalars['ID']['input'];
-};
-
-
-export type MutationUnsetDefaultTestingRuntimeArgs = {
-  id: Scalars['ID']['input'];
 };
 
 
@@ -515,7 +502,6 @@ export type User = {
 
 export type Workspace = {
   createdAt: Scalars['Date']['output'];
-  defaultTestingRuntime?: Maybe<Runtime>;
   globalRuntime?: Maybe<Runtime>;
   id: Scalars['ID']['output'];
   mcpRegistries?: Maybe<Array<McpRegistry>>;
@@ -792,12 +778,10 @@ export type MutationResolvers<ContextType = object, ParentType extends Resolvers
   logoutUser?: Resolver<ResolversTypes['LogoutPayload'], ParentType, ContextType, RequireFields<MutationLogoutUserArgs, 'input'>>;
   refreshToken?: Resolver<ResolversTypes['RefreshTokenPayload'], ParentType, ContextType, RequireFields<MutationRefreshTokenArgs, 'input'>>;
   registerUser?: Resolver<ResolversTypes['RegisterUserPayload'], ParentType, ContextType, RequireFields<MutationRegisterUserArgs, 'input'>>;
-  setDefaultTestingRuntime?: Resolver<ResolversTypes['Workspace'], ParentType, ContextType, RequireFields<MutationSetDefaultTestingRuntimeArgs, 'id' | 'runtimeId'>>;
   setGlobalRuntime?: Resolver<ResolversTypes['Workspace'], ParentType, ContextType, RequireFields<MutationSetGlobalRuntimeArgs, 'id' | 'runtimeId'>>;
   syncUpstreamRegistry?: Resolver<ResolversTypes['MCPRegistry'], ParentType, ContextType, RequireFields<MutationSyncUpstreamRegistryArgs, 'registryId'>>;
   unlinkMCPServerFromRuntime?: Resolver<ResolversTypes['MCPServer'], ParentType, ContextType, RequireFields<MutationUnlinkMcpServerFromRuntimeArgs, 'mcpServerId'>>;
   unlinkMCPToolFromRuntime?: Resolver<ResolversTypes['Runtime'], ParentType, ContextType, RequireFields<MutationUnlinkMcpToolFromRuntimeArgs, 'mcpToolId' | 'runtimeId'>>;
-  unsetDefaultTestingRuntime?: Resolver<ResolversTypes['Workspace'], ParentType, ContextType, RequireFields<MutationUnsetDefaultTestingRuntimeArgs, 'id'>>;
   unsetGlobalRuntime?: Resolver<ResolversTypes['Workspace'], ParentType, ContextType, RequireFields<MutationUnsetGlobalRuntimeArgs, 'id'>>;
   updateMCPServer?: Resolver<ResolversTypes['MCPServer'], ParentType, ContextType, RequireFields<MutationUpdateMcpServerArgs, 'config' | 'description' | 'id' | 'name' | 'repositoryUrl' | 'transport'>>;
   updateMCPServerRunOn?: Resolver<ResolversTypes['MCPServer'], ParentType, ContextType, RequireFields<MutationUpdateMcpServerRunOnArgs, 'mcpServerId' | 'runOn'>>;
@@ -906,7 +890,6 @@ export type UserResolvers<ContextType = object, ParentType extends ResolversPare
 
 export type WorkspaceResolvers<ContextType = object, ParentType extends ResolversParentTypes['Workspace'] = ResolversParentTypes['Workspace']> = {
   createdAt?: Resolver<ResolversTypes['Date'], ParentType, ContextType>;
-  defaultTestingRuntime?: Resolver<Maybe<ResolversTypes['Runtime']>, ParentType, ContextType>;
   globalRuntime?: Resolver<Maybe<ResolversTypes['Runtime']>, ParentType, ContextType>;
   id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
   mcpRegistries?: Resolver<Maybe<Array<ResolversTypes['MCPRegistry']>>, ParentType, ContextType>;

@@ -40,7 +40,6 @@ type Workspace @withSubscription {
   users: [User!] @hasInverse(field: membersOfWorkspaces)
   system: System! @hasInverse(field: workspaces)
   globalRuntime: Runtime
-  defaultTestingRuntime: Runtime
   onboardingSteps: [OnboardingStep!]
 }
 

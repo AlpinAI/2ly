@@ -242,14 +242,6 @@ export const resolvers = (container: Container = defaultContainer): apolloResolv
         await workspaceRepository.unsetGlobalRuntime(id);
         return workspaceRepository.findById(id);
       },
-      setDefaultTestingRuntime: async (_parent: unknown, { id, runtimeId }: { id: string; runtimeId: string }) => {
-        await workspaceRepository.setDefaultTestingRuntime(runtimeId);
-        return workspaceRepository.findById(id);
-      },
-      unsetDefaultTestingRuntime: async (_parent: unknown, { id }: { id: string }) => {
-        await workspaceRepository.unsetDefaultTestingRuntime(id);
-        return workspaceRepository.findById(id);
-      },
       initSystem: async (_parent: unknown, { adminPassword, email }: { adminPassword: string; email: string }) => {
         return systemRepository.initSystem(adminPassword, email);
       },

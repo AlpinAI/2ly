@@ -30,10 +30,6 @@ export const QUERY_WORKSPACE = gql`
         id
         name
       }
-      defaultTestingRuntime {
-        id
-        name
-      }
       onboardingSteps {
         id
         stepId
@@ -54,10 +50,6 @@ export const QUERY_WORKSPACES = gql`
       name
       createdAt
       globalRuntime {
-        id
-        name
-      }
-      defaultTestingRuntime {
         id
         name
       }
@@ -182,25 +174,6 @@ export const UPDATE_WORKSPACE = gql`
   }
 `;
 
-export const SET_DEFAULT_TESTING_RUNTIME = gql`
-  mutation setDefaultTestingRuntime($id: ID!, $runtimeId: ID!) {
-    updateWorkspace(input: { filter: { id: [$id] }, set: { defaultTestingRuntime: { id: $runtimeId } } }) {
-      workspace {
-        id
-      }
-    }
-  }
-`;
-
-export const UNSET_DEFAULT_TESTING_RUNTIME = gql`
-  mutation unsetDefaultTestingRuntime($id: ID!) {
-    updateWorkspace(input: { filter: { id: [$id] }, set: { defaultTestingRuntime: null } }) {
-      workspace {
-        id
-      }
-    }
-  }
-`;
 
 export const SET_GLOBAL_RUNTIME = gql`
   mutation setGlobalRuntime($id: ID!, $runtimeId: ID!) {

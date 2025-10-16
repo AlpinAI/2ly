@@ -29,7 +29,7 @@ import { map, Observable } from 'rxjs';
 import { createSubscriptionFromQuery, escapeValue } from '../helpers';
 import { MCPToolRepository } from './mcp-tool.repository';
 import pino from 'pino';
-import { QUERY_WORKSPACE, SET_DEFAULT_TESTING_RUNTIME } from './workspace.operations';
+import { QUERY_WORKSPACE } from './workspace.operations';
 import { WorkspaceRepository } from './workspace.repository';
 
 @injectable()
@@ -65,11 +65,6 @@ export class RuntimeRepository {
       capabilities,
     });
 
-    // set as default testing runtime if no other runtime is set as default
-    const workspace = await this.dgraphService.query<{ getWorkspace: dgraphResolversTypes.Workspace }>(QUERY_WORKSPACE, { workspaceId });
-    if (!workspace.getWorkspace.defaultTestingRuntime) {
-      await this.dgraphService.mutation<{ updateWorkspace: { workspace: dgraphResolversTypes.Workspace[] } }>(SET_DEFAULT_TESTING_RUNTIME, { id: workspaceId, runtimeId: res.addRuntime.runtime[0].id });
-    }
 
     return res.addRuntime.runtime[0];
   }
@@ -365,7 +360,7 @@ export class RuntimeRepository {
 
   /**
    * Method to simulate a tool call to a MCP Tool
-   * Uses the workspace's default testing runtime to execute the tool
+   * Uses the workspace's global runtime to execute the tool
    */
   async callMCPTool(toolId: string, input: string): Promise<apolloResolversTypes.CallToolResult> {
     // Get the tool with its workspace to determine which runtime to use
@@ -379,18 +374,19 @@ export class RuntimeRepository {
       throw new Error(`Tool ${toolId} has no workspace`);
     }
 
-    // Get the default testing runtime from the workspace
-    const defaultTestingRuntime = tool.workspace.defaultTestingRuntime;
+    // Get the global runtime from the workspace
+    const workspace = await this.dgraphService.query<{ getWorkspace: { globalRuntime: { id: string; name: string } | null } }>(QUERY_WORKSPACE, { workspaceId: tool.workspace.id });
+    const globalRuntime = workspace.getWorkspace.globalRuntime;
 
-    if (!defaultTestingRuntime) {
+    if (!globalRuntime) {
       throw new Error(
-        `No default testing runtime configured for workspace ${tool.workspace.name}. ` +
-        `Please create a runtime and it will be automatically set as the default testing runtime.`
+        `No global runtime configured for workspace ${tool.workspace.name}. ` +
+        `Please set a global runtime to test tools.`
       );
     }
 
-    this.logger.debug(
-      `Calling tool ${tool.name} using default testing runtime ${defaultTestingRuntime.name} (${defaultTestingRuntime.id})`
+    this.logger.info(
+      `Calling tool ${tool.name} using global runtime ${globalRuntime.name} (${globalRuntime.id})`
     );
 
     // Arguments as JSON
@@ -404,7 +400,7 @@ export class RuntimeRepository {
     const message = new AgentCallMCPToolMessage({
       toolId,
       arguments: args,
-      from: defaultTestingRuntime.id,
+      from: globalRuntime.id,
     });
 
     const response = await this.natsService.request(message);

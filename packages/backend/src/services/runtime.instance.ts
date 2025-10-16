@@ -11,7 +11,6 @@ import {
   SetRuntimeCapabilitiesMessage,
   AckMessage,
   SetRootsMessage,
-  SetDefaultTestingRuntimeMessage,
   SetGlobalRuntimeMessage,
   SetMcpClientNameMessage,
 } from '@2ly/common';
@@ -105,10 +104,6 @@ export class RuntimeInstance extends Service {
       } else if (message instanceof SetGlobalRuntimeMessage) {
         this.logger.debug(`Setting ${this.instance.id} as global runtime`);
         await this.workspaceRepository.setGlobalRuntime(this.instance.id);
-        message.respond(new AckMessage({}));
-      } else if (message instanceof SetDefaultTestingRuntimeMessage) {
-        this.logger.debug(`Setting ${this.instance.id} as default testing runtime`);
-        await this.workspaceRepository.setDefaultTestingRuntime(this.instance.id);
         message.respond(new AckMessage({}));
       } else if (message instanceof SetMcpClientNameMessage) {
         this.logger.debug(`Setting ${this.instance.id} as MCP client name`);

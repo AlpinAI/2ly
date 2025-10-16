@@ -169,12 +169,10 @@ export type Mutation = {
   logoutUser: LogoutPayload;
   refreshToken: RefreshTokenPayload;
   registerUser: RegisterUserPayload;
-  setDefaultTestingRuntime: Workspace;
   setGlobalRuntime: Workspace;
   syncUpstreamRegistry: McpRegistry;
   unlinkMCPServerFromRuntime: McpServer;
   unlinkMCPToolFromRuntime: Runtime;
-  unsetDefaultTestingRuntime: Workspace;
   unsetGlobalRuntime: Workspace;
   updateMCPServer: McpServer;
   updateMCPServerRunOn: McpServer;
@@ -295,12 +293,6 @@ export type MutationRegisterUserArgs = {
 };
 
 
-export type MutationSetDefaultTestingRuntimeArgs = {
-  id: Scalars['ID']['input'];
-  runtimeId: Scalars['ID']['input'];
-};
-
-
 export type MutationSetGlobalRuntimeArgs = {
   id: Scalars['ID']['input'];
   runtimeId: Scalars['ID']['input'];
@@ -320,11 +312,6 @@ export type MutationUnlinkMcpServerFromRuntimeArgs = {
 export type MutationUnlinkMcpToolFromRuntimeArgs = {
   mcpToolId: Scalars['ID']['input'];
   runtimeId: Scalars['ID']['input'];
-};
-
-
-export type MutationUnsetDefaultTestingRuntimeArgs = {
-  id: Scalars['ID']['input'];
 };
 
 
@@ -535,7 +522,6 @@ export type User = {
 export type Workspace = {
   __typename: 'Workspace';
   createdAt: Scalars['Date']['output'];
-  defaultTestingRuntime: Maybe<Runtime>;
   globalRuntime: Maybe<Runtime>;
   id: Scalars['ID']['output'];
   mcpRegistries: Maybe<Array<McpRegistry>>;

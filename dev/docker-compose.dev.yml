@@ -130,7 +130,6 @@ services:
       - NATS_SERVERS=nats:4222
       - RUNTIME_NAME=Main Runtime
       - GLOBAL_RUNTIME=true
-      - DEFAULT_TESTING_RUNTIME=true
       - ROOTS=TEMP:/tmp
       - AGENT_SERVER_TRANSPORT=stream
       - AGENT_SERVER_TRANSPORT_PORT=3001

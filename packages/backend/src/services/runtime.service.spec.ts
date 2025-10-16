@@ -161,7 +161,7 @@ describe('RuntimeService', () => {
         await service.stop();
     });
 
-    it('does not handle SetRoots/SetGlobalRuntime/SetDefaultTestingRuntime/SetRuntimeCapabilities anymore');
+    it('does not handle SetRoots/SetGlobalRuntime/SetRuntimeCapabilities anymore');
 
     it('logs error messages and ignores unknown', async () => {
         const { service, iterator } = createService();

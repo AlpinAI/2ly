@@ -38,7 +38,6 @@ type Workspace {
   runtimes: [Runtime!]
   mcpRegistries: [MCPRegistry!]
   globalRuntime: Runtime
-  defaultTestingRuntime: Runtime
   onboardingSteps: [OnboardingStep!]
 }
 
@@ -240,8 +239,6 @@ type Mutation {
   unlinkMCPToolFromRuntime(mcpToolId: ID!, runtimeId: ID!): Runtime!
   initSystem(adminPassword: String!, email: String!): System!
   updateWorkspace(id: ID!, name: String!): Workspace!
-  setDefaultTestingRuntime(id: ID!, runtimeId: ID!): Workspace!
-  unsetDefaultTestingRuntime(id: ID!): Workspace!
   setGlobalRuntime(id: ID!, runtimeId: ID!): Workspace!
   unsetGlobalRuntime(id: ID!): Workspace!
   updateMCPServerRunOn(mcpServerId: ID!, runOn: MCPServerRunOn!, runtimeId: ID): MCPServer!

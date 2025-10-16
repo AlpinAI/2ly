@@ -190,7 +190,6 @@ export type User = {
 export type Workspace = {
   admins?: Maybe<Array<User>>;
   createdAt: Scalars['DateTime']['output'];
-  defaultTestingRuntime?: Maybe<Runtime>;
   globalRuntime?: Maybe<Runtime>;
   id: Scalars['ID']['output'];
   mcpRegistries?: Maybe<Array<McpRegistry>>;
@@ -472,7 +471,6 @@ export type UserResolvers<ContextType = any, ParentType extends ResolversParentT
 export type WorkspaceResolvers<ContextType = any, ParentType extends ResolversParentTypes['Workspace'] = ResolversParentTypes['Workspace']> = ResolversObject<{
   admins?: Resolver<Maybe<Array<ResolversTypes['User']>>, ParentType, ContextType>;
   createdAt?: Resolver<ResolversTypes['DateTime'], ParentType, ContextType>;
-  defaultTestingRuntime?: Resolver<Maybe<ResolversTypes['Runtime']>, ParentType, ContextType>;
   globalRuntime?: Resolver<Maybe<ResolversTypes['Runtime']>, ParentType, ContextType>;
   id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
   mcpRegistries?: Resolver<Maybe<Array<ResolversTypes['MCPRegistry']>>, ParentType, ContextType>;

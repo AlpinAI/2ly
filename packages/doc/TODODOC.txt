@@ -160,7 +160,6 @@ CONTENT NEEDED:
   * AGENT_SERVER_TRANSPORT
   * ROOTS (filesystem access)
   * GLOBAL_RUNTIME flag
-  * DEFAULT_TESTING_RUNTIME flag
   * Capability flags
 - Lifecycle states
 - Message handling
@@ -427,7 +426,6 @@ IMPROVEMENTS NEEDED:
   * AGENT_SERVER_TRANSPORT_PORT
   * ROOTS
   * GLOBAL_RUNTIME
-  * DEFAULT_TESTING_RUNTIME
   * AGENT_CAPABILITY
   * TOOL_CAPABILITY
 - Add Claude Desktop integration example

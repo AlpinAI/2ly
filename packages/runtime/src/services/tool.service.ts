@@ -6,7 +6,6 @@ import {
   SetRootsMessage,
   AckMessage,
   Service,
-  SetDefaultTestingRuntimeMessage,
   SetGlobalRuntimeMessage,
 } from '@2ly/common';
 import { ToolClientService } from './tool.client.service';
@@ -16,7 +15,6 @@ import { IdentityService } from './identity.service';
 
 export const ROOTS = 'ROOTS';
 export const GLOBAL_RUNTIME = 'GLOBAL_RUNTIME';
-export const DEFAULT_TESTING_RUNTIME = 'DEFAULT_TESTING_RUNTIME';
 
 @injectable()
 export class ToolService extends Service {
@@ -25,7 +23,6 @@ export class ToolService extends Service {
 
   @inject(ROOTS) private roots!: string | undefined;
   @inject(GLOBAL_RUNTIME) private globalRuntime!: boolean;
-  @inject(DEFAULT_TESTING_RUNTIME) private defaultTestingRuntime!: boolean;
 
   constructor(
     @inject(LoggerService) private loggerService: LoggerService,
@@ -45,7 +42,6 @@ export class ToolService extends Service {
     await this.startService(this.toolClientService);
     this.setRoots();
     this.setGlobalRuntime();
-    this.setDefaultTestingRuntime();
   }
 
   protected async shutdown() {
@@ -111,20 +107,4 @@ export class ToolService extends Service {
     }
   }
 
-  private async setDefaultTestingRuntime() {
-    if (this.defaultTestingRuntime) {
-      const identity = this.identityService.getIdentity();
-      if (!identity.RID) {
-        throw new Error('Cannot set default testing runtime without RID');
-      }
-      this.logger.info('Setting default testing runtime');
-      const message = SetDefaultTestingRuntimeMessage.create({ RID: identity.RID }) as SetDefaultTestingRuntimeMessage;
-      const response = await this.natsService.request(message);
-      if (response instanceof AckMessage) {
-        this.logger.info('Default testing runtime set successfully');
-      } else {
-        throw new Error('Failed to set default testing runtime');
-      }
-    }
-  }
 }
