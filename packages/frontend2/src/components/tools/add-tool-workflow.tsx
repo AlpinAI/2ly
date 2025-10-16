@@ -13,9 +13,10 @@
  * - Positioned directly below navigation menu
  */
 
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState } from 'react';
 import { X, ChevronLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { BottomPanel } from '@/components/ui/bottom-panel';
 import { MCPServerBrowser } from './mcp-server-browser';
 import { MCPServerConfigure } from './mcp-server-configure';
 import type { GetMcpRegistriesQuery } from '@/graphql/generated/graphql';
@@ -74,46 +75,13 @@ const TOOL_CATEGORIES: CategoryOption[] = [
 ];
 
 export function AddToolWorkflow({ isOpen, onClose, initialStep }: AddToolWorkflowProps) {
-  const [shouldRender, setShouldRender] = useState(false);
-  const [isAnimating, setIsAnimating] = useState(false);
-  const [topOffset, setTopOffset] = useState(0);
   const [currentStep, setCurrentStep] = useState<WorkflowStep>('selection');
   const [selectedCategory, setSelectedCategory] = useState<ToolCategory | null>(null);
   const [selectedServer, setSelectedServer] = useState<MCPRegistryServer | null>(null);
 
-  const panelRef = useRef<HTMLDivElement>(null);
-  const animationTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-
-  // Calculate exact position below navigation
+  // Set initial step and reset state when opening/closing
   useEffect(() => {
-    const calculateTopOffset = () => {
-      const navElement = document.querySelector('nav');
-      if (navElement) {
-        const rect = navElement.getBoundingClientRect();
-        setTopOffset(rect.bottom);
-      } else {
-        setTopOffset(112);
-      }
-    };
-
     if (isOpen) {
-      calculateTopOffset();
-      window.addEventListener('resize', calculateTopOffset);
-      return () => window.removeEventListener('resize', calculateTopOffset);
-    }
-  }, [isOpen]);
-
-  // Handle mounting and animation timing
-  useEffect(() => {
-    if (animationTimeoutRef.current) {
-      clearTimeout(animationTimeoutRef.current);
-      animationTimeoutRef.current = null;
-    }
-
-    if (isOpen) {
-      setIsAnimating(false);
-      setShouldRender(true);
-
       // Set initial step and category based on initialStep prop
       if (initialStep) {
         setCurrentStep(initialStep);
@@ -124,59 +92,13 @@ export function AddToolWorkflow({ isOpen, onClose, initialStep }: AddToolWorkflo
         setCurrentStep('selection');
         setSelectedCategory(null);
       }
-
-      requestAnimationFrame(() => {
-        requestAnimationFrame(() => {
-          setIsAnimating(true);
-        });
-      });
     } else {
-      setIsAnimating(false);
-      animationTimeoutRef.current = setTimeout(() => {
-        setShouldRender(false);
-        // Reset workflow state when closing
-        setCurrentStep('selection');
-        setSelectedCategory(null);
-        setSelectedServer(null);
-        animationTimeoutRef.current = null;
-      }, 300);
+      // Reset workflow state when closing
+      setCurrentStep('selection');
+      setSelectedCategory(null);
+      setSelectedServer(null);
     }
-
-    return () => {
-      if (animationTimeoutRef.current) {
-        clearTimeout(animationTimeoutRef.current);
-        animationTimeoutRef.current = null;
-      }
-    };
   }, [isOpen, initialStep]);
-
-  // Prevent body scroll when panel is open
-  useEffect(() => {
-    if (isOpen) {
-      document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = 'unset';
-    }
-    return () => {
-      document.body.style.overflow = 'unset';
-    };
-  }, [isOpen]);
-
-  // Handle escape key to close
-  useEffect(() => {
-    const handleEscape = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && isOpen) {
-        if (currentStep !== 'selection') {
-          // Go back to selection if not on first step
-          handleBack();
-        } else {
-          onClose();
-        }
-      }
-    };
-    window.addEventListener('keydown', handleEscape);
-    return () => window.removeEventListener('keydown', handleEscape);
-  }, [isOpen, currentStep]);
 
   const handleCategorySelect = (category: ToolCategory) => {
     setSelectedCategory(category);
@@ -212,20 +134,19 @@ export function AddToolWorkflow({ isOpen, onClose, initialStep }: AddToolWorkflo
     return '0%';
   };
 
-  if (!shouldRender) return null;
+  // Custom escape handler - go back if not on first step, otherwise close
+  const handleEscape = () => {
+    if (currentStep !== 'selection') {
+      handleBack();
+    } else {
+      onClose();
+    }
+  };
 
   return (
-    <div
-      ref={panelRef}
-      className={`fixed inset-x-0 bottom-0 z-50 bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700 shadow-2xl transition-transform duration-300 ease-out ${
-        isAnimating ? 'translate-y-0' : 'translate-y-full'
-      }`}
-      style={{
-        top: `${topOffset}px`,
-      }}
-    >
-      {/* Panel Header */}
-      <div className="sticky top-0 z-10 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 px-6 py-4 flex items-center justify-between">
+    <BottomPanel isOpen={isOpen} onClose={onClose} onEscape={handleEscape}>
+      {/* Panel Header - natural height, no flex grow */}
+      <div className="flex-shrink-0 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 px-6 py-4 flex items-center justify-between">
         <div className="flex items-center gap-3">
           {currentStep !== 'selection' && (
             <Button variant="ghost" size="icon" onClick={handleBack} className="rounded-full" aria-label="Go back">
@@ -239,8 +160,8 @@ export function AddToolWorkflow({ isOpen, onClose, initialStep }: AddToolWorkflo
         </Button>
       </div>
 
-      {/* Horizontal Carousel Container */}
-      <div className="overflow-hidden" style={{ height: `calc(100vh - ${topOffset}px - 73px)` }}>
+      {/* Horizontal Carousel Container - flex-1 takes all remaining space */}
+      <div className="flex-1 overflow-hidden">
         <div
           className="flex transition-transform duration-500 ease-in-out h-full"
           style={{ transform: `translateX(${getTranslateXValue()})` }}
@@ -336,6 +257,6 @@ export function AddToolWorkflow({ isOpen, onClose, initialStep }: AddToolWorkflo
           </div>
         </div>
       </div>
-    </div>
+    </BottomPanel>
   );
 }

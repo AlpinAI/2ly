@@ -17,7 +17,6 @@ import { Bot, Wrench, Clock, Cpu, Settings } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useManageToolsDialog } from '@/stores/uiStore';
 import type { SubscribeRuntimesSubscription } from '@/graphql/generated/graphql';
-import { ToolManagementDialog } from '../toolsets/tool-management-dialog';
 
 type Runtime = NonNullable<SubscribeRuntimesSubscription['runtimes']>[number];
 
@@ -39,8 +38,7 @@ export function AgentDetail({ agent }: AgentDetailProps) {
   };
 
   return (
-    <>
-      <div className="flex flex-col h-full overflow-auto">
+    <div className="flex flex-col h-full overflow-auto">
         {/* Header */}
         <div className="p-4 border-b border-gray-200 dark:border-gray-700">
           <div className="flex items-start gap-3">
@@ -166,7 +164,5 @@ export function AgentDetail({ agent }: AgentDetailProps) {
           </div>
         </div>
       </div>
-      <ToolManagementDialog />
-    </>
   );
 }
