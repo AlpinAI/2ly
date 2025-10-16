@@ -31,13 +31,57 @@ import { createClient } from 'graphql-ws';
 /**
  * Backend GraphQL Endpoints
  *
- * WHY environment variables: Allow different endpoints for dev/staging/prod
+ * WHY runtime configuration: Allow dynamic configuration at container startup
  * WHY fallback to localhost: Works out of the box in development
+ * 
+ * RUNTIME CONFIGURATION:
+ * - RUNTIME_VITE_GRAPHQL_HOST: Sets the host (e.g., "api.example.com")
+ * - RUNTIME_VITE_GRAPHQL_HOST_SSL: Override SSL detection ("true" or "false")
+ * 
+ * PROTOCOL DETECTION:
+ * - If VITE_GRAPHQL_HOST_SSL is set: use that value
+ * - If host contains "localhost" or "127.0.0.1": use HTTP/WS
+ * - Otherwise: use HTTPS/WSS
  */
-const HTTP_ENDPOINT =
-  import.meta.env.VITE_GRAPHQL_HTTP_URL || 'http://localhost:3000/graphql';
-const WS_ENDPOINT =
-  import.meta.env.VITE_GRAPHQL_WS_URL || 'ws://localhost:3000/graphql-ws';
+const runtimeHost = 'RUNTIME_VITE_GRAPHQL_HOST';
+const runtimeHostSsl = 'RUNTIME_VITE_GRAPHQL_HOST_SSL';
+
+/**
+ * Helper function to check if host contains localhost
+ */
+const hostContainsLocalhost = (host: string): boolean => 
+  host.includes('localhost') || host.includes('127.0.0.1');
+
+/**
+ * Helper function to determine if SSL should be used
+ */
+const shouldUseSsl = (host: string, sslFlag?: string | boolean): boolean => {
+  if (typeof sslFlag === 'boolean') return sslFlag;
+  if (sslFlag === 'true') return true;
+  if (sslFlag === 'false') return false;
+  return !hostContainsLocalhost(host);
+};
+
+// Get host from environment or runtime placeholder
+const host = 
+  import.meta.env.VITE_GRAPHQL_HOST || 
+  (runtimeHost.startsWith('RUNTIME_') ? null : runtimeHost) ||
+  'localhost:3000';
+
+// Get SSL flag from environment or runtime placeholder
+const sslFlag = 
+  import.meta.env.VITE_GRAPHQL_HOST_SSL !== undefined 
+    ? import.meta.env.VITE_GRAPHQL_HOST_SSL
+    : (runtimeHostSsl.startsWith('RUNTIME_') ? undefined : runtimeHostSsl);
+
+// Determine protocol based on host and SSL flag
+const useSsl = shouldUseSsl(host, sslFlag);
+const protocol = useSsl ? 'https' : 'http';
+const wsProtocol = useSsl ? 'wss' : 'ws';
+
+// Construct endpoints
+const HTTP_ENDPOINT = `${protocol}://${host}/graphql`;
+const WS_ENDPOINT = `${wsProtocol}://${host}/graphql-ws`;
 
 // Log endpoints in development/test for debugging connection issues
 if (import.meta.env.DEV || import.meta.env.MODE === 'test') {

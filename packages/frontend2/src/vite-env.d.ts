@@ -8,8 +8,8 @@
  */
 
 interface ImportMetaEnv {
-  readonly VITE_GRAPHQL_HTTP_URL?: string;
-  readonly VITE_GRAPHQL_WS_URL?: string;
+  readonly VITE_GRAPHQL_HOST?: string;
+  readonly VITE_GRAPHQL_HOST_SSL?: boolean;
   readonly DEV: boolean;
   readonly PROD: boolean;
   readonly SSR: boolean;

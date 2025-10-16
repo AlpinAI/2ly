@@ -452,6 +452,86 @@ The `.vscode/settings.json` configures Tailwind to work with:
 - TypeScript/TSX files
 - CSS files with `@tailwind` directives
 
+## 🐳 Docker Deployment
+
+The frontend supports runtime configuration for flexible deployment across different environments without rebuilding the image.
+
+### Environment Variables
+
+**Primary variable:**
+- `VITE_GRAPHQL_HOST` - Sets the backend host
+  - Example: `VITE_GRAPHQL_HOST=api.example.com`
+  - Results in: `https://api.example.com/graphql` and `wss://api.example.com/graphql-ws`
+
+**Optional SSL override:**
+- `VITE_GRAPHQL_HOST_SSL` - Override SSL detection (boolean)
+  - `true` - Force HTTPS/WSS
+  - `false` - Force HTTP/WS
+  - Not set - Auto-detect (localhost → HTTP, others → HTTPS)
+
+**Default behavior:**
+- No env vars set → `http://localhost:3000/graphql` and `ws://localhost:3000/graphql-ws`
+- `VITE_GRAPHQL_HOST=api.example.com` → `https://api.example.com/graphql` and `wss://api.example.com/graphql-ws`
+- `VITE_GRAPHQL_HOST=localhost:8080` → `http://localhost:8080/graphql` and `ws://localhost:8080/graphql-ws`
+
+### Docker Run Examples
+
+**Basic deployment:**
+```bash
+docker run -d \
+  -e VITE_GRAPHQL_HOST=api.example.com \
+  -p 8080:80 \
+  --name 2ly-frontend \
+  2ly/frontend2:latest
+```
+
+**With SSL override:**
+```bash
+docker run -d \
+  -e VITE_GRAPHQL_HOST=api.example.com \
+  -e VITE_GRAPHQL_HOST_SSL=false \
+  -p 8080:80 \
+  --name 2ly-frontend \
+  2ly/frontend2:latest
+```
+
+### Docker Compose Example
+
+```yaml
+version: '3.8'
+
+services:
+  frontend:
+    image: 2ly/frontend2:latest
+    ports:
+      - "8080:80"
+    environment:
+      - VITE_GRAPHQL_HOST=api.production.example.com
+    restart: unless-stopped
+
+  # Multiple environments from same image
+  frontend-staging:
+    image: 2ly/frontend2:latest
+    ports:
+      - "8081:80"
+    environment:
+      - VITE_GRAPHQL_HOST=api.staging.example.com
+    restart: unless-stopped
+```
+
+### Building the Docker Image
+
+```bash
+# Build the image
+docker build -t 2ly/frontend2:latest .
+
+# Or build with specific backend host (for testing)
+docker build \
+  --build-arg VITE_GRAPHQL_HOST=api.example.com \
+  --build-arg VITE_GRAPHQL_HOST_SSL=true \
+  -t 2ly/frontend2:latest .
+```
+
 ## 🎯 Pages
 
 ### LoginPage (`/login`)
