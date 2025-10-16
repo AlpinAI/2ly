@@ -4,7 +4,6 @@
  * WHY: Complete section for MCP Registry management in settings
  *
  * WHAT IT SHOWS:
- * - Section header with icon and description
  * - Quick-add button for official registry
  * - Form to add custom registries
  * - List of all configured registries
@@ -15,6 +14,7 @@ import { Database, AlertCircle } from 'lucide-react';
 import { RegistryForm } from './registry-form';
 import { RegistryList } from './registry-list';
 import { RegistrySplitButton } from '@/components/registry/registry-split-button';
+import { SettingsSection } from './settings-section';
 import type { Registry } from './registry-card';
 
 interface McpRegistrySectionProps {
@@ -41,18 +41,11 @@ export function McpRegistrySection({
 }: McpRegistrySectionProps) {
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6 shadow-sm mb-6">
-      {/* Section Header */}
-      <div className="flex items-center gap-2 mb-4">
-        <Database className="h-5 w-5 text-gray-600 dark:text-gray-400" />
-        <h3 className="text-xl font-bold text-gray-900 dark:text-white">
-          MCP Registry Management
-        </h3>
-      </div>
-
-      <p className="text-sm text-gray-600 dark:text-gray-400 mb-6">
-        Connect to upstream MCP registries to sync available servers and tools.
-      </p>
+    <SettingsSection
+      title="MCP Registry Management"
+      description="Connect to upstream MCP registries to sync available servers and tools."
+      icon={Database}
+    >
 
       {/* Error State */}
       {error && (
@@ -97,6 +90,6 @@ export function McpRegistrySection({
         onSync={onSyncRegistry}
         onDelete={onDeleteRegistry}
       />
-    </div>
+    </SettingsSection>
   );
 }

@@ -1,16 +1,17 @@
 /**
  * Settings Page
  *
- * WHY: Application and user settings, including MCP Registry management.
- * Manages upstream registry connections and synchronization.
+ * WHY: Application and user settings with organized sections.
+ * Manages upstream registry connections, users, runtimes, and API keys.
  *
  * ARCHITECTURE:
  * - Uses AppLayout (header + navigation are automatic)
+ * - Tab-based navigation for different settings sections
  * - useMCPRegistries hook for real-time registry updates
- * - Follows same patterns as DashboardPage
  * - Composed of smaller, focused components from /components/settings/
  */
 
+import { Database, Users, Cpu, Key } from 'lucide-react';
 import { useMutation } from '@apollo/client/react';
 import { useWorkspaceId } from '@/stores/workspaceStore';
 import { useMCPRegistries } from '@/hooks/useMCPRegistries';
@@ -20,7 +21,11 @@ import {
   DeleteMcpRegistryDocument,
   SyncUpstreamRegistryDocument,
 } from '@/graphql/generated/graphql';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { McpRegistrySection } from '@/components/settings/mcp-registry-section';
+import { UsersRolesSection } from '@/components/settings/users-roles-section';
+import { RuntimesSection } from '@/components/settings/runtimes-section';
+import { ApiKeysSection } from '@/components/settings/api-keys-section';
 
 
 export default function SettingsPage() {
@@ -79,25 +84,52 @@ export default function SettingsPage() {
     <div className="max-w-7xl mx-auto">
       <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-6">Settings</h2>
 
-      {/* MCP Registry Management Section */}
-      <McpRegistrySection
-        registries={registries}
-        loading={loading}
-        error={error}
-        isSyncing={isSyncing}
-        onCreateRegistry={handleCreateRegistry}
-        onSyncRegistry={handleSyncRegistry}
-        onDeleteRegistry={handleDeleteRegistry}
-        isCreating={creating}
-        workspaceId={workspaceId}
-      />
+      <Tabs defaultValue="registries" className="w-full">
+        <TabsList className="mb-6">
+          <TabsTrigger value="registries" className="flex items-center gap-2">
+            <Database className="h-4 w-4" />
+            <span>MCP Registries</span>
+          </TabsTrigger>
+          <TabsTrigger value="users" className="flex items-center gap-2">
+            <Users className="h-4 w-4" />
+            <span>Users & Roles</span>
+          </TabsTrigger>
+          <TabsTrigger value="runtimes" className="flex items-center gap-2">
+            <Cpu className="h-4 w-4" />
+            <span>Runtimes</span>
+          </TabsTrigger>
+          <TabsTrigger value="api-keys" className="flex items-center gap-2">
+            <Key className="h-4 w-4" />
+            <span>API Keys</span>
+          </TabsTrigger>
+        </TabsList>
 
-      {/* Future settings sections can be added here:
-        - User Profile Settings
-        - Workspace Settings
-        - Notification Preferences
-        - etc.
-      */}
+        <TabsContent value="registries">
+          <McpRegistrySection
+            registries={registries}
+            loading={loading}
+            error={error}
+            isSyncing={isSyncing}
+            onCreateRegistry={handleCreateRegistry}
+            onSyncRegistry={handleSyncRegistry}
+            onDeleteRegistry={handleDeleteRegistry}
+            isCreating={creating}
+            workspaceId={workspaceId}
+          />
+        </TabsContent>
+
+        <TabsContent value="users">
+          <UsersRolesSection />
+        </TabsContent>
+
+        <TabsContent value="runtimes">
+          <RuntimesSection />
+        </TabsContent>
+
+        <TabsContent value="api-keys">
+          <ApiKeysSection />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
