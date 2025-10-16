@@ -77,12 +77,12 @@ async function globalSetup(_config: FullConfig) {
     };
 
     if (services.backend) {
-      // Frontend expects VITE_GRAPHQL_HTTP_ENDPOINT and VITE_GRAPHQL_WS_ENDPOINT
-      viteEnv.VITE_GRAPHQL_HTTP_ENDPOINT = `${backendUrl}/graphql`;
-      viteEnv.VITE_GRAPHQL_WS_ENDPOINT = `${backendUrl.replace('http://', 'ws://')}/graphql`;
+      // Frontend expects VITE_GRAPHQL_HTTP_URL and VITE_GRAPHQL_WS_URL
+      viteEnv.VITE_GRAPHQL_HTTP_URL = `${backendUrl}/graphql`;
+      viteEnv.VITE_GRAPHQL_WS_URL = `${backendUrl.replace('http://', 'ws://')}/graphql`;
 
-      console.log('  Backend GraphQL HTTP:', viteEnv.VITE_GRAPHQL_HTTP_ENDPOINT);
-      console.log('  Backend GraphQL WS:', viteEnv.VITE_GRAPHQL_WS_ENDPOINT);
+      console.log('  Backend GraphQL HTTP:', viteEnv.VITE_GRAPHQL_HTTP_URL);
+      console.log('  Backend GraphQL WS:', viteEnv.VITE_GRAPHQL_WS_URL);
     }
 
     console.log('  Test Frontend Port:', testFrontendPort);
