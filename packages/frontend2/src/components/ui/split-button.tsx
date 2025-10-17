@@ -43,7 +43,7 @@ export interface SplitButtonProps {
   primaryDisabled?: boolean;
 
   // Dropdown
-  dropdownContent: React.ReactNode;
+  dropdownContent?: React.ReactNode;
   dropdownDisabled?: boolean;
   dropdownOpen?: boolean;
   onDropdownOpenChange?: (open: boolean) => void;
@@ -74,6 +74,23 @@ export function SplitButton({
   primaryAriaLabel,
   dropdownAriaLabel = 'Show options',
 }: SplitButtonProps) {
+  // If no dropdown content, render as simple button
+  if (!dropdownContent) {
+    return (
+      <Button
+        variant={variant}
+        size={size}
+        onClick={onPrimaryAction}
+        disabled={primaryDisabled}
+        className={className}
+        aria-label={primaryAriaLabel}
+      >
+        {primaryLabel}
+      </Button>
+    );
+  }
+
+  // Render split button with dropdown
   return (
     <div className={cn('inline-flex', className)}>
       {/* Primary Action Button */}

@@ -360,19 +360,23 @@ export function MCPServerConfigure({ selectedServer, onBack, onSuccess }: MCPSer
               onPrimaryAction={handleTestServer}
               primaryDisabled={!isFormValid || testStatus === 'running'}
               dropdownContent={
-                <DropdownMenuRadioGroup value={selectedRuntimeId} onValueChange={setSelectedRuntimeId}>
-                  {runtimes.length === 0 ? (
-                    <div className="px-2 py-1.5 text-sm text-gray-500">No runtimes available</div>
-                  ) : (
-                    runtimes.map((runtime) => (
-                      <DropdownMenuRadioItem key={runtime.id} value={runtime.id} disabled={runtime.status !== 'ACTIVE'}>
-                        {runtime.name}
-                        {runtime.id === defaultRuntimeId && ' (Default)'}
-                        {runtime.status !== 'ACTIVE' && ' (Offline)'}
-                      </DropdownMenuRadioItem>
-                    ))
-                  )}
-                </DropdownMenuRadioGroup>
+                runtimes.length === 1
+                  ? undefined
+                  : (
+                      <DropdownMenuRadioGroup value={selectedRuntimeId} onValueChange={setSelectedRuntimeId}>
+                        {runtimes.length === 0 ? (
+                          <div className="px-2 py-1.5 text-sm text-gray-500">No runtimes available</div>
+                        ) : (
+                          runtimes.map((runtime) => (
+                            <DropdownMenuRadioItem key={runtime.id} value={runtime.id} disabled={runtime.status !== 'ACTIVE'}>
+                              {runtime.name}
+                              {runtime.id === defaultRuntimeId && ' (Default)'}
+                              {runtime.status !== 'ACTIVE' && ' (Offline)'}
+                            </DropdownMenuRadioItem>
+                          ))
+                        )}
+                      </DropdownMenuRadioGroup>
+                    )
               }
               dropdownAriaLabel="Select runtime"
               className="w-full"
