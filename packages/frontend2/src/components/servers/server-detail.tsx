@@ -27,6 +27,7 @@ import { ExternalLink, Server, Save, X, Trash2 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue, SelectGroup, SelectLabel, SelectSeparator } from '@/components/ui/select';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { ConfigEditor } from './config-editor';
 import { useRuntimeData } from '@/stores/runtimeStore';
 import { UpdateMcpServerRunOnDocument, UpdateMcpServerDocument, DeleteMcpServerDocument } from '@/graphql/generated/graphql';
@@ -52,6 +53,10 @@ export function ServerDetail({ server }: ServerDetailProps) {
   const [configFields, setConfigFields] = useState<ConfigField[]>([]);
   const [editedConfigFields, setEditedConfigFields] = useState<ConfigField[]>([]);
   const [hasConfigChanges, setHasConfigChanges] = useState(false);
+
+  // Delete confirmation state
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // Mutations
   const [updateServer] = useMutation(UpdateMcpServerDocument);
@@ -216,19 +221,23 @@ export function ServerDetail({ server }: ServerDetailProps) {
   };
 
   // Handle server deletion
-  const handleDeleteServer = async () => {
-    if (!confirm(`Are you sure you want to delete "${server.name}"? This action cannot be undone.`)) {
-      return;
-    }
+  const handleDeleteClick = () => {
+    setShowDeleteConfirm(true);
+  };
 
+  const handleDeleteConfirm = async () => {
+    setIsDeleting(true);
     try {
       await deleteServer({
         variables: {
           id: server.id,
         },
       });
+      setShowDeleteConfirm(false);
     } catch (error) {
       console.error('Failed to delete server:', error);
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -386,9 +395,10 @@ export function ServerDetail({ server }: ServerDetailProps) {
         <div className="pt-4 border-t border-gray-200 dark:border-gray-700 flex justify-end">
           <Button
             variant="destructive"
-            onClick={handleDeleteServer}
+            onClick={handleDeleteClick}
             size="sm"
             className="h-7 px-2 text-xs"
+            disabled={isDeleting}
           >
             <Trash2 className="h-3 w-3 mr-1" />
             Delete Server
@@ -396,6 +406,18 @@ export function ServerDetail({ server }: ServerDetailProps) {
         </div>
 
       </div>
+
+      <ConfirmDialog
+        open={showDeleteConfirm}
+        onOpenChange={setShowDeleteConfirm}
+        title="Delete Server"
+        description={`Are you sure you want to delete "${server.name}"? This action cannot be undone.`}
+        confirmLabel="Delete Server"
+        cancelLabel="Cancel"
+        variant="destructive"
+        onConfirm={handleDeleteConfirm}
+        loading={isDeleting}
+      />
     </div>
   );
 }

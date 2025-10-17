@@ -14,9 +14,13 @@ export default defineConfig({
         dir: './',
         include: [
             'packages/**/src/**/*.spec.ts',
+            'packages/**/src/**/*.spec.tsx',
             'packages/**/src/**/*.test.ts',
+            'packages/**/src/**/*.test.tsx',
             'packages/**/__tests__/**/*.spec.ts',
-            'packages/**/__tests__/**/*.test.ts'
+            'packages/**/__tests__/**/*.spec.tsx',
+            'packages/**/__tests__/**/*.test.ts',
+            'packages/**/__tests__/**/*.test.tsx'
         ],
         exclude: [
             '**/node_modules/**',
@@ -30,7 +34,8 @@ export default defineConfig({
             'packages/backend/tests/**'
         ],
         environmentMatchGlobs: [
-            ['packages/frontend/**', 'jsdom']
+            ['packages/frontend/**', 'jsdom'],
+            ['packages/frontend2/**', 'jsdom']
         ],
         globals: true,
         coverage: {
@@ -57,7 +62,8 @@ export default defineConfig({
             '@2ly/common/test/testcontainers': path.resolve(__dirname, 'packages/common/src/test/testcontainers.ts'),
             '@2ly/common/test/vitest': path.resolve(__dirname, 'packages/common/src/test/vitest.ts'),
             '@2ly/common': path.resolve(__dirname, 'packages/common/src/index.ts'),
-            '@2ly/common/*': path.resolve(__dirname, 'packages/common/src/*')
+            '@2ly/common/*': path.resolve(__dirname, 'packages/common/src/*'),
+            '@': path.resolve(__dirname, 'packages/frontend2/src')
 
         }
     }

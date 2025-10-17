@@ -13,6 +13,7 @@
 import { useState } from 'react';
 import { Loader2, RefreshCw, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 
 export interface Registry {
   id: string;
@@ -38,14 +39,17 @@ interface RegistryCardProps {
 
 export function RegistryCard({ registry, onSync, onDelete, isSyncing }: RegistryCardProps) {
   const [isDeleting, setIsDeleting] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
-  const handleDelete = async () => {
-    if (!confirm('Are you sure you want to delete this registry and all its synced servers?')) {
-      return;
-    }
+  const handleDeleteClick = () => {
+    setShowDeleteConfirm(true);
+  };
+
+  const handleDeleteConfirm = async () => {
     setIsDeleting(true);
     try {
       await onDelete(registry.id);
+      setShowDeleteConfirm(false);
     } finally {
       setIsDeleting(false);
     }
@@ -89,7 +93,7 @@ export function RegistryCard({ registry, onSync, onDelete, isSyncing }: Registry
           <Button
             size="sm"
             variant="destructive"
-            onClick={handleDelete}
+            onClick={handleDeleteClick}
             disabled={isSyncing || isDeleting}
           >
             {isDeleting ? (
@@ -141,6 +145,18 @@ export function RegistryCard({ registry, onSync, onDelete, isSyncing }: Registry
           </div>
         </details>
       )}
+
+      <ConfirmDialog
+        open={showDeleteConfirm}
+        onOpenChange={setShowDeleteConfirm}
+        title="Delete Registry"
+        description="Are you sure you want to delete this registry and all its synced servers? This action cannot be undone."
+        confirmLabel="Delete Registry"
+        cancelLabel="Cancel"
+        variant="destructive"
+        onConfirm={handleDeleteConfirm}
+        loading={isDeleting}
+      />
     </div>
   );
 }
