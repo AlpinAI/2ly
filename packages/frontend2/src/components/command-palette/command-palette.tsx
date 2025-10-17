@@ -26,7 +26,7 @@ import * as Dialog from '@radix-ui/react-dialog';
 import { Search, Layers, Palette, Moon, Sun, Check, Plus, FolderPlus } from 'lucide-react';
 import { useWorkspaceId } from '@/stores/workspaceStore';
 import { useTheme } from '@/contexts/ThemeContext';
-import { useUIStore, useCreateToolSetDialog } from '@/stores/uiStore';
+import { useUIStore, useCreateToolSetDialog, useManageToolsDialog } from '@/stores/uiStore';
 import { GetWorkspacesDocument, type GetWorkspacesQuery } from '@/graphql/generated/graphql';
 
 type CommandMode = 'main' | 'search' | 'workspace' | 'theme';
@@ -79,8 +79,12 @@ export function CommandPalette() {
     setOpen(false);
   };
 
+  const manageToolsDialog = useManageToolsDialog();
   const handleCreateToolSet = () => {
-    openCreateToolSetDialog();
+    openCreateToolSetDialog((toolSetId: string) => {
+      manageToolsDialog.setSelectedToolSetId(toolSetId);
+      manageToolsDialog.setOpen(true);
+    });
     setOpen(false);
   };
 
