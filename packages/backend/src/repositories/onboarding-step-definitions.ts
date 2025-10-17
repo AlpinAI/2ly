@@ -18,11 +18,11 @@ export interface OnboardingStepDefinition {
 
 /**
  * Initial onboarding steps for new workspaces
- * 
+ *
  * WHY: These 3 steps guide users through the core 2LY setup:
  * 1. Connect to MCP registry (discover tools)
  * 2. Install MCP server (add tools to workspace)
- * 3. Connect agent runtime (execute tools)
+ * 3. Create tool set with tools (organize and manage tools)
  */
 export const INITIAL_ONBOARDING_STEPS: OnboardingStepDefinition[] = [
   {
@@ -36,7 +36,7 @@ export const INITIAL_ONBOARDING_STEPS: OnboardingStepDefinition[] = [
     priority: 2,
   },
   {
-    stepId: 'connect-agent',
+    stepId: 'create-tool-set',
     type: 'ONBOARDING',
     priority: 3,
   },

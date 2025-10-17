@@ -16,7 +16,7 @@
 export const ONBOARDING_STEPS = {
   CHOOSE_REGISTRY: 'choose-mcp-registry',
   INSTALL_SERVER: 'install-mcp-server',
-  CONNECT_AGENT: 'connect-agent',
+  CREATE_TOOL_SET: 'create-tool-set',
 } as const;
 
 export interface StepMetadata {
@@ -27,7 +27,7 @@ export interface StepMetadata {
 
 /**
  * Step metadata for UI display
- * 
+ *
  * WHY: Provides consistent titles, descriptions, and icons for each onboarding step.
  * Icons are Lucide React icon names that can be imported dynamically.
  */
@@ -42,9 +42,9 @@ export const STEP_METADATA: Record<string, StepMetadata> = {
     description: 'Add your first MCP server to start using tools in your agents.',
     icon: 'server',
   },
-  [ONBOARDING_STEPS.CONNECT_AGENT]: {
-    title: 'Connect an Agent Runtime',
-    description: 'Connect your first agent runtime to execute tools and interact with servers.',
-    icon: 'bot',
+  [ONBOARDING_STEPS.CREATE_TOOL_SET]: {
+    title: 'Create Your First Tool Set',
+    description: 'Create a tool set with at least one tool to start enriching your agents.',
+    icon: 'package',
   },
 };

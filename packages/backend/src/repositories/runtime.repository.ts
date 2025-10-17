@@ -309,14 +309,6 @@ export class RuntimeRepository {
       capabilities,
     });
     const updated = res.updateRuntime.runtime[0];
-    const hasAgent = capabilities.some((c) => c.toLowerCase() === 'agent');
-    if (hasAgent) {
-      const runtime = await this.getRuntime(id);
-      const workspaceId = runtime.workspace?.id;
-      if (workspaceId) {
-        await this.workspaceRepository.checkAndCompleteStep(workspaceId, 'connect-agent');
-      }
-    }
     return updated;
   }
 
@@ -335,7 +327,17 @@ export class RuntimeRepository {
       mcpToolId,
       runtimeId,
     });
-    return res.updateRuntime.runtime[0];
+    const updated = res.updateRuntime.runtime[0];
+
+    // Check and complete create-tool-set step if this is an agent runtime
+    const runtime = await this.getRuntime(runtimeId);
+    const workspaceId = runtime.workspace?.id;
+    const hasAgentCapability = runtime.capabilities?.some((c) => c.toLowerCase() === 'agent');
+    if (workspaceId && hasAgentCapability) {
+      await this.workspaceRepository.checkAndCompleteStep(workspaceId, 'create-tool-set');
+    }
+
+    return updated;
   }
 
   async unlinkMCPToolFromRuntime(mcpToolId: string, runtimeId: string): Promise<dgraphResolversTypes.Runtime> {

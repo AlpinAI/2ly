@@ -256,13 +256,20 @@ export class WorkspaceRepository {
         }>(QUERY_WORKSPACE_WITH_MCP_SERVERS, { workspaceId });
         shouldComplete = (servers.getWorkspace.mcpServers?.length || 0) > 0;
         break; }
-      case 'connect-agent':
+      case 'create-tool-set':
         { const runtimes = await this.dgraphService.query<{
-          getWorkspace: { runtimes: { capabilities: string[] }[] };
+          getWorkspace: {
+            runtimes: {
+              capabilities: string[];
+              mcpToolCapabilities: { id: string }[];
+            }[]
+          };
         }>(QUERY_WORKSPACE_WITH_RUNTIMES, { workspaceId });
+        // Check if there's at least one runtime with 'agent' capability and at least one tool
         shouldComplete = (
           runtimes.getWorkspace.runtimes?.some(r =>
-            (r.capabilities || []).some(c => c.toUpperCase() === 'AGENT')
+            (r.capabilities || []).some(c => c.toUpperCase() === 'AGENT') &&
+            (r.mcpToolCapabilities?.length || 0) > 0
           ) || false
         );
         break; }

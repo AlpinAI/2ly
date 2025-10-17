@@ -13,27 +13,25 @@
  * STEP-SPECIFIC CONTENT:
  * - Step 1: "Add Official Registry" button + "Browse Registries" link
  * - Step 2: "Browse MCP Servers" button (opens Add Tool Workflow)
- * - Step 3: Runtime connection instructions embedded in card
+ * - Step 3: "Create Tool Set" button (opens Create Tool Set dialog, then Manage Tools dialog)
  */
 
 import { useState } from 'react';
 import { useMutation } from '@apollo/client/react';
-import { 
-  CheckCircle, 
-  Circle, 
-  Database, 
-  Server, 
-  Bot, 
-  Plus, 
-  ExternalLink,
-  Check,
+import {
+  CheckCircle,
+  Circle,
+  Database,
+  Server,
+  Package,
+  Plus,
   RefreshCw,
   Loader2
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useWorkspaceId } from '@/stores/workspaceStore';
-import { useUIStore } from '@/stores/uiStore';
+import { useUIStore, useCreateToolSetDialog, useManageToolsDialog } from '@/stores/uiStore';
 import { CreateMcpRegistryDocument } from '@/graphql/generated/graphql';
 import { STEP_METADATA, ONBOARDING_STEPS } from '@/constants/onboarding-steps';
 import { RegistrySplitButton } from '@/components/registry/registry-split-button';
@@ -55,8 +53,10 @@ export function OnboardingCard({ step, isCurrentStep = false }: OnboardingCardPr
   const workspaceId = useWorkspaceId();
   const setAddToolWorkflowOpen = useUIStore((state) => state.setAddToolWorkflowOpen);
   const [isAddingRegistry, setIsAddingRegistry] = useState(false);
-  const [copiedCommand, setCopiedCommand] = useState(false);
   const [pendingRegistryId, setPendingRegistryId] = useState<string | null>(null);
+
+  const { openDialog: openCreateToolSetDialog } = useCreateToolSetDialog();
+  const manageToolsDialog = useManageToolsDialog();
   
   const [createRegistry] = useMutation(CreateMcpRegistryDocument);
   const { autoSyncRegistry } = useRegistryAutoSync();
@@ -72,8 +72,8 @@ export function OnboardingCard({ step, isCurrentStep = false }: OnboardingCardPr
         return <Database className="h-6 w-6" />;
       case 'server':
         return <Server className="h-6 w-6" />;
-      case 'bot':
-        return <Bot className="h-6 w-6" />;
+      case 'package':
+        return <Package className="h-6 w-6" />;
       default:
         return <Circle className="h-6 w-6" />;
     }
@@ -109,18 +109,14 @@ export function OnboardingCard({ step, isCurrentStep = false }: OnboardingCardPr
     }
   };
   
-  // Handle copying runtime connection command
-  const handleCopyCommand = async () => {
-    const command = `npx @2ly/runtime --workspace-id=${workspaceId} --capabilities=agent`;
-    try {
-      await navigator.clipboard.writeText(command);
-      setCopiedCommand(true);
-      setTimeout(() => setCopiedCommand(false), 2000);
-    } catch (error) {
-      console.error('Failed to copy command:', error);
-    }
+  // Handle creating tool set with callback to open manage tools dialog
+  const handleCreateToolSet = () => {
+    openCreateToolSetDialog((toolSetId) => {
+      manageToolsDialog.setSelectedToolSetId(toolSetId);
+      manageToolsDialog.setOpen(true);
+    });
   };
-  
+
   // Render step-specific content
   const renderStepContent = () => {
     switch (step.stepId) {
@@ -214,20 +210,25 @@ export function OnboardingCard({ step, isCurrentStep = false }: OnboardingCardPr
         );
       }
         
-      case ONBOARDING_STEPS.CONNECT_AGENT: {
+      case ONBOARDING_STEPS.CREATE_TOOL_SET: {
         const { runtimes } = useRuntimeData();
         const { agents } = useAgents(runtimes);
-        const firstAgent = agents[0];
 
-        if (isCompleted && firstAgent) {
+        // Find first agent with at least one tool
+        const firstAgentWithTools = agents.find(agent =>
+          agent.mcpToolCapabilities && agent.mcpToolCapabilities.length > 0
+        );
+
+        if (isCompleted && firstAgentWithTools) {
+          const toolCount = firstAgentWithTools.mcpToolCapabilities?.length || 0;
           return (
             <div className="space-y-3">
               <div className="rounded-lg bg-green-400/20 dark:bg-green-900/20 p-3">
                 <p className="text-sm text-green-800 dark:text-green-200">
                   <span className="flex items-center">
-                    <Bot className="mr-2 h-4 w-4" />
-                    <span className="font-medium truncate max-w-xs overflow-hidden whitespace-nowrap" title={firstAgent.name}>
-                      {firstAgent.name}
+                    <Package className="mr-2 h-4 w-4" />
+                    <span className="font-medium truncate max-w-xs overflow-hidden whitespace-nowrap" title={firstAgentWithTools.name}>
+                      {firstAgentWithTools.name} ({toolCount} {toolCount === 1 ? 'tool' : 'tools'})
                     </span>
                   </span>
                 </p>
@@ -238,21 +239,12 @@ export function OnboardingCard({ step, isCurrentStep = false }: OnboardingCardPr
 
         return (
           <Button
-            onClick={handleCopyCommand}
+            onClick={handleCreateToolSet}
             className="w-full"
             variant={isCurrentStep ? "default" : "outline"}
           >
-            {copiedCommand ? (
-              <>
-                <Check className="mr-2 h-4 w-4" />
-                Copied!
-              </>
-            ) : (
-              <>
-                <ExternalLink className="mr-2 h-4 w-4" />
-                Get instructions
-              </>
-            )}
+            <Plus className="mr-2 h-4 w-4" />
+            Create Tool Set
           </Button>
         );
       }
