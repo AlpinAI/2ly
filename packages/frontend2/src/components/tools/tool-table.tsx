@@ -111,7 +111,7 @@ export function ToolTable({
         ) : (
           <>
             <div className="flex-1 overflow-auto">
-              <table className="w-full">
+              <table className="w-full border-separate border-spacing-0">
                 <thead className="bg-gray-50 dark:bg-gray-900 sticky top-0">
                   <tr>
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
@@ -134,10 +134,12 @@ export function ToolTable({
                       key={tool.id}
                       onClick={() => onSelectTool(tool.id)}
                       className={`cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors ${
-                        selectedToolId === tool.id ? 'bg-cyan-50 dark:bg-cyan-900/20 border-l-4 border-cyan-500' : ''
+                        selectedToolId === tool.id ? 'bg-cyan-50 dark:bg-cyan-900/20' : ''
                       }`}
                     >
-                      <td className="px-4 py-3 text-sm">
+                      <td className={`px-4 py-3 text-sm ${
+                        selectedToolId === tool.id ? 'border-l-4 border-cyan-500 pl-3' : ''
+                      }`}>
                         <div className="font-medium text-gray-900 dark:text-white">{tool.name}</div>
                         <div className="text-xs text-gray-500 dark:text-gray-400 line-clamp-2 max-w-md">{tool.description}</div>
                       </td>

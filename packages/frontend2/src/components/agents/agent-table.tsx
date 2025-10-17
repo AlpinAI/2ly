@@ -116,7 +116,7 @@ export function AgentTable({
             </div>
           </div>
         ) : (
-          <table className="w-full">
+          <table className="w-full border-separate border-spacing-0">
             <thead className="bg-gray-50 dark:bg-gray-900 sticky top-0">
               <tr>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
@@ -137,11 +137,13 @@ export function AgentTable({
                   onClick={() => onSelectAgent(agent.id)}
                   className={`cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors ${
                     selectedAgentId === agent.id
-                      ? 'bg-cyan-50 dark:bg-cyan-900/20 border-l-4 border-cyan-500'
+                      ? 'bg-cyan-50 dark:bg-cyan-900/20'
                       : ''
                   }`}
                 >
-                  <td className="px-4 py-3 text-sm">
+                  <td className={`px-4 py-3 text-sm ${
+                    selectedAgentId === agent.id ? 'border-l-4 border-cyan-500 pl-3' : ''
+                  }`}>
                     <div className="font-medium text-gray-900 dark:text-white">{agent.name}</div>
                     {agent.description && (
                       <div className="text-xs text-gray-500 dark:text-gray-400 truncate max-w-md">
