@@ -52,6 +52,10 @@ interface UIState {
   setManageToolsDialogOpen: (open: boolean) => void;
   selectedToolSetForManagement: string | null;
   setSelectedToolSetForManagement: (id: string | null) => void;
+  createToolSetDialogOpen: boolean;
+  createToolSetDialogCallback: ((toolSetId: string) => void) | null;
+  openCreateToolSetDialog: (onSuccess?: (toolSetId: string) => void) => void;
+  closeCreateToolSetDialog: () => void;
 
   // Tool Catalog Filters
   toolCategoryFilter: string;
@@ -122,6 +126,20 @@ export const useUIStore = create<UIState>()(
         setSelectedPlaygroundTool: (toolId) => set({ selectedPlaygroundTool: toolId }),
         playgroundConsoleExpanded: false,
         setPlaygroundConsoleExpanded: (expanded) => set({ playgroundConsoleExpanded: expanded }),
+
+        // Initial State - Create Tool Set Dialog
+        createToolSetDialogOpen: false,
+        createToolSetDialogCallback: null,
+        openCreateToolSetDialog: (onSuccess) =>
+          set({
+            createToolSetDialogOpen: true,
+            createToolSetDialogCallback: onSuccess || null,
+          }),
+        closeCreateToolSetDialog: () =>
+          set({
+            createToolSetDialogOpen: false,
+            createToolSetDialogCallback: null,
+          }),
 
         // Actions
         resetFilters: () =>
@@ -199,11 +217,25 @@ export const useManageToolsDialog = () => {
   const setOpen = useUIStore((state) => state.setManageToolsDialogOpen);
   const selectedToolSetId = useUIStore((state) => state.selectedToolSetForManagement);
   const setSelectedToolSetId = useUIStore((state) => state.setSelectedToolSetForManagement);
-  
+
   return {
     open,
     setOpen,
     selectedToolSetId,
     setSelectedToolSetId,
+  };
+};
+
+export const useCreateToolSetDialog = () => {
+  const open = useUIStore((state) => state.createToolSetDialogOpen);
+  const callback = useUIStore((state) => state.createToolSetDialogCallback);
+  const openDialog = useUIStore((state) => state.openCreateToolSetDialog);
+  const close = useUIStore((state) => state.closeCreateToolSetDialog);
+
+  return {
+    open,
+    callback,
+    openDialog,
+    close,
   };
 };

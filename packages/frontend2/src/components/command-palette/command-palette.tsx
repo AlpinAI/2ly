@@ -23,10 +23,10 @@ import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@apollo/client/react';
 import { Command } from 'cmdk';
 import * as Dialog from '@radix-ui/react-dialog';
-import { Search, Layers, Palette, Moon, Sun, Check, Plus } from 'lucide-react';
+import { Search, Layers, Palette, Moon, Sun, Check, Plus, FolderPlus } from 'lucide-react';
 import { useWorkspaceId } from '@/stores/workspaceStore';
 import { useTheme } from '@/contexts/ThemeContext';
-import { useUIStore } from '@/stores/uiStore';
+import { useUIStore, useCreateToolSetDialog } from '@/stores/uiStore';
 import { GetWorkspacesDocument, type GetWorkspacesQuery } from '@/graphql/generated/graphql';
 
 type CommandMode = 'main' | 'search' | 'workspace' | 'theme';
@@ -39,6 +39,7 @@ export function CommandPalette() {
   const currentWorkspaceId = useWorkspaceId();
   const { theme, setTheme } = useTheme();
   const setAddToolWorkflowOpen = useUIStore((state) => state.setAddToolWorkflowOpen);
+  const { openDialog: openCreateToolSetDialog } = useCreateToolSetDialog();
 
   const { data, loading } = useQuery(GetWorkspacesDocument);
 
@@ -75,6 +76,11 @@ export function CommandPalette() {
 
   const handleAddTool = () => {
     setAddToolWorkflowOpen(true);
+    setOpen(false);
+  };
+
+  const handleCreateToolSet = () => {
+    openCreateToolSetDialog();
     setOpen(false);
   };
 
@@ -168,6 +174,18 @@ export function CommandPalette() {
                     <div className="flex flex-1 items-center justify-between">
                       <span className="font-medium">Add Tool</span>
                       <span className="text-xs text-gray-500 dark:text-gray-400">Browse and install MCP tools</span>
+                    </div>
+                  </Command.Item>
+
+                  <Command.Item
+                    value="new-tool-set"
+                    onSelect={handleCreateToolSet}
+                    className="relative flex cursor-pointer select-none items-center gap-3 rounded-sm px-3 py-2 text-sm outline-none data-[selected=true]:bg-blue-100 data-[selected=true]:text-blue-900 dark:data-[selected=true]:bg-blue-900 dark:data-[selected=true]:text-blue-100"
+                  >
+                    <FolderPlus className="h-4 w-4" />
+                    <div className="flex flex-1 items-center justify-between">
+                      <span className="font-medium">New Tool Set</span>
+                      <span className="text-xs text-gray-500 dark:text-gray-400">Create a new tool set</span>
                     </div>
                   </Command.Item>
 

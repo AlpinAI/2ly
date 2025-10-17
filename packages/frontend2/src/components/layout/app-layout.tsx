@@ -34,6 +34,7 @@ import { AppHeader } from './app-header';
 import { AppNavigation } from './app-navigation';
 import { AddToolWorkflow } from '@/components/tools/add-tool-workflow';
 import { ToolManagementPanel } from '@/components/toolsets/tool-management-panel';
+import { CreateToolSetDialog } from '@/components/tool-sets/create-tool-set-dialog';
 
 export function AppLayout() {
 
@@ -53,6 +54,9 @@ export function AppLayout() {
       {/* Global bottom panels - self-contained, accessible from any page */}
       <AddToolWorkflow />
       <ToolManagementPanel />
+
+      {/* Global dialogs - accessible from any page */}
+      <CreateToolSetDialog />
     </div>
   );
 }

@@ -17,15 +17,19 @@
  */
 
 import { useState, useMemo } from 'react';
+import { Plus } from 'lucide-react';
 import { MasterDetailLayout } from '@/components/layout/master-detail-layout';
 import { AgentTable } from '@/components/agents/agent-table';
 import { AgentDetail } from '@/components/agents/agent-detail';
+import { Button } from '@/components/ui/button';
 import { useAgents } from '@/hooks/useAgents';
 import { useMCPServers } from '@/hooks/useMCPServers';
 import { useRuntimeData } from '@/stores/runtimeStore';
+import { useCreateToolSetDialog } from '@/stores/uiStore';
 
 export default function ToolSetsPage() {
   const [selectedAgentId, setSelectedAgentId] = useState<string | null>(null);
+  const { openDialog } = useCreateToolSetDialog();
 
   // Fetch runtimes and servers
   const { runtimes, loading, error } = useRuntimeData();
@@ -60,9 +64,18 @@ export default function ToolSetsPage() {
   return (
     <div className="h-full flex flex-col">
       {/* Page Header */}
-      <div className="mb-6">
-        <h2 className="text-3xl font-bold text-gray-900 dark:text-white">Tool Sets</h2>
-        <p className="text-gray-500 dark:text-gray-400 mt-1">Manage AI tool sets and view their capabilities</p>
+      <div className="mb-6 flex items-start justify-between">
+        <div>
+          <h2 className="text-3xl font-bold text-gray-900 dark:text-white">Tool Sets</h2>
+          <p className="text-gray-500 dark:text-gray-400 mt-1">Manage AI tool sets and view their capabilities</p>
+        </div>
+        <Button
+          onClick={() => openDialog((toolSetId) => setSelectedAgentId(toolSetId))}
+          className="flex items-center gap-2"
+        >
+          <Plus className="h-4 w-4" />
+          New Tool Set
+        </Button>
       </div>
 
       {/* Master-Detail Layout */}
