@@ -35,6 +35,7 @@ import { AppNavigation } from './app-navigation';
 import { AddToolWorkflow } from '@/components/tools/add-tool-workflow';
 import { ToolManagementPanel } from '@/components/toolsets/tool-management-panel';
 import { CreateToolSetDialog } from '@/components/tool-sets/create-tool-set-dialog';
+import { ConnectAgentDialog } from '@/components/agents/connect-agent-dialog';
 
 export function AppLayout() {
 
@@ -57,6 +58,7 @@ export function AppLayout() {
 
       {/* Global dialogs - accessible from any page */}
       <CreateToolSetDialog />
+      <ConnectAgentDialog />
     </div>
   );
 }

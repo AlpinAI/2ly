@@ -13,9 +13,9 @@
  * - Last seen timestamp
  */
 
-import { Bot, Wrench, Clock, Cpu, Settings } from 'lucide-react';
+import { Bot, Wrench, Clock, Cpu, Settings, Cable } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useManageToolsDialog } from '@/stores/uiStore';
+import { useManageToolsDialog, useConnectAgentDialog } from '@/stores/uiStore';
 import type { SubscribeRuntimesSubscription } from '@/graphql/generated/graphql';
 
 type Runtime = NonNullable<SubscribeRuntimesSubscription['runtimes']>[number];
@@ -26,6 +26,7 @@ export interface AgentDetailProps {
 
 export function AgentDetail({ agent }: AgentDetailProps) {
   const { setOpen, setSelectedToolSetId } = useManageToolsDialog();
+  const { setOpen: setConnectDialogOpen, setSelectedAgentId } = useConnectAgentDialog();
 
   const formatDate = (dateString: string | Date) => {
     const date = typeof dateString === 'string' ? new Date(dateString) : dateString;
@@ -37,11 +38,16 @@ export function AgentDetail({ agent }: AgentDetailProps) {
     setOpen(true);
   };
 
+  const handleConnectAgent = () => {
+    setSelectedAgentId(agent.id);
+    setConnectDialogOpen(true);
+  };
+
   return (
     <div className="flex flex-col h-full overflow-auto">
         {/* Header */}
         <div className="p-4 border-b border-gray-200 dark:border-gray-700">
-          <div className="flex items-start gap-3">
+          <div className="flex items-start gap-3 mb-3">
             <div className="p-2 bg-cyan-100 dark:bg-cyan-900/30 rounded-lg">
               <Bot className="h-5 w-5 text-cyan-600 dark:text-cyan-400" />
             </div>
@@ -49,6 +55,19 @@ export function AgentDetail({ agent }: AgentDetailProps) {
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white truncate">{agent.name}</h3>
               {agent.description && <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{agent.description}</p>}
             </div>
+          </div>
+
+          {/* Action Buttons */}
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleConnectAgent}
+              className="flex-1"
+            >
+              <Cable className="h-4 w-4 mr-2" />
+              Connect Agent
+            </Button>
           </div>
         </div>
 

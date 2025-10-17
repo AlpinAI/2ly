@@ -56,6 +56,10 @@ interface UIState {
   createToolSetDialogCallback: ((toolSetId: string) => void) | null;
   openCreateToolSetDialog: (onSuccess?: (toolSetId: string) => void) => void;
   closeCreateToolSetDialog: () => void;
+  connectAgentDialogOpen: boolean;
+  setConnectAgentDialogOpen: (open: boolean) => void;
+  selectedAgentForConnection: string | null;
+  setSelectedAgentForConnection: (agentId: string | null) => void;
 
   // Tool Catalog Filters
   toolCategoryFilter: string;
@@ -140,6 +144,12 @@ export const useUIStore = create<UIState>()(
             createToolSetDialogOpen: false,
             createToolSetDialogCallback: null,
           }),
+
+        // Initial State - Connect Agent Dialog
+        connectAgentDialogOpen: false,
+        setConnectAgentDialogOpen: (open) => set({ connectAgentDialogOpen: open }),
+        selectedAgentForConnection: null,
+        setSelectedAgentForConnection: (agentId) => set({ selectedAgentForConnection: agentId }),
 
         // Actions
         resetFilters: () =>
@@ -237,5 +247,19 @@ export const useCreateToolSetDialog = () => {
     callback,
     openDialog,
     close,
+  };
+};
+
+export const useConnectAgentDialog = () => {
+  const open = useUIStore((state) => state.connectAgentDialogOpen);
+  const setOpen = useUIStore((state) => state.setConnectAgentDialogOpen);
+  const selectedAgentId = useUIStore((state) => state.selectedAgentForConnection);
+  const setSelectedAgentId = useUIStore((state) => state.setSelectedAgentForConnection);
+
+  return {
+    open,
+    setOpen,
+    selectedAgentId,
+    setSelectedAgentId,
   };
 };
