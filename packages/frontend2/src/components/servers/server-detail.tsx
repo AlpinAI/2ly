@@ -238,6 +238,7 @@ export function ServerDetail({ server }: ServerDetailProps) {
         variables: {
           id: server.id,
         },
+        refetchQueries: ['GetMCPTools'],
       });
     } catch (error) {
       console.error('Failed to delete server:', error);

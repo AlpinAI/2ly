@@ -163,6 +163,7 @@ export function MCPServerConfigure({ selectedServer, onBack, onSuccess }: MCPSer
           mcpServerId: testServerId,
           runOn: McpServerRunOn.Global,
         },
+        refetchQueries: ['GetMCPTools'],
       }).catch((err) => {
         console.error('Failed to set server to GLOBAL:', err);
       });
