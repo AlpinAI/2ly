@@ -57,25 +57,24 @@ export function AgentDetail({ agent }: AgentDetailProps) {
             </div>
           </div>
 
-          {/* Action Buttons */}
-          <div className="flex gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleConnectAgent}
-              className="flex-1"
-            >
-              <Cable className="h-4 w-4 mr-2" />
-              Connect Agent
-            </Button>
-          </div>
         </div>
 
         {/* Content */}
         <div className="flex-1 p-4 space-y-4">
           {/* Status */}
           <div>
-            <h4 className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">Status</h4>
+            <div className="flex items-center justify-between mb-2">
+              <h4 className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Status</h4>
+              <Button
+                variant="default"
+                size="sm"
+                onClick={handleConnectAgent}
+                className="h-6 px-2 text-xs"
+              >
+                <Cable className="h-3 w-3 mr-1" />
+                Connect
+              </Button>
+            </div>
             <span
               className={`inline-flex items-center px-2 py-1 rounded text-sm font-medium ${
                 agent.status === 'ACTIVE'
@@ -156,7 +155,7 @@ export function AgentDetail({ agent }: AgentDetailProps) {
                 Available Tools ({agent.mcpToolCapabilities?.length || 0})
               </h4>
               <Button
-                variant="ghost"
+                variant="default"
                 size="sm"
                 onClick={handleManageTools}
                 className="h-6 px-2 text-xs"
