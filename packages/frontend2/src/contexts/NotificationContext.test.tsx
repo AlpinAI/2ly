@@ -48,7 +48,7 @@ describe('NotificationContext', () => {
     });
 
     it('returns confirm function', () => {
-      let confirmFn: ((options: any) => Promise<boolean>) | undefined;
+      let confirmFn: ((options: { title: string; description: string }) => Promise<boolean>) | undefined;
 
       const TestComponent = () => {
         const { confirm } = useNotification();

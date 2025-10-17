@@ -137,7 +137,7 @@ export function ToolSelectionTable({
             checked={allSelected}
             ref={(el) => {
               if (el) {
-                (el as any).indeterminate = someSelected;
+                (el as HTMLInputElement).indeterminate = someSelected;
               }
             }}
             onCheckedChange={(checked) => {
@@ -197,7 +197,7 @@ export function ToolSelectionTable({
                   checked={serverSelectionState === 'all'}
                   ref={(el) => {
                     if (el) {
-                      (el as any).indeterminate = serverSelectionState === 'partial';
+                      (el as HTMLInputElement).indeterminate = serverSelectionState === 'partial';
                     }
                   }}
                   onCheckedChange={() => onServerToggle(server.id)}
