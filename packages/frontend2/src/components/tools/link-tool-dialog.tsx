@@ -20,7 +20,7 @@ import * as Dialog from '@radix-ui/react-dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useRuntimeData } from '@/stores/runtimeStore';
-import { useToast } from '@/hooks/use-toast';
+import { useNotification } from '@/contexts/NotificationContext';
 import { CreateAgentForm } from '@/components/agents/create-agent-form';
 import { LinkMcpToolToRuntimeDocument } from '@/graphql/generated/graphql';
 import type { GetMcpToolsQuery } from '@/graphql/generated/graphql';
@@ -35,7 +35,7 @@ export interface LinkToolDialogProps {
 
 export function LinkToolDialog({ open, onOpenChange, tool }: LinkToolDialogProps) {
   const { runtimes } = useRuntimeData();
-  const { toast } = useToast();
+  const { toast } = useNotification();
   const [searchTerm, setSearchTerm] = useState('');
   const [isLinking, setIsLinking] = useState<string | null>(null);
   const [showCreateForm, setShowCreateForm] = useState(false);
@@ -79,16 +79,17 @@ export function LinkToolDialog({ open, onOpenChange, tool }: LinkToolDialogProps
       
       toast({
         title: 'Tool linked successfully',
-        description: `Tool has been linked to the agent.`,
+        description: 'Tool has been linked to the agent.',
+        variant: 'success',
       });
-      
+
       onOpenChange(false);
     } catch (error) {
       console.error('Error linking tool:', error);
       toast({
         title: 'Failed to link tool',
         description: error instanceof Error ? error.message : 'An unexpected error occurred',
-        variant: 'destructive',
+        variant: 'error',
       });
     } finally {
       setIsLinking(null);

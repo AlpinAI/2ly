@@ -27,7 +27,7 @@ import { ExternalLink, Server, Save, X, Trash2 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue, SelectGroup, SelectLabel, SelectSeparator } from '@/components/ui/select';
-import { ConfirmDialog } from '@/components/ui/confirm-dialog';
+import { useNotification } from '@/contexts/NotificationContext';
 import { ConfigEditor } from './config-editor';
 import { useRuntimeData } from '@/stores/runtimeStore';
 import { UpdateMcpServerRunOnDocument, UpdateMcpServerDocument, DeleteMcpServerDocument } from '@/graphql/generated/graphql';
@@ -43,7 +43,8 @@ export interface ServerDetailProps {
 
 export function ServerDetail({ server }: ServerDetailProps) {
   const { runtimes } = useRuntimeData();
-  
+  const { confirm } = useNotification();
+
   // Inline edit state
   const [serverName, setServerName] = useState(server.name);
   const [runOn, setRunOn] = useState<McpServerRunOn | null>(server.runOn);
@@ -54,8 +55,7 @@ export function ServerDetail({ server }: ServerDetailProps) {
   const [editedConfigFields, setEditedConfigFields] = useState<ConfigField[]>([]);
   const [hasConfigChanges, setHasConfigChanges] = useState(false);
 
-  // Delete confirmation state
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  // Delete state
   const [isDeleting, setIsDeleting] = useState(false);
 
   // Mutations
@@ -221,11 +221,17 @@ export function ServerDetail({ server }: ServerDetailProps) {
   };
 
   // Handle server deletion
-  const handleDeleteClick = () => {
-    setShowDeleteConfirm(true);
-  };
+  const handleDelete = async () => {
+    const confirmed = await confirm({
+      title: 'Delete Server',
+      description: `Are you sure you want to delete "${server.name}"? This action cannot be undone.`,
+      confirmLabel: 'Delete Server',
+      cancelLabel: 'Cancel',
+      variant: 'destructive',
+    });
 
-  const handleDeleteConfirm = async () => {
+    if (!confirmed) return;
+
     setIsDeleting(true);
     try {
       await deleteServer({
@@ -233,7 +239,6 @@ export function ServerDetail({ server }: ServerDetailProps) {
           id: server.id,
         },
       });
-      setShowDeleteConfirm(false);
     } catch (error) {
       console.error('Failed to delete server:', error);
     } finally {
@@ -395,7 +400,7 @@ export function ServerDetail({ server }: ServerDetailProps) {
         <div className="pt-4 border-t border-gray-200 dark:border-gray-700 flex justify-end">
           <Button
             variant="destructive"
-            onClick={handleDeleteClick}
+            onClick={handleDelete}
             size="sm"
             className="h-7 px-2 text-xs"
             disabled={isDeleting}
@@ -406,18 +411,6 @@ export function ServerDetail({ server }: ServerDetailProps) {
         </div>
 
       </div>
-
-      <ConfirmDialog
-        open={showDeleteConfirm}
-        onOpenChange={setShowDeleteConfirm}
-        title="Delete Server"
-        description={`Are you sure you want to delete "${server.name}"? This action cannot be undone.`}
-        confirmLabel="Delete Server"
-        cancelLabel="Cancel"
-        variant="destructive"
-        onConfirm={handleDeleteConfirm}
-        loading={isDeleting}
-      />
     </div>
   );
 }

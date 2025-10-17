@@ -18,7 +18,7 @@ import { ToolTester } from './tool-tester';
 import { LinkToolDialog } from './link-tool-dialog';
 import { Button } from '@/components/ui/button';
 import { useRuntimeData } from '@/stores/runtimeStore';
-import { useToast } from '@/hooks/use-toast';
+import { useNotification } from '@/contexts/NotificationContext';
 import type { GetMcpToolsQuery } from '@/graphql/generated/graphql';
 import { UnlinkMcpToolFromRuntimeDocument } from '@/graphql/generated/graphql';
 
@@ -30,7 +30,7 @@ export interface ToolDetailProps {
 
 export function ToolDetail({ tool }: ToolDetailProps) {
   const { runtimes } = useRuntimeData();
-  const { toast } = useToast();
+  const { toast } = useNotification();
   const [loadingStates, setLoadingStates] = useState<Record<string, boolean>>({});
   const [linkDialogOpen, setLinkDialogOpen] = useState(false);
 
@@ -63,14 +63,15 @@ export function ToolDetail({ tool }: ToolDetailProps) {
       
       toast({
         title: 'Tool unlinked successfully',
-        description: `Tool has been unlinked from the agent.`,
+        description: 'Tool has been unlinked from the agent.',
+        variant: 'success',
       });
     } catch (error) {
       console.error('Error unlinking tool:', error);
       toast({
         title: 'Failed to unlink tool',
         description: error instanceof Error ? error.message : 'An unexpected error occurred',
-        variant: 'destructive',
+        variant: 'error',
       });
     } finally {
       setLoadingStates((prev) => ({ ...prev, [agentId]: false }));

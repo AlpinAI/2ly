@@ -5,14 +5,16 @@
  *
  * PROVIDER ORDER MATTERS:
  * 1. ThemeProvider - Theme must be available first (affects all UI)
- * 2. ApolloProvider - GraphQL client (server state)
- * 3. BrowserRouter - Routing (required for navigate())
- * 4. SystemInitChecker - Check system initialization before anything else
- * 5. AuthProvider - Authentication state (uses navigate(), so must be inside Router)
+ * 2. NotificationProvider - Transient UI (confirms, toasts) - needs theme, no other deps
+ * 3. ApolloProvider - GraphQL client (server state)
+ * 4. BrowserRouter - Routing (required for navigate())
+ * 5. SystemInitChecker - Check system initialization before anything else
+ * 6. AuthProvider - Authentication state (uses navigate(), so must be inside Router)
  */
 
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { ThemeProvider } from '@/contexts/ThemeContext';
+import { NotificationProvider } from '@/contexts/NotificationContext';
 import { ApolloProvider } from '@/lib/apollo/ApolloProvider';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { SystemInitChecker } from '@/components/logic/system-init-checker';
@@ -34,11 +36,12 @@ import NotFoundPage from '@/pages/NotFoundPage';
 function App() {
   return (
     <ThemeProvider>
-      <ApolloProvider>
-        <BrowserRouter>
-          <SystemInitChecker>
-            <AuthProvider>
-              <Routes>
+      <NotificationProvider>
+        <ApolloProvider>
+          <BrowserRouter>
+            <SystemInitChecker>
+              <AuthProvider>
+                <Routes>
                 {/* Root redirects to default workspace */}
                 <Route
                   path="/"
@@ -87,11 +90,12 @@ function App() {
 
                 {/* 404 page */}
                 <Route path="*" element={<NotFoundPage />} />
-              </Routes>
-            </AuthProvider>
-          </SystemInitChecker>
-        </BrowserRouter>
-      </ApolloProvider>
+                </Routes>
+              </AuthProvider>
+            </SystemInitChecker>
+          </BrowserRouter>
+        </ApolloProvider>
+      </NotificationProvider>
     </ThemeProvider>
   );
 }

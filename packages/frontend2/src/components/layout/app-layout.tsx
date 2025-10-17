@@ -34,7 +34,6 @@ import { AppHeader } from './app-header';
 import { AppNavigation } from './app-navigation';
 import { AddToolWorkflow } from '@/components/tools/add-tool-workflow';
 import { ToolManagementPanel } from '@/components/toolsets/tool-management-panel';
-import { Toaster } from '@/components/ui/toaster';
 
 export function AppLayout() {
 
@@ -54,9 +53,6 @@ export function AppLayout() {
       {/* Global bottom panels - self-contained, accessible from any page */}
       <AddToolWorkflow />
       <ToolManagementPanel />
-
-      {/* Toast notifications */}
-      <Toaster />
     </div>
   );
 }
