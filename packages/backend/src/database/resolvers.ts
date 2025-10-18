@@ -77,6 +77,19 @@ export const resolvers = (container: Container = defaultContainer): apolloResolv
       mcpRegistries: async (_parent: unknown, { workspaceId }: { workspaceId: string }) => {
         return registryRepository.findByWorkspace(workspaceId);
       },
+      // Monitoring query with filtering and pagination
+      toolCalls: async (
+        _parent: unknown,
+        args: apolloResolversTypes.QueryToolCallsArgs
+      ) => {
+        return monitoringRepository.queryToolCalls({
+          workspaceId: args.workspaceId,
+          limit: args.limit ?? 100,
+          offset: args.offset ?? 0,
+          filters: args.filters ?? undefined,
+          orderBy: args.orderBy ?? undefined,
+        });
+      },
       // Authentication queries
       ...authResolvers.Query,
     },

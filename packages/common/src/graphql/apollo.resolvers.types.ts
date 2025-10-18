@@ -362,6 +362,11 @@ export enum OnboardingStepType {
   Onboarding = 'ONBOARDING'
 }
 
+export enum OrderDirection {
+  Asc = 'ASC',
+  Desc = 'DESC'
+}
+
 export type Query = {
   infra: Infra;
   isMCPAutoConfigEnabled: Scalars['Boolean']['output'];
@@ -370,6 +375,7 @@ export type Query = {
   mcpTools?: Maybe<Array<McpTool>>;
   me?: Maybe<User>;
   system?: Maybe<System>;
+  toolCalls: ToolCallsResult;
   workspace?: Maybe<Array<Workspace>>;
   workspaceMCPTools?: Maybe<Workspace>;
 };
@@ -386,6 +392,15 @@ export type QueryMcpServersArgs = {
 
 
 export type QueryMcpToolsArgs = {
+  workspaceId: Scalars['ID']['input'];
+};
+
+
+export type QueryToolCallsArgs = {
+  filters?: InputMaybe<ToolCallFilters>;
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  offset?: InputMaybe<Scalars['Int']['input']>;
+  orderBy?: InputMaybe<ToolCallOrderBy>;
   workspaceId: Scalars['ID']['input'];
 };
 
@@ -484,11 +499,47 @@ export type ToolCall = {
   toolOutput?: Maybe<Scalars['String']['output']>;
 };
 
+export type ToolCallFilters = {
+  dateFrom?: InputMaybe<Scalars['Date']['input']>;
+  dateTo?: InputMaybe<Scalars['Date']['input']>;
+  mcpServerIds?: InputMaybe<Array<Scalars['ID']['input']>>;
+  mcpToolIds?: InputMaybe<Array<Scalars['ID']['input']>>;
+  runtimeIds?: InputMaybe<Array<Scalars['ID']['input']>>;
+  search?: InputMaybe<Scalars['String']['input']>;
+  status?: InputMaybe<Array<ToolCallStatus>>;
+};
+
+export type ToolCallOrderBy = {
+  direction: OrderDirection;
+  field: ToolCallOrderField;
+};
+
+export enum ToolCallOrderField {
+  CalledAt = 'CALLED_AT',
+  CompletedAt = 'COMPLETED_AT',
+  Status = 'STATUS'
+}
+
+export type ToolCallStats = {
+  avgDuration?: Maybe<Scalars['Float']['output']>;
+  completed: Scalars['Int']['output'];
+  failed: Scalars['Int']['output'];
+  pending: Scalars['Int']['output'];
+  total: Scalars['Int']['output'];
+};
+
 export enum ToolCallStatus {
   Completed = 'COMPLETED',
   Failed = 'FAILED',
   Pending = 'PENDING'
 }
+
+export type ToolCallsResult = {
+  hasMore: Scalars['Boolean']['output'];
+  stats: ToolCallStats;
+  toolCalls: Array<ToolCall>;
+  totalCount: Scalars['Int']['output'];
+};
 
 export type User = {
   adminOfWorkspaces?: Maybe<Array<Workspace>>;
@@ -589,6 +640,7 @@ export type ResolversTypes = {
   Boolean: ResolverTypeWrapper<Scalars['Boolean']['output']>;
   CallToolResult: ResolverTypeWrapper<CallToolResult>;
   Date: ResolverTypeWrapper<Scalars['Date']['output']>;
+  Float: ResolverTypeWrapper<Scalars['Float']['output']>;
   ID: ResolverTypeWrapper<Scalars['ID']['output']>;
   Infra: ResolverTypeWrapper<Infra>;
   Int: ResolverTypeWrapper<Scalars['Int']['output']>;
@@ -608,6 +660,7 @@ export type ResolversTypes = {
   OnboardingStep: ResolverTypeWrapper<OnboardingStep>;
   OnboardingStepStatus: OnboardingStepStatus;
   OnboardingStepType: OnboardingStepType;
+  OrderDirection: OrderDirection;
   Query: ResolverTypeWrapper<{}>;
   RefreshTokenInput: RefreshTokenInput;
   RefreshTokenPayload: ResolverTypeWrapper<RefreshTokenPayload>;
@@ -618,7 +671,12 @@ export type ResolversTypes = {
   Subscription: ResolverTypeWrapper<{}>;
   System: ResolverTypeWrapper<System>;
   ToolCall: ResolverTypeWrapper<ToolCall>;
+  ToolCallFilters: ToolCallFilters;
+  ToolCallOrderBy: ToolCallOrderBy;
+  ToolCallOrderField: ToolCallOrderField;
+  ToolCallStats: ResolverTypeWrapper<ToolCallStats>;
   ToolCallStatus: ToolCallStatus;
+  ToolCallsResult: ResolverTypeWrapper<ToolCallsResult>;
   User: ResolverTypeWrapper<User>;
   Workspace: ResolverTypeWrapper<Workspace>;
 };
@@ -630,6 +688,7 @@ export type ResolversParentTypes = {
   Boolean: Scalars['Boolean']['output'];
   CallToolResult: CallToolResult;
   Date: Scalars['Date']['output'];
+  Float: Scalars['Float']['output'];
   ID: Scalars['ID']['output'];
   Infra: Infra;
   Int: Scalars['Int']['output'];
@@ -655,6 +714,10 @@ export type ResolversParentTypes = {
   Subscription: {};
   System: System;
   ToolCall: ToolCall;
+  ToolCallFilters: ToolCallFilters;
+  ToolCallOrderBy: ToolCallOrderBy;
+  ToolCallStats: ToolCallStats;
+  ToolCallsResult: ToolCallsResult;
   User: User;
   Workspace: Workspace;
 };
@@ -808,6 +871,7 @@ export type QueryResolvers<ContextType = object, ParentType extends ResolversPar
   mcpTools?: Resolver<Maybe<Array<ResolversTypes['MCPTool']>>, ParentType, ContextType, RequireFields<QueryMcpToolsArgs, 'workspaceId'>>;
   me?: Resolver<Maybe<ResolversTypes['User']>, ParentType, ContextType>;
   system?: Resolver<Maybe<ResolversTypes['System']>, ParentType, ContextType>;
+  toolCalls?: Resolver<ResolversTypes['ToolCallsResult'], ParentType, ContextType, RequireFields<QueryToolCallsArgs, 'workspaceId'>>;
   workspace?: Resolver<Maybe<Array<ResolversTypes['Workspace']>>, ParentType, ContextType>;
   workspaceMCPTools?: Resolver<Maybe<ResolversTypes['Workspace']>, ParentType, ContextType, RequireFields<QueryWorkspaceMcpToolsArgs, 'workspaceId'>>;
 };
@@ -877,6 +941,23 @@ export type ToolCallResolvers<ContextType = object, ParentType extends Resolvers
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 };
 
+export type ToolCallStatsResolvers<ContextType = object, ParentType extends ResolversParentTypes['ToolCallStats'] = ResolversParentTypes['ToolCallStats']> = {
+  avgDuration?: Resolver<Maybe<ResolversTypes['Float']>, ParentType, ContextType>;
+  completed?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  failed?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  pending?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  total?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+};
+
+export type ToolCallsResultResolvers<ContextType = object, ParentType extends ResolversParentTypes['ToolCallsResult'] = ResolversParentTypes['ToolCallsResult']> = {
+  hasMore?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
+  stats?: Resolver<ResolversTypes['ToolCallStats'], ParentType, ContextType>;
+  toolCalls?: Resolver<Array<ResolversTypes['ToolCall']>, ParentType, ContextType>;
+  totalCount?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+};
+
 export type UserResolvers<ContextType = object, ParentType extends ResolversParentTypes['User'] = ResolversParentTypes['User']> = {
   adminOfWorkspaces?: Resolver<Maybe<Array<ResolversTypes['Workspace']>>, ParentType, ContextType>;
   createdAt?: Resolver<ResolversTypes['Date'], ParentType, ContextType>;
@@ -922,6 +1003,8 @@ export type Resolvers<ContextType = object> = {
   Subscription?: SubscriptionResolvers<ContextType>;
   System?: SystemResolvers<ContextType>;
   ToolCall?: ToolCallResolvers<ContextType>;
+  ToolCallStats?: ToolCallStatsResolvers<ContextType>;
+  ToolCallsResult?: ToolCallsResultResolvers<ContextType>;
   User?: UserResolvers<ContextType>;
   Workspace?: WorkspaceResolvers<ContextType>;
 };

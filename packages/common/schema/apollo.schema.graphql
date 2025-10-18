@@ -191,6 +191,48 @@ type MCPRegistryServer {
   registry: MCPRegistry!
 }
 
+# Monitoring types for scalable tool call queries
+input ToolCallFilters {
+  status: [ToolCallStatus!]
+  mcpToolIds: [ID!]
+  mcpServerIds: [ID!]
+  runtimeIds: [ID!]
+  dateFrom: Date
+  dateTo: Date
+  search: String
+}
+
+input ToolCallOrderBy {
+  field: ToolCallOrderField!
+  direction: OrderDirection!
+}
+
+enum ToolCallOrderField {
+  CALLED_AT
+  COMPLETED_AT
+  STATUS
+}
+
+enum OrderDirection {
+  ASC
+  DESC
+}
+
+type ToolCallsResult {
+  toolCalls: [ToolCall!]!
+  totalCount: Int!
+  hasMore: Boolean!
+  stats: ToolCallStats!
+}
+
+type ToolCallStats {
+  total: Int!
+  pending: Int!
+  completed: Int!
+  failed: Int!
+  avgDuration: Float
+}
+
 type Query {
   workspace: [Workspace!]
   mcpServers(workspaceId: ID!): [MCPServer!]
@@ -200,6 +242,14 @@ type Query {
   workspaceMCPTools(workspaceId: ID!): Workspace
   isMCPAutoConfigEnabled: Boolean!
   mcpRegistries(workspaceId: ID!): [MCPRegistry!]
+  # Monitoring query with filtering and pagination
+  toolCalls(
+    workspaceId: ID!
+    limit: Int
+    offset: Int
+    filters: ToolCallFilters
+    orderBy: ToolCallOrderBy
+  ): ToolCallsResult!
   # Authentication queries
   me: User
 }

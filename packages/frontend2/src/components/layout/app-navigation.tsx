@@ -12,7 +12,7 @@
  */
 
 import { useLocation, Link, useParams } from 'react-router-dom';
-import { Home, Bot, Wrench, Server, Settings } from 'lucide-react';
+import { Home, Bot, Wrench, Server, Settings, Activity } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface NavItem {
@@ -41,6 +41,11 @@ const leftNavItems: NavItem[] = [
     label: 'Tool Sets',
     path: 'toolsets',
     icon: Bot,
+  },
+  {
+    label: 'Monitoring',
+    path: 'monitoring',
+    icon: Activity,
   },
 ];
 
