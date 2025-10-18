@@ -44,10 +44,10 @@ interface UIState {
   // Modal States
   deployModalOpen: boolean;
   setDeployModalOpen: (open: boolean) => void;
-  addToolWorkflowOpen: boolean;
-  setAddToolWorkflowOpen: (open: boolean) => void;
-  addToolWorkflowInitialStep: 'selection' | 'mcp-browser' | 'mcp-config' | null;
-  setAddToolWorkflowInitialStep: (step: 'selection' | 'mcp-browser' | 'mcp-config' | null) => void;
+  addSourceWorkflowOpen: boolean;
+  setAddSourceWorkflowOpen: (open: boolean) => void;
+  addSourceWorkflowInitialStep: 'selection' | 'mcp-browser' | 'mcp-config' | null;
+  setAddSourceWorkflowInitialStep: (step: 'selection' | 'mcp-browser' | 'mcp-config' | null) => void;
   manageToolsDialogOpen: boolean;
   setManageToolsDialogOpen: (open: boolean) => void;
   selectedToolSetForManagement: string | null;
@@ -102,10 +102,10 @@ export const useUIStore = create<UIState>()(
         // Initial State - Modals
         deployModalOpen: false,
         setDeployModalOpen: (open) => set({ deployModalOpen: open }),
-        addToolWorkflowOpen: false,
-        setAddToolWorkflowOpen: (open) => set({ addToolWorkflowOpen: open }),
-        addToolWorkflowInitialStep: null,
-        setAddToolWorkflowInitialStep: (step) => set({ addToolWorkflowInitialStep: step }),
+        addSourceWorkflowOpen: false,
+        setAddSourceWorkflowOpen: (open) => set({ addSourceWorkflowOpen: open }),
+        addSourceWorkflowInitialStep: null,
+        setAddSourceWorkflowInitialStep: (step) => set({ addSourceWorkflowInitialStep: step }),
         manageToolsDialogOpen: false,
         setManageToolsDialogOpen: (open) => set({ manageToolsDialogOpen: open }),
         selectedToolSetForManagement: null,
@@ -216,10 +216,10 @@ export const useNavigation = () =>
     setActiveSubSection: state.setActiveSubSection,
   }));
 
-export const useAddToolWorkflow = () =>
+export const useAddSourceWorkflow = () =>
   useUIStore((state) => ({
-    open: state.addToolWorkflowOpen,
-    setOpen: state.setAddToolWorkflowOpen,
+    open: state.addSourceWorkflowOpen,
+    setOpen: state.setAddSourceWorkflowOpen,
   }));
 
 export const useManageToolsDialog = () => {

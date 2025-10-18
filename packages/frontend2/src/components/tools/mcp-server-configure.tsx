@@ -25,7 +25,7 @@ import { cn } from '@/lib/utils';
 import { useWorkspaceId } from '@/stores/workspaceStore';
 import { useRuntimeData } from '@/stores/runtimeStore';
 import { TestPanel, type TestStatus } from './test-panel';
-import { ConfigEditor } from '@/components/servers/config-editor';
+import { ConfigEditor } from '@/components/sources/config-editor';
 import {
   extractConfigOptions,
   extractConfigurableFields,

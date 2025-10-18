@@ -1,8 +1,8 @@
 /**
- * ServerDetail Component
+ * MCPServerDetail Component
  *
  * WHY: Displays detailed information about a selected MCP server.
- * Used by Servers Page as the detail panel.
+ * Used by Sources Page as the detail panel for MCP Server sources.
  *
  * DISPLAYS:
  * - Name (editable)
@@ -37,11 +37,11 @@ import { McpServerRunOn } from '@/graphql/generated/graphql';
 
 type McpServer = NonNullable<SubscribeMcpServersSubscription['mcpServers']>[number];
 
-export interface ServerDetailProps {
+export interface MCPServerDetailProps {
   server: McpServer;
 }
 
-export function ServerDetail({ server }: ServerDetailProps) {
+export function MCPServerDetail({ server }: MCPServerDetailProps) {
   const { runtimes } = useRuntimeData();
   const { confirm } = useNotification();
 

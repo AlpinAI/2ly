@@ -51,7 +51,7 @@ interface OnboardingCardProps {
 
 export function OnboardingCard({ step, isCurrentStep = false }: OnboardingCardProps) {
   const workspaceId = useWorkspaceId();
-  const setAddToolWorkflowOpen = useUIStore((state) => state.setAddToolWorkflowOpen);
+  const setAddSourceWorkflowOpen = useUIStore((state) => state.setAddSourceWorkflowOpen);
   const [isAddingRegistry, setIsAddingRegistry] = useState(false);
   const [pendingRegistryId, setPendingRegistryId] = useState<string | null>(null);
 
@@ -200,7 +200,7 @@ export function OnboardingCard({ step, isCurrentStep = false }: OnboardingCardPr
 
         return (
           <Button
-            onClick={() => setAddToolWorkflowOpen(true)}
+            onClick={() => setAddSourceWorkflowOpen(true)}
             className="w-full"
             variant={isCurrentStep ? "default" : "outline"}
           >

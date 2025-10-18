@@ -38,7 +38,7 @@ export function CommandPalette() {
   const navigate = useNavigate();
   const currentWorkspaceId = useWorkspaceId();
   const { theme, setTheme } = useTheme();
-  const setAddToolWorkflowOpen = useUIStore((state) => state.setAddToolWorkflowOpen);
+  const setAddSourceWorkflowOpen = useUIStore((state) => state.setAddSourceWorkflowOpen);
   const { openDialog: openCreateToolSetDialog } = useCreateToolSetDialog();
 
   const { data, loading } = useQuery(GetWorkspacesDocument);
@@ -74,8 +74,8 @@ export function CommandPalette() {
     setOpen(false);
   };
 
-  const handleAddTool = () => {
-    setAddToolWorkflowOpen(true);
+  const handleAddSource = () => {
+    setAddSourceWorkflowOpen(true);
     setOpen(false);
   };
 
@@ -170,14 +170,14 @@ export function CommandPalette() {
                   </Command.Item>
 
                   <Command.Item
-                    value="add-tool"
-                    onSelect={handleAddTool}
+                    value="add-source"
+                    onSelect={handleAddSource}
                     className="relative flex cursor-pointer select-none items-center gap-3 rounded-sm px-3 py-2 text-sm outline-none data-[selected=true]:bg-blue-100 data-[selected=true]:text-blue-900 dark:data-[selected=true]:bg-blue-900 dark:data-[selected=true]:text-blue-100"
                   >
                     <Plus className="h-4 w-4" />
                     <div className="flex flex-1 items-center justify-between">
-                      <span className="font-medium">Add Tool</span>
-                      <span className="text-xs text-gray-500 dark:text-gray-400">Browse and install MCP tools</span>
+                      <span className="font-medium">Add Source</span>
+                      <span className="text-xs text-gray-500 dark:text-gray-400">Browse and add sources</span>
                     </div>
                   </Command.Item>
 

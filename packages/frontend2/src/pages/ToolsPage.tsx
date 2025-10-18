@@ -31,7 +31,7 @@ import { useRuntimeData } from '@/stores/runtimeStore';
 
 export default function ToolsPage() {
   const [selectedToolId, setSelectedToolId] = useState<string | null>(null);
-  const setAddToolWorkflowOpen = useUIStore((state) => state.setAddToolWorkflowOpen);
+  const setAddSourceWorkflowOpen = useUIStore((state) => state.setAddSourceWorkflowOpen);
 
   // Fetch tools, servers, and agents
   const { runtimes } = useRuntimeData();
@@ -79,7 +79,7 @@ export default function ToolsPage() {
           <h2 className="text-3xl font-bold text-gray-900 dark:text-white">Tools</h2>
           <p className="text-gray-500 dark:text-gray-400 mt-1">Browse, test, and manage your MCP tools</p>
         </div>
-        <Button onClick={() => setAddToolWorkflowOpen(true)} className="gap-2">
+        <Button onClick={() => setAddSourceWorkflowOpen(true)} className="gap-2">
           <Plus className="h-4 w-4" />
           Add Tools
         </Button>

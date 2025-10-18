@@ -20,30 +20,46 @@ import { useState, useMemo } from 'react';
 import { Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { MasterDetailLayout } from '@/components/layout/master-detail-layout';
-import { ServerTable } from '@/components/servers/server-table';
-import { ServerDetail } from '@/components/servers/server-detail';
+import { SourceTable } from '@/components/sources/source-table';
+import { SourceDetail } from '@/components/sources/source-detail';
 import { useMCPServers } from '@/hooks/useMCPServers';
 import { useAgents } from '@/hooks/useAgents';
 import { useRuntimeData } from '@/stores/runtimeStore';
 import { useUIStore } from '@/stores/uiStore';
+import { SourceType } from '@/types/sources';
 
 export default function SourcesPage() {
   const [selectedServerId, setSelectedServerId] = useState<string | null>(null);
+  const [typeFilter, setTypeFilter] = useState<string[]>([]);
 
   // Fetch servers and agents
   const { runtimes } = useRuntimeData();
   const { servers, loading, error } = useMCPServers();
   const { agents } = useAgents(runtimes);
 
-  // UI store for opening add tool workflow
-  const setAddToolWorkflowOpen = useUIStore((state) => state.setAddToolWorkflowOpen);
-  const setAddToolWorkflowInitialStep = useUIStore((state) => state.setAddToolWorkflowInitialStep);
+  // UI store for opening add source workflow
+  const setAddSourceWorkflowOpen = useUIStore((state) => state.setAddSourceWorkflowOpen);
+  const setAddSourceWorkflowInitialStep = useUIStore((state) => state.setAddSourceWorkflowInitialStep);
 
-  // Get selected server
-  const selectedServer = useMemo(() => {
+  // Add type field to sources
+  const sourcesWithType = useMemo(() => {
+    return servers.map(server => ({
+      ...server,
+      type: SourceType.MCP_SERVER,
+    }));
+  }, [servers]);
+
+  // Apply type filtering
+  const filteredSources = useMemo(() => {
+    if (typeFilter.length === 0) return sourcesWithType;
+    return sourcesWithType.filter(source => typeFilter.includes(source.type));
+  }, [sourcesWithType, typeFilter]);
+
+  // Get selected source
+  const selectedSource = useMemo(() => {
     if (!selectedServerId) return null;
-    return servers.find((s) => s.id === selectedServerId) || null;
-  }, [selectedServerId, servers]);
+    return sourcesWithType.find((s) => s.id === selectedServerId) || null;
+  }, [selectedServerId, sourcesWithType]);
 
   // Available agents for filter
   const availableAgents = useMemo(() => {
@@ -53,10 +69,10 @@ export default function SourcesPage() {
     }));
   }, [agents]);
 
-  // Handle add MCP server button click
-  const handleAddMCPServer = () => {
-    setAddToolWorkflowInitialStep('mcp-browser');
-    setAddToolWorkflowOpen(true);
+  // Handle add source button click
+  const handleAddSource = () => {
+    setAddSourceWorkflowInitialStep(null); // Start at category selection
+    setAddSourceWorkflowOpen(true);
   };
 
   if (error) {
@@ -77,24 +93,26 @@ export default function SourcesPage() {
         <div>
           <h2 className="text-3xl font-bold text-gray-900 dark:text-white">Sources</h2>
           <p className="text-gray-500 dark:text-gray-400 mt-1">
-            Manage MCP sources and their configurations
+            Manage sources and their configurations
           </p>
         </div>
-        <Button onClick={handleAddMCPServer} className="gap-2">
+        <Button onClick={handleAddSource} className="gap-2">
           <Plus className="h-4 w-4" />
-          Add MCP Server
+          Add Source
         </Button>
       </div>
 
       {/* Master-Detail Layout */}
       <MasterDetailLayout
         table={
-          <ServerTable
-            servers={servers}
-            selectedServerId={selectedServerId}
-            onSelectServer={setSelectedServerId}
+          <SourceTable
+            sources={filteredSources}
+            selectedSourceId={selectedServerId}
+            onSelectSource={setSelectedServerId}
             search={''}
             onSearchChange={() => {}}
+            typeFilter={typeFilter}
+            onTypeFilterChange={setTypeFilter}
             transportFilter={[]}
             onTransportFilterChange={() => {}}
             runOnFilter={[]}
@@ -105,7 +123,7 @@ export default function SourcesPage() {
             loading={loading}
           />
         }
-        detail={selectedServer ? <ServerDetail server={selectedServer} /> : null}
+        detail={selectedSource ? <SourceDetail source={selectedSource} /> : null}
         onCloseDetail={() => setSelectedServerId(null)}
       />
     </div>

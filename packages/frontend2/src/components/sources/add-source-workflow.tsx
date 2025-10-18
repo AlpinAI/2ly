@@ -1,9 +1,9 @@
 /**
- * AddToolWorkflow Component
+ * AddSourceWorkflow Component
  *
- * WHY: Multi-step workflow for adding tools with slide animations.
- * Step 1: Select tool category (MCP Server, API, Code)
- * Step 2: Browse and configure selected tool type
+ * WHY: Multi-step workflow for adding sources with slide animations.
+ * Step 1: Select source category (MCP Server, REST API)
+ * Step 2: Browse and configure selected source type
  *
  * ARCHITECTURE:
  * - Sliding panel from bottom
@@ -19,8 +19,8 @@ import { useEffect, useState, useCallback } from 'react';
 import { X, ChevronLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { BottomPanel } from '@/components/ui/bottom-panel';
-import { MCPServerBrowser } from './mcp-server-browser';
-import { MCPServerConfigure } from './mcp-server-configure';
+import { MCPServerBrowser } from '@/components/tools/mcp-server-browser';
+import { MCPServerConfigure } from '@/components/tools/mcp-server-configure';
 import { useUIStore } from '@/stores/uiStore';
 import { useCloseOnNavigation } from '@/hooks/useCloseOnNavigation';
 import type { GetMcpRegistriesQuery } from '@/graphql/generated/graphql';
@@ -31,10 +31,10 @@ type MCPRegistryServer = NonNullable<
 >[number];
 
 type WorkflowStep = 'selection' | 'mcp-browser' | 'mcp-config';
-type ToolCategory = 'mcp' | 'api' | 'code';
+type SourceCategory = 'mcp' | 'api';
 
 interface CategoryOption {
-  id: ToolCategory;
+  id: SourceCategory;
   title: string;
   description: string;
   icon: string;
@@ -45,7 +45,7 @@ interface CategoryOption {
 // Export WorkflowStep type for UIStore
 export type { WorkflowStep };
 
-const TOOL_CATEGORIES: CategoryOption[] = [
+const SOURCE_CATEGORIES: CategoryOption[] = [
   {
     id: 'mcp',
     title: 'Add MCP Server',
@@ -65,26 +65,18 @@ const TOOL_CATEGORIES: CategoryOption[] = [
     ],
     comingSoon: true,
   },
-  {
-    id: 'code',
-    title: 'Code your own Tool',
-    description: 'Build delightful custom tools that run right beside your agent.',
-    icon: '🛠️',
-    features: ['Write tools in Python or TypeScript', 'Local dev, smooth DX', 'Starter templates included'],
-    comingSoon: true,
-  },
 ];
 
-export function AddToolWorkflow() {
+export function AddSourceWorkflow() {
   // Read from UIStore
-  const isOpen = useUIStore((state) => state.addToolWorkflowOpen);
-  const setOpen = useUIStore((state) => state.setAddToolWorkflowOpen);
-  const initialStep = useUIStore((state) => state.addToolWorkflowInitialStep);
-  const setInitialStep = useUIStore((state) => state.setAddToolWorkflowInitialStep);
+  const isOpen = useUIStore((state) => state.addSourceWorkflowOpen);
+  const setOpen = useUIStore((state) => state.setAddSourceWorkflowOpen);
+  const initialStep = useUIStore((state) => state.addSourceWorkflowInitialStep);
+  const setInitialStep = useUIStore((state) => state.setAddSourceWorkflowInitialStep);
 
   // Local workflow state
   const [currentStep, setCurrentStep] = useState<WorkflowStep>('selection');
-  const [selectedCategory, setSelectedCategory] = useState<ToolCategory | null>(null);
+  const [selectedCategory, setSelectedCategory] = useState<SourceCategory | null>(null);
   const [selectedServer, setSelectedServer] = useState<MCPRegistryServer | null>(null);
 
   // Close handler with cleanup
@@ -121,7 +113,7 @@ export function AddToolWorkflow() {
     }
   }, [isOpen, initialStep]);
 
-  const handleCategorySelect = (category: ToolCategory) => {
+  const handleCategorySelect = (category: SourceCategory) => {
     setSelectedCategory(category);
     setCurrentStep('mcp-browser');
   };
@@ -142,10 +134,10 @@ export function AddToolWorkflow() {
   };
 
   const getStepTitle = (): string => {
-    if (currentStep === 'selection') return 'Add Tools';
+    if (currentStep === 'selection') return 'Add Sources';
     if (currentStep === 'mcp-browser') return 'Browse MCP Servers';
     if (currentStep === 'mcp-config') return `Configure MCP Server`;
-    return 'Add Tools';
+    return 'Add Sources';
   };
 
   const getTranslateXValue = (): string => {
@@ -189,16 +181,16 @@ export function AddToolWorkflow() {
         >
           {/* Step 1: Category Selection */}
           <div className="flex-shrink-0 w-full overflow-y-auto">
-            <div className="p-6 max-w-7xl mx-auto">
+            <div className="p-6 max-w-4xl mx-auto">
               <div className="text-center mb-8">
-                <h2 className="text-xl font-semibold mb-2 text-gray-900 dark:text-white">Select the tool category</h2>
+                <h2 className="text-xl font-semibold mb-2 text-gray-900 dark:text-white">Select the source category</h2>
                 <p className="text-gray-600 dark:text-gray-400">
-                  Choose an option below and start adding tools to your workspace
+                  Choose an option below and start adding sources to your workspace
                 </p>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                {TOOL_CATEGORIES.map((option) => (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {SOURCE_CATEGORIES.map((option) => (
                   <div
                     key={option.id}
                     className={`relative p-6 border-2 rounded-lg transition-all duration-200 select-none bg-white/80 dark:bg-gray-800/80 backdrop-blur ${

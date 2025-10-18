@@ -1,36 +1,38 @@
 /**
- * ServerTable Component
+ * SourceTable Component
  *
- * WHY: Displays MCP servers in a table with search and filters.
- * Used by Servers Page as the master list.
+ * WHY: Displays sources (MCP servers, REST APIs) in a unified table with search and filters.
+ * Used by Sources Page as the master list.
  *
  * COLUMNS:
  * - Name
- * - Transport (STREAM, STDIO, SSE)
- * - Run On (GLOBAL, AGENT, EDGE)
+ * - Type (MCP Server, REST API)
+ * - Transport (STREAM, STDIO, SSE) - MCP only
+ * - Run On (GLOBAL, AGENT, EDGE) - MCP only
  * - # Tools
  *
  * FEATURES:
  * - Search by name/description
- * - Filter by transport, runOn, agent
+ * - Filter by type, transport, runOn, agent
  * - Click row to select
  * - Highlight selected row
+ * - Conditional columns based on source type
  */
 
 import { Search } from '@/components/ui/search';
 import { CheckboxDropdown } from '@/components/ui/checkbox-dropdown';
 import { Button } from '@/components/ui/button';
-import { X } from 'lucide-react';
-import type { SubscribeMcpServersSubscription } from '@/graphql/generated/graphql';
+import { X, Server, Globe } from 'lucide-react';
+import { SOURCE_TYPE_OPTIONS, SOURCE_TYPE_LABELS, SourceType, type Source } from '@/types/sources';
 
-type McpServer = NonNullable<SubscribeMcpServersSubscription['mcpServers']>[number];
-
-export interface ServerTableProps {
-  servers: McpServer[];
-  selectedServerId: string | null;
-  onSelectServer: (serverId: string) => void;
+export interface SourceTableProps {
+  sources: Source[];
+  selectedSourceId: string | null;
+  onSelectSource: (sourceId: string) => void;
   search: string;
   onSearchChange: (search: string) => void;
+  typeFilter: string[];
+  onTypeFilterChange: (types: string[]) => void;
   transportFilter: string[];
   onTransportFilterChange: (transports: string[]) => void;
   runOnFilter: string[];
@@ -53,12 +55,14 @@ const RUN_ON_OPTIONS = [
   { id: 'EDGE', label: 'Edge' },
 ];
 
-export function ServerTable({
-  servers,
-  selectedServerId,
-  onSelectServer,
+export function SourceTable({
+  sources,
+  selectedSourceId,
+  onSelectSource,
   search,
   onSearchChange,
+  typeFilter,
+  onTypeFilterChange,
   transportFilter,
   onTransportFilterChange,
   runOnFilter,
@@ -67,15 +71,17 @@ export function ServerTable({
   onAgentFilterChange,
   availableAgents,
   loading,
-}: ServerTableProps) {
+}: SourceTableProps) {
   const hasActiveFilters =
     search.length > 0 ||
+    typeFilter.length > 0 ||
     transportFilter.length > 0 ||
     runOnFilter.length > 0 ||
     agentFilter.length > 0;
 
   const handleClearFilters = () => {
     onSearchChange('');
+    onTypeFilterChange([]);
     onTransportFilterChange([]);
     onRunOnFilterChange([]);
     onAgentFilterChange([]);
@@ -86,12 +92,20 @@ export function ServerTable({
       {/* Header with Search and Filters */}
       <div className="p-4 border-b border-gray-200 dark:border-gray-700 space-y-3">
         <Search
-          placeholder="Search servers..."
+          placeholder="Search sources..."
           value={search}
           onChange={(e) => onSearchChange(e.target.value)}
         />
 
         <div className="flex flex-wrap gap-2">
+          <CheckboxDropdown
+            label="Type"
+            placeholder="All types"
+            items={SOURCE_TYPE_OPTIONS}
+            selectedIds={typeFilter}
+            onChange={onTypeFilterChange}
+          />
+
           <CheckboxDropdown
             label="Transport"
             placeholder="All transports"
@@ -129,13 +143,13 @@ export function ServerTable({
       <div className="flex-1 flex flex-col min-h-0">
         {loading ? (
           <div className="flex items-center justify-center h-full">
-            <p className="text-sm text-muted-foreground">Loading servers...</p>
+            <p className="text-sm text-muted-foreground">Loading sources...</p>
           </div>
-        ) : servers.length === 0 ? (
+        ) : sources.length === 0 ? (
           <div className="flex items-center justify-center h-full">
             <div className="text-center">
               <p className="text-sm text-muted-foreground">
-                {hasActiveFilters ? 'No servers match your filters' : 'No servers found'}
+                {hasActiveFilters ? 'No sources match your filters' : 'No sources found'}
               </p>
             </div>
           </div>
@@ -149,6 +163,9 @@ export function ServerTable({
                       Name
                     </th>
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                      Type
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                       Transport
                     </th>
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
@@ -160,42 +177,64 @@ export function ServerTable({
                   </tr>
                 </thead>
                 <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                  {servers.map((server) => (
+                  {sources.map((source) => (
                     <tr
-                      key={server.id}
-                      onClick={() => onSelectServer(server.id)}
+                      key={source.id}
+                      onClick={() => onSelectSource(source.id)}
                       className={`cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors ${
-                        selectedServerId === server.id
+                        selectedSourceId === source.id
                           ? 'bg-cyan-50 dark:bg-cyan-900/20'
                           : ''
                       }`}
                     >
                       <td className={`px-4 py-3 text-sm ${
-                        selectedServerId === server.id ? 'border-l-4 border-cyan-500 pl-3' : ''
+                        selectedSourceId === source.id ? 'border-l-4 border-cyan-500 pl-3' : ''
                       }`}>
                         <div className="font-medium text-gray-900 dark:text-white">
-                          {server.name}
+                          {source.name}
                         </div>
                         <div className="text-xs text-gray-500 dark:text-gray-400 truncate max-w-xs">
-                          {server.description}
+                          {source.description}
                         </div>
                       </td>
                       <td className="px-4 py-3 text-sm text-gray-700 dark:text-gray-300">
-                        <span className="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300">
-                          {server.transport}
+                        <span className={`inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-medium ${
+                          source.type === SourceType.MCP_SERVER
+                            ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300'
+                            : 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300'
+                        }`}>
+                          {source.type === SourceType.MCP_SERVER ? (
+                            <Server className="h-3 w-3" />
+                          ) : (
+                            <Globe className="h-3 w-3" />
+                          )}
+                          {SOURCE_TYPE_LABELS[source.type]}
                         </span>
                       </td>
                       <td className="px-4 py-3 text-sm text-gray-700 dark:text-gray-300">
-                        {server.runOn ? (
-                          <span className="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-purple-100 dark:bg-purple-900/30 text-purple-800 dark:text-purple-300">
-                            {server.runOn}
+                        {source.type === SourceType.MCP_SERVER && 'transport' in source ? (
+                          <span className="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300">
+                            {source.transport}
                           </span>
                         ) : (
                           <span className="text-gray-400 dark:text-gray-500">-</span>
                         )}
                       </td>
                       <td className="px-4 py-3 text-sm text-gray-700 dark:text-gray-300">
-                        {server.tools?.length || 0}
+                        {source.type === SourceType.MCP_SERVER && 'runOn' in source ? (
+                          source.runOn ? (
+                            <span className="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-purple-100 dark:bg-purple-900/30 text-purple-800 dark:text-purple-300">
+                              {source.runOn}
+                            </span>
+                          ) : (
+                            <span className="text-gray-400 dark:text-gray-500">-</span>
+                          )
+                        ) : (
+                          <span className="text-gray-400 dark:text-gray-500">-</span>
+                        )}
+                      </td>
+                      <td className="px-4 py-3 text-sm text-gray-700 dark:text-gray-300">
+                        {source.type === SourceType.MCP_SERVER && 'tools' in source ? source.tools?.length || 0 : '-'}
                       </td>
                     </tr>
                   ))}
@@ -206,7 +245,7 @@ export function ServerTable({
             {/* Footer with count - now at bottom of table panel */}
             <div className="px-4 py-2 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900">
               <p className="text-xs text-gray-500 dark:text-gray-400">
-                Showing {servers.length} {servers.length === 1 ? 'server' : 'servers'}
+                Showing {sources.length} {sources.length === 1 ? 'source' : 'sources'}
               </p>
             </div>
           </>
