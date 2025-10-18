@@ -14,7 +14,7 @@
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/2ly-ai/2ly.git",
+    "url": "https://github.com/AlpinAI/2ly.git",
     "directory": "packages/runtime"
   },
   "exports": {
@@ -47,13 +47,13 @@
     "lint": "eslint \"{src,test}/**/*.{js,ts}\"",
     "format": "prettier --write \"{src,test}/**/*.*\" && rm -rf node_modules/.cache/prettier",
     "format:check": "prettier --check \"{src,test}/**/*.*\"",
-    "typecheck": "tsc --noEmit --skipLibCheck"
+    "typecheck": "tsc --noEmit --skipLibCheck",
+    "test": "vitest --run"
   },
   "dependencies": {
     "@apollo/server": "^4.12.2",
     "@fastify/cors": "^11.0.1",
     "@grpc/grpc-js": "^1.13.4",
-    "@modelcontextprotocol/sdk": "^1.12.1",
     "@nitra/as-integrations-fastify": "^3.0.2",
     "dotenv": "^16.5.0",
     "fastify": "^5.3.3",

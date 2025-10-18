@@ -1,6 +1,6 @@
 ---
-title: "Runtime Implementation"
-description: "Deep dive into 2LY runtime architecture and services"
+title: 'Runtime Implementation'
+description: 'Deep dive into 2LY runtime architecture and services'
 draft: true
 ---
 
@@ -15,6 +15,7 @@ RID = {id}-{processId}
 ```
 
 **Why include PID?**
+
 - Allows multiple runtime processes with the same name
 - Enables process-specific message routing
 - Supports runtime restarts without ID conflicts
@@ -24,16 +25,19 @@ RID = {id}-{processId}
 Runtimes can operate in two modes simultaneously:
 
 **Agent Capability** (`agent`)
+
 - Runtime acts as MCP server for AI agents
 - Exposes tools to agents via MCP protocol
 - Handles tool execution requests from agents
 
 **Tool Capability** (`tool`)
+
 - Runtime spawns and manages MCP servers
 - Executes tools from MCP servers
 - Routes tool results back to agents
 
 Configuration:
+
 ```bash
 AGENT_CAPABILITY=true|false|auto    # Default: auto
 TOOL_CAPABILITY=true|false          # Default: true
@@ -79,9 +83,11 @@ graph TB
 ```
 
 ### RuntimeMainService
+
 Coordinates the entire runtime lifecycle:
 
 **Responsibilities:**
+
 - Connects to NATS backend
 - Registers runtime identity
 - Starts agent service (if enabled)
@@ -90,6 +96,7 @@ Coordinates the entire runtime lifecycle:
 - Graceful shutdown
 
 **Configuration:**
+
 ```bash
 RUNTIME_NAME=my-runtime              # Required
 WORKSPACE_ID=workspace-123           # Default: DEFAULT
@@ -97,9 +104,11 @@ NATS_SERVERS=nats://localhost:4222   # Default
 ```
 
 ### IdentityService
+
 Manages runtime identification:
 
 **RID Components:**
+
 - `id`: UUID assigned by backend
 - `processId`: Current process PID
 - `name`: User-provided name
@@ -107,9 +116,11 @@ Manages runtime identification:
 - `hostIP`: Machine IP address
 
 ### RuntimeHealthService
+
 Publishes heartbeat to keep runtime alive:
 
 **Heartbeat Pattern:**
+
 - Publishes to NATS KV store every 5 seconds
 - Key: `{RID}`
 - Value: `{ timestamp: "..." }`
@@ -117,9 +128,11 @@ Publishes heartbeat to keep runtime alive:
 - Backend marks runtime INACTIVE if heartbeat expires
 
 ### AgentServerService (Agent Mode)
+
 Implements MCP server protocol for agents:
 
 **MCP Protocol Handlers:**
+
 ```typescript
 // Initialize connection
 server.setRequestHandler(InitializeRequestSchema, async () => {
@@ -146,19 +159,23 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 ```
 
 **Transports:**
+
 - **STDIO** (default): Standard input/output for local agents
 - **STREAM**: HTTP-based for remote agents
 
 Configuration:
+
 ```bash
 AGENT_SERVER_TRANSPORT=stdio|stream     # Default: stdio
 AGENT_SERVER_TRANSPORT_PORT=3001        # For stream transport
 ```
 
 ### ToolClientService (Tool Mode)
+
 Orchestrates MCP server lifecycle:
 
 **Responsibilities:**
+
 - Observes MCP server configurations from backend (ephemeral KV)
 - Spawns ToolServerService for each MCP server
 - Stops servers when config removed
@@ -166,9 +183,10 @@ Orchestrates MCP server lifecycle:
 - Publishes discovered tools to backend
 
 **Config Observation:**
+
 ```typescript
 // Watch ephemeral KV for config updates
-natsService.observeEphemeral(subject).subscribe(msg => {
+natsService.observeEphemeral(subject).subscribe((msg) => {
   if (msg instanceof UpdateConfiguredMCPServerMessage) {
     // Spawn or update MCP servers
   }
@@ -176,9 +194,11 @@ natsService.observeEphemeral(subject).subscribe(msg => {
 ```
 
 ### ToolServerService (MCP Client)
+
 Manages individual MCP server connection:
 
 **Lifecycle:**
+
 1. Spawn MCP server subprocess (STDIO or STREAM)
 2. Connect MCP client to server
 3. List available tools
@@ -187,8 +207,9 @@ Manages individual MCP server connection:
 6. Monitor process health
 
 **Tool Discovery:**
+
 ```typescript
-const client = new Client({ name: "2ly", version: "1.0.0" });
+const client = new Client({ name: '2ly', version: '1.0.0' });
 await client.connect(transport);
 
 const { tools } = await client.listTools();
@@ -196,10 +217,11 @@ const { tools } = await client.listTools();
 ```
 
 **Tool Execution:**
+
 ```typescript
 const result = await client.callTool({
   name: toolName,
-  arguments: toolArgs
+  arguments: toolArgs,
 });
 // Return via AgentCallResponseMessage
 ```
@@ -207,6 +229,7 @@ const result = await client.callTool({
 ## MCP Transports
 
 ### STDIO Transport
+
 Default transport for local communication:
 
 ```typescript
@@ -216,35 +239,38 @@ await server.connect(transport);
 
 // Client side (tool mode)
 const transport = new StdioClientTransport({
-  command: "npx",
-  args: ["@modelcontextprotocol/server-filesystem", "/tmp"]
+  command: 'npx',
+  args: ['@modelcontextprotocol/server-filesystem', '/tmp'],
 });
 await client.connect(transport);
 ```
 
 **Use Cases:**
+
 - Claude Desktop integration
 - Local agent development
 - Subprocess-based tools
 
 ### STREAM Transport
+
 HTTP-based transport for remote communication:
 
 ```typescript
 // Server side (agent mode)
 const app = Fastify();
-const transport = new StreamableHTTPServerTransport("/mcp", app);
+const transport = new StreamableHTTPServerTransport('/mcp', app);
 await server.connect(transport);
 await app.listen({ port: 3001 });
 
 // Client side (tool mode)
 const transport = new StreamableHTTPClientTransport({
-  endpoint: "http://localhost:3001/mcp"
+  endpoint: 'http://localhost:3001/mcp',
 });
 await client.connect(transport);
 ```
 
 **Use Cases:**
+
 - Remote agent connections
 - HTTP-based MCP servers
 - Cloud-deployed runtimes
@@ -254,11 +280,13 @@ await client.connect(transport);
 Roots define filesystem access boundaries:
 
 **Configuration:**
+
 ```bash
 ROOTS=HOME:/Users/alice,PROJECTS:/Users/alice/projects
 ```
 
 **Format:**
+
 ```json
 [
   { "name": "HOME", "uri": "file:///Users/alice" },
@@ -267,6 +295,7 @@ ROOTS=HOME:/Users/alice,PROJECTS:/Users/alice/projects
 ```
 
 **Flow:**
+
 1. Runtime validates paths exist
 2. Sends SetRootsMessage to backend
 3. Backend stores in Runtime.roots field
@@ -276,11 +305,13 @@ ROOTS=HOME:/Users/alice,PROJECTS:/Users/alice/projects
 ## Configuration Reference
 
 ### Required
+
 ```bash
 RUNTIME_NAME=my-runtime                # Unique runtime name
 ```
 
 ### Optional
+
 ```bash
 WORKSPACE_ID=workspace-123             # Default: DEFAULT
 NATS_SERVERS=nats://host:4222          # Default: nats://localhost:4222
@@ -298,12 +329,12 @@ ROOTS=NAME:path,NAME:path              # Filesystem roots
 
 # Special flags
 GLOBAL_RUNTIME=false                   # Is global runtime
-DEFAULT_TESTING_RUNTIME=false          # Is testing runtime
 ```
 
 ## Deployment Patterns
 
 ### Claude Desktop (Agent Mode)
+
 ```json
 {
   "mcpServers": {
@@ -320,6 +351,7 @@ DEFAULT_TESTING_RUNTIME=false          # Is testing runtime
 ```
 
 ### Edge Runtime (Tool Mode)
+
 ```bash
 # User's local machine
 RUNTIME_NAME=alice-edge \
@@ -328,6 +360,7 @@ npx @2ly/runtime
 ```
 
 ### Global Runtime (Tool Mode)
+
 ```bash
 # Shared runtime in Docker
 RUNTIME_NAME=global \
@@ -336,6 +369,7 @@ npx @2ly/runtime
 ```
 
 ### Dual Mode Runtime
+
 ```bash
 # Both agent and tool capabilities
 RUNTIME_NAME=hybrid \
@@ -353,16 +387,19 @@ IDLE → STARTING → STARTED → STOPPING → STOPPED
 ```
 
 **STARTING:**
+
 - Connecting to NATS
 - Registering identity
 - Starting services
 
 **STARTED:**
+
 - Heartbeat publishing
 - Handling messages
 - Executing tools
 
 **STOPPING:**
+
 - Graceful shutdown
 - Closing NATS connection
 - Stopping MCP servers
@@ -370,16 +407,19 @@ IDLE → STARTING → STARTED → STOPPING → STOPPED
 ## Error Recovery
 
 **NATS Connection Loss:**
+
 - Exponential backoff reconnection
 - Retry intervals: 1s, 2s, 4s, 8s... (max 30s)
 - Maintains service state during reconnection
 
 **MCP Server Crash:**
+
 - ToolServerService detects subprocess exit
 - Logs error and notifies backend
 - Can be restarted by config update
 
 **Agent Disconnection:**
+
 - AgentServerService handles gracefully
 - Logs disconnection
 - Ready for new agent connection
@@ -388,6 +428,7 @@ IDLE → STARTING → STARTED → STOPPING → STOPPED
 
 **Health Check:**
 Check if runtime is publishing heartbeat:
+
 ```bash
 # Query NATS KV store
 nats kv get heartbeat {RID}
@@ -395,6 +436,7 @@ nats kv get heartbeat {RID}
 
 **Logs:**
 Runtime logs include:
+
 - Connection status
 - MCP server lifecycle
 - Tool execution
@@ -402,6 +444,7 @@ Runtime logs include:
 
 **Metrics:**
 Key metrics to monitor:
+
 - Heartbeat timestamp freshness
 - MCP server subprocess count
 - Tool execution latency

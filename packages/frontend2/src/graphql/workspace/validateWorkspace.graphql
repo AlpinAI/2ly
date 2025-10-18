@@ -1,0 +1,11 @@
+# Validate Workspace Access
+# WHY: Verify user has access to the workspace in the URL before loading app.
+# Used by WorkspaceLoader to prevent unauthorized workspace access.
+# Uses workspaceMCPTools query which returns Workspace if user has access.
+
+query ValidateWorkspace($workspaceId: ID!) {
+  workspaceMCPTools(workspaceId: $workspaceId) {
+    id
+    name
+  }
+}

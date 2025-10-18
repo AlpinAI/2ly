@@ -2,7 +2,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { RuntimeService } from './runtime.service';
 import { ControllableAsyncIterator } from '../../../common/src/test/utils';
-import { NatsServiceMock } from '@2ly/common';
+import { NatsServiceMock } from '@2ly/common/test/vitest';
 import {
     UpdateMcpToolsMessage,
     RuntimeConnectMessage,
@@ -161,7 +161,7 @@ describe('RuntimeService', () => {
         await service.stop();
     });
 
-    it('does not handle SetRoots/SetGlobalRuntime/SetDefaultTestingRuntime/SetRuntimeCapabilities anymore');
+    it('does not handle SetRoots/SetGlobalRuntime/SetRuntimeCapabilities anymore');
 
     it('logs error messages and ignores unknown', async () => {
         const { service, iterator } = createService();

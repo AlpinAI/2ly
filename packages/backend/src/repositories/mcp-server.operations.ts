@@ -6,11 +6,7 @@ export const ADD_MCPSERVER = gql`
     $description: String!
     $repositoryUrl: String!
     $transport: MCPTransportType!
-    $command: String!
-    $args: String!
-    $ENV: String!
-    $serverUrl: String!
-    $headers: String
+    $config: String!
     $workspaceId: ID!
     $runOn: MCPServerRunOn
   ) {
@@ -20,11 +16,7 @@ export const ADD_MCPSERVER = gql`
         description: $description
         repositoryUrl: $repositoryUrl
         transport: $transport
-        command: $command
-        args: $args
-        ENV: $ENV
-        serverUrl: $serverUrl
-        headers: $headers
+        config: $config
         runOn: $runOn
         workspace: { id: $workspaceId }
       }
@@ -35,11 +27,7 @@ export const ADD_MCPSERVER = gql`
         description
         repositoryUrl
         transport
-        command
-        args
-        ENV
-        serverUrl
-        headers
+        config
         runOn
         workspace {
           id
@@ -57,11 +45,7 @@ export const UPDATE_MCPSERVER = gql`
     $description: String!
     $repositoryUrl: String!
     $transport: MCPTransportType!
-    $command: String!
-    $args: String!
-    $ENV: String!
-    $serverUrl: String!
-    $headers: String
+    $config: String!
     $runOn: MCPServerRunOn
   ) {
     updateMCPServer(
@@ -72,11 +56,7 @@ export const UPDATE_MCPSERVER = gql`
           description: $description
           repositoryUrl: $repositoryUrl
           transport: $transport
-          command: $command
-          args: $args
-          ENV: $ENV
-          serverUrl: $serverUrl
-          headers: $headers
+          config: $config
           runOn: $runOn
         }
       }
@@ -87,11 +67,7 @@ export const UPDATE_MCPSERVER = gql`
         description
         repositoryUrl
         transport
-        command
-        args
-        ENV
-        serverUrl
-        headers
+        config
         runOn
         workspace {
           id
@@ -104,12 +80,7 @@ export const UPDATE_MCPSERVER = gql`
 
 export const UPDATE_MCPSERVER_RUN_ON = gql`
   mutation updateMCPServerRunOn($id: ID!, $runOn: MCPServerRunOn) {
-    updateMCPServer(
-      input: {
-        filter: { id: [$id] }
-        set: { runOn: $runOn }
-      }
-    ) {
+    updateMCPServer(input: { filter: { id: [$id] }, set: { runOn: $runOn } }) {
       mCPServer {
         id
         runOn
@@ -129,7 +100,7 @@ export const GET_MCPSERVER = gql`
   query getMCPServer($id: ID!) {
     getMCPServer(id: $id) {
       id
-        runtime {
+      runtime {
         id
       }
     }
@@ -138,9 +109,7 @@ export const GET_MCPSERVER = gql`
 
 export const LINK_RUNTIME = gql`
   mutation linkRuntime($mcpServerId: ID!, $runtimeId: ID!) {
-    updateMCPServer(
-      input: { filter: { id: [$mcpServerId] }, set: { runtime: { id: $runtimeId } } }
-    ) {
+    updateMCPServer(input: { filter: { id: [$mcpServerId] }, set: { runtime: { id: $runtimeId } } }) {
       mCPServer {
         id
         name
@@ -159,9 +128,7 @@ export const LINK_RUNTIME = gql`
 
 export const UNLINK_RUNTIME = gql`
   mutation unlinkRuntime($mcpServerId: ID!, $runtimeId: ID!) {
-    updateMCPServer(
-      input: { filter: { id: [$mcpServerId] }, remove: { runtime: { id: $runtimeId } } }
-    ) {
+    updateMCPServer(input: { filter: { id: [$mcpServerId] }, remove: { runtime: { id: $runtimeId } } }) {
       mCPServer {
         id
         name
@@ -193,11 +160,7 @@ export const DELETE_MCPSERVER = gql`
         description
         repositoryUrl
         transport
-        command
-        args
-        ENV
-        serverUrl
-        headers
+        config
         runOn
         workspace {
           id
@@ -234,11 +197,7 @@ export const QUERY_MCPSERVERS = gql`
       description
       repositoryUrl
       transport
-      command
-      args
-      ENV
-      serverUrl
-      headers
+      config
       runOn
       tools {
         id

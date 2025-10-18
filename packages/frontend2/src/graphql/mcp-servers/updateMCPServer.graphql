@@ -1,0 +1,33 @@
+# Update MCP Server Mutation
+# WHY: Update server name, description, config, and other properties
+mutation UpdateMCPServer(
+  $id: ID!
+  $name: String!
+  $description: String!
+  $repositoryUrl: String!
+  $transport: MCPTransportType!
+  $config: String!
+  $runOn: MCPServerRunOn
+) {
+  updateMCPServer(
+    id: $id
+    name: $name
+    description: $description
+    repositoryUrl: $repositoryUrl
+    transport: $transport
+    config: $config
+    runOn: $runOn
+  ) {
+    id
+    name
+    description
+    repositoryUrl
+    transport
+    runOn
+    config
+    runtime {
+      id
+      name
+    }
+  }
+}

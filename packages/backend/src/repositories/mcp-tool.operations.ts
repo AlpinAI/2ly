@@ -8,10 +8,6 @@ export const GET_MCP_TOOL_WITH_WORKSPACE = gql`
       workspace {
         id
         name
-        defaultTestingRuntime {
-          id
-          name
-        }
       }
     }
   }

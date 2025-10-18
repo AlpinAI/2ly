@@ -3,21 +3,41 @@
   "version": "0.0.1",
   "type": "module",
   "exports": {
-    "import": {
-      "types": "./dist/index.d.ts",
-      "browser": "./dist/index.browser.js",
-      "default": "./dist/index.js"
+    ".": {
+      "import": {
+        "types": "./src/index.ts",
+        "browser": "./src/index.browser.ts",
+        "default": "./src/index.ts"
+      },
+      "types": "./src/index.ts"
     },
-    "types": "./dist/index.d.ts"
+    "./test/testcontainers": {
+      "import": {
+        "types": "./src/test/testcontainers.ts",
+        "default": "./src/test/testcontainers.ts"
+      },
+      "types": "./src/test/testcontainers.ts"
+    },
+    "./test/vitest": {
+      "import": {
+        "types": "./src/test/vitest.ts",
+        "default": "./src/test/vitest.ts"
+      },
+      "types": "./src/test/vitest.ts"
+    }
   },
   "scripts": {
+    "build": "tsc",
     "lint": "eslint \"{src,test}/**/*.{js,ts}\"",
     "format": "prettier --write \"{src,test}/**/*.*\" && rm -rf node_modules/.cache/prettier",
     "typecheck": "tsc --noEmit --skipLibCheck",
-    "codegen": "graphql-codegen --config apollo.codegen.ts && graphql-codegen --config dgraph.codegen.ts"
+    "codegen": "graphql-codegen --config apollo.codegen.ts && graphql-codegen --config dgraph.codegen.ts",
+    "codegen:mcp-registry": "openapi-typescript https://registry.modelcontextprotocol.io/openapi.yaml -o src/types/mcp-registry.ts",
+    "test": "vitest --run"
   },
   "devDependencies": {
-    "@testcontainers/nats": "^11.5.1"
+    "@testcontainers/nats": "^11.7.1",
+    "testcontainers": "^11.7.1"
   },
   "overrides": {}
 }

@@ -1,0 +1,20 @@
+# Get all workspaces with their runtimes
+# WHY: Dashboard needs to show runtime status and stats
+query GetRuntimes {
+  workspace {
+    id
+    name
+    runtimes {
+      id
+      name
+      description
+      status
+      createdAt
+      lastSeenAt
+      capabilities
+      hostIP
+      hostname
+      mcpClientName
+    }
+  }
+}

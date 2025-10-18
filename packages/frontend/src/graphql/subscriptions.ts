@@ -8,11 +8,7 @@ export const MCP_SERVERS_SUBSCRIPTION = gql`
       description
       repositoryUrl
       transport
-      command
-      args
-      ENV
-      serverUrl
-      headers
+      config
       runOn
       tools {
         id
@@ -148,7 +144,10 @@ export const TOOL_CALLS_SUBSCRIPTION = gql`
       mcpTool {
         id
         name
-        mcpServer { id name }
+        mcpServer {
+          id
+          name
+        }
       }
       calledBy {
         id

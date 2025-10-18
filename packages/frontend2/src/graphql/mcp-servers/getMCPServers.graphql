@@ -1,0 +1,21 @@
+# Get MCP Servers Query
+# WHY: Fetch all MCP servers for cache initialization (cache-only, populated by subscription)
+query GetMCPServers($workspaceId: ID!) {
+  mcpServers(workspaceId: $workspaceId) {
+    id
+    name
+    description
+    repositoryUrl
+    transport
+    runOn
+    config
+    tools {
+      id
+      name
+    }
+    runtime {
+      id
+      name
+    }
+  }
+}

@@ -55,7 +55,7 @@ const AgentCard: React.FC<AgentCardProps> = ({ agent, tools = [], className, onD
 
   return (
     <>
-      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }}>
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }} as="div">
         <Card className={cn('h-full flex flex-col', className)}>
           <CardContent className="p-0 flex-1">
             <div className="flex items-center gap-4 border-b border-gray-100 p-2">

@@ -1,0 +1,24 @@
+# Sync Upstream Registry Mutation
+# WHY: Sync servers from the upstream registry.
+# This fetches all servers from the upstream API and upserts them in our database.
+mutation SyncUpstreamRegistry($registryId: ID!) {
+  syncUpstreamRegistry(registryId: $registryId) {
+    id
+    name
+    upstreamUrl
+    lastSyncAt
+    servers {
+      id
+      name
+      description
+      title
+      repositoryUrl
+      version
+      packages
+      remotes
+      _meta
+      createdAt
+      lastSeenAt
+    }
+  }
+}

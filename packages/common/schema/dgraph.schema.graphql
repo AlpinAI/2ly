@@ -7,6 +7,7 @@ enum ActiveStatus {
 
 enum MCPTransportType {
   STDIO
+  SSE
   STREAM
 }
 
@@ -34,11 +35,38 @@ type Workspace @withSubscription {
   mcpServers: [MCPServer!] @hasInverse(field: workspace)
   mcpTools: [MCPTool!] @hasInverse(field: workspace)
   runtimes: [Runtime!] @hasInverse(field: workspace)
+  mcpRegistries: [MCPRegistry!] @hasInverse(field: workspace)
   admins: [User!] @hasInverse(field: adminOfWorkspaces)
   users: [User!] @hasInverse(field: membersOfWorkspaces)
   system: System! @hasInverse(field: workspaces)
   globalRuntime: Runtime
-  defaultTestingRuntime: Runtime
+  onboardingSteps: [OnboardingStep!]
+}
+
+type MCPRegistry @withSubscription {
+  id: ID!
+  name: String! @search(by: [hash])
+  upstreamUrl: String!
+  createdAt: DateTime!
+  lastSyncAt: DateTime
+  workspace: Workspace! @hasInverse(field: mcpRegistries)
+  servers: [MCPRegistryServer!] @hasInverse(field: registry)
+}
+
+type MCPRegistryServer @withSubscription {
+  id: ID!
+  name: String! @search(by: [hash])
+  description: String!
+  title: String!
+  repositoryUrl: String!
+  version: String!
+  packages: String!
+  remotes: String
+  _meta: String
+  createdAt: DateTime!
+  lastSeenAt: DateTime!
+  registry: MCPRegistry! @hasInverse(field: servers)
+  deployements: [MCPServer!]
 }
 
 type MCPServer @withSubscription {
@@ -47,11 +75,21 @@ type MCPServer @withSubscription {
   description: String!
   repositoryUrl: String!
   transport: MCPTransportType!
-  command: String!
-  args: String!
-  ENV: String!
-  serverUrl: String!
-  headers: String
+  # The `config` field contains THE SINGLE SELECTED configuration for this MCP server deployment.
+  # It is NOT an array - it's the one chosen package or remote configuration.
+  #
+  # When transport is STDIO: config contains a single Package object following the
+  # Package schema from the MCP registry (with identifier, packageArguments, runtimeArguments,
+  # environmentVariables, etc.)
+  #
+  # When transport is SSE or STREAM: config contains a single Transport object following
+  # the Transport schema from the MCP registry (with type, url, headers, etc.)
+  # Note: SSE and STREAM both use the Transport schema, differentiated by the "type" field
+  # ("sse" for SSE transport, "streamableHttp" for STREAM transport)
+  #
+  # The config values come from selecting ONE item from either MCPRegistryServer.packages
+  # or MCPRegistryServer.remotes during the server configuration workflow.
+  config: String!
   tools: [MCPTool!] @hasInverse(field: mcpServer)
   runOn: MCPServerRunOn @search
   # an MCP server can run either on a specific runtime - or if no value is provided it will be launch on the agent runtime which requires the capability
@@ -122,10 +160,32 @@ type Session @withSubscription {
   isActive: Boolean! @search
 }
 
+enum OnboardingStepType {
+  ONBOARDING
+  ANNOUNCEMENT
+  LEARNING
+}
+
+enum OnboardingStepStatus {
+  PENDING
+  COMPLETED
+  DISMISSED
+}
+
 enum ToolCallStatus {
   PENDING
   COMPLETED
   FAILED
+}
+
+type OnboardingStep {
+  id: ID!
+  stepId: String! @search(by: [hash])
+  type: OnboardingStepType!
+  status: OnboardingStepStatus!
+  priority: Int
+  createdAt: DateTime!
+  updatedAt: DateTime
 }
 
 type ToolCall {

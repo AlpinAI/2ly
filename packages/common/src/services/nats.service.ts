@@ -2,7 +2,7 @@ import { NatsConnection, Msg, ConnectionOptions, RequestOptions } from '@nats-io
 import { connect } from '@nats-io/transport-node';
 import { jetstream, jetstreamManager, JetStreamClient, JetStreamManager } from "@nats-io/jetstream";
 import { Kvm, KV } from "@nats-io/kv";
-import { inject, injectable } from 'inversify';
+import { injectable, inject } from 'inversify';
 import { LoggerService } from './logger.service';
 import pino from 'pino';
 import { Service } from './service.interface';

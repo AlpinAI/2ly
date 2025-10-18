@@ -14,7 +14,6 @@ export * from './set-roots.message';
 export * from './set-runtime-capabilities.message';
 export * from './runtime-healthy.message';
 export * from './set-global-runtime.message';
-export * from './set-default-testing-runtime.message';
 export * from './runtime-connect.message';
 export * from './set-mcp-client-name.message';
 

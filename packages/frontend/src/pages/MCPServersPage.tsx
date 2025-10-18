@@ -17,6 +17,7 @@ import {
 } from '../graphql';
 import { useRequiredWorkspace } from '../contexts/useRequiredWorkspace';
 import { useNavigate } from 'react-router-dom';
+import { parseMcpServerConfig } from '../utils/mcpServerConfig';
 
 interface GroupedTools {
   [mcpServerId: string]: {
@@ -185,11 +186,7 @@ const MCPServersPage: React.FC = () => {
           description: server.description,
           repositoryUrl: server.repositoryUrl,
           transport: server.transport,
-          command: server.command,
-          args: server.args,
-          ENV: server.ENV,
-          serverUrl: server.serverUrl,
-          headers: server.headers,
+          config: server.config, // Use the config field directly
           workspaceId: currentWorkspace.id,
         },
       });

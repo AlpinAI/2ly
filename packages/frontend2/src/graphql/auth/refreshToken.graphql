@@ -1,0 +1,9 @@
+# Refresh Token Mutation
+# WHY: Get new access token using refresh token.
+mutation RefreshToken($input: RefreshTokenInput!) {
+  refreshToken(input: $input) {
+    success
+    accessToken
+    errors
+  }
+}

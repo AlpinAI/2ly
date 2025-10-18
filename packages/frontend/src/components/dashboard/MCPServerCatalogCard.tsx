@@ -6,6 +6,7 @@ import Badge from '../ui/Badge';
 import Button from '../ui/Button';
 import { apolloResolversTypes } from '@2ly/common';
 import { cn } from '../../utils/helpers';
+import { parseMcpServerConfig } from '../../utils/mcpServerConfig';
 
 interface MCPServerCatalogCardProps {
   server: apolloResolversTypes.McpServer;
@@ -14,6 +15,9 @@ interface MCPServerCatalogCardProps {
 }
 
 const MCPServerCatalogCard: React.FC<MCPServerCatalogCardProps> = ({ server, className, onConfigure }) => {
+  // Parse the server config to extract additional properties
+  const serverWithConfig = parseMcpServerConfig(server);
+  
   const getServerTypeColor = (type: string) => {
     return type === 'STREAM' ? 'bg-blue-100 text-blue-800' : 'bg-purple-100 text-purple-800';
   };
@@ -42,21 +46,21 @@ const MCPServerCatalogCard: React.FC<MCPServerCatalogCardProps> = ({ server, cla
               <div className="grid grid-cols-2 gap-2 text-xs">
                 <div className="rounded-md bg-gray-50 p-2">
                   <span className="block text-gray-500">Command</span>
-                  <span className="font-medium truncate">{server.command}</span>
+                  <span className="font-medium truncate">{serverWithConfig.command}</span>
                 </div>
               </div>
 
-              {server.args && (
+              {serverWithConfig.args && (
                 <div className="rounded-md bg-gray-50 p-2 text-xs">
                   <span className="block text-gray-500">Arguments</span>
-                  <span className="font-medium truncate">{server.args}</span>
+                  <span className="font-medium truncate">{serverWithConfig.args}</span>
                 </div>
               )}
 
-              {server.ENV && (
+              {serverWithConfig.ENV && (
                 <div className="rounded-md bg-gray-50 p-2 text-xs">
                   <span className="block text-gray-500">Environment</span>
-                  <span className="font-medium truncate">{server.ENV}</span>
+                  <span className="font-medium truncate">{serverWithConfig.ENV}</span>
                 </div>
               )}
             </div>
@@ -69,10 +73,10 @@ const MCPServerCatalogCard: React.FC<MCPServerCatalogCardProps> = ({ server, cla
                 </div>
               )}
 
-              {server.serverUrl && (
+              {serverWithConfig.serverUrl && (
                 <div className="flex items-center gap-2 text-xs text-gray-600">
                   <Server className="h-3 w-3" />
-                  <span className="truncate">{server.serverUrl}</span>
+                  <span className="truncate">{serverWithConfig.serverUrl}</span>
                 </div>
               )}
             </div>

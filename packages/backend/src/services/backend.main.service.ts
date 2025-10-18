@@ -82,10 +82,10 @@ export class MainService extends Service {
         if (!this.apolloService.isRunning()) {
           throw new Error('Apollo is not running');
         }
-        res.status(200).send('OK');
+        res.status(200).send({ status: 'ok' });
       } catch (error) {
         this.logger.error(`Error during health check: ${error}`);
-        res.status(503).send('Service not running');
+        res.status(503).send({ status: 'error', message: 'Service not running' });
       }
     });
   }
@@ -157,9 +157,9 @@ export class MainService extends Service {
     const activeServices = Service.getActiveServices();
     if (activeServices.length > 0) {
       this.logger.warn('⚠️  Some services are still active after shutdown:');
-      activeServices.forEach(service => {
+      activeServices.forEach((service) => {
         this.logger.warn(
-          `   - Service "${service.name}" (${service.state}) is kept alive by consumers: [${service.consumers.join(', ')}]`
+          `   - Service "${service.name}" (${service.state}) is kept alive by consumers: [${service.consumers.join(', ')}]`,
         );
       });
     }

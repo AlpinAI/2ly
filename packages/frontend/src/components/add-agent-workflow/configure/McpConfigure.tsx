@@ -6,6 +6,16 @@ import MCPQuickConfig from './MCPQuickConfig';
 import { useWorkspace } from '../../../contexts/useWorkspace';
 import { client, observe } from '../../../services/apollo.client';
 import { CREATE_MCP_SERVER_MUTATION, DELETE_MCP_SERVER_MUTATION, MCP_SERVERS_SUBSCRIPTION, UPDATE_MCP_SERVER_RUN_ON_MUTATION } from '../../../graphql';
+import { buildConfigFromFormData } from '../../../utils/mcpServerConfig';
+
+// Extended type for frontend form data that includes config properties
+interface McpServerFormData extends Partial<apolloResolversTypes.McpServer> {
+    command?: string;
+    args?: string;
+    ENV?: string;
+    serverUrl?: string;
+    headers?: string;
+}
 
 const PAGE_SIZE_DEFAULT = 20;
 const CARD_FIXED_HEIGHT_PX = 560;
@@ -165,7 +175,7 @@ const McpConfigure: React.FC<McpConfigureProps> = ({ onSuccessExit }) => {
     const [isSearching, setIsSearching] = useState<boolean>(false);
     const [selectedServer, setSelectedServer] = useState<McpServerFromRegistry | null>(null);
     const [isManualMode, setIsManualMode] = useState<boolean>(false);
-    const [formData, setFormData] = useState<Partial<apolloResolversTypes.McpServer>>({
+    const [formData, setFormData] = useState<McpServerFormData>({
         name: '',
         description: '',
         repositoryUrl: '',
@@ -178,7 +188,7 @@ const McpConfigure: React.FC<McpConfigureProps> = ({ onSuccessExit }) => {
     });
     const [testView, setTestView] = useState<TestViewState>('idle');
     const [isQuickConfigValid, setIsQuickConfigValid] = useState<boolean>(true);
-    const [quickConfigFormData, setQuickConfigFormData] = useState<Partial<apolloResolversTypes.McpServer>>({});
+    const [quickConfigFormData, setQuickConfigFormData] = useState<McpServerFormData>({});
     const [testingServerName, setTestingServerName] = useState<string>('');
     const [testingTools, setTestingTools] = useState<apolloResolversTypes.McpTool[]>([]);
     const [testingError, setTestingError] = useState<string>('');
@@ -191,7 +201,7 @@ const McpConfigure: React.FC<McpConfigureProps> = ({ onSuccessExit }) => {
     const currentQuery = searchTerm.trim();
     const { currentWorkspace, runtimes } = useWorkspace();
 
-    const handleQuickConfigChange = useCallback((cfg: Partial<apolloResolversTypes.McpServer>): void => {
+    const handleQuickConfigChange = useCallback((cfg: McpServerFormData): void => {
         setQuickConfigFormData(cfg);
     }, []);
 
@@ -216,7 +226,7 @@ const McpConfigure: React.FC<McpConfigureProps> = ({ onSuccessExit }) => {
         initFormFromServer();
     }, [initFormFromServer]);
 
-    const onFormDataChange = useCallback((field: keyof Partial<apolloResolversTypes.McpServer>, value: string | apolloResolversTypes.McpTransportType): void => {
+    const onFormDataChange = useCallback((field: keyof McpServerFormData, value: string | apolloResolversTypes.McpTransportType): void => {
         setFormData(prev => ({ ...prev, [field]: value as string }));
     }, []);
 
@@ -690,7 +700,7 @@ const McpConfigure: React.FC<McpConfigureProps> = ({ onSuccessExit }) => {
         setTestingServerName('');
     }, [initFormFromServer]);
 
-    const buildCreateVariables = useCallback((): { data: Partial<apolloResolversTypes.McpServer>; nameForDisplay: string } => {
+    const buildCreateVariables = useCallback((): { data: McpServerFormData; nameForDisplay: string } => {
         if (isManualMode) {
             const name = ((formData.name || '') as string).trim() || 'MCP Server';
             return { data: formData, nameForDisplay: name };
@@ -763,6 +773,16 @@ const McpConfigure: React.FC<McpConfigureProps> = ({ onSuccessExit }) => {
             setTestingServerName(nameForDisplay);
             let serverId = createdServerId;
             if (!serverId) {
+                // Build config from form data
+                const config = buildConfigFromFormData({
+                    command: createData.command,
+                    args: createData.args,
+                    ENV: createData.ENV,
+                    serverUrl: createData.serverUrl,
+                    headers: createData.headers,
+                    transport: createData.transport!,
+                });
+                
                 const createResult = await client.mutate({
                     mutation: CREATE_MCP_SERVER_MUTATION,
                     variables: {
@@ -770,11 +790,7 @@ const McpConfigure: React.FC<McpConfigureProps> = ({ onSuccessExit }) => {
                         description: createData.description,
                         repositoryUrl: createData.repositoryUrl,
                         transport: createData.transport,
-                        command: createData.command,
-                        args: createData.args,
-                        ENV: createData.ENV,
-                        serverUrl: createData.serverUrl,
-                        headers: createData.headers,
+                        config: config,
                         workspaceId: currentWorkspace.id,
                     },
                 });

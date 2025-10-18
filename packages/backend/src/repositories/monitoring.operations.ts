@@ -60,7 +60,6 @@ export const COMPLETE_TOOL_CALL_ERROR = gql`
   }
 `;
 
-
 export const QUERY_TOOL_CALLS = gql`
   query toolCalls($workspaceId: ID!) {
     getWorkspace(id: $workspaceId) {
@@ -77,6 +76,45 @@ export const QUERY_TOOL_CALLS = gql`
           mcpTool { id name mcpServer { id name } }
           calledBy { id name }
           executedBy { id name }
+        }
+      }
+    }
+  }
+`;
+
+// New scalable query with filtering and pagination
+// WHY: Query through Workspace -> MCPTools -> ToolCalls (follows schema structure)
+export const QUERY_TOOL_CALLS_FILTERED = gql`
+  query queryToolCallsFiltered(
+    $workspaceId: ID!
+  ) {
+    getWorkspace(id: $workspaceId) {
+      mcpTools {
+        id
+        name
+        description
+        mcpServer {
+          id
+          name
+        }
+        toolCalls(order: { desc: calledAt }) {
+          id
+          toolInput
+          toolOutput
+          error
+          calledAt
+          completedAt
+          status
+          calledBy {
+            id
+            name
+            hostname
+          }
+          executedBy {
+            id
+            name
+            hostname
+          }
         }
       }
     }

@@ -1,0 +1,26 @@
+# Get all MCP tools for a workspace
+# WHY: Tool catalog page with cache-and-network fetch policy
+query GetMCPTools($workspaceId: ID!) {
+  mcpTools(workspaceId: $workspaceId) {
+    id
+    name
+    description
+    inputSchema
+    annotations
+    status
+    createdAt
+    lastSeenAt
+    mcpServer {
+      id
+      name
+      description
+      repositoryUrl
+    }
+    runtimes {
+      id
+      name
+      status
+      capabilities
+    }
+  }
+}

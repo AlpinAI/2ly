@@ -6,11 +6,13 @@ export interface PasswordValidationResult {
 }
 
 /**
- * Simple password policy service for POC.
- * Only validates minimum length of 8 characters.
+ * Password policy service.
+ * Validates password requirements:
+ * - Minimum 8 characters
+ * - At least one letter
+ * - At least one number
  *
  * TODO: Future improvements could include:
- * - Complexity requirements (uppercase, lowercase, numbers, special chars)
  * - Password strength scoring
  * - Common password checking
  * - Password history enforcement
@@ -22,13 +24,24 @@ export class PasswordPolicyService {
   private readonly minLength = parseInt(process.env.PASSWORD_MIN_LENGTH || '8', 10);
 
   /**
-   * Validates password against simple policy (8+ characters).
+   * Validates password against policy:
+   * - Minimum 8 characters
+   * - At least one letter
+   * - At least one number
    */
   validatePassword(password: string): PasswordValidationResult {
     const errors: string[] = [];
 
     if (!password || password.length < this.minLength) {
       errors.push(`Password must be at least ${this.minLength} characters long`);
+    }
+
+    if (!/[a-zA-Z]/.test(password)) {
+      errors.push('Password must contain at least one letter');
+    }
+
+    if (!/[0-9]/.test(password)) {
+      errors.push('Password must contain at least one number');
     }
 
     return {

@@ -23,7 +23,7 @@ import {
 import { HealthService, HEARTBEAT_INTERVAL } from '../services/runtime.health.service';
 import { ToolClientService } from '../services/tool.client.service';
 import { ToolServerService, type ToolServerServiceFactory } from '../services/tool.server.service';
-import { ROOTS, ToolService, DEFAULT_TESTING_RUNTIME, GLOBAL_RUNTIME } from '../services/tool.service';
+import { ROOTS, ToolService, GLOBAL_RUNTIME } from '../services/tool.service';
 import { AgentService } from '../services/agent.service';
 import {
   AgentServerService,
@@ -71,7 +71,6 @@ const start = () => {
   // Init tool client service
   container.bind(ROOTS).toConstantValue(process.env.ROOTS || undefined);
   container.bind(GLOBAL_RUNTIME).toConstantValue(process.env.GLOBAL_RUNTIME === 'true');
-  container.bind(DEFAULT_TESTING_RUNTIME).toConstantValue(process.env.DEFAULT_TESTING_RUNTIME === 'true');
   container.bind(ToolClientService).toSelf().inSingletonScope();
 
   // Init agent server service

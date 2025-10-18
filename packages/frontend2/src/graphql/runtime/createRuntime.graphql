@@ -1,0 +1,12 @@
+# Create Runtime Mutation
+# WHY: Create a new runtime (agent or tool runtime) in a workspace
+mutation CreateRuntime($workspaceId: ID!, $name: String!, $description: String!, $capabilities: [String!]!) {
+  createRuntime(workspaceId: $workspaceId, name: $name, description: $description, capabilities: $capabilities) {
+    id
+    name
+    description
+    status
+    capabilities
+    createdAt
+  }
+}

@@ -1,7 +1,6 @@
 import { ApolloServer, BaseContext } from '@apollo/server';
 import { ApolloServerPluginLandingPageLocalDefault } from '@apollo/server/plugin/landingPage/default';
 import { fastifyApolloDrainPlugin, fastifyApolloHandler } from '@nitra/as-integrations-fastify';
-import { STATE } from '@2ly/common';
 import { injectable, inject } from 'inversify';
 import { resolvers } from '../database/resolvers';
 import { FastifyService } from './fastify.service';

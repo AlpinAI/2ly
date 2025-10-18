@@ -1,0 +1,3 @@
+mutation DismissOnboardingStep($workspaceId: ID!, $stepId: String!) {
+  dismissOnboardingStep(workspaceId: $workspaceId, stepId: $stepId)
+}

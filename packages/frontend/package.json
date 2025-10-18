@@ -6,10 +6,7 @@
   "scripts": {
     "dev": "vite --force",
     "build": "vite build",
-    "lint": "eslint .",
     "preview": "vite preview",
-    "format": "prettier --write \"{src,test}/**/*.*\" && rm -rf node_modules/.cache/prettier",
-    "typecheck": "tsc --noEmit -p tsconfig.app.json --skipLibCheck",
     "codegen:mcp-registry": "openapi-typescript https://registry.modelcontextprotocol.io/openapi.yaml -o src/types/mcp-registry.ts"
   },
   "dependencies": {
