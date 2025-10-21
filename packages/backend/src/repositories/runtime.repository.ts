@@ -186,7 +186,7 @@ export class RuntimeRepository {
       'getRuntime',
       true,
     ).pipe(
-      map((runtime) => runtime.mcpServers ?? []),
+      map((runtime) => runtime?.mcpServers ?? []),
     );
   }
 
@@ -210,7 +210,7 @@ export class RuntimeRepository {
       'getWorkspace',
       true,
     ).pipe(
-      map((runtime) => runtime.mcpServers ?? []),
+      map((runtime) => runtime?.mcpServers ?? []),
     );
   }
 

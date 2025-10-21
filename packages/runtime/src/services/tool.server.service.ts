@@ -139,7 +139,6 @@ export class ToolServerService extends Service {
           this.logger.warn(`Missing required positional argument: ${arg.valueHint}`);
         }
       });
-      console.log('args', args);
       // Build environment variables
       const defaultEnv = getDefaultEnvironment();
       const env = envVars.reduce(
@@ -152,11 +151,7 @@ export class ToolServerService extends Service {
         { ...defaultEnv },
       );
 
-      console.log(`STDIO command: ${command}, args: ${args.join(' ')}`);
-      console.log(`Environment: ${JSON.stringify(env, null, 2)}`);
-
       this.logger.info(`STDIO command: ${command}, args: ${args.join(' ')}`);
-      this.logger.debug(`Environment: ${JSON.stringify(env, null, 2)}`);
 
       this.transport = new StdioClientTransport({
         command,
@@ -301,7 +296,7 @@ export class ToolServerService extends Service {
   }
 
   getConfigSignature(): string {
-    return `${this.config.transport} ${this.config.config}`;
+    return `${this.config.transport}-${this.config.config}-${this.config.tools?.length ?? 0}-${this.roots.length}`;
   }
 
   updateRoots(roots: { name: string; uri: string }[]) {

@@ -15,7 +15,7 @@ import {
   SetMcpClientNameMessage,
 } from '@2ly/common';
 import { RuntimeRepository, WorkspaceRepository } from '../repositories';
-import { combineLatest, debounceTime, of, Subscription, tap } from 'rxjs';
+import { BehaviorSubject, combineLatest, debounceTime, of, Subscription, switchMap, tap } from 'rxjs';
 
 // TODO: the "connect"/"disconnect" status is not always meaningful since we can potentially have multiple
 // instances of the same runtime running with different process ids
@@ -37,6 +37,7 @@ export class RuntimeInstance extends Service {
   name = 'runtime-instance';
   private rxjsSubscriptions: Subscription[] = [];
   private natsSubscriptions: { unsubscribe: () => void; drain: () => Promise<void> }[] = [];
+  private isGlobalRuntime: BehaviorSubject<boolean> = new BehaviorSubject(false);
 
   constructor(
     private logger: pino.Logger,
@@ -52,7 +53,7 @@ export class RuntimeInstance extends Service {
   }
 
   protected async initialize() {
-    this.logger.info(`Initializing runtime instance ${this.instance.id}:${this.metadata.pid}`);
+    this.logger.info(`Initializing runtime instance: ${this.instance.id}:${this.metadata.pid}`);
     await this.runtimeRepository.setActive(
       this.instance.id,
       this.metadata.pid,
@@ -104,6 +105,7 @@ export class RuntimeInstance extends Service {
       } else if (message instanceof SetGlobalRuntimeMessage) {
         this.logger.debug(`Setting ${this.instance.id} as global runtime`);
         await this.workspaceRepository.setGlobalRuntime(this.instance.id);
+        this.isGlobalRuntime.next(true);
         message.respond(new AckMessage({}));
       } else if (message instanceof SetMcpClientNameMessage) {
         this.logger.debug(`Setting ${this.instance.id} as MCP client name`);
@@ -151,10 +153,10 @@ export class RuntimeInstance extends Service {
     const roots = this.runtimeRepository.observeRoots(this.instance.id);
     const edgeMcpServers = this.runtimeRepository.observeMCPServersOnEdge(this.instance.id);
     const agentMcpServers = this.runtimeRepository.observeMCPServersOnAgent(this.instance.id);
-    const isGlobalRuntime = runtime.workspace.globalRuntime?.id === this.instance.id;
-    const globalMcpServers = isGlobalRuntime
-      ? this.runtimeRepository.observeMCPServersOnGlobal(runtime.workspace.id)
-      : of([]);
+    this.isGlobalRuntime.next(runtime.workspace.globalRuntime?.id === this.instance.id);
+    const globalMcpServers = this.isGlobalRuntime.pipe(
+      switchMap((isGlobal) => isGlobal ? this.runtimeRepository.observeMCPServersOnGlobal(runtime.workspace.id) : of([] as dgraphResolversTypes.McpServer[])),
+    );
     const subscription = combineLatest([roots, edgeMcpServers, agentMcpServers, globalMcpServers])
       .pipe(
         debounceTime(100), // debounce to avoid spamming the nats service
