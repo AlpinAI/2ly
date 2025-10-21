@@ -68,8 +68,7 @@ jobs:
 
           gh release create "$TAG" \
             --title "Release $VERSION" \
-            --notes "$(cat <<'EOF'
-          Release $VERSION
+            --notes "Release $VERSION
 
           This release was automatically created from the main branch.
 
@@ -87,9 +86,7 @@ jobs:
           - \`ghcr.io/${{ github.repository_owner }}/backend:$VERSION\`
           - \`ghcr.io/${{ github.repository_owner }}/frontend:$VERSION\`
           - \`ghcr.io/${{ github.repository_owner }}/runtime:$VERSION\`
-          - \`ghcr.io/${{ github.repository_owner }}/doc:$VERSION\`
-          EOF
-          )"
+          - \`ghcr.io/${{ github.repository_owner }}/doc:$VERSION\`"
 
           echo "✅ Created GitHub release: $TAG"
 
