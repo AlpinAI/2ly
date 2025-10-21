@@ -155,7 +155,7 @@ npm run build -w @2ly/runtime
 # Run quality checks
 npm run lint -w @2ly/runtime
 npm run typecheck -w @2ly/runtime
-npm run test -w @2ly/runtime
+npm run test -- packages/runtime
 
 # Publish to NPM (requires NPM login)
 npm login
