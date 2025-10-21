@@ -1,0 +1,95 @@
+name: Create Release
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  create-release:
+    name: Create Release Tag
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write  # Required to create tags and releases
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Extract version
+        id: version
+        run: |
+          VERSION=$(node -p "require('./packages/backend/package.json').version")
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "tag=v$VERSION" >> $GITHUB_OUTPUT
+          echo "Extracted version: $VERSION"
+
+      - name: Check if tag already exists
+        id: check-tag
+        run: |
+          TAG="${{ steps.version.outputs.tag }}"
+
+          if git rev-parse "$TAG" >/dev/null 2>&1; then
+            echo "exists=true" >> $GITHUB_OUTPUT
+            echo "Tag $TAG already exists - skipping release creation"
+          else
+            echo "exists=false" >> $GITHUB_OUTPUT
+            echo "Tag $TAG does not exist - will create release"
+          fi
+
+      - name: Create and push tag
+        if: steps.check-tag.outputs.exists == 'false'
+        run: |
+          TAG="${{ steps.version.outputs.tag }}"
+          VERSION="${{ steps.version.outputs.version }}"
+
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          git tag -a "$TAG" -m "Release $VERSION"
+          git push origin "$TAG"
+
+          echo "✅ Created and pushed tag: $TAG"
+
+      - name: Create GitHub Release
+        if: steps.check-tag.outputs.exists == 'false'
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ steps.version.outputs.tag }}
+          release_name: Release ${{ steps.version.outputs.version }}
+          body: |
+            Release ${{ steps.version.outputs.version }}
+
+            This release was automatically created from the main branch.
+
+            ## NPM Package
+            The runtime package has been published to NPM:
+            - [@2ly/runtime@${{ steps.version.outputs.version }}](https://www.npmjs.com/package/@2ly/runtime/v/${{ steps.version.outputs.version }})
+
+            Install with:
+            ```bash
+            npm install @2ly/runtime@${{ steps.version.outputs.version }}
+            ```
+
+            ## Docker Images
+            The following Docker images have been built and tagged with this version:
+            - `ghcr.io/${{ github.repository_owner }}/backend:${{ steps.version.outputs.version }}`
+            - `ghcr.io/${{ github.repository_owner }}/frontend:${{ steps.version.outputs.version }}`
+            - `ghcr.io/${{ github.repository_owner }}/runtime:${{ steps.version.outputs.version }}`
+            - `ghcr.io/${{ github.repository_owner }}/doc:${{ steps.version.outputs.version }}`
+          draft: false
+          prerelease: false
+
+      - name: Release already exists
+        if: steps.check-tag.outputs.exists == 'true'
+        run: |
+          echo "ℹ️ Release ${{ steps.version.outputs.tag }} already exists"
+          echo "No action taken - this commit was likely a direct push to main without version bump"
