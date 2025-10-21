@@ -29,8 +29,15 @@ jobs:
           node-version: '22'
           cache: 'npm'
 
+      - name: Debug environment
+        run: |
+          pwd
+          ls -la packages/frontend/src/components/ui/button.tsx
+          cd packages/frontend && npx tsc --showConfig
+          cat packages/frontend/tsconfig.json
+
       - name: Install dependencies
-        run: npm ci
+        run: npm ci --cache .npm --prefer-offline=false
 
       - name: Run linter
         id: lint
