@@ -84,6 +84,51 @@ Personal Access Tokens expire for security. When yours expires:
 
 ## Troubleshooting
 
+### Error: "Permission denied" when pushing tag
+
+**Symptom**: Release workflow fails with:
+```
+remote: Permission to AlpinAI/2ly.git denied to [username].
+fatal: unable to access 'https://github.com/AlpinAI/2ly/': The requested URL returned error: 403
+```
+
+**Most Common Causes** (even for organization owners):
+
+#### 1. **SSO/SAML Authorization Required** ⭐ Most Likely
+
+If your organization uses SSO (SAML), you MUST authorize the PAT:
+
+1. Go to GitHub → **Settings** → **Developer settings** → **Personal access tokens**
+2. Find your token in the list
+3. Look for **"Configure SSO"** or **"Authorize"** button next to the token
+4. Click it and authorize the token for the **AlpinAI** organization
+5. Retry the workflow
+
+**Note**: Even organization owners need to do this step if SSO is enabled!
+
+#### 2. **Fine-Grained PAT: Repository Not Selected**
+
+If you created a fine-grained PAT:
+
+1. Go to your PAT settings
+2. Edit the token
+3. Under **Repository access**, ensure you selected:
+   - **"Only select repositories"** → Check **"2ly"** is in the list
+   - OR use **"All repositories"** (less secure)
+4. Save and retry
+
+#### 3. **Organization PAT Restrictions**
+
+Check if the organization restricts PAT usage:
+
+1. Go to **AlpinAI** organization → **Settings** → **Personal access tokens**
+2. Check the policy settings
+3. If restricted, allowlist your PAT or adjust the policy
+
+#### 4. **Classic PAT: Missing Scopes**
+
+Ensure your classic PAT has the **`repo`** scope (full control of private repositories)
+
 ### Workflows Still Not Triggering
 
 **Check 1: PAT_TOKEN is set**
@@ -99,8 +144,9 @@ Personal Access Tokens expire for security. When yours expires:
 - Regenerate if expired
 
 **Check 4: Token is for correct user**
-- The PAT should be from a user with write access to the repository
+- The PAT should be from a user with **write access** to the repository
 - Organization tokens may have additional restrictions
+- For "AlpinAI/2ly": User must be in AlpinAI organization with write permissions
 
 ### Manual Trigger Workaround
 

@@ -3,9 +3,9 @@ name: Publish Runtime to NPM
 on:
   push:
     branches:
-      - develop  # Publish beta builds on develop commits
+      - develop # Publish beta builds on develop commits
     tags:
-      - 'v*'  # Publish stable releases on version tags (e.g., v0.1.0)
+      - 'v*' # Publish stable releases on version tags (e.g., v0.1.0)
   workflow_dispatch:
 
 jobs:
@@ -75,7 +75,7 @@ jobs:
         run: npm run typecheck -w @2ly/runtime
 
       - name: Run tests
-        run: npm run test -w @2ly/runtime
+        run: npm run test packages/runtime
 
       - name: Build runtime package
         run: npm run build -w @2ly/runtime
