@@ -9,14 +9,14 @@ jobs:
     name: Create Release Tag
     runs-on: ubuntu-latest
     permissions:
-      contents: write  # Required to create tags and releases
+      contents: write # Required to create tags and releases
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          token: ${{ secrets.PAT_TOKEN || secrets.GITHUB_TOKEN }}  # Use PAT to trigger workflows
+          token: ${{ secrets.PAT_TOKEN || secrets.GITHUB_TOKEN }} # Use PAT to trigger workflows
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
