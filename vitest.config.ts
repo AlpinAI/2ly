@@ -52,8 +52,7 @@ export default defineConfig({
                 plugins: [react()],
                 resolve: {
                     alias: {
-                        '@': path.resolve(__dirname, 'packages/frontend/src'),
-                        '@/*': path.resolve(__dirname, 'packages/frontend/src/*')
+                        '@': path.resolve(__dirname, 'packages/frontend/src')
                     }
                 }
             },
@@ -81,8 +80,7 @@ export default defineConfig({
                     alias: {
                         '@2ly/common/test/testcontainers': path.resolve(__dirname, 'packages/common/src/test/testcontainers.ts'),
                         '@2ly/common/test/vitest': path.resolve(__dirname, 'packages/common/src/test/vitest.ts'),
-                        '@2ly/common': path.resolve(__dirname, 'packages/common/src/index.ts'),
-                        '@2ly/common/*': path.resolve(__dirname, 'packages/common/src/*')
+                        '@2ly/common': path.resolve(__dirname, 'packages/common/src/index.ts')
                     }
                 }
             }
