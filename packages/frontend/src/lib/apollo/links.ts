@@ -33,23 +33,25 @@ import { createClient } from 'graphql-ws';
  *
  * WHY runtime configuration: Allow dynamic configuration at container startup
  * WHY fallback to localhost: Works out of the box in development
- * 
- * RUNTIME CONFIGURATION:
- * - RUNTIME_VITE_GRAPHQL_HOST: Sets the host (e.g., "api.example.com")
- * - RUNTIME_VITE_GRAPHQL_HOST_SSL: Override SSL detection ("true" or "false")
- * 
+ *
+ * RUNTIME CONFIGURATION (Docker/Production):
+ * - window.__ENV__.GRAPHQL_HOST: Sets the host (e.g., "api.example.com")
+ * - window.__ENV__.GRAPHQL_HOST_SSL: Override SSL detection (true or false)
+ *
+ * BUILD-TIME CONFIGURATION (Development):
+ * - import.meta.env.VITE_GRAPHQL_HOST: Build-time host override
+ * - import.meta.env.VITE_GRAPHQL_HOST_SSL: Build-time SSL override
+ *
  * PROTOCOL DETECTION:
- * - If VITE_GRAPHQL_HOST_SSL is set: use that value
+ * - If GRAPHQL_HOST_SSL is explicitly set: use that value
  * - If host contains "localhost" or "127.0.0.1": use HTTP/WS
  * - Otherwise: use HTTPS/WSS
  */
-const runtimeHost = 'RUNTIME_VITE_GRAPHQL_HOST';
-const runtimeHostSsl = 'RUNTIME_VITE_GRAPHQL_HOST_SSL';
 
 /**
  * Helper function to check if host contains localhost
  */
-const hostContainsLocalhost = (host: string): boolean => 
+const hostContainsLocalhost = (host: string): boolean =>
   host.includes('localhost') || host.includes('127.0.0.1');
 
 /**
@@ -62,17 +64,22 @@ const shouldUseSsl = (host: string, sslFlag?: string | boolean): boolean => {
   return !hostContainsLocalhost(host);
 };
 
-// Get host from environment or runtime placeholder
-const host = 
-  import.meta.env.VITE_GRAPHQL_HOST || 
-  (runtimeHost.startsWith('RUNTIME_') ? null : runtimeHost) ||
+// Get runtime config from window.__ENV__ (injected by docker-entrypoint.sh)
+const runtimeEnv = window.__ENV__;
+
+// Get host: runtime > build-time > default
+const host =
+  runtimeEnv?.GRAPHQL_HOST ||
+  import.meta.env.VITE_GRAPHQL_HOST ||
   'localhost:3000';
 
-// Get SSL flag from environment or runtime placeholder
-const sslFlag = 
-  import.meta.env.VITE_GRAPHQL_HOST_SSL !== undefined 
-    ? import.meta.env.VITE_GRAPHQL_HOST_SSL
-    : (runtimeHostSsl.startsWith('RUNTIME_') ? undefined : runtimeHostSsl);
+// Get SSL flag: runtime > build-time > auto-detect
+const sslFlag =
+  runtimeEnv?.GRAPHQL_HOST_SSL !== undefined
+    ? runtimeEnv.GRAPHQL_HOST_SSL
+    : (import.meta.env.VITE_GRAPHQL_HOST_SSL !== undefined
+        ? import.meta.env.VITE_GRAPHQL_HOST_SSL
+        : undefined);
 
 // Determine protocol based on host and SSL flag
 const useSsl = shouldUseSsl(host, sslFlag);

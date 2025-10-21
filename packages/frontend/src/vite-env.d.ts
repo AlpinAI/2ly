@@ -19,3 +19,19 @@ interface ImportMetaEnv {
 interface ImportMeta {
   readonly env: ImportMetaEnv;
 }
+
+/**
+ * Runtime Environment Configuration
+ *
+ * WHY: Allows runtime configuration of frontend in Docker containers
+ * HOW: docker-entrypoint.sh injects this via <script> tag in index.html
+ *
+ * USAGE: Set VITE_GRAPHQL_HOST and VITE_GRAPHQL_HOST_SSL environment variables
+ * when running the Docker container to configure the GraphQL endpoint.
+ */
+interface Window {
+  __ENV__?: {
+    GRAPHQL_HOST?: string;
+    GRAPHQL_HOST_SSL?: boolean;
+  };
+}
