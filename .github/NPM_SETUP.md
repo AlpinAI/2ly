@@ -6,6 +6,7 @@ This document explains how to configure NPM publishing for the `@2ly/runtime` pa
 
 1. **NPM Account**: You need an NPM account with publishing permissions for the `@2ly` scope
 2. **GitHub Repository Access**: Admin access to configure repository secrets
+3. **Personal Access Token**: A GitHub PAT to trigger workflows (see [PAT_SETUP.md](./PAT_SETUP.md))
 
 ## Setting up NPM Token
 
@@ -160,6 +161,17 @@ npm run test -w @2ly/runtime
 npm login
 npm publish -w @2ly/runtime
 ```
+
+## Required GitHub Secrets
+
+For the complete automation to work, you need **two secrets** configured:
+
+| Secret Name | Purpose | Setup Guide |
+|------------|---------|-------------|
+| `PAT_TOKEN` | Allows release workflow to trigger other workflows | [PAT_SETUP.md](./PAT_SETUP.md) |
+| `NPM_TOKEN` | Allows publishing to NPM registry | See "Setting up NPM Token" above |
+
+Both must be configured in **Settings** → **Secrets and variables** → **Actions**.
 
 ## Package Information
 

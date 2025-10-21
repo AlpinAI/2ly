@@ -9,13 +9,14 @@ jobs:
     name: Create Release Tag
     runs-on: ubuntu-latest
     permissions:
-      contents: write  # Required to create tags and releases
+      contents: write # Required to create tags and releases
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          token: ${{ secrets.PAT_TOKEN || secrets.GITHUB_TOKEN }} # Use PAT to trigger workflows
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -59,34 +60,38 @@ jobs:
 
       - name: Create GitHub Release
         if: steps.check-tag.outputs.exists == 'false'
-        uses: actions/create-release@v1
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tag_name: ${{ steps.version.outputs.tag }}
-          release_name: Release ${{ steps.version.outputs.version }}
-          body: |
-            Release ${{ steps.version.outputs.version }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TAG="${{ steps.version.outputs.tag }}"
+          VERSION="${{ steps.version.outputs.version }}"
 
-            This release was automatically created from the main branch.
+          gh release create "$TAG" \
+            --title "Release $VERSION" \
+            --notes "$(cat <<'EOF'
+          Release $VERSION
 
-            ## NPM Package
-            The runtime package has been published to NPM:
-            - [@2ly/runtime@${{ steps.version.outputs.version }}](https://www.npmjs.com/package/@2ly/runtime/v/${{ steps.version.outputs.version }})
+          This release was automatically created from the main branch.
 
-            Install with:
-            ```bash
-            npm install @2ly/runtime@${{ steps.version.outputs.version }}
-            ```
+          ## NPM Package
+          The runtime package has been published to NPM:
+          - [@2ly/runtime@$VERSION](https://www.npmjs.com/package/@2ly/runtime/v/$VERSION)
 
-            ## Docker Images
-            The following Docker images have been built and tagged with this version:
-            - `ghcr.io/${{ github.repository_owner }}/backend:${{ steps.version.outputs.version }}`
-            - `ghcr.io/${{ github.repository_owner }}/frontend:${{ steps.version.outputs.version }}`
-            - `ghcr.io/${{ github.repository_owner }}/runtime:${{ steps.version.outputs.version }}`
-            - `ghcr.io/${{ github.repository_owner }}/doc:${{ steps.version.outputs.version }}`
-          draft: false
-          prerelease: false
+          Install with:
+          \`\`\`bash
+          npm install @2ly/runtime@$VERSION
+          \`\`\`
+
+          ## Docker Images
+          The following Docker images have been built and tagged with this version:
+          - \`ghcr.io/${{ github.repository_owner }}/backend:$VERSION\`
+          - \`ghcr.io/${{ github.repository_owner }}/frontend:$VERSION\`
+          - \`ghcr.io/${{ github.repository_owner }}/runtime:$VERSION\`
+          - \`ghcr.io/${{ github.repository_owner }}/doc:$VERSION\`
+          EOF
+          )"
+
+          echo "✅ Created GitHub release: $TAG"
 
       - name: Release already exists
         if: steps.check-tag.outputs.exists == 'true'
