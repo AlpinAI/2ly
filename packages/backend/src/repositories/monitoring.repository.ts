@@ -65,7 +65,7 @@ export class MonitoringRepository {
         limit: number;
         offset: number;
         filters?: apolloResolversTypes.ToolCallFilters;
-        orderBy?: apolloResolversTypes.ToolCallOrderBy;
+        orderDirection?: apolloResolversTypes.OrderDirection;
     }): Promise<apolloResolversTypes.ToolCallsResult> {
         // Fetch all tool calls for workspace (through mcpTools)
         const result = await this.dgraphService.query<{
@@ -125,6 +125,41 @@ export class MonitoringRepository {
                 (call.executedBy && params.filters!.runtimeIds!.includes(call.executedBy.id))
             );
         }
+
+        // Apply search filter (case-insensitive)
+        if (params.filters?.search && params.filters.search.trim()) {
+            const searchLower = params.filters.search.toLowerCase().trim();
+            filteredCalls = filteredCalls.filter((call) => {
+                const toolName = call.mcpTool.name?.toLowerCase() || '';
+                const toolDescription = call.mcpTool.description?.toLowerCase() || '';
+                const toolInput = call.toolInput?.toLowerCase() || '';
+                const toolOutput = call.toolOutput?.toLowerCase() || '';
+                const error = call.error?.toLowerCase() || '';
+
+                return (
+                    toolName.includes(searchLower) ||
+                    toolDescription.includes(searchLower) ||
+                    toolInput.includes(searchLower) ||
+                    toolOutput.includes(searchLower) ||
+                    error.includes(searchLower)
+                );
+            });
+        }
+
+        // Apply sorting by calledAt date
+        filteredCalls.sort((a, b) => {
+            const dateA = new Date(a.calledAt).getTime();
+            const dateB = new Date(b.calledAt).getTime();
+
+            // Default to DESC (newest first) if not specified
+            const direction = params.orderDirection || 'DESC';
+
+            if (direction === 'ASC') {
+                return dateA - dateB; // Oldest first
+            } else {
+                return dateB - dateA; // Newest first
+            }
+        });
 
         // Calculate stats from all calls (before pagination)
         const stats: apolloResolversTypes.ToolCallStats = {

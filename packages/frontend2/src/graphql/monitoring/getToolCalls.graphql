@@ -5,14 +5,14 @@ query GetToolCalls(
   $limit: Int
   $offset: Int
   $filters: ToolCallFilters
-  $orderBy: ToolCallOrderBy
+  $orderDirection: OrderDirection
 ) {
   toolCalls(
     workspaceId: $workspaceId
     limit: $limit
     offset: $offset
     filters: $filters
-    orderBy: $orderBy
+    orderDirection: $orderDirection
   ) {
     toolCalls {
       id

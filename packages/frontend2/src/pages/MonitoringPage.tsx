@@ -22,11 +22,16 @@ import { Activity, AlertCircle, CheckCircle, Clock } from 'lucide-react';
 import { MasterDetailLayout } from '@/components/layout/master-detail-layout';
 import { ToolCallsTable } from '@/components/monitoring/ToolCallsTable';
 import { ToolCallDetail } from '@/components/monitoring/ToolCallDetail';
+import { RefreshIntervalControl } from '@/components/monitoring/RefreshIntervalControl';
 import { useToolCalls } from '@/hooks/useToolCalls';
 
 export default function MonitoringPage() {
   const [selectedToolCallId, setSelectedToolCallId] = useState<string | null>(null);
-  const { toolCalls, stats, loading, error, filters, pagination } = useToolCalls();
+  const [pollInterval, setPollInterval] = useState(30000);
+
+  const { toolCalls, stats, loading, error, filters, sorting, pagination } = useToolCalls({
+    pollInterval,
+  });
 
   // Get selected tool call
   const selectedToolCall = useMemo(
@@ -48,9 +53,12 @@ export default function MonitoringPage() {
   return (
     <div className="h-full flex flex-col">
       {/* Page Header */}
-      <div className="mb-6">
-        <h2 className="text-3xl font-bold text-gray-900 dark:text-white">Monitoring</h2>
-        <p className="text-gray-500 dark:text-gray-400 mt-1">Real-time tool call monitoring and debugging</p>
+      <div className="mb-6 flex items-start justify-between">
+        <div>
+          <h2 className="text-3xl font-bold text-gray-900 dark:text-white">Monitoring</h2>
+          <p className="text-gray-500 dark:text-gray-400 mt-1">Real-time tool call monitoring and debugging</p>
+        </div>
+        <RefreshIntervalControl interval={pollInterval} onChange={setPollInterval} />
       </div>
 
       {/* Stats Cards */}
@@ -105,6 +113,7 @@ export default function MonitoringPage() {
             selectedToolCallId={selectedToolCallId}
             onSelectToolCall={setSelectedToolCallId}
             filters={filters}
+            sorting={sorting}
             pagination={pagination}
           />
         }

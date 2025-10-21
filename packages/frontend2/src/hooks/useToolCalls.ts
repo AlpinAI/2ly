@@ -28,16 +28,28 @@
 
 import { useState, useMemo, useCallback } from 'react';
 import { useQuery } from '@apollo/client/react';
-import { GetToolCallsDocument, ToolCallStatus } from '@/graphql/generated/graphql';
+import { GetToolCallsDocument, ToolCallStatus, OrderDirection } from '@/graphql/generated/graphql';
 import { useWorkspaceId } from '@/stores/workspaceStore';
 
-export function useToolCalls(pollInterval = 30000) {
+export interface UseToolCallsOptions {
+  pollInterval?: number;
+  initialOrderDirection?: OrderDirection;
+}
+
+export function useToolCalls(options: UseToolCallsOptions = {}) {
+  const { pollInterval = 30000, initialOrderDirection } = options;
   const workspaceId = useWorkspaceId();
 
   // Filter state
   const [statusFilter, setStatusFilter] = useState<ToolCallStatus[]>([]);
   const [toolFilter, setToolFilter] = useState<string[]>([]);
   const [runtimeFilter, setRuntimeFilter] = useState<string[]>([]);
+  const [searchQuery, setSearchQuery] = useState<string>('');
+
+  // Sort state (only direction, always by calledAt date)
+  const [orderDirection, setOrderDirection] = useState<OrderDirection>(
+    initialOrderDirection || OrderDirection.Desc
+  );
 
   // Pagination state
   const [limit] = useState(100);
@@ -53,7 +65,9 @@ export function useToolCalls(pollInterval = 30000) {
         status: statusFilter.length > 0 ? statusFilter : undefined,
         mcpToolIds: toolFilter.length > 0 ? toolFilter : undefined,
         runtimeIds: runtimeFilter.length > 0 ? runtimeFilter : undefined,
+        search: searchQuery || undefined,
       },
+      orderDirection,
     },
     skip: !workspaceId,
     fetchPolicy: 'cache-and-network',
@@ -106,10 +120,27 @@ export function useToolCalls(pollInterval = 30000) {
     [resetPagination]
   );
 
+  const handleSetSearchQuery = useCallback(
+    (query: string) => {
+      setSearchQuery(query);
+      resetPagination();
+    },
+    [resetPagination]
+  );
+
+  const handleSetOrderDirection = useCallback(
+    (direction: OrderDirection) => {
+      setOrderDirection(direction);
+      resetPagination();
+    },
+    [resetPagination]
+  );
+
   const resetFilters = useCallback(() => {
     setStatusFilter([]);
     setToolFilter([]);
     setRuntimeFilter([]);
+    setSearchQuery('');
     resetPagination();
   }, [resetPagination]);
 
@@ -122,9 +153,19 @@ export function useToolCalls(pollInterval = 30000) {
       setToolIds: handleSetToolFilter,
       runtimeIds: runtimeFilter,
       setRuntimeIds: handleSetRuntimeFilter,
+      search: searchQuery,
+      setSearch: handleSetSearchQuery,
       reset: resetFilters,
     }),
-    [statusFilter, handleSetStatusFilter, toolFilter, handleSetToolFilter, runtimeFilter, handleSetRuntimeFilter, resetFilters]
+    [statusFilter, handleSetStatusFilter, toolFilter, handleSetToolFilter, runtimeFilter, handleSetRuntimeFilter, searchQuery, handleSetSearchQuery, resetFilters]
+  );
+
+  const sorting = useMemo(
+    () => ({
+      orderDirection,
+      setOrderDirection: handleSetOrderDirection,
+    }),
+    [orderDirection, handleSetOrderDirection]
   );
 
   const pagination = useMemo(
@@ -147,6 +188,7 @@ export function useToolCalls(pollInterval = 30000) {
     loading,
     error,
     filters,
+    sorting,
     pagination,
     refetch,
   };

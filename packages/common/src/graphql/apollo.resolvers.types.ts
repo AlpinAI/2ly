@@ -400,7 +400,7 @@ export type QueryToolCallsArgs = {
   filters?: InputMaybe<ToolCallFilters>;
   limit?: InputMaybe<Scalars['Int']['input']>;
   offset?: InputMaybe<Scalars['Int']['input']>;
-  orderBy?: InputMaybe<ToolCallOrderBy>;
+  orderDirection?: InputMaybe<OrderDirection>;
   workspaceId: Scalars['ID']['input'];
 };
 
@@ -508,17 +508,6 @@ export type ToolCallFilters = {
   search?: InputMaybe<Scalars['String']['input']>;
   status?: InputMaybe<Array<ToolCallStatus>>;
 };
-
-export type ToolCallOrderBy = {
-  direction: OrderDirection;
-  field: ToolCallOrderField;
-};
-
-export enum ToolCallOrderField {
-  CalledAt = 'CALLED_AT',
-  CompletedAt = 'COMPLETED_AT',
-  Status = 'STATUS'
-}
 
 export type ToolCallStats = {
   avgDuration?: Maybe<Scalars['Float']['output']>;
@@ -672,8 +661,6 @@ export type ResolversTypes = {
   System: ResolverTypeWrapper<System>;
   ToolCall: ResolverTypeWrapper<ToolCall>;
   ToolCallFilters: ToolCallFilters;
-  ToolCallOrderBy: ToolCallOrderBy;
-  ToolCallOrderField: ToolCallOrderField;
   ToolCallStats: ResolverTypeWrapper<ToolCallStats>;
   ToolCallStatus: ToolCallStatus;
   ToolCallsResult: ResolverTypeWrapper<ToolCallsResult>;
@@ -715,7 +702,6 @@ export type ResolversParentTypes = {
   System: System;
   ToolCall: ToolCall;
   ToolCallFilters: ToolCallFilters;
-  ToolCallOrderBy: ToolCallOrderBy;
   ToolCallStats: ToolCallStats;
   ToolCallsResult: ToolCallsResult;
   User: User;

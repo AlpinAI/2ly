@@ -202,17 +202,6 @@ input ToolCallFilters {
   search: String
 }
 
-input ToolCallOrderBy {
-  field: ToolCallOrderField!
-  direction: OrderDirection!
-}
-
-enum ToolCallOrderField {
-  CALLED_AT
-  COMPLETED_AT
-  STATUS
-}
-
 enum OrderDirection {
   ASC
   DESC
@@ -248,7 +237,7 @@ type Query {
     limit: Int
     offset: Int
     filters: ToolCallFilters
-    orderBy: ToolCallOrderBy
+    orderDirection: OrderDirection
   ): ToolCallsResult!
   # Authentication queries
   me: User

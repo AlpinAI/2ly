@@ -4,16 +4,24 @@
  * Displays a table of tool calls with filtering, pagination, and selection
  */
 
-import { ChevronLeft, ChevronRight, AlertCircle, CheckCircle, Clock } from 'lucide-react';
+import { ChevronLeft, ChevronRight, AlertCircle, CheckCircle, Clock, ArrowUpDown, X } from 'lucide-react';
+import { useQuery } from '@apollo/client/react';
 import { Button } from '@/components/ui/button';
+import { CheckboxDropdown } from '@/components/ui/checkbox-dropdown';
+import { Search } from '@/components/ui/search';
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import { ToolCallStatus } from '@/graphql/generated/graphql';
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import {
+  ToolCallStatus,
+  OrderDirection,
+  GetMcpToolsDocument,
+  GetRuntimesDocument,
+} from '@/graphql/generated/graphql';
+import { useWorkspaceId } from '@/stores/workspaceStore';
 import { cn } from '@/lib/utils';
 
 interface ToolCall {
@@ -40,7 +48,17 @@ interface ToolCallsTableProps {
   filters: {
     status: ToolCallStatus[];
     setStatus: (status: ToolCallStatus[]) => void;
+    toolIds: string[];
+    setToolIds: (toolIds: string[]) => void;
+    runtimeIds: string[];
+    setRuntimeIds: (runtimeIds: string[]) => void;
+    search: string;
+    setSearch: (search: string) => void;
     reset: () => void;
+  };
+  sorting: {
+    orderDirection: OrderDirection;
+    setOrderDirection: (direction: OrderDirection) => void;
   };
   pagination: {
     currentPage: number;
@@ -53,14 +71,68 @@ interface ToolCallsTableProps {
   };
 }
 
+const STATUS_OPTIONS = [
+  { id: ToolCallStatus.Pending, label: 'Pending' },
+  { id: ToolCallStatus.Completed, label: 'Completed' },
+  { id: ToolCallStatus.Failed, label: 'Failed' },
+];
+
+const SORT_OPTIONS = [
+  { direction: OrderDirection.Desc, label: 'Newest First' },
+  { direction: OrderDirection.Asc, label: 'Oldest First' },
+];
+
 export function ToolCallsTable({
   toolCalls,
   loading,
   selectedToolCallId,
   onSelectToolCall,
   filters,
+  sorting,
   pagination,
 }: ToolCallsTableProps) {
+  const workspaceId = useWorkspaceId();
+
+  // Fetch available tools for filter
+  const { data: toolsData } = useQuery(GetMcpToolsDocument, {
+    variables: { workspaceId: workspaceId || '' },
+    skip: !workspaceId,
+  });
+
+  // Fetch available runtimes for filter
+  const { data: runtimesData } = useQuery(GetRuntimesDocument, {
+    skip: !workspaceId,
+  });
+
+  const tools = toolsData?.mcpTools || [];
+  const runtimes = runtimesData?.workspace?.[0]?.runtimes || [];
+
+  const toolOptions = tools.map((tool: { id: string; name: string; mcpServer: { name: string } }) => ({
+    id: tool.id,
+    label: `${tool.name} (${tool.mcpServer.name})`,
+  }));
+
+  const runtimeOptions = runtimes.map((runtime: { id: string; name: string }) => ({
+    id: runtime.id,
+    label: runtime.name,
+  }));
+
+  const activeFilterCount =
+    filters.status.length +
+    filters.toolIds.length +
+    filters.runtimeIds.length +
+    (filters.search ? 1 : 0);
+
+  // Convert ToolCallStatus[] to string[] for CheckboxDropdown
+  const handleStatusChange = (selectedIds: string[]) => {
+    filters.setStatus(selectedIds as ToolCallStatus[]);
+  };
+
+  const handleSortChange = (direction: OrderDirection) => {
+    sorting.setOrderDirection(direction);
+  };
+
+  const currentSort = SORT_OPTIONS.find((opt) => opt.direction === sorting.orderDirection);
   // Status icon helper
   const getStatusIcon = (status: ToolCallStatus) => {
     switch (status) {
@@ -86,27 +158,73 @@ export function ToolCallsTable({
 
   return (
     <div className="flex flex-col h-full">
-      {/* Filters */}
-      <div className="p-4 border-b border-gray-200 dark:border-gray-700 space-y-3">
-        <div className="flex gap-2 items-center">
-          <Select
-            value={filters.status.length > 0 ? filters.status[0] : 'all'}
-            onValueChange={(value) => filters.setStatus(value !== 'all' ? [value as ToolCallStatus] : [])}
-          >
-            <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder="Filter by status" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Status</SelectItem>
-              <SelectItem value={ToolCallStatus.Pending}>Pending</SelectItem>
-              <SelectItem value={ToolCallStatus.Completed}>Completed</SelectItem>
-              <SelectItem value={ToolCallStatus.Failed}>Failed</SelectItem>
-            </SelectContent>
-          </Select>
+      {/* Single-line Filter Bar */}
+      <div className="p-3 border-b border-gray-200 dark:border-gray-700">
+        <div className="flex items-center gap-2 flex-nowrap">
+          {/* Search */}
+          <div className="flex-1 min-w-[200px]">
+            <Search
+              placeholder="Search..."
+              value={filters.search}
+              onChange={(e) => filters.setSearch(e.target.value)}
+              className="h-9"
+            />
+          </div>
 
-          {filters.status.length > 0 && (
-            <Button variant="ghost" size="sm" onClick={filters.reset}>
-              Clear filters
+          {/* Status Filter */}
+          <CheckboxDropdown
+            label="Status"
+            placeholder="Status"
+            items={STATUS_OPTIONS}
+            selectedIds={filters.status as string[]}
+            onChange={handleStatusChange}
+            className="w-[130px] h-9"
+          />
+
+          {/* Tool Filter */}
+          <CheckboxDropdown
+            label="Tool"
+            placeholder="Tool"
+            items={toolOptions}
+            selectedIds={filters.toolIds}
+            onChange={filters.setToolIds}
+            className="w-[130px] h-9"
+          />
+
+          {/* Runtime Filter */}
+          <CheckboxDropdown
+            label="Runtime"
+            placeholder="Runtime"
+            items={runtimeOptions}
+            selectedIds={filters.runtimeIds}
+            onChange={filters.setRuntimeIds}
+            className="w-[130px] h-9"
+          />
+
+          {/* Sort (icon-only) */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="sm" className="h-9 w-9 p-0">
+                <ArrowUpDown className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              {SORT_OPTIONS.map((option) => (
+                <DropdownMenuItem
+                  key={option.direction}
+                  onClick={() => handleSortChange(option.direction)}
+                  className={cn(currentSort?.direction === option.direction && 'bg-accent')}
+                >
+                  {option.label}
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+
+          {/* Reset Filters */}
+          {activeFilterCount > 0 && (
+            <Button variant="ghost" size="sm" onClick={filters.reset} className="h-9 px-2">
+              <X className="h-4 w-4" />
             </Button>
           )}
         </div>

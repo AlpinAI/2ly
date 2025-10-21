@@ -87,7 +87,7 @@ export const resolvers = (container: Container = defaultContainer): apolloResolv
           limit: args.limit ?? 100,
           offset: args.offset ?? 0,
           filters: args.filters ?? undefined,
-          orderBy: args.orderBy ?? undefined,
+          orderDirection: args.orderDirection ?? undefined,
         });
       },
       // Authentication queries
