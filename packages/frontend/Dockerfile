@@ -14,12 +14,7 @@ RUN npm install
 # Build the frontend
 ARG BUILD_MODE=production
 
-# Set environment variables for Vite build (only if provided)
-ARG VITE_GRAPHQL_HOST=""
-ARG VITE_GRAPHQL_HOST_SSL=""
-ENV VITE_GRAPHQL_HOST=${VITE_GRAPHQL_HOST}
-ENV VITE_GRAPHQL_HOST_SSL=${VITE_GRAPHQL_HOST_SSL}
-
+# Build without hardcoded environment variables (runtime config will be injected)
 RUN npm run build -w @2ly/frontend -- --mode ${BUILD_MODE}
 
 # Remove unnecessary node_modules now that we have a build

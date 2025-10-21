@@ -1,0 +1,7 @@
+# Delete Runtime Mutation
+# WHY: Remove a runtime/agent from the workspace
+mutation DeleteRuntime($id: ID!) {
+  deleteRuntime(id: $id) {
+    id
+  }
+}

@@ -13,9 +13,12 @@
  * - Last seen timestamp
  */
 
-import { Bot, Wrench, Clock, Cpu, Settings, Cable } from 'lucide-react';
+import { Bot, Wrench, Clock, Cpu, Settings, Cable, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useManageToolsDialog, useConnectAgentDialog } from '@/stores/uiStore';
+import { useMutation } from '@apollo/client/react';
+import { useNotification } from '@/contexts/NotificationContext';
+import { DeleteRuntimeDocument } from '@/graphql/generated/graphql';
 import type { SubscribeRuntimesSubscription } from '@/graphql/generated/graphql';
 
 type Runtime = NonNullable<SubscribeRuntimesSubscription['runtimes']>[number];
@@ -27,6 +30,8 @@ export interface AgentDetailProps {
 export function AgentDetail({ agent }: AgentDetailProps) {
   const { setOpen, setSelectedToolSetId } = useManageToolsDialog();
   const { setOpen: setConnectDialogOpen, setSelectedAgentId } = useConnectAgentDialog();
+  const { confirm } = useNotification();
+  const [deleteAgent] = useMutation(DeleteRuntimeDocument);
 
   const formatDate = (dateString: string | Date) => {
     const date = typeof dateString === 'string' ? new Date(dateString) : dateString;
@@ -41,6 +46,29 @@ export function AgentDetail({ agent }: AgentDetailProps) {
   const handleConnectAgent = () => {
     setSelectedAgentId(agent.id);
     setConnectDialogOpen(true);
+  };
+
+  const handleDelete = async () => {
+    const confirmed = await confirm({
+      title: 'Delete Tool Set',
+      description: `Are you sure you want to delete "${agent.name}"? This action cannot be undone.`,
+      confirmLabel: 'Delete Tool Set',
+      cancelLabel: 'Cancel',
+      variant: 'destructive',
+    });
+
+    if (!confirmed) return;
+
+    try {
+      await deleteAgent({
+        variables: {
+          id: agent.id,
+        },
+        refetchQueries: ['SubscribeRuntimes'],
+      });
+    } catch (error) {
+      console.error('Failed to delete tool set:', error);
+    }
   };
 
   return (
@@ -179,6 +207,19 @@ export function AgentDetail({ agent }: AgentDetailProps) {
             ) : (
               <p className="text-sm text-gray-400 dark:text-gray-500">No tools available</p>
             )}
+          </div>
+
+          {/* Delete Agent Button */}
+          <div className="pt-4 border-t border-gray-200 dark:border-gray-700 flex justify-end">
+            <Button
+              variant="destructive"
+              onClick={handleDelete}
+              size="sm"
+              className="h-7 px-2 text-xs"
+            >
+              <Trash2 className="h-3 w-3 mr-1" />
+              Delete Tool Set
+            </Button>
           </div>
         </div>
       </div>
