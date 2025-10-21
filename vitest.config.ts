@@ -63,8 +63,8 @@ export default defineConfig({
             '@2ly/common/test/vitest': path.resolve(__dirname, 'packages/common/src/test/vitest.ts'),
             '@2ly/common': path.resolve(__dirname, 'packages/common/src/index.ts'),
             '@2ly/common/*': path.resolve(__dirname, 'packages/common/src/*'),
-            '@': path.resolve(__dirname, 'packages/frontend/src')
-
+            '@': path.resolve(__dirname, 'packages/frontend/src'),
+            '@/*': path.resolve(__dirname, 'packages/frontend/src/*')
         }
     }
 });
