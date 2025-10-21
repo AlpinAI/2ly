@@ -15,10 +15,10 @@ RUN npm install
 ARG BUILD_MODE=production
 
 # Set environment variables for Vite build (only if provided)
-ARG VITE_GRAPHQL_HTTP_URL=""
-ARG VITE_GRAPHQL_WS_URL=""
-ENV VITE_GRAPHQL_HTTP_URL=${VITE_GRAPHQL_HTTP_URL}
-ENV VITE_GRAPHQL_WS_URL=${VITE_GRAPHQL_WS_URL}
+ARG VITE_GRAPHQL_HOST=""
+ARG VITE_GRAPHQL_HOST_SSL=""
+ENV VITE_GRAPHQL_HOST=${VITE_GRAPHQL_HOST}
+ENV VITE_GRAPHQL_HOST_SSL=${VITE_GRAPHQL_HOST_SSL}
 
 RUN npm run build -w @2ly/frontend -- --mode ${BUILD_MODE}
 
@@ -29,5 +29,15 @@ RUN rm -rf packages/common/node_modules
 
 # Stage 2: production image
 FROM nginx:alpine
+
+# Copy build files
 COPY --from=builder /app/packages/frontend/dist /usr/share/nginx/html
 COPY packages/frontend/nginx.conf /etc/nginx/conf.d/default.conf
+
+# Copy and setup entrypoint script
+COPY packages/frontend/docker-entrypoint.sh /docker-entrypoint.sh
+RUN chmod +x /docker-entrypoint.sh
+
+# Set entrypoint
+ENTRYPOINT ["/docker-entrypoint.sh"]
+CMD ["nginx", "-g", "daemon off;"]

@@ -1,159 +1,104 @@
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { useApolloClient } from '@apollo/client';
-import { useAuthentication } from './hooks/useAuthentication';
-// Context Providers
-import { AuthenticationProvider } from './contexts/AuthenticationProvider';
-import { getAuthService } from './services/auth.service';
-import { getSystemInitializationService } from './services/system.service';
-import { WorkspaceProvider } from './contexts/WorkspaceContextProvider';
-// Route Protection
-import { ProtectedRoute, PublicRoute, SystemInitRoute, AuthRouteManager } from './components/routing';
-// Layout
-import Layout from './components/layout/Layout';
-// Pages
-import LandingPage from './pages/LandingPage';
-import { LoginPage, RegisterPage } from './pages/auth';
-import Dashboard from './pages/Dashboard';
-import AgentsPage from './pages/AgentsPage';
-import RecipesPage from './pages/RecipesPage';
-import MonitoringPage from './pages/MonitoringPage';
-import IntegrationPage from './pages/IntegrationPage';
-import MCPServersPage from './pages/MCPServersPage';
-import RuntimesPage from './pages/RuntimesPage';
-import WelcomePage from './pages/WelcomePage';
-import SettingsPage from './pages/SettingsPage';
-import AgentWorkflowPage from './pages/AgentWorkflowPage';
-import AgentCapabilitiesPage from './pages/AgentCapabilitiesPage';
-import MCPServerWorkflowPage from './pages/MCPServerWorkflowPage';
-import PlaygroundPage from './pages/PlaygroundPage';
-import ProfilePage from './pages/ProfilePage';
+/**
+ * App Component
+ *
+ * WHY: Root component that sets up the provider hierarchy.
+ *
+ * PROVIDER ORDER MATTERS:
+ * 1. ThemeProvider - Theme must be available first (affects all UI)
+ * 2. NotificationProvider - Transient UI (confirms, toasts) - needs theme, no other deps
+ * 3. ApolloProvider - GraphQL client (server state)
+ * 4. BrowserRouter - Routing (required for navigate())
+ * 5. SystemInitChecker - Check system initialization before anything else
+ * 6. AuthProvider - Authentication state (uses navigate(), so must be inside Router)
+ */
+
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { ThemeProvider } from '@/contexts/ThemeContext';
+import { NotificationProvider } from '@/contexts/NotificationContext';
+import { ApolloProvider } from '@/lib/apollo/ApolloProvider';
+import { AuthProvider } from '@/contexts/AuthContext';
+import { SystemInitChecker } from '@/components/logic/system-init-checker';
+import { ProtectedRoute } from '@/components/logic/protected-route';
+import { WorkspaceLoader } from '@/components/logic/workspace-loader';
+import { WorkspaceRedirect } from '@/components/logic/workspace-redirect';
+import { AppLayout } from '@/components/layout/app-layout';
+import LoginPage from '@/pages/LoginPage';
+import RegisterPage from '@/pages/RegisterPage';
+import DashboardPage from '@/pages/DashboardPage';
+import ToolSetsPage from '@/pages/ToolSetsPage';
+import ToolsPage from '@/pages/ToolsPage';
+import SourcesPage from '@/pages/SourcesPage';
+import SettingsPage from '@/pages/SettingsPage';
+import MonitoringPage from '@/pages/MonitoringPage';
+import InitPage from '@/pages/InitPage';
+import BackendErrorPage from '@/pages/BackendErrorPage';
+import NotFoundPage from '@/pages/NotFoundPage';
 
 function App() {
-  // Get the unified authenticated Apollo Client from the provider
-  const apolloClient = useApolloClient();
-  const authService = getAuthService(apolloClient);
-  // Initialize system service early so it's available throughout the app
-  getSystemInitializationService(apolloClient, authService);
-
   return (
-    <AuthenticationProvider authService={authService}>
-      <WorkspaceProvider>
-        <Router>
-          <AuthRouteManager>
-            <AppContent />
-          </AuthRouteManager>
-        </Router>
-      </WorkspaceProvider>
-    </AuthenticationProvider>
-  );
-}
+    <ThemeProvider>
+      <NotificationProvider>
+        <ApolloProvider>
+          <BrowserRouter>
+            <SystemInitChecker>
+              <AuthProvider>
+                <Routes>
+                {/* Root redirects to default workspace */}
+                <Route
+                  path="/"
+                  element={
+                    <ProtectedRoute>
+                      <WorkspaceRedirect />
+                    </ProtectedRoute>
+                  }
+                />
 
-function AppContent() {
-  const { isAuthenticated } = useAuthentication();
+                {/* Legacy redirects */}
+                <Route path="/dashboard" element={<Navigate to="/" replace />} />
+                <Route path="/app/*" element={<Navigate to="/" replace />} />
 
-  const handleWelcomeComplete = () => {
-    window.location.reload();
-  };
+                {/* System initialization (no auth required, but SystemInitChecker allows /init) */}
+                <Route path="/init" element={<InitPage />} />
 
-  return (
-    <Routes>
-      {/* Public routes - no authentication required */}
-      <Route
-        path="/landing"
-        element={
-          <PublicRoute>
-            <LandingPage />
-          </PublicRoute>
-        }
-      />
+                {/* Backend error page (no auth required, SystemInitChecker handles this) */}
+                <Route path="/backend-error" element={<BackendErrorPage />} />
 
-      {/* Authentication routes - redirect authenticated users */}
-      <Route
-        path="/login"
-        element={
-          <PublicRoute redirectAuthenticated>
-            <LoginPage />
-          </PublicRoute>
-        }
-      />
-      <Route
-        path="/register"
-        element={
-          <PublicRoute redirectAuthenticated>
-            <RegisterPage />
-          </PublicRoute>
-        }
-      />
+                {/* Public routes (only accessible if system is initialized) */}
+                <Route path="/login" element={<LoginPage />} />
+                <Route path="/register" element={<RegisterPage />} />
 
-      {/* System initialization route */}
-      <Route
-        path="/welcome"
-        element={
-          <SystemInitRoute>
-            <WelcomePage onComplete={handleWelcomeComplete} />
-          </SystemInitRoute>
-        }
-      />
+                {/* Protected workspace routes with layout (require system init + auth) */}
+                <Route
+                  path="/w/:workspaceId"
+                  element={
+                    <ProtectedRoute>
+                      <WorkspaceLoader>
+                        <AppLayout />
+                      </WorkspaceLoader>
+                    </ProtectedRoute>
+                  }
+                >
+                  {/* Nested routes - AppLayout provides header + navigation */}
+                  <Route path="overview" element={<DashboardPage />} />
+                  <Route path="toolsets" element={<ToolSetsPage />} />
+                  <Route path="tools" element={<ToolsPage />} />
+                  <Route path="sources" element={<SourcesPage />} />
+                  <Route path="monitoring" element={<MonitoringPage />} />
+                  <Route path="settings" element={<SettingsPage />} />
 
-      {/* Protected workflow routes - require authentication but no layout */}
-      <Route
-        path="/agents/new"
-        element={
-          <ProtectedRoute requireWorkspace>
-            <AgentWorkflowPage />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/agents/:runtimeId/capabilities"
-        element={
-          <ProtectedRoute requireWorkspace>
-            <AgentCapabilitiesPage />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/mcp-servers/new"
-        element={
-          <ProtectedRoute requireWorkspace>
-            <MCPServerWorkflowPage />
-          </ProtectedRoute>
-        }
-      />
+                  {/* Redirect /w/:workspaceId to /w/:workspaceId/overview */}
+                  <Route index element={<Navigate to="overview" replace />} />
+                </Route>
 
-      {/* Main protected routes with layout */}
-      <Route
-        element={
-          <ProtectedRoute requireWorkspace>
-            <Layout />
-          </ProtectedRoute>
-        }
-      >
-        <Route path="/" element={<Navigate to="/mcp-servers" replace />} />
-        <Route path="/mcp-servers" element={<MCPServersPage />} />
-        <Route path="/dashboard" element={<Dashboard />} />
-        <Route path="/agents" element={<AgentsPage />} />
-        <Route path="/runtimes" element={<RuntimesPage />} />
-        <Route path="/recipes" element={<RecipesPage />} />
-        <Route path="/monitoring" element={<MonitoringPage />} />
-        <Route path="/integration" element={<IntegrationPage />} />
-        <Route path="/playground" element={<PlaygroundPage />} />
-        <Route path="/settings" element={<SettingsPage />} />
-        <Route path="/profile" element={<ProfilePage />} />
-      </Route>
-
-      {/* Catch-all route - redirect based on authentication status */}
-      <Route
-        path="*"
-        element={
-          isAuthenticated ? (
-            <Navigate to="/" replace />
-          ) : (
-            <Navigate to="/landing" replace />
-          )
-        }
-      />
-    </Routes>
+                {/* 404 page */}
+                <Route path="*" element={<NotFoundPage />} />
+                </Routes>
+              </AuthProvider>
+            </SystemInitChecker>
+          </BrowserRouter>
+        </ApolloProvider>
+      </NotificationProvider>
+    </ThemeProvider>
   );
 }
 

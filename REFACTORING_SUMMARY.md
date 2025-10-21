@@ -5,7 +5,7 @@ This document summarizes the test infrastructure refactoring and login feature i
 ## 1. Test Refactoring (Backend vs Frontend)
 
 ### Problem
-E2E tests in `packages/frontend2/tests/e2e/` contained backend API tests that didn't require a browser or UI.
+E2E tests in `packages/frontend/tests/e2e/` contained backend API tests that didn't require a browser or UI.
 
 ### Solution
 Moved backend-only tests to `packages/backend/tests/integration/` and configured them to use Vitest with testcontainers.
@@ -27,16 +27,16 @@ Moved backend-only tests to `packages/backend/tests/integration/` and configured
 
 #### Frontend Test Updates
 **Modified:**
-- `packages/frontend2/tests/e2e/clean/backend-api.spec.ts` - Simplified to example test
-- `packages/frontend2/tests/fixtures/database.ts` - Added password field for user seeding
+- `packages/frontend/tests/e2e/clean/backend-api.spec.ts` - Simplified to example test
+- `packages/frontend/tests/fixtures/database.ts` - Added password field for user seeding
 
 **Deleted:**
-- `packages/frontend2/tests/e2e/clean/workspace-creation.spec.ts` - Moved functionality to backend
+- `packages/frontend/tests/e2e/clean/workspace-creation.spec.ts` - Moved functionality to backend
 
 **Kept:**
 - All Playwright project configurations (clean-*, seeded-*, parallel-*)
-- `packages/frontend2/tests/e2e/seeded/workspace-management.spec.ts` - As example
-- `packages/frontend2/tests/e2e/parallel/workspace-ui.spec.ts` - Real UI tests
+- `packages/frontend/tests/e2e/seeded/workspace-management.spec.ts` - As example
+- `packages/frontend/tests/e2e/parallel/workspace-ui.spec.ts` - Real UI tests
 
 ### Key Fix: GlobalSetup vs SetupFiles
 
@@ -69,24 +69,24 @@ Implemented full authentication from frontend UI to backend GraphQL API with JWT
 
 #### Frontend Authentication
 **Created:**
-- `packages/frontend2/src/contexts/AuthContext.tsx` - Auth state management
-- `packages/frontend2/src/graphql/mutations/auth.ts` - Login/logout/register mutations
-- `packages/frontend2/tests/e2e/seeded/login.spec.ts` - E2E login tests
+- `packages/frontend/src/contexts/AuthContext.tsx` - Auth state management
+- `packages/frontend/src/graphql/mutations/auth.ts` - Login/logout/register mutations
+- `packages/frontend/tests/e2e/seeded/login.spec.ts` - E2E login tests
 
 **Modified:**
-- `packages/frontend2/src/pages/LoginPage.tsx` - Connected to backend with useMutation
-- `packages/frontend2/src/App.tsx` - Added AuthProvider to provider hierarchy
+- `packages/frontend/src/pages/LoginPage.tsx` - Connected to backend with useMutation
+- `packages/frontend/src/App.tsx` - Added AuthProvider to provider hierarchy
 
 #### Test Fixtures
 **Updated:**
-- `packages/frontend2/tests/fixtures/database.ts`
+- `packages/frontend/tests/fixtures/database.ts`
   - Added `password` field to SeedData users
   - Changed user seeding to use `registerUser` mutation (sets passwords)
   - Added `seedPresets.withUsers` for auth tests
 
 ### Login E2E Tests
 
-Created comprehensive test suite in `packages/frontend2/tests/e2e/seeded/login.spec.ts`:
+Created comprehensive test suite in `packages/frontend/tests/e2e/seeded/login.spec.ts`:
 - Display login page
 - Login with valid credentials
 - Show error with invalid credentials
@@ -119,7 +119,7 @@ Created comprehensive test suite in `packages/frontend2/tests/e2e/seeded/login.s
 
 ### Rule: Prefer Direct Imports
 
-**Created:** `packages/frontend2/docs/CONVENTIONS.md` - Frontend code conventions
+**Created:** `packages/frontend/docs/CONVENTIONS.md` - Frontend code conventions
 
 **Key Points:**
 - ✅ Import from source packages: `import { useMutation } from '@apollo/client/react'`
@@ -151,7 +151,7 @@ packages/backend/tests/
 
 ### Frontend Tests
 ```
-packages/frontend2/tests/
+packages/frontend/tests/
 ├── e2e/
 │   ├── clean/
 │   │   └── backend-api.spec.ts (example)
@@ -200,7 +200,7 @@ npm run test -- packages/backend/tests/integration/api.spec.ts
 ### Frontend E2E Tests
 ```bash
 # All e2e tests
-cd packages/frontend2 && npm run test:e2e
+cd packages/frontend && npm run test:e2e
 
 # Login tests only
 npm run test:e2e -- tests/e2e/seeded/login.spec.ts
@@ -231,5 +231,5 @@ npm run test:e2e:chromium
 All documentation is in place:
 - ✅ `packages/backend/tests/README.md` - Backend test guide
 - ✅ `packages/backend/tests/ARCHITECTURE.md` - Test architecture guide
-- ✅ `packages/frontend2/docs/CONVENTIONS.md` - Frontend conventions
+- ✅ `packages/frontend/docs/CONVENTIONS.md` - Frontend conventions
 - ✅ This summary document

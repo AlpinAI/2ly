@@ -46,7 +46,7 @@ unauthorized ip address: 172.21.0.5
 
 This is a known issue with Dgraph's ACL configuration in Docker networks. The Dgraph Alpha container needs to be configured to allow connections from the backend container's IP.
 
-**Workaround**: Use the frontend2 Playwright tests which have the same testcontainer setup but work correctly (timing differences in startup).
+**Workaround**: Use the frontend Playwright tests which have the same testcontainer setup but work correctly (timing differences in startup).
 
 **To Fix**: Update `TestEnvironment` in `@2ly/common` to configure Dgraph Alpha with proper ACL settings or whitelist the Docker network CIDR.
 
@@ -83,14 +83,14 @@ describe('My Feature Tests', () => {
 
 ## Migrated Tests
 
-The following tests were moved from `frontend2/tests/e2e/`:
+The following tests were moved from `frontend/tests/e2e/`:
 
-1. **backend-api.spec.ts** (moved from `frontend2/tests/e2e/clean/`)
+1. **backend-api.spec.ts** (moved from `frontend/tests/e2e/clean/`)
    - System queries
    - Health checks
    - GraphQL introspection
 
-2. **workspace-management.spec.ts** (moved from `frontend2/tests/e2e/seeded/`)
+2. **workspace-management.spec.ts** (moved from `frontend/tests/e2e/seeded/`)
    - Workspace queries and filtering
    - Pagination and ordering
    - Edge cases (kept skipped)

@@ -16,9 +16,6 @@
       "@2ly/frontend": [
         "packages/frontend/src"
       ],
-      "@2ly/frontend2": [
-        "packages/frontend2/src"
-      ],
       "@2ly/backend": [
         "packages/backend/src"
       ],

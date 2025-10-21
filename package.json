@@ -6,7 +6,6 @@
     "packages/backend",
     "packages/common",
     "packages/frontend",
-    "packages/frontend2",
     "packages/mcp-client",
     "packages/runtime"
   ],
@@ -19,11 +18,10 @@
     "lint": "npm run lint --workspaces --if-present",
     "typecheck": "npm run typecheck --workspaces --if-present",
     "format": "npm run format --workspaces --if-present",
-    "codegen": "npm run codegen -w @2ly/common && npm run codegen -w @2ly/frontend2",
+    "codegen": "npm run codegen -w @2ly/common && npm run codegen -w @2ly/frontend",
     "codegen:mcp-registry": "npm run codegen:mcp-registry -w @2ly/common",
     "dev:backend": "npm run dev -w @2ly/backend",
     "dev:frontend": "npm run dev -w @2ly/frontend",
-    "dev:frontend2": "npm run dev -w @2ly/frontend2",
     "dev:main-runtime": "ROOTS=TEMP:/tmp RUNTIME_NAME=\"Main Runtime\" GLOBAL_RUNTIME=true DEFAULT_TESTING_RUNTIME=true node packages/runtime/dist/index.js",
     "dev:tool-edge": "ROOTS=TEMP:/tmp RUNTIME_NAME=\"Local Edge\" node packages/runtime/dist/index.js",
     "dev:doc": "cd packages/doc && npm run dev",
@@ -43,8 +41,8 @@
     "test:integration": "vitest --run --config vitest.integration.config.ts",
     "test:integration:watch": "vitest --config vitest.integration.config.ts",
     "test:integration:cov": "vitest --run --coverage --config vitest.integration.config.ts",
-    "test:e2e": "npm run test:e2e -w @2ly/frontend2",
-    "test:e2e:chromium": "npm run test:e2e:chromium -w @2ly/frontend2"
+    "test:e2e": "npm run test:e2e -w @2ly/frontend",
+    "test:e2e:chromium": "npm run test:e2e:chromium -w @2ly/frontend"
   },
   "devDependencies": {
     "@graphql-codegen/cli": "^5.0.7",

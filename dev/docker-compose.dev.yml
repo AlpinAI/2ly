@@ -148,7 +148,7 @@ services:
   frontend:
     build:
       context: ../
-      dockerfile: packages/frontend2/Dockerfile
+      dockerfile: packages/frontend/Dockerfile
       args:
         BUILD_MODE: development
     container_name: 2ly-frontend

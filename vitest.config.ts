@@ -29,14 +29,14 @@ export default defineConfig({
             '.git',
             'packages/**/dist/**',
             'packages/doc/**',
-            'packages/frontend*/tests/**',
+            'packages/depr-frontend/**',
             'packages/**/src/**/*.integration.spec.ts',
             'packages/backend/tests/**'
         ],
         environmentMatchGlobs: [
             ['packages/frontend/**', 'jsdom'],
-            ['packages/frontend2/**', 'jsdom']
         ],
+        setupFiles: ['./packages/frontend/src/test/setup.ts'],
         globals: true,
         coverage: {
             reporter: ['text', 'html', 'lcov'],
@@ -63,7 +63,7 @@ export default defineConfig({
             '@2ly/common/test/vitest': path.resolve(__dirname, 'packages/common/src/test/vitest.ts'),
             '@2ly/common': path.resolve(__dirname, 'packages/common/src/index.ts'),
             '@2ly/common/*': path.resolve(__dirname, 'packages/common/src/*'),
-            '@': path.resolve(__dirname, 'packages/frontend2/src')
+            '@': path.resolve(__dirname, 'packages/frontend/src')
 
         }
     }
