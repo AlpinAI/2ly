@@ -93,7 +93,7 @@ describe('ConnectAgentDialog', () => {
   it('displays waiting status initially', () => {
     // Mock agent as not yet connected (INACTIVE status)
     vi.mocked(runtimeStore.useRuntimeData).mockReturnValue({
-      runtimes: [{ ...mockAgent, status: 'INACTIVE' }],
+      runtimes: [{ ...mockAgent, status: ActiveStatus.Inactive }],
       loading: false,
       error: null,
       stats: { total: 1, active: 0, inactive: 1 },
