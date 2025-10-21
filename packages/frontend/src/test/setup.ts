@@ -6,6 +6,13 @@
  */
 
 import '@testing-library/jest-dom/vitest';
+import { cleanup } from '@testing-library/react';
+import { afterEach } from 'vitest';
+
+// Cleanup after each test to prevent DOM pollution
+afterEach(() => {
+  cleanup();
+});
 
 // Mock matchMedia for dark mode detection (only in browser environments)
 if (typeof window !== 'undefined') {
