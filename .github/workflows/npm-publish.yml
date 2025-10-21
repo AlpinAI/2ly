@@ -1,0 +1,126 @@
+name: Publish Runtime to NPM
+
+on:
+  push:
+    branches:
+      - develop  # Publish beta builds on develop commits
+    tags:
+      - 'v*'  # Publish stable releases on version tags (e.g., v0.1.0)
+  workflow_dispatch:
+
+jobs:
+  publish-runtime:
+    name: Publish @2ly/runtime to NPM
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Determine version and publish tag
+        id: version
+        run: |
+          PACKAGE_VERSION=$(node -p "require('./packages/runtime/package.json').version")
+
+          # Check if this is a tag push or branch push
+          if [[ "$GITHUB_REF" == refs/tags/v* ]]; then
+            # Tag push - stable release
+            TAG_VERSION=${GITHUB_REF#refs/tags/v}
+            NPM_TAG="latest"
+            RELEASE_TYPE="stable"
+
+            # Verify package.json version matches tag
+            if [ "$PACKAGE_VERSION" != "$TAG_VERSION" ]; then
+              echo "❌ Error: Version mismatch!"
+              echo "  package.json version: $PACKAGE_VERSION"
+              echo "  Git tag version:      $TAG_VERSION"
+              echo ""
+              echo "These versions must match for publishing to NPM."
+              exit 1
+            fi
+
+            VERSION=$TAG_VERSION
+          else
+            # Branch push (develop) - beta release
+            COMMIT_SHA=${GITHUB_SHA::7}
+            VERSION="${PACKAGE_VERSION}-beta.${COMMIT_SHA}"
+            NPM_TAG="beta"
+            RELEASE_TYPE="beta"
+          fi
+
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "npm_tag=$NPM_TAG" >> $GITHUB_OUTPUT
+          echo "release_type=$RELEASE_TYPE" >> $GITHUB_OUTPUT
+
+          echo "📦 Publishing @2ly/runtime@$VERSION"
+          echo "   NPM tag: $NPM_TAG"
+          echo "   Release type: $RELEASE_TYPE"
+
+      - name: Install dependencies
+        run: npm ci --cache .npm --prefer-offline=false
+
+      - name: Run linter
+        run: npm run lint -w @2ly/runtime
+
+      - name: Run type checker
+        run: npm run typecheck -w @2ly/runtime
+
+      - name: Run tests
+        run: npm run test -w @2ly/runtime
+
+      - name: Build runtime package
+        run: npm run build -w @2ly/runtime
+
+      - name: Verify build output
+        run: |
+          if [ ! -d "packages/runtime/dist" ]; then
+            echo "❌ Error: Build output directory 'dist' not found"
+            exit 1
+          fi
+
+          if [ ! -f "packages/runtime/dist/index.js" ]; then
+            echo "❌ Error: Main entry point 'dist/index.js' not found"
+            exit 1
+          fi
+
+          echo "✅ Build output verified"
+          echo ""
+          echo "Package contents:"
+          ls -lah packages/runtime/dist/
+
+      - name: Publish to NPM
+        run: npm publish -w @2ly/runtime --tag ${{ steps.version.outputs.npm_tag }}
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Publication successful
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          NPM_TAG="${{ steps.version.outputs.npm_tag }}"
+          RELEASE_TYPE="${{ steps.version.outputs.release_type }}"
+
+          echo ""
+          echo "✅ Successfully published @2ly/runtime@$VERSION to NPM"
+          echo ""
+          echo "Package URL: https://www.npmjs.com/package/@2ly/runtime/v/$VERSION"
+          echo "NPM tag: $NPM_TAG"
+          echo ""
+
+          if [ "$RELEASE_TYPE" == "stable" ]; then
+            echo "Install with:"
+            echo "  npm install @2ly/runtime@$VERSION"
+            echo "  npm install @2ly/runtime  # (latest)"
+          else
+            echo "Install beta with:"
+            echo "  npm install @2ly/runtime@$VERSION"
+            echo "  npm install @2ly/runtime@beta  # (latest beta)"
+          fi

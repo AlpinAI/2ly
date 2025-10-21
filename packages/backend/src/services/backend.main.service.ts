@@ -9,6 +9,7 @@ import { container } from '../di/container';
 import { WorkspaceRepository, SystemRepository } from '../repositories';
 import { MCPServerAutoConfigService } from './mcp-auto-config.service';
 import { MonitoringService } from './monitoring.service';
+import packageJson from '../../package.json';
 
 @injectable()
 export class MainService extends Service {
@@ -30,7 +31,7 @@ export class MainService extends Service {
   }
 
   protected async initialize() {
-    this.logger.info('Starting');
+    this.logger.info(`Starting backend, version: ${packageJson.version}`);
     await this.startService(this.runtimeService);
     this.registerHealthCheck();
     this.registerUtilityEndpoints();

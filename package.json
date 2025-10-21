@@ -42,7 +42,11 @@
     "test:integration:watch": "vitest --config vitest.integration.config.ts",
     "test:integration:cov": "vitest --run --coverage --config vitest.integration.config.ts",
     "test:e2e": "npm run test:e2e -w @2ly/frontend",
-    "test:e2e:chromium": "npm run test:e2e:chromium -w @2ly/frontend"
+    "test:e2e:chromium": "npm run test:e2e:chromium -w @2ly/frontend",
+    "bump-version": "node scripts/bump-version.js",
+    "bump-version:patch": "node scripts/bump-version.js patch",
+    "bump-version:minor": "node scripts/bump-version.js minor",
+    "bump-version:major": "node scripts/bump-version.js major"
   },
   "devDependencies": {
     "@graphql-codegen/cli": "^5.0.7",
