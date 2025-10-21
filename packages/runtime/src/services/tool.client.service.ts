@@ -155,7 +155,7 @@ export class ToolClientService extends Service {
       }
     }
     this.logger.info(
-      `Spawning MCPServer: ${JSON.stringify(mcpServer.name, null, 2)} with roots: ${JSON.stringify(roots, null, 2)}`,
+      `Spawning MCPServer: ${mcpServer.name} with ${mcpServer.tools?.length ?? 0} tools, and roots: ${JSON.stringify(roots)}`,
     );
 
     if (this.mcpServers.has(mcpServer.id)) {
