@@ -1,168 +1,114 @@
-import { useState, useEffect, useMemo } from 'react';
-import { apolloResolversTypes } from '@2ly/common';
-import { gql } from '@apollo/client/core';
-import { client } from '../services/apollo.client';
-
-const QUERY_MCP_SERVERS = gql`
-  query getMCPServers {
-    mcpServers {
-      id
-      name
-      description
-      runOn
-      tools {
-        id
-        name
-        description
-        status
-        inputSchema
-        annotations
-      }
-    }
-  }
-`;
-
-export interface GroupedMCPServer {
-  id: string;
-  name: string;
-  description: string;
-  runOn?: 'GLOBAL' | 'AGENT' | 'EDGE' | null;
-  tools: apolloResolversTypes.McpTool[];
-}
-
-export interface UseMCPToolsResult {
-  mcpServers: GroupedMCPServer[];
-  isLoading: boolean;
-  searchTerm: string;
-  setSearchTerm: (term: string) => void;
-  selectedServerIds: string[];
-  setSelectedServerIds: (ids: string[]) => void;
-  selectedAgentIds: string[];
-  setSelectedAgentIds: (ids: string[]) => void;
-  filteredTools: Array<{
-    tool: apolloResolversTypes.McpTool;
-    server: GroupedMCPServer;
-  }>;
-  allTools: Array<{
-    tool: apolloResolversTypes.McpTool;
-    server: GroupedMCPServer;
-  }>;
-}
-
 /**
- * Custom hook for fetching and filtering MCP servers and tools
- * Provides search and filtering capabilities across servers and their tools
+ * useMCPTools Hook
+ *
+ * WHY: Fetches MCP tools with cache-and-network fetch policy and client-side filtering.
+ * Used by Tools Page to display and filter tool list.
+ *
+ * PATTERN: Similar to useMCPServers
+ * - useQuery with cache-and-network for optimal performance
+ * - useMemo for client-side filtering
+ * - Multi-select filters for servers and agents
+ *
+ * USAGE:
+ * ```tsx
+ * function ToolsPage() {
+ *   const { tools, filteredTools, loading, error, filters } = useMCPTools();
+ *
+ *   return (
+ *     <div>
+ *       <Search value={filters.search} onChange={filters.setSearch} />
+ *       <ToolTable tools={filteredTools} />
+ *     </div>
+ *   );
+ * }
+ * ```
  */
-export function useMCPTools(
-  runtimes: apolloResolversTypes.Runtime[]
-): UseMCPToolsResult {
-  const [mcpServers, setMCPServers] = useState<GroupedMCPServer[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+
+import { useMemo, useState, useCallback } from 'react';
+import { useQuery } from '@apollo/client/react';
+import { GetMcpToolsDocument } from '@/graphql/generated/graphql';
+import { useWorkspaceId } from '@/stores/workspaceStore';
+
+export function useMCPTools() {
+  const workspaceId = useWorkspaceId();
+
+  // Filter state
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedServerIds, setSelectedServerIds] = useState<string[]>([]);
   const [selectedAgentIds, setSelectedAgentIds] = useState<string[]>([]);
 
-  useEffect(() => {
-    const loadData = async () => {
-      setIsLoading(true);
-      try {
-        // Load MCP servers and tools
-        const serversResult = await client.query({ query: QUERY_MCP_SERVERS });
-        if (serversResult.data?.mcpServers) {
-          const servers: GroupedMCPServer[] = serversResult.data.mcpServers.map(
-            (server: apolloResolversTypes.McpServer) => ({
-              id: server.id,
-              name: server.name,
-              description: server.description,
-              runOn: server.runOn,
-              tools: server.tools || [],
-            })
-          );
-          setMCPServers(servers);
-        }
-      } catch (error) {
-        console.error('Error loading MCP servers and tools:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    loadData();
-  }, []);
+  // Fetch tools with query
+  const { data, loading, error } = useQuery(GetMcpToolsDocument, {
+    variables: { workspaceId: workspaceId || '' },
+    skip: !workspaceId,
+    fetchPolicy: 'cache-and-network',
+  });
 
-  // Flatten all tools with their server information
-  const allTools = useMemo(() => {
-    const tools: Array<{
-      tool: apolloResolversTypes.McpTool;
-      server: GroupedMCPServer;
-    }> = [];
+  const allTools = (data?.mcpTools ?? []).filter((tool): tool is NonNullable<typeof tool> => tool !== null);
 
-    mcpServers.forEach((server) => {
-      if (server.tools) {
-        server.tools.forEach((tool) => {
-          tools.push({ tool, server });
-        });
-      }
-    });
-
-    return tools;
-  }, [mcpServers]);
-
-  // Build a map of tool IDs to agent IDs for agent filtering
-  const toolToAgentsMap = useMemo(() => {
-    const map = new Map<string, Set<string>>();
-    runtimes.forEach((runtime) => {
-      runtime.mcpToolCapabilities?.forEach((tool) => {
-        if (!map.has(tool.id)) {
-          map.set(tool.id, new Set());
-        }
-        map.get(tool.id)!.add(runtime.id);
-      });
-    });
-    return map;
-  }, [runtimes]);
-
-  // Apply all filters to get the final filtered list
+  // Client-side filtering
   const filteredTools = useMemo(() => {
-    let filtered = allTools;
+    let result = [...allTools];
 
-    // Filter by agent selection
-    if (selectedAgentIds.length > 0) {
-      filtered = filtered.filter((item) => {
-        const agentIds = toolToAgentsMap.get(item.tool.id);
-        return agentIds && selectedAgentIds.some(id => agentIds.has(id));
-      });
-    }
-
-    // Filter by server selection
-    if (selectedServerIds.length > 0) {
-      filtered = filtered.filter((item) => selectedServerIds.includes(item.server.id));
-    }
-
-    // Filter by search term
+    // Search filter (name + description)
     if (searchTerm) {
-      const searchLower = searchTerm.toLowerCase();
-      filtered = filtered.filter(
-        (item) =>
-          item.tool.name.toLowerCase().includes(searchLower) ||
-          item.tool.description.toLowerCase().includes(searchLower) ||
-          item.server.name.toLowerCase().includes(searchLower) ||
-          item.server.description.toLowerCase().includes(searchLower)
+      const query = searchTerm.toLowerCase();
+      result = result.filter(
+        (tool) => tool.name.toLowerCase().includes(query) || tool.description.toLowerCase().includes(query),
       );
     }
 
-    return filtered;
-  }, [allTools, selectedAgentIds, selectedServerIds, searchTerm, toolToAgentsMap]);
+    // Server filter
+    if (selectedServerIds.length > 0) {
+      result = result.filter((tool) => selectedServerIds.includes(tool.mcpServer.id));
+    }
+
+    // Agent filter (tools available on specific agents/runtimes)
+    if (selectedAgentIds.length > 0) {
+      result = result.filter((tool) => {
+        if (!tool.runtimes || tool.runtimes.length === 0) return false;
+        return tool.runtimes.some((runtime) => selectedAgentIds.includes(runtime.id));
+      });
+    }
+
+    return result;
+  }, [allTools, searchTerm, selectedServerIds, selectedAgentIds]);
+
+  // Calculate stats
+  const stats = {
+    total: allTools.length,
+    filtered: filteredTools.length,
+    active: allTools.filter((t) => t.status === 'ACTIVE').length,
+    inactive: allTools.filter((t) => t.status === 'INACTIVE').length,
+  };
+
+  // Memoize the reset function to prevent recreating it on every render
+  const resetFilters = useCallback(() => {
+    setSearchTerm('');
+    setSelectedServerIds([]);
+    setSelectedAgentIds([]);
+  }, []);
+
+  // Memoize the filters object to prevent recreating it on every render
+  const filters = useMemo(() => ({
+    search: searchTerm,
+    setSearch: setSearchTerm,
+    serverIds: selectedServerIds,
+    setServerIds: setSelectedServerIds,
+    agentIds: selectedAgentIds,
+    setAgentIds: setSelectedAgentIds,
+    reset: resetFilters,
+  }), [searchTerm, selectedServerIds, selectedAgentIds, resetFilters]);
+
+  // Memoize the stats object to prevent recreating it on every render
+  const memoizedStats = useMemo(() => stats, [stats.total, stats.filtered, stats.active, stats.inactive]);
 
   return {
-    mcpServers,
-    isLoading,
-    searchTerm,
-    setSearchTerm,
-    selectedServerIds,
-    setSelectedServerIds,
-    selectedAgentIds,
-    setSelectedAgentIds,
+    tools: allTools,
     filteredTools,
-    allTools,
+    loading,
+    error,
+    stats: memoizedStats,
+    filters,
   };
 }

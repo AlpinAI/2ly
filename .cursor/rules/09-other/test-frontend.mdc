@@ -1,0 +1,9 @@
+---
+alwaysApply: false
+---
+* You MUST NOT start a backend or frontend yourself, expect that one is already running
+* Frontend SHOULD run on http://localhost:8888 (Vite dev server) - if not, stop and ask the user to start the frontend
+* ALWAYS use the same email and password to login:
+  - email: cursor@2ly.ai
+  - password: AB12cd34-cursor
+* If you cannot login, create the account first

@@ -1,4 +1,4 @@
-import { inject, injectable } from 'inversify';
+import { injectable, inject } from 'inversify';
 import pino from 'pino';
 import pretty from 'pino-pretty';
 

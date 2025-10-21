@@ -1,0 +1,28 @@
+# Subscribe to runtime changes
+# WHY: Real-time monitoring of runtimes for MCP server configuration and dashboard
+# This replaces polling-based queries with reactive subscriptions
+subscription SubscribeRuntimes($workspaceId: ID!) {
+  runtimes(workspaceId: $workspaceId) {
+    id
+    name
+    description
+    status
+    createdAt
+    lastSeenAt
+    capabilities
+    hostIP
+    hostname
+    mcpClientName
+    mcpServers {
+      id
+      name
+      description
+    }
+    mcpToolCapabilities {
+      id
+      name
+      description
+      status
+    }
+  }
+}

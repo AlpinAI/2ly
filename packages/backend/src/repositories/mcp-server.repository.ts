@@ -13,10 +13,14 @@ import {
   UNLINK_RUNTIME,
   GET_MCPSERVER,
 } from './mcp-server.operations';
+import { WorkspaceRepository } from './workspace.repository';
 
 @injectable()
 export class MCPServerRepository {
-  constructor(@inject(DGraphService) private readonly dgraphService: DGraphService) { }
+  constructor(
+    @inject(DGraphService) private readonly dgraphService: DGraphService,
+    @inject(WorkspaceRepository) private readonly workspaceRepository: WorkspaceRepository,
+  ) {}
 
   async findAll(): Promise<dgraphResolversTypes.McpServer[]> {
     const res = await this.dgraphService.query<{
@@ -29,12 +33,8 @@ export class MCPServerRepository {
     name: string,
     description: string,
     repositoryUrl: string,
-    transport: 'STREAM' | 'STDIO',
-    command: string,
-    args: string,
-    ENV: string,
-    serverUrl: string,
-    headers: string | null,
+    transport: 'STREAM' | 'STDIO' | 'SSE',
+    config: string,
     runOn: MCP_SERVER_RUN_ON | null,
     workspaceId: string,
   ): Promise<dgraphResolversTypes.McpServer> {
@@ -45,15 +45,13 @@ export class MCPServerRepository {
       description,
       repositoryUrl,
       transport,
-      command,
-      args,
-      ENV,
-      serverUrl,
-      headers,
+      config,
       workspaceId,
       runOn,
     });
-    return res.addMCPServer.mCPServer[0];
+    const created = res.addMCPServer.mCPServer[0];
+    await this.workspaceRepository.checkAndCompleteStep(workspaceId, 'install-mcp-server');
+    return created;
   }
 
   async update(
@@ -61,12 +59,8 @@ export class MCPServerRepository {
     name: string,
     description: string,
     repositoryUrl: string,
-    transport: 'STREAM' | 'STDIO',
-    command: string,
-    args: string,
-    ENV: string,
-    serverUrl: string,
-    headers: string | null,
+    transport: 'STREAM' | 'STDIO' | 'SSE',
+    config: string,
     runOn: MCP_SERVER_RUN_ON | null,
   ): Promise<dgraphResolversTypes.McpServer> {
     const res = await this.dgraphService.mutation<{
@@ -77,11 +71,7 @@ export class MCPServerRepository {
       description,
       repositoryUrl,
       transport,
-      command,
-      args,
-      ENV,
-      serverUrl,
-      headers,
+      config,
       runOn,
     });
     return res.updateMCPServer.mCPServer[0];

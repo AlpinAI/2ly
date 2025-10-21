@@ -59,19 +59,72 @@ packages/backend/src/
 ```
 packages/frontend/src/
 ├── components/      # Reusable UI components
-├── pages/          # Route components
-├── contexts/       # React contexts
-├── hooks/          # Custom hooks
-├── services/       # API services
+│   ├── ui/         # Radix UI primitives (button, select, dropdown, etc.)
+│   ├── monitoring/ # Domain-specific components
+│   ├── layout/     # Layout components (header, navigation)
+│   ├── toolsets/   # Tool set management components
+│   ├── agents/     # Agent-related components
+│   └── sources/    # Source management components
+├── hooks/          # Custom hooks (useToolCalls, useMCPServers, etc.)
+├── stores/         # Zustand state management
+├── contexts/       # React contexts (Theme, Auth, Notification)
 └── graphql/        # GraphQL queries/mutations
 ```
 
 ## Testing Framework
 
-- **Framework**: Vitest (Jest-compatible)
-- **Test Files**: `*.spec.ts`, `*.test.ts`, `*.integration.spec.ts`
-- **Coverage**: v8 provider with HTML/LCOV reports
-- **Single Test**: `npm run test -- packages/backend/src/path/to/file.spec.ts`
+The project uses three types of tests with different tools and purposes:
+
+### 1. Unit Tests
+- **Tool**: Vitest + React Testing Library
+- **Location**: `*.test.ts` / `*.test.tsx` files alongside source code in `src/` directories
+- **Purpose**: Test individual components and functions in isolation
+- **Pattern**: Mock external dependencies (Apollo hooks, stores, etc.) to keep tests focused
+- **Example**: `src/components/ui/button.test.tsx`
+- **Run**: `npm run test` (all unit tests) or `npm run test:watch` (watch mode)
+
+### 2. Integration Tests
+- **Tool**: Vitest + Testcontainers
+- **Location**:
+  - `*.integration.spec.ts` files in `packages/**/src/`
+  - `packages/backend/tests/**/*.spec.ts`
+- **Purpose**: Test interactions between multiple components/services with real infrastructure (Dgraph, NATS)
+- **Setup**: Uses testcontainers to spin up Docker containers
+- **Run**: `npm run test:integration`
+- **Config**: `vitest.integration.config.ts`
+
+### 3. End-to-End (E2E) Tests
+- **Tool**: Playwright
+- **Location**: `packages/frontend/tests/e2e/`
+- **Purpose**: Test complete user workflows in a real browser
+- **Setup**: Uses testcontainers for full stack (Dgraph, NATS, Backend, Frontend)
+- **Run**: `npm run test:e2e`
+
+#### E2E Test Organization
+Tests are organized into three strategies:
+
+**clean/** - Fresh database for each test
+- Tests that need an empty database
+- Run sequentially (workers: 1)
+- Example: `init.spec.ts`, `backend-api.spec.ts`
+
+**seeded/** - Pre-populated database
+- Tests that need predefined data (workspaces, users, etc.)
+- Database is reset and seeded before each describe block
+- Run sequentially (workers: 1)
+- Example: `login.spec.ts`, `routing.spec.ts`
+
+**parallel/** - Order-independent UI tests
+- UI-focused tests that can run in any order
+- Pre-seeded database shared across tests
+- Run in parallel for speed
+- Example: `workspace-ui.spec.ts`, `password-validation.spec.ts`
+
+### Test Mocking Patterns
+- **Apollo Mocks**: Mock components using Apollo hooks instead of wrapping in providers
+  - Example: `vi.mock('@/components/command-palette/command-palette', () => ({ CommandPalette: () => null }))`
+- **Store Mocks**: Mock Zustand stores and return test data
+- **See**: `app-layout.test.tsx` for comprehensive mocking example
 
 ## Technology Stack
 
@@ -82,11 +135,13 @@ packages/frontend/src/
 - **TypeScript** with strict configuration
 
 ### Frontend
-- **React 18** with TypeScript
+- **React 19** with TypeScript
+- **React Router 7** for routing
 - **Vite 7** for build tooling
-- **Tailwind CSS** with custom design system
+- **Radix UI** primitives for accessible components
+- **Tailwind CSS** v3.4 with custom design system
 - **Apollo Client** for GraphQL state management
-- **Framer Motion** for animations
+- **Zustand** for client-side state management
 
 ### Runtime
 - **MCP SDK** (`@modelcontextprotocol/sdk`) for tool integration
@@ -102,8 +157,13 @@ packages/frontend/src/
 - **Frontend**: http://localhost:8888
 
 ### GraphQL Schema
-- **Core Types**: System, Workspace, User, MCPServer, MCPTool, Runtime
-- **Schemas**: `packages/common/src/apollo.schema.graphql` and `dgraph.schema.graphql`
+- **Location**: `packages/common/schema/apollo.schema.graphql` (Apollo) and `dgraph.schema.graphql` (Dgraph)
+- **Key Features**:
+  - Workspace-based multi-tenancy
+  - MCP server and tool management
+  - Runtime registration and monitoring
+  - Tool call tracking with filtering and pagination
+- **Code Generation**: Run `npm run codegen` to generate TypeScript types from schema
 
 ## Code Quality Standards
 
@@ -112,6 +172,6 @@ packages/frontend/src/
 - **Type Safety**: Strict TypeScript configuration across all packages
 - **Path Mapping**: `@2ly/common`, `@2ly/backend`, etc. for cross-package imports
 
-## Current Development Focus
+## Current Branch
 
-The project is actively implementing a comprehensive authentication system with JWT tokens, refresh token rotation, and security middleware. The `login_kiro` branch contains ongoing authentication work.
+The `design-radix-tailwind` branch contains the active frontend development with Radix UI components and improved UX patterns.

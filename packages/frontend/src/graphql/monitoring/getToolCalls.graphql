@@ -1,0 +1,55 @@
+# Get tool calls with filtering and pagination
+# WHY: Monitoring page with backend filtering for scalability
+query GetToolCalls(
+  $workspaceId: ID!
+  $limit: Int
+  $offset: Int
+  $filters: ToolCallFilters
+  $orderDirection: OrderDirection
+) {
+  toolCalls(
+    workspaceId: $workspaceId
+    limit: $limit
+    offset: $offset
+    filters: $filters
+    orderDirection: $orderDirection
+  ) {
+    toolCalls {
+      id
+      toolInput
+      toolOutput
+      error
+      calledAt
+      completedAt
+      status
+      mcpTool {
+        id
+        name
+        description
+        mcpServer {
+          id
+          name
+        }
+      }
+      calledBy {
+        id
+        name
+        hostname
+      }
+      executedBy {
+        id
+        name
+        hostname
+      }
+    }
+    totalCount
+    hasMore
+    stats {
+      total
+      pending
+      completed
+      failed
+      avgDuration
+    }
+  }
+}

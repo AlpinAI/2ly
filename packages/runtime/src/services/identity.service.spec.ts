@@ -2,7 +2,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { AGENT_CAPABILITY, IDENTITY_NAME, IdentityService, TOOL_CAPABILITY, WORKSPACE_ID } from './identity.service';
 import { LoggerService, NatsService } from '@2ly/common';
-import { LoggerServiceMock, NatsServiceMock } from '@2ly/common';
+import { LoggerServiceMock, NatsServiceMock } from '@2ly/common/test/vitest';
 import { Container } from 'inversify';
 
 // Mock os module

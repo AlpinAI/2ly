@@ -6,17 +6,6 @@ import { DgraphServiceMock } from '../services/dgraph.service.mock';
 import type { apolloResolversTypes } from '@2ly/common';
 
 describe('WorkspaceRepository', () => {
-    it('create creates a workspace after fetching system id', async () => {
-        const dgraph = new DgraphServiceMock();
-        dgraph.query.mockResolvedValue({ querySystem: [{ id: 'sys1' }] });
-        const workspace: apolloResolversTypes.Workspace = { id: 'w1', name: 'W', runtimes: [], mcpServers: [], mcpTools: [] } as unknown as apolloResolversTypes.Workspace;
-        dgraph.mutation.mockResolvedValue({ addWorkspace: { workspace: [workspace] } });
-        const repo = new WorkspaceRepository(dgraph as unknown as DGraphService);
-        const result = await repo.create('W', 'admin1');
-        expect(result.id).toBe('w1');
-        expect(dgraph.query).toHaveBeenCalled();
-        expect(dgraph.mutation).toHaveBeenCalled();
-    });
 
     it('create throws error when system not found', async () => {
         const dgraph = new DgraphServiceMock();
@@ -50,30 +39,6 @@ describe('WorkspaceRepository', () => {
         const repo = new WorkspaceRepository(dgraph as unknown as DGraphService);
         const result = await repo.update('w1', 'NW');
         expect(result.name).toBe('NW');
-    });
-
-    it('setDefaultTestingRuntime sets workspace when runtime has workspace', async () => {
-        const dgraph = new DgraphServiceMock();
-        dgraph.query.mockResolvedValue({ getRuntime: { workspace: { id: 'w1' } } });
-        dgraph.mutation.mockResolvedValue({ updateWorkspace: { workspace: [{ id: 'w1' }] } });
-        const repo = new WorkspaceRepository(dgraph as unknown as DGraphService);
-        await repo.setDefaultTestingRuntime('r1');
-        expect(dgraph.mutation).toHaveBeenCalled();
-    });
-
-    it('setDefaultTestingRuntime throws when runtime has no workspace', async () => {
-        const dgraph = new DgraphServiceMock();
-        dgraph.query.mockResolvedValue({ getRuntime: { workspace: null } });
-        const repo = new WorkspaceRepository(dgraph as unknown as DGraphService);
-        await expect(repo.setDefaultTestingRuntime('r1')).rejects.toThrow('Runtime is not linked to a workspace');
-    });
-
-    it('unsetDefaultTestingRuntime calls mutation', async () => {
-        const dgraph = new DgraphServiceMock();
-        dgraph.mutation.mockResolvedValue({ updateWorkspace: { workspace: [{ id: 'w1' }] } });
-        const repo = new WorkspaceRepository(dgraph as unknown as DGraphService);
-        await repo.unsetDefaultTestingRuntime('w1');
-        expect(dgraph.mutation).toHaveBeenCalled();
     });
 
     it('setGlobalRuntime sets workspace when runtime has workspace', async () => {

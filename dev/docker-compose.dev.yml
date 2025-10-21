@@ -116,6 +116,9 @@ services:
       interval: 5s
       timeout: 3s
       retries: 10
+    profiles:
+      - backend
+      - all
 
   # 2LY Tool Runtime
   main-runtime:
@@ -127,7 +130,6 @@ services:
       - NATS_SERVERS=nats:4222
       - RUNTIME_NAME=Main Runtime
       - GLOBAL_RUNTIME=true
-      - DEFAULT_TESTING_RUNTIME=true
       - ROOTS=TEMP:/tmp
       - AGENT_SERVER_TRANSPORT=stream
       - AGENT_SERVER_TRANSPORT_PORT=3001
@@ -138,6 +140,9 @@ services:
     networks:
       - 2ly-network
     restart: unless-stopped
+    profiles:
+      - runtime
+      - all
 
   # 2LY Frontend
   frontend:
@@ -147,11 +152,17 @@ services:
       args:
         BUILD_MODE: development
     container_name: 2ly-frontend
+    environment:
+      - VITE_GRAPHQL_HOST=localhost:3000
+      - VITE_GRAPHQL_HOST_SSL=false
     ports:
       - 8888:80
     networks:
       - 2ly-network
     restart: unless-stopped
+    profiles:
+      - frontend
+      - all
 
   doc:
     build:

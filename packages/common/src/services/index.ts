@@ -3,6 +3,5 @@ export * from './nats.service';
 export * from './nats.message';
 export * from './service.interface';
 
-// mocks
-export * from './nats.service.mock';
-export * from './logger.service.mock';
+// Note: Mocks are not exported to avoid vitest dependency conflicts
+// Import them directly if needed: import { ... } from '@2ly/common/dist/services/nats.service.mock';

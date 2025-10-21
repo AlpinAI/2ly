@@ -1,0 +1,12 @@
+# Unlink MCP Tool from Runtime
+# WHY: Disconnect a tool from a runtime (tool set) for management
+mutation UnlinkMCPToolFromRuntime($mcpToolId: ID!, $runtimeId: ID!) {
+  unlinkMCPToolFromRuntime(mcpToolId: $mcpToolId, runtimeId: $runtimeId) {
+    id
+    name
+    mcpToolCapabilities {
+      id
+      name
+    }
+  }
+}

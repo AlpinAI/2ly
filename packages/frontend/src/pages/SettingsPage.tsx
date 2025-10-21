@@ -1,173 +1,155 @@
-import React, { useState } from 'react';
-import { useMutation } from '@apollo/client';
-import { UPDATE_WORKSPACE_MUTATION, SET_DEFAULT_TESTING_RUNTIME_MUTATION, SET_GLOBAL_RUNTIME_MUTATION, UNSET_GLOBAL_RUNTIME_MUTATION, UNSET_DEFAULT_TESTING_RUNTIME_MUTATION } from '../graphql/mutations';
-import { useWorkspace } from '../contexts/useWorkspace';
-import { useRuntimes } from '../hooks/useRuntimes';
+/**
+ * Settings Page
+ *
+ * WHY: Application and user settings with organized sections.
+ * Manages upstream registry connections, users, runtimes, and API keys.
+ *
+ * ARCHITECTURE:
+ * - Uses AppLayout (header + navigation are automatic)
+ * - Tab-based navigation for different settings sections
+ * - useMCPRegistries hook for real-time registry updates
+ * - Composed of smaller, focused components from /components/settings/
+ */
 
-const SettingsPage: React.FC = () => {
-  const { currentWorkspace, setCurrentWorkspace } = useWorkspace();
-  const [name, setName] = useState(currentWorkspace?.name || '');
-  const [globalRuntimeId, setGlobalRuntimeId] = useState(currentWorkspace?.globalRuntime?.id || '');
-  const [defaultTestingRuntimeId, setDefaultTestingRuntimeId] = useState(currentWorkspace?.defaultTestingRuntime?.id || '');
-  const [updateWorkspace, { loading: updateLoading, error: updateError }] = useMutation(UPDATE_WORKSPACE_MUTATION);
-  const [setGlobalRuntime] = useMutation(SET_GLOBAL_RUNTIME_MUTATION);
-  const [unsetGlobalRuntime] = useMutation(UNSET_GLOBAL_RUNTIME_MUTATION);
-  const [setDefaultTestingRuntime, { loading: runtimeLoading, error: runtimeError }] = useMutation(SET_DEFAULT_TESTING_RUNTIME_MUTATION);
-  const [unsetDefaultTestingRuntime] = useMutation(UNSET_DEFAULT_TESTING_RUNTIME_MUTATION);
-  const [success, setSuccess] = useState(false);
+import { useState } from 'react';
+import { Database, Users, Cpu, Key } from 'lucide-react';
+import { useMutation } from '@apollo/client/react';
+import { useWorkspaceId } from '@/stores/workspaceStore';
+import { useMCPRegistries } from '@/hooks/useMCPRegistries';
+import { useRegistrySyncStore } from '@/stores/registrySyncStore';
+import { useRegistryAutoSync } from '@/hooks/useRegistryAutoSync';
+import {
+  CreateMcpRegistryDocument,
+  DeleteMcpRegistryDocument,
+  SyncUpstreamRegistryDocument,
+} from '@/graphql/generated/graphql';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { McpRegistrySection } from '@/components/settings/mcp-registry-section';
+import { UsersRolesSection } from '@/components/settings/users-roles-section';
+import { RuntimesSection } from '@/components/settings/runtimes-section';
+import { ApiKeysSection } from '@/components/settings/api-keys-section';
 
-  // Get runtimes for the dropdown
-  const runtimes = useRuntimes(currentWorkspace?.id || '', []);
 
-  if (!currentWorkspace) {
-    return <div className="p-8">No workspace selected.</div>;
-  }
+export default function SettingsPage() {
+  const workspaceId = useWorkspaceId();
+  const { startSync, endSync, updateLastSyncTime, isSyncing } = useRegistrySyncStore();
+  const { autoSyncRegistry } = useRegistryAutoSync();
+  const [syncingRegistryId, setSyncingRegistryId] = useState<string | null>(null);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setSuccess(false);
+  console.log('[SettingsPage] Rendering with workspaceId:', workspaceId);
+
+  // Get registries data via hook - poll during sync to show server count updates
+  const pollInterval = syncingRegistryId && isSyncing(syncingRegistryId) ? 3000 : 0;
+  const { registries, loading, error } = useMCPRegistries(pollInterval);
+
+  // Mutations
+  const [createRegistry, { loading: creating }] = useMutation(CreateMcpRegistryDocument, {
+    refetchQueries: ['GetMCPRegistries'],
+    onError: (err) => {
+      console.error('[SettingsPage] Create registry error:', err);
+    },
+  });
+
+  const [deleteRegistry] = useMutation(DeleteMcpRegistryDocument, {
+    refetchQueries: ['GetMCPRegistries'],
+    onError: (err) => {
+      console.error('[SettingsPage] Delete registry error:', err);
+    },
+  });
+
+  const [syncRegistry] = useMutation(SyncUpstreamRegistryDocument);
+
+  const handleCreateRegistry = async (name: string, upstreamUrl: string) => {
+    if (!workspaceId) return;
 
     try {
-      // Update workspace name if changed
-      if (name !== currentWorkspace.name) {
-        const result = await updateWorkspace({ variables: { id: currentWorkspace.id, name } });
-        if (result.data?.updateWorkspace) {
-          setCurrentWorkspace(result.data.updateWorkspace);
-        }
-      }
+      const result = await createRegistry({
+        variables: {
+          workspaceId,
+          name,
+          upstreamUrl,
+        },
+      });
 
-      // Update global runtime if changed
-      if (globalRuntimeId !== currentWorkspace.globalRuntime?.id) {
-        if (globalRuntimeId) {
-          const runtimeResult = await setGlobalRuntime({ variables: { id: currentWorkspace.id, runtimeId: globalRuntimeId } });
-          if (runtimeResult.data?.setGlobalRuntime) {
-            setCurrentWorkspace(runtimeResult.data.setGlobalRuntime);
-          }
-        } else {
-          const runtimeResult = await unsetGlobalRuntime({ variables: { id: currentWorkspace.id } });
-          if (runtimeResult.data?.unsetGlobalRuntime) {
-            setCurrentWorkspace(runtimeResult.data.unsetGlobalRuntime);
-          }
-        }
+      // Auto-sync the newly created registry
+      const registryId = result.data?.createMCPRegistry?.id;
+      if (registryId) {
+        setSyncingRegistryId(registryId);
+        await autoSyncRegistry(registryId);
+        setSyncingRegistryId(null);
       }
-
-      // Update default testing runtime if changed
-      if (defaultTestingRuntimeId !== currentWorkspace.defaultTestingRuntime?.id) {
-        if (defaultTestingRuntimeId) {
-          const runtimeResult = await setDefaultTestingRuntime({
-            variables: { id: currentWorkspace.id, runtimeId: defaultTestingRuntimeId }
-          });
-          if (runtimeResult.data?.setDefaultTestingRuntime) {
-            setCurrentWorkspace(runtimeResult.data.setDefaultTestingRuntime);
-          }
-        } else {
-          const runtimeResult = await unsetDefaultTestingRuntime({
-            variables: { id: currentWorkspace.id }
-          });
-          if (runtimeResult.data?.unsetDefaultTestingRuntime) {
-            setCurrentWorkspace(runtimeResult.data.unsetDefaultTestingRuntime);
-          }
-        }
-      }
-
-      setSuccess(true);
-    } catch {
-      // error handled by Apollo
+    } catch (error) {
+      console.error('[SettingsPage] Failed to create and sync registry:', error);
+      setSyncingRegistryId(null);
     }
   };
 
-  const isLoading = updateLoading || runtimeLoading;
-  const hasError = updateError || runtimeError;
-  const hasChanges = name !== currentWorkspace.name || defaultTestingRuntimeId !== currentWorkspace.defaultTestingRuntime?.id;
+  const handleDeleteRegistry = async (id: string) => {
+    await deleteRegistry({ variables: { id } });
+  };
+
+  const handleSyncRegistry = async (id: string) => {
+    if (isSyncing(id)) return; // Prevent duplicate sync
+    
+    startSync(id);
+    try {
+      await syncRegistry({ variables: { registryId: id } });
+      updateLastSyncTime(id, new Date());
+    } finally {
+      endSync(id);
+    }
+  };
 
   return (
-    <div className="max-w-xl mx-auto p-8">
-      <h1 className="text-2xl font-bold mb-6">Workspace Settings</h1>
-      <form onSubmit={handleSubmit} className="space-y-4 bg-white p-6 rounded shadow">
-        <div>
-          <label htmlFor="workspace-id" className="block text-sm font-medium text-gray-700 mb-1">
-            Workspace ID
-          </label>
-          <input
-            id="workspace-id"
-            type="text"
-            value={currentWorkspace.id}
-            disabled
-            className="w-full border border-gray-200 bg-gray-100 rounded px-3 py-2 text-gray-500 cursor-not-allowed"
+    <div className="max-w-7xl mx-auto">
+      <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-6">Settings</h2>
+
+      <Tabs defaultValue="registries" className="w-full">
+        <TabsList className="mb-6">
+          <TabsTrigger value="registries" className="flex items-center gap-2">
+            <Database className="h-4 w-4" />
+            <span>MCP Registries</span>
+          </TabsTrigger>
+          <TabsTrigger value="users" className="flex items-center gap-2">
+            <Users className="h-4 w-4" />
+            <span>Users & Roles</span>
+          </TabsTrigger>
+          <TabsTrigger value="runtimes" className="flex items-center gap-2">
+            <Cpu className="h-4 w-4" />
+            <span>Runtimes</span>
+          </TabsTrigger>
+          <TabsTrigger value="api-keys" className="flex items-center gap-2">
+            <Key className="h-4 w-4" />
+            <span>API Keys</span>
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="registries">
+          <McpRegistrySection
+            registries={registries}
+            loading={loading}
+            error={error}
+            isSyncing={isSyncing}
+            onCreateRegistry={handleCreateRegistry}
+            onSyncRegistry={handleSyncRegistry}
+            onDeleteRegistry={handleDeleteRegistry}
+            isCreating={creating}
+            workspaceId={workspaceId}
           />
-        </div>
-        <div>
-          <label htmlFor="workspace-name" className="block text-sm font-medium text-gray-700 mb-1">
-            Workspace Name
-          </label>
-          <input
-            id="workspace-name"
-            type="text"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-200"
-            disabled={isLoading}
-            required
-          />
-        </div>
-        <div>
-          <label htmlFor="default-testing-runtime" className="block text-sm font-medium text-gray-700 mb-1">
-            Global Runtime
-          </label>
-          <select
-            id="global-runtime"
-            value={globalRuntimeId}
-            onChange={(e) => setGlobalRuntimeId(e.target.value)}
-            className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-200"
-            disabled={isLoading}
-          >
-            <option value="">Select a runtime</option>
-            {runtimes.map((runtime) => (
-              <option key={runtime.id} value={runtime.id}>
-                {runtime.name}
-              </option>
-            ))}
-          </select>
-        </div>
-        <div>
-          <label htmlFor="default-testing-runtime" className="block text-sm font-medium text-gray-700 mb-1">
-            Default Testing Runtime
-          </label>
-          <select
-            id="default-testing-runtime"
-            value={defaultTestingRuntimeId}
-            onChange={(e) => setDefaultTestingRuntimeId(e.target.value)}
-            className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-200"
-            disabled={isLoading}
-          >
-            <option value="">Select a runtime</option>
-            {runtimes.map((runtime) => (
-              <option key={runtime.id} value={runtime.id}>
-                {runtime.name}
-              </option>
-            ))}
-          </select>
-        </div>
-        <button
-          type="submit"
-          className="bg-primary-600 text-white px-4 py-2 rounded hover:bg-primary-700 disabled:opacity-50"
-          disabled={isLoading || !hasChanges}
-        >
-          {isLoading ? 'Saving...' : 'Save Changes'}
-        </button>
-        {success && <div className="text-green-600 text-sm">Workspace settings updated!</div>}
-        {hasError && <div className="text-red-600 text-sm">Error updating workspace: {(updateError || runtimeError)?.message}</div>}
-      </form>
-      <div className="mt-10">
-        <h2 className="text-lg font-semibold mb-2">Other Settings (coming soon)</h2>
-        <ul className="list-disc list-inside text-gray-500">
-          <li>Role permissions</li>
-          <li>Members & invitations</li>
-          <li>Danger zone (delete workspace)</li>
-        </ul>
-      </div>
+        </TabsContent>
+
+        <TabsContent value="users">
+          <UsersRolesSection />
+        </TabsContent>
+
+        <TabsContent value="runtimes">
+          <RuntimesSection />
+        </TabsContent>
+
+        <TabsContent value="api-keys">
+          <ApiKeysSection />
+        </TabsContent>
+      </Tabs>
     </div>
   );
-};
-
-export default SettingsPage;
+}

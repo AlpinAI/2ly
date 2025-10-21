@@ -1,0 +1,11 @@
+# Create MCP Registry Mutation
+# WHY: Create a new upstream MCP registry connection.
+mutation CreateMCPRegistry($workspaceId: ID!, $name: String!, $upstreamUrl: String!) {
+  createMCPRegistry(workspaceId: $workspaceId, name: $name, upstreamUrl: $upstreamUrl) {
+    id
+    name
+    upstreamUrl
+    createdAt
+    lastSyncAt
+  }
+}

@@ -1,77 +1,56 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { RegistryRepository } from './registry.repository';
-import { readFileSync } from 'fs';
-
-// Mock fs module
-vi.mock('fs', () => ({
-    readFileSync: vi.fn(),
-}));
-
-// Mock fetch
-global.fetch = vi.fn();
+import type { DGraphService } from '../services/dgraph.service';
+import { DgraphServiceMock } from '../services/dgraph.service.mock';
+import { dgraphResolversTypes } from '@2ly/common';
+import type { WorkspaceRepository } from './workspace.repository';
 
 describe('RegistryRepository', () => {
-    let registryRepository: RegistryRepository;
+  let dgraphService: DgraphServiceMock;
+  let registryRepository: RegistryRepository;
+  let workspaceRepository: WorkspaceRepository;
 
-    beforeEach(() => {
-        registryRepository = new RegistryRepository();
-        vi.clearAllMocks();
+  beforeEach(() => {
+    dgraphService = new DgraphServiceMock();
+    workspaceRepository = { checkAndCompleteStep: vi.fn().mockResolvedValue(undefined) } as unknown as WorkspaceRepository;
+    registryRepository = new RegistryRepository(
+      dgraphService as unknown as DGraphService,
+      workspaceRepository,
+    );
+  });
+
+  it('createRegistry does not complete onboarding step immediately', async () => {
+    const registry = { id: 'reg1', name: 'Test Registry' } as unknown as dgraphResolversTypes.McpRegistry;
+    dgraphService.mutation.mockResolvedValue({ addMCPRegistry: { mCPRegistry: [registry] } });
+
+    const result = await registryRepository.createRegistry('w1', 'Test Registry', 'https://example.com');
+
+    expect(result.id).toBe('reg1');
+    expect((workspaceRepository.checkAndCompleteStep as unknown as ReturnType<typeof vi.fn>)).not.toHaveBeenCalled();
+  });
+
+  it('syncUpstream completes choose-mcp-registry onboarding step after sync', async () => {
+    const registryData = {
+      id: 'reg1',
+      name: 'Test Registry',
+      upstreamUrl: 'https://example.com',
+      workspace: { id: 'w1' }
+    } as unknown as dgraphResolversTypes.McpRegistry;
+    
+    dgraphService.query.mockResolvedValue({ getMCPRegistry: registryData });
+    dgraphService.mutation
+      .mockResolvedValueOnce({ updateMCPRegistry: { mCPRegistry: [registryData] } }); // For lastSyncAt update
+
+    // Mock fetch for upstream API
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: () => Promise.resolve({ servers: [], metadata: { nextCursor: null } })
     });
 
-    it('getDefaultRegistryPath returns correct path', () => {
-        const result = registryRepository.getDefaultRegistryPath();
+    await registryRepository.syncUpstream('reg1');
 
-        expect(result).toContain('data');
-        expect(result).toContain('mcp-server-catalog.json');
-        expect(result).toContain('src');
-    });
-
-    it('getRegistry reads local file when type is local', async () => {
-        const mockContent = '{"servers": []}';
-        const filePath = '/path/to/registry.json';
-
-        (readFileSync as any).mockReturnValue(mockContent);
-
-        const result = await registryRepository.getRegistry(filePath, 'local');
-
-        expect(readFileSync).toHaveBeenCalledWith(filePath, 'utf-8');
-        expect(result).toBe(mockContent);
-    });
-
-    it('getRegistry fetches remote content when type is remote', async () => {
-        const mockContent = '{"servers": []}';
-        const url = 'https://example.com/registry.json';
-
-        (global.fetch as any).mockResolvedValue({
-            text: () => Promise.resolve(mockContent),
-        });
-
-        const result = await registryRepository.getRegistry(url, 'remote');
-
-        expect(global.fetch).toHaveBeenCalledWith(url);
-        expect(result).toBe(mockContent);
-    });
-
-    it('getRegistry handles fetch errors for remote type', async () => {
-        const url = 'https://example.com/registry.json';
-        const error = new Error('Network error');
-
-        (global.fetch as any).mockRejectedValue(error);
-
-        await expect(registryRepository.getRegistry(url, 'remote'))
-            .rejects.toThrow('Network error');
-    });
-
-    it('getRegistry handles readFileSync errors for local type', async () => {
-        const filePath = '/nonexistent/path.json';
-        const error = new Error('ENOENT: no such file or directory');
-
-        (readFileSync as any).mockImplementation(() => {
-            throw error;
-        });
-
-        await expect(registryRepository.getRegistry(filePath, 'local'))
-            .rejects.toThrow('ENOENT: no such file or directory');
-    });
+    expect((workspaceRepository.checkAndCompleteStep as unknown as ReturnType<typeof vi.fn>)).toHaveBeenCalledWith('w1', 'choose-mcp-registry');
+  });
 });
+
+

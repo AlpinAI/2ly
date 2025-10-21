@@ -1,8 +1,12 @@
 {
   "extends": "../../tsconfig.json",
-  "include": ["./src/*.ts"],
+  "include": ["./src/**/*.ts"],
+  "exclude": ["./src/**/*.spec.ts", "./src/**/*.test.ts"],
   "compilerOptions": {
     "outDir": "dist",
-    "declaration": true
+    "declaration": true,
+    "skipLibCheck": true,
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true
   }
 }

@@ -11,7 +11,6 @@ import {
   SetRuntimeCapabilitiesMessage,
   AckMessage,
   SetRootsMessage,
-  SetDefaultTestingRuntimeMessage,
   SetGlobalRuntimeMessage,
   SetMcpClientNameMessage,
 } from '@2ly/common';
@@ -35,7 +34,6 @@ export type RuntimeInstanceMetadata = {
 
 @injectable()
 export class RuntimeInstance extends Service {
-
   name = 'runtime-instance';
   private rxjsSubscriptions: Subscription[] = [];
   private natsSubscriptions: { unsubscribe: () => void; drain: () => Promise<void> }[] = [];
@@ -55,7 +53,12 @@ export class RuntimeInstance extends Service {
 
   protected async initialize() {
     this.logger.info(`Initializing runtime instance ${this.instance.id}:${this.metadata.pid}`);
-    await this.runtimeRepository.setActive(this.instance.id, this.metadata.pid, this.metadata.hostIP, this.metadata.hostname);
+    await this.runtimeRepository.setActive(
+      this.instance.id,
+      this.metadata.pid,
+      this.metadata.hostIP,
+      this.metadata.hostname,
+    );
     this.observeHeartbeat();
     this.handleRuntimeMessages();
     this.observeMCPServers();
@@ -102,10 +105,6 @@ export class RuntimeInstance extends Service {
         this.logger.debug(`Setting ${this.instance.id} as global runtime`);
         await this.workspaceRepository.setGlobalRuntime(this.instance.id);
         message.respond(new AckMessage({}));
-      } else if (message instanceof SetDefaultTestingRuntimeMessage) {
-        this.logger.debug(`Setting ${this.instance.id} as default testing runtime`);
-        await this.workspaceRepository.setDefaultTestingRuntime(this.instance.id);
-        message.respond(new AckMessage({}));
       } else if (message instanceof SetMcpClientNameMessage) {
         this.logger.debug(`Setting ${this.instance.id} as MCP client name`);
         await this.runtimeRepository.setMcpClientName(this.instance.id, message.data.mcpClientName);
@@ -139,7 +138,7 @@ export class RuntimeInstance extends Service {
    * - MCP Servers running "on the edge" with a direct link to the runtime (Runtime - (mcpServers) -> MCP Server(filter runOn: EDGE))
    * - MCP Servers running "on the agent side" AND that are linked to the runtime via an MCP Tool (Runtime - (mcpToolCapabilities) -> MCP Tool - (mcpServer) -> MCP Server)
    * - ONLY if the runtime is the global runtime, the list of MCP Servers running "on Main Runtime" with property runOn: GLOBAL
-   * 
+   *
    * Publish an UpdateConfiguredMCPServerMessage in the nats KV ephemeral store
    * - the message will stay in the KV ephemeral long enough to be observed by the runtime
    */
@@ -156,31 +155,31 @@ export class RuntimeInstance extends Service {
     const globalMcpServers = isGlobalRuntime
       ? this.runtimeRepository.observeMCPServersOnGlobal(runtime.workspace.id)
       : of([]);
-    const subscription = combineLatest([roots, edgeMcpServers, agentMcpServers, globalMcpServers]).pipe(
-      debounceTime(100), // debounce to avoid spamming the nats service
-      tap(([roots, edgeMcpServers, agentMcpServers, globalMcpServers]) => {
-        if (!this.instance) {
-          // ignore
-          return;
-        }
-        const mcpServers = [...edgeMcpServers, ...agentMcpServers, ...globalMcpServers].reduce((acc, mcpServer) => {
-          if (!acc.has(mcpServer.id)) {
-            acc.set(mcpServer.id, mcpServer);
+    const subscription = combineLatest([roots, edgeMcpServers, agentMcpServers, globalMcpServers])
+      .pipe(
+        debounceTime(100), // debounce to avoid spamming the nats service
+        tap(([roots, edgeMcpServers, agentMcpServers, globalMcpServers]) => {
+          if (!this.instance) {
+            // ignore
+            return;
           }
-          return acc;
-        }, new Map<string, dgraphResolversTypes.McpServer>());
-        this.logger.debug(
-          `Update with ${mcpServers.size} MCP Servers for runtime ${this.instance.id}`,
-        );
-        const mcpServersMessage = UpdateConfiguredMCPServerMessage.create({
-          RID: this.metadata.RID,
-          roots,
-          mcpServers: Array.from(mcpServers.values()),
-        }) as UpdateConfiguredMCPServerMessage;
+          const mcpServers = [...edgeMcpServers, ...agentMcpServers, ...globalMcpServers].reduce((acc, mcpServer) => {
+            if (!acc.has(mcpServer.id)) {
+              acc.set(mcpServer.id, mcpServer);
+            }
+            return acc;
+          }, new Map<string, dgraphResolversTypes.McpServer>());
+          this.logger.debug(`Update with ${mcpServers.size} MCP Servers for runtime ${this.instance.id}`);
+          const mcpServersMessage = UpdateConfiguredMCPServerMessage.create({
+            RID: this.metadata.RID,
+            roots,
+            mcpServers: Array.from(mcpServers.values()),
+          }) as UpdateConfiguredMCPServerMessage;
 
-        this.natsService.publishEphemeral(mcpServersMessage);
-      }),
-    ).subscribe();
+          this.natsService.publishEphemeral(mcpServersMessage);
+        }),
+      )
+      .subscribe();
 
     this.rxjsSubscriptions.push(subscription);
   }
@@ -190,7 +189,7 @@ export class RuntimeInstance extends Service {
    * - MCP Tools related with the mcpToolCapabilities edge
    * - (future) API Tools related with the apiToolCapabilities edge
    * - (future) Other types of tools
-   * 
+   *
    * Publish an AgentCapabilitiesMessage in the nats KV ephemeral store
    * - the message will stay in the KV ephemeral long enough to be observed by the runtime
    */
@@ -210,7 +209,10 @@ export class RuntimeInstance extends Service {
           this.logger.debug(
             `Capabilities for runtime ${this.instance.id}: ${JSON.stringify(runtime?.mcpToolCapabilities, null, 2)}`,
           );
-          const message = AgentCapabilitiesMessage.create({ RID: this.metadata.RID, capabilities: runtime?.mcpToolCapabilities ?? [] }) as AgentCapabilitiesMessage;
+          const message = AgentCapabilitiesMessage.create({
+            RID: this.metadata.RID,
+            capabilities: runtime?.mcpToolCapabilities ?? [],
+          }) as AgentCapabilitiesMessage;
           this.natsService.publishEphemeral(message);
         }),
       )

@@ -1,0 +1,21 @@
+# Subscribe to MCP Servers
+# WHY: Real-time monitoring of MCP servers for Servers Page with full details
+subscription SubscribeMCPServers($workspaceId: ID!) {
+  mcpServers(workspaceId: $workspaceId) {
+    id
+    name
+    description
+    repositoryUrl
+    transport
+    runOn
+    config
+    tools {
+      id
+      name
+    }
+    runtime {
+      id
+      name
+    }
+  }
+}

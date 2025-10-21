@@ -30,7 +30,7 @@ jobs:
           cache: 'npm'
 
       - name: Install dependencies
-        run: npm ci
+        run: npm ci --cache .npm --prefer-offline=false
 
       - name: Run linter
         id: lint

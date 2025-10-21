@@ -1,28 +1,16 @@
 import { defineConfig } from 'vitest/config';
+import react from '@vitejs/plugin-react-swc';
 import path from 'path';
+
+/**
+ * Vitest Configuration for Unit Tests
+ *
+ * Unit tests run without testcontainers - they are fast and isolated.
+ * For integration tests that need testcontainers, use vitest.integration.config.ts
+ */
 
 export default defineConfig({
     test: {
-        environment: 'node',
-        dir: './',
-        setupFiles: [],
-        include: [
-            'packages/**/src/**/*.spec.ts',
-            'packages/**/src/**/*.test.ts',
-            'packages/**/__tests__/**/*.spec.ts',
-            'packages/**/__tests__/**/*.test.ts'
-        ],
-        environmentMatchGlobs: [
-            ['packages/frontend/**', 'jsdom']
-        ],
-        exclude: [
-            '**/node_modules/**',
-            'node_modules',
-            'dist',
-            '.git',
-            'packages/**/dist/**',
-            'packages/doc/**'
-        ],
         globals: true,
         coverage: {
             reporter: ['text', 'html', 'lcov'],
@@ -41,13 +29,61 @@ export default defineConfig({
                 '**/index.browser.ts',
                 'packages/doc/**'
             ]
-        }
-    },
-    resolve: {
-        alias: {
-            '@2ly/common': path.resolve(__dirname, 'packages/common/src/index.ts'),
-            '@2ly/common/*': path.resolve(__dirname, 'packages/common/src/*')
-
-        }
+        },
+        // Use projects to separate frontend (React + jsdom) from backend (Node.js)
+        projects: [
+            {
+                test: {
+                    name: 'frontend',
+                    environment: 'jsdom',
+                    include: [
+                        'packages/frontend/src/**/*.spec.ts',
+                        'packages/frontend/src/**/*.spec.tsx',
+                        'packages/frontend/src/**/*.test.ts',
+                        'packages/frontend/src/**/*.test.tsx'
+                    ],
+                    exclude: [
+                        '**/node_modules/**',
+                        '**/dist/**',
+                        '**/e2e/**'
+                    ],
+                    setupFiles: ['./packages/frontend/src/test/setup.ts']
+                },
+                plugins: [react()],
+                resolve: {
+                    alias: {
+                        '@': path.resolve(__dirname, 'packages/frontend/src')
+                    }
+                }
+            },
+            {
+                test: {
+                    name: 'backend',
+                    environment: 'node',
+                    include: [
+                        'packages/backend/src/**/*.spec.ts',
+                        'packages/backend/__tests__/**/*.spec.ts',
+                        'packages/backend/__tests__/**/*.test.ts',
+                        'packages/common/src/**/*.spec.ts',
+                        'packages/common/__tests__/**/*.spec.ts',
+                        'packages/runtime/src/**/*.spec.ts',
+                        'packages/runtime/__tests__/**/*.spec.ts'
+                    ],
+                    exclude: [
+                        '**/node_modules/**',
+                        '**/dist/**',
+                        'packages/backend/tests/**',
+                        '**/*.integration.spec.ts'
+                    ]
+                },
+                resolve: {
+                    alias: {
+                        '@2ly/common/test/testcontainers': path.resolve(__dirname, 'packages/common/src/test/testcontainers.ts'),
+                        '@2ly/common/test/vitest': path.resolve(__dirname, 'packages/common/src/test/vitest.ts'),
+                        '@2ly/common': path.resolve(__dirname, 'packages/common/src/index.ts')
+                    }
+                }
+            }
+        ]
     }
 });

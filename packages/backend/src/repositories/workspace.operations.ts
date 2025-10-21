@@ -25,13 +25,19 @@ export const QUERY_WORKSPACE = gql`
     getWorkspace(id: $workspaceId) {
       id
       name
+      createdAt
       globalRuntime {
         id
         name
       }
-      defaultTestingRuntime {
+      onboardingSteps {
         id
-        name
+        stepId
+        type
+        status
+        priority
+        createdAt
+        updatedAt
       }
     }
   }
@@ -42,11 +48,8 @@ export const QUERY_WORKSPACES = gql`
     queryWorkspace {
       id
       name
+      createdAt
       globalRuntime {
-        id
-        name
-      }
-      defaultTestingRuntime {
         id
         name
       }
@@ -97,10 +100,7 @@ export const QUERY_WORKSPACE_WITH_MCP_SERVERS = gql`
         description
         repositoryUrl
         transport
-        command
-        args
-        ENV
-        serverUrl
+        config
         runOn
         tools {
           id
@@ -147,6 +147,15 @@ export const QUERY_WORKSPACE_WITH_MCP_TOOLS = gql`
         lastSeenAt
         mcpServer {
           id
+          name
+          description
+          repositoryUrl
+        }
+        runtimes {
+          id
+          name
+          status
+          capabilities
         }
       }
     }
@@ -165,25 +174,6 @@ export const UPDATE_WORKSPACE = gql`
   }
 `;
 
-export const SET_DEFAULT_TESTING_RUNTIME = gql`
-  mutation setDefaultTestingRuntime($id: ID!, $runtimeId: ID!) {
-    updateWorkspace(input: { filter: { id: [$id] }, set: { defaultTestingRuntime: { id: $runtimeId } } }) {
-      workspace {
-        id
-      }
-    }
-  }
-`;
-
-export const UNSET_DEFAULT_TESTING_RUNTIME = gql`
-  mutation unsetDefaultTestingRuntime($id: ID!) {
-    updateWorkspace(input: { filter: { id: [$id] }, set: { defaultTestingRuntime: null } }) {
-      workspace {
-        id
-      }
-    }
-  }
-`;
 
 export const SET_GLOBAL_RUNTIME = gql`
   mutation setGlobalRuntime($id: ID!, $runtimeId: ID!) {
@@ -200,6 +190,82 @@ export const UNSET_GLOBAL_RUNTIME = gql`
     updateWorkspace(input: { filter: { id: [$id] }, set: { globalRuntime: null } }) {
       workspace {
         id
+      }
+    }
+  }
+`;
+
+export const CREATE_ONBOARDING_STEP = gql`
+  mutation createOnboardingStep($stepId: String!, $type: OnboardingStepType!, $priority: Int!, $now: DateTime!) {
+    addOnboardingStep(input: {
+      stepId: $stepId
+      type: $type
+      status: PENDING
+      priority: $priority
+      createdAt: $now
+    }) {
+      onboardingStep {
+        id
+        stepId
+        type
+        status
+        priority
+        createdAt
+      }
+    }
+  }
+`;
+
+export const QUERY_ONBOARDING_STEP_BY_STEP_ID = gql`
+  query queryOnboardingStepByStepId($stepId: String!) {
+    queryOnboardingStep(filter: { stepId: { eq: $stepId } }) {
+      id
+      stepId
+      status
+    }
+  }
+`;
+
+export const UPDATE_ONBOARDING_STEP_STATUS = gql`
+  mutation updateOnboardingStepCompleted($id: ID!, $status: OnboardingStepStatus!, $now: DateTime!) {
+    updateOnboardingStep(input: {
+      filter: { id: [$id] }
+      set: {
+        status: $status
+        updatedAt: $now
+      }
+    }) {
+      onboardingStep {
+        id
+        stepId
+        type
+        status
+        priority
+        createdAt
+        updatedAt
+      }
+    }
+  }
+`;
+
+export const LINK_ONBOARDING_STEP_TO_WORKSPACE = gql`
+  mutation linkOnboardingStepToWorkspace($workspaceId: ID!, $stepId: ID!) {
+    updateWorkspace(input: { 
+      filter: { id: [$workspaceId] }
+      set: { onboardingSteps: { id: $stepId } }
+    }) {
+      workspace {
+        id
+        name
+        onboardingSteps {
+          id
+          stepId
+          type
+          status
+          priority
+          createdAt
+          updatedAt
+        }
       }
     }
   }

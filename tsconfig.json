@@ -24,6 +24,12 @@
       ],
       "@2ly/common": [
         "packages/common/src"
+      ],
+      "@2ly/common/test/testcontainers": [
+        "packages/common/src/test/testcontainers.ts"
+      ],
+      "@2ly/common/test/vitest": [
+        "packages/common/src/test/vitest.ts"
       ]
     }
   },

@@ -1,0 +1,16 @@
+# Login Mutation
+# WHY: Authenticate user with email/password, get tokens.
+mutation Login($input: LoginInput!) {
+  login(input: $input) {
+    success
+    user {
+      id
+      email
+    }
+    tokens {
+      accessToken
+      refreshToken
+    }
+    errors
+  }
+}

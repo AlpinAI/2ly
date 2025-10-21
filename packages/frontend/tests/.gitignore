@@ -1,0 +1,7 @@
+# Test environment state
+.test-environment-state.json
+
+# Playwright test results
+test-results/
+playwright-report/
+playwright/.cache/

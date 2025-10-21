@@ -18,6 +18,10 @@ export default [
     {
         ignores: [
             "packages/**/src/graphql/**",
+            "**/node_modules/**",
+            "**/dist/**",
+            "**/build/**",
+            "**/coverage/**",
         ],
     },
     ...compat.extends("eslint:recommended", "plugin:@typescript-eslint/recommended", "prettier"),

@@ -1,0 +1,8 @@
+# Call MCP Tool
+# WHY: Execute tool for testing in Tools Page
+mutation CallMCPTool($toolId: ID!, $input: String!) {
+  callMCPTool(toolId: $toolId, input: $input) {
+    success
+    result
+  }
+}

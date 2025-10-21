@@ -7,6 +7,7 @@ enum ActiveStatus {
 
 enum MCPTransportType {
   STREAM
+  SSE
   STDIO
 }
 
@@ -35,8 +36,9 @@ type Workspace {
   mcpServers: [MCPServer!]
   mcpTools: [MCPTool!]
   runtimes: [Runtime!]
+  mcpRegistries: [MCPRegistry!]
   globalRuntime: Runtime
-  defaultTestingRuntime: Runtime
+  onboardingSteps: [OnboardingStep!]
 }
 
 type MCPServer {
@@ -45,11 +47,7 @@ type MCPServer {
   description: String!
   repositoryUrl: String!
   transport: MCPTransportType!
-  command: String!
-  args: String!
-  ENV: String!
-  serverUrl: String!
-  headers: String
+  config: String!
   tools: [MCPTool!]
   runOn: MCPServerRunOn
   runtime: Runtime
@@ -87,10 +85,32 @@ type Runtime {
   mcpClientName: String
 }
 
+enum OnboardingStepType {
+  ONBOARDING
+  ANNOUNCEMENT
+  LEARNING
+}
+
+enum OnboardingStepStatus {
+  PENDING
+  COMPLETED
+  DISMISSED
+}
+
 enum ToolCallStatus {
   PENDING
   COMPLETED
   FAILED
+}
+
+type OnboardingStep {
+  id: ID!
+  stepId: String!
+  type: OnboardingStepType!
+  status: OnboardingStepStatus!
+  priority: Int
+  createdAt: Date!
+  updatedAt: Date
 }
 
 type ToolCall {
@@ -142,40 +162,83 @@ input LogoutInput {
   refreshToken: String!
 }
 
-type Registry {
-  version: String!
-  description: String!
-  servers: [MCPRegistryServer!]
-}
-
-type MCPRegistryServer {
-  _2ly: MCPRegistry2lyMetadata!
-  name: String!
-  description: String!
-  repositoryUrl: String!
-  transport: MCPTransportType!
-  command: String
-  args: String
-  ENV: String
-  serverUrl: String
-  headers: String
-  config: String!
-}
-
 type MCPRegistry2lyMetadata {
   registryVersion: String!
 }
 
+type MCPRegistry {
+  id: ID!
+  name: String!
+  upstreamUrl: String!
+  createdAt: Date!
+  lastSyncAt: Date
+  workspace: Workspace!
+  servers: [MCPRegistryServer!]
+}
+
+type MCPRegistryServer {
+  id: ID!
+  name: String!
+  description: String!
+  title: String!
+  repositoryUrl: String!
+  version: String!
+  packages: String
+  remotes: String
+  _meta: String
+  createdAt: Date!
+  lastSeenAt: Date!
+  registry: MCPRegistry!
+}
+
+# Monitoring types for scalable tool call queries
+input ToolCallFilters {
+  status: [ToolCallStatus!]
+  mcpToolIds: [ID!]
+  mcpServerIds: [ID!]
+  runtimeIds: [ID!]
+  dateFrom: Date
+  dateTo: Date
+  search: String
+}
+
+enum OrderDirection {
+  ASC
+  DESC
+}
+
+type ToolCallsResult {
+  toolCalls: [ToolCall!]!
+  totalCount: Int!
+  hasMore: Boolean!
+  stats: ToolCallStats!
+}
+
+type ToolCallStats {
+  total: Int!
+  pending: Int!
+  completed: Int!
+  failed: Int!
+  avgDuration: Float
+}
+
 type Query {
   workspace: [Workspace!]
-  mcpServers: [MCPServer!]
+  mcpServers(workspaceId: ID!): [MCPServer!]
+  mcpTools(workspaceId: ID!): [MCPTool!]
   system: System
   infra: Infra!
-  registry: Registry!
-  searchMCPServers(query: String!): [MCPRegistryServer!]
-  fetchMCPServerConfig(repositoryUrl: String!): MCPRegistryServer
   workspaceMCPTools(workspaceId: ID!): Workspace
   isMCPAutoConfigEnabled: Boolean!
+  mcpRegistries(workspaceId: ID!): [MCPRegistry!]
+  # Monitoring query with filtering and pagination
+  toolCalls(
+    workspaceId: ID!
+    limit: Int
+    offset: Int
+    filters: ToolCallFilters
+    orderDirection: OrderDirection
+  ): ToolCallsResult!
   # Authentication queries
   me: User
 }
@@ -186,17 +249,12 @@ type CallToolResult {
 }
 
 type Mutation {
-
   createMCPServer(
     name: String!
     description: String!
     repositoryUrl: String!
     transport: MCPTransportType!
-    command: String!
-    args: String!
-    ENV: String!
-    serverUrl: String!
-    headers: String
+    config: String!
     runOn: MCPServerRunOn
     workspaceId: ID!
   ): MCPServer!
@@ -206,11 +264,7 @@ type Mutation {
     description: String!
     repositoryUrl: String!
     transport: MCPTransportType!
-    command: String!
-    args: String!
-    ENV: String!
-    serverUrl: String!
-    headers: String
+    config: String!
     runOn: MCPServerRunOn
   ): MCPServer!
   linkMCPServerToRuntime(mcpServerId: ID!, runtimeId: ID!): MCPServer!
@@ -224,14 +278,21 @@ type Mutation {
   unlinkMCPToolFromRuntime(mcpToolId: ID!, runtimeId: ID!): Runtime!
   initSystem(adminPassword: String!, email: String!): System!
   updateWorkspace(id: ID!, name: String!): Workspace!
-  setDefaultTestingRuntime(id: ID!, runtimeId: ID!): Workspace!
-  unsetDefaultTestingRuntime(id: ID!): Workspace!
   setGlobalRuntime(id: ID!, runtimeId: ID!): Workspace!
   unsetGlobalRuntime(id: ID!): Workspace!
   updateMCPServerRunOn(mcpServerId: ID!, runOn: MCPServerRunOn!, runtimeId: ID): MCPServer!
 
+  # Registry mutations
+  createMCPRegistry(workspaceId: ID!, name: String!, upstreamUrl: String!): MCPRegistry!
+  deleteMCPRegistry(id: ID!): MCPRegistry!
+  syncUpstreamRegistry(registryId: ID!): MCPRegistry!
+
   # Playground mutations
   callMCPTool(toolId: ID!, input: String!): CallToolResult!
+
+  # Onboarding mutations
+  completeOnboardingStep(workspaceId: ID!, stepId: String!): Boolean!
+  dismissOnboardingStep(workspaceId: ID!, stepId: String!): Boolean!
 
   # Authentication mutations
   registerUser(input: RegisterUserInput!): RegisterUserPayload!
@@ -312,8 +373,8 @@ input LogoutInput {
 
 type Subscription {
   workspaces: [Workspace!]
+  workspace(workspaceId: ID!): Workspace
   runtimes(workspaceId: ID!): [Runtime!]
   mcpServers(workspaceId: ID!): [MCPServer!]
-  mcpTools(workspaceId: ID!): [MCPTool]
   toolCalls(workspaceId: ID!): [ToolCall!]
 }
