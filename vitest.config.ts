@@ -33,8 +33,8 @@ export default defineConfig({
         // Use projects to separate frontend (React + jsdom) from backend (Node.js)
         projects: [
             {
-                name: 'frontend',
                 test: {
+                    name: 'frontend',
                     environment: 'jsdom',
                     include: [
                         'packages/frontend/src/**/*.spec.ts',
@@ -57,8 +57,8 @@ export default defineConfig({
                 }
             },
             {
-                name: 'backend',
                 test: {
+                    name: 'backend',
                     environment: 'node',
                     include: [
                         'packages/backend/src/**/*.spec.ts',
