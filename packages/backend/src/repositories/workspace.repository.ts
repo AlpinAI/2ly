@@ -16,7 +16,9 @@ import {
   UPDATE_ONBOARDING_STEP_STATUS,
 } from './workspace.operations';
 import {
-  QUERY_WORKSPACE_WITH_REGISTRIES
+  QUERY_WORKSPACE_WITH_REGISTRIES,
+  ADD_MCP_REGISTRY,
+  ADD_REGISTRY_SERVER,
 } from './registry.operations';
 import { GET_RUNTIME } from './runtime.operations';
 import { QUERY_SYSTEM } from './system.operations';
@@ -24,6 +26,7 @@ import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { createSubscriptionFromQuery } from '../helpers';
 import { INITIAL_ONBOARDING_STEPS } from './onboarding-step-definitions';
+import { INITIAL_FEATURED_SERVERS } from './initial-servers';
 
 @injectable()
 export class WorkspaceRepository {
@@ -50,6 +53,33 @@ export class WorkspaceRepository {
       adminId,
     });
     const workspace = res.addWorkspace.workspace[0];
+
+    // Create "Private Registry" with empty upstreamUrl
+    const registryRes = await this.dgraphService.mutation<{
+      addMCPRegistry: { mCPRegistry: dgraphResolversTypes.McpRegistry[] };
+    }>(ADD_MCP_REGISTRY, {
+      name: 'Private Registry',
+      upstreamUrl: '',
+      workspaceId: workspace.id,
+      now,
+    });
+    const privateRegistry = registryRes.addMCPRegistry.mCPRegistry[0];
+
+    // Create 10 featured servers from INITIAL_FEATURED_SERVERS
+    for (const server of INITIAL_FEATURED_SERVERS) {
+      await this.dgraphService.mutation(ADD_REGISTRY_SERVER, {
+        name: server.name,
+        description: server.description,
+        title: server.title,
+        repositoryUrl: server.repositoryUrl,
+        version: server.version,
+        packages: JSON.stringify(server.packages),
+        remotes: server.remotes ? JSON.stringify(server.remotes) : null,
+        _meta: null,
+        registryId: privateRegistry.id,
+        now,
+      });
+    }
 
     // Initialize onboarding steps for new workspace
     await this.initializeOnboardingSteps(workspace.id);

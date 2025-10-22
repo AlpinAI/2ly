@@ -61,19 +61,6 @@ const isLatestVersion = (server: MCPRegistryServer): boolean => {
 };
 
 /**
- * Parse _meta JSON and check if this is the active version
- */
-const isActive = (server: MCPRegistryServer): boolean => {
-  try {
-    if (!server._meta) return false;
-    const meta = JSON.parse(server._meta);
-    return meta['io.modelcontextprotocol.registry/official']?.status === 'active';
-  } catch {
-    return false;
-  }
-};
-
-/**
  * Group servers by name, separating latest from older versions
  */
 const groupServersByName = (servers: MCPRegistryServer[]): ServerVersionGroup[] => {
@@ -136,7 +123,7 @@ export function MCPServerBrowser({ onConfigure }: MCPServerBrowserProps) {
 
   // Flatten all servers from all registries
   const allServers = useMemo(() => {
-    return registries?.flatMap((registry) => registry.servers?.filter((s) => isActive(s)) || []) || [];
+    return registries?.flatMap((registry) => registry.servers || []) || [];
   }, [registries]);
 
   // Group servers by name (latest + older versions)
