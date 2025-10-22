@@ -35,6 +35,7 @@ export default defineConfig({
         // Longer timeout for integration tests with containers
         testTimeout: 30000,
         hookTimeout: 30000,
+        teardownTimeout: 20000, // 20 seconds for container cleanup
         coverage: {
             reporter: ['text', 'html', 'lcov'],
             provider: 'v8',

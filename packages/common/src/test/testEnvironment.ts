@@ -283,11 +283,41 @@ export class TestEnvironment {
 
     this.log('Building backend Docker image...', { projectRoot: this.config.projectRoot });
 
-    // Build the Docker image first
-    const builtImage = await GenericContainer.fromDockerfile(
-      this.config.projectRoot,
-      'packages/backend/Dockerfile'
-    ).build();
+    // Build the Docker image first with timeout
+    let builtImage: GenericContainer | undefined = undefined;
+    let progressInterval: NodeJS.Timeout | undefined = undefined;
+    let promiseTimeout: NodeJS.Timeout | undefined = undefined;
+    try {
+      // Log progress every 10 seconds during build
+      progressInterval = setInterval(() => {
+        this.log('Docker build still in progress...');
+      }, 10000);
+
+      const buildPromise = GenericContainer.fromDockerfile(
+        this.config.projectRoot,
+        'packages/backend/Dockerfile'
+      ).build();
+
+      // Add timeout to prevent hanging indefinitely
+      const timeoutPromise = new Promise((_, reject) => {
+        promiseTimeout = setTimeout(() => reject(new Error('Docker build timed out after 5 minutes')), 5 * 60 * 1000);
+      });
+
+      builtImage = await Promise.race([
+        buildPromise, timeoutPromise
+      ]) as GenericContainer;
+      this.log('Backend Docker image built successfully');
+    } catch (error) {
+      this.log('Failed to build backend Docker image', error);
+      throw new Error(`Docker build failed: ${error instanceof Error ? error.message : String(error)}`);
+    } finally {
+      if (progressInterval) {
+        clearInterval(progressInterval);
+      }
+      if (promiseTimeout) {
+        clearTimeout(promiseTimeout);
+      }
+    }
 
     // Then create and configure the container
     let started;
@@ -374,36 +404,68 @@ export class TestEnvironment {
   async stop(): Promise<void> {
     this.log('Stopping test environment...');
 
+    const errors: Error[] = [];
+
     try {
       if (this.services?.backend) {
-        await this.services.backend.container.stop();
-        this.log('Backend stopped');
+        try {
+          await this.services.backend.container.stop({ timeout: 10000 });
+          this.log('Backend stopped');
+        } catch (error) {
+          this.log('Error stopping backend', error);
+          errors.push(error instanceof Error ? error : new Error(String(error)));
+        }
       }
 
       if (this.services?.dgraphAlpha) {
-        await this.services.dgraphAlpha.container.stop();
-        this.log('Dgraph Alpha stopped');
+        try {
+          await this.services.dgraphAlpha.container.stop({ timeout: 5000 });
+          this.log('Dgraph Alpha stopped');
+        } catch (error) {
+          this.log('Error stopping Dgraph Alpha', error);
+          errors.push(error instanceof Error ? error : new Error(String(error)));
+        }
       }
 
       if (this.services?.dgraphZero) {
-        await this.services.dgraphZero.container.stop();
-        this.log('Dgraph Zero stopped');
+        try {
+          await this.services.dgraphZero.container.stop({ timeout: 5000 });
+          this.log('Dgraph Zero stopped');
+        } catch (error) {
+          this.log('Error stopping Dgraph Zero', error);
+          errors.push(error instanceof Error ? error : new Error(String(error)));
+        }
       }
 
       if (this.services?.nats) {
-        await this.services.nats.container.stop();
-        this.log('NATS stopped');
+        try {
+          await this.services.nats.container.stop({ timeout: 5000 });
+          this.log('NATS stopped');
+        } catch (error) {
+          this.log('Error stopping NATS', error);
+          errors.push(error instanceof Error ? error : new Error(String(error)));
+        }
       }
 
       if (this.network) {
-        await this.network.stop();
-        this.log('Network stopped');
+        try {
+          await this.network.stop();
+          this.log('Network stopped');
+        } catch (error) {
+          this.log('Error stopping network', error);
+          errors.push(error instanceof Error ? error : new Error(String(error)));
+        }
       }
 
       this.services = undefined;
       this.network = undefined;
 
       this.log('Test environment stopped successfully');
+
+      if (errors.length > 0) {
+        this.log(`Encountered ${errors.length} errors during cleanup`);
+        // Don't throw, just log - we want cleanup to complete
+      }
     } catch (error) {
       this.log('Error stopping test environment', error);
       throw error;

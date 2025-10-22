@@ -19,7 +19,7 @@ describe('DGraphService', () => {
         container.bind(DGRAPH_URL).toConstantValue('dgraph:8080');
         container.bind(DGraphService).toSelf().inSingletonScope();
         const service = container.get(DGraphService);
-        await service.start();
+        await service.start('test');
         return service;
     };
 

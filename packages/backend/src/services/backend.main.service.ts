@@ -49,6 +49,7 @@ export class MainService extends Service {
     await this.stopService(this.mcpServerAutoConfigService);
     await this.stopService(this.monitoringService);
     this.logActiveServices();
+    this.logger.info('Stopped');
   }
 
   private async initInstance() {

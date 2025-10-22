@@ -147,9 +147,9 @@ describe('AuthDirective', () => {
       try {
         await privateField.resolve?.({}, {}, authContext, {} as GraphQLResolveInfo);
         expect.fail('Should have thrown authentication error');
-      } catch (error) {
-        expect(error.message).toContain('Authentication required');
-        expect(error.extensions?.code).toBe('UNAUTHENTICATED');
+      } catch (error: unknown) {
+        expect((error as Error).message).toContain('Authentication required');
+        expect((error as { extensions?: { code?: string } }).extensions?.code).toBe('UNAUTHENTICATED');
       }
     });
 
@@ -186,10 +186,10 @@ describe('AuthDirective', () => {
       try {
         await adminField.resolve?.({}, {}, memberContext, {} as GraphQLResolveInfo);
         expect.fail('Should have thrown authorization error');
-      } catch (error) {
-        expect(error.message).toContain('Access denied');
-        expect(error.message).toContain('admin');
-        expect(error.extensions?.code).toBe('FORBIDDEN');
+      } catch (error: unknown) {
+        expect((error as Error).message).toContain('Access denied');
+        expect((error as Error).message).toContain('admin');
+        expect((error as { extensions?: { code?: string } }).extensions?.code).toBe('FORBIDDEN');
       }
     });
 
@@ -217,9 +217,9 @@ describe('AuthDirective', () => {
       try {
         await adminField.resolve?.({}, {}, authContext, {} as GraphQLResolveInfo);
         expect.fail('Should have thrown authentication error');
-      } catch (error) {
-        expect(error.message).toContain('Authentication required');
-        expect(error.extensions?.code).toBe('UNAUTHENTICATED');
+      } catch (error: unknown) {
+        expect((error as Error).message).toContain('Authentication required');
+        expect((error as { extensions?: { code?: string } }).extensions?.code).toBe('UNAUTHENTICATED');
       }
     });
   });
@@ -260,9 +260,9 @@ describe('AuthDirective', () => {
       try {
         await workspaceField.resolve?.(source, {}, memberContext, {} as GraphQLResolveInfo);
         expect.fail('Should have thrown workspace access error');
-      } catch (error) {
-        expect(error.message).toContain('Access denied to this workspace');
-        expect(error.extensions?.code).toBe('FORBIDDEN');
+      } catch (error: unknown) {
+        expect((error as Error).message).toContain('Access denied to this workspace');
+        expect((error as { extensions?: { code?: string } }).extensions?.code).toBe('FORBIDDEN');
       }
     });
 
@@ -301,9 +301,9 @@ describe('AuthDirective', () => {
       try {
         await workspaceField.resolve?.(source, {}, memberContext, {} as GraphQLResolveInfo);
         expect.fail('Should have thrown workspace context error');
-      } catch (error) {
-        expect(error.message).toContain('Workspace context required');
-        expect(error.extensions?.reason).toBe('MISSING_WORKSPACE_CONTEXT');
+      } catch (error: unknown) {
+        expect((error as Error).message).toContain('Workspace context required');
+        expect((error as { extensions?: { reason?: string } }).extensions?.reason).toBe('MISSING_WORKSPACE_CONTEXT');
       }
     });
 
@@ -335,8 +335,8 @@ describe('AuthDirective', () => {
       try {
         await idField.resolve?.({}, {}, authContext, {} as GraphQLResolveInfo);
         expect.fail('Should have thrown authentication error');
-      } catch (error) {
-        expect(error.message).toContain('Authentication required');
+      } catch (error: unknown) {
+        expect((error as Error).message).toContain('Authentication required');
       }
     });
 
@@ -354,9 +354,9 @@ describe('AuthDirective', () => {
       try {
         await idField.resolve?.({}, {}, memberContext, {} as GraphQLResolveInfo);
         expect.fail('Should have thrown authorization error');
-      } catch (error) {
-        expect(error.message).toContain('Access denied');
-        expect(error.message).toContain('admin');
+      } catch (error: unknown) {
+        expect((error as Error).message).toContain('Access denied');
+        expect((error as Error).message).toContain('admin');
       }
     });
   });
@@ -368,8 +368,8 @@ describe('AuthDirective', () => {
 
       try {
         await privateField.resolve?.({}, {}, authContext, {} as GraphQLResolveInfo);
-      } catch (error) {
-        expect(error.extensions?.code).toBe('UNAUTHENTICATED');
+      } catch (error: unknown) {
+        expect((error as { extensions?: { code?: string } }).extensions?.code).toBe('UNAUTHENTICATED');
       }
     });
 
@@ -386,9 +386,9 @@ describe('AuthDirective', () => {
 
       try {
         await adminField.resolve?.({}, {}, memberContext, {} as GraphQLResolveInfo);
-      } catch (error) {
-        expect(error.extensions?.code).toBe('FORBIDDEN');
-        expect(error.extensions?.requiredRoles).toEqual(['admin']);
+      } catch (error: unknown) {
+        expect((error as { extensions?: { code?: string } }).extensions?.code).toBe('FORBIDDEN');
+        expect((error as { extensions?: { requiredRoles?: string[] } }).extensions?.requiredRoles).toEqual(['admin']);
       }
     });
   });
