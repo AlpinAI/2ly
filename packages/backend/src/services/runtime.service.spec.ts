@@ -107,11 +107,11 @@ describe('RuntimeService', () => {
     it('initialize starts services and subscribes', async () => {
         const { service, dgraph, nats } = createService();
         (service as unknown as { dropAllData: boolean }).dropAllData = true;
-        await service.start();
+        await service.start('test');
         expect(dgraph.start).toHaveBeenCalled();
         expect(dgraph.initSchema).toHaveBeenCalledWith(true);
         expect(nats.start).toHaveBeenCalled();
-        await service.stop();
+        await service.stop('test');
     });
 
     it('handles RuntimeConnect for existing runtime by creating instance', async () => {
@@ -121,13 +121,13 @@ describe('RuntimeService', () => {
             },
             system: { getDefaultWorkspace: vi.fn(async () => ({ id: 'ws1' })) },
         });
-        await service.start();
+        await service.start('test');
         const msg = new RuntimeConnectMessage({ name: 'node', pid: 'p', hostIP: 'ip', hostname: 'host', workspaceId: 'DEFAULT' });
         iterator.push(msg);
         // allow message loop
         await new Promise((r) => setTimeout(r, 10));
         expect(factory).toHaveBeenCalledTimes(1);
-        await service.stop();
+        await service.stop('test');
     });
 
     it('handles RuntimeConnect for new runtime by creating record and instance', async () => {
@@ -135,12 +135,12 @@ describe('RuntimeService', () => {
             runtime: { findByName: vi.fn(async () => null) },
             workspace: { findById: vi.fn(async () => ({ id: 'wsX' })) },
         });
-        await service.start();
+        await service.start('test');
         const msg = new RuntimeConnectMessage({ name: 'new-node', pid: 'p', hostIP: 'ip', hostname: 'host', workspaceId: 'wsX' });
         iterator.push(msg);
         await new Promise((r) => setTimeout(r, 10));
         expect(runtimeRepo.create).toHaveBeenCalled();
-        await service.stop();
+        await service.stop('test');
     });
 
     it('no longer handles RuntimeHealthyMessage or disconnect messages');
@@ -152,24 +152,24 @@ describe('RuntimeService', () => {
         // spy on disconnectTool/upsertTool
         const disconnectToolSpy = vi.spyOn(service, 'disconnectTool');
         const upsertToolSpy = vi.spyOn(service, 'upsertTool');
-        await service.start();
+        await service.start('test');
         const msg = new UpdateMcpToolsMessage({ mcpServerId: 'm1', tools: [{ name: 'new', description: '', inputSchema: { type: 'object' as const }, annotations: {} }] });
         iterator.push(msg);
         await new Promise((r) => setTimeout(r, 10));
         expect(disconnectToolSpy).toHaveBeenCalledWith('t1');
         expect(upsertToolSpy).toHaveBeenCalledTimes(1);
-        await service.stop();
+        await service.stop('test');
     });
 
     it('does not handle SetRoots/SetGlobalRuntime/SetRuntimeCapabilities anymore');
 
     it('logs error messages and ignores unknown', async () => {
         const { service, iterator } = createService();
-        await service.start();
+        await service.start('test');
         iterator.push(new NatsErrorMessage({ error: 'boom' }));
         // Unknown message: push a NatsMessage-like object with shouldRespond()
         iterator.push({ type: 'unknown', data: {}, shouldRespond: () => false } as unknown as NatsMessage);
         await new Promise((r) => setTimeout(r, 10));
-        await service.stop();
+        await service.stop('test');
     });
 });

@@ -3,10 +3,12 @@ import { FastifyRequest } from 'fastify';
 import { GraphQLAuthMiddleware, AuthContext, AuthenticatedContext } from './graphql-auth.middleware';
 import { AuthenticationService } from '../services/auth/auth.service';
 import { JwtPayload } from '../services/auth/jwt.service';
+import { GraphQLResolveInfo } from 'graphql';
 
 // Mock authentication service
+const mockVerifyAccessToken = vi.fn();
 const mockAuthService = {
-  verifyAccessToken: vi.fn(),
+  verifyAccessToken: mockVerifyAccessToken,
 } as unknown as AuthenticationService;
 
 describe('GraphQLAuthMiddleware', () => {
@@ -22,6 +24,12 @@ describe('GraphQLAuthMiddleware', () => {
         info: vi.fn(),
         warn: vi.fn(),
         error: vi.fn(),
+        debug: vi.fn(),
+        fatal: vi.fn(),
+        trace: vi.fn(),
+        child: vi.fn(),
+        silent: vi.fn(),
+        level: 'info',
       },
     };
     vi.clearAllMocks();
@@ -47,14 +55,14 @@ describe('GraphQLAuthMiddleware', () => {
 
     it('should create unauthenticated context when token is invalid', async () => {
       mockRequest.headers = { authorization: 'Bearer invalid-token' };
-      mockAuthService.verifyAccessToken.mockResolvedValue(null);
+      mockVerifyAccessToken.mockResolvedValue(null);
 
       const context = await middleware.createContext(mockRequest as FastifyRequest);
 
       expect(context.isAuthenticated).toBe(false);
       expect(context.user).toBeUndefined();
       expect(mockAuthService.verifyAccessToken).toHaveBeenCalledWith('invalid-token');
-      expect(mockRequest.log.warn).toHaveBeenCalledWith(
+      expect(mockRequest.log!.warn).toHaveBeenCalledWith(
         expect.objectContaining({
           event: 'invalid_jwt_token',
         }),
@@ -71,7 +79,7 @@ describe('GraphQLAuthMiddleware', () => {
       };
 
       mockRequest.headers = { authorization: 'Bearer valid-token' };
-      mockAuthService.verifyAccessToken.mockResolvedValue(jwtPayload);
+      mockVerifyAccessToken.mockResolvedValue(jwtPayload);
 
       const context = await middleware.createContext(mockRequest as FastifyRequest);
 
@@ -82,7 +90,7 @@ describe('GraphQLAuthMiddleware', () => {
         workspaceId: 'ws1',
         role: 'member',
       });
-      expect(mockRequest.log.info).toHaveBeenCalledWith(
+      expect(mockRequest.log!.info).toHaveBeenCalledWith(
         expect.objectContaining({
           event: 'authenticated_request',
           userId: '123',
@@ -93,13 +101,13 @@ describe('GraphQLAuthMiddleware', () => {
 
     it('should handle errors gracefully and return unauthenticated context', async () => {
       mockRequest.headers = { authorization: 'Bearer token' };
-      mockAuthService.verifyAccessToken.mockRejectedValue(new Error('Service error'));
+      mockVerifyAccessToken.mockRejectedValue(new Error('Service error'));
 
       const context = await middleware.createContext(mockRequest as FastifyRequest);
 
       expect(context.isAuthenticated).toBe(false);
       expect(context.user).toBeUndefined();
-      expect(mockRequest.log.error).toHaveBeenCalledWith(
+      expect(mockRequest.log!.error).toHaveBeenCalledWith(
         expect.objectContaining({
           event: 'auth_context_error',
         }),
@@ -296,7 +304,7 @@ describe('GraphQLAuthMiddleware', () => {
 
       middleware.logAuthEvent(context, 'test_event', { additional: 'data' });
 
-      expect(mockRequest.log.info).toHaveBeenCalledWith(
+      expect(mockRequest.log!.info).toHaveBeenCalledWith(
         expect.objectContaining({
           event: 'test_event',
           isAuthenticated: true,
@@ -318,7 +326,7 @@ describe('GraphQLAuthMiddleware', () => {
 
       middleware.logAuthEvent(context, 'test_event');
 
-      expect(mockRequest.log.info).toHaveBeenCalledWith(
+      expect(mockRequest.log!.info).toHaveBeenCalledWith(
         expect.objectContaining({
           event: 'test_event',
           isAuthenticated: false,
@@ -347,13 +355,13 @@ describe('GraphQLAuthMiddleware', () => {
       const info = {
         fieldName: 'testField',
         parentType: { name: 'TestType' },
-      };
+      } as GraphQLResolveInfo;
 
       const result = wrappedResolver({}, {}, context, info);
 
       expect(result).toBe('result');
       expect(mockResolver).toHaveBeenCalledWith({}, {}, context, info);
-      expect(mockRequest.log.info).toHaveBeenCalledWith(
+      expect(mockRequest.log!.info).toHaveBeenCalledWith(
         expect.objectContaining({
           event: 'resolver_access',
           resolver: 'testField',
@@ -381,13 +389,13 @@ describe('GraphQLAuthMiddleware', () => {
       const info = {
         fieldName: 'adminField',
         parentType: { name: 'TestType' },
-      };
+      } as GraphQLResolveInfo;
 
       const result = wrappedResolver({}, {}, context, info);
 
       expect(result).toBe('admin-result');
       expect(mockResolver).toHaveBeenCalledWith({}, {}, context, info);
-      expect(mockRequest.log.info).toHaveBeenCalledWith(
+      expect(mockRequest.log!.info).toHaveBeenCalledWith(
         expect.objectContaining({
           event: 'role_based_access',
           resolver: 'adminField',
@@ -418,13 +426,13 @@ describe('GraphQLAuthMiddleware', () => {
       const info = {
         fieldName: 'workspaceField',
         parentType: { name: 'TestType' },
-      };
+      } as GraphQLResolveInfo;
 
       const result = wrappedResolver({}, args, context, info);
 
       expect(result).toBe('workspace-result');
       expect(mockResolver).toHaveBeenCalledWith({}, args, context, info);
-      expect(mockRequest.log.info).toHaveBeenCalledWith(
+      expect(mockRequest.log!.info).toHaveBeenCalledWith(
         expect.objectContaining({
           event: 'workspace_access',
           resolver: 'workspaceField',
@@ -453,7 +461,7 @@ describe('GraphQLAuthMiddleware', () => {
 
       const args = {}; // No workspaceId
       const source = {}; // No workspaceId
-      const info = { fieldName: 'workspaceField', parentType: { name: 'TestType' } };
+      const info = { fieldName: 'workspaceField', parentType: { name: 'TestType' } } as GraphQLResolveInfo;
 
       expect(() => wrappedResolver(source, args, context, info)).toThrow(
         'Workspace context required'

@@ -70,7 +70,7 @@ describe('SystemRepository', () => {
         const result = await systemRepository.getSystem();
 
         expect(dgraphService.query).toHaveBeenCalled();
-        expect(result.id).toBe('sys1');
+        expect(result?.id).toBe('sys1');
     });
 
     it('initSystem initializes system with workspace and admin updates', async () => {
@@ -108,7 +108,7 @@ describe('SystemRepository', () => {
 
         dgraphService.query.mockResolvedValue({ querySystem: [system] });
 
-        await expect(systemRepository.initSystem('Test Workspace', 'newpassword', 'admin@example.com'))
+        await expect(systemRepository.initSystem('newpassword', 'admin@example.com'))
             .rejects.toThrow('Cannot initialize system');
     });
 
@@ -122,7 +122,7 @@ describe('SystemRepository', () => {
 
         dgraphService.query.mockResolvedValue({ querySystem: [system] });
 
-        await expect(systemRepository.initSystem('Test Workspace', 'newpassword', 'admin@example.com'))
+        await expect(systemRepository.initSystem('newpassword', 'admin@example.com'))
             .rejects.toThrow('Cannot initialize system');
     });
 
@@ -136,7 +136,7 @@ describe('SystemRepository', () => {
 
         dgraphService.query.mockResolvedValue({ querySystem: [system] });
 
-        await expect(systemRepository.initSystem('Test Workspace', 'newpassword', 'admin@example.com'))
+        await expect(systemRepository.initSystem('newpassword', 'admin@example.com'))
             .rejects.toThrow('Cannot initialize system');
     });
 

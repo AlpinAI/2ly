@@ -232,7 +232,7 @@ describe('RuntimeRepository', () => {
 
         expect(dgraphService.mutation).toHaveBeenCalledWith(expect.any(Object), { id: 'r1' });
         expect(mcpToolRepository.setStatus).toHaveBeenCalledWith('t1', 'INACTIVE');
-        expect(result.id).toBe('r1');
+        expect(result?.id).toBe('r1');
     });
 
     it('setInactive handles runtime not found gracefully', async () => {
@@ -345,7 +345,7 @@ describe('RuntimeRepository', () => {
             expect.any(Object),
             { workspaceId: 'w1', name: 'test-runtime' }
         );
-        expect(result.id).toBe('r1');
+        expect(result?.id).toBe('r1');
     });
 
     it('findByName returns undefined when runtime not found', async () => {

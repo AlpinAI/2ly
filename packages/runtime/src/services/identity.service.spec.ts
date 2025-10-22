@@ -2,7 +2,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { AGENT_CAPABILITY, IDENTITY_NAME, IdentityService, TOOL_CAPABILITY, WORKSPACE_ID } from './identity.service';
 import { LoggerService, NatsService } from '@2ly/common';
-import { LoggerServiceMock, NatsServiceMock } from '@2ly/common/test/vitest';
+import { LoggerServiceMock, NatsServiceMock, ControllableAsyncIterator } from '@2ly/common/test/vitest';
 import { Container } from 'inversify';
 
 // Mock os module
@@ -24,13 +24,15 @@ vi.mock('../utils', () => ({
 describe('IdentityService', () => {
   let identityService: IdentityService;
   const mockProcessId = 12345;
+  let mockIterator: ControllableAsyncIterator<unknown>;
 
   beforeEach(() => {
     vi.clearAllMocks();
     vi.spyOn(process, 'pid', 'get').mockReturnValue(mockProcessId);
+    mockIterator = new ControllableAsyncIterator<unknown>();
     const container = new Container();
     container.bind(LoggerService).toConstantValue(new LoggerServiceMock() as unknown as LoggerService);
-    container.bind(NatsService).toConstantValue(new NatsServiceMock() as unknown as NatsService);
+    container.bind(NatsService).toConstantValue(new NatsServiceMock(mockIterator) as unknown as NatsService);
     container.bind(IdentityService).toSelf().inSingletonScope();
     container.bind(IDENTITY_NAME).toConstantValue('test-runtime');
     container.bind(WORKSPACE_ID).toConstantValue('workspace-123');
@@ -41,13 +43,13 @@ describe('IdentityService', () => {
 
   describe('Initialization', () => {
     it('should start successfully with default capabilities', async () => {
-      await identityService.start();
+      await identityService.start('test');
       const identity = identityService.getIdentity();
       expect(identity.capabilities).toContain('tool');
     });
 
     it('should handle adding agent capability', async () => {
-      await identityService.start();
+      await identityService.start('test');
       identityService.addCapability('agent');
       const identity = identityService.getIdentity();
       expect(identity.capabilities).toContain('agent');
@@ -57,7 +59,7 @@ describe('IdentityService', () => {
 
   describe('Identity Management', () => {
     beforeEach(async () => {
-      await identityService.start();
+      await identityService.start('test');
     });
 
     it('should return correct identity structure', () => {
@@ -134,8 +136,8 @@ describe('IdentityService', () => {
 
   describe('Shutdown', () => {
     it('should stop NATS service on shutdown', async () => {
-      await identityService.start();
-      await identityService.stop();
+      await identityService.start('test');
+      await identityService.stop('test');
 
       expect(true).toBe(true); // Simple test that start/stop doesn't throw
     });
@@ -143,13 +145,15 @@ describe('IdentityService', () => {
 
   describe('Edge Cases', () => {
     it('should maintain identity state across multiple calls', async () => {
-      await identityService.start();
+      await identityService.start('test');
 
       const identity1 = identityService.getIdentity();
       const identity2 = identityService.getIdentity();
 
       expect(identity1).toEqual(identity2);
-      expect(identity1.startedAt).toBe(identity2.startedAt);
+      // Identity objects should be deeply equal
+      expect(identity1.id).toBe(identity2.id);
+      expect(identity1.RID).toBe(identity2.RID);
     });
   });
 });
