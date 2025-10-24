@@ -7,6 +7,7 @@ mutation CreateMCPServer(
   $repositoryUrl: String!
   $transport: MCPTransportType!
   $config: String!
+  $registryServerId: ID!
 ) {
   createMCPServer(
     workspaceId: $workspaceId
@@ -15,6 +16,7 @@ mutation CreateMCPServer(
     repositoryUrl: $repositoryUrl
     transport: $transport
     config: $config
+    registryServerId: $registryServerId
   ) {
     id
     name
@@ -22,6 +24,10 @@ mutation CreateMCPServer(
     transport
     runOn
     runtime {
+      id
+      name
+    }
+    registryServer {
       id
       name
     }

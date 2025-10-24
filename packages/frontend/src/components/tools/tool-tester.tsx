@@ -1,18 +1,19 @@
 /**
  * ToolTester Component
  *
- * WHY: Allows testing MCP tools with input generation and output display.
- * Inspired by PlaygroundPage testing functionality.
+ * WHY: Allows testing MCP tools with schema-aware input generation and output display.
+ * Uses SchemaInput for intelligent form rendering based on JSON Schema.
  *
  * FEATURES:
- * - Parse inputSchema JSON to generate form fields
+ * - Parse JSON Schema to generate appropriate form fields
+ * - Schema-aware inputs (strings, numbers, booleans, enums, arrays, objects)
  * - Execute tool with callMCPTool mutation
- * - Show loading/success/error states
+ * - Validation before submission
  * - Display formatted output (JSON/text)
  *
  * USAGE:
  * ```tsx
- * <ToolTester toolId="tool-123" inputSchema={schema} />
+ * <ToolTester toolId="tool-123" toolName="search" inputSchema={schema} />
  * ```
  */
 
@@ -20,9 +21,9 @@ import { useState, useMemo } from 'react';
 import { useMutation } from '@apollo/client/react';
 import { Play, Loader2, CheckCircle, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { CallMcpToolDocument } from '@/graphql/generated/graphql';
+import { SchemaInput } from './schema-input';
+import { parseJSONSchema, convertValueToType, validateSchemaValue } from '@/lib/jsonSchemaHelpers';
 
 export interface ToolTesterProps {
   toolId: string;
@@ -44,40 +45,52 @@ export function ToolTester({ toolId, inputSchema }: ToolTesterProps) {
 
   const [callTool, { loading: isExecuting }] = useMutation(CallMcpToolDocument);
 
-  // Parse inputSchema to extract properties
+  // Parse inputSchema using new helper
   const inputProperties = useMemo(() => {
-    try {
-      const schema = JSON.parse(inputSchema);
-      const properties = schema.properties || {};
-      const required = schema.required || [];
-
-      return Object.entries(properties).map(([key, prop]) => {
-        const propObj = prop as Record<string, unknown>;
-        return {
-          name: key,
-          type: (propObj.type as string) || 'string',
-          description: (propObj.description as string) || '',
-          required: required.includes(key),
-          default: propObj.default,
-        };
-      });
-    } catch {
-      return [];
-    }
+    return parseJSONSchema(inputSchema);
   }, [inputSchema]);
 
-  const handleInputChange = (name: string, value: string) => {
+  const handleInputChange = (name: string, value: unknown) => {
     setInputValues((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleTest = async () => {
     setExecutionResult(null);
 
+    // Validate all inputs before submission
+    const validationErrors: string[] = [];
+    const processedInputs: ToolInput = {};
+
+    for (const prop of inputProperties) {
+      const value = inputValues[prop.name];
+
+      // Validate
+      const validation = validateSchemaValue(value, prop);
+      if (!validation.valid) {
+        validationErrors.push(`${prop.name}: ${validation.error}`);
+        continue;
+      }
+
+      // Convert to proper type
+      if (value !== undefined && value !== null) {
+        processedInputs[prop.name] = convertValueToType(value, prop.type);
+      }
+    }
+
+    // Show validation errors
+    if (validationErrors.length > 0) {
+      setExecutionResult({
+        success: false,
+        error: `Validation failed:\n${validationErrors.join('\n')}`,
+      });
+      return;
+    }
+
     try {
       const response = await callTool({
         variables: {
           toolId,
-          input: JSON.stringify(inputValues),
+          input: JSON.stringify(processedInputs),
         },
       });
 
@@ -137,21 +150,13 @@ export function ToolTester({ toolId, inputSchema }: ToolTesterProps) {
         <div className="space-y-3 bg-gray-50 dark:bg-gray-900/50 rounded-lg p-3">
           <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">Input Parameters</p>
           {inputProperties.map((prop) => (
-            <div key={prop.name} className="space-y-1">
-              <Label htmlFor={prop.name} className="text-xs">
-                {prop.name}
-                {prop.required && <span className="text-red-500 ml-1">*</span>}
-              </Label>
-              {prop.description && <p className="text-xs text-gray-500 dark:text-gray-400">{prop.description}</p>}
-              <Input
-                id={prop.name}
-                type={prop.type === 'number' ? 'number' : 'text'}
-                placeholder={prop.default ? `Default: ${prop.default}` : ''}
-                value={(inputValues[prop.name] as string) || ''}
-                onChange={(e) => handleInputChange(prop.name, e.target.value)}
-                className="text-sm"
-              />
-            </div>
+            <SchemaInput
+              key={prop.name}
+              property={prop}
+              value={inputValues[prop.name]}
+              onChange={(value) => handleInputChange(prop.name, value)}
+              className="space-y-1"
+            />
           ))}
         </div>
       ) : (

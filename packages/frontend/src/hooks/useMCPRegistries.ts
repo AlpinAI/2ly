@@ -1,58 +1,58 @@
 /**
  * useMCPRegistries Hook
  *
- * WHY: Wrapper around Apollo Client useSubscription with typed document node
- * - Real-time MCP registry updates via GraphQL subscription
+ * WHY: Wrapper around Apollo Client useQuery to fetch workspace registry servers
+ * - Fetches MCP registry servers directly from workspace
  * - Automatic error handling
  * - Loading states
  * - Data transformation
  * - Apollo cache deduplication
  *
- * APOLLO v4 PATTERN: Use typed document nodes with Apollo's useSubscription hook
+ * APOLLO v4 PATTERN: Use typed document nodes with Apollo's useQuery hook
  * Apply this pattern to other entities (agents, tools, etc.)
  *
  * USAGE:
  * ```tsx
- * function MCPRegistriesList() {
- *   const { registries, loading, error } = useMCPRegistries();
+ * function MCPRegistryServersList() {
+ *   const { registryServers, loading, error } = useMCPRegistries();
  *
  *   if (loading) return <Spinner />;
  *   if (error) return <Error message={error.message} />;
  *
- *   return <div>{registries.map(r => <RegistryCard key={r.id} registry={r} />)}</div>;
+ *   return <div>{registryServers.map(s => <ServerCard key={s.id} server={s} />)}</div>;
  * }
  * ```
  */
 
 import { useQuery } from '@apollo/client/react';
-import { GetMcpRegistriesDocument } from '@/graphql/generated/graphql';
+import { GetRegistryServersDocument } from '@/graphql/generated/graphql';
 import { useWorkspaceId } from '@/stores/workspaceStore';
 
 export function useMCPRegistries(pollInterval = 0) {
   const workspaceId = useWorkspaceId();
 
-  // WHY: Use Apollo Client's useQuery with cache-first policy
+  // WHY: Use Apollo Client's useQuery with cache-and-network policy
   // Efficient caching reduces server load and improves performance.
-  const { data, loading, error } = useQuery(GetMcpRegistriesDocument, {
+  const { data, loading, error } = useQuery(GetRegistryServersDocument, {
     variables: { workspaceId: workspaceId || '' },
     skip: !workspaceId,
     fetchPolicy: 'cache-and-network',
     pollInterval,
   });
 
-  // WHY: Extract registries from query data
-  const registries = data?.mcpRegistries ?? [];
+  // WHY: Extract registry servers directly from query result
+  const registryServers = data?.getRegistryServers ?? [];
 
   // WHY: Calculate aggregate stats
   const stats = {
-    total: registries.length,
-    synced: registries.filter((r) => r.lastSyncAt).length,
-    unsynced: registries.filter((r) => !r.lastSyncAt).length,
-    totalServers: registries.reduce((sum, r) => sum + (r.servers?.length || 0), 0),
+    total: registryServers.length,
+    configured: registryServers.filter((s) => s.configurations && s.configurations.length > 0).length,
+    unconfigured: registryServers.filter((s) => !s.configurations || s.configurations.length === 0).length,
+    totalServers: registryServers.length,
   };
 
   return {
-    registries,
+    registryServers,
     stats,
     loading,
     error,

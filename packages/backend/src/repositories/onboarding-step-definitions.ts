@@ -20,23 +20,23 @@ export interface OnboardingStepDefinition {
  * Initial onboarding steps for new workspaces
  *
  * WHY: These 3 steps guide users through the core 2LY setup:
- * 1. Connect to MCP registry (discover tools)
- * 2. Install MCP server (add tools to workspace)
- * 3. Create tool set with tools (organize and manage tools)
+ * 1. Install MCP server (add tools to workspace)
+ * 2. Create tool set with tools (organize and manage tools)
+ * 3. Test your tools (verify everything works)
  */
 export const INITIAL_ONBOARDING_STEPS: OnboardingStepDefinition[] = [
   {
-    stepId: 'choose-mcp-registry',
+    stepId: 'install-mcp-server',
     type: 'ONBOARDING',
     priority: 1,
   },
   {
-    stepId: 'install-mcp-server',
+    stepId: 'create-tool-set',
     type: 'ONBOARDING',
     priority: 2,
   },
   {
-    stepId: 'create-tool-set',
+    stepId: 'test-your-tools',
     type: 'ONBOARDING',
     priority: 3,
   },

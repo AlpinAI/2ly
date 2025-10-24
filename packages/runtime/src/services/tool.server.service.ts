@@ -1,6 +1,16 @@
 import { injectable } from 'inversify';
 import pino from 'pino';
-import { Service, dgraphResolversTypes, MCPTool, mcpRegistry } from '@2ly/common';
+import {
+  Service,
+  dgraphResolversTypes,
+  MCPTool,
+  mcpRegistry,
+  findUnsubstitutedVariables,
+  buildStdioTransport,
+  buildSseTransport,
+  buildStreamTransport,
+  safeParseConfig,
+} from '@2ly/common';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StdioClientTransport, getDefaultEnvironment } from '@modelcontextprotocol/sdk/client/stdio.js';
 import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/streamableHttp.js';
@@ -50,166 +60,81 @@ export class ToolServerService extends Service {
       };
     });
 
-    // Parse the config field which contains a single Package or Transport object
+    // Parse and validate the config field which contains a single Package or Transport object
     let parsedConfig: ServerPackage | ServerTransport;
     try {
-      parsedConfig = JSON.parse(this.config.config);
-      this.logger.debug(`Parsed config: ${JSON.stringify(parsedConfig, null, 2)}`);
+      const rawConfig = JSON.parse(this.config.config);
+      const validationResult = safeParseConfig(rawConfig);
+
+      if (!validationResult.success) {
+        const errorDetails = validationResult.error.issues
+          .map((issue) => `${issue.path.join('.')}: ${issue.message}`)
+          .join(', ');
+        throw new Error(`Config validation failed: ${errorDetails}`);
+      }
+
+      parsedConfig = validationResult.data as ServerPackage | ServerTransport;
+      this.logger.info(`Parsed and validated config: ${JSON.stringify(parsedConfig, null, 2)}`);
     } catch (error) {
-      throw new Error(`Failed to parse config for ${this.config.name}: ${error}`);
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      throw new Error(`Failed to parse config for ${this.config.name}: ${errorMessage}`);
+    }
+
+    // DEFENSIVE CHECK: Warn if config contains unsubstituted variables
+    // Frontend should substitute all variables, but we check defensively
+    const unsubstitutedVars = findUnsubstitutedVariables(parsedConfig);
+    if (unsubstitutedVars.length > 0) {
+      this.logger.warn(
+        `Config for ${this.config.name} contains unsubstituted variables: ${unsubstitutedVars.join(', ')}. ` +
+          `This may indicate a frontend configuration issue. The server may fail to start.`,
+      );
     }
 
     // STDIO transport: config contains a Package object with packageArguments, environmentVariables, etc.
     if (this.config.transport === dgraphResolversTypes.McpTransportType.Stdio && 'identifier' in parsedConfig) {
       this.logger.info(`Setting STDIO transport for ${this.config.name}`);
 
-      // Extract command and args from Package config
-      const identifier = parsedConfig.identifier || '';
-      const packageArgs = (parsedConfig.packageArguments || []) as mcpRegistry.components['schemas']['Argument'][];
-      const runtimeArgs = (parsedConfig.runtimeArguments || []) as mcpRegistry.components['schemas']['Argument'][];
-      const envVars = (parsedConfig.environmentVariables || []) as mcpRegistry.components['schemas']['KeyValueInput'][];
-      const registryType = parsedConfig.registryType || '';
-      console.log('identifier', identifier);
-      console.log('registryType', registryType);
-
-      // Validate identifier
-      if (!identifier) {
-        throw new Error(`Package identifier is required for ${this.config.name}`);
-      }
-
-      // Determine base command from registry type
-      let command: string;
-      const supportedTypes = ['npm', 'pypi', 'nuget', 'oci'];
-      console.log('analyzing registry type:', registryType);
-      switch (registryType) {
-        case 'npm':
-          command = 'npx';
-          break;
-        case 'pypi':
-          command = 'uvx';
-          break;
-        case 'nuget':
-          command = 'dnx';
-          break;
-        case 'oci':
-          command = 'docker';
-          break;
-        default:
-          throw new Error(`Unsupported registry type: ${registryType}. Supported types: ${supportedTypes.join(', ')}`);
-      }
-      // Build args array: [runtimeArgs, identifier, packageArgs]
-      const args: string[] = [];
-      // Process runtime arguments (before identifier)
-      runtimeArgs.forEach((arg: mcpRegistry.components['schemas']['Argument']) => {
-        if (arg.name) {
-          // Named argument: --name value
-          args.push(`--${arg.name}`);
-          if (arg.value) {
-            args.push(String(arg.value));
-          }
-        } else if (arg.value) {
-          // Positional argument
-          args.push(String(arg.value));
-        }
-      });
-
-      // Add docker 'run' subcommand for OCI containers
-      if (registryType === 'oci') {
-        args.push('run');
-      }
-
-      // Add package identifier
-      // - some package prefix the identifier with npm: -> which must be removed
-      const normalizedIdentifier = identifier.replace(/^npm:/, '');
-      args.push(normalizedIdentifier);
-      // Process package arguments (after identifier)
-      packageArgs.forEach((arg) => {
-        if (arg.type === 'named' && arg.name) {
-          // Named argument: --name value
-          args.push(`--${arg.name}`);
-          if (arg.value) {
-            args.push(String(arg.value));
-          } else if (arg.valueHint) {
-            this.logger.warn(`Missing value for named argument --${arg.name}, expected: ${arg.valueHint}`);
-          }
-        } else if (arg.value) {
-          // Positional argument (default or explicit type="positional")
-          args.push(String(arg.value));
-        } else if (arg.isRequired && arg.valueHint) {
-          this.logger.warn(`Missing required positional argument: ${arg.valueHint}`);
-        }
-      });
-      // Build environment variables
+      // Use common transport builder
       const defaultEnv = getDefaultEnvironment();
-      const env = envVars.reduce(
-        (acc, envVar) => {
-          if (envVar.name && envVar.value) {
-            acc[envVar.name] = envVar.value;
-          }
-          return acc;
-        },
-        { ...defaultEnv },
-      );
-
-      this.logger.info(`STDIO command: ${command}, args: ${args.join(' ')}`);
+      const stdioConfig = buildStdioTransport(parsedConfig as ServerPackage, defaultEnv);
+      this.logger.info(`STDIO config: ${stdioConfig}`);
 
       this.transport = new StdioClientTransport({
-        command,
-        args,
-        env,
+        command: stdioConfig.command,
+        args: stdioConfig.args,
+        env: stdioConfig.env,
       });
     }
     // SSE transport: config contains a Transport object with type="sse", url, headers
     else if (this.config.transport === dgraphResolversTypes.McpTransportType.Sse) {
       this.logger.info(`Setting SSE transport for ${this.config.name}`);
 
-      const url = (parsedConfig as ServerTransport).url || '';
-      const headers = (parsedConfig as ServerTransport).headers || [];
+      // Use common transport builder
+      const sseConfig = buildSseTransport(parsedConfig as ServerTransport);
 
-      // Build headers map
-      const headerMap = new Map<string, string>();
-      headers.forEach((header) => {
-        if (header.name && header.value) {
-          headerMap.set(header.name, header.value);
-        }
-      });
+      this.logger.info(`SSE URL: ${sseConfig.url}`);
+      this.logger.info(`Headers: ${JSON.stringify(Object.entries(sseConfig.headers))}`);
 
-      this.logger.info(`SSE URL: ${url}`);
-      this.logger.debug(`Headers: ${JSON.stringify(Array.from(headerMap.entries()))}`);
-
-      // SSEClientTransport options
-      const options = {
+      this.transport = new SSEClientTransport(new URL(sseConfig.url), {
         requestInit: {
-          headers: Object.fromEntries(headerMap),
+          headers: sseConfig.headers,
         },
-      };
-
-      this.transport = new SSEClientTransport(new URL(url), options);
+      });
     }
     // STREAM transport: config contains a Transport object with type="streamableHttp", url, headers
     else if (this.config.transport === dgraphResolversTypes.McpTransportType.Stream) {
       this.logger.info(`Setting STREAM transport for ${this.config.name}`);
 
-      const url = (parsedConfig as ServerTransport).url || '';
-      const headers = (parsedConfig as ServerTransport).headers || [];
+      // Use common transport builder
+      const streamConfig = buildStreamTransport(parsedConfig as ServerTransport);
 
-      // Build headers map
-      const headerMap = new Map<string, string>();
-      headers.forEach((header) => {
-        if (header.name && header.value) {
-          headerMap.set(header.name, header.value);
-        }
-      });
+      this.logger.info(`STREAM URL: ${streamConfig.url}`);
+      this.logger.info(`Headers: ${JSON.stringify(Object.entries(streamConfig.headers))}`);
 
-      this.logger.info(`STREAM URL: ${url}`);
-      this.logger.debug(`Headers: ${JSON.stringify(Array.from(headerMap.entries()))}`);
-
-      const requestInit: RequestInit = {
-        headers: Object.fromEntries(headerMap),
-      };
-
-      this.transport = new StreamableHTTPClientTransport(new URL(url), {
-        requestInit,
+      this.transport = new StreamableHTTPClientTransport(new URL(streamConfig.url), {
+        requestInit: {
+          headers: streamConfig.headers,
+        },
       });
     } else {
       throw new Error(`Unknown MCP server type: ${this.config.transport}, only STDIO, SSE and STREAM are supported`);

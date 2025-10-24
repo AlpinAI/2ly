@@ -32,6 +32,20 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ### Code Generation
 - `npm run codegen` - Generate GraphQL types from schema
 
+## Development Workflow
+
+**IMPORTANT: Assume Running Services**
+
+- **NEVER** start the frontend or backend processes yourself unless explicitly asked by the user
+- **ALWAYS** assume that frontend (port 8888) and backend (port 3000) are already running with hot reload enabled
+- Changes to code will automatically reload - you can directly test against the running services
+- You may consume http://localhost:3000 (backend) and http://localhost:8888 (frontend) for any tests or verification
+
+**Exception Cases:**
+- If you want to start a backend yourself to analyze logs, you MUST ask the user for permission first
+- With user permission, you CAN kill any process on port 3000 before launching your backend process
+- Only start services if the user explicitly requests it
+
 ## Monorepo Architecture
 
 ### Package Structure

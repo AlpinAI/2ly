@@ -35,22 +35,12 @@ type Workspace @withSubscription {
   mcpServers: [MCPServer!] @hasInverse(field: workspace)
   mcpTools: [MCPTool!] @hasInverse(field: workspace)
   runtimes: [Runtime!] @hasInverse(field: workspace)
-  mcpRegistries: [MCPRegistry!] @hasInverse(field: workspace)
+  registryServers: [MCPRegistryServer!] @hasInverse(field: workspace)
   admins: [User!] @hasInverse(field: adminOfWorkspaces)
   users: [User!] @hasInverse(field: membersOfWorkspaces)
   system: System! @hasInverse(field: workspaces)
   globalRuntime: Runtime
   onboardingSteps: [OnboardingStep!]
-}
-
-type MCPRegistry @withSubscription {
-  id: ID!
-  name: String! @search(by: [hash])
-  upstreamUrl: String!
-  createdAt: DateTime!
-  lastSyncAt: DateTime
-  workspace: Workspace! @hasInverse(field: mcpRegistries)
-  servers: [MCPRegistryServer!] @hasInverse(field: registry)
 }
 
 type MCPRegistryServer @withSubscription {
@@ -65,8 +55,8 @@ type MCPRegistryServer @withSubscription {
   _meta: String
   createdAt: DateTime!
   lastSeenAt: DateTime!
-  registry: MCPRegistry! @hasInverse(field: servers)
-  deployements: [MCPServer!]
+  workspace: Workspace! @hasInverse(field: registryServers)
+  configurations: [MCPServer!] @hasInverse(field: registryServer)
 }
 
 type MCPServer @withSubscription {
@@ -94,6 +84,7 @@ type MCPServer @withSubscription {
   runOn: MCPServerRunOn @search
   # an MCP server can run either on a specific runtime - or if no value is provided it will be launch on the agent runtime which requires the capability
   runtime: Runtime @hasInverse(field: mcpServers)
+  registryServer: MCPRegistryServer! @hasInverse(field: configurations)
   workspace: Workspace! @hasInverse(field: mcpServers)
 }
 

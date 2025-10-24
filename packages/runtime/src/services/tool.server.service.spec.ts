@@ -66,9 +66,10 @@ describe('ToolServerService', () => {
         name: 'test-server',
         description: 'Test server',
         transport: dgraphResolversTypes.McpTransportType.Stdio,
-        config: JSON.stringify({ identifier: 'test-package', registryType: 'npm' }),
+        config: JSON.stringify({ identifier: 'test-package', registryType: 'npm', version: '1.0.0' }),
         repositoryUrl: 'https://example.com',
         workspace: {} as any,
+        registryServer: {} as any,
         tools: [createMockTool('tool1'), createMockTool('tool2')],
       };
 
@@ -90,9 +91,10 @@ describe('ToolServerService', () => {
         name: 'test-server',
         description: 'Test server',
         transport: dgraphResolversTypes.McpTransportType.Sse,
-        config: JSON.stringify({ url: 'https://example.com/sse', type: 'sse' }),
+        config: JSON.stringify({ type: 'sse', url: 'https://example.com/sse' }),
         repositoryUrl: 'https://example.com',
         workspace: {} as any,
+        registryServer: {} as any,
         tools: undefined, // No tools
       };
 
@@ -109,9 +111,10 @@ describe('ToolServerService', () => {
         name: 'test-server',
         description: 'Test server',
         transport: dgraphResolversTypes.McpTransportType.Stream,
-        config: JSON.stringify({ url: 'https://example.com/stream', type: 'streamableHttp' }),
+        config: JSON.stringify({ type: 'streamableHttp', url: 'https://example.com/stream' }),
         repositoryUrl: 'https://example.com',
         workspace: {} as any,
+        registryServer: {} as any,
         tools: [], // Empty tools array
       };
 
@@ -130,9 +133,10 @@ describe('ToolServerService', () => {
         name: 'test-server',
         description: 'Test server',
         transport: dgraphResolversTypes.McpTransportType.Stdio,
-        config: JSON.stringify({ identifier: 'test-package', registryType: 'npm' }),
+        config: JSON.stringify({ identifier: 'test-package', registryType: 'npm', version: '1.0.0' }),
         repositoryUrl: 'https://example.com',
         workspace: {} as any,
+        registryServer: {} as any,
         tools: [createMockTool('tool1')],
       };
 
@@ -156,9 +160,10 @@ describe('ToolServerService', () => {
         name: 'test-server',
         description: 'Test server',
         transport: dgraphResolversTypes.McpTransportType.Stdio,
-        config: JSON.stringify({ identifier: 'test-package', registryType: 'npm' }),
+        config: JSON.stringify({ identifier: 'test-package', registryType: 'npm', version: '1.0.0' }),
         repositoryUrl: 'https://example.com',
         workspace: {} as any,
+        registryServer: {} as any,
         tools: [],
       };
 
@@ -187,9 +192,10 @@ describe('ToolServerService', () => {
         name: 'test-server',
         description: 'Test server',
         transport: dgraphResolversTypes.McpTransportType.Stdio,
-        config: JSON.stringify({ identifier: 'test-package', registryType: 'npm' }),
+        config: JSON.stringify({ identifier: 'test-package', registryType: 'npm', version: '1.0.0' }),
         repositoryUrl: 'https://example.com',
         workspace: {} as any,
+        registryServer: {} as any,
         tools: [
           createMockTool('tool1'),
           createMockTool('tool2'),
@@ -223,25 +229,26 @@ describe('ToolServerService', () => {
         description: 'Test server',
         repositoryUrl: 'https://example.com',
         workspace: {} as any,
+        registryServer: {} as any,
         tools: [],
       };
 
       const stdioConfig: dgraphResolversTypes.McpServer = {
         ...baseConfig,
         transport: dgraphResolversTypes.McpTransportType.Stdio,
-        config: JSON.stringify({ identifier: 'test-package', registryType: 'npm' }),
+        config: JSON.stringify({ identifier: 'test-package', registryType: 'npm', version: '1.0.0' }),
       };
 
       const sseConfig: dgraphResolversTypes.McpServer = {
         ...baseConfig,
         transport: dgraphResolversTypes.McpTransportType.Sse,
-        config: JSON.stringify({ url: 'https://example.com/sse', type: 'sse' }),
+        config: JSON.stringify({ type: 'sse', url: 'https://example.com/sse' }),
       };
 
       const streamConfig: dgraphResolversTypes.McpServer = {
         ...baseConfig,
         transport: dgraphResolversTypes.McpTransportType.Stream,
-        config: JSON.stringify({ url: 'https://example.com/stream', type: 'streamableHttp' }),
+        config: JSON.stringify({ type: 'streamableHttp', url: 'https://example.com/stream' }),
       };
 
       const stdioService = new ToolServerService(logger, stdioConfig, []);
@@ -261,9 +268,10 @@ describe('ToolServerService', () => {
         name: 'my-test-server',
         description: 'Test server',
         transport: dgraphResolversTypes.McpTransportType.Stdio,
-        config: JSON.stringify({ identifier: 'test-package', registryType: 'npm' }),
+        config: JSON.stringify({ identifier: 'test-package', registryType: 'npm', version: '1.0.0' }),
         repositoryUrl: 'https://example.com',
         workspace: {} as any,
+        registryServer: {} as any,
       };
 
       const service = new ToolServerService(logger, config, []);
@@ -278,9 +286,10 @@ describe('ToolServerService', () => {
         name: 'test-server',
         description: 'Test server',
         transport: dgraphResolversTypes.McpTransportType.Stdio,
-        config: JSON.stringify({ identifier: 'test-package', registryType: 'npm' }),
+        config: JSON.stringify({ identifier: 'test-package', registryType: 'npm', version: '1.0.0' }),
         repositoryUrl: 'https://example.com',
         workspace: {} as any,
+        registryServer: {} as any,
       };
 
       const service = new ToolServerService(logger, config, []);

@@ -14,9 +14,9 @@
  */
 
 export const ONBOARDING_STEPS = {
-  CHOOSE_REGISTRY: 'choose-mcp-registry',
   INSTALL_SERVER: 'install-mcp-server',
   CREATE_TOOL_SET: 'create-tool-set',
+  TEST_TOOLS: 'test-your-tools',
 } as const;
 
 export interface StepMetadata {
@@ -32,11 +32,6 @@ export interface StepMetadata {
  * Icons are Lucide React icon names that can be imported dynamically.
  */
 export const STEP_METADATA: Record<string, StepMetadata> = {
-  [ONBOARDING_STEPS.CHOOSE_REGISTRY]: {
-    title: 'Choose an MCP Registry',
-    description: 'Enable the servers from the registry to be configured',
-    icon: 'database',
-  },
   [ONBOARDING_STEPS.INSTALL_SERVER]: {
     title: 'Install an MCP Server',
     description: 'Add your first MCP server to start using tools in your agents.',
@@ -46,5 +41,10 @@ export const STEP_METADATA: Record<string, StepMetadata> = {
     title: 'Create Your First Tool Set',
     description: 'Create a tool set with at least one tool to start enriching your agents.',
     icon: 'package',
+  },
+  [ONBOARDING_STEPS.TEST_TOOLS]: {
+    title: 'Test Your Tools',
+    description: 'Try out your tools to make sure everything is working correctly.',
+    icon: 'flask-conical',
   },
 };

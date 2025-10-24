@@ -17,22 +17,21 @@
 import { useState, useMemo } from 'react';
 import { Search } from '@/components/ui/search';
 import { Button } from '@/components/ui/button';
-import { Loader2, AlertCircle } from 'lucide-react';
+import { Loader2, AlertCircle, Plus, PackagePlus } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { cn } from '@/lib/utils';
 import { useMCPRegistries } from '@/hooks/useMCPRegistries';
+import { useAddServerWorkflow } from '@/stores/uiStore';
 import { MCPServerCard } from './mcp-server-card';
 import { mcpRegistry } from '@2ly/common';
-import { GetMcpRegistriesQuery } from '@/graphql/generated/graphql';
+import { GetRegistryServersQuery } from '@/graphql/generated/graphql';
 
 // Use official MCP Registry schema types
 type Package = mcpRegistry.components['schemas']['Package'];
 type Transport = mcpRegistry.components['schemas']['Transport'];
 
-// Extract server type from GraphQL subscription
-type MCPRegistryServer = NonNullable<
-NonNullable<GetMcpRegistriesQuery['mcpRegistries']>[number]['servers']
->[number];
+// Extract server type from GraphQL query
+type MCPRegistryServer = GetRegistryServersQuery['getRegistryServers'][number];
 
 export interface ServerVersionGroup {
   name: string;
@@ -55,19 +54,6 @@ const isLatestVersion = (server: MCPRegistryServer): boolean => {
     if (!server._meta) return false;
     const meta = JSON.parse(server._meta);
     return meta['io.modelcontextprotocol.registry/official']?.isLatest === true;
-  } catch {
-    return false;
-  }
-};
-
-/**
- * Parse _meta JSON and check if this is the active version
- */
-const isActive = (server: MCPRegistryServer): boolean => {
-  try {
-    if (!server._meta) return false;
-    const meta = JSON.parse(server._meta);
-    return meta['io.modelcontextprotocol.registry/official']?.status === 'active';
   } catch {
     return false;
   }
@@ -131,13 +117,16 @@ export function MCPServerBrowser({ onConfigure }: MCPServerBrowserProps) {
   const [selectedTransport, setSelectedTransport] = useState('All');
   const [visibleCount, setVisibleCount] = useState(ITEMS_PER_PAGE);
 
-  // Get registries data via hook
-  const { registries, loading, error } = useMCPRegistries();
+  // Get registry servers data via hook
+  const { registryServers, loading, error } = useMCPRegistries();
 
-  // Flatten all servers from all registries
+  // Add server workflow control
+  const { setOpen: setAddServerWorkflowOpen } = useAddServerWorkflow();
+
+  // All servers are already flat (no need to flatMap)
   const allServers = useMemo(() => {
-    return registries?.flatMap((registry) => registry.servers?.filter((s) => isActive(s)) || []) || [];
-  }, [registries]);
+    return registryServers || [];
+  }, [registryServers]);
 
   // Group servers by name (latest + older versions)
   const groupedServers = useMemo(() => {
@@ -235,8 +224,8 @@ export function MCPServerBrowser({ onConfigure }: MCPServerBrowserProps) {
 
   return (
     <div className="px-6 py-6">
-      {/* Search Bar */}
-      <div className="mb-6">
+      {/* Search Bar and Add Button */}
+      <div className="mb-6 flex items-center justify-between gap-4">
         <Search
           placeholder="Search servers by name or description..."
           value={searchQuery}
@@ -244,8 +233,15 @@ export function MCPServerBrowser({ onConfigure }: MCPServerBrowserProps) {
             setSearchQuery(e.target.value);
             setVisibleCount(ITEMS_PER_PAGE); // Reset pagination on search
           }}
-          className="max-w-2xl"
+          className="max-w-2xl flex-1"
         />
+        <Button
+          onClick={() => setAddServerWorkflowOpen(true)}
+          className="flex items-center gap-2 whitespace-nowrap flex-shrink-0"
+        >
+          <Plus className="h-4 w-4" />
+          Add MCP Server
+        </Button>
       </div>
 
       {/* Transport Type Filters */}
@@ -288,11 +284,37 @@ export function MCPServerBrowser({ onConfigure }: MCPServerBrowserProps) {
         </div>
       )}
 
-      {/* Empty State (after filtering) */}
+      {/* Empty State (after filtering) - Placeholder Card CTA */}
       {filteredGroups.length === 0 && (
-        <div className="text-center py-12">
-          <p className="text-gray-600 dark:text-gray-400 mb-2">No servers found</p>
-          <p className="text-sm text-gray-500 dark:text-gray-500">Try adjusting your search or filter criteria</p>
+        <div className="flex justify-center">
+          <div
+            onClick={() => setAddServerWorkflowOpen(true)}
+            className="max-w-md w-full bg-white dark:bg-gray-800 rounded-lg border-2 border-dashed border-gray-300 dark:border-gray-600 p-8 shadow-sm hover:shadow-md hover:border-cyan-500 dark:hover:border-cyan-500 transition-all cursor-pointer"
+            role="button"
+            tabIndex={0}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                setAddServerWorkflowOpen(true);
+              }
+            }}
+          >
+            <div className="text-center">
+              <div className="flex justify-center mb-4">
+                <PackagePlus className="h-16 w-16 text-gray-400 dark:text-gray-500" />
+              </div>
+              <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                No servers found
+              </h4>
+              <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                Try adjusting your search or filter criteria, or add a new MCP server to your private registry.
+              </p>
+              <Button className="flex items-center gap-2 mx-auto">
+                <Plus className="h-4 w-4" />
+                Add MCP Server
+              </Button>
+            </div>
+          </div>
         </div>
       )}
     </div>

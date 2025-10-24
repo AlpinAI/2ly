@@ -6,18 +6,23 @@
  *
  * ARCHITECTURE:
  * - Parse JSON strings from MCPRegistryServer
- * - Extract configurable fields (env vars, args, headers, query params)
- * - Enrich configurations with user-provided values while preserving schema shape
+ * - Extract configurable variables from arguments, env vars, and headers
+ * - Perform variable substitution in templates (e.g., "Bearer {token}" → "Bearer abc123")
  * - Support STDIO, SSE, and STREAM transports
+ *
+ * IMPORTANT: Uses shared utilities from @2ly/common for variable extraction and substitution.
  */
 
-import type { GetMcpRegistriesQuery, McpTransportType } from '@/graphql/generated/graphql';
-import { mcpRegistry } from '@2ly/common';
+import type { GetRegistryServersQuery, McpTransportType } from '@/graphql/generated/graphql';
+import {
+  mcpRegistry,
+  getAllVariablesFromConfig,
+  substituteAllVariables,
+  type VariableDefinition,
+} from '@2ly/common';
 
 // Extract server type
-type MCPRegistryServer = NonNullable<
-  NonNullable<GetMcpRegistriesQuery['mcpRegistries']>[number]['servers']
->[number];
+type MCPRegistryServer = GetRegistryServersQuery['getRegistryServers'][number];
 
 // Use official MCP Registry schema types
 type Package = mcpRegistry.components['schemas']['Package'];
@@ -45,6 +50,14 @@ export interface ConfigField {
   default?: string;
   choices?: string[];
   value?: string;
+  /**
+   * True if this field represents a variable that will be substituted into a template (Pattern 2).
+   * False if this field's value is set directly without substitution (Pattern 1).
+   *
+   * Pattern 1 (Direct): { name: "BRAVE_API_KEY", isRequired: true } → isVariable: false
+   * Pattern 2 (Template): { value: "Bearer {github_pat}", variables: { github_pat: {...} } } → isVariable: true
+   */
+  isVariable: boolean;
 }
 
 /**
@@ -127,7 +140,125 @@ export function extractConfigOptions(server: MCPRegistryServer): ConfigOption[] 
 }
 
 /**
- * Extract configurable fields from a config option
+ * Check if an input (argument, env var, header) has configurable variables (Pattern 2).
+ * Pattern 2: { value: "Bearer {token}", variables: { token: {...} } }
+ */
+function hasConfigurableVariables(input: { variables?: Record<string, unknown> } | undefined): boolean {
+  return !!(input && input.variables && Object.keys(input.variables).length > 0);
+}
+
+/**
+ * Convert a VariableDefinition to a ConfigField for the UI (Pattern 2).
+ * This represents a variable that will be substituted into a template.
+ */
+function variableToConfigField(variable: VariableDefinition): ConfigField {
+  // Determine field type based on format and choices
+  let fieldType: 'string' | 'boolean' | 'choices' = 'string';
+  if (variable.choices && variable.choices.length > 0) {
+    fieldType = 'choices';
+  } else if (variable.format === 'boolean') {
+    fieldType = 'boolean';
+  }
+
+  // Map context from variable to ConfigField context
+  let context: 'env' | 'arg' | 'header' | 'query' = 'arg';
+  if (variable.context === 'environmentVariables') {
+    context = 'env';
+  } else if (variable.context === 'headers') {
+    context = 'header';
+  } else if (variable.context === 'packageArguments' || variable.context === 'runtimeArguments') {
+    context = 'arg';
+  }
+
+  return {
+    name: variable.name,
+    label: variable.name,
+    description: variable.description,
+    type: fieldType,
+    context,
+    required: variable.isRequired || false,
+    secret: variable.isSecret || false,
+    default: String(variable.default ?? (fieldType === 'boolean' ? 'false' : '')),
+    choices: variable.choices?.map((c) => String(c)),
+    value: String(variable.default ?? (fieldType === 'boolean' ? 'false' : '')),
+    isVariable: true, // Pattern 2: This is a variable that will be substituted
+  };
+}
+
+/**
+ * Convert a direct input field to a ConfigField for the UI (Pattern 1).
+ * This represents a field whose value is set directly without substitution.
+ */
+function directInputToConfigField(
+  input: {
+    name?: string;
+    description?: string;
+    format?: string;
+    isRequired?: boolean;
+    isSecret?: boolean;
+    default?: string;
+    value?: string;
+    valueHint?: string;
+    choices?: (string | number)[];
+  },
+  context: 'env' | 'arg' | 'header' | 'query',
+  fallbackName?: string,
+): ConfigField {
+  // Determine field type
+  let fieldType: 'string' | 'boolean' | 'choices' = 'string';
+  if (input.choices && input.choices.length > 0) {
+    fieldType = 'choices';
+  } else if (input.format === 'boolean') {
+    fieldType = 'boolean';
+  }
+
+  const name = input.name || input.valueHint || fallbackName || 'field';
+  const defaultValue = fieldType === 'boolean' ? 'false' : '';
+
+  return {
+    name,
+    label: name,
+    description: input.description,
+    type: fieldType,
+    context,
+    required: input.isRequired || false,
+    secret: input.isSecret || false,
+    default: String(input.default ?? defaultValue),
+    choices: input.choices?.map((c) => String(c)),
+    value: String(input.value ?? input.default ?? defaultValue),
+    isVariable: false, // Pattern 1: This is a direct field (no substitution)
+  };
+}
+
+/**
+ * Extract configurable fields from a config option.
+ *
+ * Supports TWO patterns:
+ *
+ * Pattern 1 (Direct Configuration):
+ * ```typescript
+ * environmentVariables: [{
+ *   name: "BRAVE_API_KEY",
+ *   description: "Your API key",
+ *   isRequired: true,
+ *   isSecret: true
+ * }]
+ * // Output: ConfigField { name: "BRAVE_API_KEY", isVariable: false }
+ * // User configures the field directly, value is set without substitution
+ * ```
+ *
+ * Pattern 2 (Template Variables):
+ * ```typescript
+ * headers: [{
+ *   name: "Authorization",
+ *   value: "Bearer {github_pat}",
+ *   variables: {
+ *     github_pat: { description: "GitHub PAT", isRequired: true, isSecret: true }
+ *   }
+ * }]
+ * // Output: ConfigField { name: "github_pat", isVariable: true }
+ * // User configures the variable, which gets substituted into "Bearer {github_pat}"
+ * ```
  */
 export function extractConfigurableFields(option: ConfigOption): ConfigField[] {
   const fields: ConfigField[] = [];
@@ -137,103 +268,57 @@ export function extractConfigurableFields(option: ConfigOption): ConfigField[] {
 
     // Environment variables
     pkg.environmentVariables?.forEach((env) => {
-      if (env.choices && env.choices.length > 0) {
-        fields.push({
-          name: env.name,
-          label: env.name,
-          description: env.description,
-          type: 'choices',
-          context: 'env',
-          required: env.isRequired || false,
-          secret: env.isSecret || false,
-          default: String(env.default ?? ''),
-          choices: env.choices.map((c) => String(c)),
-          value: String(env.value ?? env.default ?? ''),
-        });
-      } else if (env.format === 'boolean') {
-        fields.push({
-          name: env.name,
-          label: env.name,
-          description: env.description,
-          type: 'boolean',
-          context: 'env',
-          required: env.isRequired || false,
-          secret: false,
-          default: String(env.default ?? 'false'),
-          value: String(env.value ?? env.default ?? 'false'),
-        });
+      if (hasConfigurableVariables(env)) {
+        // Pattern 2: Extract variables from "variables" property
+        const variables = getAllVariablesFromConfig(option.config);
+        variables
+          .filter((v) => v.context === 'environmentVariables' && v.fieldName === env.name)
+          .forEach((variable) => {
+            fields.push(variableToConfigField(variable));
+          });
+      } else if (env.value) {
+        // Already has a value set → skip (no configuration needed)
       } else {
-        fields.push({
-          name: env.name,
-          label: env.name,
-          description: env.description,
-          type: 'string',
-          context: 'env',
-          required: env.isRequired || false,
-          secret: env.isSecret || false,
-          default: String(env.default ?? ''),
-          value: String(env.value ?? env.default ?? ''),
-        });
+        // Pattern 1: The field itself is configurable
+        fields.push(directInputToConfigField({ ...env, choices: env.choices ?? undefined }, 'env'));
       }
     });
 
     // Package arguments
-    pkg.packageArguments?.forEach((arg) => {
-      const argName = arg.name || `arg-${fields.length}`;
-      if (arg.format === 'boolean') {
-        fields.push({
-          name: argName,
-          label: argName,
-          description: arg.description,
-          type: 'boolean',
-          context: 'arg',
-          required: arg.isRequired || false,
-          secret: false,
-          default: String(arg.default ?? 'false'),
-          value: String(arg.value ?? arg.default ?? 'false'),
-        });
+    pkg.packageArguments?.forEach((arg, index) => {
+      if (hasConfigurableVariables(arg)) {
+        // Pattern 2: Extract variables from "variables" property
+        const variables = getAllVariablesFromConfig(option.config);
+        const argName = arg.name || arg.valueHint || `arg-${index}`;
+        variables
+          .filter((v) => v.context === 'packageArguments' && v.fieldName === argName)
+          .forEach((variable) => {
+            fields.push(variableToConfigField(variable));
+          });
+      } else if (arg.value) {
+        // Already has a value set → skip (no configuration needed)
       } else {
-        fields.push({
-          name: argName,
-          label: argName,
-          description: arg.description,
-          type: 'string',
-          context: 'arg',
-          required: arg.isRequired || false,
-          secret: arg.isSecret || false,
-          default: String(arg.default ?? ''),
-          value: String(arg.value ?? arg.default ?? ''),
-        });
+        // Pattern 1: The field itself is configurable
+        fields.push(directInputToConfigField({ ...arg, choices: arg.choices ?? undefined }, 'arg', `arg-${index}`));
       }
     });
 
-    // Runtime arguments (if present)
-    pkg.runtimeArguments?.forEach((arg) => {
-      const argName = arg.name || `runtime-arg-${fields.length}`;
-      if (arg.format === 'boolean') {
-        fields.push({
-          name: argName,
-          label: argName,
-          description: arg.description,
-          type: 'boolean',
-          context: 'arg',
-          required: arg.isRequired || false,
-          secret: false,
-          default: String(arg.default ?? 'false'),
-          value: String(arg.value ?? arg.default ?? 'false'),
-        });
+    // Runtime arguments
+    pkg.runtimeArguments?.forEach((arg, index) => {
+      if (hasConfigurableVariables(arg)) {
+        // Pattern 2: Extract variables from "variables" property
+        const variables = getAllVariablesFromConfig(option.config);
+        const argName = arg.name || arg.valueHint || `runtime-arg-${index}`;
+        variables
+          .filter((v) => v.context === 'runtimeArguments' && v.fieldName === argName)
+          .forEach((variable) => {
+            fields.push(variableToConfigField(variable));
+          });
+      } else if (arg.value) {
+        // Already has a value set → skip (no configuration needed)
       } else {
-        fields.push({
-          name: argName,
-          label: argName,
-          description: arg.description,
-          type: 'string',
-          context: 'arg',
-          required: arg.isRequired || false,
-          secret: arg.isSecret || false,
-          default: String(arg.default ?? ''),
-          value: String(arg.value ?? arg.default ?? ''),
-        });
+        // Pattern 1: The field itself is configurable
+        fields.push(directInputToConfigField({ ...arg, choices: arg.choices ?? undefined }, 'arg', `runtime-arg-${index}`));
       }
     });
   } else if (option.type === 'remote') {
@@ -241,43 +326,19 @@ export function extractConfigurableFields(option: ConfigOption): ConfigField[] {
 
     // Headers
     remote.headers?.forEach((header) => {
-      if (header.choices && header.choices.length > 0) {
-        fields.push({
-          name: header.name,
-          label: header.name,
-          description: header.description,
-          type: 'choices',
-          context: 'header',
-          required: header.isRequired || false,
-          secret: header.isSecret || false,
-          default: String(header.default ?? ''),
-          choices: header.choices.map((c) => String(c)),
-          value: String(header.value ?? header.default ?? ''),
-        });
-      } else if (header.format === 'boolean') {
-        fields.push({
-          name: header.name,
-          label: header.name,
-          description: header.description,
-          type: 'boolean',
-          context: 'header',
-          required: header.isRequired || false,
-          secret: false,
-          default: String(header.default ?? 'false'),
-          value: String(header.value ?? header.default ?? 'false'),
-        });
+      if (hasConfigurableVariables(header)) {
+        // Pattern 2: Extract variables from "variables" property
+        const variables = getAllVariablesFromConfig(option.config);
+        variables
+          .filter((v) => v.context === 'headers' && v.fieldName === header.name)
+          .forEach((variable) => {
+            fields.push(variableToConfigField(variable));
+          });
+      } else if (header.value) {
+        // Already has a value set → skip (no configuration needed)
       } else {
-        fields.push({
-          name: header.name,
-          label: header.name,
-          description: header.description,
-          type: 'string',
-          context: 'header',
-          required: header.isRequired || false,
-          secret: header.isSecret || false,
-          default: String(header.default ?? ''),
-          value: String(header.value ?? header.default ?? ''),
-        });
+        // Pattern 1: The field itself is configurable
+        fields.push(directInputToConfigField({ ...header, choices: header.choices ?? undefined }, 'header'));
       }
     });
   }
@@ -286,9 +347,23 @@ export function extractConfigurableFields(option: ConfigOption): ConfigField[] {
 }
 
 /**
- * Enrich configuration with user-provided values while preserving the official MCP registry schema shape.
- * IMPORTANT: This function ONLY adds the "value" property to configurable fields.
- * It does NOT change the shape of the config - all other properties are preserved exactly as they are.
+ * Enrich configuration with user-provided values and perform variable substitution.
+ *
+ * Handles TWO patterns:
+ *
+ * Pattern 1 (Direct): Sets field values directly
+ * ```typescript
+ * // Input: { name: "BRAVE_API_KEY" }
+ * // Field: { name: "BRAVE_API_KEY", value: "sk-123", isVariable: false }
+ * // Output: { name: "BRAVE_API_KEY", value: "sk-123" }
+ * ```
+ *
+ * Pattern 2 (Template): Substitutes variables into templates
+ * ```typescript
+ * // Input: { value: "Bearer {github_pat}", variables: {...} }
+ * // Field: { name: "github_pat", value: "ghp_abc", isVariable: true }
+ * // Output: { value: "Bearer ghp_abc", variables: {...} }
+ * ```
  *
  * Returns a config object following the MCP registry Package or Transport schema.
  */
@@ -312,63 +387,79 @@ export function enrichConfigWithValues(
   // Deep clone the config to avoid mutating the original
   const configObj = JSON.parse(JSON.stringify(option.config));
 
-  if (option.type === 'package') {
+  // STEP 1: Set direct values for Pattern 1 fields (isVariable === false)
+  if ('identifier' in configObj) {
+    // Package config
     const pkg = configObj as Package;
 
-    // Enrich package arguments with values
-    if (pkg.packageArguments) {
-      pkg.packageArguments.forEach((arg) => {
-        const argName = arg.name || '';
-        const field = fields.find((f) => f.context === 'arg' && f.name === argName);
+    // Environment variables
+    pkg.environmentVariables?.forEach((env) => {
+      if (!hasConfigurableVariables(env)) {
+        // Pattern 1: Find matching ConfigField and set value directly
+        const field = fields.find((f) => f.context === 'env' && f.name === env.name && !f.isVariable);
         if (field) {
-          arg.value = field.value || String(arg.default ?? '');
+          env.value = field.value || field.default || '';
         }
-      });
-    }
+      }
+    });
 
-    // Enrich runtime arguments with values
-    if (pkg.runtimeArguments) {
-      pkg.runtimeArguments.forEach((arg) => {
-        const argName = arg.name || '';
-        const field = fields.find((f) => f.context === 'arg' && f.name === argName);
+    // Package arguments
+    pkg.packageArguments?.forEach((arg) => {
+      if (!hasConfigurableVariables(arg)) {
+        // Pattern 1: Find matching ConfigField and set value directly
+        const argName = arg.name || arg.valueHint || '';
+        const field = fields.find((f) => f.context === 'arg' && f.name === argName && !f.isVariable);
         if (field) {
-          arg.value = field.value || String(arg.default ?? '');
+          arg.value = field.value || field.default || '';
         }
-      });
-    }
+      }
+    });
 
-    // Enrich environment variables with values
-    if (pkg.environmentVariables) {
-      pkg.environmentVariables.forEach((env) => {
-        const field = fields.find((f) => f.context === 'env' && f.name === env.name);
+    // Runtime arguments
+    pkg.runtimeArguments?.forEach((arg) => {
+      if (!hasConfigurableVariables(arg)) {
+        // Pattern 1: Find matching ConfigField and set value directly
+        const argName = arg.name || arg.valueHint || '';
+        const field = fields.find((f) => f.context === 'arg' && f.name === argName && !f.isVariable);
         if (field) {
-          env.value = field.value || String(env.default ?? '');
+          arg.value = field.value || field.default || '';
         }
-      });
-    }
-  } else if (option.type === 'remote') {
-    const remote = configObj as Transport;
+      }
+    });
+  } else {
+    // Transport config
+    const transport = configObj as Transport;
 
-    // Enrich headers with values
-    if (remote.headers) {
-      remote.headers.forEach((header) => {
-        const field = fields.find((f) => f.context === 'header' && f.name === header.name);
+    // Headers
+    transport.headers?.forEach((header) => {
+      if (!hasConfigurableVariables(header)) {
+        // Pattern 1: Find matching ConfigField and set value directly
+        const field = fields.find((f) => f.context === 'header' && f.name === header.name && !f.isVariable);
         if (field) {
-          header.value = field.value || String(header.default ?? '');
+          header.value = field.value || field.default || '';
         }
-      });
-    }
-
-    // Note: Query parameters are typically handled via URL modification
-    // but we preserve the Transport schema structure exactly
+      }
+    });
   }
+
+  // STEP 2: Build variables map ONLY for Pattern 2 fields (isVariable === true)
+  const variablesMap: Record<string, string> = {};
+  fields.forEach((field) => {
+    if (field.isVariable) {
+      // Pattern 2: This is a variable that will be substituted
+      variablesMap[field.name] = field.value || field.default || '';
+    }
+  });
+
+  // STEP 3: Substitute variables in Pattern 2 templates
+  const enrichedConfig = substituteAllVariables(configObj, variablesMap);
 
   return {
     name,
     description,
     repositoryUrl,
     transport,
-    config: JSON.stringify(configObj),
+    config: JSON.stringify(enrichedConfig),
   };
 }
 
@@ -389,3 +480,4 @@ export function validateFields(fields: ConfigField[]): boolean {
     return value !== '';
   });
 }
+

@@ -1,8 +1,0 @@
-# Delete MCP Registry Mutation
-# WHY: Delete an MCP registry and all its synced servers.
-mutation DeleteMCPRegistry($id: ID!) {
-  deleteMCPRegistry(id: $id) {
-    id
-    name
-  }
-}

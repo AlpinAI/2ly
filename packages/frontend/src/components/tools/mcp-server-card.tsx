@@ -18,12 +18,10 @@ import { Button } from '@/components/ui/button';
 import { SplitButton } from '@/components/ui/split-button';
 import { DropdownMenuItem, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import type { ServerVersionGroup } from './mcp-server-browser';
-import type { GetMcpRegistriesQuery } from '@/graphql/generated/graphql';
+import type { GetRegistryServersQuery } from '@/graphql/generated/graphql';
 
-// Extract the server type from the subscription
-type MCPRegistryServer = NonNullable<
-  NonNullable<GetMcpRegistriesQuery['mcpRegistries']>[number]['servers']
->[number];
+// Extract the server type from the query
+type MCPRegistryServer = GetRegistryServersQuery['getRegistryServers'][number];
 
 interface MCPServerCardProps {
   serverGroup: ServerVersionGroup;

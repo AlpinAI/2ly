@@ -19,6 +19,7 @@ interface SettingsSectionProps {
   icon: LucideIcon;
   children: React.ReactNode;
   className?: string;
+  headerAction?: React.ReactNode;
 }
 
 export function SettingsSection({
@@ -27,6 +28,7 @@ export function SettingsSection({
   icon: Icon,
   children,
   className,
+  headerAction,
 }: SettingsSectionProps) {
   return (
     <div
@@ -36,11 +38,14 @@ export function SettingsSection({
       )}
     >
       {/* Section Header */}
-      <div className="flex items-center gap-2 mb-4">
-        <Icon className="h-5 w-5 text-gray-600 dark:text-gray-400" />
-        <h3 className="text-xl font-bold text-gray-900 dark:text-white">
-          {title}
-        </h3>
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-2">
+          <Icon className="h-5 w-5 text-gray-600 dark:text-gray-400" />
+          <h3 className="text-xl font-bold text-gray-900 dark:text-white">
+            {title}
+          </h3>
+        </div>
+        {headerAction && <div>{headerAction}</div>}
       </div>
 
       {/* Optional Description */}

@@ -16,29 +16,19 @@
  * - Step 3: "Create Tool Set" button (opens Create Tool Set dialog, then Manage Tools dialog)
  */
 
-import { useState } from 'react';
-import { useMutation } from '@apollo/client/react';
 import {
   CheckCircle,
   Circle,
-  Database,
   Server,
   Package,
   Plus,
-  RefreshCw,
-  Loader2
+  FlaskConical
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { useWorkspaceId } from '@/stores/workspaceStore';
 import { useUIStore, useCreateToolSetDialog, useManageToolsDialog } from '@/stores/uiStore';
-import { CreateMcpRegistryDocument } from '@/graphql/generated/graphql';
 import { STEP_METADATA, ONBOARDING_STEPS } from '@/constants/onboarding-steps';
-import { RegistrySplitButton } from '@/components/registry/registry-split-button';
-import { useMCPRegistries } from '@/hooks/useMCPRegistries';
-import { useRegistryAutoSync } from '@/hooks/useRegistryAutoSync';
 import { useMCPServers } from '@/hooks/useMCPServers';
-import { useRegistrySyncStore } from '@/stores/registrySyncStore';
 import { useRuntimeData } from '@/stores/runtimeStore';
 import { useAgents } from '@/hooks/useAgents';
 import type { OnboardingStep } from '@/graphql/generated/graphql';
@@ -50,62 +40,25 @@ interface OnboardingCardProps {
 }
 
 export function OnboardingCard({ step, isCurrentStep = false }: OnboardingCardProps) {
-  const workspaceId = useWorkspaceId();
   const setAddSourceWorkflowOpen = useUIStore((state) => state.setAddSourceWorkflowOpen);
-  const [isAddingRegistry, setIsAddingRegistry] = useState(false);
-  const [pendingRegistryId, setPendingRegistryId] = useState<string | null>(null);
 
   const { openDialog: openCreateToolSetDialog } = useCreateToolSetDialog();
   const manageToolsDialog = useManageToolsDialog();
-  
-  const [createRegistry] = useMutation(CreateMcpRegistryDocument);
-  const { autoSyncRegistry } = useRegistryAutoSync();
-  const { isSyncing } = useRegistrySyncStore();
-  
+
   const metadata = STEP_METADATA[step.stepId];
   const isCompleted = step.status === 'COMPLETED';
-  
+
   // Get icon component based on metadata
   const getIcon = () => {
     switch (metadata?.icon) {
-      case 'database':
-        return <Database className="h-6 w-6" />;
       case 'server':
         return <Server className="h-6 w-6" />;
       case 'package':
         return <Package className="h-6 w-6" />;
+      case 'flask-conical':
+        return <FlaskConical className="h-6 w-6" />;
       default:
         return <Circle className="h-6 w-6" />;
-    }
-  };
-  
-  // Handle adding registry with auto-sync
-  const handleAddRegistry = async (name: string, upstreamUrl: string) => {
-    if (!workspaceId) return;
-    
-    setIsAddingRegistry(true);
-    try {
-      const result = await createRegistry({
-        variables: {
-          workspaceId,
-          name,
-          upstreamUrl,
-        },
-      });
-      
-      // Auto-sync the newly created registry
-      const registryId = result.data?.createMCPRegistry?.id;
-      if (registryId) {
-        setPendingRegistryId(registryId);
-        await autoSyncRegistry(registryId);
-      }
-      
-      // Don't call onComplete here - completion will come via workspace subscription
-      // once backend marks the step complete after sync
-    } catch (error) {
-      console.error('Failed to add registry:', error);
-    } finally {
-      setIsAddingRegistry(false);
     }
   };
   
@@ -120,63 +73,6 @@ export function OnboardingCard({ step, isCurrentStep = false }: OnboardingCardPr
   // Render step-specific content
   const renderStepContent = () => {
     switch (step.stepId) {
-      case ONBOARDING_STEPS.CHOOSE_REGISTRY: {
-        const isSyncingNow = pendingRegistryId ? isSyncing(pendingRegistryId) : false;
-        const pollInterval = isSyncingNow ? 3000 : 0;
-        
-        const { registries } = useMCPRegistries(pollInterval);
-        const existingUrls = registries.map(r => r.upstreamUrl);
-        const firstRegistry = registries[0];
-        
-        if (isCompleted && firstRegistry) {
-          return (
-            <div className="space-y-3">
-              <div className="rounded-lg bg-green-400/20 dark:bg-green-900/20 p-3">
-                <p className="text-sm text-green-800 dark:text-green-200">
-                <span className="flex items-center">
-                  <RefreshCw className="mr-2 h-4 w-4" />
-                  <span className="font-medium">{firstRegistry.name}</span>
-                </span>
-                </p>
-              </div>
-            </div>
-          );
-        }
-        
-        // Find the pending registry to get server count
-        const pendingRegistry = pendingRegistryId 
-          ? registries.find(r => r.id === pendingRegistryId) 
-          : null;
-        const serverCount = pendingRegistry?.servers?.length || 0;
-        
-        return (
-          <div className="space-y-3">
-            {isSyncingNow ? (
-              <Button
-                className="w-full"
-                variant={isCurrentStep ? "default" : "outline"}
-                disabled
-              >
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Syncing {serverCount > 0 ? `(${serverCount} servers found)` : '...'}
-              </Button>
-            ) : (
-              <RegistrySplitButton
-                onSelectRegistry={handleAddRegistry}
-                onCustomClick={() => {
-                  // In onboarding, we encourage using preset registries
-                  // Users can add custom registries later from Settings
-                }}
-                isLoading={isAddingRegistry}
-                existingRegistryUrls={existingUrls}
-                className="w-full"
-                variant={isCurrentStep ? "default" : "outline"}
-              />
-            )}
-          </div>
-        );
-      }
-        
       case ONBOARDING_STEPS.INSTALL_SERVER: {
         const { servers } = useMCPServers();
         const firstServer = servers[0];
@@ -248,7 +144,32 @@ export function OnboardingCard({ step, isCurrentStep = false }: OnboardingCardPr
           </Button>
         );
       }
-        
+
+      case ONBOARDING_STEPS.TEST_TOOLS: {
+        if (isCompleted) {
+          return (
+            <div className="space-y-3">
+              <div className="rounded-lg bg-green-400/20 dark:bg-green-900/20 p-3">
+                <p className="text-sm text-green-800 dark:text-green-200">
+                  <span className="flex items-center">
+                    <FlaskConical className="mr-2 h-4 w-4" />
+                    <span className="font-medium">Tests completed</span>
+                  </span>
+                </p>
+              </div>
+            </div>
+          );
+        }
+
+        return (
+          <div className="space-y-3">
+            <p className="text-sm text-gray-600 dark:text-gray-400 italic">
+              Coming soon: Test your tools to verify they work correctly.
+            </p>
+          </div>
+        );
+      }
+
       default:
         return null;
     }

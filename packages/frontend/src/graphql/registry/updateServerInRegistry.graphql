@@ -1,0 +1,30 @@
+mutation UpdateServerInRegistry(
+  $serverId: ID!
+  $name: String
+  $description: String
+  $title: String
+  $repositoryUrl: String
+  $version: String
+  $packages: String
+  $remotes: String
+) {
+  updateServerInRegistry(
+    serverId: $serverId
+    name: $name
+    description: $description
+    title: $title
+    repositoryUrl: $repositoryUrl
+    version: $version
+    packages: $packages
+    remotes: $remotes
+  ) {
+    id
+    name
+    title
+    description
+    version
+    repositoryUrl
+    packages
+    remotes
+  }
+}

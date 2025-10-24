@@ -23,7 +23,6 @@ import {
   WorkspaceRepository,
   UserRepository,
   SessionRepository,
-  RegistryRepository,
   MCPServerRepository,
   MCPToolRepository,
   SystemRepository,
@@ -77,7 +76,6 @@ const start = () => {
   container.bind(WorkspaceRepository).toSelf().inSingletonScope();
   container.bind(UserRepository).toSelf().inSingletonScope();
   container.bind(SessionRepository).toSelf().inSingletonScope();
-  container.bind(RegistryRepository).toSelf().inSingletonScope();
   container.bind(MCPServerRepository).toSelf().inSingletonScope();
   container.bind(MCPToolRepository).toSelf().inSingletonScope();
   container.bind(SystemRepository).toSelf().inSingletonScope();

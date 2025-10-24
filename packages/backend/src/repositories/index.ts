@@ -3,7 +3,6 @@
 export * from './workspace.repository';
 export * from './user.repository';
 export * from './session.repository';
-export * from './registry.repository';
 export * from './mcp-server.repository';
 export * from './mcp-tool.repository';
 export * from './runtime.repository';

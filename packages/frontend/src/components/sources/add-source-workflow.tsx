@@ -23,12 +23,11 @@ import { MCPServerBrowser } from '@/components/tools/mcp-server-browser';
 import { MCPServerConfigure } from '@/components/tools/mcp-server-configure';
 import { useUIStore } from '@/stores/uiStore';
 import { useCloseOnNavigation } from '@/hooks/useCloseOnNavigation';
-import type { GetMcpRegistriesQuery } from '@/graphql/generated/graphql';
+import type { GetRegistryServersQuery } from '@/graphql/generated/graphql';
+import { useMCPRegistries } from '@/hooks/useMCPRegistries';
 
 // Extract server type
-type MCPRegistryServer = NonNullable<
-  NonNullable<GetMcpRegistriesQuery['mcpRegistries']>[number]['servers']
->[number];
+type MCPRegistryServer = GetRegistryServersQuery['getRegistryServers'][number];
 
 type WorkflowStep = 'selection' | 'mcp-browser' | 'mcp-config';
 type SourceCategory = 'mcp' | 'api';
@@ -73,6 +72,11 @@ export function AddSourceWorkflow() {
   const setOpen = useUIStore((state) => state.setAddSourceWorkflowOpen);
   const initialStep = useUIStore((state) => state.addSourceWorkflowInitialStep);
   const setInitialStep = useUIStore((state) => state.setAddSourceWorkflowInitialStep);
+  const serverId = useUIStore((state) => state.addSourceWorkflowServerId);
+  const setServerId = useUIStore((state) => state.setAddSourceWorkflowServerId);
+
+  // Get registries data to fetch server by ID
+  const { registryServers } = useMCPRegistries();
 
   // Local workflow state
   const [currentStep, setCurrentStep] = useState<WorkflowStep>('selection');
@@ -83,22 +87,26 @@ export function AddSourceWorkflow() {
   const handleClose = useCallback(() => {
     setOpen(false);
     setInitialStep(null);
+    setServerId(null);
     // Reset workflow state
     setCurrentStep('selection');
     setSelectedCategory(null);
     setSelectedServer(null);
-  }, [setOpen, setInitialStep]);
+  }, [setOpen, setInitialStep, setServerId]);
 
   // Auto-close on navigation
   useCloseOnNavigation(handleClose);
 
-  // Set initial step and reset state when opening/closing
+  // Effect 1: Handle panel open/close and initial step changes
+  // NOTE: Does not depend on registries to avoid resetting when data refetches
   useEffect(() => {
     if (isOpen) {
       // Set initial step and category based on initialStep from store
       if (initialStep) {
         setCurrentStep(initialStep);
         if (initialStep === 'mcp-browser') {
+          setSelectedCategory('mcp');
+        } else if (initialStep === 'mcp-config') {
           setSelectedCategory('mcp');
         }
       } else {
@@ -112,6 +120,18 @@ export function AddSourceWorkflow() {
       setSelectedServer(null);
     }
   }, [isOpen, initialStep]);
+
+  // Effect 2: Handle server lookup when serverId changes (for direct navigation to config)
+  // This is separate to prevent registry refetches from resetting workflow state
+  useEffect(() => {
+    if (isOpen && initialStep === 'mcp-config' && serverId) {
+      const server = registryServers
+        .find((s) => s.id === serverId);
+      if (server) {
+        setSelectedServer(server as MCPRegistryServer);
+      }
+    }
+  }, [isOpen, initialStep, serverId, registryServers]);
 
   const handleCategorySelect = (category: SourceCategory) => {
     setSelectedCategory(category);
@@ -135,7 +155,7 @@ export function AddSourceWorkflow() {
 
   const getStepTitle = (): string => {
     if (currentStep === 'selection') return 'Add Sources';
-    if (currentStep === 'mcp-browser') return 'Browse MCP Servers';
+    if (currentStep === 'mcp-browser') return 'Browse Private Registry';
     if (currentStep === 'mcp-config') return `Configure MCP Server`;
     return 'Add Sources';
   };

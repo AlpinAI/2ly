@@ -21,9 +21,9 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@apollo/client/react';
-import { Command } from 'cmdk';
 import * as Dialog from '@radix-ui/react-dialog';
-import { Search, Layers, Palette, Moon, Sun, Check, Plus, FolderPlus } from 'lucide-react';
+import { Search, Layers, Palette, Moon, Sun, Check, Plus, FolderPlus, Database } from 'lucide-react';
+import { Command, CommandInput, CommandList, CommandEmpty, CommandGroup, CommandItem } from '@/components/ui/command';
 import { useWorkspaceId } from '@/stores/workspaceStore';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useUIStore, useCreateToolSetDialog, useManageToolsDialog } from '@/stores/uiStore';
@@ -39,6 +39,7 @@ export function CommandPalette() {
   const currentWorkspaceId = useWorkspaceId();
   const { theme, setTheme } = useTheme();
   const setAddSourceWorkflowOpen = useUIStore((state) => state.setAddSourceWorkflowOpen);
+  const setAddServerWorkflowOpen = useUIStore((state) => state.setAddServerWorkflowOpen);
   const { openDialog: openCreateToolSetDialog } = useCreateToolSetDialog();
 
   const { data, loading } = useQuery(GetWorkspacesDocument);
@@ -76,6 +77,11 @@ export function CommandPalette() {
 
   const handleAddSource = () => {
     setAddSourceWorkflowOpen(true);
+    setOpen(false);
+  };
+
+  const handleAddServer = () => {
+    setAddServerWorkflowOpen(true);
     setOpen(false);
   };
 
@@ -129,108 +135,117 @@ export function CommandPalette() {
         <Dialog.Content className="fixed left-[50%] top-[50%] max-h-[85vh] w-[90vw] max-w-[640px] translate-x-[-50%] translate-y-[-50%] rounded-lg border border-gray-200 bg-white p-0 shadow-lg data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%] dark:border-gray-700 dark:bg-gray-800">
           <Dialog.Title className="sr-only">{getTitle()}</Dialog.Title>
           <Command className="rounded-lg" shouldFilter={true}>
-            <div className="border-b border-gray-200 px-3 dark:border-gray-700">
-              <Command.Input
-                placeholder={getPlaceholder()}
-                value={searchQuery}
-                onValueChange={setSearchQuery}
-                className="flex h-12 w-full rounded-md bg-transparent py-3 text-sm outline-none placeholder:text-gray-500 disabled:cursor-not-allowed disabled:opacity-50 dark:placeholder:text-gray-400"
-              />
-            </div>
-            <Command.List className="max-h-[400px] overflow-y-auto p-2">
-              <Command.Empty className="py-6 text-center text-sm text-gray-500 dark:text-gray-400">
+            <CommandInput
+              placeholder={getPlaceholder()}
+              value={searchQuery}
+              onValueChange={setSearchQuery}
+            />
+            <CommandList className="max-h-[400px] p-2">
+              <CommandEmpty>
                 {loading ? 'Loading...' : 'No results found.'}
-              </Command.Empty>
+              </CommandEmpty>
 
               {/* Main Mode - Show all commands */}
               {mode === 'main' && (
-                <Command.Group heading="Commands" className="mb-2">
-                  <Command.Item
+                <CommandGroup heading="Commands" className="mb-2">
+                  <CommandItem
                     value="search"
                     onSelect={() => setMode('search')}
-                    className="relative flex cursor-pointer select-none items-center gap-3 rounded-sm px-3 py-2 text-sm outline-none data-[selected=true]:bg-blue-100 data-[selected=true]:text-blue-900 dark:data-[selected=true]:bg-blue-900 dark:data-[selected=true]:text-blue-100"
+                    className="gap-3 cursor-pointer"
                   >
                     <Search className="h-4 w-4" />
                     <div className="flex flex-1 items-center justify-between">
                       <span className="font-medium">Search</span>
                       <span className="text-xs text-gray-500 dark:text-gray-400">Find anything...</span>
                     </div>
-                  </Command.Item>
+                  </CommandItem>
 
-                  <Command.Item
+                  <CommandItem
                     value="workspace"
                     onSelect={() => setMode('workspace')}
-                    className="relative flex cursor-pointer select-none items-center gap-3 rounded-sm px-3 py-2 text-sm outline-none data-[selected=true]:bg-blue-100 data-[selected=true]:text-blue-900 dark:data-[selected=true]:bg-blue-900 dark:data-[selected=true]:text-blue-100"
+                    className="gap-3 cursor-pointer"
                   >
                     <Layers className="h-4 w-4" />
                     <div className="flex flex-1 items-center justify-between">
                       <span className="font-medium">Switch Workspace</span>
                       <span className="text-xs text-gray-500 dark:text-gray-400">Change your workspace</span>
                     </div>
-                  </Command.Item>
+                  </CommandItem>
 
-                  <Command.Item
+                  <CommandItem
                     value="add-source"
                     onSelect={handleAddSource}
-                    className="relative flex cursor-pointer select-none items-center gap-3 rounded-sm px-3 py-2 text-sm outline-none data-[selected=true]:bg-blue-100 data-[selected=true]:text-blue-900 dark:data-[selected=true]:bg-blue-900 dark:data-[selected=true]:text-blue-100"
+                    className="gap-3 cursor-pointer"
                   >
                     <Plus className="h-4 w-4" />
                     <div className="flex flex-1 items-center justify-between">
                       <span className="font-medium">Add Source</span>
                       <span className="text-xs text-gray-500 dark:text-gray-400">Browse and add sources</span>
                     </div>
-                  </Command.Item>
+                  </CommandItem>
 
-                  <Command.Item
+                  <CommandItem
+                    value="add-mcp-server"
+                    onSelect={handleAddServer}
+                    className="gap-3 cursor-pointer"
+                  >
+                    <Database className="h-4 w-4" />
+                    <div className="flex flex-1 items-center justify-between">
+                      <span className="font-medium">Add MCP Server</span>
+                      <span className="text-xs text-gray-500 dark:text-gray-400">Add server to private registry</span>
+                    </div>
+                  </CommandItem>
+
+                  <CommandItem
                     value="new-tool-set"
                     onSelect={handleCreateToolSet}
-                    className="relative flex cursor-pointer select-none items-center gap-3 rounded-sm px-3 py-2 text-sm outline-none data-[selected=true]:bg-blue-100 data-[selected=true]:text-blue-900 dark:data-[selected=true]:bg-blue-900 dark:data-[selected=true]:text-blue-100"
+                    className="gap-3 cursor-pointer"
                   >
                     <FolderPlus className="h-4 w-4" />
                     <div className="flex flex-1 items-center justify-between">
                       <span className="font-medium">New Tool Set</span>
                       <span className="text-xs text-gray-500 dark:text-gray-400">Create a new tool set</span>
                     </div>
-                  </Command.Item>
+                  </CommandItem>
 
-                  <Command.Item
+                  <CommandItem
                     value="theme"
                     onSelect={() => setMode('theme')}
-                    className="relative flex cursor-pointer select-none items-center gap-3 rounded-sm px-3 py-2 text-sm outline-none data-[selected=true]:bg-blue-100 data-[selected=true]:text-blue-900 dark:data-[selected=true]:bg-blue-900 dark:data-[selected=true]:text-blue-100"
+                    className="gap-3 cursor-pointer"
                   >
                     <Palette className="h-4 w-4" />
                     <div className="flex flex-1 items-center justify-between">
                       <span className="font-medium">Change Theme</span>
                       <span className="text-xs text-gray-500 dark:text-gray-400">Toggle dark/light mode</span>
                     </div>
-                  </Command.Item>
-                </Command.Group>
+                  </CommandItem>
+                </CommandGroup>
               )}
 
               {/* Search Mode */}
               {mode === 'search' && (
-                <Command.Group heading="Search Results" className="mb-2">
-                  <Command.Item
+                <CommandGroup heading="Search Results" className="mb-2">
+                  <CommandItem
                     value="search-action"
                     onSelect={handleSearch}
-                    className="relative flex cursor-pointer select-none items-center gap-3 rounded-sm px-3 py-2 text-sm outline-none data-[selected=true]:bg-blue-100 data-[selected=true]:text-blue-900 dark:data-[selected=true]:bg-blue-900 dark:data-[selected=true]:text-blue-100"
+                    className="gap-3 cursor-pointer"
                   >
                     <Search className="h-4 w-4" />
                     <span>Search for "{searchQuery}"</span>
-                  </Command.Item>
+                  </CommandItem>
                   {/* TODO: Add actual search results here */}
-                </Command.Group>
+                </CommandGroup>
               )}
 
               {/* Workspace Mode */}
               {mode === 'workspace' && (
-                <Command.Group heading="Workspaces" className="mb-2">
+                <CommandGroup heading="Workspaces" className="mb-2">
                   {workspaces.map((workspace: NonNullable<GetWorkspacesQuery['workspace']>[number]) => (
-                    <Command.Item
+                    <CommandItem
                       key={workspace.id}
                       value={workspace.name}
                       onSelect={() => handleSelectWorkspace(workspace.id)}
-                      className="relative flex cursor-pointer select-none items-center gap-3 rounded-sm px-3 py-2 text-sm outline-none data-[selected=true]:bg-blue-100 data-[selected=true]:text-blue-900 dark:data-[selected=true]:bg-blue-900 dark:data-[selected=true]:text-blue-100"
+                      className="gap-3 cursor-pointer"
                     >
                       <Layers className="h-4 w-4" />
                       <div className="flex flex-1 items-center gap-2">
@@ -244,40 +259,40 @@ export function CommandPalette() {
                           </span>
                         )}
                       </div>
-                    </Command.Item>
+                    </CommandItem>
                   ))}
-                </Command.Group>
+                </CommandGroup>
               )}
 
               {/* Theme Mode */}
               {mode === 'theme' && (
-                <Command.Group heading="Theme Options" className="mb-2">
-                  <Command.Item
+                <CommandGroup heading="Theme Options" className="mb-2">
+                  <CommandItem
                     value="light"
                     onSelect={() => handleSelectTheme('light')}
-                    className="relative flex cursor-pointer select-none items-center gap-3 rounded-sm px-3 py-2 text-sm outline-none data-[selected=true]:bg-blue-100 data-[selected=true]:text-blue-900 dark:data-[selected=true]:bg-blue-900 dark:data-[selected=true]:text-blue-100"
+                    className="gap-3 cursor-pointer"
                   >
                     <Sun className="h-4 w-4" />
                     <div className="flex flex-1 items-center justify-between">
                       <span className="font-medium">Light</span>
                       {theme === 'light' && <Check className="h-4 w-4" />}
                     </div>
-                  </Command.Item>
+                  </CommandItem>
 
-                  <Command.Item
+                  <CommandItem
                     value="dark"
                     onSelect={() => handleSelectTheme('dark')}
-                    className="relative flex cursor-pointer select-none items-center gap-3 rounded-sm px-3 py-2 text-sm outline-none data-[selected=true]:bg-blue-100 data-[selected=true]:text-blue-900 dark:data-[selected=true]:bg-blue-900 dark:data-[selected=true]:text-blue-100"
+                    className="gap-3 cursor-pointer"
                   >
                     <Moon className="h-4 w-4" />
                     <div className="flex flex-1 items-center justify-between">
                       <span className="font-medium">Dark</span>
                       {theme === 'dark' && <Check className="h-4 w-4" />}
                     </div>
-                  </Command.Item>
-                </Command.Group>
+                  </CommandItem>
+                </CommandGroup>
               )}
-            </Command.List>
+            </CommandList>
 
             <div className="border-t border-gray-200 px-3 py-2 text-xs text-gray-500 dark:border-gray-700 dark:text-gray-400">
               <div className="flex items-center justify-between">

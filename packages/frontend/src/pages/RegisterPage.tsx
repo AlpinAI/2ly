@@ -193,19 +193,23 @@ export default function RegisterPage() {
                   />
                   <span className="text-sm text-gray-700 dark:text-gray-300">
                     I agree to the{' '}
-                    <Link
-                      to="/terms"
+                    <a
+                      href="https://www.2ly.ai/terms-of-service"
+                      target="_blank"
+                      rel="noopener noreferrer"
                       className="text-cyan-600 hover:text-cyan-500 underline"
                     >
                       Terms of Service
-                    </Link>
+                    </a>
                     {' '}and{' '}
-                    <Link
-                      to="/privacy"
+                    <a
+                      href="https://www.2ly.ai/privacy-policy"
+                      target="_blank"
+                      rel="noopener noreferrer"
                       className="text-cyan-600 hover:text-cyan-500 underline"
                     >
                       Privacy Policy
-                    </Link>
+                    </a>
                   </span>
                 </label>
               </div>

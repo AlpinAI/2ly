@@ -250,7 +250,7 @@ export const UPDATE_ONBOARDING_STEP_STATUS = gql`
 
 export const LINK_ONBOARDING_STEP_TO_WORKSPACE = gql`
   mutation linkOnboardingStepToWorkspace($workspaceId: ID!, $stepId: ID!) {
-    updateWorkspace(input: { 
+    updateWorkspace(input: {
       filter: { id: [$workspaceId] }
       set: { onboardingSteps: { id: $stepId } }
     }) {
@@ -266,6 +266,168 @@ export const LINK_ONBOARDING_STEP_TO_WORKSPACE = gql`
           createdAt
           updatedAt
         }
+      }
+    }
+  }
+`;
+
+// Registry server operations
+export const QUERY_WORKSPACE_WITH_REGISTRY_SERVERS = gql`
+  query getWorkspaceWithRegistryServers($workspaceId: ID!) {
+    getWorkspace(id: $workspaceId) {
+      id
+      registryServers {
+        id
+        name
+        description
+        title
+        repositoryUrl
+        version
+        packages
+        remotes
+        _meta
+        createdAt
+        lastSeenAt
+        configurations {
+          id
+          name
+        }
+      }
+    }
+  }
+`;
+
+export const ADD_REGISTRY_SERVER = gql`
+  mutation addRegistryServer(
+    $name: String!
+    $description: String!
+    $title: String!
+    $repositoryUrl: String!
+    $version: String!
+    $packages: String!
+    $remotes: String
+    $_meta: String
+    $workspaceId: ID!
+    $now: DateTime!
+  ) {
+    addMCPRegistryServer(
+      input: {
+        name: $name
+        description: $description
+        title: $title
+        repositoryUrl: $repositoryUrl
+        version: $version
+        packages: $packages
+        remotes: $remotes
+        _meta: $_meta
+        createdAt: $now
+        lastSeenAt: $now
+        workspace: { id: $workspaceId }
+      }
+    ) {
+      mCPRegistryServer {
+        id
+        name
+        description
+        title
+        repositoryUrl
+        version
+        packages
+        remotes
+        _meta
+        createdAt
+        lastSeenAt
+        workspace {
+          id
+        }
+      }
+    }
+  }
+`;
+
+export const UPDATE_REGISTRY_SERVER = gql`
+  mutation updateRegistryServer(
+    $id: ID!
+    $name: String
+    $description: String
+    $title: String
+    $repositoryUrl: String
+    $version: String
+    $packages: String
+    $remotes: String
+  ) {
+    updateMCPRegistryServer(
+      input: {
+        filter: { id: [$id] }
+        set: {
+          name: $name
+          description: $description
+          title: $title
+          repositoryUrl: $repositoryUrl
+          version: $version
+          packages: $packages
+          remotes: $remotes
+        }
+      }
+    ) {
+      mCPRegistryServer {
+        id
+        name
+        description
+        title
+        repositoryUrl
+        version
+        packages
+        remotes
+        _meta
+        createdAt
+        lastSeenAt
+      }
+    }
+  }
+`;
+
+export const DELETE_REGISTRY_SERVER = gql`
+  mutation deleteRegistryServer($id: ID!) {
+    deleteMCPRegistryServer(filter: { id: [$id] }) {
+      mCPRegistryServer {
+        id
+        name
+      }
+    }
+  }
+`;
+
+export const DELETE_REGISTRY_SERVERS = gql`
+  mutation deleteRegistryServers($ids: [ID!]!) {
+    deleteMCPRegistryServer(filter: { id: $ids }) {
+      mCPRegistryServer {
+        id
+      }
+    }
+  }
+`;
+
+export const GET_REGISTRY_SERVER = gql`
+  query getRegistryServer($id: ID!) {
+    getMCPRegistryServer(id: $id) {
+      id
+      name
+      description
+      title
+      repositoryUrl
+      version
+      packages
+      remotes
+      _meta
+      createdAt
+      lastSeenAt
+      workspace {
+        id
+      }
+      configurations {
+        id
+        name
       }
     }
   }

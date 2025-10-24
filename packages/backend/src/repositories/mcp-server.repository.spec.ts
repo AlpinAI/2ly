@@ -63,6 +63,7 @@ describe('MCPServerRepository', () => {
       config,
       'EDGE',
       'w1',
+      'reg1',
     );
 
     expect(dgraphService.mutation).toHaveBeenCalledWith(expect.any(Object), {
@@ -72,6 +73,7 @@ describe('MCPServerRepository', () => {
       transport: 'STDIO',
       config,
       workspaceId: 'w1',
+      registryServerId: 'reg1',
       runOn: 'EDGE',
     });
     expect(result.id).toBe('s1');

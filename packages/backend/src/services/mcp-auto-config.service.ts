@@ -344,7 +344,7 @@ Return ONLY valid JSON following this format.`;
                 createdAt: new Date(),
                 lastSeenAt: new Date(),
                 id: '', // Will be set by the database
-                registry: { id: '' } as apolloResolversTypes.McpRegistry, // Will be set by the database
+                workspace: { id: '' } as apolloResolversTypes.Workspace, // Will be set by the database
               };
             } catch (parseError) {
               console.error('Error parsing JSON configuration:', parseError);
