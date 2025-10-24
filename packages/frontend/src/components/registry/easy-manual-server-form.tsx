@@ -30,8 +30,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { useMCPRegistries } from '@/hooks/useMCPRegistries';
 import { AddServerToRegistryDocument } from '@/graphql/generated/graphql';
+import { useWorkspaceId } from '@/stores/workspaceStore';
 
 interface EasyManualServerFormProps {
   onServerAdded: (serverId: string) => void;
@@ -44,11 +44,15 @@ export function EasyManualServerForm({
   onServerAdded,
   onCancel,
 }: EasyManualServerFormProps) {
-  const { registries } = useMCPRegistries();
-  const privateRegistry = registries[0];
+  const workspaceId = useWorkspaceId();
+
+  if (!workspaceId) {
+    console.error('No workspace ID found');
+    return;
+  }
 
   const [addServerToRegistry] = useMutation(AddServerToRegistryDocument, {
-    refetchQueries: ['GetMCPRegistries'],
+    refetchQueries: ['GetRegistryServers'],
     onError: (err) => {
       console.error('[EasyManualServerForm] Add server error:', err);
     },
@@ -72,11 +76,6 @@ export function EasyManualServerForm({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    if (!privateRegistry?.id) {
-      console.error('No private registry found');
-      return;
-    }
 
     setIsSubmitting(true);
     try {
@@ -169,7 +168,7 @@ export function EasyManualServerForm({
 
       const result = await addServerToRegistry({
         variables: {
-          registryId: privateRegistry.id,
+          workspaceId: workspaceId,
           name: formData.name,
           description: formData.description,
           title: formData.name,

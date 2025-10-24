@@ -26,7 +26,7 @@ import { useAddServerWorkflow } from '@/stores/uiStore';
 
 export default function SettingsPage() {
   const workspaceId = useWorkspaceId();
-  const { registries, loading, error } = useMCPRegistries();
+  const { registryServers, loading, error } = useMCPRegistries();
   const { setOpen: setAddServerWorkflowOpen } = useAddServerWorkflow();
   const [activeTab, setActiveTab] = useState('private-registry');
 
@@ -68,7 +68,7 @@ export default function SettingsPage() {
 
         <TabsContent value="private-registry" className="flex-1 min-h-0">
           <PrivateRegistrySection
-            registries={registries}
+            registryServers={registryServers}
             loading={loading}
             error={error}
           />

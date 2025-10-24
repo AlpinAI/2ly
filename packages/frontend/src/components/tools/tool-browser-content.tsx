@@ -10,12 +10,10 @@
  */
 
 import { MCPServerBrowser } from './mcp-server-browser';
-import type { GetMcpRegistriesQuery } from '@/graphql/generated/graphql';
+import type { GetRegistryServersQuery } from '@/graphql/generated/graphql';
 
 // Extract server type
-type MCPRegistryServer = NonNullable<
-  NonNullable<GetMcpRegistriesQuery['mcpRegistries']>[number]['servers']
->[number];
+type MCPRegistryServer = GetRegistryServersQuery['getRegistryServers'][number];
 
 export function ToolBrowserContent() {
   const handleConfigure = (server: MCPRegistryServer) => {

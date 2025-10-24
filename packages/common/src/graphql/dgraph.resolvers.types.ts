@@ -21,15 +21,6 @@ export enum ActiveStatus {
   Inactive = 'INACTIVE'
 }
 
-export type McpRegistry = {
-  createdAt: Scalars['DateTime']['output'];
-  id: Scalars['ID']['output'];
-  lastSyncAt?: Maybe<Scalars['DateTime']['output']>;
-  name: Scalars['String']['output'];
-  servers?: Maybe<Array<McpRegistryServer>>;
-  workspace: Workspace;
-};
-
 export type McpRegistryServer = {
   _meta?: Maybe<Scalars['String']['output']>;
   configurations?: Maybe<Array<McpServer>>;
@@ -39,11 +30,11 @@ export type McpRegistryServer = {
   lastSeenAt: Scalars['DateTime']['output'];
   name: Scalars['String']['output'];
   packages: Scalars['String']['output'];
-  registry: McpRegistry;
   remotes?: Maybe<Scalars['String']['output']>;
   repositoryUrl: Scalars['String']['output'];
   title: Scalars['String']['output'];
   version: Scalars['String']['output'];
+  workspace: Workspace;
 };
 
 export type McpServer = {
@@ -192,11 +183,11 @@ export type Workspace = {
   createdAt: Scalars['DateTime']['output'];
   globalRuntime?: Maybe<Runtime>;
   id: Scalars['ID']['output'];
-  mcpRegistries?: Maybe<Array<McpRegistry>>;
   mcpServers?: Maybe<Array<McpServer>>;
   mcpTools?: Maybe<Array<McpTool>>;
   name: Scalars['String']['output'];
   onboardingSteps?: Maybe<Array<OnboardingStep>>;
+  registryServers?: Maybe<Array<McpRegistryServer>>;
   runtimes?: Maybe<Array<Runtime>>;
   system: System;
   users?: Maybe<Array<User>>;
@@ -279,7 +270,6 @@ export type ResolversTypes = ResolversObject<{
   DateTime: ResolverTypeWrapper<Scalars['DateTime']['output']>;
   ID: ResolverTypeWrapper<Scalars['ID']['output']>;
   Int: ResolverTypeWrapper<Scalars['Int']['output']>;
-  MCPRegistry: ResolverTypeWrapper<McpRegistry>;
   MCPRegistryServer: ResolverTypeWrapper<McpRegistryServer>;
   MCPServer: ResolverTypeWrapper<McpServer>;
   MCPServerRunOn: McpServerRunOn;
@@ -304,7 +294,6 @@ export type ResolversParentTypes = ResolversObject<{
   DateTime: Scalars['DateTime']['output'];
   ID: Scalars['ID']['output'];
   Int: Scalars['Int']['output'];
-  MCPRegistry: McpRegistry;
   MCPRegistryServer: McpRegistryServer;
   MCPServer: McpServer;
   MCPTool: McpTool;
@@ -322,16 +311,6 @@ export interface DateTimeScalarConfig extends GraphQLScalarTypeConfig<ResolversT
   name: 'DateTime';
 }
 
-export type McpRegistryResolvers<ContextType = any, ParentType extends ResolversParentTypes['MCPRegistry'] = ResolversParentTypes['MCPRegistry']> = ResolversObject<{
-  createdAt?: Resolver<ResolversTypes['DateTime'], ParentType, ContextType>;
-  id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
-  lastSyncAt?: Resolver<Maybe<ResolversTypes['DateTime']>, ParentType, ContextType>;
-  name?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
-  servers?: Resolver<Maybe<Array<ResolversTypes['MCPRegistryServer']>>, ParentType, ContextType>;
-  workspace?: Resolver<ResolversTypes['Workspace'], ParentType, ContextType>;
-  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
-}>;
-
 export type McpRegistryServerResolvers<ContextType = any, ParentType extends ResolversParentTypes['MCPRegistryServer'] = ResolversParentTypes['MCPRegistryServer']> = ResolversObject<{
   _meta?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   configurations?: Resolver<Maybe<Array<ResolversTypes['MCPServer']>>, ParentType, ContextType>;
@@ -341,11 +320,11 @@ export type McpRegistryServerResolvers<ContextType = any, ParentType extends Res
   lastSeenAt?: Resolver<ResolversTypes['DateTime'], ParentType, ContextType>;
   name?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   packages?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
-  registry?: Resolver<ResolversTypes['MCPRegistry'], ParentType, ContextType>;
   remotes?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   repositoryUrl?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   title?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   version?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  workspace?: Resolver<ResolversTypes['Workspace'], ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
@@ -473,11 +452,11 @@ export type WorkspaceResolvers<ContextType = any, ParentType extends ResolversPa
   createdAt?: Resolver<ResolversTypes['DateTime'], ParentType, ContextType>;
   globalRuntime?: Resolver<Maybe<ResolversTypes['Runtime']>, ParentType, ContextType>;
   id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
-  mcpRegistries?: Resolver<Maybe<Array<ResolversTypes['MCPRegistry']>>, ParentType, ContextType>;
   mcpServers?: Resolver<Maybe<Array<ResolversTypes['MCPServer']>>, ParentType, ContextType>;
   mcpTools?: Resolver<Maybe<Array<ResolversTypes['MCPTool']>>, ParentType, ContextType>;
   name?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   onboardingSteps?: Resolver<Maybe<Array<ResolversTypes['OnboardingStep']>>, ParentType, ContextType>;
+  registryServers?: Resolver<Maybe<Array<ResolversTypes['MCPRegistryServer']>>, ParentType, ContextType>;
   runtimes?: Resolver<Maybe<Array<ResolversTypes['Runtime']>>, ParentType, ContextType>;
   system?: Resolver<ResolversTypes['System'], ParentType, ContextType>;
   users?: Resolver<Maybe<Array<ResolversTypes['User']>>, ParentType, ContextType>;
@@ -486,7 +465,6 @@ export type WorkspaceResolvers<ContextType = any, ParentType extends ResolversPa
 
 export type Resolvers<ContextType = any> = ResolversObject<{
   DateTime?: GraphQLScalarType;
-  MCPRegistry?: McpRegistryResolvers<ContextType>;
   MCPRegistryServer?: McpRegistryServerResolvers<ContextType>;
   MCPServer?: McpServerResolvers<ContextType>;
   MCPTool?: McpToolResolvers<ContextType>;

@@ -23,13 +23,11 @@ import { MCPServerBrowser } from '@/components/tools/mcp-server-browser';
 import { MCPServerConfigure } from '@/components/tools/mcp-server-configure';
 import { useUIStore } from '@/stores/uiStore';
 import { useCloseOnNavigation } from '@/hooks/useCloseOnNavigation';
+import type { GetRegistryServersQuery } from '@/graphql/generated/graphql';
 import { useMCPRegistries } from '@/hooks/useMCPRegistries';
-import type { GetMcpRegistriesQuery } from '@/graphql/generated/graphql';
 
 // Extract server type
-type MCPRegistryServer = NonNullable<
-  NonNullable<GetMcpRegistriesQuery['mcpRegistries']>[number]['servers']
->[number];
+type MCPRegistryServer = GetRegistryServersQuery['getRegistryServers'][number];
 
 type WorkflowStep = 'selection' | 'mcp-browser' | 'mcp-config';
 type SourceCategory = 'mcp' | 'api';
@@ -78,7 +76,7 @@ export function AddSourceWorkflow() {
   const setServerId = useUIStore((state) => state.setAddSourceWorkflowServerId);
 
   // Get registries data to fetch server by ID
-  const { registries } = useMCPRegistries();
+  const { registryServers } = useMCPRegistries();
 
   // Local workflow state
   const [currentStep, setCurrentStep] = useState<WorkflowStep>('selection');
@@ -126,15 +124,14 @@ export function AddSourceWorkflow() {
   // Effect 2: Handle server lookup when serverId changes (for direct navigation to config)
   // This is separate to prevent registry refetches from resetting workflow state
   useEffect(() => {
-    if (isOpen && initialStep === 'mcp-config' && serverId && registries.length > 0) {
-      const server = registries
-        .flatMap((reg) => reg.servers || [])
+    if (isOpen && initialStep === 'mcp-config' && serverId) {
+      const server = registryServers
         .find((s) => s.id === serverId);
       if (server) {
-        setSelectedServer(server);
+        setSelectedServer(server as MCPRegistryServer);
       }
     }
-  }, [isOpen, initialStep, serverId, registries]);
+  }, [isOpen, initialStep, serverId, registryServers]);
 
   const handleCategorySelect = (category: SourceCategory) => {
     setSelectedCategory(category);

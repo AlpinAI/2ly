@@ -13,7 +13,7 @@
  * IMPORTANT: Uses shared utilities from @2ly/common for variable extraction and substitution.
  */
 
-import type { GetMcpRegistriesQuery, McpTransportType } from '@/graphql/generated/graphql';
+import type { GetRegistryServersQuery, McpTransportType } from '@/graphql/generated/graphql';
 import {
   mcpRegistry,
   getAllVariablesFromConfig,
@@ -22,9 +22,7 @@ import {
 } from '@2ly/common';
 
 // Extract server type
-type MCPRegistryServer = NonNullable<
-  NonNullable<GetMcpRegistriesQuery['mcpRegistries']>[number]['servers']
->[number];
+type MCPRegistryServer = GetRegistryServersQuery['getRegistryServers'][number];
 
 // Use official MCP Registry schema types
 type Package = mcpRegistry.components['schemas']['Package'];

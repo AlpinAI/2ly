@@ -23,16 +23,14 @@ import { cn } from '@/lib/utils';
 import { useMCPRegistries } from '@/hooks/useMCPRegistries';
 import { MCPServerCard } from './mcp-server-card';
 import { mcpRegistry } from '@2ly/common';
-import { GetMcpRegistriesQuery } from '@/graphql/generated/graphql';
+import { GetRegistryServersQuery } from '@/graphql/generated/graphql';
 
 // Use official MCP Registry schema types
 type Package = mcpRegistry.components['schemas']['Package'];
 type Transport = mcpRegistry.components['schemas']['Transport'];
 
-// Extract server type from GraphQL subscription
-type MCPRegistryServer = NonNullable<
-NonNullable<GetMcpRegistriesQuery['mcpRegistries']>[number]['servers']
->[number];
+// Extract server type from GraphQL query
+type MCPRegistryServer = GetRegistryServersQuery['getRegistryServers'][number];
 
 export interface ServerVersionGroup {
   name: string;
@@ -118,13 +116,13 @@ export function MCPServerBrowser({ onConfigure }: MCPServerBrowserProps) {
   const [selectedTransport, setSelectedTransport] = useState('All');
   const [visibleCount, setVisibleCount] = useState(ITEMS_PER_PAGE);
 
-  // Get registries data via hook
-  const { registries, loading, error } = useMCPRegistries();
+  // Get registry servers data via hook
+  const { registryServers, loading, error } = useMCPRegistries();
 
-  // Flatten all servers from all registries
+  // All servers are already flat (no need to flatMap)
   const allServers = useMemo(() => {
-    return registries?.flatMap((registry) => registry.servers || []) || [];
-  }, [registries]);
+    return registryServers || [];
+  }, [registryServers]);
 
   // Group servers by name (latest + older versions)
   const groupedServers = useMemo(() => {

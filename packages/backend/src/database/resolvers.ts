@@ -5,7 +5,6 @@ import { Observable } from 'rxjs';
 import { latestValueFrom } from 'rxjs-for-await';
 import { MCPServerAutoConfigService } from '../services/mcp-auto-config.service';
 import {
-  RegistryRepository,
   MCPServerRepository,
   RuntimeRepository,
   WorkspaceRepository,
@@ -30,7 +29,6 @@ const observableToAsyncGenerator = <T, K extends string>(
 
 export const resolvers = (container: Container = defaultContainer): apolloResolversTypes.Resolvers => {
   const systemRepository = container.get(SystemRepository);
-  const registryRepository = container.get(RegistryRepository);
   const mcpServerRepository = container.get(MCPServerRepository);
   const runtimeRepository = container.get(RuntimeRepository);
   const workspaceRepository = container.get(WorkspaceRepository);
@@ -74,8 +72,8 @@ export const resolvers = (container: Container = defaultContainer): apolloResolv
       isMCPAutoConfigEnabled: async () => {
         return mcpAutoConfigService.isConfigured();
       },
-      mcpRegistries: async (_parent: unknown, { workspaceId }: { workspaceId: string }) => {
-        return registryRepository.findByWorkspace(workspaceId);
+      getRegistryServers: async (_parent: unknown, { workspaceId }: { workspaceId: string }) => {
+        return workspaceRepository.findRegistryServersByWorkspace(workspaceId);
       },
       // Monitoring query with filtering and pagination
       toolCalls: async (
@@ -271,23 +269,12 @@ export const resolvers = (container: Container = defaultContainer): apolloResolv
           };
         }
       },
-      createMCPRegistry: async (
-        _parent: unknown,
-        { workspaceId, name }: { workspaceId: string; name: string },
-      ) => {
-        console.log('create mcp registry', workspaceId, name);
-        return registryRepository.createRegistry(workspaceId, name);
-      },
-      deleteMCPRegistry: async (_parent: unknown, { id }: { id: string }) => {
-        return registryRepository.deleteRegistry(id);
-      },
-
       // Registry server mutations
       addServerToRegistry: async (
         _parent: unknown,
         args: apolloResolversTypes.MutationAddServerToRegistryArgs,
       ) => {
-        return registryRepository.addServerToRegistry(args.registryId, {
+        return workspaceRepository.addServerToWorkspace(args.workspaceId, {
           name: args.name,
           description: args.description,
           title: args.title,
@@ -301,7 +288,7 @@ export const resolvers = (container: Container = defaultContainer): apolloResolv
         _parent: unknown,
         args: apolloResolversTypes.MutationUpdateServerInRegistryArgs,
       ) => {
-        return registryRepository.updateServerInRegistry(args.serverId, {
+        return workspaceRepository.updateServerInWorkspace(args.serverId, {
           name: args.name ?? undefined,
           description: args.description ?? undefined,
           title: args.title ?? undefined,
@@ -312,7 +299,7 @@ export const resolvers = (container: Container = defaultContainer): apolloResolv
         });
       },
       removeServerFromRegistry: async (_parent: unknown, { serverId }: { serverId: string }) => {
-        return registryRepository.removeServerFromRegistry(serverId);
+        return workspaceRepository.removeServerFromWorkspace(serverId);
       },
 
       // Onboarding mutations

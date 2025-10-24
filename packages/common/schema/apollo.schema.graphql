@@ -36,7 +36,7 @@ type Workspace {
   mcpServers: [MCPServer!]
   mcpTools: [MCPTool!]
   runtimes: [Runtime!]
-  mcpRegistries: [MCPRegistry!]
+  registryServers: [MCPRegistryServer!]
   globalRuntime: Runtime
   onboardingSteps: [OnboardingStep!]
 }
@@ -163,19 +163,6 @@ input LogoutInput {
   refreshToken: String!
 }
 
-type MCPRegistry2lyMetadata {
-  registryVersion: String!
-}
-
-type MCPRegistry {
-  id: ID!
-  name: String!
-  createdAt: Date!
-  lastSyncAt: Date
-  workspace: Workspace!
-  servers: [MCPRegistryServer!]
-}
-
 type MCPRegistryServer {
   id: ID!
   name: String!
@@ -188,7 +175,7 @@ type MCPRegistryServer {
   _meta: String
   createdAt: Date!
   lastSeenAt: Date!
-  registry: MCPRegistry!
+  workspace: Workspace!
   configurations: [MCPServer!]
 }
 
@@ -231,7 +218,7 @@ type Query {
   infra: Infra!
   workspaceMCPTools(workspaceId: ID!): Workspace
   isMCPAutoConfigEnabled: Boolean!
-  mcpRegistries(workspaceId: ID!): [MCPRegistry!]
+  getRegistryServers(workspaceId: ID!): [MCPRegistryServer!]!
   # Monitoring query with filtering and pagination
   toolCalls(
     workspaceId: ID!
@@ -284,13 +271,9 @@ type Mutation {
   unsetGlobalRuntime(id: ID!): Workspace!
   updateMCPServerRunOn(mcpServerId: ID!, runOn: MCPServerRunOn!, runtimeId: ID): MCPServer!
 
-  # Registry mutations
-  createMCPRegistry(workspaceId: ID!, name: String!): MCPRegistry!
-  deleteMCPRegistry(id: ID!): MCPRegistry!
-
   # Registry server mutations
   addServerToRegistry(
-    registryId: ID!
+    workspaceId: ID!
     name: String!
     description: String!
     title: String!

@@ -20,10 +20,10 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { useMCPRegistries } from '@/hooks/useMCPRegistries';
 import { AddServerToRegistryDocument } from '@/graphql/generated/graphql';
 import { cn } from '@/lib/utils';
 import { validatePackages, validateRemotes } from '@/lib/mcpSchemas';
+import { useWorkspaceId } from '@/stores/workspaceStore';
 
 interface AdvancedManualServerFormProps {
   onServerAdded: (serverId: string) => void;
@@ -65,11 +65,15 @@ export function AdvancedManualServerForm({
   onServerAdded,
   onCancel,
 }: AdvancedManualServerFormProps) {
-  const { registries } = useMCPRegistries();
-  const privateRegistry = registries[0];
+  const workspaceId = useWorkspaceId();
+
+  if (!workspaceId) {
+    console.error('No workspace ID found');
+    return;
+  }
 
   const [addServerToRegistry] = useMutation(AddServerToRegistryDocument, {
-    refetchQueries: ['GetMCPRegistries'],
+    refetchQueries: ['GetRegistryServers'],
     onError: (err) => {
       console.error('[AdvancedManualServerForm] Add server error:', err);
     },
@@ -145,11 +149,6 @@ export function AdvancedManualServerForm({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!privateRegistry?.id) {
-      console.error('No private registry found');
-      return;
-    }
-
     setIsSubmitting(true);
     try {
       const packages = packagesJson.trim() ? packagesJson : null;
@@ -157,7 +156,7 @@ export function AdvancedManualServerForm({
 
       const result = await addServerToRegistry({
         variables: {
-          registryId: privateRegistry.id,
+          workspaceId: workspaceId,
           name: formData.name,
           description: formData.description,
           title: formData.name,

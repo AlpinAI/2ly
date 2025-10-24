@@ -18,10 +18,10 @@
  */
 
 import { ExternalLink, Database } from 'lucide-react';
-import type { GetMcpRegistriesQuery } from '@/graphql/generated/graphql';
+import type { GetRegistryServersQuery } from '@/graphql/generated/graphql';
 
 export interface RegistryServerTableProps {
-  servers: Array<NonNullable<NonNullable<GetMcpRegistriesQuery['mcpRegistries']>[number]['servers']>[number]>;
+  servers: GetRegistryServersQuery['getRegistryServers'];
   selectedServerId: string | null;
   onSelectServer: (serverId: string) => void;
   loading?: boolean;

@@ -14,11 +14,13 @@ import {
   LINK_ONBOARDING_STEP_TO_WORKSPACE,
   QUERY_ONBOARDING_STEP_BY_STEP_ID,
   UPDATE_ONBOARDING_STEP_STATUS,
-} from './workspace.operations';
-import {
-  ADD_MCP_REGISTRY,
   ADD_REGISTRY_SERVER,
-} from './registry.operations';
+  UPDATE_REGISTRY_SERVER,
+  DELETE_REGISTRY_SERVER,
+  DELETE_REGISTRY_SERVERS,
+  GET_REGISTRY_SERVER,
+  QUERY_WORKSPACE_WITH_REGISTRY_SERVERS,
+} from './workspace.operations';
 import { GET_RUNTIME } from './runtime.operations';
 import { QUERY_SYSTEM } from './system.operations';
 import { Observable } from 'rxjs';
@@ -53,18 +55,7 @@ export class WorkspaceRepository {
     });
     const workspace = res.addWorkspace.workspace[0];
 
-    // Create "Private Registry" with empty upstreamUrl
-    const registryRes = await this.dgraphService.mutation<{
-      addMCPRegistry: { mCPRegistry: dgraphResolversTypes.McpRegistry[] };
-    }>(ADD_MCP_REGISTRY, {
-      name: 'Private Registry',
-      upstreamUrl: '',
-      workspaceId: workspace.id,
-      now,
-    });
-    const privateRegistry = registryRes.addMCPRegistry.mCPRegistry[0];
-
-    // Create 10 featured servers from INITIAL_FEATURED_SERVERS
+    // Create featured servers directly on workspace from INITIAL_FEATURED_SERVERS
     for (const server of INITIAL_FEATURED_SERVERS) {
       await this.dgraphService.mutation(ADD_REGISTRY_SERVER, {
         name: server.name,
@@ -75,7 +66,7 @@ export class WorkspaceRepository {
         packages: JSON.stringify(server.packages),
         remotes: server.remotes ? JSON.stringify(server.remotes) : null,
         _meta: null,
-        registryId: privateRegistry.id,
+        workspaceId: workspace.id,
         now,
       });
     }
@@ -257,7 +248,7 @@ export class WorkspaceRepository {
     const workspace = await this.dgraphService.query<{
       getWorkspace: {
         onboardingSteps: { stepId: string; status: string }[];
-        mcpRegistries: { id: string }[];
+        registryServers: { id: string }[];
         mcpServers: { id: string }[];
         runtimes: { capabilities: string[] }[];
       };
@@ -305,5 +296,116 @@ export class WorkspaceRepository {
     if (shouldComplete) {
       await this.completeOnboardingStep(workspaceId, stepId);
     }
+  }
+
+  // Registry server management methods
+  async canModifyServer(serverId: string): Promise<boolean> {
+    const server = await this.dgraphService.query<{
+      getMCPRegistryServer: dgraphResolversTypes.McpRegistryServer;
+    }>(GET_REGISTRY_SERVER, { id: serverId });
+
+    const serverData = server.getMCPRegistryServer;
+    if (!serverData) {
+      throw new Error('Server not found');
+    }
+
+    // Check if any MCPServer configs reference this server
+    const hasConfigurations = (serverData.configurations?.length ?? 0) > 0;
+    return !hasConfigurations;
+  }
+
+  async addServerToWorkspace(
+    workspaceId: string,
+    serverData: {
+      name: string;
+      description: string;
+      title: string;
+      repositoryUrl: string;
+      version: string;
+      packages?: string;
+      remotes?: string;
+    }
+  ): Promise<dgraphResolversTypes.McpRegistryServer> {
+    const now = new Date().toISOString();
+
+    const variables: Partial<dgraphResolversTypes.McpRegistryServer> & { workspaceId: string, now: string } = {
+      name: serverData.name,
+      description: serverData.description,
+      title: serverData.title,
+      repositoryUrl: serverData.repositoryUrl,
+      version: serverData.version,
+      packages: serverData.packages || '{}',
+      workspaceId,
+      now,
+    };
+
+    if (serverData.remotes) {
+      variables.remotes = serverData.remotes;
+    }
+
+    const res = await this.dgraphService.mutation<{
+      addMCPRegistryServer: { mCPRegistryServer: dgraphResolversTypes.McpRegistryServer[] };
+    }>(ADD_REGISTRY_SERVER, variables);
+
+    return res.addMCPRegistryServer.mCPRegistryServer[0];
+  }
+
+  async updateServerInWorkspace(
+    serverId: string,
+    serverData: {
+      name?: string;
+      description?: string;
+      title?: string;
+      repositoryUrl?: string;
+      version?: string;
+      packages?: string;
+      remotes?: string;
+    }
+  ): Promise<dgraphResolversTypes.McpRegistryServer> {
+    // Check if server can be modified
+    const canModify = await this.canModifyServer(serverId);
+    if (!canModify) {
+      throw new Error('Cannot modify server that has linked configurations');
+    }
+
+    // Build update object with only provided fields
+    const updateFields: Partial<dgraphResolversTypes.McpRegistryServer> = {};
+    if (serverData.name !== undefined) updateFields.name = serverData.name;
+    if (serverData.description !== undefined) updateFields.description = serverData.description;
+    if (serverData.title !== undefined) updateFields.title = serverData.title;
+    if (serverData.repositoryUrl !== undefined) updateFields.repositoryUrl = serverData.repositoryUrl;
+    if (serverData.version !== undefined) updateFields.version = serverData.version;
+    if (serverData.packages !== undefined) updateFields.packages = serverData.packages;
+    if (serverData.remotes !== undefined) updateFields.remotes = serverData.remotes;
+
+    const res = await this.dgraphService.mutation<{
+      updateMCPRegistryServer: { mCPRegistryServer: dgraphResolversTypes.McpRegistryServer[] };
+    }>(UPDATE_REGISTRY_SERVER, {
+      id: serverId,
+      ...updateFields,
+    });
+
+    return res.updateMCPRegistryServer.mCPRegistryServer[0];
+  }
+
+  async removeServerFromWorkspace(serverId: string): Promise<dgraphResolversTypes.McpRegistryServer> {
+    // Check if server can be deleted
+    const canModify = await this.canModifyServer(serverId);
+    if (!canModify) {
+      throw new Error('Cannot delete server that has linked configurations');
+    }
+
+    const res = await this.dgraphService.mutation<{
+      deleteMCPRegistryServer: { mCPRegistryServer: dgraphResolversTypes.McpRegistryServer[] };
+    }>(DELETE_REGISTRY_SERVER, { id: serverId });
+
+    return res.deleteMCPRegistryServer.mCPRegistryServer[0];
+  }
+
+  async findRegistryServersByWorkspace(workspaceId: string): Promise<dgraphResolversTypes.McpRegistryServer[]> {
+    const res = await this.dgraphService.query<{
+      getWorkspace: { registryServers: dgraphResolversTypes.McpRegistryServer[] };
+    }>(QUERY_WORKSPACE_WITH_REGISTRY_SERVERS, { workspaceId });
+    return res.getWorkspace.registryServers || [];
   }
 }

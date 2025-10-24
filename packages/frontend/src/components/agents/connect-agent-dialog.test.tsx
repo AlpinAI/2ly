@@ -31,11 +31,11 @@ describe('ConnectAgentDialog', () => {
       name: 'Test Workspace',
       createdAt: new Date(),
       globalRuntime: null,
-      mcpRegistries: null,
-      mcpServers: null,
-      mcpTools: null,
-      onboardingSteps: null,
-      runtimes: null,
+      registryServers: [],
+      mcpServers: [],
+      mcpTools: [],
+      onboardingSteps: [],
+      runtimes: [],
     },
   };
 

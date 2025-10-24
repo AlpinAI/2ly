@@ -1,5 +1,5 @@
 mutation AddServerToRegistry(
-  $registryId: ID!
+  $workspaceId: ID!
   $name: String!
   $description: String!
   $title: String!
@@ -9,7 +9,7 @@ mutation AddServerToRegistry(
   $remotes: String
 ) {
   addServerToRegistry(
-    registryId: $registryId
+    workspaceId: $workspaceId
     name: $name
     description: $description
     title: $title

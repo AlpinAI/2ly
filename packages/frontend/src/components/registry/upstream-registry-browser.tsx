@@ -29,7 +29,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { useMCPRegistries } from '@/hooks/useMCPRegistries';
+import { useWorkspaceId } from '@/stores/workspaceStore';
 import { AddServerToRegistryDocument } from '@/graphql/generated/graphql';
 import { useUpstreamRegistryServers } from '@/hooks/useUpstreamRegistryServers';
 import type { UpstreamServer } from '@/hooks/useUpstreamRegistryServers';
@@ -44,8 +44,7 @@ export function UpstreamRegistryBrowser({
   onServerAdded,
   onCancel,
 }: UpstreamRegistryBrowserProps) {
-  const { registries } = useMCPRegistries();
-  const privateRegistry = registries[0];
+  const workspaceId = useWorkspaceId();
 
   const [selectedRegistryId, setSelectedRegistryId] = useState(REGISTRY_CONFIGURATIONS[0].id);
   const [customUrl, setCustomUrl] = useState('');
@@ -53,7 +52,7 @@ export function UpstreamRegistryBrowser({
   const [installingServerId, setInstallingServerId] = useState<string | null>(null);
 
   const [addServerToRegistry] = useMutation(AddServerToRegistryDocument, {
-    refetchQueries: ['GetMCPRegistries'],
+    refetchQueries: ['GetRegistryServers'],
     onError: (err) => {
       console.error('[UpstreamRegistryBrowser] Install server error:', err);
     },
@@ -79,8 +78,8 @@ export function UpstreamRegistryBrowser({
   });
 
   const handleInstall = async (server: UpstreamServer) => {
-    if (!privateRegistry?.id) {
-      console.error('No private registry found');
+    if (!workspaceId) {
+      console.error('No workspace ID found');
       return;
     }
 
@@ -88,7 +87,7 @@ export function UpstreamRegistryBrowser({
     try {
       const result = await addServerToRegistry({
         variables: {
-          registryId: privateRegistry.id,
+          workspaceId,
           name: server.name,
           description: server.description,
           title: server.title,

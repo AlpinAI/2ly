@@ -1,8 +1,8 @@
 /**
  * PrivateRegistrySection Component
  *
- * WHY: Displays the workspace's private MCP registry and manages its servers.
- * Each workspace has exactly one private registry for custom server configurations.
+ * WHY: Displays the workspace's private MCP registry servers.
+ * All registry servers are now stored directly on the workspace.
  *
  * WHAT IT SHOWS:
  * - Master-detail layout with server table and detail panel
@@ -16,30 +16,26 @@ import { AlertCircle } from 'lucide-react';
 import { MasterDetailLayout } from '@/components/layout/master-detail-layout';
 import { RegistryServerTable } from './registry-server-table';
 import { RegistryServerDetail } from './registry-server-detail';
-import { GetMcpRegistriesQuery } from '@/graphql/generated/graphql';
+import { GetRegistryServersQuery } from '@/graphql/generated/graphql';
 
 interface PrivateRegistrySectionProps {
-  registries: GetMcpRegistriesQuery['mcpRegistries'];
+  registryServers: GetRegistryServersQuery['getRegistryServers'];
   loading: boolean;
   error?: Error | null;
 }
 
 export function PrivateRegistrySection({
-  registries,
+  registryServers,
   loading,
   error,
 }: PrivateRegistrySectionProps) {
   const [selectedServerId, setSelectedServerId] = useState<string | null>(null);
 
-  // Get the first (and only) registry - the private registry
-  const privateRegistry = registries![0];
-  const servers = privateRegistry?.servers || [];
-
   // Get selected server
   const selectedServer = useMemo(() => {
     if (!selectedServerId) return null;
-    return servers.find((s) => s.id === selectedServerId) || null;
-  }, [selectedServerId, servers]);
+    return registryServers.find((s) => s.id === selectedServerId) || null;
+  }, [selectedServerId, registryServers]);
 
   return (
     <div className="h-full flex flex-col">
@@ -63,7 +59,7 @@ export function PrivateRegistrySection({
         <MasterDetailLayout
           table={
             <RegistryServerTable
-              servers={servers}
+              servers={registryServers}
               selectedServerId={selectedServerId}
               onSelectServer={setSelectedServerId}
               loading={loading}

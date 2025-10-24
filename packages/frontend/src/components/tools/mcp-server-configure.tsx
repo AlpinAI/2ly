@@ -41,12 +41,10 @@ import {
   SubscribeMcpServersDocument,
   McpServerRunOn,
 } from '@/graphql/generated/graphql';
-import type { GetMcpRegistriesQuery } from '@/graphql/generated/graphql';
+import type { GetRegistryServersQuery } from '@/graphql/generated/graphql';
 
 // Extract server type
-type MCPRegistryServer = NonNullable<
-  NonNullable<GetMcpRegistriesQuery['mcpRegistries']>[number]['servers']
->[number];
+type MCPRegistryServer = GetRegistryServersQuery['getRegistryServers'][number];
 
 interface MCPServerConfigureProps {
   selectedServer: MCPRegistryServer;
@@ -206,7 +204,7 @@ export function MCPServerConfigure({ selectedServer, onBack, onSuccess }: MCPSer
           config: input.config,
           registryServerId: selectedServer.id,
         },
-        refetchQueries: ['GetMCPRegistries'],
+        refetchQueries: ['GetRegistryServers'],
       });
 
       const serverId = data?.createMCPServer?.id;

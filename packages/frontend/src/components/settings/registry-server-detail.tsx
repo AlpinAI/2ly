@@ -23,9 +23,9 @@ import { useMutation } from '@apollo/client/react';
 import { Server, ExternalLink, Trash2, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useNotification } from '@/contexts/NotificationContext';
-import { GetMcpRegistriesQuery, RemoveServerFromRegistryDocument } from '@/graphql/generated/graphql';
+import { GetRegistryServersQuery, RemoveServerFromRegistryDocument } from '@/graphql/generated/graphql';
 
-type RegistryServer = NonNullable<NonNullable<GetMcpRegistriesQuery['mcpRegistries']>[number]['servers']>[number];
+type RegistryServer = GetRegistryServersQuery['getRegistryServers'][number];
 
 export interface RegistryServerDetailProps {
   server: RegistryServer;
@@ -35,7 +35,7 @@ export interface RegistryServerDetailProps {
 export function RegistryServerDetail({ server, onDeleted }: RegistryServerDetailProps) {
   const { confirm } = useNotification();
   const [deleteServer, { loading: deleting }] = useMutation(RemoveServerFromRegistryDocument, {
-    refetchQueries: ['GetMCPRegistries'],
+    refetchQueries: ['GetRegistryServers'],
     onCompleted: () => {
       onDeleted?.();
     },

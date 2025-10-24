@@ -1,0 +1,22 @@
+# Get Registry Servers
+# WHY: Fetches MCP registry servers for a workspace. Used by useMCPRegistries hook and private registry components.
+
+query GetRegistryServers($workspaceId: ID!) {
+  getRegistryServers(workspaceId: $workspaceId) {
+    id
+    name
+    title
+    description
+    repositoryUrl
+    version
+    packages
+    remotes
+    _meta
+    createdAt
+    lastSeenAt
+    configurations {
+      id
+      name
+    }
+  }
+}
