@@ -131,7 +131,6 @@ export class ToolClientService extends Service {
     // Stop MCP servers
     // -> will also drain the capabilities subscriptions
     for (const mcpServer of this.mcpServers.values()) {
-      console.log('Stopping MCP Server', mcpServer.getName());
       await this.stopService(mcpServer);
     }
     this.mcpServers.clear();

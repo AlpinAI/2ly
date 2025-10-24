@@ -51,6 +51,7 @@ type MCPServer {
   tools: [MCPTool!]
   runOn: MCPServerRunOn
   runtime: Runtime
+  registryServer: MCPRegistryServer!
   workspace: Workspace!
 }
 
@@ -169,7 +170,6 @@ type MCPRegistry2lyMetadata {
 type MCPRegistry {
   id: ID!
   name: String!
-  upstreamUrl: String!
   createdAt: Date!
   lastSyncAt: Date
   workspace: Workspace!
@@ -189,6 +189,7 @@ type MCPRegistryServer {
   createdAt: Date!
   lastSeenAt: Date!
   registry: MCPRegistry!
+  configurations: [MCPServer!]
 }
 
 # Monitoring types for scalable tool call queries
@@ -257,6 +258,7 @@ type Mutation {
     config: String!
     runOn: MCPServerRunOn
     workspaceId: ID!
+    registryServerId: ID!
   ): MCPServer!
   updateMCPServer(
     id: ID!
@@ -283,9 +285,31 @@ type Mutation {
   updateMCPServerRunOn(mcpServerId: ID!, runOn: MCPServerRunOn!, runtimeId: ID): MCPServer!
 
   # Registry mutations
-  createMCPRegistry(workspaceId: ID!, name: String!, upstreamUrl: String!): MCPRegistry!
+  createMCPRegistry(workspaceId: ID!, name: String!): MCPRegistry!
   deleteMCPRegistry(id: ID!): MCPRegistry!
-  syncUpstreamRegistry(registryId: ID!): MCPRegistry!
+
+  # Registry server mutations
+  addServerToRegistry(
+    registryId: ID!
+    name: String!
+    description: String!
+    title: String!
+    repositoryUrl: String!
+    version: String!
+    packages: String
+    remotes: String
+  ): MCPRegistryServer!
+  updateServerInRegistry(
+    serverId: ID!
+    name: String
+    description: String
+    title: String
+    repositoryUrl: String
+    version: String
+    packages: String
+    remotes: String
+  ): MCPRegistryServer!
+  removeServerFromRegistry(serverId: ID!): MCPRegistryServer!
 
   # Playground mutations
   callMCPTool(toolId: ID!, input: String!): CallToolResult!

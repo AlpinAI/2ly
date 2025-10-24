@@ -23,6 +23,7 @@ import { MCPServerBrowser } from '@/components/tools/mcp-server-browser';
 import { MCPServerConfigure } from '@/components/tools/mcp-server-configure';
 import { useUIStore } from '@/stores/uiStore';
 import { useCloseOnNavigation } from '@/hooks/useCloseOnNavigation';
+import { useMCPRegistries } from '@/hooks/useMCPRegistries';
 import type { GetMcpRegistriesQuery } from '@/graphql/generated/graphql';
 
 // Extract server type
@@ -73,6 +74,11 @@ export function AddSourceWorkflow() {
   const setOpen = useUIStore((state) => state.setAddSourceWorkflowOpen);
   const initialStep = useUIStore((state) => state.addSourceWorkflowInitialStep);
   const setInitialStep = useUIStore((state) => state.setAddSourceWorkflowInitialStep);
+  const serverId = useUIStore((state) => state.addSourceWorkflowServerId);
+  const setServerId = useUIStore((state) => state.setAddSourceWorkflowServerId);
+
+  // Get registries data to fetch server by ID
+  const { registries } = useMCPRegistries();
 
   // Local workflow state
   const [currentStep, setCurrentStep] = useState<WorkflowStep>('selection');
@@ -83,22 +89,26 @@ export function AddSourceWorkflow() {
   const handleClose = useCallback(() => {
     setOpen(false);
     setInitialStep(null);
+    setServerId(null);
     // Reset workflow state
     setCurrentStep('selection');
     setSelectedCategory(null);
     setSelectedServer(null);
-  }, [setOpen, setInitialStep]);
+  }, [setOpen, setInitialStep, setServerId]);
 
   // Auto-close on navigation
   useCloseOnNavigation(handleClose);
 
-  // Set initial step and reset state when opening/closing
+  // Effect 1: Handle panel open/close and initial step changes
+  // NOTE: Does not depend on registries to avoid resetting when data refetches
   useEffect(() => {
     if (isOpen) {
       // Set initial step and category based on initialStep from store
       if (initialStep) {
         setCurrentStep(initialStep);
         if (initialStep === 'mcp-browser') {
+          setSelectedCategory('mcp');
+        } else if (initialStep === 'mcp-config') {
           setSelectedCategory('mcp');
         }
       } else {
@@ -112,6 +122,19 @@ export function AddSourceWorkflow() {
       setSelectedServer(null);
     }
   }, [isOpen, initialStep]);
+
+  // Effect 2: Handle server lookup when serverId changes (for direct navigation to config)
+  // This is separate to prevent registry refetches from resetting workflow state
+  useEffect(() => {
+    if (isOpen && initialStep === 'mcp-config' && serverId && registries.length > 0) {
+      const server = registries
+        .flatMap((reg) => reg.servers || [])
+        .find((s) => s.id === serverId);
+      if (server) {
+        setSelectedServer(server);
+      }
+    }
+  }, [isOpen, initialStep, serverId, registries]);
 
   const handleCategorySelect = (category: SourceCategory) => {
     setSelectedCategory(category);

@@ -1,0 +1,30 @@
+mutation AddServerToRegistry(
+  $registryId: ID!
+  $name: String!
+  $description: String!
+  $title: String!
+  $repositoryUrl: String!
+  $version: String!
+  $packages: String
+  $remotes: String
+) {
+  addServerToRegistry(
+    registryId: $registryId
+    name: $name
+    description: $description
+    title: $title
+    repositoryUrl: $repositoryUrl
+    version: $version
+    packages: $packages
+    remotes: $remotes
+  ) {
+    id
+    name
+    title
+    description
+    version
+    repositoryUrl
+    packages
+    remotes
+  }
+}

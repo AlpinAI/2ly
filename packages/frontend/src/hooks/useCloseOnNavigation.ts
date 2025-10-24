@@ -25,7 +25,7 @@
  * - Consistent: Same pattern across all panels
  */
 
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
 
 /**
@@ -45,8 +45,16 @@ import { useLocation } from 'react-router-dom';
  */
 export function useCloseOnNavigation(onClose: () => void) {
   const location = useLocation();
+  const isInitialMount = useRef(true);
 
   useEffect(() => {
+    // Skip the effect on initial mount
+    if (isInitialMount.current) {
+      isInitialMount.current = false;
+      return;
+    }
+
+    // Call onClose when pathname changes (after initial mount)
     onClose();
   }, [location.pathname, onClose]);
 }

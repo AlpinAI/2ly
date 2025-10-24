@@ -4,7 +4,6 @@ query GetMCPRegistries($workspaceId: ID!) {
   mcpRegistries(workspaceId: $workspaceId) {
     id
     name
-    upstreamUrl
     createdAt
     lastSyncAt
     servers {
@@ -19,6 +18,9 @@ query GetMCPRegistries($workspaceId: ID!) {
       _meta
       createdAt
       lastSeenAt
+      configurations {
+        id
+      }
     }
   }
 }

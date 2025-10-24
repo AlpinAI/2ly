@@ -8,6 +8,7 @@ export const ADD_MCPSERVER = gql`
     $transport: MCPTransportType!
     $config: String!
     $workspaceId: ID!
+    $registryServerId: ID!
     $runOn: MCPServerRunOn
   ) {
     addMCPServer(
@@ -19,6 +20,7 @@ export const ADD_MCPSERVER = gql`
         config: $config
         runOn: $runOn
         workspace: { id: $workspaceId }
+        registryServer: { id: $registryServerId }
       }
     ) {
       mCPServer {
@@ -30,6 +32,10 @@ export const ADD_MCPSERVER = gql`
         config
         runOn
         workspace {
+          id
+          name
+        }
+        registryServer {
           id
           name
         }

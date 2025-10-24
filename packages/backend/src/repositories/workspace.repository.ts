@@ -16,7 +16,6 @@ import {
   UPDATE_ONBOARDING_STEP_STATUS,
 } from './workspace.operations';
 import {
-  QUERY_WORKSPACE_WITH_REGISTRIES,
   ADD_MCP_REGISTRY,
   ADD_REGISTRY_SERVER,
 } from './registry.operations';
@@ -70,8 +69,8 @@ export class WorkspaceRepository {
       await this.dgraphService.mutation(ADD_REGISTRY_SERVER, {
         name: server.name,
         description: server.description,
-        title: server.title,
-        repositoryUrl: server.repositoryUrl,
+        title: server.name,
+        repositoryUrl: server.repository?.url || '',
         version: server.version,
         packages: JSON.stringify(server.packages),
         remotes: server.remotes ? JSON.stringify(server.remotes) : null,
@@ -274,12 +273,6 @@ export class WorkspaceRepository {
     let shouldComplete = false;
 
     switch (stepId) {
-      case 'choose-mcp-registry':
-        { const mcpRegistries = await this.dgraphService.query<{
-          getWorkspace: { mcpRegistries: { id: string }[] };
-        }>(QUERY_WORKSPACE_WITH_REGISTRIES, { workspaceId });
-        shouldComplete = (mcpRegistries.getWorkspace.mcpRegistries?.length || 0) > 0;
-        break; }
       case 'install-mcp-server':
         { const servers = await this.dgraphService.query<{
           getWorkspace: { mcpServers: { id: string }[] };

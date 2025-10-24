@@ -1,0 +1,6 @@
+mutation RemoveServerFromRegistry($serverId: ID!) {
+  removeServerFromRegistry(serverId: $serverId) {
+    id
+    name
+  }
+}

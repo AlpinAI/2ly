@@ -33,6 +33,7 @@ import { Outlet } from 'react-router-dom';
 import { AppHeader } from './app-header';
 import { AppNavigation } from './app-navigation';
 import { AddSourceWorkflow } from '@/components/sources/add-source-workflow';
+import { AddServerWorkflow } from '@/components/registry/add-server-workflow';
 import { ToolManagementPanel } from '@/components/toolsets/tool-management-panel';
 import { CreateToolSetDialog } from '@/components/tool-sets/create-tool-set-dialog';
 import { ConnectAgentDialog } from '@/components/agents/connect-agent-dialog';
@@ -54,6 +55,7 @@ export function AppLayout() {
 
       {/* Global bottom panels - self-contained, accessible from any page */}
       <AddSourceWorkflow />
+      <AddServerWorkflow />
       <ToolManagementPanel />
 
       {/* Global dialogs - accessible from any page */}

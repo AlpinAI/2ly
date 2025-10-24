@@ -69,6 +69,7 @@ describe('ToolServerService', () => {
         config: JSON.stringify({ identifier: 'test-package', registryType: 'npm' }),
         repositoryUrl: 'https://example.com',
         workspace: {} as any,
+        registryServer: {} as any,
         tools: [createMockTool('tool1'), createMockTool('tool2')],
       };
 
@@ -93,6 +94,7 @@ describe('ToolServerService', () => {
         config: JSON.stringify({ url: 'https://example.com/sse', type: 'sse' }),
         repositoryUrl: 'https://example.com',
         workspace: {} as any,
+        registryServer: {} as any,
         tools: undefined, // No tools
       };
 
@@ -112,6 +114,7 @@ describe('ToolServerService', () => {
         config: JSON.stringify({ url: 'https://example.com/stream', type: 'streamableHttp' }),
         repositoryUrl: 'https://example.com',
         workspace: {} as any,
+        registryServer: {} as any,
         tools: [], // Empty tools array
       };
 
@@ -133,6 +136,7 @@ describe('ToolServerService', () => {
         config: JSON.stringify({ identifier: 'test-package', registryType: 'npm' }),
         repositoryUrl: 'https://example.com',
         workspace: {} as any,
+        registryServer: {} as any,
         tools: [createMockTool('tool1')],
       };
 
@@ -159,6 +163,7 @@ describe('ToolServerService', () => {
         config: JSON.stringify({ identifier: 'test-package', registryType: 'npm' }),
         repositoryUrl: 'https://example.com',
         workspace: {} as any,
+        registryServer: {} as any,
         tools: [],
       };
 
@@ -190,6 +195,7 @@ describe('ToolServerService', () => {
         config: JSON.stringify({ identifier: 'test-package', registryType: 'npm' }),
         repositoryUrl: 'https://example.com',
         workspace: {} as any,
+        registryServer: {} as any,
         tools: [
           createMockTool('tool1'),
           createMockTool('tool2'),
@@ -223,6 +229,7 @@ describe('ToolServerService', () => {
         description: 'Test server',
         repositoryUrl: 'https://example.com',
         workspace: {} as any,
+        registryServer: {} as any,
         tools: [],
       };
 
@@ -264,6 +271,7 @@ describe('ToolServerService', () => {
         config: JSON.stringify({ identifier: 'test-package', registryType: 'npm' }),
         repositoryUrl: 'https://example.com',
         workspace: {} as any,
+        registryServer: {} as any,
       };
 
       const service = new ToolServerService(logger, config, []);
@@ -281,6 +289,7 @@ describe('ToolServerService', () => {
         config: JSON.stringify({ identifier: 'test-package', registryType: 'npm' }),
         repositoryUrl: 'https://example.com',
         workspace: {} as any,
+        registryServer: {} as any,
       };
 
       const service = new ToolServerService(logger, config, []);

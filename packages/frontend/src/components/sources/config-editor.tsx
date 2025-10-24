@@ -37,8 +37,7 @@ export function ConfigEditor({
   
   if (fields.length === 0) {
     return (
-      <div className="text-center py-6">
-        <div className="text-3xl mb-2">✨</div>
+      <div className="py-6">
         <p className="text-sm text-gray-600 dark:text-gray-400">{emptyMessage}</p>
       </div>
     );

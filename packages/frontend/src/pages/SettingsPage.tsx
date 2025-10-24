@@ -12,129 +12,65 @@
  */
 
 import { useState } from 'react';
-import { Database, Users, Cpu, Key } from 'lucide-react';
-import { useMutation } from '@apollo/client/react';
+import { Database, Users, Cpu, Key, Plus } from 'lucide-react';
 import { useWorkspaceId } from '@/stores/workspaceStore';
 import { useMCPRegistries } from '@/hooks/useMCPRegistries';
-import { useRegistrySyncStore } from '@/stores/registrySyncStore';
-import { useRegistryAutoSync } from '@/hooks/useRegistryAutoSync';
-import {
-  CreateMcpRegistryDocument,
-  DeleteMcpRegistryDocument,
-  SyncUpstreamRegistryDocument,
-} from '@/graphql/generated/graphql';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-import { McpRegistrySection } from '@/components/settings/mcp-registry-section';
+import { Button } from '@/components/ui/button';
+import { PrivateRegistrySection } from '@/components/settings/private-registry-section';
 import { UsersRolesSection } from '@/components/settings/users-roles-section';
 import { RuntimesSection } from '@/components/settings/runtimes-section';
 import { ApiKeysSection } from '@/components/settings/api-keys-section';
+import { useAddServerWorkflow } from '@/stores/uiStore';
 
 
 export default function SettingsPage() {
   const workspaceId = useWorkspaceId();
-  const { startSync, endSync, updateLastSyncTime, isSyncing } = useRegistrySyncStore();
-  const { autoSyncRegistry } = useRegistryAutoSync();
-  const [syncingRegistryId, setSyncingRegistryId] = useState<string | null>(null);
+  const { registries, loading, error } = useMCPRegistries();
+  const { setOpen: setAddServerWorkflowOpen } = useAddServerWorkflow();
+  const [activeTab, setActiveTab] = useState('private-registry');
 
   console.log('[SettingsPage] Rendering with workspaceId:', workspaceId);
 
-  // Get registries data via hook - poll during sync to show server count updates
-  const pollInterval = syncingRegistryId && isSyncing(syncingRegistryId) ? 3000 : 0;
-  const { registries, loading, error } = useMCPRegistries(pollInterval);
-
-  // Mutations
-  const [createRegistry, { loading: creating }] = useMutation(CreateMcpRegistryDocument, {
-    refetchQueries: ['GetMCPRegistries'],
-    onError: (err) => {
-      console.error('[SettingsPage] Create registry error:', err);
-    },
-  });
-
-  const [deleteRegistry] = useMutation(DeleteMcpRegistryDocument, {
-    refetchQueries: ['GetMCPRegistries'],
-    onError: (err) => {
-      console.error('[SettingsPage] Delete registry error:', err);
-    },
-  });
-
-  const [syncRegistry] = useMutation(SyncUpstreamRegistryDocument);
-
-  const handleCreateRegistry = async (name: string, upstreamUrl: string) => {
-    if (!workspaceId) return;
-
-    try {
-      const result = await createRegistry({
-        variables: {
-          workspaceId,
-          name,
-          upstreamUrl,
-        },
-      });
-
-      // Auto-sync the newly created registry
-      const registryId = result.data?.createMCPRegistry?.id;
-      if (registryId) {
-        setSyncingRegistryId(registryId);
-        await autoSyncRegistry(registryId);
-        setSyncingRegistryId(null);
-      }
-    } catch (error) {
-      console.error('[SettingsPage] Failed to create and sync registry:', error);
-      setSyncingRegistryId(null);
-    }
-  };
-
-  const handleDeleteRegistry = async (id: string) => {
-    await deleteRegistry({ variables: { id } });
-  };
-
-  const handleSyncRegistry = async (id: string) => {
-    if (isSyncing(id)) return; // Prevent duplicate sync
-    
-    startSync(id);
-    try {
-      await syncRegistry({ variables: { registryId: id } });
-      updateLastSyncTime(id, new Date());
-    } finally {
-      endSync(id);
-    }
-  };
-
   return (
-    <div className="max-w-7xl mx-auto">
+    <div className="h-full flex flex-col max-w-7xl mx-auto">
       <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-6">Settings</h2>
 
-      <Tabs defaultValue="registries" className="w-full">
-        <TabsList className="mb-6">
-          <TabsTrigger value="registries" className="flex items-center gap-2">
-            <Database className="h-4 w-4" />
-            <span>MCP Registries</span>
-          </TabsTrigger>
-          <TabsTrigger value="users" className="flex items-center gap-2">
-            <Users className="h-4 w-4" />
-            <span>Users & Roles</span>
-          </TabsTrigger>
-          <TabsTrigger value="runtimes" className="flex items-center gap-2">
-            <Cpu className="h-4 w-4" />
-            <span>Runtimes</span>
-          </TabsTrigger>
-          <TabsTrigger value="api-keys" className="flex items-center gap-2">
-            <Key className="h-4 w-4" />
-            <span>API Keys</span>
-          </TabsTrigger>
-        </TabsList>
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col min-h-0">
+        <div className="flex items-center justify-between mb-6">
+          <TabsList>
+            <TabsTrigger value="private-registry" className="flex items-center gap-2">
+              <Database className="h-4 w-4" />
+              <span>Private Registry</span>
+            </TabsTrigger>
+            <TabsTrigger value="users" className="flex items-center gap-2">
+              <Users className="h-4 w-4" />
+              <span>Users & Roles</span>
+            </TabsTrigger>
+            <TabsTrigger value="runtimes" className="flex items-center gap-2">
+              <Cpu className="h-4 w-4" />
+              <span>Runtimes</span>
+            </TabsTrigger>
+            <TabsTrigger value="api-keys" className="flex items-center gap-2">
+              <Key className="h-4 w-4" />
+              <span>API Keys</span>
+            </TabsTrigger>
+          </TabsList>
 
-        <TabsContent value="registries">
-          <McpRegistrySection
+          {/* Conditional Action Button - Only show for Private Registry */}
+          {activeTab === 'private-registry' && !loading && (
+            <Button onClick={() => setAddServerWorkflowOpen(true)} size="sm">
+              <Plus className="mr-2 h-4 w-4" />
+              Add MCP Server
+            </Button>
+          )}
+        </div>
+
+        <TabsContent value="private-registry" className="flex-1 min-h-0">
+          <PrivateRegistrySection
             registries={registries}
             loading={loading}
             error={error}
-            isSyncing={isSyncing}
-            onCreateRegistry={handleCreateRegistry}
-            onSyncRegistry={handleSyncRegistry}
-            onDeleteRegistry={handleDeleteRegistry}
-            isCreating={creating}
-            workspaceId={workspaceId}
           />
         </TabsContent>
 

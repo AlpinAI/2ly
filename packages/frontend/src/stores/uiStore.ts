@@ -48,6 +48,12 @@ interface UIState {
   setAddSourceWorkflowOpen: (open: boolean) => void;
   addSourceWorkflowInitialStep: 'selection' | 'mcp-browser' | 'mcp-config' | null;
   setAddSourceWorkflowInitialStep: (step: 'selection' | 'mcp-browser' | 'mcp-config' | null) => void;
+  addSourceWorkflowServerId: string | null;
+  setAddSourceWorkflowServerId: (serverId: string | null) => void;
+  addServerWorkflowOpen: boolean;
+  setAddServerWorkflowOpen: (open: boolean) => void;
+  addServerWorkflowInitialStep: 'selection' | 'upstream' | 'easy-manual' | 'advanced-manual' | null;
+  setAddServerWorkflowInitialStep: (step: 'selection' | 'upstream' | 'easy-manual' | 'advanced-manual' | null) => void;
   manageToolsDialogOpen: boolean;
   setManageToolsDialogOpen: (open: boolean) => void;
   selectedToolSetForManagement: string | null;
@@ -106,6 +112,12 @@ export const useUIStore = create<UIState>()(
         setAddSourceWorkflowOpen: (open) => set({ addSourceWorkflowOpen: open }),
         addSourceWorkflowInitialStep: null,
         setAddSourceWorkflowInitialStep: (step) => set({ addSourceWorkflowInitialStep: step }),
+        addSourceWorkflowServerId: null,
+        setAddSourceWorkflowServerId: (serverId) => set({ addSourceWorkflowServerId: serverId }),
+        addServerWorkflowOpen: false,
+        setAddServerWorkflowOpen: (open) => set({ addServerWorkflowOpen: open }),
+        addServerWorkflowInitialStep: null,
+        setAddServerWorkflowInitialStep: (step) => set({ addServerWorkflowInitialStep: step }),
         manageToolsDialogOpen: false,
         setManageToolsDialogOpen: (open) => set({ manageToolsDialogOpen: open }),
         selectedToolSetForManagement: null,
@@ -220,6 +232,10 @@ export const useAddSourceWorkflow = () =>
   useUIStore((state) => ({
     open: state.addSourceWorkflowOpen,
     setOpen: state.setAddSourceWorkflowOpen,
+    serverId: state.addSourceWorkflowServerId,
+    setServerId: state.setAddSourceWorkflowServerId,
+    initialStep: state.addSourceWorkflowInitialStep,
+    setInitialStep: state.setAddSourceWorkflowInitialStep,
   }));
 
 export const useManageToolsDialog = () => {
@@ -261,5 +277,19 @@ export const useConnectAgentDialog = () => {
     setOpen,
     selectedAgentId,
     setSelectedAgentId,
+  };
+};
+
+export const useAddServerWorkflow = () => {
+  const open = useUIStore((state) => state.addServerWorkflowOpen);
+  const setOpen = useUIStore((state) => state.setAddServerWorkflowOpen);
+  const initialStep = useUIStore((state) => state.addServerWorkflowInitialStep);
+  const setInitialStep = useUIStore((state) => state.setAddServerWorkflowInitialStep);
+
+  return {
+    open,
+    setOpen,
+    initialStep,
+    setInitialStep,
   };
 };

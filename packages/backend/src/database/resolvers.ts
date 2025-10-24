@@ -120,6 +120,7 @@ export const resolvers = (container: Container = defaultContainer): apolloResolv
           config,
           runOn,
           workspaceId,
+          registryServerId,
         }: {
           name: string;
           description: string;
@@ -128,6 +129,7 @@ export const resolvers = (container: Container = defaultContainer): apolloResolv
           config: string;
           runOn?: MCP_SERVER_RUN_ON | null;
           workspaceId: string;
+          registryServerId: string;
         },
       ) => {
         return mcpServerRepository.create(
@@ -138,6 +140,7 @@ export const resolvers = (container: Container = defaultContainer): apolloResolv
           config,
           runOn ?? null,
           workspaceId,
+          registryServerId,
         );
       },
       createRuntime: async (
@@ -270,16 +273,46 @@ export const resolvers = (container: Container = defaultContainer): apolloResolv
       },
       createMCPRegistry: async (
         _parent: unknown,
-        { workspaceId, name, upstreamUrl }: { workspaceId: string; name: string; upstreamUrl: string },
+        { workspaceId, name }: { workspaceId: string; name: string },
       ) => {
-        console.log('create mcp registry', workspaceId, name, upstreamUrl);
-        return registryRepository.createRegistry(workspaceId, name, upstreamUrl);
+        console.log('create mcp registry', workspaceId, name);
+        return registryRepository.createRegistry(workspaceId, name);
       },
       deleteMCPRegistry: async (_parent: unknown, { id }: { id: string }) => {
         return registryRepository.deleteRegistry(id);
       },
-      syncUpstreamRegistry: async (_parent: unknown, { registryId }: { registryId: string }) => {
-        return registryRepository.syncUpstream(registryId);
+
+      // Registry server mutations
+      addServerToRegistry: async (
+        _parent: unknown,
+        args: apolloResolversTypes.MutationAddServerToRegistryArgs,
+      ) => {
+        return registryRepository.addServerToRegistry(args.registryId, {
+          name: args.name,
+          description: args.description,
+          title: args.title,
+          repositoryUrl: args.repositoryUrl,
+          version: args.version,
+          packages: args.packages ?? undefined,
+          remotes: args.remotes ?? undefined,
+        });
+      },
+      updateServerInRegistry: async (
+        _parent: unknown,
+        args: apolloResolversTypes.MutationUpdateServerInRegistryArgs,
+      ) => {
+        return registryRepository.updateServerInRegistry(args.serverId, {
+          name: args.name ?? undefined,
+          description: args.description ?? undefined,
+          title: args.title ?? undefined,
+          repositoryUrl: args.repositoryUrl ?? undefined,
+          version: args.version ?? undefined,
+          packages: args.packages ?? undefined,
+          remotes: args.remotes ?? undefined,
+        });
+      },
+      removeServerFromRegistry: async (_parent: unknown, { serverId }: { serverId: string }) => {
+        return registryRepository.removeServerFromRegistry(serverId);
       },
 
       // Onboarding mutations

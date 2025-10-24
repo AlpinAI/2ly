@@ -37,6 +37,7 @@ export class MCPServerRepository {
     config: string,
     runOn: MCP_SERVER_RUN_ON | null,
     workspaceId: string,
+    registryServerId: string,
   ): Promise<dgraphResolversTypes.McpServer> {
     const res = await this.dgraphService.mutation<{
       addMCPServer: { mCPServer: dgraphResolversTypes.McpServer[] };
@@ -47,6 +48,7 @@ export class MCPServerRepository {
       transport,
       config,
       workspaceId,
+      registryServerId,
       runOn,
     });
     const created = res.addMCPServer.mCPServer[0];

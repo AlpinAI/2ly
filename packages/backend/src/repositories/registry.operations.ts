@@ -1,11 +1,10 @@
 import { gql } from 'urql';
 
 export const ADD_MCP_REGISTRY = gql`
-  mutation addMCPRegistry($name: String!, $upstreamUrl: String!, $workspaceId: ID!, $now: DateTime!) {
+  mutation addMCPRegistry($name: String!, $workspaceId: ID!, $now: DateTime!) {
     addMCPRegistry(
       input: {
         name: $name
-        upstreamUrl: $upstreamUrl
         createdAt: $now
         workspace: { id: $workspaceId }
       }
@@ -13,7 +12,6 @@ export const ADD_MCP_REGISTRY = gql`
       mCPRegistry {
         id
         name
-        upstreamUrl
         createdAt
         lastSyncAt
         workspace {
@@ -30,7 +28,6 @@ export const GET_MCP_REGISTRY = gql`
     getMCPRegistry(id: $id) {
       id
       name
-      upstreamUrl
       createdAt
       lastSyncAt
       workspace {
@@ -49,6 +46,10 @@ export const GET_MCP_REGISTRY = gql`
         _meta
         createdAt
         lastSeenAt
+        configurations {
+          id
+          name
+        }
       }
     }
   }
@@ -61,7 +62,6 @@ export const QUERY_WORKSPACE_WITH_REGISTRIES = gql`
       mcpRegistries {
         id
         name
-        upstreamUrl
         createdAt
         lastSyncAt
         servers {
@@ -76,6 +76,10 @@ export const QUERY_WORKSPACE_WITH_REGISTRIES = gql`
           _meta
           createdAt
           lastSeenAt
+          configurations {
+            id
+            name
+          }
         }
       }
     }
@@ -98,7 +102,6 @@ export const DELETE_MCP_REGISTRY = gql`
       mCPRegistry {
         id
         name
-        upstreamUrl
         createdAt
         lastSyncAt
         workspace {
@@ -158,52 +161,80 @@ export const ADD_REGISTRY_SERVER = gql`
   }
 `;
 
-export const UPDATE_REGISTRY_SERVER_LAST_SEEN = gql`
-  mutation updateRegistryServerLastSeen($id: ID!, $lastSeenAt: DateTime!) {
+export const UPDATE_REGISTRY_SERVER = gql`
+  mutation updateRegistryServer(
+    $id: ID!
+    $name: String
+    $description: String
+    $title: String
+    $repositoryUrl: String
+    $version: String
+    $packages: String
+    $remotes: String
+  ) {
     updateMCPRegistryServer(
       input: {
         filter: { id: [$id] }
-        set: { lastSeenAt: $lastSeenAt }
+        set: {
+          name: $name
+          description: $description
+          title: $title
+          repositoryUrl: $repositoryUrl
+          version: $version
+          packages: $packages
+          remotes: $remotes
+        }
       }
     ) {
       mCPRegistryServer {
         id
+        name
+        description
+        title
+        repositoryUrl
+        version
+        packages
+        remotes
+        _meta
+        createdAt
         lastSeenAt
       }
     }
   }
 `;
 
-export const UPDATE_REGISTRY_LAST_SYNC = gql`
-  mutation updateRegistryLastSync($id: ID!, $lastSyncAt: DateTime!) {
-    updateMCPRegistry(
-      input: {
-        filter: { id: [$id] }
-        set: { lastSyncAt: $lastSyncAt }
-      }
-    ) {
-      mCPRegistry {
+export const DELETE_REGISTRY_SERVER = gql`
+  mutation deleteRegistryServer($id: ID!) {
+    deleteMCPRegistryServer(filter: { id: [$id] }) {
+      mCPRegistryServer {
         id
         name
-        upstreamUrl
-        createdAt
-        lastSyncAt
-        workspace {
-          id
-          name
-        }
       }
     }
   }
 `;
 
-export const QUERY_REGISTRY_SERVER_BY_NAME = gql`
-  query queryRegistryServerByName($name: String!) {
-    queryMCPRegistryServer(filter: { name: { eq: $name } }) {
+export const GET_REGISTRY_SERVER = gql`
+  query getRegistryServer($id: ID!) {
+    getMCPRegistryServer(id: $id) {
       id
       name
+      description
+      title
+      repositoryUrl
       version
+      packages
+      remotes
+      _meta
+      createdAt
       lastSeenAt
+      registry {
+        id
+      }
+      configurations {
+        id
+        name
+      }
     }
   }
 `;

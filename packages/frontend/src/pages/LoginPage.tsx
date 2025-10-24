@@ -148,6 +148,29 @@ export default function LoginPage() {
               </div>
             </form>
           </div>
+
+          {/* Privacy and Terms Links */}
+          <div className="text-center mt-6">
+            <p className="text-xs text-gray-500 dark:text-gray-500">
+              <a
+                href="https://www.2ly.ai/privacy-policy"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="hover:text-gray-700 dark:hover:text-gray-400 transition-colors"
+              >
+                Privacy Policy
+              </a>
+              {' • '}
+              <a
+                href="https://www.2ly.ai/terms-of-service"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="hover:text-gray-700 dark:hover:text-gray-400 transition-colors"
+              >
+                Terms of Service
+              </a>
+            </p>
+          </div>
         </div>
       </div>
     </div>

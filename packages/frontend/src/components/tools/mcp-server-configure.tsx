@@ -204,7 +204,9 @@ export function MCPServerConfigure({ selectedServer, onBack, onSuccess }: MCPSer
           repositoryUrl: input.repositoryUrl,
           transport: input.transport,
           config: input.config,
+          registryServerId: selectedServer.id,
         },
+        refetchQueries: ['GetMCPRegistries'],
       });
 
       const serverId = data?.createMCPServer?.id;
