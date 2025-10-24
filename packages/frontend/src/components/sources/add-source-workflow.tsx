@@ -155,7 +155,7 @@ export function AddSourceWorkflow() {
 
   const getStepTitle = (): string => {
     if (currentStep === 'selection') return 'Add Sources';
-    if (currentStep === 'mcp-browser') return 'Browse MCP Servers';
+    if (currentStep === 'mcp-browser') return 'Browse Private Registry';
     if (currentStep === 'mcp-config') return `Configure MCP Server`;
     return 'Add Sources';
   };

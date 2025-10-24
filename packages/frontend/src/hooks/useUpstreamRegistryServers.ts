@@ -99,7 +99,7 @@ export function useUpstreamRegistryServers({
     return () => clearTimeout(timeoutId);
   }, [searchQuery]);
 
-  const fetchServers = useCallback(async () => {
+  const fetchServers = useCallback(async (signal?: AbortSignal) => {
     if (!enabled || !registryUrl) {
       return;
     }
@@ -124,6 +124,7 @@ export function useUpstreamRegistryServers({
         headers: {
           'Accept': 'application/json',
         },
+        signal, // Pass abort signal to fetch
       });
 
       if (!response.ok) {
@@ -139,6 +140,11 @@ export function useUpstreamRegistryServers({
       setNextCursor(data.metadata.nextCursor || null);
       setError(null);
     } catch (err) {
+      // Ignore abort errors (component unmounted or new request started)
+      if (err instanceof Error && err.name === 'AbortError') {
+        return;
+      }
+
       console.error('[useUpstreamRegistryServers] Fetch error:', err);
 
       let errorMessage = 'Failed to fetch servers from registry';
@@ -163,7 +169,13 @@ export function useUpstreamRegistryServers({
 
   // Fetch on mount and when dependencies change
   useEffect(() => {
-    fetchServers();
+    const abortController = new AbortController();
+    fetchServers(abortController.signal);
+
+    // Cleanup: abort the request if component unmounts or dependencies change
+    return () => {
+      abortController.abort();
+    };
   }, [fetchServers]);
 
   return {

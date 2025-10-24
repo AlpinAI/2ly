@@ -9,6 +9,7 @@ import {
   buildStdioTransport,
   buildSseTransport,
   buildStreamTransport,
+  safeParseConfig,
 } from '@2ly/common';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StdioClientTransport, getDefaultEnvironment } from '@modelcontextprotocol/sdk/client/stdio.js';
@@ -59,13 +60,24 @@ export class ToolServerService extends Service {
       };
     });
 
-    // Parse the config field which contains a single Package or Transport object
+    // Parse and validate the config field which contains a single Package or Transport object
     let parsedConfig: ServerPackage | ServerTransport;
     try {
-      parsedConfig = JSON.parse(this.config.config);
-      this.logger.info(`Parsed config: ${JSON.stringify(parsedConfig, null, 2)}`);
+      const rawConfig = JSON.parse(this.config.config);
+      const validationResult = safeParseConfig(rawConfig);
+
+      if (!validationResult.success) {
+        const errorDetails = validationResult.error.issues
+          .map((issue) => `${issue.path.join('.')}: ${issue.message}`)
+          .join(', ');
+        throw new Error(`Config validation failed: ${errorDetails}`);
+      }
+
+      parsedConfig = validationResult.data as ServerPackage | ServerTransport;
+      this.logger.info(`Parsed and validated config: ${JSON.stringify(parsedConfig, null, 2)}`);
     } catch (error) {
-      throw new Error(`Failed to parse config for ${this.config.name}: ${error}`);
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      throw new Error(`Failed to parse config for ${this.config.name}: ${errorMessage}`);
     }
 
     // DEFENSIVE CHECK: Warn if config contains unsubstituted variables

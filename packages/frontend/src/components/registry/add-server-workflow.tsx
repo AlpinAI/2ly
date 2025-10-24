@@ -31,6 +31,9 @@ import { AdvancedManualServerForm } from './advanced-manual-server-form';
 
 type WorkflowStep = 'selection' | 'upstream' | 'easy-manual' | 'advanced-manual';
 
+// Animation timing constants
+const ANIMATION_DURATION_MS = 300;
+
 export function AddServerWorkflow() {
   const { open, setOpen, initialStep, setInitialStep } = useAddServerWorkflow();
   const setAddSourceWorkflowOpen = useUIStore((state) => state.setAddSourceWorkflowOpen);
@@ -52,7 +55,7 @@ export function AddServerWorkflow() {
     setTimeout(() => {
       setCurrentStep('selection');
       setInitialStep(null);
-    }, 300);
+    }, ANIMATION_DURATION_MS);
   }, [setOpen, setInitialStep]);
 
   // Auto-close on navigation
@@ -85,7 +88,7 @@ export function AddServerWorkflow() {
       setAddSourceWorkflowServerId(serverId);
       setAddSourceWorkflowInitialStep('mcp-config');
       setAddSourceWorkflowOpen(true);
-    }, 300);
+    }, ANIMATION_DURATION_MS);
   }
 
   // Calculate transform based on current step

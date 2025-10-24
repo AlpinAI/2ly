@@ -17,7 +17,6 @@ import {
   ADD_REGISTRY_SERVER,
   UPDATE_REGISTRY_SERVER,
   DELETE_REGISTRY_SERVER,
-  DELETE_REGISTRY_SERVERS,
   GET_REGISTRY_SERVER,
   QUERY_WORKSPACE_WITH_REGISTRY_SERVERS,
 } from './workspace.operations';
@@ -56,19 +55,30 @@ export class WorkspaceRepository {
     const workspace = res.addWorkspace.workspace[0];
 
     // Create featured servers directly on workspace from INITIAL_FEATURED_SERVERS
+    const failedServers: string[] = [];
     for (const server of INITIAL_FEATURED_SERVERS) {
-      await this.dgraphService.mutation(ADD_REGISTRY_SERVER, {
-        name: server.name,
-        description: server.description,
-        title: server.name,
-        repositoryUrl: server.repository?.url || '',
-        version: server.version,
-        packages: JSON.stringify(server.packages),
-        remotes: server.remotes ? JSON.stringify(server.remotes) : null,
-        _meta: null,
-        workspaceId: workspace.id,
-        now,
-      });
+      try {
+        await this.dgraphService.mutation(ADD_REGISTRY_SERVER, {
+          name: server.name,
+          description: server.description,
+          title: server.name,
+          repositoryUrl: server.repository?.url || '',
+          version: server.version,
+          packages: JSON.stringify(server.packages),
+          remotes: server.remotes ? JSON.stringify(server.remotes) : null,
+          _meta: null,
+          workspaceId: workspace.id,
+          now,
+        });
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        console.error(`Failed to create initial server ${server.name} for workspace ${workspace.id}:`, errorMessage);
+        failedServers.push(server.name);
+      }
+    }
+
+    if (failedServers.length > 0) {
+      console.warn(`Workspace ${workspace.id} (${workspace.name}) created with ${failedServers.length} failed servers: ${failedServers.join(', ')}`);
     }
 
     // Initialize onboarding steps for new workspace
@@ -299,19 +309,34 @@ export class WorkspaceRepository {
   }
 
   // Registry server management methods
-  async canModifyServer(serverId: string): Promise<boolean> {
-    const server = await this.dgraphService.query<{
+
+  /**
+   * Get server usage information for error messages
+   */
+  private async getServerUsageInfo(serverId: string): Promise<{
+    server: dgraphResolversTypes.McpRegistryServer;
+    configCount: number;
+    configNames: string[];
+  }> {
+    const result = await this.dgraphService.query<{
       getMCPRegistryServer: dgraphResolversTypes.McpRegistryServer;
     }>(GET_REGISTRY_SERVER, { id: serverId });
 
-    const serverData = server.getMCPRegistryServer;
-    if (!serverData) {
-      throw new Error('Server not found');
+    const server = result.getMCPRegistryServer;
+    if (!server) {
+      throw new Error(`Registry server with ID '${serverId}' not found. It may have been deleted.`);
     }
 
-    // Check if any MCPServer configs reference this server
-    const hasConfigurations = (serverData.configurations?.length ?? 0) > 0;
-    return !hasConfigurations;
+    const configurations = server.configurations || [];
+    const configCount = configurations.length;
+    const configNames = configurations.map((config) => config.name).filter(Boolean);
+
+    return { server, configCount, configNames };
+  }
+
+  async canModifyServer(serverId: string): Promise<boolean> {
+    const { configCount } = await this.getServerUsageInfo(serverId);
+    return configCount === 0;
   }
 
   async addServerToWorkspace(
@@ -363,9 +388,15 @@ export class WorkspaceRepository {
     }
   ): Promise<dgraphResolversTypes.McpRegistryServer> {
     // Check if server can be modified
-    const canModify = await this.canModifyServer(serverId);
-    if (!canModify) {
-      throw new Error('Cannot modify server that has linked configurations');
+    const { server, configCount, configNames } = await this.getServerUsageInfo(serverId);
+
+    if (configCount > 0) {
+      const sourceList = configNames.length > 0 ? configNames.slice(0, 3).join(', ') : 'source(s)';
+      const moreText = configNames.length > 3 ? ` and ${configNames.length - 3} more` : '';
+      throw new Error(
+        `Cannot modify '${server.name}' because it's used by ${configCount} ${configCount === 1 ? 'source' : 'sources'} (${sourceList}${moreText}). ` +
+        `Remove or reconfigure those sources first to modify this server.`,
+      );
     }
 
     // Build update object with only provided fields
@@ -390,16 +421,43 @@ export class WorkspaceRepository {
 
   async removeServerFromWorkspace(serverId: string): Promise<dgraphResolversTypes.McpRegistryServer> {
     // Check if server can be deleted
-    const canModify = await this.canModifyServer(serverId);
-    if (!canModify) {
-      throw new Error('Cannot delete server that has linked configurations');
+    // NOTE: There's a potential race condition between this check and the delete operation.
+    // In high-concurrency scenarios, a configuration could be created after this check.
+    // Dgraph doesn't support SQL-style "DELETE WHERE NOT EXISTS" conditional mutations.
+    // The database schema enforces referential integrity, so dangling references won't occur,
+    // but the UI should handle conflicts gracefully.
+    const { server, configCount, configNames } = await this.getServerUsageInfo(serverId);
+
+    if (configCount > 0) {
+      const sourceList = configNames.length > 0 ? configNames.slice(0, 3).join(', ') : 'source(s)';
+      const moreText = configNames.length > 3 ? ` and ${configNames.length - 3} more` : '';
+      throw new Error(
+        `Cannot delete '${server.name}' because it's used by ${configCount} ${configCount === 1 ? 'source' : 'sources'} (${sourceList}${moreText}). ` +
+        `Remove those sources first to delete this server.`,
+      );
     }
 
-    const res = await this.dgraphService.mutation<{
-      deleteMCPRegistryServer: { mCPRegistryServer: dgraphResolversTypes.McpRegistryServer[] };
-    }>(DELETE_REGISTRY_SERVER, { id: serverId });
+    // Perform deletion - this may fail if configurations were added concurrently
+    // and Dgraph enforces referential integrity
+    try {
+      const res = await this.dgraphService.mutation<{
+        deleteMCPRegistryServer: { mCPRegistryServer: dgraphResolversTypes.McpRegistryServer[] };
+      }>(DELETE_REGISTRY_SERVER, { id: serverId });
 
-    return res.deleteMCPRegistryServer.mCPRegistryServer[0];
+      return res.deleteMCPRegistryServer.mCPRegistryServer[0];
+    } catch (error) {
+      // If delete fails, re-check to provide accurate error message
+      const updatedInfo = await this.getServerUsageInfo(serverId).catch(() => null);
+      if (updatedInfo && updatedInfo.configCount > 0) {
+        const sourceList = updatedInfo.configNames.slice(0, 3).join(', ');
+        throw new Error(
+          `Cannot delete '${server.name}' because ${updatedInfo.configCount} configuration(s) were added concurrently (${sourceList}). ` +
+          `Remove those configurations and try again.`,
+        );
+      }
+      // Re-throw original error if not a configuration issue
+      throw error;
+    }
   }
 
   async findRegistryServersByWorkspace(workspaceId: string): Promise<dgraphResolversTypes.McpRegistryServer[]> {

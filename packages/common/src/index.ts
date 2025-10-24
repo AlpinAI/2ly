@@ -1,6 +1,7 @@
 export * from './constants';
 export * from './helpers';
 export * from './mcp-config.helpers';
+export * from './mcp-config.schemas';
 export * from './mcp-transport.builders';
 export * from './SimpleStateMachine';
 export * from './ThreadPromise';
