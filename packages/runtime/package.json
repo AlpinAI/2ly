@@ -44,10 +44,12 @@
     "dev": "tsx watch src/index.ts",
     "start": "node dist/index.js",
     "debug": "tsx --inspect-brk src/index.ts",
-    "lint": "eslint \"{src,test}/**/*.{js,ts}\"",
+    "lint": "eslint \"{src,test}/**/*.{js,ts}\" --format unix --quiet",
+    "lint:full": "eslint \"{src,test}/**/*.{js,ts}\"",
     "format": "prettier --write \"{src,test}/**/*.*\" && rm -rf node_modules/.cache/prettier",
     "format:check": "prettier --check \"{src,test}/**/*.*\"",
-    "typecheck": "tsc --noEmit --skipLibCheck",
+    "typecheck": "tsc --noEmit --skipLibCheck --pretty false",
+    "typecheck:full": "tsc --noEmit --skipLibCheck",
     "test": "vitest --run"
   },
   "dependencies": {

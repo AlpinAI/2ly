@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeAll, afterAll } from 'vitest';
+import { describe, it, expect, beforeAll, afterAll, vi } from 'vitest';
 import { hashPassword, verifyPassword } from './password';
 
 describe('Password Helper', () => {
@@ -139,9 +139,13 @@ describe('Password Helper', () => {
     });
 
     it('should return false for unknown hash formats', async () => {
+      const consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
       const unknownHash = '$unknown$hash$format$';
       const isValid = await verifyPassword('testPassword123', unknownHash);
       expect(isValid).toBe(false);
+
+      consoleWarnSpy.mockRestore();
     });
 
     it('should handle empty passwords gracefully', async () => {
@@ -171,9 +175,13 @@ describe('Password Helper', () => {
     });
 
     it('should return false for malformed hash', async () => {
+      const consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
       const malformedHash = 'not-a-valid-hash';
       const isValid = await verifyPassword('password', malformedHash);
       expect(isValid).toBe(false);
+
+      consoleWarnSpy.mockRestore();
     });
   });
 

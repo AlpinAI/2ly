@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeAll, afterAll, beforeEach } from 'vitest';
+import { describe, it, expect, beforeAll, afterAll, beforeEach, vi } from 'vitest';
 import { JwtService, JwtPayload } from './jwt.service';
 import { generateKeyPairSync } from 'crypto';
 import { writeFileSync, unlinkSync, mkdirSync } from 'fs';
@@ -74,12 +74,16 @@ describe('JwtService', () => {
     });
 
     it('should throw error if keys are not found', () => {
+      const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+
       const originalPrivateKeyPath = process.env.JWT_PRIVATE_KEY_PATH;
       process.env.JWT_PRIVATE_KEY_PATH = '/nonexistent/path';
 
       expect(() => new JwtService()).toThrow('JWT service initialization failed: unable to load RSA keys');
 
       process.env.JWT_PRIVATE_KEY_PATH = originalPrivateKeyPath;
+
+      consoleErrorSpy.mockRestore();
     });
   });
 

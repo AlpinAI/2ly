@@ -41,11 +41,11 @@ export default defineConfig({
   // Opt out of parallel tests on CI
   workers: process.env.CI ? 1 : undefined,
 
-  // Reporter to use
+  // Reporter to use - 'line' for minimal output
   reporter: [
     ['html', { outputFolder: 'playwright-report' }],
     ['json', { outputFile: 'test-results/results.json' }],
-    ['list'],
+    ['line'],
   ],
 
   // Shared settings for all projects
@@ -54,17 +54,20 @@ export default defineConfig({
     baseURL: BASE_URL,
 
     // Collect trace when retrying the failed test
-    trace: 'on-first-retry',
+    trace: 'retain-on-failure',
 
     // Take screenshot on failure
     screenshot: 'only-on-failure',
 
-    // Record video on first retry
+    // Record video on failure
     video: 'retain-on-failure',
 
     // Maximum time each action can take
     actionTimeout: 10 * 1000, // 10 seconds
   },
+
+  // Quiet mode to suppress console logs
+  quiet: false, // Keep test names visible but reduce noise
 
   // Configure projects for different test strategies
   // Projects use dependencies to run sequentially and avoid database conflicts

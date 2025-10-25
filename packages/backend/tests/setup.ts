@@ -18,42 +18,32 @@ let testEnv: TestEnvironment;
  * Global setup function - runs ONCE before all tests
  */
 export default async function globalSetup() {
-  console.log('🚀 Starting test environment (ONCE for all backend tests)...');
+  console.log('🚀 Starting test environment...');
+  console.log('📦 Starting containers (Dgraph, NATS, Backend)...');
 
-  // Initialize test environment
+  // Initialize test environment with minimal logging
   testEnv = new TestEnvironment({
     exposeToHost: true,
     startBackend: true,
     logging: {
-      enabled: true,
+      enabled: false, // Disable verbose TestEnvironment logs
       verbose: false,
     },
   });
 
   try {
-    // Start all containers (this will take a while)
-    console.log('📦 Starting containers (Dgraph, NATS, Backend)...');
-    console.log('⏳ This may take 1-2 minutes on first run (Docker build)...');
-
     await testEnv.start();
 
     const services = testEnv.getServices();
 
-    console.log('✅ Containers started successfully!');
-    console.log('  - NATS:', services.nats.clientUrl);
-    console.log('  - Dgraph:', testEnv.getDgraphUrl());
-    if (services.backend) {
-      console.log('  - Backend:', testEnv.getBackendUrl());
-    }
+    console.log('✅ Test environment ready');
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
 
     // Set environment variables for tests
     // These will be available to all test files
     process.env.NATS_URL = services.nats.clientUrl;
     process.env.DGRAPH_URL = testEnv.getDgraphUrl();
     process.env.API_URL = testEnv.getBackendUrl();
-
-    console.log('✨ Test environment ready!');
-    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
   } catch (error) {
     console.error('❌ Failed to start test environment:', error);
 
@@ -71,12 +61,10 @@ export default async function globalSetup() {
    * Return teardown function - runs ONCE after all tests
    */
   return async () => {
-    console.log('🧹 Cleaning up test environment...');
-
     if (testEnv) {
       try {
         await testEnv.stop();
-        console.log('✅ Test environment stopped successfully');
+        console.log('✅ Test environment stopped');
       } catch (error) {
         console.error('❌ Failed to stop test environment:', error);
         throw error;

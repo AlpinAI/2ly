@@ -141,11 +141,9 @@ export function FormDialog({
               <Dialog.Title className="text-lg font-semibold text-gray-900 dark:text-white">
                 {title}
               </Dialog.Title>
-              {subtitle && (
-                <Dialog.Description className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                  {subtitle}
-                </Dialog.Description>
-              )}
+              <Dialog.Description className={subtitle ? "text-sm text-gray-500 dark:text-gray-400 mt-1" : "sr-only"}>
+                {subtitle || "Dialog"}
+              </Dialog.Description>
             </div>
             <Dialog.Close asChild>
               <Button
