@@ -2,11 +2,11 @@
  * App Header Component
  *
  * WHY: Main application header for authenticated users.
- * Contains logo, search, notifications, user menu, and theme toggle.
+ * Contains logo, command palette trigger, notifications, user menu, and theme toggle.
  *
  * WHAT IT PROVIDES:
  * - Logo with link to dashboard
- * - Global search input (placeholder)
+ * - Command palette trigger button (⌘K)
  * - Notifications bell with popover
  * - User menu with profile and logout
  * - Theme toggle
@@ -14,7 +14,7 @@
  */
 
 import { Link } from 'react-router-dom';
-import { Bell, User as UserIcon, LogOut, Settings } from 'lucide-react';
+import { Bell, User as UserIcon, LogOut, Settings, Terminal } from 'lucide-react';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
@@ -69,7 +69,7 @@ export function AppHeader() {
               </Link>
             </div>
 
-            {/* Right: Search + Actions */}
+            {/* Right: Command Palette + Actions */}
             <div className="flex items-center gap-2 flex-shrink-0">
               {/* Command Palette Trigger Button (hidden on mobile) */}
               <button
@@ -82,17 +82,21 @@ export function AppHeader() {
                   });
                   document.dispatchEvent(event);
                 }}
+                title="Open command palette"
+                aria-label="Open command palette"
                 className={cn(
-                  'hidden md:flex items-center gap-2 px-3 h-10 w-64 lg:w-80',
+                  'hidden md:flex items-center gap-2 px-3 h-10',
                   'rounded-lg border border-gray-300 dark:border-gray-600',
                   'bg-white dark:bg-gray-800',
-                  'text-sm text-gray-500 dark:text-gray-400',
+                  'text-sm text-gray-700 dark:text-gray-300',
+                  'hover:bg-gray-50 dark:hover:bg-gray-700',
                   'hover:border-gray-400 dark:hover:border-gray-500',
                   'transition-colors'
                 )}
               >
-                <span>Search...</span>
-                <kbd className="ml-auto inline-flex h-5 select-none items-center gap-1 rounded border bg-gray-100 dark:bg-gray-700 px-1.5 font-mono text-[10px] font-medium opacity-100">
+                <Terminal className="h-4 w-4" />
+                <span className="font-medium">Commands</span>
+                <kbd className="inline-flex h-5 select-none items-center gap-1 rounded border bg-gray-100 dark:bg-gray-700 px-1.5 font-mono text-[10px] font-medium opacity-100">
                   ⌘K
                 </kbd>
               </button>
