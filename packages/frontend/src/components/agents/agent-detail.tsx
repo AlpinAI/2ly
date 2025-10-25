@@ -87,22 +87,33 @@ export function AgentDetail({ agent }: AgentDetailProps) {
 
         </div>
 
+        {/* Action Bar */}
+        <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-700 flex gap-2">
+          <Button
+            variant="default"
+            size="sm"
+            onClick={handleConnectAgent}
+            className="h-8 px-3 text-sm"
+          >
+            <Cable className="h-4 w-4 mr-2" />
+            Connect
+          </Button>
+          <Button
+            variant="default"
+            size="sm"
+            onClick={handleManageTools}
+            className="h-8 px-3 text-sm"
+          >
+            <Settings className="h-4 w-4 mr-2" />
+            Manage Tools
+          </Button>
+        </div>
+
         {/* Content */}
         <div className="flex-1 p-4 space-y-4">
           {/* Status */}
           <div>
-            <div className="flex items-center justify-between mb-2">
-              <h4 className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Status</h4>
-              <Button
-                variant="default"
-                size="sm"
-                onClick={handleConnectAgent}
-                className="h-6 px-2 text-xs"
-              >
-                <Cable className="h-3 w-3 mr-1" />
-                Connect
-              </Button>
-            </div>
+            <h4 className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">Status</h4>
             <span
               className={`inline-flex items-center px-2 py-1 rounded text-sm font-medium ${
                 agent.status === 'ACTIVE'
@@ -177,21 +188,10 @@ export function AgentDetail({ agent }: AgentDetailProps) {
 
           {/* Tools */}
           <div>
-            <div className="flex items-center justify-between mb-2">
-              <h4 className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider flex items-center gap-1">
-                <Wrench className="h-3 w-3" />
-                Available Tools ({agent.mcpToolCapabilities?.length || 0})
-              </h4>
-              <Button
-                variant="default"
-                size="sm"
-                onClick={handleManageTools}
-                className="h-6 px-2 text-xs"
-              >
-                <Settings className="h-3 w-3 mr-1" />
-                Manage
-              </Button>
-            </div>
+            <h4 className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider flex items-center gap-1 mb-2">
+              <Wrench className="h-3 w-3" />
+              Available Tools ({agent.mcpToolCapabilities?.length || 0})
+            </h4>
             {agent.mcpToolCapabilities && agent.mcpToolCapabilities.length > 0 ? (
               <ul className="space-y-1 max-h-64 overflow-auto">
                 {agent.mcpToolCapabilities.map((tool) => (
