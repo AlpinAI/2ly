@@ -44,18 +44,32 @@ describe('AppHeader', () => {
     expect(logo.src).toContain('/logo-2ly.png');
   });
 
-  it('renders command palette trigger button and opens palette on click', () => {
+  it('renders command palette trigger button with proper styling', () => {
+    renderWithProviders(<AppHeader />);
+
+    // Find the command palette trigger button by its aria-label
+    const commandButton = screen.getByRole('button', { name: /open command palette/i });
+    expect(commandButton).toBeDefined();
+
+    // Verify button contains the expected content
+    expect(screen.getByText('Commands')).toBeDefined();
+    expect(screen.getByText('⌘K')).toBeDefined();
+
+    // Verify button has proper attributes
+    expect(commandButton.getAttribute('title')).toBe('Open command palette');
+  });
+
+  it('opens command palette on button click', () => {
     renderWithProviders(<AppHeader />);
 
     // Find the command palette trigger button
-    const searchButton = screen.getByRole('button', { name: /search/i });
-    expect(searchButton).toBeDefined();
+    const commandButton = screen.getByRole('button', { name: /open command palette/i });
 
     // Spy on document.dispatchEvent to verify keyboard event is dispatched
     const dispatchEventSpy = vi.spyOn(document, 'dispatchEvent');
 
     // Click the button
-    fireEvent.click(searchButton);
+    fireEvent.click(commandButton);
 
     // Verify that a keyboard event was dispatched with correct properties
     expect(dispatchEventSpy).toHaveBeenCalledWith(
