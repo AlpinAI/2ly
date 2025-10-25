@@ -18,7 +18,7 @@ interface ToolCall {
   error: string | null;
   mcpTool: {
     name: string;
-    description: string;
+    description?: string;
     mcpServer: {
       name: string;
     };
@@ -86,10 +86,7 @@ export function ToolCallDetail({ toolCall }: ToolCallDetailProps) {
         <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
           {toolCall.mcpTool.name}
         </h3>
-        <p className="text-sm text-gray-600 dark:text-gray-400 line-clamp-2">
-          {toolCall.mcpTool.description}
-        </p>
-        <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">
+        <p className="text-xs text-gray-500 dark:text-gray-500">
           Server: {toolCall.mcpTool.mcpServer.name}
         </p>
       </div>
