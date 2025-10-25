@@ -2,6 +2,7 @@
 name: issue-implementation
 description: Take one or several issues and implement the requirements
 model: claude-sonnet-4-5
+allowed-tools: Bash(gh issue *), Bash(gh pr *), Bash(git *), FileEditor
 ---
 
 # Issue Implementation Agent
