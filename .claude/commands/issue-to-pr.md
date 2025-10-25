@@ -1,7 +1,7 @@
 ---
 name: issue-to-pr
 description: Automates the workflow from labeled GitHub issues to ready-to-review pull requests.
-allowed-tools: Bash(gh issue list:*), Bash(gh issue edit:*), Bash(gh pr create:*), Bash(git status:*), Bash(git checkout:*)
+allowed-tools: Bash(gh issue list), Bash(gh issue edit), Bash(gh pr create), Bash(git status), Bash(git checkout), Bash(git branch), Bash(git add), Bash(git commit), Bash(git push)
 model: claude-sonnet-4-5
 ---
 
