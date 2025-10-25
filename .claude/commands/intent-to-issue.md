@@ -70,7 +70,7 @@ Respond with a structured clarification using this format:
 2. [Any clarifications needed]
 
 **Is this understanding correct?**
-- Reply "yes" to proceed with issue creation
+- Reply "yes" to create the issue immediately
 - Reply "no" with corrections
 - Reply "edit [aspect]" to refine a specific part
 ```
@@ -84,30 +84,16 @@ If the user provides corrections or additional details:
 
 **Continue until you receive explicit "yes" confirmation.**
 
-### Phase 5: Generate GitHub Issue
+### Phase 5: Create GitHub Issue Automatically
 
-Once confirmed, generate a complete GitHub issue specification:
+Once confirmed, immediately create the GitHub issue using the following structure:
+
+**Issue Structure:**
+- **Title:** [Concise, descriptive title following conventional commit format: feat/fix/docs/refactor: Brief description]
+- **Labels:** Always include `intent-to-issue`, plus `bug` for bug fixes or `dev` for enhancements/features
+- **Body Template:**
 
 ```markdown
-## GitHub Issue Ready ✓
-
-I'll create an issue with the following content:
-
----
-
-**Title:**
-[Concise, descriptive title following conventional commit format]
-feat/fix/docs/refactor: [Brief description]
-
-**Labels:**
-- `intent-to-issue` (always required)
-- `bug` (if this is a bug fix)
-- `dev` (if this is an enhancement or new feature)
-
-DO NOT ADD other label
-
-**Body:**
-
 ### Description
 [Clear description of what needs to be done]
 
@@ -145,42 +131,23 @@ Original request: "${input}"
 
 ### Dependencies
 [List any related issues, PRs, or external dependencies]
-
----
-
-**Shall I create this issue?**
-- Reply "yes" to create the issue
-- Reply "edit [section]" to modify a specific section
-- Reply "no" to cancel
 ```
 
-### Phase 6: Issue Creation Confirmation
+**Action:** Execute `gh issue create` with the constructed title, body, and labels. Assign to @me automatically.
 
-After the user confirms with "yes", provide:
+### Phase 6: Issue Created Successfully
+
+After creating the issue, provide confirmation:
 
 ```markdown
-## Issue Creation Command
+## Issue Created Successfully ✓
 
-To create this issue, run:
-
-```bash
-gh issue create \
-  --title "[title]" \
-  --body-file /tmp/issue-body.md \
-  --label "intent-to-issue,bug" \
-  --assignee @me
-```
-
-Note: Replace "bug" with "dev" if this is an enhancement/feature instead of a bug fix.
-
-Or if you want me to create it directly, I can do that now.
+**Issue #[XXX]:** [Title]
+**URL:** [GitHub issue URL]
 
 **Next Steps:**
-1. Issue will be created with number #XXX
-2. You can then trigger the background implementation with:
-   `/implement #XXX`
-3. Or manually start work with:
-   `git checkout -b feature/issue-XXX`
+1. Trigger implementation with: `/implement #XXX`
+2. Or manually start work with: `git checkout -b feature/issue-XXX`
 ```
 
 ## Command Behavior Rules
@@ -195,14 +162,17 @@ Or if you want me to create it directly, I can do that now.
 - ✓ Provide testable acceptance criteria
 - ✓ Always include "intent-to-issue" label
 - ✓ Add "bug" label for bug fixes, "dev" label for enhancements/features
+- ✓ Automatically create GitHub issues once understanding is confirmed
+- ✓ Execute issue creation immediately after user says "yes"
 
 ### DON'T:
 - ✗ Make assumptions without stating them
-- ✗ Proceed without explicit confirmation
+- ✗ Proceed without explicit confirmation of understanding
 - ✗ Create vague or generic issue descriptions
 - ✗ Skip the clarification phase
 - ✗ Ignore existing code patterns
 - ✗ Forget to mention testing requirements
+- ✗ Ask for confirmation on issue body after plan is agreed
 
 ## Examples
 
@@ -244,6 +214,20 @@ You want to limit the tool descriptions in a table display to show only the firs
 3. Should this apply to all tables or a specific one?
 
 **Is this understanding correct?**
+```
+
+**User:** yes
+
+**Assistant:**
+```
+## Issue Created Successfully ✓
+
+**Issue #42:** feat: Crop tool description to one line in tools table
+**URL:** https://github.com/user/repo/issues/42
+
+**Next Steps:**
+1. Trigger implementation with: `/implement #42`
+2. Or manually start work with: `git checkout -b feature/issue-42`
 ```
 
 ### Example 2: Complex Request
