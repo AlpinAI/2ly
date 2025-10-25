@@ -2,6 +2,7 @@
 name: issue-validation
 description: Validate the code quality of an issue implementation
 model: claude-sonnet-4
+allowed-tools: Bash(gh issue *), Bash(gh pr *), Bash(git *), FileEditor
 ---
 
 # Issue Validation Agent
