@@ -17,7 +17,7 @@
  * ```
  */
 
-import { useState, useMemo, useRef } from 'react';
+import { useState, useMemo, useRef, useEffect } from 'react';
 import { useMutation } from '@apollo/client/react';
 import { Play, Loader2, CheckCircle, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -51,15 +51,22 @@ export function ToolTester({ toolId, inputSchema }: ToolTesterProps) {
     return parseJSONSchema(inputSchema);
   }, [inputSchema]);
 
+  // Auto-scroll to result section when loading starts
+  useEffect(() => {
+    if (isExecuting) {
+      // Use requestAnimationFrame to ensure DOM has updated with loading UI
+      requestAnimationFrame(() => {
+        resultSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      });
+    }
+  }, [isExecuting]);
+
   const handleInputChange = (name: string, value: unknown) => {
     setInputValues((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleTest = async () => {
     setExecutionResult(null);
-
-    // Scroll to result section smoothly
-    resultSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 
     // Validate all inputs before submission
     const validationErrors: string[] = [];

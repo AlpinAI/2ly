@@ -101,6 +101,22 @@ describe('ToolTester', () => {
     const scrollIntoViewMock = vi.fn();
     HTMLDivElement.prototype.scrollIntoView = scrollIntoViewMock;
 
+    // Mock mutation to return loading: true when called
+    mockCallTool.mockResolvedValue({
+      data: {
+        callMCPTool: {
+          success: true,
+          result: 'test result',
+        },
+      },
+    });
+
+    vi.mocked(apolloClient.useMutation).mockReturnValue([
+      mockCallTool,
+      { loading: true, error: undefined, data: undefined },
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    ] as any);
+
     render(
       <ToolTester
         toolId="tool-1"
@@ -109,15 +125,13 @@ describe('ToolTester', () => {
       />
     );
 
-    const testButton = screen.getByRole('button', { name: /test/i });
-    fireEvent.click(testButton);
-
+    // Wait for the scroll to be called (triggered by useEffect when isExecuting is true)
     await waitFor(() => {
       expect(scrollIntoViewMock).toHaveBeenCalledWith({
         behavior: 'smooth',
         block: 'nearest',
       });
-    });
+    }, { timeout: 1000 });
   });
 
   it('shows loading indicator when test is executing', () => {
