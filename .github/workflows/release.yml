@@ -31,7 +31,37 @@ jobs:
           echo "tag=v$VERSION" >> $GITHUB_OUTPUT
           echo "Extracted version: $VERSION"
 
+      - name: Check if version changed
+        id: check-version
+        run: |
+          CURRENT_VERSION="${{ steps.version.outputs.version }}"
+          TAG="${{ steps.version.outputs.tag }}"
+
+          # Get the latest tag
+          LATEST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
+
+          if [ -z "$LATEST_TAG" ]; then
+            echo "changed=true" >> $GITHUB_OUTPUT
+            echo "No previous tags found - this is the first release"
+            exit 0
+          fi
+
+          # Extract version from latest tag (remove 'v' prefix)
+          LATEST_VERSION="${LATEST_TAG#v}"
+
+          echo "Latest tag:    $LATEST_TAG (v$LATEST_VERSION)"
+          echo "Current version: v$CURRENT_VERSION"
+
+          if [ "$CURRENT_VERSION" == "$LATEST_VERSION" ]; then
+            echo "changed=false" >> $GITHUB_OUTPUT
+            echo "Version unchanged - skipping release"
+          else
+            echo "changed=true" >> $GITHUB_OUTPUT
+            echo "Version changed - will create release"
+          fi
+
       - name: Check if tag already exists
+        if: steps.check-version.outputs.changed == 'true'
         id: check-tag
         run: |
           TAG="${{ steps.version.outputs.tag }}"
@@ -45,7 +75,7 @@ jobs:
           fi
 
       - name: Create and push tag
-        if: steps.check-tag.outputs.exists == 'false'
+        if: steps.check-version.outputs.changed == 'true' && steps.check-tag.outputs.exists == 'false'
         run: |
           TAG="${{ steps.version.outputs.tag }}"
           VERSION="${{ steps.version.outputs.version }}"
@@ -59,7 +89,7 @@ jobs:
           echo "✅ Created and pushed tag: $TAG"
 
       - name: Create GitHub Release
-        if: steps.check-tag.outputs.exists == 'false'
+        if: steps.check-version.outputs.changed == 'true' && steps.check-tag.outputs.exists == 'false'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
@@ -90,8 +120,18 @@ jobs:
 
           echo "✅ Created GitHub release: $TAG"
 
+      - name: Version unchanged - no release needed
+        if: steps.check-version.outputs.changed == 'false'
+        run: |
+          echo "ℹ️ Version unchanged from latest tag"
+          echo "No release created - this is expected for PRs without version bumps"
+          echo ""
+          echo "Current version: ${{ steps.version.outputs.version }}"
+          echo ""
+          echo "To create a new release, use the 'Bump Version' workflow in GitHub Actions."
+
       - name: Release already exists
-        if: steps.check-tag.outputs.exists == 'true'
+        if: steps.check-version.outputs.changed == 'true' && steps.check-tag.outputs.exists == 'true'
         run: |
           echo "ℹ️ Release ${{ steps.version.outputs.tag }} already exists"
-          echo "No action taken - this commit was likely a direct push to main without version bump"
+          echo "No action taken - tag already created"
