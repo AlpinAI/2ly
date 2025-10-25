@@ -88,31 +88,31 @@ jobs:
             COMMITS=$(git log --pretty=format:"- %s (%h)" --max-count=20)
           fi
 
-          # Create release notes
-          NOTES="## Release v$VERSION
+          # Create release notes and save to file
+          cat > /tmp/release-notes.md <<-EOF
+          ## Release v$VERSION
 
-This PR bumps the version from v$PREV_VERSION to v$VERSION.
+          This PR bumps the version from v$PREV_VERSION to v$VERSION.
 
-### Changes
-$COMMITS
+          ### Changes
+          $COMMITS
 
-### Packages Updated
-- @2ly/backend
-- @2ly/frontend
-- @2ly/runtime
-- @2ly/common
-- @2ly/doc
+          ### Packages Updated
+          - @2ly/backend
+          - @2ly/frontend
+          - @2ly/runtime
+          - @2ly/common
+          - @2ly/doc
 
----
+          ---
 
-When this PR is merged to main, the following will happen automatically:
-1. A git tag \`v$VERSION\` will be created
-2. Docker images will be built and pushed with the \`v$VERSION\` tag
-3. The NPM package \`@2ly/runtime@$VERSION\` will be published
-4. A GitHub release will be created with release notes"
+          When this PR is merged to main, the following will happen automatically:
+          1. A git tag \`v$VERSION\` will be created
+          2. Docker images will be built and pushed with the \`v$VERSION\` tag
+          3. The NPM package \`@2ly/runtime@$VERSION\` will be published
+          4. A GitHub release will be created with release notes
+          EOF
 
-          # Save to file for PR body
-          echo "$NOTES" > /tmp/release-notes.md
           echo "Generated release notes"
 
       - name: Create Pull Request
