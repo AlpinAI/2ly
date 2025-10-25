@@ -250,7 +250,7 @@ export function ToolSelectionTable({
                         </span>
                       </div>
                       {tool.description && (
-                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 line-clamp-2">
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 line-clamp-1">
                           {highlightSearchTerm(tool.description)}
                         </p>
                       )}
