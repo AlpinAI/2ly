@@ -32,6 +32,8 @@ export default defineConfig({
         ],
         globals: true,
         fileParallelism: false,
+        // Use dot reporter for minimal output
+        reporters: ['dot'],
         // Longer timeout for integration tests with containers
         testTimeout: 30000,
         hookTimeout: 30000,

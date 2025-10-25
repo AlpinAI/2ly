@@ -1,6 +1,6 @@
 {
   "name": "@2ly/backend",
-  "version": "0.1.6",
+  "version": "0.1.7",
   "description": "",
   "author": "",
   "license": "See license in LICENSE.txt",
@@ -23,9 +23,11 @@
     "dev": "tsx tooling/esbuild.watch.ts",
     "start": "node dist/index.js",
     "debug": "tsx --inspect-brk src/index.ts",
-    "lint": "eslint \"{src,test}/**/*.{js,ts}\"",
+    "lint": "eslint \"{src,test}/**/*.{js,ts}\" --format unix --quiet",
+    "lint:full": "eslint \"{src,test}/**/*.{js,ts}\"",
     "format": "prettier --write \"{src,test}/**/*.*\" && rm -rf node_modules/.cache/prettier",
-    "typecheck": "tsc --noEmit --skipLibCheck",
+    "typecheck": "tsc --noEmit --skipLibCheck --pretty false",
+    "typecheck:full": "tsc --noEmit --skipLibCheck",
     "generate-jwt-keys": "tsx scripts/generate-jwt-keys.ts",
     "test": "vitest --run",
     "test:integration": "vitest --run --config ../../vitest.integration.config.ts packages/backend"

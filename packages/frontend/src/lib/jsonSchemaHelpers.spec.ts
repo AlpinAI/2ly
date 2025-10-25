@@ -4,7 +4,7 @@
  * Comprehensive test coverage for JSON Schema parsing, validation, and conversion utilities.
  */
 
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import {
   parseJSONSchema,
   convertValueToType,
@@ -144,8 +144,12 @@ describe('jsonSchemaHelpers', () => {
     });
 
     it('should return empty array for invalid JSON', () => {
+      const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+
       const result = parseJSONSchema('invalid json');
       expect(result).toEqual([]);
+
+      consoleErrorSpy.mockRestore();
     });
 
     it('should return empty array for schema without properties', () => {

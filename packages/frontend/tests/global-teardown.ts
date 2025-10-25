@@ -29,8 +29,6 @@ interface TestEnvironmentState {
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 async function globalTeardown(_config: FullConfig) {
-  console.log('🧹 Cleaning up test environment...');
-
   try {
     // Read state file
     let state: TestEnvironmentState | undefined;
@@ -38,9 +36,8 @@ async function globalTeardown(_config: FullConfig) {
       state = JSON.parse(fs.readFileSync(STATE_FILE, 'utf-8'));
     }
 
-    // Kill Vite dev server
+    // Kill Vite dev server (silently)
     if (state?.frontendPid) {
-      console.log('🛑 Stopping Vite dev server...');
       try {
         process.kill(state.frontendPid, 'SIGTERM');
         // Give it a moment to shut down gracefully
@@ -52,8 +49,6 @@ async function globalTeardown(_config: FullConfig) {
         } catch {
           // Already dead, that's fine
         }
-
-        console.log('✅ Vite dev server stopped');
       } catch (error) {
         console.warn('⚠️  Could not stop Vite dev server:', error);
       }
@@ -64,9 +59,7 @@ async function globalTeardown(_config: FullConfig) {
     const testEnv: TestEnvironment | undefined = (global as any).__TEST_ENVIRONMENT__;
 
     if (testEnv) {
-      console.log('🛑 Stopping containers (Dgraph, NATS, Backend)...');
       await testEnv.stop();
-      console.log('✅ Containers stopped');
     } else {
       console.warn('⚠️  No test environment reference found in global state');
     }
@@ -76,7 +69,7 @@ async function globalTeardown(_config: FullConfig) {
       fs.unlinkSync(STATE_FILE);
     }
 
-    console.log('✨ Test environment cleaned up successfully!');
+    console.log('✅ Test environment cleaned up');
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
   } catch (error) {
     console.error('❌ Error during cleanup:', error);

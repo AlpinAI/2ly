@@ -327,6 +327,7 @@ export class TestEnvironment {
         .withNetworkAliases('backend')
         .withEnvironment({
           NODE_ENV: 'test',
+          LOG_LEVEL: 'error', // Only log errors in test environment
           DGRAPH_URL: 'dgraph-alpha:8080',
           NATS_SERVERS: 'nats:4222',
           EXPOSED_NATS_SERVERS: this.services.nats.clientUrl,
@@ -339,7 +340,13 @@ export class TestEnvironment {
         .withWaitStrategy(Wait.forListeningPorts())
         .withStartupTimeout(120000) // 2 minutes for startup
         .withLogConsumer((stream) => {
-          stream.on('data', (line) => this.log(`[Backend] ${line}`));
+          // Only log ERROR and WARN lines to reduce noise
+          stream.on('data', (line) => {
+            const lineStr = line.toString();
+            if (lineStr.includes('ERROR') || lineStr.includes('WARN') || lineStr.includes('error') || lineStr.includes('warn')) {
+              this.log(`[Backend] ${line}`);
+            }
+          });
           stream.on('err', (line) => this.log(`[Backend ERROR] ${line}`));
         })
         .start();
