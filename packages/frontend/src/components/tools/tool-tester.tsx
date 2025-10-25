@@ -17,7 +17,7 @@
  * ```
  */
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef } from 'react';
 import { useMutation } from '@apollo/client/react';
 import { Play, Loader2, CheckCircle, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -42,6 +42,7 @@ export function ToolTester({ toolId, inputSchema }: ToolTesterProps) {
     result?: string;
     error?: string;
   } | null>(null);
+  const resultSectionRef = useRef<HTMLDivElement>(null);
 
   const [callTool, { loading: isExecuting }] = useMutation(CallMcpToolDocument);
 
@@ -56,6 +57,9 @@ export function ToolTester({ toolId, inputSchema }: ToolTesterProps) {
 
   const handleTest = async () => {
     setExecutionResult(null);
+
+    // Scroll to result section smoothly
+    resultSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 
     // Validate all inputs before submission
     const validationErrors: string[] = [];
@@ -166,33 +170,49 @@ export function ToolTester({ toolId, inputSchema }: ToolTesterProps) {
       )}
 
       {/* Execution Result */}
-      {executionResult && (
-        <div className="space-y-2">
-          <div className="flex items-center gap-2">
-            {executionResult.success ? (
-              <>
-                <CheckCircle className="h-4 w-4 text-green-600 dark:text-green-400" />
-                <span className="text-sm font-medium text-green-600 dark:text-green-400">Success</span>
-              </>
-            ) : (
-              <>
-                <AlertCircle className="h-4 w-4 text-red-600 dark:text-red-400" />
-                <span className="text-sm font-medium text-red-600 dark:text-red-400">Error</span>
-              </>
-            )}
-          </div>
+      <div ref={resultSectionRef} className="space-y-2">
+        {isExecuting ? (
+          <>
+            <div className="flex items-center gap-2">
+              <Loader2 className="h-4 w-4 text-cyan-600 dark:text-cyan-400 animate-spin" />
+              <span className="text-sm font-medium text-cyan-600 dark:text-cyan-400">Testing tool...</span>
+            </div>
+            <div className="bg-gray-50 dark:bg-gray-900/50 rounded-lg p-3">
+              <div className="space-y-2">
+                <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
+                <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse w-3/4" />
+                <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse w-1/2" />
+              </div>
+            </div>
+          </>
+        ) : executionResult ? (
+          <>
+            <div className="flex items-center gap-2">
+              {executionResult.success ? (
+                <>
+                  <CheckCircle className="h-4 w-4 text-green-600 dark:text-green-400" />
+                  <span className="text-sm font-medium text-green-600 dark:text-green-400">Success</span>
+                </>
+              ) : (
+                <>
+                  <AlertCircle className="h-4 w-4 text-red-600 dark:text-red-400" />
+                  <span className="text-sm font-medium text-red-600 dark:text-red-400">Error</span>
+                </>
+              )}
+            </div>
 
-          <div className="bg-gray-50 dark:bg-gray-900/50 rounded-lg p-3">
-            {executionResult.success ? (
-              <pre className="text-xs font-mono text-gray-900 dark:text-gray-100 overflow-auto">
-                {executionResult.result}
-              </pre>
-            ) : (
-              <p className="text-sm text-red-600 dark:text-red-400">{executionResult.error}</p>
-            )}
-          </div>
-        </div>
-      )}
+            <div className="bg-gray-50 dark:bg-gray-900/50 rounded-lg p-3">
+              {executionResult.success ? (
+                <pre className="text-xs font-mono text-gray-900 dark:text-gray-100 overflow-auto">
+                  {executionResult.result}
+                </pre>
+              ) : (
+                <p className="text-sm text-red-600 dark:text-red-400">{executionResult.error}</p>
+              )}
+            </div>
+          </>
+        ) : null}
+      </div>
     </div>
   );
 }
