@@ -7,7 +7,7 @@
 
 import '@testing-library/jest-dom/vitest';
 import { cleanup } from '@testing-library/react';
-import { afterEach } from 'vitest';
+import { afterEach, vi } from 'vitest';
 
 // Cleanup after each test to prevent DOM pollution
 afterEach(() => {
@@ -30,4 +30,6 @@ if (typeof window !== 'undefined') {
     }),
   });
 
+  // Mock scrollIntoView for components with scroll behavior (deep linking, auto-scroll, etc.)
+  Element.prototype.scrollIntoView = vi.fn();
 }
