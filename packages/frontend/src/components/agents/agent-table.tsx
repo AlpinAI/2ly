@@ -20,7 +20,8 @@
 import { Search } from '@/components/ui/search';
 import { CheckboxDropdown } from '@/components/ui/checkbox-dropdown';
 import { Button } from '@/components/ui/button';
-import { X } from 'lucide-react';
+import { X, Cable, Settings } from 'lucide-react';
+import { useManageToolsDialog, useConnectAgentDialog } from '@/stores/uiStore';
 import type { SubscribeRuntimesSubscription } from '@/graphql/generated/graphql';
 
 type Runtime = NonNullable<SubscribeRuntimesSubscription['runtimes']>[number];
@@ -58,11 +59,25 @@ export function AgentTable({
   loading,
 }: AgentTableProps) {
   const hasActiveFilters = search.length > 0 || serverFilter.length > 0 || statusFilter.length > 0;
+  const { setOpen: setManageToolsOpen, setSelectedToolSetId } = useManageToolsDialog();
+  const { setOpen: setConnectDialogOpen, setSelectedAgentId } = useConnectAgentDialog();
 
   const handleClearFilters = () => {
     onSearchChange('');
     onServerFilterChange([]);
     onStatusFilterChange([]);
+  };
+
+  const handleConnectClick = (e: React.MouseEvent, agentId: string) => {
+    e.stopPropagation();
+    setSelectedAgentId(agentId);
+    setConnectDialogOpen(true);
+  };
+
+  const handleManageToolsClick = (e: React.MouseEvent, agentId: string) => {
+    e.stopPropagation();
+    setSelectedToolSetId(agentId);
+    setManageToolsOpen(true);
   };
 
   return (
@@ -128,6 +143,9 @@ export function AgentTable({
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                   Tools
                 </th>
+                <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                  Actions
+                </th>
               </tr>
             </thead>
             <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
@@ -169,6 +187,28 @@ export function AgentTable({
                   </td>
                   <td className="px-4 py-3 text-sm text-gray-700 dark:text-gray-300">
                     {agent.mcpToolCapabilities?.length || 0}
+                  </td>
+                  <td className="px-4 py-3 text-sm text-right">
+                    <div className="flex items-center justify-end gap-1">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={(e) => handleConnectClick(e, agent.id)}
+                        className="h-7 w-7 p-0"
+                        aria-label="Connect agent"
+                      >
+                        <Cable className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={(e) => handleManageToolsClick(e, agent.id)}
+                        className="h-7 w-7 p-0"
+                        aria-label="Manage tools"
+                      >
+                        <Settings className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </td>
                 </tr>
               ))}
