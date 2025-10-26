@@ -112,12 +112,9 @@ export function ToolCallDetail({ toolCall }: ToolCallDetailProps) {
       <div className="grid grid-cols-2 gap-4">
         <div>
           <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Called By</p>
-          <Link
-            to={`/w/${workspaceId}/overview?id=${toolCall.calledBy.id}`}
-            className="text-sm font-medium text-gray-900 dark:text-white hover:text-cyan-600 dark:hover:text-cyan-400 hover:underline"
-          >
+          <p className="text-sm font-medium text-gray-900 dark:text-white">
             {toolCall.calledBy.name}
-          </Link>
+          </p>
           {toolCall.calledBy.hostname && (
             <p className="text-xs text-gray-500 dark:text-gray-400">{toolCall.calledBy.hostname}</p>
           )}
@@ -125,12 +122,9 @@ export function ToolCallDetail({ toolCall }: ToolCallDetailProps) {
         {toolCall.executedBy && (
           <div>
             <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Executed By</p>
-            <Link
-              to={`/w/${workspaceId}/overview?id=${toolCall.executedBy.id}`}
-              className="text-sm font-medium text-gray-900 dark:text-white hover:text-cyan-600 dark:hover:text-cyan-400 hover:underline"
-            >
+            <p className="text-sm font-medium text-gray-900 dark:text-white">
               {toolCall.executedBy.name}
-            </Link>
+            </p>
             {toolCall.executedBy.hostname && (
               <p className="text-xs text-gray-500 dark:text-gray-400">{toolCall.executedBy.hostname}</p>
             )}

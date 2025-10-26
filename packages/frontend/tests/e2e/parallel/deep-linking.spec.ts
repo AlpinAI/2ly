@@ -40,8 +40,9 @@ test.describe('Deep Linking - Monitoring Page', () => {
   });
 
   test('should make entity references clickable in detail panel', async ({ page }) => {
-    // This test verifies that tool, server, and runtime references
+    // This test verifies that tool and server references
     // in the tool call detail panel are rendered as clickable links
+    // Note: Runtime references are NOT clickable (will change in future)
 
     await page.goto('/w/test-workspace/monitoring?id=test-tool-call-123');
     await page.waitForLoadState('networkidle');
@@ -51,8 +52,7 @@ test.describe('Deep Linking - Monitoring Page', () => {
     // 2. Verify it has href="/w/test-workspace/tools?id=<tool-id>"
     // 3. Find the server name link
     // 4. Verify it has href="/w/test-workspace/sources?id=<server-id>"
-    // 5. Find the runtime name link
-    // 6. Verify it has href="/w/test-workspace/overview?id=<runtime-id>"
+    // 5. Verify runtime names are displayed but NOT clickable
   });
 });
 
@@ -126,14 +126,56 @@ test.describe('Deep Linking - Cross-Entity Navigation', () => {
     // 3. Verify the source detail panel opens automatically
   });
 
-  test('should navigate from monitoring to overview page when clicking runtime link', async ({ page }) => {
-    await page.goto('/w/test-workspace/monitoring?id=test-tool-call-123');
+  test('should navigate from tools to sources page when clicking server link', async ({ page }) => {
+    await page.goto('/w/test-workspace/tools?id=test-tool-123');
     await page.waitForLoadState('networkidle');
 
     // Note: In a real test with data, we would:
-    // 1. Click the runtime name link in the detail panel
-    // 2. Verify navigation to /w/test-workspace/overview?id=<runtime-id>
-    // 3. Verify the runtime detail panel opens automatically (if implemented)
+    // 1. Click the MCP Server name link in the detail panel
+    // 2. Verify navigation to /w/test-workspace/sources?id=<server-id>
+    // 3. Verify the source detail panel opens automatically
+  });
+
+  test('should navigate from tools to toolsets page when clicking agent link', async ({ page }) => {
+    await page.goto('/w/test-workspace/tools?id=test-tool-123');
+    await page.waitForLoadState('networkidle');
+
+    // Note: In a real test with data, we would:
+    // 1. Click an agent name link in the "Available on Agents" list
+    // 2. Verify navigation to /w/test-workspace/toolsets?id=<agent-id>
+    // 3. Verify the agent detail panel opens automatically
+    // 4. Note: Only agent-capable runtimes should be clickable
+  });
+
+  test('should navigate from toolsets to tools page when clicking tool link', async ({ page }) => {
+    await page.goto('/w/test-workspace/toolsets?id=test-toolset-123');
+    await page.waitForLoadState('networkidle');
+
+    // Note: In a real test with data, we would:
+    // 1. Click a tool name link in the "Available Tools" list
+    // 2. Verify navigation to /w/test-workspace/tools?id=<tool-id>
+    // 3. Verify the tool detail panel opens automatically
+  });
+
+  test('should navigate from sources to toolsets page when clicking connected runtime link', async ({ page }) => {
+    await page.goto('/w/test-workspace/sources?id=test-source-123');
+    await page.waitForLoadState('networkidle');
+
+    // Note: In a real test with data, we would:
+    // 1. Click the connected runtime name link (if agent-capable)
+    // 2. Verify navigation to /w/test-workspace/toolsets?id=<runtime-id>
+    // 3. Verify the agent detail panel opens automatically
+    // 4. Note: Only agent-capable runtimes should be clickable
+  });
+
+  test('should navigate from sources to tools page when clicking tool link', async ({ page }) => {
+    await page.goto('/w/test-workspace/sources?id=test-source-123');
+    await page.waitForLoadState('networkidle');
+
+    // Note: In a real test with data, we would:
+    // 1. Click a tool name link in the tools list
+    // 2. Verify navigation to /w/test-workspace/tools?id=<tool-id>
+    // 3. Verify the tool detail panel opens automatically
   });
 });
 

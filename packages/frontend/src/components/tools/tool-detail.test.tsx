@@ -6,6 +6,7 @@
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
+import { MemoryRouter } from 'react-router-dom';
 import { ToolDetail } from './tool-detail';
 import * as runtimeStore from '@/stores/runtimeStore';
 import * as notificationContext from '@/contexts/NotificationContext';
@@ -20,6 +21,15 @@ vi.mock('@/contexts/NotificationContext');
 vi.mock('@apollo/client/react', () => ({
   useMutation: vi.fn(() => [vi.fn(), { loading: false }]),
 }));
+
+// Mock react-router-dom to provide useParams
+vi.mock('react-router-dom', async () => {
+  const actual = await vi.importActual('react-router-dom');
+  return {
+    ...actual,
+    useParams: () => ({ workspaceId: 'test-workspace' }),
+  };
+});
 
 // Mock ToolTester component
 vi.mock('./tool-tester', () => ({
@@ -111,36 +121,44 @@ describe('ToolDetail', () => {
     });
   });
 
+  const renderComponent = (tool: NonNullable<NonNullable<GetMcpToolsQuery['mcpTools']>[number]>) => {
+    return render(
+      <MemoryRouter initialEntries={['/w/test-workspace/tools']}>
+        <ToolDetail tool={tool} />
+      </MemoryRouter>
+    );
+  };
+
   it('renders tool detail with scroll-smooth class', () => {
-    const { container } = render(<ToolDetail tool={mockTool} />);
+    const { container } = renderComponent(mockTool);
 
     const mainContainer = container.querySelector('.scroll-smooth');
     expect(mainContainer).toBeInTheDocument();
   });
 
   it('renders with overflow-auto for scrolling', () => {
-    const { container } = render(<ToolDetail tool={mockTool} />);
+    const { container } = renderComponent(mockTool);
 
     const mainContainer = container.querySelector('.overflow-auto');
     expect(mainContainer).toBeInTheDocument();
   });
 
   it('renders with full height flex column layout', () => {
-    const { container } = render(<ToolDetail tool={mockTool} />);
+    const { container } = renderComponent(mockTool);
 
     const mainContainer = container.querySelector('.flex.flex-col.h-full');
     expect(mainContainer).toBeInTheDocument();
   });
 
   it('renders tool name and description', () => {
-    render(<ToolDetail tool={mockTool} />);
+    renderComponent(mockTool);
 
     expect(screen.getByText('test-tool')).toBeInTheDocument();
     expect(screen.getByText('A test tool for testing')).toBeInTheDocument();
   });
 
   it('renders tool status', () => {
-    render(<ToolDetail tool={mockTool} />);
+    renderComponent(mockTool);
 
     expect(screen.getByText('Status')).toBeInTheDocument();
     // There may be multiple ACTIVE badges (tool status + agent status)
@@ -149,7 +167,7 @@ describe('ToolDetail', () => {
   });
 
   it('renders MCP server information', () => {
-    render(<ToolDetail tool={mockTool} />);
+    renderComponent(mockTool);
 
     expect(screen.getByText('MCP Server')).toBeInTheDocument();
     expect(screen.getByText('Test Server')).toBeInTheDocument();
@@ -157,14 +175,14 @@ describe('ToolDetail', () => {
   });
 
   it('renders linked agents', () => {
-    render(<ToolDetail tool={mockTool} />);
+    renderComponent(mockTool);
 
     expect(screen.getByText(/Available on Agents \(1\)/)).toBeInTheDocument();
     expect(screen.getByText('Test Agent')).toBeInTheDocument();
   });
 
   it('renders ToolTester component', () => {
-    render(<ToolDetail tool={mockTool} />);
+    renderComponent(mockTool);
 
     const toolTester = screen.getByTestId('tool-tester');
     expect(toolTester).toBeInTheDocument();
@@ -174,7 +192,7 @@ describe('ToolDetail', () => {
   it('shows message when tool has no linked agents', () => {
     const toolWithNoRuntimes = { ...mockTool, runtimes: [] };
 
-    render(<ToolDetail tool={toolWithNoRuntimes} />);
+    renderComponent(toolWithNoRuntimes);
 
     expect(screen.getByText('Not available on any agents yet')).toBeInTheDocument();
   });
@@ -182,7 +200,7 @@ describe('ToolDetail', () => {
   it('shows add button when unlinked agents exist', () => {
     const toolWithNoRuntimes = { ...mockTool, runtimes: [] };
 
-    render(<ToolDetail tool={toolWithNoRuntimes} />);
+    renderComponent(toolWithNoRuntimes);
 
     // Should show the add button since we have an agent in the store but it's not linked
     const buttons = screen.getAllByRole('button');
@@ -190,7 +208,7 @@ describe('ToolDetail', () => {
   });
 
   it('does not show add button when all agents are linked', () => {
-    render(<ToolDetail tool={mockTool} />);
+    renderComponent(mockTool);
 
     // All agents from the store are already linked to the tool
     const addButtons = screen.queryByRole('button', { name: /add/i });
@@ -199,7 +217,7 @@ describe('ToolDetail', () => {
   });
 
   it('renders external link for server repository', () => {
-    const { container } = render(<ToolDetail tool={mockTool} />);
+    const { container } = renderComponent(mockTool);
 
     const externalLink = container.querySelector('a[href="https://github.com/test/server"]');
     expect(externalLink).toBeInTheDocument();
@@ -213,14 +231,14 @@ describe('ToolDetail', () => {
       status: ActiveStatus.Inactive,
     };
 
-    render(<ToolDetail tool={inactiveTool} />);
+    renderComponent(inactiveTool);
 
     const statusElement = screen.getByText('INACTIVE');
     expect(statusElement.className).toContain('bg-gray-100');
   });
 
   it('renders agent status badges', () => {
-    render(<ToolDetail tool={mockTool} />);
+    renderComponent(mockTool);
 
     // Check for status badge in agent list
     const statusBadges = screen.getAllByText('ACTIVE');
@@ -228,7 +246,7 @@ describe('ToolDetail', () => {
   });
 
   it('container supports smooth scrolling for ToolTester', () => {
-    const { container } = render(<ToolDetail tool={mockTool} />);
+    const { container } = renderComponent(mockTool);
 
     // Verify the container has the necessary classes for smooth scrolling
     const scrollContainer = container.querySelector('.scroll-smooth.overflow-auto');
@@ -241,7 +259,7 @@ describe('ToolDetail', () => {
   });
 
   it('ToolTester is placed after other content for scroll behavior', () => {
-    render(<ToolDetail tool={mockTool} />);
+    renderComponent(mockTool);
 
     // ToolTester should be in the last section (after agents section)
     const toolTester = screen.getByTestId('tool-tester');
@@ -253,7 +271,7 @@ describe('ToolDetail', () => {
   });
 
   it('renders unlink button for linked agents', () => {
-    render(<ToolDetail tool={mockTool} />);
+    renderComponent(mockTool);
 
     // Check for unlink button (X icon button)
     const buttons = screen.getAllByRole('button');
@@ -265,7 +283,7 @@ describe('ToolDetail', () => {
   });
 
   it('header is fixed at top with border', () => {
-    const { container } = render(<ToolDetail tool={mockTool} />);
+    const { container } = renderComponent(mockTool);
 
     const header = container.querySelector('.border-b.border-gray-200');
     expect(header).toBeInTheDocument();
@@ -273,7 +291,7 @@ describe('ToolDetail', () => {
   });
 
   it('content area is scrollable', () => {
-    const { container } = render(<ToolDetail tool={mockTool} />);
+    const { container } = renderComponent(mockTool);
 
     const contentArea = container.querySelector('.flex-1.p-4');
     expect(contentArea).toBeInTheDocument();
