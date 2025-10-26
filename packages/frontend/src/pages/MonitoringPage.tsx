@@ -17,27 +17,37 @@
  * - Real-time updates via polling (30s default)
  */
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Activity, AlertCircle, CheckCircle, Clock } from 'lucide-react';
 import { MasterDetailLayout } from '@/components/layout/master-detail-layout';
 import { ToolCallsTable } from '@/components/monitoring/ToolCallsTable';
 import { ToolCallDetail } from '@/components/monitoring/ToolCallDetail';
 import { RefreshIntervalControl } from '@/components/monitoring/RefreshIntervalControl';
 import { useToolCalls } from '@/hooks/useToolCalls';
+import { useUrlSync } from '@/hooks/useUrlSync';
 
 export default function MonitoringPage() {
-  const [selectedToolCallId, setSelectedToolCallId] = useState<string | null>(null);
+  const { selectedId, setSelectedId } = useUrlSync();
   const [pollInterval, setPollInterval] = useState(30000);
 
   const { toolCalls, stats, loading, error, filters, sorting, pagination } = useToolCalls({
     pollInterval,
   });
 
-  // Get selected tool call
+  // Get selected tool call from URL
   const selectedToolCall = useMemo(
-    () => toolCalls.find((tc) => tc.id === selectedToolCallId),
-    [toolCalls, selectedToolCallId]
+    () => toolCalls.find((tc) => tc.id === selectedId),
+    [toolCalls, selectedId]
   );
+
+  // Auto-open detail panel if ID in URL and tool call exists
+  useEffect(() => {
+    if (selectedId && !selectedToolCall && !loading) {
+      // Tool call not found on current page - might need pagination handling
+      // For now, just clear the selection
+      // TODO: Implement backend pagination lookup
+    }
+  }, [selectedId, selectedToolCall, loading]);
 
   if (error) {
     return (
@@ -110,15 +120,15 @@ export default function MonitoringPage() {
           <ToolCallsTable
             toolCalls={toolCalls}
             loading={loading}
-            selectedToolCallId={selectedToolCallId}
-            onSelectToolCall={setSelectedToolCallId}
+            selectedToolCallId={selectedId}
+            onSelectToolCall={setSelectedId}
             filters={filters}
             sorting={sorting}
             pagination={pagination}
           />
         }
         detail={selectedToolCall ? <ToolCallDetail toolCall={selectedToolCall} /> : null}
-        onCloseDetail={() => setSelectedToolCallId(null)}
+        onCloseDetail={() => setSelectedId(null)}
       />
     </div>
   );

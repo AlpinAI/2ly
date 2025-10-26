@@ -17,7 +17,7 @@
  * - "Add Tools" button (opens AddToolWorkflow)
  */
 
-import { useState, useMemo } from 'react';
+import { useMemo, useEffect } from 'react';
 import { Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { MasterDetailLayout } from '@/components/layout/master-detail-layout';
@@ -28,9 +28,10 @@ import { useMCPServers } from '@/hooks/useMCPServers';
 import { useAgents } from '@/hooks/useAgents';
 import { useUIStore } from '@/stores/uiStore';
 import { useRuntimeData } from '@/stores/runtimeStore';
+import { useUrlSync } from '@/hooks/useUrlSync';
 
 export default function ToolsPage() {
-  const [selectedToolId, setSelectedToolId] = useState<string | null>(null);
+  const { selectedId, setSelectedId } = useUrlSync();
   const setAddSourceWorkflowOpen = useUIStore((state) => state.setAddSourceWorkflowOpen);
 
   // Fetch tools, servers, and agents
@@ -39,11 +40,19 @@ export default function ToolsPage() {
   const { servers } = useMCPServers();
   const { agents } = useAgents(runtimes);
 
-  // Get selected tool
+  // Get selected tool from URL
   const selectedTool = useMemo(() => {
-    if (!selectedToolId) return null;
-    return filteredTools.find((t) => t?.id === selectedToolId) || null;
-  }, [selectedToolId, filteredTools]);
+    if (!selectedId) return null;
+    return filteredTools.find((t) => t?.id === selectedId) || null;
+  }, [selectedId, filteredTools]);
+
+  // Auto-open detail panel if ID in URL and tool exists
+  useEffect(() => {
+    if (selectedId && !selectedTool && !loading) {
+      // Tool not found - might have been deleted or invalid ID
+      setSelectedId(null);
+    }
+  }, [selectedId, selectedTool, loading, setSelectedId]);
 
   // Available servers and agents for filters
   const availableServers = useMemo(() => {
@@ -90,8 +99,8 @@ export default function ToolsPage() {
         table={
           <ToolTable
             tools={filteredTools}
-            selectedToolId={selectedToolId}
-            onSelectTool={setSelectedToolId}
+            selectedToolId={selectedId}
+            onSelectTool={setSelectedId}
             search={filters.search}
             onSearchChange={filters.setSearch}
             serverFilter={filters.serverIds}
@@ -104,7 +113,7 @@ export default function ToolsPage() {
           />
         }
         detail={selectedTool ? <ToolDetail tool={selectedTool} /> : null}
-        onCloseDetail={() => setSelectedToolId(null)}
+        onCloseDetail={() => setSelectedId(null)}
       />
     </div>
   );

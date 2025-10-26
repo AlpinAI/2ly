@@ -6,6 +6,7 @@
 
 import { ChevronLeft, ChevronRight, AlertCircle, CheckCircle, Clock, ArrowUpDown, X } from 'lucide-react';
 import { useQuery } from '@apollo/client/react';
+import { useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { CheckboxDropdown } from '@/components/ui/checkbox-dropdown';
 import { Search } from '@/components/ui/search';
@@ -23,6 +24,7 @@ import {
 } from '@/graphql/generated/graphql';
 import { useWorkspaceId } from '@/stores/workspaceStore';
 import { cn } from '@/lib/utils';
+import { useScrollToEntity } from '@/hooks/useScrollToEntity';
 
 interface ToolCall {
   id: string;
@@ -92,6 +94,8 @@ export function ToolCallsTable({
   pagination,
 }: ToolCallsTableProps) {
   const workspaceId = useWorkspaceId();
+  const scrollToEntity = useScrollToEntity();
+  const rowRefs = useRef<Map<string, HTMLTableRowElement>>(new Map());
 
   // Fetch available tools for filter
   const { data: toolsData } = useQuery(GetMcpToolsDocument, {
@@ -133,6 +137,20 @@ export function ToolCallsTable({
   };
 
   const currentSort = SORT_OPTIONS.find((opt) => opt.direction === sorting.orderDirection);
+
+  // Scroll to selected entity when ID changes and element is ready
+  useEffect(() => {
+    if (selectedToolCallId && !loading) {
+      const element = rowRefs.current.get(selectedToolCallId);
+      if (element) {
+        // Use setTimeout to ensure the table has fully rendered
+        setTimeout(() => {
+          scrollToEntity(element);
+        }, 100);
+      }
+    }
+  }, [selectedToolCallId, loading, scrollToEntity]);
+
   // Status icon helper
   const getStatusIcon = (status: ToolCallStatus) => {
     switch (status) {
@@ -265,6 +283,13 @@ export function ToolCallsTable({
               {toolCalls.map((call) => (
                 <tr
                   key={call.id}
+                  ref={(el) => {
+                    if (el) {
+                      rowRefs.current.set(call.id, el);
+                    } else {
+                      rowRefs.current.delete(call.id);
+                    }
+                  }}
                   onClick={() => onSelectToolCall(call.id)}
                   className={cn(
                     'cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors',

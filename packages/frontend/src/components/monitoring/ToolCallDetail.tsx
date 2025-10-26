@@ -5,6 +5,7 @@
  */
 
 import { AlertCircle, CheckCircle, Clock } from 'lucide-react';
+import { Link, useParams } from 'react-router-dom';
 import { ToolCallStatus } from '@/graphql/generated/graphql';
 import { cn } from '@/lib/utils';
 
@@ -17,17 +18,21 @@ interface ToolCall {
   toolOutput: string | null;
   error: string | null;
   mcpTool: {
+    id: string;
     name: string;
     description?: string;
     mcpServer: {
+      id: string;
       name: string;
     };
   };
   calledBy: {
+    id: string;
     name: string;
     hostname: string | null;
   };
   executedBy?: {
+    id: string;
     name: string;
     hostname: string | null;
   } | null;
@@ -38,6 +43,7 @@ interface ToolCallDetailProps {
 }
 
 export function ToolCallDetail({ toolCall }: ToolCallDetailProps) {
+  const { workspaceId } = useParams<{ workspaceId: string }>();
   // Format date helper
   const formatDate = (date: Date) => {
     return new Date(date).toLocaleString();
@@ -84,10 +90,21 @@ export function ToolCallDetail({ toolCall }: ToolCallDetailProps) {
       {/* Tool Info */}
       <div>
         <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-          {toolCall.mcpTool.name}
+          <Link
+            to={`/w/${workspaceId}/tools?id=${toolCall.mcpTool.id}`}
+            className="hover:text-cyan-600 dark:hover:text-cyan-400 hover:underline"
+          >
+            {toolCall.mcpTool.name}
+          </Link>
         </h3>
         <p className="text-xs text-gray-500 dark:text-gray-500">
-          Server: {toolCall.mcpTool.mcpServer.name}
+          Server:{' '}
+          <Link
+            to={`/w/${workspaceId}/sources?id=${toolCall.mcpTool.mcpServer.id}`}
+            className="hover:text-cyan-600 dark:hover:text-cyan-400 hover:underline"
+          >
+            {toolCall.mcpTool.mcpServer.name}
+          </Link>
         </p>
       </div>
 
@@ -95,7 +112,12 @@ export function ToolCallDetail({ toolCall }: ToolCallDetailProps) {
       <div className="grid grid-cols-2 gap-4">
         <div>
           <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Called By</p>
-          <p className="text-sm font-medium text-gray-900 dark:text-white">{toolCall.calledBy.name}</p>
+          <Link
+            to={`/w/${workspaceId}/overview?id=${toolCall.calledBy.id}`}
+            className="text-sm font-medium text-gray-900 dark:text-white hover:text-cyan-600 dark:hover:text-cyan-400 hover:underline"
+          >
+            {toolCall.calledBy.name}
+          </Link>
           {toolCall.calledBy.hostname && (
             <p className="text-xs text-gray-500 dark:text-gray-400">{toolCall.calledBy.hostname}</p>
           )}
@@ -103,9 +125,12 @@ export function ToolCallDetail({ toolCall }: ToolCallDetailProps) {
         {toolCall.executedBy && (
           <div>
             <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Executed By</p>
-            <p className="text-sm font-medium text-gray-900 dark:text-white">
+            <Link
+              to={`/w/${workspaceId}/overview?id=${toolCall.executedBy.id}`}
+              className="text-sm font-medium text-gray-900 dark:text-white hover:text-cyan-600 dark:hover:text-cyan-400 hover:underline"
+            >
               {toolCall.executedBy.name}
-            </p>
+            </Link>
             {toolCall.executedBy.hostname && (
               <p className="text-xs text-gray-500 dark:text-gray-400">{toolCall.executedBy.hostname}</p>
             )}

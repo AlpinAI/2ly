@@ -16,7 +16,7 @@
  * - Show tool set capabilities, sources, and tools
  */
 
-import { useState, useMemo } from 'react';
+import { useMemo, useEffect } from 'react';
 import { Plus } from 'lucide-react';
 import { MasterDetailLayout } from '@/components/layout/master-detail-layout';
 import { AgentTable } from '@/components/agents/agent-table';
@@ -26,9 +26,10 @@ import { useAgents } from '@/hooks/useAgents';
 import { useMCPServers } from '@/hooks/useMCPServers';
 import { useRuntimeData } from '@/stores/runtimeStore';
 import { useCreateToolSetDialog, useManageToolsDialog } from '@/stores/uiStore';
+import { useUrlSync } from '@/hooks/useUrlSync';
 
 export default function ToolSetsPage() {
-  const [selectedAgentId, setSelectedAgentId] = useState<string | null>(null);
+  const { selectedId, setSelectedId } = useUrlSync();
   const { openDialog } = useCreateToolSetDialog();
 
   // Fetch runtimes and servers
@@ -36,11 +37,19 @@ export default function ToolSetsPage() {
   const { filteredAgents, filters } = useAgents(runtimes);
   const { servers } = useMCPServers();
 
-  // Get selected agent
+  // Get selected agent from URL
   const selectedAgent = useMemo(() => {
-    if (!selectedAgentId) return null;
-    return filteredAgents.find((a) => a.id === selectedAgentId) || null;
-  }, [selectedAgentId, filteredAgents]);
+    if (!selectedId) return null;
+    return filteredAgents.find((a) => a.id === selectedId) || null;
+  }, [selectedId, filteredAgents]);
+
+  // Auto-open detail panel if ID in URL and agent exists
+  useEffect(() => {
+    if (selectedId && !selectedAgent && !loading) {
+      // Agent not found - might have been deleted or invalid ID
+      setSelectedId(null);
+    }
+  }, [selectedId, selectedAgent, loading, setSelectedId]);
 
   // Available servers for filter
   const availableServers = useMemo(() => {
@@ -64,7 +73,7 @@ export default function ToolSetsPage() {
   const manageToolsDialog = useManageToolsDialog();
   const handleCreateToolSet = () => {
     openDialog((toolSetId) => {
-      setSelectedAgentId(toolSetId);
+      setSelectedId(toolSetId);
       manageToolsDialog.setSelectedToolSetId(toolSetId);
       manageToolsDialog.setOpen(true);
     });
@@ -92,8 +101,8 @@ export default function ToolSetsPage() {
         table={
           <AgentTable
             agents={filteredAgents}
-            selectedAgentId={selectedAgentId}
-            onSelectAgent={setSelectedAgentId}
+            selectedAgentId={selectedId}
+            onSelectAgent={setSelectedId}
             search={filters.search}
             onSearchChange={filters.setSearch}
             serverFilter={filters.serverIds}
@@ -105,7 +114,7 @@ export default function ToolSetsPage() {
           />
         }
         detail={selectedAgent ? <AgentDetail agent={selectedAgent} /> : null}
-        onCloseDetail={() => setSelectedAgentId(null)}
+        onCloseDetail={() => setSelectedId(null)}
       />
     </div>
   );
