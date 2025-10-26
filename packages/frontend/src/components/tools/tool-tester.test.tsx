@@ -335,6 +335,9 @@ describe('ToolTester', () => {
   });
 
   it('handles mutation errors gracefully', async () => {
+    // Silence expected console.error from error handling
+    const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+
     mockCallTool.mockRejectedValue(new Error('Network error'));
 
     render(
@@ -352,6 +355,8 @@ describe('ToolTester', () => {
       expect(screen.getByText('Error')).toBeInTheDocument();
       expect(screen.getByText('Network error')).toBeInTheDocument();
     });
+
+    consoleErrorSpy.mockRestore();
   });
 
   it('clears previous result when starting new test', async () => {

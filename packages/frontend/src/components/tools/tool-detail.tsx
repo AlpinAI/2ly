@@ -13,6 +13,7 @@
 
 import { ExternalLink, Wrench, Server, Bot, Plus, X } from 'lucide-react';
 import { useState, useMemo } from 'react';
+import { Link, useParams } from 'react-router-dom';
 import { useMutation } from '@apollo/client/react';
 import { ToolTester } from './tool-tester';
 import { LinkToolDialog } from './link-tool-dialog';
@@ -29,6 +30,7 @@ export interface ToolDetailProps {
 }
 
 export function ToolDetail({ tool }: ToolDetailProps) {
+  const { workspaceId } = useParams<{ workspaceId: string }>();
   const { runtimes } = useRuntimeData();
   const { toast } = useNotification();
   const [loadingStates, setLoadingStates] = useState<Record<string, boolean>>({});
@@ -117,7 +119,12 @@ export function ToolDetail({ tool }: ToolDetailProps) {
           <div className="flex items-center gap-2 bg-white dark:bg-gray-800 px-3 py-2 rounded border border-gray-200 dark:border-gray-700">
             <Server className="h-4 w-4 text-gray-400" />
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-gray-900 dark:text-white truncate">{tool.mcpServer.name}</p>
+              <Link
+                to={`/w/${workspaceId}/sources?id=${tool.mcpServer.id}`}
+                className="text-sm font-medium text-gray-900 dark:text-white hover:text-cyan-600 dark:hover:text-cyan-400 hover:underline truncate block"
+              >
+                {tool.mcpServer.name}
+              </Link>
               <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{tool.mcpServer.description}</p>
             </div>
             {tool.mcpServer.repositoryUrl && (
@@ -153,41 +160,53 @@ export function ToolDetail({ tool }: ToolDetailProps) {
           </div>
           {tool.runtimes && tool.runtimes.length > 0 ? (
             <ul className="space-y-1">
-              {tool.runtimes.map((runtime) => (
-                <li
-                  key={runtime.id}
-                  className="flex items-center gap-2 bg-white dark:bg-gray-800 px-3 py-2 rounded border border-gray-200 dark:border-gray-700"
-                >
-                  <Bot className="h-4 w-4 text-gray-400" />
-                  <div className="flex-1">
-                    <p className="text-sm font-medium text-gray-900 dark:text-white">{runtime.name}</p>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span
-                      className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
-                        runtime.status === 'ACTIVE'
-                          ? 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300'
-                          : 'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-300'
-                      }`}
-                    >
-                      {runtime.status}
-                    </span>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-6 w-6 p-0 text-gray-400 hover:text-red-600 dark:hover:text-red-400"
-                      onClick={() => handleUnlinkTool(runtime.id)}
-                      disabled={loadingStates[runtime.id]}
-                    >
-                      {loadingStates[runtime.id] ? (
-                        <div className="h-3 w-3 animate-spin rounded-full border-2 border-gray-300 border-t-gray-600" />
+              {tool.runtimes.map((runtime) => {
+                const isAgent = runtime.capabilities?.includes('agent');
+                return (
+                  <li
+                    key={runtime.id}
+                    className="flex items-center gap-2 bg-white dark:bg-gray-800 px-3 py-2 rounded border border-gray-200 dark:border-gray-700"
+                  >
+                    <Bot className="h-4 w-4 text-gray-400" />
+                    <div className="flex-1">
+                      {isAgent ? (
+                        <Link
+                          to={`/w/${workspaceId}/toolsets?id=${runtime.id}`}
+                          className="text-sm font-medium text-gray-900 dark:text-white hover:text-cyan-600 dark:hover:text-cyan-400 hover:underline"
+                        >
+                          {runtime.name}
+                        </Link>
                       ) : (
-                        <X className="h-3 w-3" />
+                        <p className="text-sm font-medium text-gray-900 dark:text-white">{runtime.name}</p>
                       )}
-                    </Button>
-                  </div>
-                </li>
-              ))}
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span
+                        className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
+                          runtime.status === 'ACTIVE'
+                            ? 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300'
+                            : 'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-300'
+                        }`}
+                      >
+                        {runtime.status}
+                      </span>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-6 w-6 p-0 text-gray-400 hover:text-red-600 dark:hover:text-red-400"
+                        onClick={() => handleUnlinkTool(runtime.id)}
+                        disabled={loadingStates[runtime.id]}
+                      >
+                        {loadingStates[runtime.id] ? (
+                          <div className="h-3 w-3 animate-spin rounded-full border-2 border-gray-300 border-t-gray-600" />
+                        ) : (
+                          <X className="h-3 w-3" />
+                        )}
+                      </Button>
+                    </div>
+                  </li>
+                );
+              })}
             </ul>
           ) : (
             <p className="text-sm text-gray-400 dark:text-gray-500">Not available on any agents yet</p>

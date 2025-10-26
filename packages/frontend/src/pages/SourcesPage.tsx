@@ -16,7 +16,7 @@
  * - Show source configuration with masked secrets
  */
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { MasterDetailLayout } from '@/components/layout/master-detail-layout';
@@ -27,9 +27,10 @@ import { useAgents } from '@/hooks/useAgents';
 import { useRuntimeData } from '@/stores/runtimeStore';
 import { useUIStore } from '@/stores/uiStore';
 import { SourceType } from '@/types/sources';
+import { useUrlSync } from '@/hooks/useUrlSync';
 
 export default function SourcesPage() {
-  const [selectedServerId, setSelectedServerId] = useState<string | null>(null);
+  const { selectedId, setSelectedId } = useUrlSync();
   const [typeFilter, setTypeFilter] = useState<string[]>([]);
 
   // Fetch servers and agents
@@ -55,11 +56,20 @@ export default function SourcesPage() {
     return sourcesWithType.filter(source => typeFilter.includes(source.type));
   }, [sourcesWithType, typeFilter]);
 
-  // Get selected source
+  // Get selected source from URL
   const selectedSource = useMemo(() => {
-    if (!selectedServerId) return null;
-    return sourcesWithType.find((s) => s.id === selectedServerId) || null;
-  }, [selectedServerId, sourcesWithType]);
+    if (!selectedId) return null;
+    return sourcesWithType.find((s) => s.id === selectedId) || null;
+  }, [selectedId, sourcesWithType]);
+
+  // Auto-open detail panel if ID in URL and source exists
+  useEffect(() => {
+    if (selectedId && !selectedSource && !loading) {
+      // Source not found - might have been deleted or invalid ID
+      // Clear the selection
+      setSelectedId(null);
+    }
+  }, [selectedId, selectedSource, loading, setSelectedId]);
 
   // Available agents for filter
   const availableAgents = useMemo(() => {
@@ -107,8 +117,8 @@ export default function SourcesPage() {
         table={
           <SourceTable
             sources={filteredSources}
-            selectedSourceId={selectedServerId}
-            onSelectSource={setSelectedServerId}
+            selectedSourceId={selectedId}
+            onSelectSource={setSelectedId}
             search={''}
             onSearchChange={() => {}}
             typeFilter={typeFilter}
@@ -124,7 +134,7 @@ export default function SourcesPage() {
           />
         }
         detail={selectedSource ? <SourceDetail source={selectedSource} /> : null}
-        onCloseDetail={() => setSelectedServerId(null)}
+        onCloseDetail={() => setSelectedId(null)}
       />
     </div>
   );

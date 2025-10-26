@@ -19,11 +19,13 @@
  * - Conditional columns based on source type
  */
 
+import { useEffect, useRef } from 'react';
 import { Search } from '@/components/ui/search';
 import { CheckboxDropdown } from '@/components/ui/checkbox-dropdown';
 import { Button } from '@/components/ui/button';
 import { X, Server, Globe } from 'lucide-react';
 import { SOURCE_TYPE_OPTIONS, SOURCE_TYPE_LABELS, SourceType, type Source } from '@/types/sources';
+import { useScrollToEntity } from '@/hooks/useScrollToEntity';
 
 export interface SourceTableProps {
   sources: Source[];
@@ -72,12 +74,27 @@ export function SourceTable({
   availableAgents,
   loading,
 }: SourceTableProps) {
+  const scrollToEntity = useScrollToEntity();
+  const rowRefs = useRef<Map<string, HTMLTableRowElement>>(new Map());
+
   const hasActiveFilters =
     search.length > 0 ||
     typeFilter.length > 0 ||
     transportFilter.length > 0 ||
     runOnFilter.length > 0 ||
     agentFilter.length > 0;
+
+  // Scroll to selected entity when ID changes and element is ready
+  useEffect(() => {
+    if (selectedSourceId && !loading) {
+      const element = rowRefs.current.get(selectedSourceId);
+      if (element) {
+        setTimeout(() => {
+          scrollToEntity(element);
+        }, 100);
+      }
+    }
+  }, [selectedSourceId, loading, scrollToEntity]);
 
   const handleClearFilters = () => {
     onSearchChange('');
@@ -180,6 +197,13 @@ export function SourceTable({
                   {sources.map((source) => (
                     <tr
                       key={source.id}
+                      ref={(el) => {
+                        if (el) {
+                          rowRefs.current.set(source.id, el);
+                        } else {
+                          rowRefs.current.delete(source.id);
+                        }
+                      }}
                       onClick={() => onSelectSource(source.id)}
                       className={`cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors ${
                         selectedSourceId === source.id

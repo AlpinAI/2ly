@@ -17,12 +17,14 @@
  * - Highlight selected row
  */
 
+import { useEffect, useRef } from 'react';
 import { Search } from '@/components/ui/search';
 import { CheckboxDropdown } from '@/components/ui/checkbox-dropdown';
 import { Button } from '@/components/ui/button';
 import { X, Cable, Settings } from 'lucide-react';
 import { useManageToolsDialog, useConnectAgentDialog } from '@/stores/uiStore';
 import type { SubscribeRuntimesSubscription } from '@/graphql/generated/graphql';
+import { useScrollToEntity } from '@/hooks/useScrollToEntity';
 
 type Runtime = NonNullable<SubscribeRuntimesSubscription['runtimes']>[number];
 
@@ -58,9 +60,24 @@ export function AgentTable({
   availableServers,
   loading,
 }: AgentTableProps) {
+  const scrollToEntity = useScrollToEntity();
+  const rowRefs = useRef<Map<string, HTMLTableRowElement>>(new Map());
+
   const hasActiveFilters = search.length > 0 || serverFilter.length > 0 || statusFilter.length > 0;
   const { setOpen: setManageToolsOpen, setSelectedToolSetId } = useManageToolsDialog();
   const { setOpen: setConnectDialogOpen, setSelectedAgentId } = useConnectAgentDialog();
+
+  // Scroll to selected entity when ID changes and element is ready
+  useEffect(() => {
+    if (selectedAgentId && !loading) {
+      const element = rowRefs.current.get(selectedAgentId);
+      if (element) {
+        setTimeout(() => {
+          scrollToEntity(element);
+        }, 100);
+      }
+    }
+  }, [selectedAgentId, loading, scrollToEntity]);
 
   const handleClearFilters = () => {
     onSearchChange('');
@@ -152,6 +169,13 @@ export function AgentTable({
               {agents.map((agent) => (
                 <tr
                   key={agent.id}
+                  ref={(el) => {
+                    if (el) {
+                      rowRefs.current.set(agent.id, el);
+                    } else {
+                      rowRefs.current.delete(agent.id);
+                    }
+                  }}
                   onClick={() => onSelectAgent(agent.id)}
                   className={`cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors ${
                     selectedAgentId === agent.id

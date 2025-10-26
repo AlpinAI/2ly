@@ -6,6 +6,7 @@
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { MemoryRouter } from 'react-router-dom';
 import { AgentDetail } from './agent-detail';
 import * as uiStore from '@/stores/uiStore';
 import * as NotificationContext from '@/contexts/NotificationContext';
@@ -23,6 +24,15 @@ vi.mock('@/contexts/NotificationContext');
 vi.mock('@apollo/client/react', () => ({
   useMutation: vi.fn(),
 }));
+
+// Mock react-router-dom to provide useParams
+vi.mock('react-router-dom', async () => {
+  const actual = await vi.importActual('react-router-dom');
+  return {
+    ...actual,
+    useParams: () => ({ workspaceId: 'test-workspace' }),
+  };
+});
 
 describe('AgentDetail', () => {
   const mockAgent: Runtime = {
@@ -96,7 +106,11 @@ describe('AgentDetail', () => {
   });
 
   const renderComponent = (agent: Runtime) => {
-    return render(<AgentDetail agent={agent} />);
+    return render(
+      <MemoryRouter initialEntries={['/w/test-workspace/toolsets']}>
+        <AgentDetail agent={agent} />
+      </MemoryRouter>
+    );
   };
 
   it('renders agent details', () => {

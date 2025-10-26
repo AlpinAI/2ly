@@ -174,3 +174,33 @@
     scrollbar-color: hsl(var(--muted-foreground) / 0.3) hsl(var(--muted));
   }
 }
+
+/**
+ * Entity Highlight Animation
+ *
+ * WHY: When navigating to an entity via deep link, we need visual feedback
+ * to show users which entity was selected. This creates a temporary highlight
+ * that fades out after 2.5 seconds.
+ *
+ * USAGE: Applied by useScrollToEntity hook when scrolling to an entity
+ */
+@layer utilities {
+  .entity-highlight {
+    animation: entity-highlight-fade 2.5s ease-out forwards;
+  }
+}
+
+@keyframes entity-highlight-fade {
+  0% {
+    background-color: hsl(var(--primary) / 0.2);
+    box-shadow: 0 0 0 2px hsl(var(--primary) / 0.4);
+  }
+  40% {
+    background-color: hsl(var(--primary) / 0.2);
+    box-shadow: 0 0 0 2px hsl(var(--primary) / 0.4);
+  }
+  100% {
+    background-color: transparent;
+    box-shadow: 0 0 0 0 transparent;
+  }
+}

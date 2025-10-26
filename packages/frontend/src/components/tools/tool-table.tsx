@@ -17,11 +17,13 @@
  * - Highlight selected row
  */
 
+import { useEffect, useRef } from 'react';
 import { Search } from '@/components/ui/search';
 import { CheckboxDropdown } from '@/components/ui/checkbox-dropdown';
 import { Button } from '@/components/ui/button';
 import { X } from 'lucide-react';
 import type { GetMcpToolsQuery } from '@/graphql/generated/graphql';
+import { useScrollToEntity } from '@/hooks/useScrollToEntity';
 
 type McpTool = NonNullable<NonNullable<GetMcpToolsQuery['mcpTools']>[number]>;
 
@@ -54,7 +56,22 @@ export function ToolTable({
   availableAgents,
   loading,
 }: ToolTableProps) {
+  const scrollToEntity = useScrollToEntity();
+  const rowRefs = useRef<Map<string, HTMLTableRowElement>>(new Map());
+
   const hasActiveFilters = search.length > 0 || serverFilter.length > 0 || agentFilter.length > 0;
+
+  // Scroll to selected entity when ID changes and element is ready
+  useEffect(() => {
+    if (selectedToolId && !loading) {
+      const element = rowRefs.current.get(selectedToolId);
+      if (element) {
+        setTimeout(() => {
+          scrollToEntity(element);
+        }, 100);
+      }
+    }
+  }, [selectedToolId, loading, scrollToEntity]);
 
   const handleClearFilters = () => {
     onSearchChange('');
@@ -132,6 +149,13 @@ export function ToolTable({
                   {tools.map((tool) => (
                     <tr
                       key={tool.id}
+                      ref={(el) => {
+                        if (el) {
+                          rowRefs.current.set(tool.id, el);
+                        } else {
+                          rowRefs.current.delete(tool.id);
+                        }
+                      }}
                       onClick={() => onSelectTool(tool.id)}
                       className={`cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors ${
                         selectedToolId === tool.id ? 'bg-cyan-50 dark:bg-cyan-900/20' : ''

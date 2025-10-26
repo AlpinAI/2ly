@@ -138,6 +138,10 @@ Tests are organized into three strategies:
 - **Apollo Mocks**: Mock components using Apollo hooks instead of wrapping in providers
   - Example: `vi.mock('@/components/command-palette/command-palette', () => ({ CommandPalette: () => null }))`
 - **Store Mocks**: Mock Zustand stores and return test data
+- **Silence Expected Errors**: Always silence expected console.error/console.warn in tests to avoid noise
+  - Pattern: `const spy = vi.spyOn(console, 'error').mockImplementation(() => {});` then `spy.mockRestore()` after
+  - Example: `tool-tester.test.tsx` - "handles mutation errors gracefully" test
+  - **IMPORTANT**: This prevents bloating test output and agent context with expected error logs
 - **See**: `app-layout.test.tsx` for comprehensive mocking example
 
 ## Technology Stack

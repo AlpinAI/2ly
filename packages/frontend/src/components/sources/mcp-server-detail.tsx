@@ -22,6 +22,7 @@
  */
 
 import { useState, useEffect, useMemo } from 'react';
+import { Link, useParams } from 'react-router-dom';
 import { useMutation } from '@apollo/client/react';
 import { ExternalLink, Server, Save, X, Trash2 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
@@ -42,6 +43,7 @@ export interface MCPServerDetailProps {
 }
 
 export function MCPServerDetail({ server }: MCPServerDetailProps) {
+  const { workspaceId } = useParams<{ workspaceId: string }>();
   const { runtimes } = useRuntimeData();
   const { confirm } = useNotification();
 
@@ -308,14 +310,29 @@ export function MCPServerDetail({ server }: MCPServerDetailProps) {
         </div>
 
         {/* Runtime */}
-        {server.runtime && (
-          <div>
-            <h4 className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">
-              Connected Runtime
-            </h4>
-            <p className="text-sm text-gray-700 dark:text-gray-300">{server.runtime.name}</p>
-          </div>
-        )}
+        {server.runtime && (() => {
+          // Look up full runtime details from store to check capabilities
+          const fullRuntime = runtimes.find(r => r.id === server.runtime!.id);
+          const isAgent = fullRuntime?.capabilities?.includes('agent') ?? false;
+
+          return (
+            <div>
+              <h4 className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">
+                Connected Runtime
+              </h4>
+              {isAgent ? (
+                <Link
+                  to={`/w/${workspaceId}/toolsets?id=${server.runtime.id}`}
+                  className="text-sm text-gray-700 dark:text-gray-300 hover:text-cyan-600 dark:hover:text-cyan-400 hover:underline"
+                >
+                  {server.runtime.name}
+                </Link>
+              ) : (
+                <p className="text-sm text-gray-700 dark:text-gray-300">{server.runtime.name}</p>
+              )}
+            </div>
+          );
+        })()}
 
         {/* Repository URL */}
         {server.repositoryUrl && (
@@ -386,9 +403,14 @@ export function MCPServerDetail({ server }: MCPServerDetailProps) {
               {server.tools.map((tool) => (
                 <li
                   key={tool.id}
-                  className="text-sm text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 px-3 py-2 rounded border border-gray-200 dark:border-gray-700"
+                  className="bg-white dark:bg-gray-800 px-3 py-2 rounded border border-gray-200 dark:border-gray-700"
                 >
-                  {tool.name}
+                  <Link
+                    to={`/w/${workspaceId}/tools?id=${tool.id}`}
+                    className="text-sm text-gray-700 dark:text-gray-300 hover:text-cyan-600 dark:hover:text-cyan-400 hover:underline"
+                  >
+                    {tool.name}
+                  </Link>
                 </li>
               ))}
             </ul>

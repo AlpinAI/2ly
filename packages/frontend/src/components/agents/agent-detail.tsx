@@ -14,6 +14,7 @@
  */
 
 import { Bot, Wrench, Clock, Cpu, Settings, Cable, Trash2 } from 'lucide-react';
+import { Link, useParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { useManageToolsDialog, useConnectAgentDialog } from '@/stores/uiStore';
 import { useMutation } from '@apollo/client/react';
@@ -28,6 +29,7 @@ export interface AgentDetailProps {
 }
 
 export function AgentDetail({ agent }: AgentDetailProps) {
+  const { workspaceId } = useParams<{ workspaceId: string }>();
   const { setOpen, setSelectedToolSetId } = useManageToolsDialog();
   const { setOpen: setConnectDialogOpen, setSelectedAgentId } = useConnectAgentDialog();
   const { confirm } = useNotification();
@@ -200,7 +202,12 @@ export function AgentDetail({ agent }: AgentDetailProps) {
                     className="flex items-center gap-2 bg-white dark:bg-gray-800 px-3 py-2 rounded border border-gray-200 dark:border-gray-700"
                   >
                     <Wrench className="h-4 w-4 text-gray-400 flex-shrink-0" />
-                    <span className="text-sm text-gray-900 dark:text-white truncate">{tool.name}</span>
+                    <Link
+                      to={`/w/${workspaceId}/tools?id=${tool.id}`}
+                      className="text-sm text-gray-900 dark:text-white hover:text-cyan-600 dark:hover:text-cyan-400 hover:underline truncate"
+                    >
+                      {tool.name}
+                    </Link>
                   </li>
                 ))}
               </ul>
