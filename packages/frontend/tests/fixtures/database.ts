@@ -175,49 +175,49 @@ export const test = base.extend<DatabaseFixture>({
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   seedDatabase: async ({ graphql }, use) => {
     const seed = async (data: SeedData) => {
+      const initialSystemQuery = `
+        query {
+          querySystem {
+            id
+            initialized
+            createdAt
+            updatedAt
+            instanceId
+            defaultWorkspace {
+              id
+            }
+          }
+        }
+      `;
+      const initialSystemQueryResult = await dgraphQL(initialSystemQuery);
+      const systemId = initialSystemQueryResult.querySystem[0].id;
+      const workspaceId = initialSystemQueryResult.querySystem[0].defaultWorkspace.id;
+
       // Track created entity IDs for cross-referencing
       const entityIds: Record<string, string> = {};
       const now = new Date().toISOString();
 
-      // 1. Create System
+      // 1. Update System to mark as initialized
       const systemMutation = `
-        mutation AddSystem {
-          addSystem(input: {
-            initialized: true
-            createdAt: "${now}"
-            updatedAt: "${now}"
-            instanceId: "test-instance"
+        mutation UpdateSystem($systemId: ID!) {
+          updateSystem(input: {
+            filter: { id: [$systemId] }
+            set: {
+              initialized: true
+              updatedAt: "${now}"
+            }
           }) {
             system {
               id
+              initialized
             }
           }
         }
       `;
-      const systemResult = await dgraphQL<{
-        addSystem: { system: Array<{ id: string }> };
-      }>(systemMutation);
-      const systemId = systemResult.addSystem.system[0].id;
+      await dgraphQL<{
+        updateSystem: { system: Array<{ id: string; initialized: boolean }> };
+      }>(systemMutation, { systemId });
 
-      // 2. Create Workspace
-      const workspaceName = data.workspaces?.[0]?.name || 'Test Workspace';
-      const workspaceMutation = `
-        mutation AddWorkspace($systemId: ID!) {
-          addWorkspace(input: {
-            name: "${workspaceName}"
-            createdAt: "${now}"
-            system: { id: $systemId }
-          }) {
-            workspace {
-              id
-            }
-          }
-        }
-      `;
-      const workspaceResult = await dgraphQL<{
-        addWorkspace: { workspace: Array<{ id: string }> };
-      }>(workspaceMutation, { systemId });
-      const workspaceId = workspaceResult.addWorkspace.workspace[0].id;
       entityIds['default-workspace'] = workspaceId;
 
       // Update system with defaultWorkspace
@@ -464,22 +464,16 @@ export const test = base.extend<DatabaseFixture>({
    */
   getDatabaseState: async ({ graphql }, use) => {
     const getState = async (): Promise<DatabaseState> => {
-      // First get workspaces and system
+      // First get workspaces and system (no auth required)
       const query1 = `
         query GetDatabaseState {
           workspace {
             id
             name
-            description
           }
           system {
             id
             initialized
-          }
-          me {
-            id
-            email
-            name
           }
         }
       `;
@@ -487,7 +481,6 @@ export const test = base.extend<DatabaseFixture>({
       const result1 = await graphql<{
         workspace: any[];
         system: any;
-        me: any;
       }>(query1);
 
       const workspaces = result1.workspace || [];
@@ -513,7 +506,7 @@ export const test = base.extend<DatabaseFixture>({
 
       return {
         workspaces,
-        users: result1.me ? [result1.me] : [],
+        users: [], // Cannot query users without auth - tests should seed and track separately
         mcpServers,
         system: result1.system,
       };
