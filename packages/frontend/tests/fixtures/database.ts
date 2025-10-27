@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { test as base } from '@playwright/test';
 import { comprehensiveSeededData } from '../e2e/fixtures/seed-data';
+import { dgraphQL } from './dgraph-client';
 
 /**
  * Database Fixture for Playwright Tests
@@ -165,224 +166,220 @@ export const test = base.extend<DatabaseFixture>({
 
   /**
    * Seed database fixture
-   * Populates database with test data
+   * Populates database with test data using direct Dgraph GraphQL API
+   *
+   * This bypasses the Apollo API layer to enable comprehensive test fixtures
+   * including backend-only entities (tools, toolCalls) that shouldn't be
+   * exposed via the client API.
    */
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   seedDatabase: async ({ graphql }, use) => {
     const seed = async (data: SeedData) => {
       // Track created entity IDs for cross-referencing
       const entityIds: Record<string, string> = {};
+      const now = new Date().toISOString();
 
-      // Seed users first (initializes system)
-      if (data.users && data.users.length > 0) {
-        // Use initSystem for the first user (this initializes the system)
-        const firstUser = data.users[0];
-        const initMutation = `
-          mutation InitSystem($email: String!, $adminPassword: String!) {
-            initSystem(email: $email, adminPassword: $adminPassword) {
+      // 1. Create System
+      const systemMutation = `
+        mutation AddSystem {
+          addSystem(input: {
+            initialized: true
+            createdAt: "${now}"
+            updatedAt: "${now}"
+            instanceId: "test-instance"
+          }) {
+            system {
               id
-              initialized
-              defaultWorkspace {
-                id
-              }
             }
           }
-        `;
-        const initResult = await graphql<{
-          initSystem: { id: string; defaultWorkspace: { id: string } };
-        }>(initMutation, {
-          email: firstUser.email,
-          adminPassword: firstUser.password,
-        });
-
-        // Store the default workspace ID
-        if (initResult.initSystem.defaultWorkspace) {
-          entityIds['default-workspace'] = initResult.initSystem.defaultWorkspace.id;
         }
+      `;
+      const systemResult = await dgraphQL<{
+        addSystem: { system: Array<{ id: string }> };
+      }>(systemMutation);
+      const systemId = systemResult.addSystem.system[0].id;
 
-        // Use registerUser for remaining users
-        for (let i = 1; i < data.users.length; i++) {
-          const user = data.users[i];
-          const registerMutation = `
-            mutation RegisterUser($input: RegisterUserInput!) {
-              registerUser(input: $input) {
-                success
+      // 2. Create Workspace
+      const workspaceName = data.workspaces?.[0]?.name || 'Test Workspace';
+      const workspaceMutation = `
+        mutation AddWorkspace($systemId: ID!) {
+          addWorkspace(input: {
+            name: "${workspaceName}"
+            createdAt: "${now}"
+            system: { id: $systemId }
+          }) {
+            workspace {
+              id
+            }
+          }
+        }
+      `;
+      const workspaceResult = await dgraphQL<{
+        addWorkspace: { workspace: Array<{ id: string }> };
+      }>(workspaceMutation, { systemId });
+      const workspaceId = workspaceResult.addWorkspace.workspace[0].id;
+      entityIds['default-workspace'] = workspaceId;
+
+      // Update system with defaultWorkspace
+      const updateSystemMutation = `
+        mutation UpdateSystem($systemId: ID!, $workspaceId: ID!) {
+          updateSystem(input: {
+            filter: { id: [$systemId] }
+            set: {
+              defaultWorkspace: { id: $workspaceId }
+            }
+          }) {
+            system {
+              id
+            }
+          }
+        }
+      `;
+      await dgraphQL(updateSystemMutation, { systemId, workspaceId });
+
+      // 3. Create Users
+      if (data.users && data.users.length > 0) {
+        for (const user of data.users) {
+          const userMutation = `
+            mutation AddUser($workspaceId: ID!) {
+              addUser(input: {
+                email: "${user.email}"
+                password: "${user.password}"
+                createdAt: "${now}"
+                updatedAt: "${now}"
+                adminOfWorkspaces: [{ id: $workspaceId }]
+                membersOfWorkspaces: [{ id: $workspaceId }]
+              }) {
                 user {
                   id
-                  email
                 }
-                errors
               }
             }
           `;
-          await graphql(registerMutation, {
-            input: {
-              email: user.email,
-              password: user.password,
-            },
-          });
+          await dgraphQL(userMutation, { workspaceId });
         }
       }
 
-      // Note: Workspace seeding is skipped because there's no addWorkspace mutation
-      // The default workspace created by initSystem is used for all seeded entities
-      // If data.workspaces is provided, we could potentially update the default workspace name
-      // using updateWorkspace mutation, but for now we just use the default workspace as-is
-
-      // Get the workspace ID to use (either from seed or default)
-      const workspaceId =
-        entityIds['test-workspace'] || entityIds['default-workspace'] || entityIds[Object.keys(entityIds)[0]];
-
-      // Seed registry servers
+      // 4. Create Registry Servers
       if (data.registryServers && workspaceId) {
         for (const registryServer of data.registryServers) {
-          const mutation = `
-            mutation AddServerToRegistry(
-              $workspaceId: ID!
-              $name: String!
-              $description: String!
-              $title: String!
-              $repositoryUrl: String!
-              $version: String!
-              $packages: String
-              $remotes: String
-            ) {
-              addServerToRegistry(
-                workspaceId: $workspaceId
-                name: $name
-                description: $description
-                title: $title
-                repositoryUrl: $repositoryUrl
-                version: $version
-                packages: $packages
-                remotes: $remotes
-              ) {
-                id
-                name
-              }
-            }
-          `;
-          const result = await graphql<{
-            addServerToRegistry: { id: string; name: string };
-          }>(mutation, {
-            ...registryServer,
-            workspaceId,
-          });
-          // Store registry server ID
-          entityIds[`registry-${registryServer.name}`] = result.addServerToRegistry.id;
-        }
-      }
-
-      // Seed MCP servers
-      if (data.mcpServers && workspaceId) {
-        const serverNames = ['filesystem-server', 'web-fetch-server', 'development-tools', 'database-server'];
-        for (let i = 0; i < data.mcpServers.length; i++) {
-          const server = data.mcpServers[i];
-          // For now, create basic MCP servers without registry linkage
-          // This is a simplified approach - in production, you'd properly link to registry
-          const registryServerId = entityIds[`registry-${server.name.toLowerCase().replace(/\s+/g, '-')}`];
-
-          if (registryServerId) {
-            const mutation = `
-              mutation CreateMCPServer(
-                $name: String!
-                $description: String!
-                $repositoryUrl: String!
-                $transport: MCPTransportType!
-                $config: String!
-                $workspaceId: ID!
-                $registryServerId: ID!
-              ) {
-                createMCPServer(
-                  name: $name
-                  description: $description
-                  repositoryUrl: $repositoryUrl
-                  transport: $transport
-                  config: $config
-                  workspaceId: $workspaceId
-                  registryServerId: $registryServerId
-                ) {
+          const registryMutation = `
+            mutation AddMCPRegistryServer($workspaceId: ID!) {
+              addMCPRegistryServer(input: {
+                name: "${registryServer.name}"
+                description: "${registryServer.description}"
+                title: "${registryServer.title}"
+                repositoryUrl: "${registryServer.repositoryUrl}"
+                version: "${registryServer.version}"
+                packages: "${registryServer.packages.replace(/"/g, '\\"')}"
+                ${registryServer.remotes ? `remotes: "${registryServer.remotes.replace(/"/g, '\\"')}"` : ''}
+                createdAt: "${now}"
+                lastSeenAt: "${now}"
+                workspace: { id: $workspaceId }
+              }) {
+                mCPRegistryServer {
                   id
                   name
                 }
               }
+            }
+          `;
+          const result = await dgraphQL<{
+            addMCPRegistryServer: { mCPRegistryServer: Array<{ id: string; name: string }> };
+          }>(registryMutation, { workspaceId });
+          // Store registry server ID
+          const normalizedName = registryServer.name.toLowerCase().replace(/\s+/g, '-');
+          entityIds[`registry-${normalizedName}`] = result.addMCPRegistryServer.mCPRegistryServer[0].id;
+        }
+      }
+
+      // 5. Create MCP Servers
+      if (data.mcpServers && workspaceId) {
+        const serverNames = ['filesystem-server', 'web-fetch-server', 'development-tools', 'database-server'];
+        for (let i = 0; i < data.mcpServers.length; i++) {
+          const server = data.mcpServers[i];
+          const normalizedName = server.name.toLowerCase().replace(/\s+/g, '-');
+          const registryServerId = entityIds[`registry-${normalizedName}`];
+
+          if (registryServerId) {
+            const config = JSON.stringify({ command: server.command, args: server.args }).replace(/"/g, '\\"');
+            const serverMutation = `
+              mutation AddMCPServer($workspaceId: ID!, $registryServerId: ID!) {
+                addMCPServer(input: {
+                  name: "${server.name}"
+                  description: "${server.name}"
+                  repositoryUrl: "https://github.com/example/repo"
+                  transport: ${server.transport}
+                  config: "${config}"
+                  runOn: GLOBAL
+                  workspace: { id: $workspaceId }
+                  registryServer: { id: $registryServerId }
+                }) {
+                  mCPServer {
+                    id
+                    name
+                  }
+                }
+              }
             `;
-            const result = await graphql<{
-              createMCPServer: { id: string; name: string };
-            }>(mutation, {
-              name: server.name,
-              description: server.name,
-              repositoryUrl: 'https://github.com/example/repo',
-              transport: server.transport,
-              config: JSON.stringify({ command: server.command, args: server.args }),
-              workspaceId,
-              registryServerId,
-            });
-            // Store server ID using simplified key
-            entityIds[serverNames[i]] = result.createMCPServer.id;
+            const result = await dgraphQL<{
+              addMCPServer: { mCPServer: Array<{ id: string; name: string }> };
+            }>(serverMutation, { workspaceId, registryServerId });
+            // Store server ID
+            entityIds[serverNames[i]] = result.addMCPServer.mCPServer[0].id;
           }
         }
       }
 
-      // Seed runtimes (agents and edge runtimes)
+      // 6. Create Runtimes (agents and edge runtimes)
       if (data.runtimes && workspaceId) {
         const runtimeKeys = ['claude-desktop-agent', 'web-assistant-agent', 'edge-runtime'];
         for (let i = 0; i < data.runtimes.length; i++) {
           const runtime = data.runtimes[i];
-          const mutation = `
-            mutation CreateRuntime(
-              $name: String!
-              $description: String!
-              $capabilities: [String!]!
-              $workspaceId: ID!
-            ) {
-              createRuntime(
-                name: $name
-                description: $description
-                capabilities: $capabilities
-                workspaceId: $workspaceId
-              ) {
-                id
-                name
+          const capsStr = runtime.capabilities.map((c: string) => `"${c}"`).join(', ');
+          const runtimeMutation = `
+            mutation AddRuntime($workspaceId: ID!) {
+              addRuntime(input: {
+                name: "${runtime.name}"
+                description: "${runtime.description}"
+                status: ACTIVE
+                capabilities: [${capsStr}]
+                createdAt: "${now}"
+                lastSeenAt: "${now}"
+                workspace: { id: $workspaceId }
+              }) {
+                runtime {
+                  id
+                  name
+                }
               }
             }
           `;
-          const result = await graphql<{
-            createRuntime: { id: string; name: string };
-          }>(mutation, {
-            ...runtime,
-            workspaceId,
-          });
+          const result = await dgraphQL<{
+            addRuntime: { runtime: Array<{ id: string; name: string }> };
+          }>(runtimeMutation, { workspaceId });
           // Store runtime ID
-          entityIds[runtimeKeys[i]] = result.createRuntime.id;
+          entityIds[runtimeKeys[i]] = result.addRuntime.runtime[0].id;
         }
       }
 
-      // Seed tools
+      // 7. Create Tools
       if (data.tools) {
         for (const tool of data.tools) {
           const mcpServerId = entityIds[tool.mcpServerId];
           if (mcpServerId) {
-            // Tools are typically created by the runtime when connecting to MCP servers
-            // For testing, we need to use a direct mutation or backend seeding approach
-            // This requires a custom mutation or using backend repository directly
-            const mutation = `
-              mutation AddMCPTool(
-                $name: String!
-                $description: String!
-                $inputSchema: String!
-                $annotations: String!
-                $status: ActiveStatus!
-                $mcpServerId: ID!
-                $workspaceId: ID!
-              ) {
+            const escapedInputSchema = tool.inputSchema.replace(/"/g, '\\"').replace(/\n/g, '\\n');
+            const escapedAnnotations = tool.annotations.replace(/"/g, '\\"').replace(/\n/g, '\\n');
+            const toolMutation = `
+              mutation AddMCPTool($mcpServerId: ID!, $workspaceId: ID!) {
                 addMCPTool(input: {
-                  name: $name
-                  description: $description
-                  inputSchema: $inputSchema
-                  annotations: $annotations
-                  status: $status
-                  createdAt: "${new Date().toISOString()}"
-                  lastSeenAt: "${new Date().toISOString()}"
+                  name: "${tool.name}"
+                  description: "${tool.description.replace(/"/g, '\\"')}"
+                  inputSchema: "${escapedInputSchema}"
+                  annotations: "${escapedAnnotations}"
+                  status: ${tool.status}
+                  createdAt: "${now}"
+                  lastSeenAt: "${now}"
                   mcpServer: { id: $mcpServerId }
                   workspace: { id: $workspaceId }
                 }) {
@@ -394,10 +391,9 @@ export const test = base.extend<DatabaseFixture>({
               }
             `;
             try {
-              const result = await graphql<{
+              const result = await dgraphQL<{
                 addMCPTool: { mCPTool: Array<{ id: string; name: string }> };
-              }>(mutation, {
-                ...tool,
+              }>(toolMutation, {
                 mcpServerId,
                 workspaceId,
               });
@@ -405,14 +401,13 @@ export const test = base.extend<DatabaseFixture>({
               const toolKey = tool.name.replace(/[^a-zA-Z0-9]/g, '_');
               entityIds[toolKey] = result.addMCPTool.mCPTool[0].id;
             } catch (error) {
-              // If mutation fails, continue (tools might need runtime to register them)
               console.warn(`Failed to seed tool ${tool.name}:`, error);
             }
           }
         }
       }
 
-      // Seed tool calls
+      // 8. Create Tool Calls
       if (data.toolCalls) {
         for (const toolCall of data.toolCalls) {
           const mcpToolId = entityIds[toolCall.mcpToolId.replace(/[^a-zA-Z0-9]/g, '_')];
@@ -420,25 +415,19 @@ export const test = base.extend<DatabaseFixture>({
           const executedById = toolCall.executedById ? entityIds[toolCall.executedById] : undefined;
 
           if (mcpToolId && calledById) {
-            const mutation = `
-              mutation AddToolCall(
-                $toolInput: String!
-                $calledAt: DateTime!
-                $calledById: ID!
-                $mcpToolId: ID!
-                $status: ToolCallStatus!
-                $completedAt: DateTime
-                $toolOutput: String
-                $error: String
-                $executedById: ID
-              ) {
+            const escapedInput = toolCall.toolInput.replace(/"/g, '\\"').replace(/\n/g, '\\n');
+            const escapedOutput = toolCall.toolOutput ? toolCall.toolOutput.replace(/"/g, '\\"').replace(/\n/g, '\\n') : '';
+            const escapedError = toolCall.error ? toolCall.error.replace(/"/g, '\\"').replace(/\n/g, '\\n') : '';
+
+            const toolCallMutation = `
+              mutation AddToolCall($mcpToolId: ID!, $calledById: ID!${executedById ? ', $executedById: ID!' : ''}) {
                 addToolCall(input: {
-                  toolInput: $toolInput
-                  calledAt: $calledAt
-                  status: $status
-                  completedAt: $completedAt
-                  toolOutput: $toolOutput
-                  error: $error
+                  toolInput: "${escapedInput}"
+                  calledAt: "${toolCall.calledAt}"
+                  status: ${toolCall.status}
+                  ${toolCall.completedAt ? `completedAt: "${toolCall.completedAt}"` : ''}
+                  ${toolCall.toolOutput ? `toolOutput: "${escapedOutput}"` : ''}
+                  ${toolCall.error ? `error: "${escapedError}"` : ''}
                   calledBy: { id: $calledById }
                   mcpTool: { id: $mcpToolId }
                   ${executedById ? 'executedBy: { id: $executedById }' : ''}
@@ -450,11 +439,10 @@ export const test = base.extend<DatabaseFixture>({
               }
             `;
             try {
-              await graphql(mutation, {
-                ...toolCall,
+              await dgraphQL(toolCallMutation, {
                 mcpToolId,
                 calledById,
-                executedById,
+                ...(executedById ? { executedById } : {}),
               });
             } catch (error) {
               console.warn('Failed to seed tool call:', error);
