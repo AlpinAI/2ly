@@ -24,7 +24,7 @@
     "codegen:mcp-registry": "npm run codegen:mcp-registry -w @2ly/common",
     "dev:backend": "npm run dev -w @2ly/backend",
     "dev:frontend": "npm run dev -w @2ly/frontend",
-    "dev:main-runtime": "ROOTS=TEMP:/tmp RUNTIME_NAME=\"Main Runtime\" GLOBAL_RUNTIME=true DEFAULT_TESTING_RUNTIME=true node packages/runtime/dist/index.js",
+    "dev:main-runtime": "ROOTS=TEMP:/tmp RUNTIME_NAME=\"Main Runtime\" GLOBAL_RUNTIME=true node packages/runtime/dist/index.js",
     "dev:tool-edge": "ROOTS=TEMP:/tmp RUNTIME_NAME=\"Local Edge\" node packages/runtime/dist/index.js",
     "dev:doc": "cd packages/doc && npm run dev",
     "agent:inspect": "npx -y @modelcontextprotocol/inspector --config packages/runtime/mcp.config.json --server 2ly-stdio",
