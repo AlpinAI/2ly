@@ -139,6 +139,11 @@ export class DGraphService extends Service {
     const result = await this.urqlClient.query(query, variables, context);
     if (result.error) {
       this.logger.error(`DGraph query error: ${result.error}`);
+      if (process.env.NODE_ENV === 'development') {
+        const queryString = typeof query === 'string' ? query : query.loc?.source.body;
+        this.logger.error(`Query: ${queryString}`);
+        this.logger.error(`Variables: ${JSON.stringify(variables, null, 2)}`);
+      }
       throw result.error;
     }
     return result.data as T;
@@ -155,6 +160,11 @@ export class DGraphService extends Service {
     const result = await this.urqlClient.mutation(mutation, variables, context);
     if (result.error) {
       this.logger.error(`DGraph mutation error: ${result.error}`);
+      if (process.env.NODE_ENV === 'development') {
+        const mutationString = typeof mutation === 'string' ? mutation : mutation.loc?.source.body;
+        this.logger.error(`Mutation: ${mutationString}`);
+        this.logger.error(`Variables: ${JSON.stringify(variables, null, 2)}`);
+      }
       throw result.error;
     }
     return result.data as T;
