@@ -223,30 +223,10 @@ export const test = base.extend<DatabaseFixture>({
         }
       }
 
-      // Seed workspaces
-      if (data.workspaces) {
-        for (const workspace of data.workspaces) {
-          const mutation = `
-            mutation CreateWorkspace($name: String!, $description: String) {
-              addWorkspace(input: {
-                name: $name
-                description: $description
-              }) {
-                workspace {
-                  id
-                  name
-                }
-              }
-            }
-          `;
-          const result = await graphql<{
-            addWorkspace: { workspace: Array<{ id: string; name: string }> };
-          }>(mutation, workspace);
-          // Store workspace ID using normalized name as key
-          const key = workspace.name.toLowerCase().replace(/\s+/g, '-');
-          entityIds[key] = result.addWorkspace.workspace[0].id;
-        }
-      }
+      // Note: Workspace seeding is skipped because there's no addWorkspace mutation
+      // The default workspace created by initSystem is used for all seeded entities
+      // If data.workspaces is provided, we could potentially update the default workspace name
+      // using updateWorkspace mutation, but for now we just use the default workspace as-is
 
       // Get the workspace ID to use (either from seed or default)
       const workspaceId =
@@ -496,42 +476,58 @@ export const test = base.extend<DatabaseFixture>({
    */
   getDatabaseState: async ({ graphql }, use) => {
     const getState = async (): Promise<DatabaseState> => {
-      const query = `
+      // First get workspaces and system
+      const query1 = `
         query GetDatabaseState {
-          workspace: queryWorkspace {
+          workspace {
             id
             name
             description
-          }
-          user: queryUser {
-            id
-            email
-            name
-          }
-          mCPServer: queryMCPServer {
-            id
-            name
-            transport
           }
           system {
             id
             initialized
           }
+          me {
+            id
+            email
+            name
+          }
         }
       `;
 
-      const result = await graphql<{
+      const result1 = await graphql<{
         workspace: any[];
-        user: any[];
-        mCPServer: any[];
         system: any;
-      }>(query);
+        me: any;
+      }>(query1);
+
+      const workspaces = result1.workspace || [];
+      const workspaceId = workspaces[0]?.id;
+
+      // If we have a workspace, get MCP servers for it
+      let mcpServers: any[] = [];
+      if (workspaceId) {
+        const query2 = `
+          query GetMCPServers($workspaceId: ID!) {
+            mcpServers(workspaceId: $workspaceId) {
+              id
+              name
+              transport
+            }
+          }
+        `;
+        const result2 = await graphql<{
+          mcpServers: any[];
+        }>(query2, { workspaceId });
+        mcpServers = result2.mcpServers || [];
+      }
 
       return {
-        workspaces: result.workspace || [],
-        users: result.user || [],
-        mcpServers: result.mCPServer || [],
-        system: result.system,
+        workspaces,
+        users: result1.me ? [result1.me] : [],
+        mcpServers,
+        system: result1.system,
       };
     };
 
