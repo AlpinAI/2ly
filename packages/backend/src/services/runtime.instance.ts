@@ -54,17 +54,23 @@ export class RuntimeInstance extends Service {
 
   protected async initialize() {
     this.logger.info(`Initializing runtime instance: ${this.instance.id}:${this.metadata.pid}`);
-    await this.runtimeRepository.setActive(
-      this.instance.id,
-      this.metadata.pid,
-      this.metadata.hostIP,
-      this.metadata.hostname,
-    );
-    this.observeHeartbeat();
-    this.handleRuntimeMessages();
-    this.observeMCPServers();
-    this.observeCapabilities();
-    this.onReady();
+    try {
+      await this.runtimeRepository.setActive(
+        this.instance.id,
+        this.metadata.pid,
+        this.metadata.hostIP,
+        this.metadata.hostname,
+      );
+      this.observeHeartbeat();
+      this.handleRuntimeMessages();
+      this.observeMCPServers();
+      this.observeCapabilities();
+      this.onReady();  
+    } catch (error) {
+      this.logger.error(`Error setting runtime active: ${error}`);
+      await this.disconnect();
+      this.onDisconnect();
+    }
   }
 
   private async observeHeartbeat() {
