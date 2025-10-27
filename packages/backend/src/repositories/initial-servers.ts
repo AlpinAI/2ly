@@ -171,4 +171,58 @@ export const INITIAL_FEATURED_SERVERS: Server[] = [
       },
     ],
   },
+  {  
+    name: "supermemoryai/apple-mcp",
+    description: "Your Mac can do more than just look pretty. Turn your Apple apps into AI superpowers!",
+    version: "1.0.0",
+    repository: {
+      url: 'https://github.com/supermemoryai/apple-mcp',
+      source: 'github',
+    },
+    packages: [
+      {
+        registryType: 'npm',
+        identifier: 'apple-mcp',
+        version: '1.0.0',
+        packageArguments: [],
+        runtimeArguments: [],
+        environmentVariables: [],
+      },
+    ],
+    remotes: null,
+  },
+  {  
+    name: "crystaldba/postgres-mcp",
+    description: "Postgres MCP Pro provides configurable read/write access and performance analysis for you and your AI agents.",
+    version: "0.3.0",
+    repository: {
+      url: 'https://github.com/crystaldba/postgres-mcp',
+      source: 'github',
+    },
+    packages: [
+      {
+        registryType: 'pypi',
+        identifier: 'postgres-mcp',
+        version: '0.3.0',
+        packageArguments: [
+          {
+            name: 'access-mode',
+            type: 'string',
+            value: 'unrestricted',
+          }
+        ],
+        runtimeArguments: [],
+        environmentVariables: [
+          {
+            name: 'DATABASE_URI',
+            isRequired: true,
+            isSecret: true,
+            format: 'string',
+            description: 'The URI of the database to connect to, example: postgresql://user:password@host:port/database',
+          }
+        ],
+      },
+    ],
+    remotes: null,
+  },
 ];
