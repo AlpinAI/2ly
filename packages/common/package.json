@@ -37,6 +37,9 @@
     "codegen:mcp-registry": "openapi-typescript https://registry.modelcontextprotocol.io/openapi.yaml -o src/types/mcp-registry.ts",
     "test": "vitest --run"
   },
+  "dependencies": {
+    "bcryptjs": "^3.0.2"
+  },
   "devDependencies": {
     "@testcontainers/nats": "^11.7.1",
     "testcontainers": "^11.7.1"

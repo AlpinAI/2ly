@@ -20,6 +20,13 @@ import * as fs from 'fs';
 import * as path from 'path';
 
 /**
+ * Encryption key used for password hashing in test environments.
+ * This must be at least 32 characters long.
+ * Used by both the backend container and test runners that call hashPassword.
+ */
+export const TEST_ENCRYPTION_KEY = 'test-encryption-key-for-playwright-integration-tests-minimum-32-chars';
+
+/**
  * Find the project root by looking for package.json with workspaces
  */
 function findProjectRoot(startDir: string = process.cwd()): string {
@@ -279,8 +286,6 @@ export class TestEnvironment {
 
     this.log('Starting Backend...');
 
-    const encryptionKey = 'test-encryption-key-for-playwright-integration-tests-minimum-32-chars';
-
     this.log('Building backend Docker image...', { projectRoot: this.config.projectRoot });
 
     // Build the Docker image first with timeout
@@ -332,7 +337,7 @@ export class TestEnvironment {
           NATS_SERVERS: 'nats:4222',
           EXPOSED_NATS_SERVERS: this.services.nats.clientUrl,
           CORS_ORIGINS: 'http://localhost:8888,http://localhost:9999',
-          ENCRYPTION_KEY: encryptionKey,
+          ENCRYPTION_KEY: TEST_ENCRYPTION_KEY,
           ...this.config.backendEnv,
         })
         .withExposedPorts(...(this.config.exposeToHost ? [3000] : []))
