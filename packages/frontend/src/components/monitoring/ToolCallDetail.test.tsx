@@ -5,11 +5,22 @@
  * and does not display the tool description field.
  */
 
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
+import { userEvent } from '@testing-library/user-event';
 import { createMemoryRouter, RouterProvider } from 'react-router-dom';
 import { ToolCallDetail } from './ToolCallDetail';
 import { ToolCallStatus } from '@/graphql/generated/graphql';
+
+// Mock CodeViewerDialog component
+vi.mock('@/components/ui/code-viewer-dialog', () => ({
+  CodeViewerDialog: ({ open, title, content }: { open: boolean; title: string; content: string }) => (
+    open ? <div data-testid="code-viewer-dialog">
+      <div data-testid="viewer-title">{title}</div>
+      <div data-testid="viewer-content">{content}</div>
+    </div> : null
+  ),
+}));
 
 describe('ToolCallDetail', () => {
   const mockToolCall = {
@@ -316,5 +327,109 @@ describe('ToolCallDetail', () => {
     expect(screen.getByText('test-tool')).toBeInTheDocument();
     expect(screen.getByText('Server:')).toBeInTheDocument();
     expect(screen.getByText('Test Server')).toBeInTheDocument();
+  });
+
+  it('renders expand button for input', () => {
+    renderWithRouter(<ToolCallDetail toolCall={mockToolCall} />);
+
+    // Should have expand buttons (Input, Output/Error)
+    const expandButtons = screen.getAllByText('Expand');
+    expect(expandButtons.length).toBeGreaterThan(0);
+  });
+
+  it('renders expand button for output when completed successfully', () => {
+    renderWithRouter(<ToolCallDetail toolCall={mockToolCall} />);
+
+    // Should have expand button for output
+    const expandButtons = screen.getAllByText('Expand');
+    expect(expandButtons.length).toBeGreaterThanOrEqual(2); // At least Input and Output
+  });
+
+  it('renders expand button for error when failed', () => {
+    const failedToolCall = {
+      ...mockToolCall,
+      status: ToolCallStatus.Failed,
+      error: 'Test error message',
+      toolOutput: null,
+    };
+
+    renderWithRouter(<ToolCallDetail toolCall={failedToolCall} />);
+
+    // Should have expand button for error
+    const expandButtons = screen.getAllByText('Expand');
+    expect(expandButtons.length).toBeGreaterThanOrEqual(2); // At least Input and Error
+  });
+
+  it('opens code viewer dialog when input expand button is clicked', async () => {
+    const user = userEvent.setup();
+    renderWithRouter(<ToolCallDetail toolCall={mockToolCall} />);
+
+    // Click the first expand button (Input)
+    const expandButtons = screen.getAllByText('Expand');
+    await user.click(expandButtons[0]);
+
+    // Dialog should be open with correct content
+    expect(screen.getByTestId('code-viewer-dialog')).toBeInTheDocument();
+    expect(screen.getByTestId('viewer-title')).toHaveTextContent('Tool Input');
+    expect(screen.getByTestId('viewer-content')).toHaveTextContent('query');
+  });
+
+  it('opens code viewer dialog when output expand button is clicked', async () => {
+    const user = userEvent.setup();
+    renderWithRouter(<ToolCallDetail toolCall={mockToolCall} />);
+
+    // Click the second expand button (Output)
+    const expandButtons = screen.getAllByText('Expand');
+    await user.click(expandButtons[1]);
+
+    // Dialog should be open with correct content
+    expect(screen.getByTestId('code-viewer-dialog')).toBeInTheDocument();
+    expect(screen.getByTestId('viewer-title')).toHaveTextContent('Tool Output');
+    expect(screen.getByTestId('viewer-content')).toHaveTextContent('test output');
+  });
+
+  it('opens code viewer dialog when error expand button is clicked', async () => {
+    const user = userEvent.setup();
+    const failedToolCall = {
+      ...mockToolCall,
+      status: ToolCallStatus.Failed,
+      error: 'Test error message',
+      toolOutput: null,
+    };
+
+    renderWithRouter(<ToolCallDetail toolCall={failedToolCall} />);
+
+    // Click the second expand button (Error)
+    const expandButtons = screen.getAllByText('Expand');
+    await user.click(expandButtons[1]);
+
+    // Dialog should be open with correct content
+    expect(screen.getByTestId('code-viewer-dialog')).toBeInTheDocument();
+    expect(screen.getByTestId('viewer-title')).toHaveTextContent('Error');
+    expect(screen.getByTestId('viewer-content')).toHaveTextContent('Test error message');
+  });
+
+  it('expand buttons have proper icons', () => {
+    const { container } = renderWithRouter(<ToolCallDetail toolCall={mockToolCall} />);
+
+    // Maximize2 icons should be present (lucide uses lowercase without hyphen before number)
+    const maximizeIcons = container.querySelectorAll('svg[class*="lucide"][class*="maximize"]');
+    expect(maximizeIcons.length).toBeGreaterThan(0);
+  });
+
+  it('does not render expand button when no output and no error', () => {
+    const pendingToolCall = {
+      ...mockToolCall,
+      status: ToolCallStatus.Pending,
+      completedAt: null,
+      toolOutput: null,
+      error: null,
+    };
+
+    renderWithRouter(<ToolCallDetail toolCall={pendingToolCall} />);
+
+    // Should only have one expand button (for input)
+    const expandButtons = screen.getAllByText('Expand');
+    expect(expandButtons.length).toBe(1);
   });
 });
