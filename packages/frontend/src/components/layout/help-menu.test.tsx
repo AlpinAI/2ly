@@ -61,7 +61,7 @@ describe('HelpMenu', () => {
     const trigger = screen.getByRole('button', { name: /help and resources/i });
     await user.click(trigger);
 
-    expect(screen.getByText('Join our Discord community')).toBeDefined();
+    expect(screen.getByText('Ask our Discord community')).toBeDefined();
     expect(screen.getByText('Report bugs or request features')).toBeDefined();
     expect(screen.getByText('Read the documentation')).toBeDefined();
     expect(screen.getByText('Visit our GitHub repository')).toBeDefined();
