@@ -190,4 +190,97 @@ describe('ToolSelectionTable', () => {
     expect(screen.getByText('Tool 2')).toBeDefined();
     expect(screen.getByText('Tool 3')).toBeDefined();
   });
+
+  describe('showSelectedOnly filter', () => {
+    it('shows only selected tools when showSelectedOnly is true', () => {
+      const selectedToolIds = new Set(['tool-1', 'tool-3']);
+      render(
+        <ToolSelectionTable
+          {...defaultProps}
+          selectedToolIds={selectedToolIds}
+          showSelectedOnly={true}
+        />
+      );
+
+      // Should show selected tools
+      expect(screen.getByText('Tool 1')).toBeDefined();
+      expect(screen.getByText('Tool 3')).toBeDefined();
+
+      // Should not show unselected tool
+      expect(screen.queryByText('Tool 2')).toBeNull();
+    });
+
+    it('shows all tools when showSelectedOnly is false', () => {
+      const selectedToolIds = new Set(['tool-1']);
+      render(
+        <ToolSelectionTable
+          {...defaultProps}
+          selectedToolIds={selectedToolIds}
+          showSelectedOnly={false}
+        />
+      );
+
+      // Should show all tools
+      expect(screen.getByText('Tool 1')).toBeDefined();
+      expect(screen.getByText('Tool 2')).toBeDefined();
+      expect(screen.getByText('Tool 3')).toBeDefined();
+    });
+
+    it('hides servers with no selected tools when showSelectedOnly is true', () => {
+      const selectedToolIds = new Set(['tool-1']); // Only tool from server 1
+      render(
+        <ToolSelectionTable
+          {...defaultProps}
+          selectedToolIds={selectedToolIds}
+          showSelectedOnly={true}
+        />
+      );
+
+      // Should show server with selected tool
+      expect(screen.getByText('Test Server 1')).toBeDefined();
+
+      // Should not show server with no selected tools
+      expect(screen.queryByText('Test Server 2')).toBeNull();
+    });
+
+    it('shows "No selected tools" message when filter is active and nothing is selected', () => {
+      render(
+        <ToolSelectionTable
+          {...defaultProps}
+          selectedToolIds={new Set()}
+          showSelectedOnly={true}
+        />
+      );
+
+      expect(screen.getByText('No selected tools.')).toBeDefined();
+    });
+
+    it('updates filtered list when selection changes with showSelectedOnly active', () => {
+      const selectedToolIds = new Set(['tool-1']);
+      const { rerender } = render(
+        <ToolSelectionTable
+          {...defaultProps}
+          selectedToolIds={selectedToolIds}
+          showSelectedOnly={true}
+        />
+      );
+
+      expect(screen.getByText('Tool 1')).toBeDefined();
+      expect(screen.queryByText('Tool 2')).toBeNull();
+
+      // Update selection
+      const updatedSelection = new Set(['tool-1', 'tool-2']);
+      rerender(
+        <ToolSelectionTable
+          {...defaultProps}
+          selectedToolIds={updatedSelection}
+          showSelectedOnly={true}
+        />
+      );
+
+      // Now both should be visible
+      expect(screen.getByText('Tool 1')).toBeDefined();
+      expect(screen.getByText('Tool 2')).toBeDefined();
+    });
+  });
 });
