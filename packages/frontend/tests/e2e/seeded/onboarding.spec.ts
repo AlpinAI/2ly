@@ -1,4 +1,4 @@
-import { test, expect } from '../../fixtures/database';
+import { test, expect, performLogin } from '../../fixtures/database';
 
 /**
  * Onboarding Flow E2E Tests
@@ -15,7 +15,7 @@ import { test, expect } from '../../fixtures/database';
  */
 
 test.describe('Onboarding Flow', () => {
-  test.beforeEach(async ({ resetDatabase, seedDatabase }) => {
+  test.beforeEach(async ({ page, resetDatabase, seedDatabase }) => {
     await resetDatabase();
 
     // Seed with minimal data for onboarding
@@ -65,31 +65,31 @@ test.describe('Onboarding Flow', () => {
         },
       ],
     });
+
+    // Log in with the seeded user credentials
+    // Credentials from comprehensive seed: test@example.com / testpassword123
+    await performLogin(page, 'test@example.com', 'testpassword123');
   });
 
   test('displays all three onboarding steps on initial load', async ({ page }) => {
-    await page.goto('/');
-
     // Check that onboarding section is visible
     await expect(page.getByText('Get Started with 2LY')).toBeVisible();
     await expect(page.getByText('Complete these steps to set up your workspace')).toBeVisible();
 
     // Check step 1: Install MCP Server
-    await expect(page.getByText('Install an MCP Server')).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Install an MCP Server' })).toBeVisible();
     await expect(page.getByText('Add your first MCP server to start using tools')).toBeVisible();
 
     // Check step 2: Create Tool Set
-    await expect(page.getByText('Create Your First Tool Set')).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Create Your First Tool Set' })).toBeVisible();
     await expect(page.getByText('Create a tool set with at least one tool')).toBeVisible();
 
     // Check step 3: Connect Agent
-    await expect(page.getByText('Connect your Tool Set to an Agent')).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Connect your Tool Set to an Agent' })).toBeVisible();
     await expect(page.getByText('Connect your tool set to an agent to start using your tools in AI workflows')).toBeVisible();
   });
 
   test('shows step priority badges', async ({ page }) => {
-    await page.goto('/');
-
     // Find the three priority badges (1, 2, 3)
     const badges = page.locator('.absolute.-top-3.-left-3 .flex');
     await expect(badges).toHaveCount(3);
@@ -101,18 +101,16 @@ test.describe('Onboarding Flow', () => {
   });
 
   test('step 1 shows Browse MCP Servers button when pending', async ({ page }) => {
-    await page.goto('/');
-
     // Find step 1 card
     const step1Card = page.locator('text=Install an MCP Server').locator('..');
+    console.log('step1Card', step1Card);
+    console.log('step1Card.getByRole("button", { name: /Browse MCP Servers/i })', step1Card.getByRole('button', { name: /Browse MCP Servers/i }));
 
     // Should show Browse MCP Servers button
     await expect(step1Card.getByRole('button', { name: /Browse MCP Servers/i })).toBeVisible();
   });
 
   test('step 1 shows completed status after server is installed', async ({ page }) => {
-    await page.goto('/');
-
     // Step 1 should show completed with server name
     const step1Card = page.locator('text=Install an MCP Server').locator('..').locator('..');
     await expect(step1Card.getByText('Completed')).toBeVisible();
@@ -149,8 +147,6 @@ test.describe('Onboarding Flow', () => {
       }
     `);
 
-    await page.goto('/');
-
     // Find step 2 card
     const step2Card = page.locator('text=Create Your First Tool Set').locator('..');
 
@@ -159,8 +155,6 @@ test.describe('Onboarding Flow', () => {
   });
 
   test('step 3 shows Connect button when agent with tools exists', async ({ page }) => {
-    await page.goto('/');
-
     // Find step 3 card
     const step3Card = page.locator('text=Connect your Tool Set to an Agent').locator('..');
 
@@ -169,8 +163,6 @@ test.describe('Onboarding Flow', () => {
   });
 
   test('step 3 Connect button opens Connect Agent dialog', async ({ page }) => {
-    await page.goto('/');
-
     // Find and click Connect button
     const step3Card = page.locator('text=Connect your Tool Set to an Agent').locator('..');
     const connectButton = step3Card.getByRole('button', { name: /Connect/i });
@@ -183,8 +175,6 @@ test.describe('Onboarding Flow', () => {
   });
 
   test('step 3 Connect dialog shows platform selector', async ({ page }) => {
-    await page.goto('/');
-
     // Open Connect dialog
     const step3Card = page.locator('text=Connect your Tool Set to an Agent').locator('..');
     const connectButton = step3Card.getByRole('button', { name: /Connect/i });
@@ -207,8 +197,6 @@ test.describe('Onboarding Flow', () => {
         },
       ],
     });
-
-    await page.goto('/');
 
     // Find step 3 card
     const step3Card = page.locator('text=Connect your Tool Set to an Agent').locator('..');
@@ -247,8 +235,6 @@ test.describe('Onboarding Flow', () => {
       }
     `);
 
-    await page.goto('/');
-
     // Step 3 should show completed
     const step3Card = page.locator('text=Connect your Tool Set to an Agent').locator('..').locator('..');
     await expect(step3Card.getByText('Completed')).toBeVisible();
@@ -256,8 +242,6 @@ test.describe('Onboarding Flow', () => {
   });
 
   test('dismiss onboarding button is visible', async ({ page }) => {
-    await page.goto('/');
-
     // Check dismiss button
     await expect(page.getByRole('button', { name: /Dismiss onboarding/i })).toBeVisible();
   });
@@ -292,8 +276,6 @@ test.describe('Onboarding Flow', () => {
       `);
     }
 
-    await page.goto('/');
-
     // All steps should show Completed badge
     const completedBadges = page.locator('text=Completed');
     await expect(completedBadges).toHaveCount(3);
@@ -303,8 +285,6 @@ test.describe('Onboarding Flow', () => {
   });
 
   test('step 3 uses different icon (Link) compared to step 1 and 2', async ({ page }) => {
-    await page.goto('/');
-
     // Get all three step cards by their titles
     const step1 = page.locator('text=Install an MCP Server').locator('..').locator('..');
     const step2 = page.locator('text=Create Your First Tool Set').locator('..').locator('..');
@@ -350,8 +330,6 @@ test.describe('Onboarding Flow', () => {
         `);
       }
     }
-
-    await page.goto('/');
 
     // Step 3 Connect button should be the default variant (not outline)
     const step3Card = page.locator('text=Connect your Tool Set to an Agent').locator('..');
