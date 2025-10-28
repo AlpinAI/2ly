@@ -12,3 +12,4 @@ export type {
   TestEnvironmentConfig,
   TestEnvironmentServices,
 } from './testEnvironment';
+export * from '../node-helpers/password';
