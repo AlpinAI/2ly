@@ -253,7 +253,6 @@ export class WorkspaceRepository {
   }
 
   async checkAndCompleteStep(workspaceId: string, stepId: string): Promise<void> {
-    console.log('checkAndCompleteStep', workspaceId, stepId);
     // Get current workspace state
     const workspace = await this.dgraphService.query<{
       getWorkspace: {
@@ -267,7 +266,6 @@ export class WorkspaceRepository {
     // Check if step is already completed
     const step = workspace.getWorkspace.onboardingSteps?.find(s => s.stepId === stepId);
     if (step?.status === 'COMPLETED') {
-      console.log('step is already completed', stepId);
       return; // Already completed
     }
 
@@ -318,8 +316,6 @@ export class WorkspaceRepository {
       default:
         return; // Unknown step
     }
-
-    console.log('shouldComplete', shouldComplete);
 
     if (shouldComplete) {
       await this.completeOnboardingStep(workspaceId, stepId);
