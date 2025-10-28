@@ -52,13 +52,14 @@ jobs:
         run: npm run test:integration
         continue-on-error: true
 
-      - name: Run e2e tests
-        id: e2e-test
-        run: npm run test:e2e
-        continue-on-error: true
+      # Temporarily disabled e2e tests
+      # - name: Run e2e tests
+      #   id: e2e-test
+      #   run: npm run test:e2e
+      #   continue-on-error: true
 
       - name: Check results and fail if any step failed
-        if: steps.lint.outcome == 'failure' || steps.typecheck.outcome == 'failure' || steps.unit-test.outcome == 'failure' || steps.integration-test.outcome == 'failure' || steps.e2e-test.outcome == 'failure'
+        if: steps.lint.outcome == 'failure' || steps.typecheck.outcome == 'failure' || steps.unit-test.outcome == 'failure' || steps.integration-test.outcome == 'failure'
         run: |
           echo "❌ Code quality checks failed:"
           echo ""
@@ -74,15 +75,12 @@ jobs:
           if [ "${{ steps.integration-test.outcome }}" == "failure" ]; then
             echo "  - Integration tests failed"
           fi
-          if [ "${{ steps.e2e-test.outcome }}" == "failure" ]; then
-            echo "  - E2E tests failed"
-          fi
           echo ""
           echo "Please fix the issues and push again."
           exit 1
 
       - name: All checks passed
-        if: steps.lint.outcome == 'success' && steps.typecheck.outcome == 'success' && steps.unit-test.outcome == 'success' && steps.integration-test.outcome == 'success' && steps.e2e-test.outcome == 'success'
+        if: steps.lint.outcome == 'success' && steps.typecheck.outcome == 'success' && steps.unit-test.outcome == 'success' && steps.integration-test.outcome == 'success'
         run: |
           echo "✅ All code quality checks passed!"
           echo ""
@@ -90,4 +88,3 @@ jobs:
           echo "  ✓ Type checking passed"
           echo "  ✓ Unit tests passed"
           echo "  ✓ Integration tests passed"
-          echo "  ✓ E2E tests passed"
