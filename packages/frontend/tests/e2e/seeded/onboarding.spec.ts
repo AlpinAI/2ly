@@ -101,13 +101,8 @@ test.describe('Onboarding Flow', () => {
   });
 
   test('step 1 shows Browse MCP Servers button when pending', async ({ page }) => {
-    // Find step 1 card
-    const step1Card = page.locator('text=Install an MCP Server').locator('..');
-    console.log('step1Card', step1Card);
-    console.log('step1Card.getByRole("button", { name: /Browse MCP Servers/i })', step1Card.getByRole('button', { name: /Browse MCP Servers/i }));
-
     // Should show Browse MCP Servers button
-    await expect(step1Card.getByRole('button', { name: /Browse MCP Servers/i })).toBeVisible();
+    await expect(page.getByRole('button', { name: /Browse MCP Servers/i })).toBeVisible();
   });
 
   test('step 1 shows completed status after server is installed', async ({ page }) => {
