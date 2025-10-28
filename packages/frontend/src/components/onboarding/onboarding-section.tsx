@@ -29,6 +29,7 @@
  */
 
 import { OnboardingCard } from './onboarding-card';
+import { Button } from '@/components/ui/button';
 import type { OnboardingStep } from '@/graphql/generated/graphql';
 
 interface OnboardingSectionProps {
@@ -69,14 +70,24 @@ export function OnboardingSection({ steps, isComplete, onHide }: OnboardingSecti
           ))}
         </div>
         
-        {/* Centered Dismiss Button */}
+        {/* Centered Dismiss/Close Button */}
         <div className="flex justify-center">
-          <button
-            onClick={onHide}
-            className="text-sm text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-colors"
-          >
-            {isComplete ? 'Close onboarding' : 'Dismiss onboarding'}
-          </button>
+          {isComplete ? (
+            <Button
+              onClick={onHide}
+              size="lg"
+              variant="default"
+            >
+              Close onboarding
+            </Button>
+          ) : (
+            <button
+              onClick={onHide}
+              className="text-sm text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-colors"
+            >
+              Dismiss onboarding
+            </button>
+          )}
         </div>
       </div>
     </div>
