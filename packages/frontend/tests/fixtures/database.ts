@@ -101,6 +101,12 @@ export interface DatabaseFixture {
    * Get current database state (for debugging/assertions)
    */
   getDatabaseState: () => Promise<DatabaseState>;
+
+  /**
+   * Get the default workspace ID
+   * Useful for tests that need to interact with workspace-specific resources
+   */
+  workspaceId: string;
 }
 
 // ============================================================================
@@ -517,6 +523,32 @@ export const test = base.extend<DatabaseFixture>({
     };
 
     await use(getState);
+  },
+
+  /**
+   * Workspace ID fixture
+   * Provides the default workspace ID for tests to use
+   */
+  workspaceId: async ({ graphql }, use) => {
+    const query = `
+      query GetWorkspaceId {
+        workspace {
+          id
+        }
+      }
+    `;
+
+    const result = await graphql<{
+      workspace: Array<{ id: string }>;
+    }>(query);
+
+    const workspaceId = result.workspace[0]?.id;
+
+    if (!workspaceId) {
+      throw new Error('No workspace found. Make sure to seed the database before using workspaceId fixture.');
+    }
+
+    await use(workspaceId);
   },
 });
 
