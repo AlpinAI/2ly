@@ -11,6 +11,13 @@
       },
       "types": "./src/index.ts"
     },
+    "./password": {
+      "import": {
+        "types": "./src/helpers/password.ts",
+        "default": "./src/helpers/password.ts"
+      },
+      "types": "./src/helpers/password.ts"
+    },
     "./test/testcontainers": {
       "import": {
         "types": "./src/test/testcontainers.ts",
@@ -36,6 +43,9 @@
     "codegen": "graphql-codegen --config apollo.codegen.ts && graphql-codegen --config dgraph.codegen.ts",
     "codegen:mcp-registry": "openapi-typescript https://registry.modelcontextprotocol.io/openapi.yaml -o src/types/mcp-registry.ts",
     "test": "vitest --run"
+  },
+  "dependencies": {
+    "bcryptjs": "^3.0.2"
   },
   "devDependencies": {
     "@testcontainers/nats": "^11.7.1",

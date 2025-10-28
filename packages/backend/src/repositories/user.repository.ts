@@ -12,7 +12,7 @@ import {
   INCREMENT_FAILED_LOGIN_ATTEMPTS,
   UNLOCK_USER_ACCOUNT,
 } from './user.operations';
-import { hashPassword } from '../helpers/password';
+import { hashPassword } from '@2ly/common/password';
 
 @injectable()
 export class UserRepository {

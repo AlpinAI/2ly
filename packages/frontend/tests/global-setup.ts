@@ -9,7 +9,7 @@
  */
 
 import { chromium, FullConfig } from '@playwright/test';
-import { TestEnvironment } from '@2ly/common/test/testcontainers';
+import { TestEnvironment, TEST_ENCRYPTION_KEY } from '@2ly/common/test/testcontainers';
 import { exec } from 'child_process';
 // import { promisify } from 'util';
 import * as fs from 'fs';
@@ -155,6 +155,7 @@ async function globalSetup(_config: FullConfig) {
     process.env.DGRAPH_URL = state.dgraphUrl;
     process.env.API_URL = state.backendUrl;
     process.env.BASE_URL = state.frontendUrl;
+    process.env.ENCRYPTION_KEY = TEST_ENCRYPTION_KEY;
 
     console.log('✅ Test environment ready');
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');

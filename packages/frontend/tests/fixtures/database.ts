@@ -1,7 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { test as base } from '@playwright/test';
+import { test as base, type Page } from '@playwright/test';
 import { comprehensiveSeededData } from '../e2e/fixtures/seed-data';
 import { dgraphQL } from './dgraph-client';
+import { hashPassword } from '@2ly/common/password';
 
 /**
  * Database Fixture for Playwright Tests
@@ -11,6 +12,7 @@ import { dgraphQL } from './dgraph-client';
  * - seedDatabase: Populate database with predefined test data
  * - graphql: Execute GraphQL queries against the backend
  * - getDatabaseState: Inspect current database state
+ * - performLogin: Helper to log in a user (for authenticated test scenarios)
  */
 
 // ============================================================================
@@ -240,11 +242,13 @@ export const test = base.extend<DatabaseFixture>({
       // 3. Create Users
       if (data.users && data.users.length > 0) {
         for (const user of data.users) {
+          // Hash the password before storing
+          const hashedPassword = await hashPassword(user.password);
           const userMutation = `
             mutation AddUser($workspaceId: ID!) {
               addUser(input: {
                 email: "${user.email}"
-                password: "${user.password}"
+                password: "${hashedPassword}"
                 createdAt: "${now}"
                 updatedAt: "${now}"
                 adminOfWorkspaces: [{ id: $workspaceId }]
@@ -634,6 +638,35 @@ export const seedPresets = {
     return comprehensiveSeededData;
   },
 } satisfies Record<string, SeedData | { comprehensive: SeedData }>;
+
+// ============================================================================
+// Helper Functions
+// ============================================================================
+
+/**
+ * Perform login for a user
+ *
+ * This helper function automates the login flow for authenticated test scenarios.
+ * It navigates to /login, fills in credentials, submits the form, and waits for
+ * the workspace redirect.
+ *
+ * @param page - Playwright page object
+ * @param email - User email
+ * @param password - User password
+ */
+export async function performLogin(page: Page, email: string, password: string): Promise<void> {
+  await page.goto('/login');
+
+  // Fill in credentials
+  await page.fill('input[type="email"]', email);
+  await page.fill('input[type="password"]', password);
+
+  // Submit the form
+  await page.click('button[type="submit"]');
+
+  // Wait for redirect to workspace
+  await page.waitForURL(/\/w\/.+\/overview/, { timeout: 5000 });
+}
 
 // Re-export expect for convenience
 export { expect } from '@playwright/test';

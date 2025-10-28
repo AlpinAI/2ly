@@ -9,13 +9,20 @@
  * and run serially to maintain database consistency.
  */
 
-import { test, expect, seedPresets } from '../../fixtures/database';
+import { test, expect, seedPresets, performLogin } from '../../fixtures/database';
 
 test.describe('Deep Linking with Comprehensive Data', () => {
   // Reset and seed database before all tests
   test.beforeAll(async ({ resetDatabase, seedDatabase }) => {
     await resetDatabase();
     await seedDatabase(seedPresets.comprehensive);
+  });
+
+  // Log in before each test to ensure authenticated session
+  test.beforeEach(async ({ page }) => {
+    // Log in with the seeded user credentials
+    // Credentials from comprehensive seed: test@example.com / testpassword123
+    await performLogin(page, 'test@example.com', 'testpassword123');
   });
 
   // Configure tests to run serially
@@ -114,10 +121,12 @@ test.describe('Deep Linking with Comprehensive Data', () => {
       const firstRow = page.locator('table tbody tr').first();
       await firstRow.click();
 
+      // Wait for URL to update, confirming selection state has changed
+      await page.waitForURL(/id=/, { timeout: 2000 });
+
       // Row should have highlight styling (bg-cyan-50 or similar)
-      // Check for the highlight class or background color
-      const rowClasses = await firstRow.getAttribute('class');
-      expect(rowClasses).toMatch(/bg-cyan|selected|highlighted/);
+      // Use Playwright's expect which automatically waits for the condition
+      await expect(firstRow).toHaveClass(/bg-cyan/);
     });
 
     test('should clear ID from URL when closing detail panel', async ({ page, getDatabaseState }) => {
@@ -150,10 +159,10 @@ test.describe('Deep Linking with Comprehensive Data', () => {
       await page.goto(`/w/${workspace.id}/sources`);
       await page.waitForLoadState('networkidle');
 
-      // Click first server card
-      await page.waitForSelector('[data-testid="server-card"]', { timeout: 5000 });
-      const firstCard = page.locator('[data-testid="server-card"]').first();
-      await firstCard.click();
+      // Click first server row
+      await page.waitForSelector('table tbody tr', { timeout: 5000 });
+      const firstRow = page.locator('table tbody tr').first();
+      await firstRow.click();
 
       // URL should contain ID
       await page.waitForURL(/id=/, { timeout: 2000 });
@@ -169,8 +178,8 @@ test.describe('Deep Linking with Comprehensive Data', () => {
       await page.waitForLoadState('networkidle');
 
       // Click first server to open detail panel
-      await page.waitForSelector('[data-testid="server-card"]', { timeout: 5000 });
-      await page.locator('[data-testid="server-card"]').first().click();
+      await page.waitForSelector('table tbody tr', { timeout: 5000 });
+      await page.locator('table tbody tr').first().click();
 
       // Wait for detail panel
       await page.waitForSelector('[role="complementary"], [data-testid="detail-panel"]', { timeout: 3000 });
