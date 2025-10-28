@@ -11,9 +11,9 @@
  * - Step-specific action content
  *
  * STEP-SPECIFIC CONTENT:
- * - Step 1: "Add Official Registry" button + "Browse Registries" link
- * - Step 2: "Browse MCP Servers" button (opens Add Tool Workflow)
- * - Step 3: "Create Tool Set" button (opens Create Tool Set dialog, then Manage Tools dialog)
+ * - Step 1: "Browse MCP Servers" button (opens Add Source Workflow)
+ * - Step 2: "Create Tool Set" button (opens Create Tool Set dialog, then Manage Tools dialog)
+ * - Step 3: "Connect" button (opens Connect Agent dialog for the first agent with tools)
  */
 
 import {
@@ -22,11 +22,11 @@ import {
   Server,
   Package,
   Plus,
-  FlaskConical
+  Link
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { useUIStore, useCreateToolSetDialog, useManageToolsDialog } from '@/stores/uiStore';
+import { useUIStore, useCreateToolSetDialog, useManageToolsDialog, useConnectAgentDialog } from '@/stores/uiStore';
 import { STEP_METADATA, ONBOARDING_STEPS } from '@/constants/onboarding-steps';
 import { useMCPServers } from '@/hooks/useMCPServers';
 import { useRuntimeData } from '@/stores/runtimeStore';
@@ -44,6 +44,7 @@ export function OnboardingCard({ step, isCurrentStep = false }: OnboardingCardPr
 
   const { openDialog: openCreateToolSetDialog } = useCreateToolSetDialog();
   const manageToolsDialog = useManageToolsDialog();
+  const { setOpen: setConnectAgentDialogOpen, setSelectedAgentId } = useConnectAgentDialog();
 
   const metadata = STEP_METADATA[step.stepId];
   const isCompleted = step.status === 'COMPLETED';
@@ -55,8 +56,8 @@ export function OnboardingCard({ step, isCurrentStep = false }: OnboardingCardPr
         return <Server className="h-6 w-6" />;
       case 'package':
         return <Package className="h-6 w-6" />;
-      case 'flask-conical':
-        return <FlaskConical className="h-6 w-6" />;
+      case 'link':
+        return <Link className="h-6 w-6" />;
       default:
         return <Circle className="h-6 w-6" />;
     }
@@ -145,15 +146,25 @@ export function OnboardingCard({ step, isCurrentStep = false }: OnboardingCardPr
         );
       }
 
-      case ONBOARDING_STEPS.TEST_TOOLS: {
-        if (isCompleted) {
+      case ONBOARDING_STEPS.CONNECT_AGENT: {
+        const { runtimes } = useRuntimeData();
+        const { agents } = useAgents(runtimes);
+
+        // Find first agent with tools
+        const firstAgentWithTools = agents.find(agent =>
+          agent.mcpToolCapabilities && agent.mcpToolCapabilities.length > 0
+        );
+
+        if (isCompleted && firstAgentWithTools) {
           return (
             <div className="space-y-3">
               <div className="rounded-lg bg-green-400/20 dark:bg-green-900/20 p-3">
                 <p className="text-sm text-green-800 dark:text-green-200">
                   <span className="flex items-center">
-                    <FlaskConical className="mr-2 h-4 w-4" />
-                    <span className="font-medium">Tests completed</span>
+                    <Link className="mr-2 h-4 w-4" />
+                    <span className="font-medium truncate max-w-xs overflow-hidden whitespace-nowrap" title={firstAgentWithTools.name}>
+                      {firstAgentWithTools.name} connected
+                    </span>
                   </span>
                 </p>
               </div>
@@ -161,12 +172,29 @@ export function OnboardingCard({ step, isCurrentStep = false }: OnboardingCardPr
           );
         }
 
+        // Need to have an agent with tools first
+        if (!firstAgentWithTools) {
+          return (
+            <div className="space-y-3">
+              <p className="text-sm text-gray-600 dark:text-gray-400 italic">
+                Create a tool set first to connect to an agent.
+              </p>
+            </div>
+          );
+        }
+
         return (
-          <div className="space-y-3">
-            <p className="text-sm text-gray-600 dark:text-gray-400 italic">
-              Coming soon: Test your tools to verify they work correctly.
-            </p>
-          </div>
+          <Button
+            onClick={() => {
+              setSelectedAgentId(firstAgentWithTools.id);
+              setConnectAgentDialogOpen(true);
+            }}
+            className="w-full"
+            variant={isCurrentStep ? "default" : "outline"}
+          >
+            <Link className="mr-2 h-4 w-4" />
+            Connect
+          </Button>
         );
       }
 
