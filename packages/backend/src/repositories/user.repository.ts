@@ -1,6 +1,6 @@
 import { injectable, inject } from 'inversify';
 import { DGraphService } from '../services/dgraph.service';
-import { dgraphResolversTypes } from '@2ly/common';
+import { dgraphResolversTypes, hashPassword } from '@2ly/common';
 import {
   ADD_USER,
   ADD_ADMIN_TO_WORKSPACE,
@@ -12,7 +12,6 @@ import {
   INCREMENT_FAILED_LOGIN_ATTEMPTS,
   UNLOCK_USER_ACCOUNT,
 } from './user.operations';
-import { hashPassword } from '@2ly/common/password';
 
 @injectable()
 export class UserRepository {

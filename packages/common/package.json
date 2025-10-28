@@ -11,13 +11,6 @@
       },
       "types": "./src/index.ts"
     },
-    "./password": {
-      "import": {
-        "types": "./src/helpers/password.ts",
-        "default": "./src/helpers/password.ts"
-      },
-      "types": "./src/helpers/password.ts"
-    },
     "./test/testcontainers": {
       "import": {
         "types": "./src/test/testcontainers.ts",
