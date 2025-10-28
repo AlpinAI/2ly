@@ -16,7 +16,7 @@
 export const ONBOARDING_STEPS = {
   INSTALL_SERVER: 'install-mcp-server',
   CREATE_TOOL_SET: 'create-tool-set',
-  TEST_TOOLS: 'test-your-tools',
+  CONNECT_AGENT: 'connect-tool-set-to-agent',
 } as const;
 
 export interface StepMetadata {
@@ -42,9 +42,9 @@ export const STEP_METADATA: Record<string, StepMetadata> = {
     description: 'Create a tool set with at least one tool to start enriching your agents.',
     icon: 'package',
   },
-  [ONBOARDING_STEPS.TEST_TOOLS]: {
-    title: 'Test Your Tools',
-    description: 'Try out your tools to make sure everything is working correctly.',
-    icon: 'flask-conical',
+  [ONBOARDING_STEPS.CONNECT_AGENT]: {
+    title: 'Connect your Tool Set to an Agent',
+    description: 'Connect your tool set to an agent to start using your tools in AI workflows.',
+    icon: 'link',
   },
 };

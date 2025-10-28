@@ -303,9 +303,15 @@ describe('RuntimeRepository', () => {
     });
 
     it('setCapabilities validates and sets runtime capabilities', async () => {
-        const runtime = { id: 'r1', capabilities: ['tool', 'agent'] } as unknown as dgraphResolversTypes.Runtime;
+        const runtime = {
+            id: 'r1',
+            capabilities: ['tool', 'agent'],
+            workspace: null,
+            mcpToolCapabilities: []
+        } as unknown as dgraphResolversTypes.Runtime;
         const capabilities = ['tool', 'agent'];
         dgraphService.mutation.mockResolvedValue({ updateRuntime: { runtime: [runtime] } });
+        dgraphService.query.mockResolvedValue({ getRuntime: runtime });
 
         const result = await runtimeRepository.setCapabilities('r1', capabilities);
 
@@ -316,14 +322,51 @@ describe('RuntimeRepository', () => {
         expect(result.id).toBe('r1');
     });
 
-    it('setCapabilities does not trigger onboarding step completion', async () => {
-        const runtime = { id: 'r1', capabilities: ['agent'] } as unknown as dgraphResolversTypes.Runtime;
+    it('setCapabilities does not trigger onboarding when agent has no tools', async () => {
+        const runtime = {
+            id: 'r1',
+            capabilities: ['agent'],
+            workspace: { id: 'w1' },
+            mcpToolCapabilities: []
+        } as unknown as dgraphResolversTypes.Runtime;
         dgraphService.mutation.mockResolvedValue({ updateRuntime: { runtime: [runtime] } });
+        dgraphService.query.mockResolvedValue({ getRuntime: runtime });
 
         const result = await runtimeRepository.setCapabilities('r1', ['agent']);
 
         expect(result.id).toBe('r1');
-        // checkAndCompleteStep should NOT be called for setCapabilities anymore
+        expect((workspaceRepository.checkAndCompleteStep as unknown as ReturnType<typeof vi.fn>)).not.toHaveBeenCalled();
+    });
+
+    it('setCapabilities completes onboarding steps when agent has tools', async () => {
+        const runtime = {
+            id: 'r1',
+            capabilities: ['agent'],
+            workspace: { id: 'w1' },
+            mcpToolCapabilities: [{ id: 'tc1' }]
+        } as unknown as dgraphResolversTypes.Runtime;
+        dgraphService.mutation.mockResolvedValue({ updateRuntime: { runtime: [runtime] } });
+        dgraphService.query.mockResolvedValue({ getRuntime: runtime });
+
+        const result = await runtimeRepository.setCapabilities('r1', ['agent']);
+
+        expect(result.id).toBe('r1');
+        expect((workspaceRepository.checkAndCompleteStep as unknown as ReturnType<typeof vi.fn>)).toHaveBeenCalledWith('w1', 'create-tool-set');
+        expect((workspaceRepository.checkAndCompleteStep as unknown as ReturnType<typeof vi.fn>)).toHaveBeenCalledWith('w1', 'connect-tool-set-to-agent');
+    });
+
+    it('setCapabilities does not trigger onboarding when not agent capability', async () => {
+        const runtime = {
+            id: 'r1',
+            capabilities: ['tool'],
+            workspace: { id: 'w1' },
+            mcpToolCapabilities: [{ id: 'tc1' }]
+        } as unknown as dgraphResolversTypes.Runtime;
+        dgraphService.mutation.mockResolvedValue({ updateRuntime: { runtime: [runtime] } });
+
+        const result = await runtimeRepository.setCapabilities('r1', ['tool']);
+
+        expect(result.id).toBe('r1');
         expect((workspaceRepository.checkAndCompleteStep as unknown as ReturnType<typeof vi.fn>)).not.toHaveBeenCalled();
     });
 
@@ -371,7 +414,7 @@ describe('RuntimeRepository', () => {
         expect(result.id).toBe('r1');
     });
 
-    it('linkMCPToolToRuntime completes create-tool-set when agent runtime', async () => {
+    it('linkMCPToolToRuntime completes onboarding steps when agent runtime', async () => {
         const runtime = {
             id: 'r1',
             capabilities: ['agent'],
@@ -384,6 +427,7 @@ describe('RuntimeRepository', () => {
 
         expect(result.id).toBe('r1');
         expect((workspaceRepository.checkAndCompleteStep as unknown as ReturnType<typeof vi.fn>)).toHaveBeenCalledWith('w1', 'create-tool-set');
+        expect((workspaceRepository.checkAndCompleteStep as unknown as ReturnType<typeof vi.fn>)).toHaveBeenCalledWith('w1', 'connect-tool-set-to-agent');
     });
 
     it('linkMCPToolToRuntime does not complete step when not agent runtime', async () => {

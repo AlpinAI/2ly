@@ -309,6 +309,22 @@ export class RuntimeRepository {
       capabilities,
     });
     const updated = res.updateRuntime.runtime[0];
+
+    // Check and complete onboarding steps if this becomes an agent runtime with tools
+    const hasAgentCapability = capabilities.some((c) => c.toLowerCase() === 'agent');
+    if (hasAgentCapability) {
+      const runtime = await this.getRuntime(id);
+      const workspaceId = runtime.workspace?.id;
+      const hasTools = (runtime.mcpToolCapabilities?.length ?? 0) > 0;
+
+      if (workspaceId && hasTools) {
+        // Step 2: Create tool set (agent with tools exists)
+        await this.workspaceRepository.checkAndCompleteStep(workspaceId, 'create-tool-set');
+        // Step 3: Connect tool set to agent (agent runtime has tools)
+        await this.workspaceRepository.checkAndCompleteStep(workspaceId, 'connect-tool-set-to-agent');
+      }
+    }
+
     return updated;
   }
 
@@ -329,12 +345,15 @@ export class RuntimeRepository {
     });
     const updated = res.updateRuntime.runtime[0];
 
-    // Check and complete create-tool-set step if this is an agent runtime
+    // Check and complete onboarding steps if this is an agent runtime
     const runtime = await this.getRuntime(runtimeId);
     const workspaceId = runtime.workspace?.id;
     const hasAgentCapability = runtime.capabilities?.some((c) => c.toLowerCase() === 'agent');
     if (workspaceId && hasAgentCapability) {
+      // Step 2: Create tool set (agent with tools exists)
       await this.workspaceRepository.checkAndCompleteStep(workspaceId, 'create-tool-set');
+      // Step 3: Connect tool set to agent (agent runtime has tools linked)
+      await this.workspaceRepository.checkAndCompleteStep(workspaceId, 'connect-tool-set-to-agent');
     }
 
     return updated;
