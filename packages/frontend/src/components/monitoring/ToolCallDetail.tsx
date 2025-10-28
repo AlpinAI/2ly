@@ -166,12 +166,11 @@ export function ToolCallDetail({ toolCall }: ToolCallDetailProps) {
           <p className="text-sm font-medium text-gray-900 dark:text-white">Input</p>
           <Button
             variant="ghost"
-            size="sm"
+            size="icon"
             onClick={() => openViewer('Tool Input', toolCall.toolInput, 'json')}
-            className="h-7 gap-1.5 text-xs"
+            className="h-7 w-7 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
           >
-            <Maximize2 className="h-3.5 w-3.5" />
-            Expand
+            <Maximize2 className="h-4 w-4" />
           </Button>
         </div>
         <pre className="text-xs bg-gray-50 dark:bg-gray-900 p-3 rounded border border-gray-200 dark:border-gray-700 overflow-x-auto max-h-40">
@@ -192,12 +191,11 @@ export function ToolCallDetail({ toolCall }: ToolCallDetailProps) {
             <p className="text-sm font-medium text-red-800 dark:text-red-300">Error</p>
             <Button
               variant="ghost"
-              size="sm"
+              size="icon"
               onClick={() => openViewer('Error', toolCall.error || '', 'text')}
-              className="h-7 gap-1.5 text-xs"
+              className="h-7 w-7 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
             >
-              <Maximize2 className="h-3.5 w-3.5" />
-              Expand
+              <Maximize2 className="h-4 w-4" />
             </Button>
           </div>
           <pre className="text-xs bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300 p-3 rounded border border-red-200 dark:border-red-800 overflow-x-auto max-h-40">
@@ -210,12 +208,11 @@ export function ToolCallDetail({ toolCall }: ToolCallDetailProps) {
             <p className="text-sm font-medium text-gray-900 dark:text-white">Output</p>
             <Button
               variant="ghost"
-              size="sm"
+              size="icon"
               onClick={() => openViewer('Tool Output', toolCall.toolOutput || '', 'json')}
-              className="h-7 gap-1.5 text-xs"
+              className="h-7 w-7 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
             >
-              <Maximize2 className="h-3.5 w-3.5" />
-              Expand
+              <Maximize2 className="h-4 w-4" />
             </Button>
           </div>
           <pre className="text-xs bg-green-50 dark:bg-green-900/20 p-3 rounded border border-green-200 dark:border-green-800 overflow-x-auto max-h-40">

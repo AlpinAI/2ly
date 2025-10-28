@@ -62,6 +62,7 @@ export function CodeViewerDialog({
 }: CodeViewerDialogProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [viewMode, setViewMode] = useState<ViewMode>('tree');
+  const [isDark, setIsDark] = useState(() => document.documentElement.classList.contains('dark'));
   const prevOpenRef = useRef(open);
 
   // Reset state when dialog opens (transitions from closed to open)
@@ -72,6 +73,20 @@ export function CodeViewerDialog({
     }
     prevOpenRef.current = open;
   }, [open]);
+
+  // Track dark mode changes
+  useEffect(() => {
+    const observer = new MutationObserver(() => {
+      setIsDark(document.documentElement.classList.contains('dark'));
+    });
+
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ['class'],
+    });
+
+    return () => observer.disconnect();
+  }, []);
 
   // Parse JSON if content is JSON
   const parsedJson = useMemo(() => {
@@ -123,9 +138,6 @@ export function CodeViewerDialog({
 
   // Custom JSON view styles for dark mode
   const jsonViewStyles = useMemo(() => {
-    // Detect if we're in dark mode
-    const isDark = document.documentElement.classList.contains('dark');
-
     return {
       ...defaultStyles,
       container: `${defaultStyles.container} font-mono text-sm`,
@@ -157,7 +169,7 @@ export function CodeViewerDialog({
         ? 'text-gray-400'
         : 'text-gray-500',
     };
-  }, []);
+  }, [isDark]);
 
   return (
     <Dialog.Root open={open} onOpenChange={handleOpenChange}>
@@ -191,7 +203,7 @@ export function CodeViewerDialog({
                   }`}
                 >
                   <Braces className="h-4 w-4" />
-                  Tree
+                  Pretty
                 </Button>
                 <Button
                   variant="ghost"
@@ -204,7 +216,7 @@ export function CodeViewerDialog({
                   }`}
                 >
                   <Code2 className="h-4 w-4" />
-                  Code
+                  Raw
                 </Button>
               </div>
             )}
@@ -241,7 +253,7 @@ export function CodeViewerDialog({
           <div className="flex-1 overflow-auto p-4 bg-gray-50 dark:bg-gray-900/50">
             {viewMode === 'tree' && parsedJson ? (
               // JSON Tree View
-              <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
+              <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700 p-4 [&_[role='tree']]:!bg-transparent">
                 <JsonView
                   data={parsedJson}
                   shouldExpandNode={(level) => level < 3}
@@ -299,7 +311,7 @@ function CodeHighlightView({ content, language, searchQuery }: CodeHighlightView
   );
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
+    <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
       <Highlight code={content} language={prismLanguage} theme={themes.vsDark}>
         {({ className, style, tokens, getLineProps, getTokenProps }) => (
           <pre
