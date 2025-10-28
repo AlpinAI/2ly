@@ -32,7 +32,7 @@ import { useNotification } from '@/contexts/NotificationContext';
 import { ConfigEditor } from './config-editor';
 import { useRuntimeData } from '@/stores/runtimeStore';
 import { UpdateMcpServerRunOnDocument, UpdateMcpServerDocument, DeleteMcpServerDocument } from '@/graphql/generated/graphql';
-import { extractConfigurableFields, enrichConfigWithValues, type ConfigField, type ConfigOption } from '@/lib/mcpConfigHelpers';
+import { extractFields, enrichConfigWithValues, type ConfigField, type ConfigOption } from '@/lib/mcpConfigHelpers';
 import type { SubscribeMcpServersSubscription } from '@/graphql/generated/graphql';
 import { McpServerRunOn } from '@/graphql/generated/graphql';
 
@@ -88,10 +88,12 @@ export function MCPServerDetail({ server }: MCPServerDetailProps) {
     }
   }, [server.config, server.transport]);
 
-  // Extract configurable fields using existing helper
+  // Extract configurable fields using helper for stored configs
+  // Note: extractFields now uses unified logic to only extract fields that were
+  // marked as configurable during initial server setup (isConfigurable flag).
   const configurableFields = useMemo(() => {
     if (!configOption) return [];
-    return extractConfigurableFields(configOption);
+    return extractFields(configOption);
   }, [configOption]);
 
   // Reset values when server changes

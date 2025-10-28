@@ -22,6 +22,8 @@ export default [
             "**/dist/**",
             "**/build/**",
             "**/coverage/**",
+            "**/playwright-report/**",
+            "**/test-results/**",
         ],
     },
     ...compat.extends("eslint:recommended", "plugin:@typescript-eslint/recommended", "prettier"),

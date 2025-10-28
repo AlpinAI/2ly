@@ -28,7 +28,7 @@ import { TestPanel, type TestStatus } from './test-panel';
 import { ConfigEditor } from '@/components/sources/config-editor';
 import {
   extractConfigOptions,
-  extractConfigurableFields,
+  extractFields,
   enrichConfigWithValues,
   getServerDisplayName,
   validateFields,
@@ -122,7 +122,7 @@ export function MCPServerConfigure({ selectedServer, onBack, onSuccess }: MCPSer
   // Extract fields when option changes
   useEffect(() => {
     if (selectedOption) {
-      const extracted = extractConfigurableFields(selectedOption);
+      const extracted = extractFields(selectedOption);
       setFields(extracted);
     } else {
       setFields([]);

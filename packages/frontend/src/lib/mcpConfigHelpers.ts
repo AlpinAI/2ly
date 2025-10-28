@@ -27,6 +27,14 @@ type MCPRegistryServer = GetRegistryServersQuery['getRegistryServers'][number];
 // Use official MCP Registry schema types
 type Package = mcpRegistry.components['schemas']['Package'];
 type Transport = mcpRegistry.components['schemas']['Transport'];
+type KeyValueInput = mcpRegistry.components['schemas']['KeyValueInput'];
+type Argument = mcpRegistry.components['schemas']['Argument'];
+type AugmentedKeyValueInput = KeyValueInput & {
+  isConfigurable: boolean;
+};
+type AugmentedArgument = Argument & {
+  isConfigurable: boolean;
+};
 
 // Configuration option for dropdown
 export interface ConfigOption {
@@ -58,6 +66,17 @@ export interface ConfigField {
    * Pattern 2 (Template): { value: "Bearer {github_pat}", variables: { github_pat: {...} } } → isVariable: true
    */
   isVariable: boolean;
+  /**
+   * Indicates whether this field was considered configurable during initial server setup.
+   * This flag is stored in the database config and used to determine which fields
+   * should be editable in the edit flow.
+   *
+   * - Set to `true` during initial configuration for fields that were extracted as configurable
+   * - Stored inline in the config JSON (e.g., { name: "API_KEY", value: "...", isConfigurable: true })
+   * - Used to filter fields in edit mode (only show fields where isConfigurable === true)
+   * - Defaults to `false` for backward compatibility with old configs
+   */
+  isConfigurable: boolean;
 }
 
 /**
@@ -182,6 +201,7 @@ function variableToConfigField(variable: VariableDefinition): ConfigField {
     choices: variable.choices?.map((c) => String(c)),
     value: String(variable.default ?? (fieldType === 'boolean' ? 'false' : '')),
     isVariable: true, // Pattern 2: This is a variable that will be substituted
+    isConfigurable: true, // Variables are always configurable
   };
 }
 
@@ -227,11 +247,18 @@ function directInputToConfigField(
     choices: input.choices?.map((c) => String(c)),
     value: String(input.value ?? input.default ?? defaultValue),
     isVariable: false, // Pattern 1: This is a direct field (no substitution)
+    isConfigurable: true, // Direct fields are configurable when extracted
   };
 }
 
 /**
  * Extract configurable fields from a config option.
+ *
+ * Uses unified condition: Extract fields if `isConfigurable === true` OR field has no value.
+ * This works for both new server setup and editing existing servers:
+ *
+ * - **New setup**: Fields without values are extracted (isConfigurable not set yet)
+ * - **Edit mode**: Fields marked `isConfigurable: true` are extracted (even if they have values)
  *
  * Supports TWO patterns:
  *
@@ -243,7 +270,7 @@ function directInputToConfigField(
  *   isRequired: true,
  *   isSecret: true
  * }]
- * // Output: ConfigField { name: "BRAVE_API_KEY", isVariable: false }
+ * // Output: ConfigField { name: "BRAVE_API_KEY", isVariable: false, isConfigurable: true }
  * // User configures the field directly, value is set without substitution
  * ```
  *
@@ -256,11 +283,14 @@ function directInputToConfigField(
  *     github_pat: { description: "GitHub PAT", isRequired: true, isSecret: true }
  *   }
  * }]
- * // Output: ConfigField { name: "github_pat", isVariable: true }
+ * // Output: ConfigField { name: "github_pat", isVariable: true, isConfigurable: true }
  * // User configures the variable, which gets substituted into "Bearer {github_pat}"
  * ```
+ *
+ * @param option - The config option to extract fields from
+ * @returns Array of ConfigField objects
  */
-export function extractConfigurableFields(option: ConfigOption): ConfigField[] {
+export function extractFields(option: ConfigOption): ConfigField[] {
   const fields: ConfigField[] = [];
 
   if (option.type === 'package') {
@@ -270,17 +300,45 @@ export function extractConfigurableFields(option: ConfigOption): ConfigField[] {
     pkg.environmentVariables?.forEach((env) => {
       if (hasConfigurableVariables(env)) {
         // Pattern 2: Extract variables from "variables" property
+        const isConfigurable = (env as AugmentedKeyValueInput).isConfigurable ?? undefined;
+
+        // Pattern 2: Extract if not explicitly marked as non-configurable
+        // (Undefined in new setup, true in edit mode, rarely/never false)
+        if (isConfigurable === false) return;
+
         const variables = getAllVariablesFromConfig(option.config);
         variables
           .filter((v) => v.context === 'environmentVariables' && v.fieldName === env.name)
           .forEach((variable) => {
-            fields.push(variableToConfigField(variable));
+            const field = variableToConfigField(variable);
+            field.isConfigurable = isConfigurable ?? true; // Default true for Pattern 2
+
+            // Set current value from stored config if available
+            if (env.value !== undefined) {
+              field.value = String(env.value);
+            }
+
+            fields.push(field);
           });
-      } else if (env.value) {
-        // Already has a value set → skip (no configuration needed)
       } else {
-        // Pattern 1: The field itself is configurable
-        fields.push(directInputToConfigField({ ...env, choices: env.choices ?? undefined }, 'env'));
+        // Pattern 1: Direct field
+        const isConfigurable = (env as AugmentedKeyValueInput).isConfigurable;
+
+        // Unified condition: Extract if marked configurable OR has no value
+        if (isConfigurable !== true && env.value) {
+          return; // Skip: has value AND not marked configurable
+        }
+
+        const field = directInputToConfigField({ ...env, choices: env.choices ?? undefined }, 'env');
+        // Mark as configurable if extracted (either explicitly set or no value)
+        field.isConfigurable = isConfigurable === true ? true : !env.value;
+
+        // Set current value from stored config if available
+        if (env.value !== undefined) {
+          field.value = String(env.value);
+        }
+
+        fields.push(field);
       }
     });
 
@@ -288,18 +346,45 @@ export function extractConfigurableFields(option: ConfigOption): ConfigField[] {
     pkg.packageArguments?.forEach((arg, index) => {
       if (hasConfigurableVariables(arg)) {
         // Pattern 2: Extract variables from "variables" property
+        const isConfigurable = (arg as AugmentedArgument).isConfigurable ?? undefined;
+
+        // Pattern 2: Extract if not explicitly marked as non-configurable
+        if (isConfigurable === false) return;
+
         const variables = getAllVariablesFromConfig(option.config);
         const argName = arg.name || arg.valueHint || `arg-${index}`;
         variables
           .filter((v) => v.context === 'packageArguments' && v.fieldName === argName)
           .forEach((variable) => {
-            fields.push(variableToConfigField(variable));
+            const field = variableToConfigField(variable);
+            field.isConfigurable = isConfigurable ?? true; // Default true for Pattern 2
+
+            // Set current value from stored config if available
+            if (arg.value !== undefined) {
+              field.value = String(arg.value);
+            }
+
+            fields.push(field);
           });
-      } else if (arg.value) {
-        // Already has a value set → skip (no configuration needed)
       } else {
-        // Pattern 1: The field itself is configurable
-        fields.push(directInputToConfigField({ ...arg, choices: arg.choices ?? undefined }, 'arg', `arg-${index}`));
+        // Pattern 1: Direct field
+        const isConfigurable = (arg as AugmentedArgument).isConfigurable;
+
+        // Unified condition: Extract if marked configurable OR has no value
+        if (isConfigurable !== true && arg.value) {
+          return; // Skip: has value AND not marked configurable
+        }
+
+        const field = directInputToConfigField({ ...arg, choices: arg.choices ?? undefined }, 'arg', `arg-${index}`);
+        // Mark as configurable if extracted (either explicitly set or no value)
+        field.isConfigurable = isConfigurable === true ? true : !arg.value;
+
+        // Set current value from stored config if available
+        if (arg.value !== undefined) {
+          field.value = String(arg.value);
+        }
+
+        fields.push(field);
       }
     });
 
@@ -307,18 +392,45 @@ export function extractConfigurableFields(option: ConfigOption): ConfigField[] {
     pkg.runtimeArguments?.forEach((arg, index) => {
       if (hasConfigurableVariables(arg)) {
         // Pattern 2: Extract variables from "variables" property
+        const isConfigurable = (arg as AugmentedArgument).isConfigurable ?? undefined;
+
+        // Pattern 2: Extract if not explicitly marked as non-configurable
+        if (isConfigurable === false) return;
+
         const variables = getAllVariablesFromConfig(option.config);
         const argName = arg.name || arg.valueHint || `runtime-arg-${index}`;
         variables
           .filter((v) => v.context === 'runtimeArguments' && v.fieldName === argName)
           .forEach((variable) => {
-            fields.push(variableToConfigField(variable));
+            const field = variableToConfigField(variable);
+            field.isConfigurable = isConfigurable ?? true; // Default true for Pattern 2
+
+            // Set current value from stored config if available
+            if (arg.value !== undefined) {
+              field.value = String(arg.value);
+            }
+
+            fields.push(field);
           });
-      } else if (arg.value) {
-        // Already has a value set → skip (no configuration needed)
       } else {
-        // Pattern 1: The field itself is configurable
-        fields.push(directInputToConfigField({ ...arg, choices: arg.choices ?? undefined }, 'arg', `runtime-arg-${index}`));
+        // Pattern 1: Direct field
+        const isConfigurable = (arg as AugmentedArgument).isConfigurable;
+
+        // Unified condition: Extract if marked configurable OR has no value
+        if (isConfigurable !== true && arg.value) {
+          return; // Skip: has value AND not marked configurable
+        }
+
+        const field = directInputToConfigField({ ...arg, choices: arg.choices ?? undefined }, 'arg', `runtime-arg-${index}`);
+        // Mark as configurable if extracted (either explicitly set or no value)
+        field.isConfigurable = isConfigurable === true ? true : !arg.value;
+
+        // Set current value from stored config if available
+        if (arg.value !== undefined) {
+          field.value = String(arg.value);
+        }
+
+        fields.push(field);
       }
     });
   } else if (option.type === 'remote') {
@@ -328,23 +440,51 @@ export function extractConfigurableFields(option: ConfigOption): ConfigField[] {
     remote.headers?.forEach((header) => {
       if (hasConfigurableVariables(header)) {
         // Pattern 2: Extract variables from "variables" property
+        const isConfigurable = (header as AugmentedKeyValueInput).isConfigurable ?? undefined;
+
+        // Pattern 2: Extract if not explicitly marked as non-configurable
+        if (isConfigurable === false) return;
+
         const variables = getAllVariablesFromConfig(option.config);
         variables
           .filter((v) => v.context === 'headers' && v.fieldName === header.name)
           .forEach((variable) => {
-            fields.push(variableToConfigField(variable));
+            const field = variableToConfigField(variable);
+            field.isConfigurable = isConfigurable ?? true; // Default true for Pattern 2
+
+            // Set current value from stored config if available
+            if (header.value !== undefined) {
+              field.value = String(header.value);
+            }
+
+            fields.push(field);
           });
-      } else if (header.value) {
-        // Already has a value set → skip (no configuration needed)
       } else {
-        // Pattern 1: The field itself is configurable
-        fields.push(directInputToConfigField({ ...header, choices: header.choices ?? undefined }, 'header'));
+        // Pattern 1: Direct field
+        const isConfigurable = (header as AugmentedKeyValueInput).isConfigurable;
+
+        // Unified condition: Extract if marked configurable OR has no value
+        if (isConfigurable !== true && header.value) {
+          return; // Skip: has value AND not marked configurable
+        }
+
+        const field = directInputToConfigField({ ...header, choices: header.choices ?? undefined }, 'header');
+        // Mark as configurable if extracted (either explicitly set or no value)
+        field.isConfigurable = isConfigurable === true ? true : !header.value;
+
+        // Set current value from stored config if available
+        if (header.value !== undefined) {
+          field.value = String(header.value);
+        }
+
+        fields.push(field);
       }
     });
   }
 
   return fields;
 }
+
 
 /**
  * Enrich configuration with user-provided values and perform variable substitution.
@@ -387,7 +527,7 @@ export function enrichConfigWithValues(
   // Deep clone the config to avoid mutating the original
   const configObj = JSON.parse(JSON.stringify(option.config));
 
-  // STEP 1: Set direct values for Pattern 1 fields (isVariable === false)
+  // STEP 1: Set direct values for Pattern 1 fields (isVariable === false) and store isConfigurable flag
   if ('identifier' in configObj) {
     // Package config
     const pkg = configObj as Package;
@@ -399,7 +539,11 @@ export function enrichConfigWithValues(
         const field = fields.find((f) => f.context === 'env' && f.name === env.name && !f.isVariable);
         if (field) {
           env.value = field.value || field.default || '';
+          (env as AugmentedKeyValueInput).isConfigurable = field.isConfigurable;
         }
+      } else {
+        // Pattern 2: Mark as configurable (variables are always configurable)
+        (env as AugmentedKeyValueInput).isConfigurable = true;
       }
     });
 
@@ -411,7 +555,11 @@ export function enrichConfigWithValues(
         const field = fields.find((f) => f.context === 'arg' && f.name === argName && !f.isVariable);
         if (field) {
           arg.value = field.value || field.default || '';
+          (arg as AugmentedArgument).isConfigurable = field.isConfigurable;
         }
+      } else {
+        // Pattern 2: Mark as configurable (variables are always configurable)
+        (arg as AugmentedArgument).isConfigurable = true;
       }
     });
 
@@ -423,7 +571,11 @@ export function enrichConfigWithValues(
         const field = fields.find((f) => f.context === 'arg' && f.name === argName && !f.isVariable);
         if (field) {
           arg.value = field.value || field.default || '';
+          (arg as AugmentedArgument).isConfigurable = field.isConfigurable;
         }
+      } else {
+        // Pattern 2: Mark as configurable (variables are always configurable)
+        (arg as AugmentedArgument).isConfigurable = true;
       }
     });
   } else {
@@ -437,7 +589,11 @@ export function enrichConfigWithValues(
         const field = fields.find((f) => f.context === 'header' && f.name === header.name && !f.isVariable);
         if (field) {
           header.value = field.value || field.default || '';
+          (header as AugmentedKeyValueInput).isConfigurable = field.isConfigurable;
         }
+      } else {
+        // Pattern 2: Mark as configurable (variables are always configurable)
+        (header as AugmentedKeyValueInput).isConfigurable = true;
       }
     });
   }
