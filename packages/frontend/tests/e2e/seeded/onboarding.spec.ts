@@ -1,4 +1,4 @@
-import { test, expect, performLogin } from '../../fixtures/database';
+import { test, expect, performLogin, completeOnboardingSteps } from '../../fixtures/database';
 
 /**
  * Onboarding Flow E2E Tests
@@ -105,53 +105,46 @@ test.describe('Onboarding Flow', () => {
     await expect(page.getByRole('button', { name: /Browse MCP Servers/i })).toBeVisible();
   });
 
-  test('step 1 shows completed status after server is installed', async ({ page }) => {
-    // Step 1 should show completed with server name
-    const step1Card = page.locator('text=Install an MCP Server').locator('..').locator('..');
-    await expect(step1Card.getByText('Completed')).toBeVisible();
-    await expect(step1Card.getByText('filesystem-server')).toBeVisible();
+  test('step 1 shows completed status after server is installed', async ({ page, graphql, workspaceId }) => {
+    // Mark step 1 as completed first
+    await completeOnboardingSteps(graphql, workspaceId, 'install-mcp-server');
+
+    // Select the step 1 card containing the step title
+    const step1Card = page
+      .getByRole('heading', { name: 'Install an MCP Server' })
+      .locator('xpath=ancestor::*[contains(@class,"onboarding-card")][1]');
+
+    await expect(step1Card).toBeVisible();
+
+    // Assert: card shows completion status and installed server name
+    await expect(step1Card.getByText('Completed', { exact: true })).toBeVisible();
+    await expect(step1Card.getByText('filesystem-server', { exact: true })).toBeVisible();
   });
 
-  test('step 2 shows Create Tool Set button when pending', async ({ page, graphql }) => {
+  test('step 2 shows Create Tool Set button when pending', async ({ page, graphql, workspaceId }) => {
     // Mark step 1 as completed first
-    const workspaces = await graphql(`
-      query {
-        workspace {
-          id
-          onboardingSteps {
-            id
-            stepId
-          }
-        }
-      }
-    `);
-    const step1 = workspaces.workspace[0].onboardingSteps.find(
-      (s: { stepId: string }) => s.stepId === 'install-mcp-server'
-    );
+    await completeOnboardingSteps(graphql, workspaceId, 'install-mcp-server');
 
-    await graphql(`
-      mutation {
-        updateOnboardingStep(input: {
-          filter: { id: ["${step1.id}"] }
-          set: { status: COMPLETED, completedAt: "${new Date().toISOString()}" }
-        }) {
-          onboardingStep {
-            id
-          }
-        }
-      }
-    `);
-
-    // Find step 2 card
-    const step2Card = page.locator('text=Create Your First Tool Set').locator('..');
-
+    // Select the step 1 card containing the step title
+    const step2Card = page
+      .getByRole('heading', { name: 'Create Your First Tool Set' })
+      .locator('xpath=ancestor::*[contains(@class,"onboarding-card")][1]');    
+    
     // Should show Create Tool Set button
     await expect(step2Card.getByRole('button', { name: /Create Tool Set/i })).toBeVisible();
   });
 
-  test('step 3 shows Connect button when agent with tools exists', async ({ page }) => {
-    // Find step 3 card
-    const step3Card = page.locator('text=Connect your Tool Set to an Agent').locator('..');
+  test('step 3 shows Connect button when agent with tools exists', async ({ page, graphql, workspaceId }) => {
+    // Mark step 1 as completed first
+    await completeOnboardingSteps(graphql, workspaceId, 'install-mcp-server');
+
+    // Mark step 2 as completed
+    await completeOnboardingSteps(graphql, workspaceId, 'create-tool-set');
+
+    // Select the step 1 card containing the step title
+    const step3Card = page
+      .getByRole('heading', { name: 'Create Your First Tool Set' })
+      .locator('xpath=ancestor::*[contains(@class,"onboarding-card")][1]');
 
     // Should show Connect button
     await expect(step3Card.getByRole('button', { name: /Connect/i })).toBeVisible();
@@ -200,35 +193,9 @@ test.describe('Onboarding Flow', () => {
     await expect(step3Card.getByText(/Create a tool set first to connect to an agent/)).toBeVisible();
   });
 
-  test('step 3 shows completed status after connection', async ({ page, graphql }) => {
+  test('step 3 shows completed status after connection', async ({ page, graphql, workspaceId }) => {
     // Mark step 3 as completed
-    const workspaces = await graphql(`
-      query {
-        workspace {
-          id
-          onboardingSteps {
-            id
-            stepId
-          }
-        }
-      }
-    `);
-    const step3 = workspaces.workspace[0].onboardingSteps.find(
-      (s: { stepId: string }) => s.stepId === 'connect-tool-set-to-agent'
-    );
-
-    await graphql(`
-      mutation {
-        updateOnboardingStep(input: {
-          filter: { id: ["${step3.id}"] }
-          set: { status: COMPLETED, completedAt: "${new Date().toISOString()}" }
-        }) {
-          onboardingStep {
-            id
-          }
-        }
-      }
-    `);
+    await completeOnboardingSteps(graphql, workspaceId, 'connect-tool-set-to-agent');
 
     // Step 3 should show completed
     const step3Card = page.locator('text=Connect your Tool Set to an Agent').locator('..').locator('..');
@@ -241,35 +208,13 @@ test.describe('Onboarding Flow', () => {
     await expect(page.getByRole('button', { name: /Dismiss onboarding/i })).toBeVisible();
   });
 
-  test('all completed steps show green styling', async ({ page, graphql }) => {
+  test('all completed steps show green styling', async ({ page, graphql, workspaceId }) => {
     // Mark all steps as completed
-    const workspaces = await graphql(`
-      query {
-        workspace {
-          id
-          onboardingSteps {
-            id
-            stepId
-          }
-        }
-      }
-    `);
-
-    const steps = workspaces.workspace[0].onboardingSteps;
-    for (const step of steps) {
-      await graphql(`
-        mutation {
-          updateOnboardingStep(input: {
-            filter: { id: ["${step.id}"] }
-            set: { status: COMPLETED, completedAt: "${new Date().toISOString()}" }
-          }) {
-            onboardingStep {
-              id
-            }
-          }
-        }
-      `);
-    }
+    await completeOnboardingSteps(graphql, workspaceId, [
+      'install-mcp-server',
+      'create-tool-set',
+      'connect-tool-set-to-agent',
+    ]);
 
     // All steps should show Completed badge
     const completedBadges = page.locator('text=Completed');
@@ -294,37 +239,9 @@ test.describe('Onboarding Flow', () => {
     // in E2E tests without checking SVG paths, so we just verify icons exist
   });
 
-  test('Connect button variant changes based on isCurrentStep', async ({ page, graphql }) => {
+  test('Connect button variant changes based on isCurrentStep', async ({ page, graphql, workspaceId }) => {
     // Mark step 1 and 2 as completed to make step 3 the current step
-    const workspaces = await graphql(`
-      query {
-        workspace {
-          id
-          onboardingSteps {
-            id
-            stepId
-          }
-        }
-      }
-    `);
-
-    const steps = workspaces.workspace[0].onboardingSteps;
-    for (const step of steps) {
-      if (step.stepId === 'install-mcp-server' || step.stepId === 'create-tool-set') {
-        await graphql(`
-          mutation {
-            updateOnboardingStep(input: {
-              filter: { id: ["${step.id}"] }
-              set: { status: COMPLETED, completedAt: "${new Date().toISOString()}" }
-            }) {
-              onboardingStep {
-                id
-              }
-            }
-          }
-        `);
-      }
-    }
+    await completeOnboardingSteps(graphql, workspaceId, ['install-mcp-server', 'create-tool-set']);
 
     // Step 3 Connect button should be the default variant (not outline)
     const step3Card = page.locator('text=Connect your Tool Set to an Agent').locator('..');

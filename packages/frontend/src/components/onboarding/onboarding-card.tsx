@@ -205,7 +205,7 @@ export function OnboardingCard({ step, isCurrentStep = false }: OnboardingCardPr
   
   return (
     <div className={cn(
-      "relative rounded-lg border p-6 transition-all duration-200",
+      "relative rounded-lg border p-6 transition-all duration-200 onboarding-card",
       isCompleted 
         ? "border-green-200 bg-green-50 dark:border-green-800 dark:bg-green-900/20" 
         : "border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800 hover:shadow-md"

@@ -101,6 +101,12 @@ export interface DatabaseFixture {
    * Get current database state (for debugging/assertions)
    */
   getDatabaseState: () => Promise<DatabaseState>;
+
+  /**
+   * Get the default workspace ID
+   * Useful for tests that need to interact with workspace-specific resources
+   */
+  workspaceId: string;
 }
 
 // ============================================================================
@@ -518,6 +524,32 @@ export const test = base.extend<DatabaseFixture>({
 
     await use(getState);
   },
+
+  /**
+   * Workspace ID fixture
+   * Provides the default workspace ID for tests to use
+   */
+  workspaceId: async ({ graphql }, use) => {
+    const query = `
+      query GetWorkspaceId {
+        workspace {
+          id
+        }
+      }
+    `;
+
+    const result = await graphql<{
+      workspace: Array<{ id: string }>;
+    }>(query);
+
+    const workspaceId = result.workspace[0]?.id;
+
+    if (!workspaceId) {
+      throw new Error('No workspace found. Make sure to seed the database before using workspaceId fixture.');
+    }
+
+    await use(workspaceId);
+  },
 });
 
 // ============================================================================
@@ -666,6 +698,48 @@ export async function performLogin(page: Page, email: string, password: string):
 
   // Wait for redirect to workspace
   await page.waitForURL(/\/w\/.+\/overview/, { timeout: 5000 });
+}
+
+/**
+ * Mark onboarding step(s) as completed
+ *
+ * This helper function automates marking one or more onboarding steps as completed
+ * using the Apollo GraphQL backend mutation.
+ *
+ * @param graphql - GraphQL executor function from the fixture
+ * @param workspaceId - The workspace ID (available from the workspaceId fixture)
+ * @param stepIds - Single stepId or array of stepIds to mark as completed
+ *                 Valid stepIds: 'install-mcp-server', 'create-tool-set', 'connect-tool-set-to-agent'
+ *
+ * @example
+ * // Mark single step as completed
+ * await completeOnboardingSteps(graphql, workspaceId, 'install-mcp-server');
+ *
+ * @example
+ * // Mark multiple steps as completed
+ * await completeOnboardingSteps(graphql, workspaceId, ['install-mcp-server', 'create-tool-set']);
+ */
+export async function completeOnboardingSteps(
+  graphql: <T = any>(query: string, variables?: Record<string, any>) => Promise<T>,
+  workspaceId: string,
+  stepIds: string | string[]
+): Promise<void> {
+  // Normalize to array
+  const stepIdsArray = Array.isArray(stepIds) ? stepIds : [stepIds];
+
+  // Complete each step using the Apollo backend mutation
+  for (const stepId of stepIdsArray) {
+    const mutation = `
+      mutation CompleteOnboardingStep($workspaceId: ID!, $stepId: String!) {
+        completeOnboardingStep(workspaceId: $workspaceId, stepId: $stepId)
+      }
+    `;
+
+    await graphql<{ completeOnboardingStep: boolean }>(mutation, {
+      workspaceId,
+      stepId,
+    });
+  }
 }
 
 // Re-export expect for convenience
