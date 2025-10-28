@@ -22,6 +22,8 @@ import { X, Search, Settings, Loader2, CheckCircle, AlertCircle } from 'lucide-r
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { CheckboxDropdown } from '@/components/ui/checkbox-dropdown';
+import { Switch } from '@/components/ui/switch';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { BottomPanel } from '@/components/ui/bottom-panel';
 import { ToolSelectionTable } from './tool-selection-table';
 import { useManageToolsDialog } from '@/stores/uiStore';
@@ -54,10 +56,12 @@ export function ToolManagementPanel() {
   // Local state
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedServerIds, setSelectedServerIds] = useState<string[]>([]);
+  const [showSelectedOnly, setShowSelectedOnly] = useState(false);
   const [selectedToolIds, setSelectedToolIds] = useState<Set<string>>(new Set());
   const [baselineToolIds, setBaselineToolIds] = useState<Set<string>>(new Set());
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
+  const [confirmRemoveToolId, setConfirmRemoveToolId] = useState<string | null>(null);
 
   // Mutations
   const [linkTool] = useMutation(LinkMcpToolToRuntimeDocument);
@@ -150,11 +154,20 @@ export function ToolManagementPanel() {
     if (!open) {
       setSearchTerm('');
       setSelectedServerIds([]);
+      setShowSelectedOnly(false);
       setSelectedToolIds(new Set());
       setBaselineToolIds(new Set());
       setSaveError(null);
+      setConfirmRemoveToolId(null);
     }
   }, [open]);
+
+  // Auto-clear "show selected only" filter when all tools are deselected
+  useEffect(() => {
+    if (showSelectedOnly && selectedToolIds.size === 0) {
+      setShowSelectedOnly(false);
+    }
+  }, [showSelectedOnly, selectedToolIds.size]);
 
   // Tool selection handlers
   const handleToolToggle = useCallback((toolId: string) => {
@@ -201,6 +214,17 @@ export function ToolManagementPanel() {
   const handleSelectNone = useCallback(() => {
     setSelectedToolIds(new Set());
   }, []);
+
+  const handleRemoveToolClick = useCallback((toolId: string) => {
+    setConfirmRemoveToolId(toolId);
+  }, []);
+
+  const handleConfirmRemoveTool = useCallback(() => {
+    if (confirmRemoveToolId) {
+      handleToolToggle(confirmRemoveToolId);
+      setConfirmRemoveToolId(null);
+    }
+  }, [confirmRemoveToolId, handleToolToggle]);
 
   // Save changes
   const handleSave = useCallback(async () => {
@@ -300,7 +324,7 @@ export function ToolManagementPanel() {
               />
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-3">
               <CheckboxDropdown
                 label="Servers"
                 placeholder="All servers"
@@ -308,6 +332,19 @@ export function ToolManagementPanel() {
                 selectedIds={selectedServerIds}
                 onChange={setSelectedServerIds}
               />
+              <div className="flex items-center gap-2 pl-3 border-l border-gray-200 dark:border-gray-700">
+                <Switch
+                  id="show-selected-only"
+                  checked={showSelectedOnly}
+                  onCheckedChange={setShowSelectedOnly}
+                />
+                <label
+                  htmlFor="show-selected-only"
+                  className="text-sm text-gray-700 dark:text-gray-300 cursor-pointer select-none"
+                >
+                  Show selected only
+                </label>
+              </div>
             </div>
           </div>
 
@@ -321,6 +358,7 @@ export function ToolManagementPanel() {
               onSelectAll={handleSelectAll}
               onSelectNone={handleSelectNone}
               searchTerm={searchTerm}
+              showSelectedOnly={showSelectedOnly}
               loading={toolsLoading}
             />
           </div>
@@ -359,10 +397,19 @@ export function ToolManagementPanel() {
                     return (
                       <div
                         key={toolId}
-                        className="flex items-center gap-2 p-2 bg-gray-50 dark:bg-gray-800 rounded text-sm"
+                        className="group flex items-center gap-2 p-2 bg-gray-50 dark:bg-gray-800 rounded text-sm transition-colors hover:bg-gray-100 dark:hover:bg-gray-700"
                       >
                         <CheckCircle className="h-3 w-3 text-green-600 dark:text-green-400 flex-shrink-0" />
-                        <span className="text-gray-900 dark:text-white truncate">{tool.name}</span>
+                        <span className="text-gray-900 dark:text-white truncate flex-1">{tool.name}</span>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleRemoveToolClick(toolId)}
+                          className="h-5 w-5 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-gray-200 dark:hover:bg-gray-600"
+                          aria-label={`Remove ${tool.name}`}
+                        >
+                          <X className="h-3 w-3" />
+                        </Button>
                       </div>
                     );
                   })}
@@ -394,6 +441,18 @@ export function ToolManagementPanel() {
           </Button>
         </div>
       </div>
+
+      {/* Confirmation Dialog for Tool Removal */}
+      <ConfirmDialog
+        open={confirmRemoveToolId !== null}
+        onOpenChange={(open) => !open && setConfirmRemoveToolId(null)}
+        title="Remove Tool"
+        description={`Are you sure you want to remove "${filteredTools.find((t) => t.id === confirmRemoveToolId)?.name}" from this tool set?`}
+        confirmLabel="Remove"
+        cancelLabel="Cancel"
+        variant="default"
+        onConfirm={handleConfirmRemoveTool}
+      />
     </BottomPanel>
   );
 }

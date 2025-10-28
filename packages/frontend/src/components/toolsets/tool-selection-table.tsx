@@ -37,6 +37,7 @@ export interface ToolSelectionTableProps {
   onSelectAll: () => void;
   onSelectNone: () => void;
   searchTerm: string;
+  showSelectedOnly?: boolean;
   loading?: boolean;
 }
 
@@ -48,16 +49,32 @@ export function ToolSelectionTable({
   onSelectAll,
   onSelectNone,
   searchTerm,
+  showSelectedOnly = false,
   loading,
 }: ToolSelectionTableProps) {
   const [collapsedServers, setCollapsedServers] = useState<Set<string>>(new Set());
 
+  // Filter servers and tools based on showSelectedOnly
+  const filteredServers = useMemo(() => {
+    if (!showSelectedOnly) {
+      return servers;
+    }
+
+    // Filter to only show servers with selected tools
+    return servers
+      .map((server) => ({
+        ...server,
+        tools: server.tools.filter((tool) => selectedToolIds.has(tool.id)),
+      }))
+      .filter((server) => server.tools.length > 0);
+  }, [servers, selectedToolIds, showSelectedOnly]);
+
   // Calculate selection state
   const allToolIds = useMemo(() => {
     const ids: string[] = [];
-    servers.forEach(server => server.tools.forEach(tool => ids.push(tool.id)));
+    filteredServers.forEach(server => server.tools.forEach(tool => ids.push(tool.id)));
     return ids;
-  }, [servers]);
+  }, [filteredServers]);
 
   const selectedCount = selectedToolIds.size;
   const totalCount = allToolIds.length;
@@ -120,10 +137,14 @@ export function ToolSelectionTable({
     );
   }
 
-  if (servers.length === 0) {
+  if (filteredServers.length === 0) {
     return (
       <div className="text-center py-8 text-gray-500 dark:text-gray-400">
-        {searchTerm ? 'No tools found matching your search.' : 'No tools available.'}
+        {showSelectedOnly
+          ? 'No selected tools.'
+          : searchTerm
+            ? 'No tools found matching your search.'
+            : 'No tools available.'}
       </div>
     );
   }
@@ -167,7 +188,7 @@ export function ToolSelectionTable({
       </div>
 
       {/* Server Groups */}
-      {servers.map((server) => {
+      {filteredServers.map((server) => {
         const isCollapsed = collapsedServers.has(server.id);
         const serverSelectionState = getServerSelectionState(server);
         // const serverToolIds = server.tools.map(tool => tool.id);
