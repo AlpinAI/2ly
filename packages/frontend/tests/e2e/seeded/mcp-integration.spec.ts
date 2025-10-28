@@ -9,65 +9,31 @@
  * 5. Execute tool calls against the real MCP server
  * 6. Verify deep-linking across dynamically created entities
  *
- * Strategy: Seeded with Runtime
+ * Strategy: Seeded with Global Runtime
  * - Database is reset + seeded before tests (workspace/user exist)
- * - Runtime container is started and connected to test network
+ * - Runtime container is started globally (shared across all E2E tests)
  * - MCP entities are created dynamically during test execution
  * - Tests complete within 2 minutes with proper timeouts
- * - Cleanup handles container lifecycle properly
  */
 
 import { test, expect, seedPresets } from '../../fixtures/database';
-import { TestEnvironment } from '@2ly/common/test/testEnvironment';
 
 // Test configuration
 const TEST_FILE_PATH = '/tmp/test-fs/test.txt';
 const TEST_FILE_CONTENT = 'Hello from MCP integration test!';
-
-/**
- * Test environment with runtime container
- */
-let testEnv: TestEnvironment;
 
 test.describe('MCP Integration with Containerized Runtime', () => {
   // Configure tests to run serially
   test.describe.configure({ mode: 'serial' });
 
   /**
-   * Setup: Start test environment with runtime container
+   * Setup: Reset and seed database with users and workspace
+   * Runtime container is started globally in global-setup.ts
    */
   test.beforeAll(async ({ resetDatabase, seedDatabase }) => {
-    // Reset and seed database with users and workspace
     await resetDatabase();
     await seedDatabase(seedPresets.withUsers);
-
-    // Start test environment with runtime container
-    testEnv = new TestEnvironment({
-      exposeToHost: true,
-      startBackend: true,
-      startRuntime: true,
-      runtimeEnv: {
-        RUNTIME_NAME: 'E2E Test Runtime',
-        GLOBAL_RUNTIME: 'true',
-      },
-      logging: {
-        enabled: false, // Set to true for debugging
-        verbose: false,
-      },
-    });
-
-    await testEnv.start();
-    console.log('Test environment started with runtime container');
-  });
-
-  /**
-   * Cleanup: Stop test environment and containers
-   */
-  test.afterAll(async () => {
-    if (testEnv) {
-      await testEnv.stop();
-      console.log('Test environment stopped');
-    }
+    console.log('Database reset and seeded for MCP integration tests');
   });
 
   test('should complete full MCP lifecycle: configure → deploy → discover → execute', async ({

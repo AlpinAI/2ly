@@ -2,7 +2,7 @@
 import { test as base, type Page } from '@playwright/test';
 import { comprehensiveSeededData } from '../e2e/fixtures/seed-data';
 import { dgraphQL } from './dgraph-client';
-import { hashPassword } from '@2ly/common';
+import { hashPassword } from '@2ly/common/test/testcontainers';
 
 /**
  * Database Fixture for Playwright Tests

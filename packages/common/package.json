@@ -24,13 +24,6 @@
         "default": "./src/test/vitest.ts"
       },
       "types": "./src/test/vitest.ts"
-    },
-    "./test/testEnvironment": {
-      "import": {
-        "types": "./src/test/testEnvironment.ts",
-        "default": "./src/test/testEnvironment.ts"
-      },
-      "types": "./src/test/testEnvironment.ts"
     }
   },
   "scripts": {
