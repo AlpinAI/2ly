@@ -39,7 +39,7 @@ const helpMenuItems: HelpMenuItem[] = [
   {
     label: 'Get Support',
     icon: <MessageCircle className="h-4 w-4" />,
-    href: 'https://discord.com/channels/1419628846348632186/1419631509274492989',
+    href: 'https://discord.gg/XSFPRSyp',
     description: 'Ask our Discord community',
   },
   {
