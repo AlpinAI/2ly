@@ -66,6 +66,14 @@ export class IdentityService extends Service {
     this.workspaceId = workspaceId;
   }
 
+  clearIdentity() {
+    this.logger.info('Clearing identity (id, RID, workspaceId)');
+    this.id = null;
+    this.RID = null;
+    // TODO: this value should come from the DI
+    this.workspaceId = process.env.WORKSPACE_ID || 'DEFAULT';
+  }
+
   addCapability(capability: string) {
     if (capability === 'agent') {
       this.agentCapability = true;

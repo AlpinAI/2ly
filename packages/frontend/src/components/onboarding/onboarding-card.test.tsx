@@ -161,7 +161,7 @@ describe('OnboardingCard', () => {
     it('renders step title and description', () => {
       render(<OnboardingCard step={mockStep} />);
 
-      expect(screen.getByText('Connect your Tool Set to an Agent')).toBeInTheDocument();
+      expect(screen.getByText('Connect your Agent')).toBeInTheDocument();
       expect(screen.getByText(/Connect your tool set to an agent to start using your tools in AI workflows/)).toBeInTheDocument();
     });
 

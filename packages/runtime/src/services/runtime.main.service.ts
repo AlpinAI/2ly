@@ -5,6 +5,7 @@ import {
   LoggerService,
   NatsService,
   RuntimeConnectMessage,
+  RuntimeReconnectMessage,
   Service,
   SetRuntimeCapabilitiesMessage,
 } from '@2ly/common';
@@ -19,6 +20,7 @@ export class MainService extends Service {
   private logger: pino.Logger;
   private RID: string | null = null;
   private failedConnectionCounter: number = 0;
+  private subscriptions: { unsubscribe: () => void; drain: () => Promise<void>; isClosed?: () => boolean }[] = [];
 
   constructor(
     @inject(LoggerService) private loggerService: LoggerService,
@@ -54,6 +56,8 @@ export class MainService extends Service {
       try {
         await this.startService(this.natsService);
         await this.startService(this.identityService);
+        // Subscribe to RuntimeReconnectMessage after NATS is connected
+        await this.subscribeToReconnectMessage();
       } catch (error) {
         this.logger.error(`Failed to start nats or identity service: ${error}`);
         await this.reconnect();
@@ -143,6 +147,7 @@ export class MainService extends Service {
   }
 
   private async down() {
+    await this.unsubscribeFromMessages();
     await this.stopService(this.healthService);
     await this.stopService(this.toolService);
     await this.stopService(this.agentService);
@@ -188,6 +193,43 @@ export class MainService extends Service {
 
   private wait(ms: number): Promise<void> {
     return new Promise((resolve) => setTimeout(resolve, ms));
+  }
+
+  private async subscribeToReconnectMessage() {
+    this.logger.debug('Subscribing to RuntimeReconnectMessage');
+    const subscription = this.natsService.subscribe(RuntimeReconnectMessage.subscribe());
+    this.subscriptions.push(subscription);
+
+    // Process messages in the background
+    (async () => {
+      try {
+        for await (const msg of subscription) {
+          if (msg instanceof RuntimeReconnectMessage) {
+            this.logger.info(`Received RuntimeReconnectMessage: ${msg.data.reason || 'No reason provided'}`);
+            // Clear identity to force re-registration
+            this.identityService.clearIdentity();
+            // Trigger reconnection
+            await this.reconnect();
+          }
+        }
+      } catch (error) {
+        this.logger.error(`Error processing RuntimeReconnectMessage: ${error}`);
+      }
+    })();
+  }
+
+  private async unsubscribeFromMessages() {
+    this.logger.debug('Unsubscribing from NATS messages');
+    for (const subscription of this.subscriptions) {
+      try {
+        if (subscription.isClosed && !subscription.isClosed()) {
+          await subscription.drain();
+        }
+      } catch (error) {
+        this.logger.error(`Failed to drain subscription: ${error}`);
+      }
+    }
+    this.subscriptions = [];
   }
 
   private isShuttingDown = false;

@@ -175,7 +175,7 @@ export class RuntimeRepository {
       { id },
       'getRuntime',
       true,
-    ).pipe(map((runtime) => runtime.roots ? JSON.parse(runtime.roots) : []));
+    ).pipe(map((runtime) => runtime?.roots ? JSON.parse(runtime.roots) : []));
   }
 
   observeMCPServersOnEdge(id: string): Observable<dgraphResolversTypes.McpServer[]> {
@@ -256,6 +256,10 @@ export class RuntimeRepository {
       hostIP,
       hostname,
     });
+    const runtime = res.updateRuntime.runtime[0]!;
+    if (runtime.workspace) {
+      await this.workspaceRepository.checkAndCompleteStep(runtime.workspace.id, 'connect-tool-set-to-agent');
+    }
     return res.updateRuntime.runtime[0];
   }
 
