@@ -2,20 +2,21 @@
  * App Header Component
  *
  * WHY: Main application header for authenticated users.
- * Contains logo, command palette trigger, notifications, user menu, and theme toggle.
+ * Contains logo, command palette trigger, help menu, user menu, and theme toggle.
  *
  * WHAT IT PROVIDES:
  * - Logo with link to dashboard
  * - Command palette trigger button (⌘K)
- * - Notifications bell with popover
+ * - Help menu with resources and support links
  * - User menu with profile and logout
  * - Theme toggle
  * - Workspace indicator
  */
 
 import { Link } from 'react-router-dom';
-import { Bell, User as UserIcon, LogOut, Settings, Terminal } from 'lucide-react';
+import { User as UserIcon, LogOut, Settings, Terminal } from 'lucide-react';
 import { ThemeToggle } from '@/components/theme-toggle';
+import { HelpMenu } from '@/components/layout/help-menu';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
   DropdownMenu,
@@ -25,11 +26,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '@/components/ui/popover';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import { cn } from '@/lib/utils';
@@ -101,32 +97,11 @@ export function AppHeader() {
                 </kbd>
               </button>
 
-            {/* Notifications */}
-            <Popover>
-              <PopoverTrigger asChild>
-                <button
-                  className={cn(
-                    'p-2 text-gray-600 dark:text-gray-400',
-                    'hover:bg-gray-100 dark:hover:bg-gray-700',
-                    'rounded-lg transition-colors',
-                    'relative'
-                  )}
-                  aria-label="Notifications"
-                >
-                  <Bell className="h-5 w-5" />
-                  {/* Notification badge (placeholder) */}
-                  {/* <span className="absolute top-1.5 right-1.5 h-2 w-2 bg-red-500 rounded-full" /> */}
-                </button>
-              </PopoverTrigger>
-              <PopoverContent align="end" className="w-80">
-                <div className="space-y-2">
-                  <h3 className="font-semibold text-sm">Notifications</h3>
-                  <p className="text-sm text-muted-foreground">
-                    No new notifications
-                  </p>
-                </div>
-              </PopoverContent>
-            </Popover>
+            {/* Help Menu */}
+            <HelpMenu />
+
+            {/* Theme Toggle */}
+            <ThemeToggle />
 
             {/* User Menu */}
             <DropdownMenu>
@@ -177,9 +152,6 @@ export function AppHeader() {
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
-
-            {/* Theme Toggle */}
-            <ThemeToggle />
           </div>
         </div>
       </div>

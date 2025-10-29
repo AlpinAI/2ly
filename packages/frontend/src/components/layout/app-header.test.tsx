@@ -28,6 +28,11 @@ vi.mock('@/components/command-palette/command-palette', () => ({
   CommandPalette: () => null,
 }));
 
+// Mock HelpMenu to simplify tests
+vi.mock('@/components/layout/help-menu', () => ({
+  HelpMenu: () => <button aria-label="Help and resources">Help</button>,
+}));
+
 const renderWithProviders = (component: React.ReactElement) => {
   return render(
     <BrowserRouter>
@@ -84,11 +89,11 @@ describe('AppHeader', () => {
     dispatchEventSpy.mockRestore();
   });
 
-  it('renders notifications button', () => {
+  it('renders help menu button', () => {
     renderWithProviders(<AppHeader />);
 
-    const notificationsButton = screen.getByLabelText('Notifications');
-    expect(notificationsButton).toBeDefined();
+    const helpButton = screen.getByLabelText('Help and resources');
+    expect(helpButton).toBeDefined();
   });
 
   it('renders user menu button', () => {
