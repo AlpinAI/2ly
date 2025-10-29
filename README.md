@@ -14,9 +14,16 @@
 
 Stop rebuilding the same tools for every agent framework. 2LY gives you a private tool registry with embedded runtimes that works across any agent environment—whether you're using LangChain, CrewAI, AutoGPT, or building custom agents.
 
-<p align="center">
-<img width="784" height="242" alt="2LY Architecture" src="https://github.com/user-attachments/assets/4a7810b1-51f8-4bc0-ad73-cff62db420c7" style="border-radius: 15px;" />
-</p>
+
+<div align="center">
+    <p><em>2-minute product walkthrough (click to unmute)</em></p>
+  <video src="https://github.com/user-attachments/assets/15f7f238-d265-44de-a3e1-50864a5d3aeb" 
+         controls 
+         loop
+         style="max-width: 100%; height: auto;">
+  </video>
+</div>
+
 
 ## ✨ Why 2LY?
 
@@ -57,6 +64,10 @@ Access the dashboard at **http://localhost:8888**, create your workspace, and fo
 ## 🌐 Distributed Architecture
 
 Unlike traditional gateways that proxy HTTP requests to fixed endpoints, 2LY uses message-based pub-sub where runtimes register dynamically from anywhere. Agents publish requests to topics; the broker routes to available runtimes regardless of location (cloud, edge, behind NAT). Message persistence and async communication enable fan-out queries, automatic failover, and zero-downtime deployments without orchestration code.
+
+<p align="center">
+<img width="784" height="242" alt="2LY Architecture" src="https://github.com/user-attachments/assets/4a7810b1-51f8-4bc0-ad73-cff62db420c7" style="border-radius: 15px;" />
+</p>
 
 ### Key Components
 
