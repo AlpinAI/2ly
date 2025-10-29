@@ -6,16 +6,20 @@
  */
 
 import { CodeBlock } from '@/components/ui/code-block';
+import { sanitizeIdentifier } from '@/lib/utils';
 
 export interface JSONInstructionsProps {
   agentName: string;
   natsServer: string;
+  sanitizeAgentName?: boolean;
 }
 
-export function JSONInstructions({ agentName, natsServer }: JSONInstructionsProps) {
+export function JSONInstructions({ agentName, natsServer, sanitizeAgentName = false }: JSONInstructionsProps) {
+  const sanitizedAgentName = sanitizeAgentName ? sanitizeIdentifier(agentName) : agentName;
+
   const jsonConfigExample = `{
   "mcpServers": {
-    "filesystem": {
+    "${sanitizedAgentName}": {
       "command": "npx",
       "args": [
         "-y",
