@@ -257,7 +257,9 @@ export class RuntimeRepository {
       hostname,
     });
     const runtime = res.updateRuntime.runtime[0]!;
-    await this.workspaceRepository.checkAndCompleteStep(runtime.workspace.id, 'connect-tool-set-to-agent');
+    if (runtime.workspace) {
+      await this.workspaceRepository.checkAndCompleteStep(runtime.workspace.id, 'connect-tool-set-to-agent');
+    }
     return res.updateRuntime.runtime[0];
   }
 

@@ -7,8 +7,7 @@ export class RuntimeReconnectMessage extends NatsPublish<{
 }> {
   static type = type;
   type = type;
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  validate(data: { reason?: string }): boolean {
+  validate(): boolean {
     return true; // No required fields
   }
 
