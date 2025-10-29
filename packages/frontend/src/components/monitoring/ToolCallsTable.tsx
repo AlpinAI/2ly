@@ -185,7 +185,7 @@ export function ToolCallsTable({
               placeholder="Search..."
               value={filters.search}
               onChange={(e) => filters.setSearch(e.target.value)}
-              className="h-9"
+              inputClassName="h-9"
             />
           </div>
 

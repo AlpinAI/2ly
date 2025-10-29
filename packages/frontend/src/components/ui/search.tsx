@@ -20,12 +20,16 @@ export interface SearchProps extends React.InputHTMLAttributes<HTMLInputElement>
    * Custom shortcut text
    */
   shortcutText?: string;
+  /**
+   * Additional classes for the input element
+   */
+  inputClassName?: string;
 }
 
 const Search = React.forwardRef<HTMLInputElement, SearchProps>(
-  ({ className, showShortcut = false, shortcutText = '⌘K', ...props }, ref) => {
+  ({ className, inputClassName, showShortcut = false, shortcutText = '⌘K', ...props }, ref) => {
     return (
-      <div className="relative">
+      <div className={cn('relative', className)}>
         <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
         <input
           type="search"
@@ -35,7 +39,7 @@ const Search = React.forwardRef<HTMLInputElement, SearchProps>(
             'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
             'disabled:cursor-not-allowed disabled:opacity-50',
             showShortcut && 'pr-12',
-            className
+            inputClassName
           )}
           ref={ref}
           {...props}

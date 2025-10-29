@@ -79,6 +79,7 @@ export function ConfigFieldInput({ field, value, onChange }: ConfigFieldInputPro
                 onChange={(e) => onChange(e.target.value)}
                 placeholder={field.default || ''}
                 className="pr-10"
+                autoComplete="off"
               />
               <Button
                 type="button"
