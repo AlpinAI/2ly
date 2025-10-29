@@ -175,7 +175,7 @@ export class RuntimeRepository {
       { id },
       'getRuntime',
       true,
-    ).pipe(map((runtime) => runtime.roots ? JSON.parse(runtime.roots) : []));
+    ).pipe(map((runtime) => runtime?.roots ? JSON.parse(runtime.roots) : []));
   }
 
   observeMCPServersOnEdge(id: string): Observable<dgraphResolversTypes.McpServer[]> {
