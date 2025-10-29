@@ -208,6 +208,22 @@ export class NatsService extends Service {
     }
   }
 
+  async clearHeartbeatKeys(): Promise<void> {
+    if (!this.heartbeatKV) {
+      throw new Error('Heartbeat KV not initialized');
+    }
+    try {
+      const keys = await this.heartbeatKeys();
+      for (const key of keys) {
+        await this.heartbeatKV.delete(key);
+      }
+      this.logger.info(`Cleared ${keys.length} heartbeat keys`);
+    } catch (error) {
+      this.logger.error(`Failed to clear heartbeat keys: ${error}`);
+      throw error;
+    }
+  }
+
   async observeHeartbeat(id: string) {
     if (!this.heartbeatKV) {
       throw new Error('Heartbeat KV not initialized');

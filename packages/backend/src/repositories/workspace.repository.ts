@@ -301,6 +301,7 @@ export class WorkspaceRepository {
             runtimes: {
               capabilities: string[];
               mcpToolCapabilities: { id: string }[];
+              status: string;
             }[]
           };
         }>(QUERY_WORKSPACE_WITH_RUNTIMES, { workspaceId });
@@ -309,7 +310,8 @@ export class WorkspaceRepository {
         shouldComplete = (
           runtimes.getWorkspace.runtimes?.some(r =>
             (r.capabilities || []).some(c => c.toUpperCase() === 'AGENT') &&
-            (r.mcpToolCapabilities?.length || 0) > 0
+            (r.mcpToolCapabilities?.length || 0) > 0 && 
+            r.status === 'ACTIVE'
           ) || false
         );
         break; }

@@ -10,7 +10,7 @@ import { test, expect, performLogin, seedPresets } from '../../fixtures/database
  * Tests the complete onboarding flow with all three steps:
  * 1. Install an MCP Server
  * 2. Create Your First Tool Set
- * 3. Connect your Tool Set to an Agent
+ * 3. Connect your Agent
  *
  * Strategy: Seeded
  * - Database is pre-populated with test data
@@ -139,7 +139,7 @@ test.describe('Onboarding Flow', () => {
     await expect(page.getByText('Create a tool set with at least one tool')).toBeVisible();
 
     // Check step 3: Connect Agent
-    await expect(page.getByRole('heading', { name: 'Connect your Tool Set to an Agent' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Connect your Agent' })).toBeVisible();
     await expect(page.getByText('Connect your tool set to an agent to start using your tools in AI workflows')).toBeVisible();
   });
 
@@ -232,7 +232,7 @@ test.describe('Onboarding Flow', () => {
 
     // Select the step 3 card containing the correct step title
     const step3Card = page
-      .getByRole('heading', { name: 'Connect your Tool Set to an Agent' })
+      .getByRole('heading', { name: 'Connect your Agent' })
       .locator('xpath=ancestor::*[contains(@class,"onboarding-card")][1]');
 
     // Should show Connect button
@@ -241,7 +241,7 @@ test.describe('Onboarding Flow', () => {
 
   test.skip('step 3 Connect button opens Connect Agent dialog', async ({ page }) => {
     // Find and click Connect button
-    const step3Card = page.locator('text=Connect your Tool Set to an Agent').locator('..');
+    const step3Card = page.locator('text=Connect your Agent').locator('..');
     const connectButton = step3Card.getByRole('button', { name: /Connect/i });
     await connectButton.click();
 
@@ -253,7 +253,7 @@ test.describe('Onboarding Flow', () => {
 
   test.skip('step 3 Connect dialog shows platform selector', async ({ page }) => {
     // Open Connect dialog
-    const step3Card = page.locator('text=Connect your Tool Set to an Agent').locator('..');
+    const step3Card = page.locator('text=Connect your Agent').locator('..');
     const connectButton = step3Card.getByRole('button', { name: /Connect/i });
     await connectButton.click();
 
@@ -276,7 +276,7 @@ test.describe('Onboarding Flow', () => {
     });
 
     // Find step 3 card
-    const step3Card = page.locator('text=Connect your Tool Set to an Agent').locator('..');
+    const step3Card = page.locator('text=Connect your Agent').locator('..');
 
     // Should show message
     await expect(step3Card.getByText(/Create a tool set first to connect to an agent/)).toBeVisible();
@@ -284,7 +284,7 @@ test.describe('Onboarding Flow', () => {
 
   test.skip('step 3 shows completed status after connection', async ({ page }) => {
     // Step 3 should show completed
-    const step3Card = page.locator('text=Connect your Tool Set to an Agent').locator('..').locator('..');
+    const step3Card = page.locator('text=Connect your Agent').locator('..').locator('..');
     await expect(step3Card.getByText('Completed')).toBeVisible();
     await expect(step3Card.getByText(/Test Agent connected/)).toBeVisible();
   });
@@ -307,7 +307,7 @@ test.describe('Onboarding Flow', () => {
     // Get all three step cards by their titles
     const step1 = page.locator('text=Install an MCP Server').locator('..').locator('..');
     const step2 = page.locator('text=Create Your First Tool Set').locator('..').locator('..');
-    const step3 = page.locator('text=Connect your Tool Set to an Agent').locator('..').locator('..');
+    const step3 = page.locator('text=Connect your Agent').locator('..').locator('..');
 
     // Each should have an icon (SVG element)
     await expect(step1.locator('svg').first()).toBeVisible();
@@ -320,7 +320,7 @@ test.describe('Onboarding Flow', () => {
 
   test.skip('Connect button variant changes based on isCurrentStep', async ({ page }) => {
     // Step 3 Connect button should be the default variant (not outline)
-    const step3Card = page.locator('text=Connect your Tool Set to an Agent').locator('..');
+    const step3Card = page.locator('text=Connect your Agent').locator('..');
     const connectButton = step3Card.getByRole('button', { name: /Connect/i });
 
     // Check button exists and is visible (detailed styling check is difficult in E2E)

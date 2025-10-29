@@ -11,6 +11,7 @@ import {
   RUNTIME_SUBJECT,
   NatsRequest,
   RuntimeConnectMessage,
+  RuntimeReconnectMessage,
 } from '@2ly/common';
 import { DGraphService } from './dgraph.service';
 import pino from 'pino';
@@ -160,6 +161,29 @@ export class RuntimeService extends Service {
     this.logger.debug(`Disconnecting runtime ${runtimeId}`);
     const response = (await this.runtimeRepository.setInactive(runtimeId)) as dgraphResolversTypes.Runtime;
     return response;
+  }
+
+  async resetRuntimes() {
+    this.logger.info('Resetting all runtime instances');
+
+    // Stop all runtime instances
+    for (const runtimeInstance of this.runtimeInstances.values()) {
+      await runtimeInstance.stop('runtime');
+    }
+
+    // Clear the runtime instances map
+    this.runtimeInstances.clear();
+    this.logger.info('Cleared runtime instances map');
+
+    // Clear NATS heartbeat KV bucket
+    await this.natsService.clearHeartbeatKeys();
+
+    // Publish RuntimeReconnectMessage to all connected runtimes
+    const reconnectMessage = new RuntimeReconnectMessage({
+      reason: 'Backend reset - please reconnect',
+    });
+    this.natsService.publish(reconnectMessage);
+    this.logger.info('Published RuntimeReconnectMessage to all runtimes');
   }
 
   async upsertTool(

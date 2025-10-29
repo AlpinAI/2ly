@@ -15,6 +15,7 @@ export * from './set-runtime-capabilities.message';
 export * from './runtime-healthy.message';
 export * from './set-global-runtime.message';
 export * from './runtime-connect.message';
+export * from './runtime-reconnect.message';
 export * from './set-mcp-client-name.message';
 
 // streams
