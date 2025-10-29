@@ -38,58 +38,124 @@ describe('JSONInstructions', () => {
     });
   });
 
-  describe('sanitized agent name in JSON config', () => {
-    it('uses sanitized agent name as JSON key instead of "filesystem"', () => {
-      const { container } = render(
-        <JSONInstructions agentName="My Agent" natsServer="localhost:4222" />
-      );
+  describe('sanitizeAgentName prop behavior', () => {
+    describe('when sanitizeAgentName is true', () => {
+      it('uses sanitized agent name as JSON key instead of "filesystem"', () => {
+        const { container } = render(
+          <JSONInstructions agentName="My Agent" natsServer="localhost:4222" sanitizeAgentName={true} />
+        );
 
-      const codeBlock = container.querySelector('pre');
-      const codeContent = codeBlock?.textContent || '';
+        const codeBlock = container.querySelector('pre');
+        const codeContent = codeBlock?.textContent || '';
 
-      // Should use "my-agent" as the key
-      expect(codeContent).toContain('"my-agent"');
-      // Should NOT contain "filesystem"
-      expect(codeContent).not.toContain('"filesystem"');
+        // Should use "my-agent" as the key
+        expect(codeContent).toContain('"my-agent"');
+        // Should NOT contain "filesystem"
+        expect(codeContent).not.toContain('"filesystem"');
+      });
+
+      it('sanitizes agent name: converts to lowercase', () => {
+        const { container } = render(
+          <JSONInstructions agentName="PRODUCTION" natsServer="localhost:4222" sanitizeAgentName={true} />
+        );
+
+        const codeContent = container.querySelector('pre')?.textContent || '';
+        expect(codeContent).toContain('"production"');
+      });
+
+      it('sanitizes agent name: replaces spaces with hyphens', () => {
+        const { container } = render(
+          <JSONInstructions agentName="Production Runtime" natsServer="localhost:4222" sanitizeAgentName={true} />
+        );
+
+        const codeContent = container.querySelector('pre')?.textContent || '';
+        expect(codeContent).toContain('"production-runtime"');
+      });
+
+      it('sanitizes agent name: removes special characters', () => {
+        const { container } = render(
+          <JSONInstructions agentName="Agent #1" natsServer="localhost:4222" sanitizeAgentName={true} />
+        );
+
+        const codeContent = container.querySelector('pre')?.textContent || '';
+        expect(codeContent).toContain('"agent-1"');
+      });
+
+      it('sanitizes agent name: prefixes with underscore if starts with number', () => {
+        const { container } = render(
+          <JSONInstructions agentName="123 Agent" natsServer="localhost:4222" sanitizeAgentName={true} />
+        );
+
+        const codeContent = container.querySelector('pre')?.textContent || '';
+        expect(codeContent).toContain('"_123-agent"');
+      });
+
+      it('sanitizes agent name: falls back to "agent" for empty/invalid names', () => {
+        const { container } = render(
+          <JSONInstructions agentName="!!!" natsServer="localhost:4222" sanitizeAgentName={true} />
+        );
+
+        const codeContent = container.querySelector('pre')?.textContent || '';
+        expect(codeContent).toContain('"agent"');
+      });
+
+      it('preserves original agent name in RUNTIME_NAME env variable', () => {
+        const { container } = render(
+          <JSONInstructions
+            agentName="My Special Agent #1"
+            natsServer="localhost:4222"
+            sanitizeAgentName={true}
+          />
+        );
+
+        const codeContent = container.querySelector('pre')?.textContent || '';
+
+        // The RUNTIME_NAME should preserve the original name
+        expect(codeContent).toContain('"RUNTIME_NAME": "My Special Agent #1"');
+        // But the key should be sanitized
+        expect(codeContent).toContain('"my-special-agent-1"');
+      });
     });
 
-    it('sanitizes agent name: converts to lowercase', () => {
-      const { container } = render(
-        <JSONInstructions agentName="PRODUCTION" natsServer="localhost:4222" />
-      );
+    describe('when sanitizeAgentName is false or not provided (default)', () => {
+      it('uses original agent name as JSON key without sanitization', () => {
+        const { container } = render(
+          <JSONInstructions agentName="My Agent" natsServer="localhost:4222" />
+        );
 
-      const codeContent = container.querySelector('pre')?.textContent || '';
-      expect(codeContent).toContain('"production"');
-    });
+        const codeBlock = container.querySelector('pre');
+        const codeContent = codeBlock?.textContent || '';
 
-    it('sanitizes agent name: replaces spaces with hyphens', () => {
-      const { container } = render(
-        <JSONInstructions agentName="Production Runtime" natsServer="localhost:4222" />
-      );
+        // Should use the original name as the key
+        expect(codeContent).toContain('"My Agent"');
+      });
 
-      const codeContent = container.querySelector('pre')?.textContent || '';
-      expect(codeContent).toContain('"production-runtime"');
-    });
+      it('preserves uppercase in JSON key', () => {
+        const { container } = render(
+          <JSONInstructions agentName="PRODUCTION" natsServer="localhost:4222" sanitizeAgentName={false} />
+        );
 
-    it('sanitizes agent name: removes special characters', () => {
-      const { container } = render(<JSONInstructions agentName="Agent #1" natsServer="localhost:4222" />);
+        const codeContent = container.querySelector('pre')?.textContent || '';
+        expect(codeContent).toContain('"PRODUCTION"');
+      });
 
-      const codeContent = container.querySelector('pre')?.textContent || '';
-      expect(codeContent).toContain('"agent-1"');
-    });
+      it('preserves spaces in JSON key', () => {
+        const { container } = render(
+          <JSONInstructions agentName="Production Runtime" natsServer="localhost:4222" />
+        );
 
-    it('sanitizes agent name: prefixes with underscore if starts with number', () => {
-      const { container } = render(<JSONInstructions agentName="123 Agent" natsServer="localhost:4222" />);
+        const codeContent = container.querySelector('pre')?.textContent || '';
+        expect(codeContent).toContain('"Production Runtime"');
+      });
 
-      const codeContent = container.querySelector('pre')?.textContent || '';
-      expect(codeContent).toContain('"_123-agent"');
-    });
+      it('preserves special characters in JSON key', () => {
+        const { container } = render(
+          <JSONInstructions agentName="Agent #1" natsServer="localhost:4222" sanitizeAgentName={false} />
+        );
 
-    it('sanitizes agent name: falls back to "agent" for empty/invalid names', () => {
-      const { container } = render(<JSONInstructions agentName="!!!" natsServer="localhost:4222" />);
-
-      const codeContent = container.querySelector('pre')?.textContent || '';
-      expect(codeContent).toContain('"agent"');
+        const codeContent = container.querySelector('pre')?.textContent || '';
+        expect(codeContent).toContain('"Agent #1"');
+      });
     });
   });
 
@@ -103,7 +169,7 @@ describe('JSONInstructions', () => {
 
       // Code block includes line numbers, so check for structure elements
       expect(codeContent).toContain('"mcpServers"');
-      expect(codeContent).toContain('"test-agent"');
+      expect(codeContent).toContain('"Test Agent"');
       expect(codeContent).toContain('"command": "npx"');
       expect(codeContent).toContain('@2ly/runtime');
     });
@@ -126,24 +192,13 @@ describe('JSONInstructions', () => {
       const codeContent = container.querySelector('pre')?.textContent || '';
       expect(codeContent).toContain('your-nats-server:4222');
     });
-
-    it('preserves original agent name in RUNTIME_NAME env variable', () => {
-      const { container } = render(
-        <JSONInstructions agentName="My Special Agent #1" natsServer="localhost:4222" />
-      );
-
-      const codeContent = container.querySelector('pre')?.textContent || '';
-
-      // The RUNTIME_NAME should preserve the original name
-      expect(codeContent).toContain('"RUNTIME_NAME": "My Special Agent #1"');
-      // But the key should be sanitized
-      expect(codeContent).toContain('"my-special-agent-1"');
-    });
   });
 
-  describe('acceptance criteria verification', () => {
+  describe('acceptance criteria verification (with sanitization enabled)', () => {
     it('uses dynamic agent name instead of hardcoded "filesystem"', () => {
-      const { container } = render(<JSONInstructions agentName="MyAgent" natsServer="localhost:4222" />);
+      const { container } = render(
+        <JSONInstructions agentName="MyAgent" natsServer="localhost:4222" sanitizeAgentName={true} />
+      );
 
       const codeContent = container.querySelector('pre')?.textContent || '';
       expect(codeContent).not.toContain('"filesystem"');
@@ -152,7 +207,7 @@ describe('JSONInstructions', () => {
 
     it('converts agent name to lowercase', () => {
       const { container } = render(
-        <JSONInstructions agentName="PRODUCTION" natsServer="localhost:4222" />
+        <JSONInstructions agentName="PRODUCTION" natsServer="localhost:4222" sanitizeAgentName={true} />
       );
 
       const codeContent = container.querySelector('pre')?.textContent || '';
@@ -164,7 +219,7 @@ describe('JSONInstructions', () => {
 
     it('replaces spaces with hyphens', () => {
       const { container } = render(
-        <JSONInstructions agentName="My Agent" natsServer="localhost:4222" />
+        <JSONInstructions agentName="My Agent" natsServer="localhost:4222" sanitizeAgentName={true} />
       );
 
       const codeContent = container.querySelector('pre')?.textContent || '';
@@ -172,7 +227,9 @@ describe('JSONInstructions', () => {
     });
 
     it('removes special characters from JSON key', () => {
-      const { container } = render(<JSONInstructions agentName="Agent@#$" natsServer="localhost:4222" />);
+      const { container } = render(
+        <JSONInstructions agentName="Agent@#$" natsServer="localhost:4222" sanitizeAgentName={true} />
+      );
 
       const codeContent = container.querySelector('pre')?.textContent || '';
       // The JSON key should only contain "agent"
@@ -183,7 +240,7 @@ describe('JSONInstructions', () => {
 
     it('example: "Production Runtime" generates key "production-runtime"', () => {
       const { container } = render(
-        <JSONInstructions agentName="Production Runtime" natsServer="localhost:4222" />
+        <JSONInstructions agentName="Production Runtime" natsServer="localhost:4222" sanitizeAgentName={true} />
       );
 
       const codeContent = container.querySelector('pre')?.textContent || '';
@@ -192,7 +249,7 @@ describe('JSONInstructions', () => {
 
     it('generates valid JSON structure that is ready to copy-paste', () => {
       const { container } = render(
-        <JSONInstructions agentName="Test Agent" natsServer="localhost:4222" />
+        <JSONInstructions agentName="Test Agent" natsServer="localhost:4222" sanitizeAgentName={true} />
       );
 
       const codeContent = container.querySelector('pre')?.textContent || '';
