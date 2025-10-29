@@ -295,6 +295,9 @@ export const SET_RUNTIME_ACTIVE = gql`
         hostname
         mcpClientName
         roots
+        workspace {
+          id
+        }
       }
     }
   }

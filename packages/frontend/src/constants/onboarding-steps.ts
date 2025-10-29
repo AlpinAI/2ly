@@ -43,7 +43,7 @@ export const STEP_METADATA: Record<string, StepMetadata> = {
     icon: 'package',
   },
   [ONBOARDING_STEPS.CONNECT_AGENT]: {
-    title: 'Connect your Tool Set to an Agent',
+    title: 'Connect your Agent',
     description: 'Connect your tool set to an agent to start using your tools in AI workflows.',
     icon: 'link',
   },
