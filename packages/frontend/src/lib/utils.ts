@@ -49,3 +49,52 @@ import { twMerge } from 'tailwind-merge';
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
+
+/**
+ * sanitizeIdentifier - Converts a name into a valid identifier
+ *
+ * WHY: Used to create safe configuration keys from user-provided names.
+ * Ensures generated identifiers are valid for JSON keys, environment variables,
+ * and other contexts where special characters may cause issues.
+ *
+ * RULES:
+ * 1. Convert to lowercase
+ * 2. Replace spaces with hyphens
+ * 3. Remove special characters (keep only alphanumeric, hyphens, and underscores)
+ * 4. Prefix with underscore if result starts with a number
+ * 5. Fallback to "agent" if result is empty
+ *
+ * @param name - The name to sanitize
+ * @returns A sanitized identifier string
+ *
+ * @example
+ * ```ts
+ * sanitizeIdentifier('My Agent') // "my-agent"
+ * sanitizeIdentifier('Production Runtime') // "production-runtime"
+ * sanitizeIdentifier('Agent #1') // "agent-1"
+ * sanitizeIdentifier('123 Agent') // "_123-agent"
+ * sanitizeIdentifier('!!!') // "agent"
+ * sanitizeIdentifier('') // "agent"
+ * ```
+ */
+export function sanitizeIdentifier(name: string): string {
+  if (!name || typeof name !== 'string') {
+    return 'agent';
+  }
+
+  let sanitized = name
+    .toLowerCase()
+    .trim()
+    .replace(/\s+/g, '-') // Replace spaces with hyphens
+    .replace(/[^a-z0-9_-]/g, '') // Remove special characters
+    .replace(/-+/g, '-') // Collapse multiple hyphens
+    .replace(/^-+|-+$/g, ''); // Remove leading/trailing hyphens
+
+  // If starts with a number, prefix with underscore
+  if (sanitized && /^\d/.test(sanitized)) {
+    sanitized = `_${sanitized}`;
+  }
+
+  // Fallback to "agent" if empty after sanitization
+  return sanitized || 'agent';
+}
