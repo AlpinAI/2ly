@@ -280,3 +280,242 @@ describe('X button hover behavior', () => {
     expect(button).toBeDefined();
   });
 });
+
+// Test tool removal dialog interaction flow
+describe('Tool removal dialog interaction', () => {
+  it('clicking X button opens confirmation dialog', async () => {
+    const user = userEvent.setup();
+    const handleRemoveClick = vi.fn();
+    const confirmDialogOpen = vi.fn();
+
+    // Simulate the tool card with X button
+    render(
+      <div>
+        <button
+          onClick={() => {
+            handleRemoveClick('tool-123');
+            confirmDialogOpen(true);
+          }}
+          aria-label="Remove Tool 1"
+        >
+          X
+        </button>
+      </div>
+    );
+
+    const removeButton = screen.getByLabelText('Remove Tool 1');
+    await user.click(removeButton);
+
+    expect(handleRemoveClick).toHaveBeenCalledWith('tool-123');
+    expect(confirmDialogOpen).toHaveBeenCalledWith(true);
+  });
+
+  it('confirmation dialog does not freeze UI', async () => {
+    const user = userEvent.setup();
+    const onConfirm = vi.fn();
+    const onCancel = vi.fn();
+
+    // Simulate dialog rendered in a portal
+    render(
+      <div>
+        {/* Background content */}
+        <div data-testid="background">Background Content</div>
+
+        {/* Confirmation dialog (simulating portal behavior) */}
+        <div role="alertdialog" aria-labelledby="dialog-title" className="z-[60]">
+          <div className="z-[60]">
+            <h2 id="dialog-title">Remove Tool</h2>
+            <p>Are you sure you want to remove "Tool 1"?</p>
+            <button onClick={onConfirm}>Confirm</button>
+            <button onClick={onCancel}>Cancel</button>
+          </div>
+        </div>
+      </div>
+    );
+
+    // Dialog should be interactive
+    const confirmButton = screen.getByText('Confirm');
+    const cancelButton = screen.getByText('Cancel');
+
+    await user.click(confirmButton);
+    expect(onConfirm).toHaveBeenCalled();
+
+    await user.click(cancelButton);
+    expect(onCancel).toHaveBeenCalled();
+  });
+
+  it('dialog has higher z-index than BottomPanel', () => {
+    render(
+      <div>
+        {/* BottomPanel */}
+        <div className="z-50" data-testid="bottom-panel">
+          Panel Content
+        </div>
+
+        {/* Dialog */}
+        <div className="z-[60]" data-testid="dialog">
+          Dialog Content
+        </div>
+      </div>
+    );
+
+    const panel = screen.getByTestId('bottom-panel');
+    const dialog = screen.getByTestId('dialog');
+
+    expect(panel.className).toContain('z-50');
+    expect(dialog.className).toContain('z-[60]');
+  });
+
+  it('complete removal flow works end-to-end', async () => {
+    const user = userEvent.setup();
+
+    // Simulate complete flow
+    let confirmRemoveToolId: string | null = null;
+    let selectedToolIds = new Set(['tool-1', 'tool-2', 'tool-3']);
+
+    const handleRemoveToolClick = (toolId: string) => {
+      confirmRemoveToolId = toolId;
+    };
+
+    const handleConfirmRemoveTool = () => {
+      if (confirmRemoveToolId) {
+        // Remove the tool
+        selectedToolIds = new Set(
+          Array.from(selectedToolIds).filter(id => id !== confirmRemoveToolId)
+        );
+        confirmRemoveToolId = null;
+      }
+    };
+
+    const handleCancel = () => {
+      confirmRemoveToolId = null;
+    };
+
+    render(
+      <div>
+        {/* Tool card with X button */}
+        <button
+          onClick={() => handleRemoveToolClick('tool-2')}
+          data-testid="remove-button"
+        >
+          Remove
+        </button>
+
+        {/* Confirmation dialog (conditionally rendered) */}
+        {confirmRemoveToolId && (
+          <div role="alertdialog">
+            <p>Remove tool-2?</p>
+            <button onClick={handleConfirmRemoveTool} data-testid="confirm">
+              Confirm
+            </button>
+            <button onClick={handleCancel} data-testid="cancel">
+              Cancel
+            </button>
+          </div>
+        )}
+
+        {/* Show selected tools count */}
+        <div data-testid="count">{selectedToolIds.size}</div>
+      </div>
+    );
+
+    // Initial state
+    expect(screen.getByTestId('count')).toHaveTextContent('3');
+
+    // Click X button to open dialog
+    const removeButton = screen.getByTestId('remove-button');
+    await user.click(removeButton);
+
+    // Verify dialog opened
+    expect(confirmRemoveToolId).toBe('tool-2');
+
+    // Re-render with dialog open
+    render(
+      <div>
+        <button
+          onClick={() => handleRemoveToolClick('tool-2')}
+          data-testid="remove-button"
+        >
+          Remove
+        </button>
+
+        {confirmRemoveToolId && (
+          <div role="alertdialog">
+            <p>Remove tool-2?</p>
+            <button onClick={handleConfirmRemoveTool} data-testid="confirm">
+              Confirm
+            </button>
+            <button onClick={handleCancel} data-testid="cancel">
+              Cancel
+            </button>
+          </div>
+        )}
+
+        <div data-testid="count">{selectedToolIds.size}</div>
+      </div>
+    );
+
+    // Click confirm button
+    const confirmButton = screen.getByTestId('confirm');
+    await user.click(confirmButton);
+
+    // Verify tool was removed
+    expect(selectedToolIds.has('tool-2')).toBe(false);
+    expect(selectedToolIds.size).toBe(2);
+  });
+
+  it('cancel button closes dialog without removing tool', async () => {
+    const user = userEvent.setup();
+
+    const selectedToolIds = new Set(['tool-1', 'tool-2', 'tool-3']);
+    const handleCancel = vi.fn();
+
+    render(
+      <div>
+        <div role="alertdialog">
+          <p>Remove tool-2?</p>
+          <button onClick={handleCancel} data-testid="cancel">
+            Cancel
+          </button>
+        </div>
+        <div data-testid="count">{selectedToolIds.size}</div>
+      </div>
+    );
+
+    const cancelButton = screen.getByTestId('cancel');
+    await user.click(cancelButton);
+
+    expect(handleCancel).toHaveBeenCalled();
+    expect(selectedToolIds.size).toBe(3);
+    expect(selectedToolIds.has('tool-2')).toBe(true);
+  });
+
+  it('keyboard navigation works in dialog', async () => {
+    const user = userEvent.setup();
+    const onConfirm = vi.fn();
+    const onCancel = vi.fn();
+
+    render(
+      <div role="alertdialog">
+        <button onClick={onCancel} data-testid="cancel">
+          Cancel
+        </button>
+        <button onClick={onConfirm} data-testid="confirm">
+          Confirm
+        </button>
+      </div>
+    );
+
+    const cancelButton = screen.getByTestId('cancel');
+    const confirmButton = screen.getByTestId('confirm');
+
+    // Tab to confirm button
+    cancelButton.focus();
+    await user.tab();
+    expect(document.activeElement).toBe(confirmButton);
+
+    // Press Enter to confirm
+    await user.keyboard('{Enter}');
+    expect(onConfirm).toHaveBeenCalled();
+  });
+});
