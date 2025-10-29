@@ -79,7 +79,7 @@ describe('HelpMenu', () => {
     expect(links.length).toBe(5);
 
     const expectedHrefs = [
-      'https://discord.com/channels/1419628846348632186/1419631509274492989',
+      'https://discord.gg/XSFPRSyp',
       'https://github.com/AlpinAI/2ly/issues',
       'https://docs.2ly.ai/getting-started/welcome',
       'https://github.com/AlpinAI/2ly',
