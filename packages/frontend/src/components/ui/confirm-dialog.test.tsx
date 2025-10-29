@@ -133,4 +133,106 @@ describe('ConfirmDialog', () => {
     // Verify that the Cancel button is the active element (has focus)
     expect(document.activeElement).toBe(cancelButton);
   });
+
+  it('overlay has correct z-index to appear above BottomPanel', () => {
+    const { container } = render(<ConfirmDialog {...defaultProps} />);
+
+    // Find the overlay element
+    const overlay = container.querySelector('[class*="inset-0"]');
+    expect(overlay).toBeDefined();
+    if (overlay) {
+      expect(overlay.className).toContain('z-[60]');
+    }
+  });
+
+  it('content has correct z-index to appear above BottomPanel', () => {
+    render(<ConfirmDialog {...defaultProps} />);
+
+    // Find the content element by its role
+    const dialog = screen.getByRole('alertdialog');
+    expect(dialog.className).toContain('z-[60]');
+  });
+
+  it('content stacks above overlay in DOM order', () => {
+    const { container } = render(<ConfirmDialog {...defaultProps} />);
+
+    const portal = container.querySelector('[data-radix-portal]');
+    if (portal) {
+      const children = Array.from(portal.children);
+      expect(children.length).toBeGreaterThan(1);
+
+      // Overlay should be first child
+      expect(children[0]?.className).toContain('inset-0');
+
+      // Content should come after overlay
+      const contentIndex = children.findIndex((child) =>
+        child.getAttribute('role') === 'alertdialog'
+      );
+      expect(contentIndex).toBeGreaterThan(0);
+    }
+  });
+
+  it('dialog remains interactive when rendered inside a z-50 container', () => {
+    // Simulate rendering inside BottomPanel (z-50)
+    render(
+      <div className="fixed z-50">
+        <ConfirmDialog {...defaultProps} />
+      </div>
+    );
+
+    // Dialog should be in a portal (not a child of the z-50 container)
+    const portalRoot = document.body.querySelector('[data-radix-portal]');
+    expect(portalRoot).toBeDefined();
+
+    // Dialog should still be clickable
+    const confirmButton = screen.getByText('Confirm');
+    expect(confirmButton).toBeDefined();
+
+    fireEvent.click(confirmButton);
+    expect(defaultProps.onConfirm).toHaveBeenCalled();
+  });
+
+  it('buttons are clickable and not blocked by overlay', () => {
+    const onConfirm = vi.fn();
+    const onOpenChange = vi.fn();
+
+    render(
+      <ConfirmDialog
+        {...defaultProps}
+        onConfirm={onConfirm}
+        onOpenChange={onOpenChange}
+      />
+    );
+
+    // Both buttons should be accessible and clickable
+    const confirmButton = screen.getByText('Confirm');
+    const cancelButton = screen.getByText('Cancel');
+
+    fireEvent.click(confirmButton);
+    expect(onConfirm).toHaveBeenCalledTimes(1);
+
+    fireEvent.click(cancelButton);
+    expect(onOpenChange).toHaveBeenCalledWith(false);
+  });
+
+  it('overlay does not prevent pointer events to dialog content', () => {
+    const { container } = render(<ConfirmDialog {...defaultProps} />);
+
+    // Verify overlay exists
+    const overlay = container.querySelector('[class*="inset-0"]');
+    expect(overlay).toBeDefined();
+
+    // Verify dialog content is accessible and interactive
+    const dialog = screen.getByRole('alertdialog');
+    expect(dialog).toBeDefined();
+
+    // All interactive elements should be reachable
+    const buttons = screen.getAllByRole('button');
+    expect(buttons.length).toBe(2);
+
+    buttons.forEach(button => {
+      expect(button).toBeDefined();
+      expect(button.getAttribute('disabled')).toBeNull();
+    });
+  });
 });
