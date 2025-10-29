@@ -40,7 +40,7 @@ describe('Search', () => {
   });
 
   it('renders with custom className', () => {
-    render(<Search placeholder="Search..." className="w-96" />);
+    render(<Search placeholder="Search..." inputClassName="w-96" />);
 
     const input = screen.getByPlaceholderText('Search...');
     expect(input.className).toContain('w-96');

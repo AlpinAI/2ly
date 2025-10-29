@@ -39,12 +39,6 @@ export function CreateToolSetDialog() {
 
   const [createRuntime, { loading }] = useMutation(CreateRuntimeDocument, {
     onCompleted: (data) => {
-      toast({
-        title: 'Tool Set Created',
-        description: `"${data.createRuntime.name}" has been created successfully.`,
-        variant: 'success',
-      });
-
       // Call the success callback if provided
       if (callback) {
         callback(data.createRuntime.id);

@@ -233,7 +233,7 @@ export function MCPServerBrowser({ onConfigure }: MCPServerBrowserProps) {
             setSearchQuery(e.target.value);
             setVisibleCount(ITEMS_PER_PAGE); // Reset pagination on search
           }}
-          className="max-w-2xl flex-1"
+          className="flex-1 max-w-4xl"
         />
         <Button
           onClick={() => setAddServerWorkflowOpen(true)}
