@@ -98,9 +98,14 @@ export class MainService extends Service {
       this.logger.info('Resetting all data');
       const dgraphService = container.get(DGraphService) as DGraphService;
       try {
+        // Reset all runtime instances and notify them to reconnect
+        await this.runtimeService.resetRuntimes();
+
+        // Drop and reinitialize database
         await dgraphService.dropAll();
         await dgraphService.initSchema(true);
         await this.initInstance();
+
         res.send({ response: 'OK' });
       } catch (error) {
         this.logger.error(`🔴 Error during reset: ${error}`);
