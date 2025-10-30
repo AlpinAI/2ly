@@ -10,6 +10,11 @@ import path from 'path';
  * - Tests against Chromium, Firefox, and WebKit
  * - Runs tests in parallel with isolated contexts
  * - Provides trace, screenshot, and video capture on failure
+ *
+ * Environment Variables:
+ * - E2E_USE_IMAGE: Set to 'true' to use published images instead of building
+ *
+ * Note: Docker's layer cache automatically optimizes local builds
  */
 
 // Get current directory in ES module

@@ -17,15 +17,38 @@
  */
 
 import { test, expect, seedPresets } from '../../fixtures/database';
+import { mcpRegistry } from '@2ly/common';
+type Package = mcpRegistry.components['schemas']['Package'];
+type Argument = mcpRegistry.components['schemas']['Argument'];
+type AugmentedArgument = Argument & { isConfigurable: boolean };
+
+const config: Package & {packageArguments: AugmentedArgument[]} = {
+  registryType: 'npm',
+  identifier: "@modelcontextprotocol/server-filesystem",
+  version: '2025.8.21',
+  packageArguments: [
+    {
+      name: 'directory_path',
+      description: 'The directory path to allow access to',
+      format: 'string',
+      type: 'positional',
+      isRequired: false,
+      value: '/tmp',
+      isConfigurable: true,
+    },
+  ],
+  environmentVariables: [],
+  runtimeArguments: [],
+};
 
 // Test configuration
-const TEST_FILE_PATH = '/tmp/test-fs/test.txt';
+const TEST_FILE_PATH = '/tmp/test.txt';
 const TEST_FILE_CONTENT = 'Hello from MCP integration test!';
 
 // TODO: unskip these tests by fixing the runtime test container
 // now that the runtime is able to reconnect after a reset, we can start the runtime
 // with the rest of the containers and call the reset endpoint without worry, theoretically
-test.describe.skip('MCP Integration with Containerized Runtime', () => {
+test.describe('MCP Integration with Containerized Runtime', () => {
   // Configure tests to run serially
   test.describe.configure({ mode: 'serial' });
 
@@ -34,9 +57,8 @@ test.describe.skip('MCP Integration with Containerized Runtime', () => {
    * Runtime container is started globally in global-setup.ts
    */
   test.beforeAll(async ({ resetDatabase, seedDatabase }) => {
-    await resetDatabase();
+    await resetDatabase(true);
     await seedDatabase(seedPresets.withUsers);
-    console.log('Database reset and seeded for MCP integration tests');
   });
 
   test('should complete full MCP lifecycle: configure → deploy → discover → execute', async ({
@@ -55,8 +77,6 @@ test.describe.skip('MCP Integration with Containerized Runtime', () => {
     const workspaceUrl = page.url();
     const workspaceId = workspaceUrl.match(/\/w\/([^/]+)/)?.[1];
     expect(workspaceId).toBeDefined();
-
-    console.log(`Logged in. Workspace ID: ${workspaceId}`);
 
     // ========================================================================
     // Step 2: Add FileSystem server to registry
@@ -106,7 +126,6 @@ test.describe.skip('MCP Integration with Containerized Runtime', () => {
     });
 
     const registryServerId = registryServerResult.addServerToRegistry.id;
-    console.log(`Registry server created: ${registryServerId}`);
 
     // ========================================================================
     // Step 3: Configure MCP server from registry
@@ -148,21 +167,16 @@ test.describe.skip('MCP Integration with Containerized Runtime', () => {
       description: 'FileSystem MCP server for E2E testing',
       repositoryUrl: 'https://github.com/modelcontextprotocol/servers',
       transport: 'STDIO',
-      config: JSON.stringify({
-        command: 'npx',
-        args: ['-y', '@modelcontextprotocol/server-filesystem', '/tmp/test-fs'],
-      }),
+      config: JSON.stringify(config),
       runOn: 'GLOBAL',
       registryServerId,
     });
 
     const mcpServerId = mcpServerResult.createMCPServer.id;
-    console.log(`MCP server created: ${mcpServerId}`);
 
     // ========================================================================
     // Step 4: Wait for tool discovery (runtime will load tools automatically)
     // ========================================================================
-    console.log('Waiting for tool discovery...');
     let tools: Array<{ id: string; name: string; description: string }> = [];
     let discoveryAttempts = 0;
     const maxAttempts = 15; // 30 seconds with 2-second intervals
@@ -189,7 +203,6 @@ test.describe.skip('MCP Integration with Containerized Runtime', () => {
       tools = toolsResult.mcpTools.filter((tool) => tool.mcpServer.id === mcpServerId);
 
       if (tools.length > 0) {
-        console.log(`Discovered ${tools.length} tools`);
         break;
       }
 
@@ -199,7 +212,6 @@ test.describe.skip('MCP Integration with Containerized Runtime', () => {
 
     // Verify tools were discovered
     expect(tools.length).toBeGreaterThan(0);
-    console.log(`Tools discovered: ${tools.map((t) => t.name).join(', ')}`);
 
     // Find specific tools we want to test
     const readFileTool = tools.find((t) => t.name === 'read_file');
@@ -213,31 +225,41 @@ test.describe.skip('MCP Integration with Containerized Runtime', () => {
     // ========================================================================
     // Step 5: Create tool set from discovered tools (link tools to runtime)
     // ========================================================================
-    // First, get the runtime that registered
-    const runtimesQuery = `
-      query GetRuntimes($workspaceId: ID!) {
-        workspace {
+    // Create a new runtime with agent capability (tool set)
+    const createRuntimeMutation = `
+      mutation CreateRuntime(
+        $workspaceId: ID!
+        $name: String!
+        $description: String!
+        $capabilities: [String!]!
+      ) {
+        createRuntime(
+          workspaceId: $workspaceId
+          name: $name
+          description: $description
+          capabilities: $capabilities
+        ) {
           id
-          runtimes {
-            id
-            name
-            status
-          }
+          name
+          description
+          capabilities
+          status
         }
       }
     `;
 
-    const runtimesResult = await graphql<{
-      workspace: Array<{ id: string; runtimes: Array<{ id: string; name: string; status: string }> }>;
-    }>(runtimesQuery);
+    const runtimeResult = await graphql<{
+      createRuntime: { id: string; name: string; description: string; capabilities: string[]; status: string };
+    }>(createRuntimeMutation, {
+      workspaceId,
+      name: 'MCP Integration Test Runtime',
+      description: 'Runtime created for MCP integration E2E test',
+      capabilities: ['agent'],
+    });
 
-    const workspace = runtimesResult.workspace.find((w) => w.id === workspaceId);
-    expect(workspace).toBeDefined();
-    expect(workspace!.runtimes.length).toBeGreaterThan(0);
-
-    const runtime = workspace!.runtimes.find((r) => r.name === 'E2E Test Runtime');
+    const runtime = runtimeResult.createRuntime;
     expect(runtime).toBeDefined();
-    console.log(`Found runtime: ${runtime!.name} (${runtime!.id})`);
+    expect(runtime.capabilities).toContain('agent');
 
     // Link tools to runtime (create tool set)
     const linkToolMutation = `
@@ -264,12 +286,11 @@ test.describe.skip('MCP Integration with Containerized Runtime', () => {
       runtimeId: runtime!.id,
     });
 
-    console.log('Tools linked to runtime (tool set created)');
-
     // ========================================================================
     // Step 6: Execute tool calls against FileSystem server
     // ========================================================================
-    console.log('Executing tool calls...');
+    // Since the tool discovery, the runtime has restarted the MCP server, so we need to wait for it to be ready
+    await new Promise((resolve) => setTimeout(resolve, 2000));
 
     // Test 1: Write a file
     const writeResult = await graphql<{
@@ -293,7 +314,6 @@ test.describe.skip('MCP Integration with Containerized Runtime', () => {
     );
 
     expect(writeResult.callMCPTool.success).toBe(true);
-    console.log('Write file succeeded');
 
     // Test 2: Read the file back
     const readResult = await graphql<{
@@ -317,9 +337,8 @@ test.describe.skip('MCP Integration with Containerized Runtime', () => {
 
     expect(readResult.callMCPTool.success).toBe(true);
     const readResultParsed = JSON.parse(readResult.callMCPTool.result);
-    expect(readResultParsed).toHaveProperty('content');
-    expect(readResultParsed.content).toContain(TEST_FILE_CONTENT);
-    console.log('Read file succeeded and content matches');
+    expect(readResultParsed).toHaveProperty('[0].text');
+    expect(readResultParsed[0].text).toContain(TEST_FILE_CONTENT);
 
     // Test 3: List directory
     const listResult = await graphql<{
@@ -336,18 +355,16 @@ test.describe.skip('MCP Integration with Containerized Runtime', () => {
       {
         toolId: listDirTool!.id,
         input: JSON.stringify({
-          path: '/tmp/test-fs',
+          path: '/tmp',
         }),
       }
     );
 
     expect(listResult.callMCPTool.success).toBe(true);
-    console.log('List directory succeeded');
 
     // ========================================================================
     // Step 7: Verify deep-linking across dynamically created entities
     // ========================================================================
-    console.log('Verifying deep-linking...');
 
     // Verify server → tools link
     const serverToolsQuery = `
@@ -370,9 +387,9 @@ test.describe.skip('MCP Integration with Containerized Runtime', () => {
     const testServer = serverToolsResult.mcpServers.find((s) => s.id === mcpServerId);
     expect(testServer).toBeDefined();
     expect(testServer!.tools.length).toBeGreaterThan(0);
-    console.log(`Server → Tools link verified: ${testServer!.tools.length} tools`);
 
     // Verify tools → server link
+    // Verify runtime → tools link (tool set)
     const toolServerQuery = `
       query GetToolServer($workspaceId: ID!) {
         mcpTools(workspaceId: $workspaceId) {
@@ -382,52 +399,27 @@ test.describe.skip('MCP Integration with Containerized Runtime', () => {
             id
             name
           }
+          runtimes {
+            id
+            name
+          }
         }
       }
     `;
 
     const toolServerResult = await graphql<{
-      mcpTools: Array<{ id: string; name: string; mcpServer: { id: string; name: string } }>;
+      mcpTools: Array<{ id: string; name: string; mcpServer: { id: string; name: string }; runtimes: Array<{ id: string; name: string }> }>;
     }>(toolServerQuery, { workspaceId });
 
     const testTools = toolServerResult.mcpTools.filter((t) => t.mcpServer.id === mcpServerId);
     expect(testTools.length).toBeGreaterThan(0);
     testTools.forEach((tool) => {
       expect(tool.mcpServer.id).toBe(mcpServerId);
-    });
-    console.log(`Tools → Server link verified: ${testTools.length} tools`);
-
-    // Verify runtime → tools link (tool set)
-    const runtimeToolsQuery = `
-      query GetRuntimeTools($workspaceId: ID!) {
-        workspace {
-          id
-          runtimes {
-            id
-            name
-            mcpToolCapabilities {
-              id
-              name
-            }
-          }
-        }
+      if (tool.name === 'write_file' || tool.name === 'read_file') {
+        expect(tool.runtimes.length).toBeGreaterThan(0);
+        expect(tool.runtimes.find((r) => r.id === runtime!.id)).toBeDefined();
       }
-    `;
-
-    const runtimeToolsResult = await graphql<{
-      workspace: Array<{
-        id: string;
-        runtimes: Array<{ id: string; name: string; mcpToolCapabilities: Array<{ id: string; name: string }> }>;
-      }>;
-    }>(runtimeToolsQuery);
-
-    const testWorkspace = runtimeToolsResult.workspace.find((w) => w.id === workspaceId);
-    const testRuntime = testWorkspace!.runtimes.find((r) => r.id === runtime!.id);
-    expect(testRuntime).toBeDefined();
-    expect(testRuntime!.mcpToolCapabilities.length).toBeGreaterThanOrEqual(2); // write_file and read_file
-    console.log(`Runtime → Tools link verified: ${testRuntime!.mcpToolCapabilities.length} tools in tool set`);
-
-    console.log('✅ Full MCP lifecycle test completed successfully!');
+    });
   });
 
   test('should handle tool call failures gracefully', async ({ page, graphql }) => {
@@ -481,6 +473,5 @@ test.describe.skip('MCP Integration with Containerized Runtime', () => {
     // Tool call should fail gracefully
     expect(failureResult.callMCPTool.success).toBe(false);
     expect(failureResult.callMCPTool.result).toBeTruthy();
-    console.log('Tool call failure handled gracefully');
   });
 });

@@ -2,7 +2,7 @@
 import { test as base, type Page } from '@playwright/test';
 import { comprehensiveSeededData } from '../e2e/fixtures/seed-data';
 import { dgraphQL } from './dgraph-client';
-import { hashPassword } from '@2ly/common/test/testcontainers';
+import { hashPassword, startRuntime, stopRuntime } from '@2ly/common/test/testcontainers';
 
 /**
  * Database Fixture for Playwright Tests
@@ -85,7 +85,7 @@ export interface DatabaseFixture {
    * Reset the database to empty state
    * WARNING: This will delete ALL data!
    */
-  resetDatabase: () => Promise<void>;
+  resetDatabase: (shouldStartRuntime?: boolean) => Promise<void>;
 
   /**
    * Seed the database with predefined test data
@@ -149,10 +149,17 @@ export const test = base.extend<DatabaseFixture>({
   /**
    * Reset database fixture
    * Drops all data from the database via backend reset endpoint
+   * Optionally starts runtime container if startRuntime is true
    */
   // eslint-disable-next-line no-empty-pattern
   resetDatabase: async ({ }, use) => {
-    const reset = async () => {
+    const reset = async (shouldStartRuntime?: boolean) => {
+      try {
+        await stopRuntime();
+      } catch (error) {
+        throw new Error(`Failed to stop runtime: ${error instanceof Error ? error.message : String(error)}`);
+      }
+
       const apiUrl = process.env.API_URL || 'http://localhost:3000';
       const resetUrl = `${apiUrl}/reset`;
 
@@ -162,11 +169,20 @@ export const test = base.extend<DatabaseFixture>({
       });
 
       if (!response.ok) {
-        throw new Error(`Failed to reset database (): ${response.statusText}`);
+        throw new Error(`Failed to reset database: ${response.statusText}`);
       }
 
       // Wait a bit for the reset to complete
       await new Promise((resolve) => setTimeout(resolve, 1000));
+
+      // Start runtime container if requested
+      if (shouldStartRuntime) {
+        try {
+          await startRuntime();
+        } catch (error) {
+          throw new Error(`Failed to start runtime: ${error instanceof Error ? error.message : String(error)}`);
+        }
+      }
     };
 
     await use(reset);
@@ -321,7 +337,7 @@ export const test = base.extend<DatabaseFixture>({
                   repositoryUrl: "https://github.com/example/repo"
                   transport: ${server.transport}
                   config: "${config}"
-                  runOn: GLOBAL
+                  runOn: AGENT
                   workspace: { id: $workspaceId }
                   registryServer: { id: $registryServerId }
                 }) {

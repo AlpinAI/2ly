@@ -6,6 +6,7 @@
  * 2. Starts the Vite dev server for the frontend
  * 3. Exposes service URLs via environment variables
  * 4. Saves state for global teardown
+ * 5. Supports using published images via E2E_USE_IMAGE flag
  */
 
 import { chromium, FullConfig } from '@playwright/test';
@@ -43,15 +44,13 @@ async function globalSetup(_config: FullConfig) {
   const testEnv = new TestEnvironment({
     exposeToHost: true,
     startBackend: true, // Enabled for backend integration tests
-    startRuntime: true, // Enabled for MCP integration tests
-    runtimeEnv: {
-      RUNTIME_NAME: 'E2E Test Runtime',
-      GLOBAL_RUNTIME: 'true',
-    },
+    prepareRuntime: true, // Prepare the runtime container for testing
     logging: {
       enabled: false, // Disable verbose TestEnvironment logs
       verbose: false,
     },
+    backendImage: process.env.E2E_USE_IMAGE === 'true' ? `2ly-backend-test:latest` : undefined,
+    runtimeImage: process.env.E2E_USE_IMAGE === 'true' ? `2ly-runtime-test:latest` : undefined,
   });
 
   try {

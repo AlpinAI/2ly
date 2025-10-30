@@ -66,10 +66,10 @@ export interface TestEnvironmentConfig {
   startBackend?: boolean;
 
   /**
-   * Whether to start the runtime container
+   * Whether to prepare the runtime container
    * @default false
    */
-  startRuntime?: boolean;
+  prepareRuntime?: boolean;
 
   /**
    * Project root directory (where packages/ folder is located)
@@ -83,17 +83,26 @@ export interface TestEnvironmentConfig {
   backendEnv?: Record<string, string>;
 
   /**
-   * Environment variables for the runtime
-   */
-  runtimeEnv?: Record<string, string>;
-
-  /**
    * Logging configuration
    */
   logging?: {
     enabled: boolean;
     verbose?: boolean;
   };
+  
+  /**
+   * Use existing backend image instead of building locally
+   * Format: '2ly-backend-test:latest'
+   * @default undefined (build locally)
+   */
+  backendImage?: string;
+
+  /**
+   * Use published runtime image instead of building locally
+   * Format: '2ly-runtime-test:latest'
+   * @default undefined (build locally)
+   */
+  runtimeImage?: string;
 }
 
 export interface TestEnvironmentServices {
@@ -117,30 +126,29 @@ export interface TestEnvironmentServices {
     apiUrl: string;
     healthUrl: string;
   };
-  runtime?: {
-    container: StartedTestContainer;
-    name: string;
-  };
 }
 
 export class TestEnvironment {
   private network?: StartedNetwork;
   private services?: TestEnvironmentServices;
-  private config: Required<TestEnvironmentConfig>;
+  private config: Omit<Required<TestEnvironmentConfig>, 'backendImage' | 'runtimeImage'> & { backendImage?: string; runtimeImage?: string };
 
   constructor(config: TestEnvironmentConfig = {}) {
     this.config = {
       exposeToHost: config.exposeToHost ?? true,
       startBackend: config.startBackend ?? true,
-      startRuntime: config.startRuntime ?? false,
+      prepareRuntime: config.prepareRuntime ?? false,
       projectRoot: config.projectRoot ?? findProjectRoot(),
       backendEnv: config.backendEnv ?? {},
-      runtimeEnv: config.runtimeEnv ?? {},
       logging: {
         enabled: config.logging?.enabled ?? false,
         verbose: config.logging?.verbose ?? false,
       },
+      backendImage: config.backendImage,
+      runtimeImage: config.runtimeImage,
     };
+
+    process.env.TEST_LOGGING_ENABLED = this.config.logging.enabled ? 'true' : 'false';
   }
 
   private log(message: string, data?: unknown): void {
@@ -161,7 +169,7 @@ export class TestEnvironment {
 
     // Create network for container communication
     this.network = await new Network().start();
-    this.log('Network created', { networkId: this.network.getId() });
+    this.log('Network created', { networkId: this.network?.getId() });
 
     // Start services in dependency order
     const natsContainer = await this.startNats();
@@ -181,9 +189,8 @@ export class TestEnvironment {
     }
 
     // Optionally start runtime
-    if (this.config.startRuntime) {
-      const runtime = await this.startRuntime();
-      this.services.runtime = runtime;
+    if (this.config.prepareRuntime) {
+      await this.prepareRuntime();
     }
 
     this.log('Test environment started successfully');
@@ -212,6 +219,9 @@ export class TestEnvironment {
       .withWaitStrategy(Wait.forListeningPorts())
       .withStartupTimeout(30000)
       .start();
+
+    const mappedPort = container.getMappedPort(4222);
+    process.env.TEST_NATS_CLIENT_URL = `localhost:${mappedPort}`;
 
     const clientUrl = this.config.exposeToHost
       ? `localhost:${container.getMappedPort(4222)}`
@@ -309,48 +319,57 @@ export class TestEnvironment {
 
     this.log('Starting Backend...');
 
-    this.log('Building backend Docker image...', { projectRoot: this.config.projectRoot });
+    let containerImage: GenericContainer;
 
-    // Build the Docker image first with timeout
-    let builtImage: GenericContainer | undefined = undefined;
-    let progressInterval: NodeJS.Timeout | undefined = undefined;
-    let promiseTimeout: NodeJS.Timeout | undefined = undefined;
-    try {
-      // Log progress every 10 seconds during build
-      progressInterval = setInterval(() => {
-        this.log('Docker build still in progress...');
-      }, 10000);
+    if (this.config.backendImage) {
+      // Use existing image
+      this.log(`Using published backend image: ${this.config.backendImage}`);
+      containerImage = new GenericContainer(this.config.backendImage);
+    } else {
+      // Build the Docker image
+      this.log('Building backend Docker image...', { projectRoot: this.config.projectRoot });
 
-      const buildPromise = GenericContainer.fromDockerfile(
-        this.config.projectRoot,
-        'packages/backend/Dockerfile'
-      ).build();
+      let builtImage: GenericContainer | undefined = undefined;
+      let progressInterval: NodeJS.Timeout | undefined = undefined;
+      let promiseTimeout: NodeJS.Timeout | undefined = undefined;
+      try {
+        // Log progress every 10 seconds during build
+        progressInterval = setInterval(() => {
+          this.log('Docker build still in progress...');
+        }, 10000);
 
-      // Add timeout to prevent hanging indefinitely
-      const timeoutPromise = new Promise((_, reject) => {
-        promiseTimeout = setTimeout(() => reject(new Error('Docker build timed out after 5 minutes')), 5 * 60 * 1000);
-      });
+        const buildPromise = GenericContainer.fromDockerfile(
+          this.config.projectRoot,
+          'packages/backend/Dockerfile'
+        ).build('2ly-backend-test', { deleteOnExit: false });
 
-      builtImage = await Promise.race([
-        buildPromise, timeoutPromise
-      ]) as GenericContainer;
-      this.log('Backend Docker image built successfully');
-    } catch (error) {
-      this.log('Failed to build backend Docker image', error);
-      throw new Error(`Docker build failed: ${error instanceof Error ? error.message : String(error)}`);
-    } finally {
-      if (progressInterval) {
-        clearInterval(progressInterval);
-      }
-      if (promiseTimeout) {
-        clearTimeout(promiseTimeout);
+        // Add timeout to prevent hanging indefinitely
+        const timeoutPromise = new Promise((_, reject) => {
+          promiseTimeout = setTimeout(() => reject(new Error('Docker build timed out after 5 minutes')), 5 * 60 * 1000);
+        });
+
+        builtImage = await Promise.race([
+          buildPromise, timeoutPromise
+        ]) as GenericContainer;
+        this.log('Backend Docker image built successfully');
+        containerImage = builtImage;
+      } catch (error) {
+        this.log('Failed to build backend Docker image', error);
+        throw new Error(`Docker build failed: ${error instanceof Error ? error.message : String(error)}`);
+      } finally {
+        if (progressInterval) {
+          clearInterval(progressInterval);
+        }
+        if (promiseTimeout) {
+          clearTimeout(promiseTimeout);
+        }
       }
     }
 
     // Then create and configure the container
     let started;
     try {
-      started = await builtImage
+      started = await containerImage
         .withNetwork(this.network!)
         .withNetworkAliases('backend')
         .withEnvironment({
@@ -370,10 +389,7 @@ export class TestEnvironment {
         .withLogConsumer((stream) => {
           // Only log ERROR and WARN lines to reduce noise
           stream.on('data', (line) => {
-            const lineStr = line.toString();
-            if (lineStr.includes('ERROR') || lineStr.includes('WARN') || lineStr.includes('error') || lineStr.includes('warn')) {
-              this.log(`[Backend] ${line}`);
-            }
+            this.log(`[Backend] ${line}`);
           });
           stream.on('err', (line) => this.log(`[Backend ERROR] ${line}`));
         })
@@ -394,113 +410,60 @@ export class TestEnvironment {
     const healthUrl = `${apiUrl}/health`;
 
     this.log('Backend started', { apiUrl, healthUrl });
-
     return { container: started, apiUrl, healthUrl };
   }
 
   /**
    * Start Runtime container
    */
-  private async startRuntime(): Promise<NonNullable<TestEnvironmentServices['runtime']>> {
+  private async prepareRuntime(): Promise<void> {
     if (!this.services?.nats || !this.services?.dgraphAlpha) {
       throw new Error('Cannot start runtime: NATS and Dgraph must be started first');
     }
 
     this.log('Starting Runtime...');
 
-    this.log('Building runtime Docker image...', { projectRoot: this.config.projectRoot });
+    if (this.config.runtimeImage) {
+      // Use published image
+      this.log(`Using published runtime image: ${this.config.runtimeImage}`);
+    } else {
+      // Build the Docker image
+      this.log('Building runtime Docker image...', { projectRoot: this.config.projectRoot });
 
-    // Build the Docker image first with timeout
-    let builtImage: GenericContainer | undefined = undefined;
-    let progressInterval: NodeJS.Timeout | undefined = undefined;
-    let promiseTimeout: NodeJS.Timeout | undefined = undefined;
-    try {
-      // Log progress every 10 seconds during build
-      progressInterval = setInterval(() => {
-        this.log('Docker build still in progress...');
-      }, 10000);
+      let progressInterval: NodeJS.Timeout | undefined = undefined;
+      let promiseTimeout: NodeJS.Timeout | undefined = undefined;
+      try {
+        // Log progress every 10 seconds during build
+        progressInterval = setInterval(() => {
+          this.log('Docker build still in progress...');
+        }, 10000);
 
-      const buildPromise = GenericContainer.fromDockerfile(
-        this.config.projectRoot,
-        'packages/runtime/Dockerfile'
-      ).build();
+        const buildPromise = GenericContainer.fromDockerfile(
+          this.config.projectRoot,
+          'packages/runtime/Dockerfile'
+        ).build('2ly-runtime-test', { deleteOnExit: false });
 
-      // Add timeout to prevent hanging indefinitely
-      const timeoutPromise = new Promise((_, reject) => {
-        promiseTimeout = setTimeout(() => reject(new Error('Docker build timed out after 5 minutes')), 5 * 60 * 1000);
-      });
+        // Add timeout to prevent hanging indefinitely
+        const timeoutPromise = new Promise((_, reject) => {
+          promiseTimeout = setTimeout(() => reject(new Error('Docker build timed out after 5 minutes')), 5 * 60 * 1000);
+        });
 
-      builtImage = await Promise.race([
-        buildPromise, timeoutPromise
-      ]) as GenericContainer;
-      this.log('Runtime Docker image built successfully');
-    } catch (error) {
-      this.log('Failed to build runtime Docker image', error);
-      throw new Error(`Docker build failed: ${error instanceof Error ? error.message : String(error)}`);
-    } finally {
-      if (progressInterval) {
-        clearInterval(progressInterval);
-      }
-      if (promiseTimeout) {
-        clearTimeout(promiseTimeout);
+        await Promise.race([
+          buildPromise, timeoutPromise
+        ]) as GenericContainer;
+        this.log('Runtime Docker image built successfully');
+      } catch (error) {
+        this.log('Failed to build runtime Docker image', error);
+        throw new Error(`Docker build failed: ${error instanceof Error ? error.message : String(error)}`);
+      } finally {
+        if (progressInterval) {
+          clearInterval(progressInterval);
+        }
+        if (promiseTimeout) {
+          clearTimeout(promiseTimeout);
+        }
       }
     }
-
-    // Create a temporary directory for runtime filesystem operations
-    const tmpDir = '/tmp/test-fs';
-
-    // Then create and configure the container
-    let started;
-    try {
-      const runtimeName = this.config.runtimeEnv?.RUNTIME_NAME || 'Test Runtime';
-
-      started = await builtImage
-        .withNetwork(this.network!)
-        .withNetworkAliases('runtime')
-        .withEnvironment({
-          NODE_ENV: 'test',
-          LOG_LEVEL: 'error', // Only log errors in test environment
-          NATS_SERVERS: 'nats:4222',
-          RUNTIME_NAME: runtimeName,
-          GLOBAL_RUNTIME: 'true',
-          ROOTS: `TEMP:${tmpDir}`,
-          AGENT_CAPABILITY: 'false', // Disable agent capability for testing
-          TOOL_CAPABILITY: 'true', // Enable tool capability for testing
-          ...this.config.runtimeEnv,
-        })
-        .withBindMounts([
-          {
-            source: tmpDir,
-            target: tmpDir,
-          },
-        ])
-        // No exposed ports needed - runtime communicates via NATS
-        .withWaitStrategy(Wait.forListeningPorts())
-        .withStartupTimeout(60000) // 1 minute for startup
-        .withLogConsumer((stream) => {
-          // Only log ERROR and WARN lines to reduce noise
-          stream.on('data', (line) => {
-            const lineStr = line.toString();
-            if (lineStr.includes('ERROR') || lineStr.includes('WARN') || lineStr.includes('error') || lineStr.includes('warn')) {
-              this.log(`[Runtime] ${line}`);
-            }
-          });
-          stream.on('err', (line) => this.log(`[Runtime ERROR] ${line}`));
-        })
-        .start();
-
-      this.log('Runtime container started, waiting for initialization...');
-      // Give runtime time to connect to NATS and register
-      await new Promise((resolve) => setTimeout(resolve, 5000)); // 5 seconds
-    } catch (error) {
-      this.log('Failed to start runtime container', error);
-      throw error;
-    }
-
-    const name = this.config.runtimeEnv?.RUNTIME_NAME || 'Test Runtime';
-    this.log('Runtime started', { name });
-
-    return { container: started, name };
   }
 
   /**
@@ -547,15 +510,6 @@ export class TestEnvironment {
     const errors: Error[] = [];
 
     try {
-      if (this.services?.runtime) {
-        try {
-          await this.services.runtime.container.stop({ timeout: 10000 });
-          this.log('Runtime stopped');
-        } catch (error) {
-          this.log('Error stopping runtime', error);
-          errors.push(error instanceof Error ? error : new Error(String(error)));
-        }
-      }
 
       if (this.services?.backend) {
         try {
@@ -622,3 +576,53 @@ export class TestEnvironment {
     }
   }
 }
+
+
+let startedContainer: StartedTestContainer | undefined = undefined;
+export const startRuntime = async (): Promise<void> => {
+  if (startedContainer) {
+    return;
+  }
+  if (process.env.TEST_LOGGING_ENABLED === 'true') {
+    console.log('Starting runtime...');
+  }
+  const natsUrl = process.env.TEST_NATS_CLIENT_URL ?? 'nats:4222';
+  const runtimeName = 'Test Runtime';
+  const container = new GenericContainer('2ly-runtime-test:latest')
+    .withNetworkMode('host')
+    .withEnvironment({
+      NODE_ENV: 'test',
+      LOG_LEVEL: 'error', // Only log errors in test environment
+      NATS_SERVERS: natsUrl,
+      RUNTIME_NAME: runtimeName,
+      GLOBAL_RUNTIME: 'true',
+      ROOTS: `TEMP:/tmp`,
+      AGENT_CAPABILITY: 'false', // Disable agent capability for testing
+      TOOL_CAPABILITY: 'true', // Enable tool capability for testing
+    })
+    // No exposed ports needed - runtime communicates via NATS
+    .withWaitStrategy(Wait.forListeningPorts())
+    .withStartupTimeout(60000) // 1 minute for startup
+    .withLogConsumer((stream) => {
+      // Only log ERROR and WARN lines to reduce noise
+      stream.on('data', (line) => {
+        if (process.env.TEST_LOGGING_ENABLED === 'true') {
+          console.log(`[Runtime] ${line}`);
+        }
+      });
+      stream.on('err', (line) => console.log(`[Runtime ERROR] ${line}`));
+    });
+  startedContainer = await container.start();
+  // Wait a bit for the runtime to fully start and register with NATS
+  await new Promise((resolve) => setTimeout(resolve, 1000));
+};
+
+export const stopRuntime = async (): Promise<void> => {
+  if (startedContainer) {
+    await startedContainer.stop({ timeout: 10000 });
+    startedContainer = undefined;
+    if (process.env.TEST_LOGGING_ENABLED === 'true') {
+      console.log('Runtime stopped');
+    }
+  }
+};
