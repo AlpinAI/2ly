@@ -65,7 +65,7 @@ async function globalSetup(_config: FullConfig) {
   const testEnv = new TestEnvironment({
     exposeToHost: true,
     startBackend: true, // Enabled for backend integration tests
-    startRuntime: true, // Enabled for MCP integration tests
+    startRuntime: true, // Enable the runtime container 
     runtimeEnv: {
       RUNTIME_NAME: 'E2E Test Runtime',
       GLOBAL_RUNTIME: 'true',

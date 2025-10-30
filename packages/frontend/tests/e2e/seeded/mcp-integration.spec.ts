@@ -17,6 +17,29 @@
  */
 
 import { test, expect, seedPresets } from '../../fixtures/database';
+import { mcpRegistry } from '@2ly/common';
+type Package = mcpRegistry.components['schemas']['Package'];
+type Argument = mcpRegistry.components['schemas']['Argument'];
+type AugmentedArgument = Argument & { isConfigurable: boolean };
+
+const config: Package & {packageArguments: AugmentedArgument[]} = {
+  registryType: 'npm',
+  identifier: "@modelcontextprotocol/server-filesystem",
+  version: '2025.8.21',
+  packageArguments: [
+    {
+      name: 'directory_path',
+      description: 'The directory path to allow access to',
+      format: 'string',
+      type: 'positional',
+      isRequired: false,
+      value: '/tmp',
+      isConfigurable: true,
+    },
+  ],
+  environmentVariables: [],
+  runtimeArguments: [],
+};
 
 // Test configuration
 const TEST_FILE_PATH = '/tmp/test-fs/test.txt';
@@ -25,7 +48,7 @@ const TEST_FILE_CONTENT = 'Hello from MCP integration test!';
 // TODO: unskip these tests by fixing the runtime test container
 // now that the runtime is able to reconnect after a reset, we can start the runtime
 // with the rest of the containers and call the reset endpoint without worry, theoretically
-test.describe.skip('MCP Integration with Containerized Runtime', () => {
+test.describe.only('MCP Integration with Containerized Runtime', () => {
   // Configure tests to run serially
   test.describe.configure({ mode: 'serial' });
 
@@ -34,7 +57,7 @@ test.describe.skip('MCP Integration with Containerized Runtime', () => {
    * Runtime container is started globally in global-setup.ts
    */
   test.beforeAll(async ({ resetDatabase, seedDatabase }) => {
-    await resetDatabase();
+    await resetDatabase(true);
     await seedDatabase(seedPresets.withUsers);
     console.log('Database reset and seeded for MCP integration tests');
   });
@@ -148,10 +171,7 @@ test.describe.skip('MCP Integration with Containerized Runtime', () => {
       description: 'FileSystem MCP server for E2E testing',
       repositoryUrl: 'https://github.com/modelcontextprotocol/servers',
       transport: 'STDIO',
-      config: JSON.stringify({
-        command: 'npx',
-        args: ['-y', '@modelcontextprotocol/server-filesystem', '/tmp/test-fs'],
-      }),
+      config: JSON.stringify(config),
       runOn: 'GLOBAL',
       registryServerId,
     });

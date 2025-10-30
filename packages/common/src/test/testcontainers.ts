@@ -7,7 +7,7 @@
  * For Vitest unit tests that need mocks, use '@2ly/common/test/vitest' instead.
  */
 
-export { TestEnvironment, TEST_ENCRYPTION_KEY } from './testEnvironment';
+export { startRuntime, stopRuntime, TestEnvironment, TEST_ENCRYPTION_KEY } from './testEnvironment';
 export type {
   TestEnvironmentConfig,
   TestEnvironmentServices,
