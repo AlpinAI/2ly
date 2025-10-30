@@ -357,7 +357,7 @@ export class TestEnvironment {
         const buildPromise = GenericContainer.fromDockerfile(
           this.config.projectRoot,
           'packages/backend/Dockerfile'
-        ).build();
+        ).build('2ly-backend-test', { deleteOnExit: false });
 
         // Add timeout to prevent hanging indefinitely
         const timeoutPromise = new Promise((_, reject) => {
@@ -368,6 +368,7 @@ export class TestEnvironment {
           buildPromise, timeoutPromise
         ]) as GenericContainer;
         this.log('Backend Docker image built successfully');
+        containerImage = builtImage;
       } catch (error) {
         this.log('Failed to build backend Docker image', error);
         throw new Error(`Docker build failed: ${error instanceof Error ? error.message : String(error)}`);
@@ -379,8 +380,6 @@ export class TestEnvironment {
           clearTimeout(promiseTimeout);
         }
       }
-
-      containerImage = builtImage;
     }
 
     // Then create and configure the container
@@ -475,7 +474,7 @@ export class TestEnvironment {
         const buildPromise = GenericContainer.fromDockerfile(
           this.config.projectRoot,
           'packages/runtime/Dockerfile'
-        ).build();
+        ).build('2ly-runtime-test', { deleteOnExit: false });
 
         // Add timeout to prevent hanging indefinitely
         const timeoutPromise = new Promise((_, reject) => {
@@ -486,6 +485,7 @@ export class TestEnvironment {
           buildPromise, timeoutPromise
         ]) as GenericContainer;
         this.log('Runtime Docker image built successfully');
+        containerImage = builtImage;
       } catch (error) {
         this.log('Failed to build runtime Docker image', error);
         throw new Error(`Docker build failed: ${error instanceof Error ? error.message : String(error)}`);
@@ -497,8 +497,6 @@ export class TestEnvironment {
           clearTimeout(promiseTimeout);
         }
       }
-
-      containerImage = builtImage;
     }
 
     // Create a temporary directory for runtime filesystem operations

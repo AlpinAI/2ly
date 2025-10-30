@@ -52,8 +52,8 @@ async function globalSetup(_config: FullConfig) {
   if (usePublishedImages) {
     console.log(`📋 Using published images (tag: ${imageTag})`);
     imageBuildStrategy = {
-      backendImage: `2ly/backend:${imageTag}`,
-      runtimeImage: `2ly/runtime:${imageTag}`,
+      backendImage: `2ly-backend-test:${imageTag}`,
+      runtimeImage: `2ly-runtime-test:${imageTag}`,
     };
   } else {
     console.log('📋 Building images locally (Docker layer cache will optimize rebuilds)');
@@ -71,7 +71,7 @@ async function globalSetup(_config: FullConfig) {
       GLOBAL_RUNTIME: 'true',
     },
     logging: {
-      enabled: false, // Disable verbose TestEnvironment logs
+      enabled: true, // Disable verbose TestEnvironment logs
       verbose: false,
     },
     imageBuildStrategy,

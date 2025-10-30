@@ -176,7 +176,10 @@ export class RuntimeService extends Service {
     this.logger.info('Cleared runtime instances map');
 
     // Clear NATS heartbeat KV bucket
-    await this.natsService.clearHeartbeatKeys();
+    await Promise.all([
+      this.natsService.clearHeartbeatKeys(),
+      this.natsService.clearEphemeralKeys()
+    ]);
 
     // Publish RuntimeReconnectMessage to all connected runtimes
     const reconnectMessage = new RuntimeReconnectMessage({

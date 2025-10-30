@@ -166,7 +166,7 @@ export class MainService extends Service {
     // Shutdown the main service (will shutdown child services automatically)
     await this.down();
 
-    this.logActiveServices();
+    this.logActiveServices(1);
 
     // Wait with exponential backoff
     await this.wait(waitTime);
@@ -277,10 +277,10 @@ export class MainService extends Service {
     process.exit(0);
   }
 
-  private logActiveServices() {
+  private logActiveServices(numberOfExpectedAlive: number = 0) {
     const activeServices = Service.getActiveServices();
-    if (activeServices.length > 0) {
-      this.logger.warn('⚠️  Some services are still active after shutdown:');
+    if (activeServices.length > numberOfExpectedAlive) {
+      this.logger.warn('⚠️  Some services are still active:');
       activeServices.forEach((service) => {
         this.logger.warn(
           `   - Service "${service.name}" (${service.state}) is kept alive by consumers: [${service.consumers.join(', ')}]`,

@@ -323,6 +323,9 @@ export class NatsService extends Service {
     return {
       [Symbol.asyncIterator]: async function* () {
         for await (const msg of watcher) {
+          if (msg.operation === 'DEL' || msg.operation === 'PURGE') {
+            return;
+          }
           yield NatsMessage.get(msg as unknown as Msg);
         }
       },
@@ -331,6 +334,23 @@ export class NatsService extends Service {
       },
       drain: () => Promise.resolve()
     };
+  }
+
+  async clearEphemeralKeys(): Promise<void> {
+    if (!this.ephemeralKV) {
+      throw new Error('Ephemeral KV not initialized');
+    }
+    try {
+      const entries = await this.ephemeralKV.keys(); // returns Promise<string[]>
+      for await (const key of entries) {
+        await this.ephemeralKV.delete(key);
+      }
+      this.logger.info(`Cleared ephemeral keys`);
+    }
+    catch (error) {
+      this.logger.error(`Failed to clear ephemeral keys: ${error}`);
+      throw error;
+    }
   }
 
   private async createStreams() {

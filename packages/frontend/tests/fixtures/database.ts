@@ -166,7 +166,7 @@ export const test = base.extend<DatabaseFixture>({
       }
 
       // Wait a bit for the reset to complete
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      await new Promise((resolve) => setTimeout(resolve, 5000));
     };
 
     await use(reset);
@@ -321,7 +321,7 @@ export const test = base.extend<DatabaseFixture>({
                   repositoryUrl: "https://github.com/example/repo"
                   transport: ${server.transport}
                   config: "${config}"
-                  runOn: GLOBAL
+                  runOn: AGENT
                   workspace: { id: $workspaceId }
                   registryServer: { id: $registryServerId }
                 }) {
