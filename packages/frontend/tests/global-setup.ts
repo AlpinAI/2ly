@@ -56,7 +56,7 @@ async function globalSetup(_config: FullConfig) {
       runtimeImage: `2ly-runtime-test:${imageTag}`,
     };
   } else {
-    console.log('📋 Building images locally (Docker layer cache will optimize rebuilds)');
+    console.log('📋 Building images locally');
   }
 
   console.log('📦 Starting containers (Dgraph, NATS, Backend)...');
@@ -71,7 +71,7 @@ async function globalSetup(_config: FullConfig) {
       GLOBAL_RUNTIME: 'true',
     },
     logging: {
-      enabled: true, // Disable verbose TestEnvironment logs
+      enabled: false, // Disable verbose TestEnvironment logs
       verbose: false,
     },
     imageBuildStrategy,

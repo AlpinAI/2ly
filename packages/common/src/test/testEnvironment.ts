@@ -160,6 +160,8 @@ export class TestEnvironment {
         runtimeImage: config.imageBuildStrategy?.runtimeImage,
       },
     };
+
+    process.env.TEST_LOGGING_ENABLED = this.config.logging.enabled ? 'true' : 'false';
   }
 
   private log(message: string, data?: unknown): void {
@@ -232,7 +234,6 @@ export class TestEnvironment {
       .start();
 
     const mappedPort = container.getMappedPort(4222);
-    console.log('Setting TEST_NATS_CLIENT_URL to', `localhost:${mappedPort}`);
     process.env.TEST_NATS_CLIENT_URL = `localhost:${mappedPort}`;
 
     const clientUrl = this.config.exposeToHost
@@ -341,7 +342,7 @@ export class TestEnvironment {
       this.log(`Using published backend image: ${backendImage}`);
       containerImage = new GenericContainer(backendImage);
     } else {
-      // Build the Docker image (Docker layer cache will optimize rebuilds automatically)
+      // Build the Docker image
       this.log('Building backend Docker image...', { projectRoot: this.config.projectRoot });
 
       let builtImage: GenericContainer | undefined = undefined;
@@ -404,10 +405,7 @@ export class TestEnvironment {
         .withLogConsumer((stream) => {
           // Only log ERROR and WARN lines to reduce noise
           stream.on('data', (line) => {
-            const lineStr = line.toString();
-            if (lineStr.includes('ERROR') || lineStr.includes('WARN') || lineStr.includes('error') || lineStr.includes('warn')) {
-              this.log(`[Backend] ${line}`);
-            }
+            this.log(`[Backend] ${line}`);
           });
           stream.on('err', (line) => this.log(`[Backend ERROR] ${line}`));
         })
@@ -450,7 +448,7 @@ export class TestEnvironment {
       // Use published image
       this.log(`Using published runtime image: ${runtimeImage}`);
     } else {
-      // Build the Docker image (Docker layer cache will optimize rebuilds automatically)
+      // Build the Docker image
       this.log('Building runtime Docker image...', { projectRoot: this.config.projectRoot });
 
       let progressInterval: NodeJS.Timeout | undefined = undefined;
@@ -606,7 +604,9 @@ export const startRuntime = async (): Promise<void> => {
   if (startedContainer) {
     return;
   }
-  console.log('Starting runtime...');
+  if (process.env.TEST_LOGGING_ENABLED === 'true') {
+    console.log('Starting runtime...');
+  }
   const natsUrl = process.env.TEST_NATS_CLIENT_URL ?? 'nats:4222';
   const runtimeName = 'Test Runtime';
   const container = new GenericContainer('2ly-runtime-test:latest')
@@ -627,7 +627,9 @@ export const startRuntime = async (): Promise<void> => {
     .withLogConsumer((stream) => {
       // Only log ERROR and WARN lines to reduce noise
       stream.on('data', (line) => {
-        console.log(`[Runtime] ${line}`);
+        if (process.env.TEST_LOGGING_ENABLED === 'true') {
+          console.log(`[Runtime] ${line}`);
+        }
       });
       stream.on('err', (line) => console.log(`[Runtime ERROR] ${line}`));
     });
@@ -640,6 +642,8 @@ export const stopRuntime = async (): Promise<void> => {
   if (startedContainer) {
     await startedContainer.stop({ timeout: 10000 });
     startedContainer = undefined;
-    console.log('Runtime stopped');
+    if (process.env.TEST_LOGGING_ENABLED === 'true') {
+      console.log('Runtime stopped');
+    }
   }
 };

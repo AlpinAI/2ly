@@ -48,7 +48,7 @@
     "test:e2e": "npm run test:e2e -w @2ly/frontend",
     "test:e2e:full": "npm run test:e2e:full -w @2ly/frontend",
     "test:e2e:chromium": "npm run test:e2e:chromium -w @2ly/frontend",
-    "test:e2e:published": "npm run test:e2e:published -w @2ly/frontend",
+    "test:e2e:no-build": "npm run test:e2e:no-build -w @2ly/frontend",
     "bump-version": "node scripts/bump-version.js",
     "bump-version:patch": "node scripts/bump-version.js patch",
     "bump-version:minor": "node scripts/bump-version.js minor",
