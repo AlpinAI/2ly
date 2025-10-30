@@ -6,6 +6,7 @@
  * 2. Starts the Vite dev server for the frontend
  * 3. Exposes service URLs via environment variables
  * 4. Saves state for global teardown
+ * 5. Supports using published images via E2E_USE_IMAGE flag
  */
 
 import { chromium, FullConfig } from '@playwright/test';
@@ -37,6 +38,27 @@ interface TestEnvironmentState {
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 async function globalSetup(_config: FullConfig) {
   console.log('🚀 Starting test environment...');
+
+  // Check for published image usage
+  const usePublishedImages = process.env.E2E_USE_IMAGE === 'true';
+  const imageTag = process.env.E2E_IMAGE_TAG || 'latest';
+
+  // Configure image build strategy for TestEnvironment
+  let imageBuildStrategy: {
+    backendImage?: string;
+    runtimeImage?: string;
+  } | undefined;
+
+  if (usePublishedImages) {
+    console.log(`📋 Using published images (tag: ${imageTag})`);
+    imageBuildStrategy = {
+      backendImage: `2ly/backend:${imageTag}`,
+      runtimeImage: `2ly/runtime:${imageTag}`,
+    };
+  } else {
+    console.log('📋 Building images locally (Docker layer cache will optimize rebuilds)');
+  }
+
   console.log('📦 Starting containers (Dgraph, NATS, Backend)...');
 
   // Initialize test environment with minimal logging
@@ -52,6 +74,7 @@ async function globalSetup(_config: FullConfig) {
       enabled: false, // Disable verbose TestEnvironment logs
       verbose: false,
     },
+    imageBuildStrategy,
   });
 
   try {

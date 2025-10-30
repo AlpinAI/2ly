@@ -94,6 +94,25 @@ export interface TestEnvironmentConfig {
     enabled: boolean;
     verbose?: boolean;
   };
+
+  /**
+   * Image build strategy configuration
+   */
+  imageBuildStrategy?: {
+    /**
+     * Use published backend image instead of building locally
+     * Format: 'org/image:tag' (e.g., '2ly/backend:latest')
+     * @default undefined (build locally)
+     */
+    backendImage?: string;
+
+    /**
+     * Use published runtime image instead of building locally
+     * Format: 'org/image:tag' (e.g., '2ly/runtime:latest')
+     * @default undefined (build locally)
+     */
+    runtimeImage?: string;
+  };
 }
 
 export interface TestEnvironmentServices {
@@ -139,6 +158,10 @@ export class TestEnvironment {
       logging: {
         enabled: config.logging?.enabled ?? false,
         verbose: config.logging?.verbose ?? false,
+      },
+      imageBuildStrategy: {
+        backendImage: config.imageBuildStrategy?.backendImage,
+        runtimeImage: config.imageBuildStrategy?.runtimeImage,
       },
     };
   }
@@ -309,48 +332,61 @@ export class TestEnvironment {
 
     this.log('Starting Backend...');
 
-    this.log('Building backend Docker image...', { projectRoot: this.config.projectRoot });
+    let containerImage: GenericContainer;
 
-    // Build the Docker image first with timeout
-    let builtImage: GenericContainer | undefined = undefined;
-    let progressInterval: NodeJS.Timeout | undefined = undefined;
-    let promiseTimeout: NodeJS.Timeout | undefined = undefined;
-    try {
-      // Log progress every 10 seconds during build
-      progressInterval = setInterval(() => {
-        this.log('Docker build still in progress...');
-      }, 10000);
+    // Determine build strategy
+    const { backendImage } = this.config.imageBuildStrategy;
 
-      const buildPromise = GenericContainer.fromDockerfile(
-        this.config.projectRoot,
-        'packages/backend/Dockerfile'
-      ).build();
+    if (backendImage) {
+      // Use published image
+      this.log(`Using published backend image: ${backendImage}`);
+      containerImage = new GenericContainer(backendImage);
+    } else {
+      // Build the Docker image (Docker layer cache will optimize rebuilds automatically)
+      this.log('Building backend Docker image...', { projectRoot: this.config.projectRoot });
 
-      // Add timeout to prevent hanging indefinitely
-      const timeoutPromise = new Promise((_, reject) => {
-        promiseTimeout = setTimeout(() => reject(new Error('Docker build timed out after 5 minutes')), 5 * 60 * 1000);
-      });
+      let builtImage: GenericContainer | undefined = undefined;
+      let progressInterval: NodeJS.Timeout | undefined = undefined;
+      let promiseTimeout: NodeJS.Timeout | undefined = undefined;
+      try {
+        // Log progress every 10 seconds during build
+        progressInterval = setInterval(() => {
+          this.log('Docker build still in progress...');
+        }, 10000);
 
-      builtImage = await Promise.race([
-        buildPromise, timeoutPromise
-      ]) as GenericContainer;
-      this.log('Backend Docker image built successfully');
-    } catch (error) {
-      this.log('Failed to build backend Docker image', error);
-      throw new Error(`Docker build failed: ${error instanceof Error ? error.message : String(error)}`);
-    } finally {
-      if (progressInterval) {
-        clearInterval(progressInterval);
+        const buildPromise = GenericContainer.fromDockerfile(
+          this.config.projectRoot,
+          'packages/backend/Dockerfile'
+        ).build();
+
+        // Add timeout to prevent hanging indefinitely
+        const timeoutPromise = new Promise((_, reject) => {
+          promiseTimeout = setTimeout(() => reject(new Error('Docker build timed out after 5 minutes')), 5 * 60 * 1000);
+        });
+
+        builtImage = await Promise.race([
+          buildPromise, timeoutPromise
+        ]) as GenericContainer;
+        this.log('Backend Docker image built successfully');
+      } catch (error) {
+        this.log('Failed to build backend Docker image', error);
+        throw new Error(`Docker build failed: ${error instanceof Error ? error.message : String(error)}`);
+      } finally {
+        if (progressInterval) {
+          clearInterval(progressInterval);
+        }
+        if (promiseTimeout) {
+          clearTimeout(promiseTimeout);
+        }
       }
-      if (promiseTimeout) {
-        clearTimeout(promiseTimeout);
-      }
+
+      containerImage = builtImage;
     }
 
     // Then create and configure the container
     let started;
     try {
-      started = await builtImage
+      started = await containerImage
         .withNetwork(this.network!)
         .withNetworkAliases('backend')
         .withEnvironment({
@@ -395,6 +431,12 @@ export class TestEnvironment {
 
     this.log('Backend started', { apiUrl, healthUrl });
 
+    // Log build completion if we built it locally (not using published image)
+    if (!backendImage) {
+      console.log(`✓ Backend image built successfully`);
+      console.log(`  Note: Image is managed by testcontainers. To reuse it, tag and push to your registry.`);
+    }
+
     return { container: started, apiUrl, healthUrl };
   }
 
@@ -408,42 +450,55 @@ export class TestEnvironment {
 
     this.log('Starting Runtime...');
 
-    this.log('Building runtime Docker image...', { projectRoot: this.config.projectRoot });
+    let containerImage: GenericContainer;
 
-    // Build the Docker image first with timeout
-    let builtImage: GenericContainer | undefined = undefined;
-    let progressInterval: NodeJS.Timeout | undefined = undefined;
-    let promiseTimeout: NodeJS.Timeout | undefined = undefined;
-    try {
-      // Log progress every 10 seconds during build
-      progressInterval = setInterval(() => {
-        this.log('Docker build still in progress...');
-      }, 10000);
+    // Determine build strategy
+    const { runtimeImage } = this.config.imageBuildStrategy;
 
-      const buildPromise = GenericContainer.fromDockerfile(
-        this.config.projectRoot,
-        'packages/runtime/Dockerfile'
-      ).build();
+    if (runtimeImage) {
+      // Use published image
+      this.log(`Using published runtime image: ${runtimeImage}`);
+      containerImage = new GenericContainer(runtimeImage);
+    } else {
+      // Build the Docker image (Docker layer cache will optimize rebuilds automatically)
+      this.log('Building runtime Docker image...', { projectRoot: this.config.projectRoot });
 
-      // Add timeout to prevent hanging indefinitely
-      const timeoutPromise = new Promise((_, reject) => {
-        promiseTimeout = setTimeout(() => reject(new Error('Docker build timed out after 5 minutes')), 5 * 60 * 1000);
-      });
+      let builtImage: GenericContainer | undefined = undefined;
+      let progressInterval: NodeJS.Timeout | undefined = undefined;
+      let promiseTimeout: NodeJS.Timeout | undefined = undefined;
+      try {
+        // Log progress every 10 seconds during build
+        progressInterval = setInterval(() => {
+          this.log('Docker build still in progress...');
+        }, 10000);
 
-      builtImage = await Promise.race([
-        buildPromise, timeoutPromise
-      ]) as GenericContainer;
-      this.log('Runtime Docker image built successfully');
-    } catch (error) {
-      this.log('Failed to build runtime Docker image', error);
-      throw new Error(`Docker build failed: ${error instanceof Error ? error.message : String(error)}`);
-    } finally {
-      if (progressInterval) {
-        clearInterval(progressInterval);
+        const buildPromise = GenericContainer.fromDockerfile(
+          this.config.projectRoot,
+          'packages/runtime/Dockerfile'
+        ).build();
+
+        // Add timeout to prevent hanging indefinitely
+        const timeoutPromise = new Promise((_, reject) => {
+          promiseTimeout = setTimeout(() => reject(new Error('Docker build timed out after 5 minutes')), 5 * 60 * 1000);
+        });
+
+        builtImage = await Promise.race([
+          buildPromise, timeoutPromise
+        ]) as GenericContainer;
+        this.log('Runtime Docker image built successfully');
+      } catch (error) {
+        this.log('Failed to build runtime Docker image', error);
+        throw new Error(`Docker build failed: ${error instanceof Error ? error.message : String(error)}`);
+      } finally {
+        if (progressInterval) {
+          clearInterval(progressInterval);
+        }
+        if (promiseTimeout) {
+          clearTimeout(promiseTimeout);
+        }
       }
-      if (promiseTimeout) {
-        clearTimeout(promiseTimeout);
-      }
+
+      containerImage = builtImage;
     }
 
     // Create a temporary directory for runtime filesystem operations
@@ -454,7 +509,7 @@ export class TestEnvironment {
     try {
       const runtimeName = this.config.runtimeEnv?.RUNTIME_NAME || 'Test Runtime';
 
-      started = await builtImage
+      started = await containerImage
         .withNetwork(this.network!)
         .withNetworkAliases('runtime')
         .withEnvironment({
@@ -499,6 +554,12 @@ export class TestEnvironment {
 
     const name = this.config.runtimeEnv?.RUNTIME_NAME || 'Test Runtime';
     this.log('Runtime started', { name });
+
+    // Log build completion if we built it locally (not using published image)
+    if (!runtimeImage) {
+      console.log(`✓ Runtime image built successfully`);
+      console.log(`  Note: Image is managed by testcontainers. To reuse it, tag and push to your registry.`);
+    }
 
     return { container: started, name };
   }

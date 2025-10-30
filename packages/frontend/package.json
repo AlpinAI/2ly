@@ -22,7 +22,8 @@
     "test:e2e:report": "playwright show-report playwright-report",
     "test:e2e:chromium": "playwright test --project=clean-chromium --project=seeded-chromium --project=parallel-chromium",
     "test:e2e:firefox": "playwright test --project=clean-firefox --project=seeded-firefox --project=parallel-firefox",
-    "test:e2e:webkit": "playwright test --project=clean-webkit --project=seeded-webkit --project=parallel-webkit"
+    "test:e2e:webkit": "playwright test --project=clean-webkit --project=seeded-webkit --project=parallel-webkit",
+    "test:e2e:published": "E2E_USE_IMAGE=true playwright test --project=clean-chromium --project=seeded-chromium --project=parallel-chromium --reporter=line"
   },
   "dependencies": {
     "@apollo/client": "^4.0.7",
