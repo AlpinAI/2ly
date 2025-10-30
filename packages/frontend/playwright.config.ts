@@ -13,7 +13,6 @@ import path from 'path';
  *
  * Environment Variables:
  * - E2E_USE_IMAGE: Set to 'true' to use published images instead of building
- * - E2E_IMAGE_TAG: Tag of published images to use (default: 'latest')
  *
  * Note: Docker's layer cache automatically optimizes local builds
  */

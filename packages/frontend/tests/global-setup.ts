@@ -41,7 +41,6 @@ async function globalSetup(_config: FullConfig) {
 
   // Check for published image usage
   const usePublishedImages = process.env.E2E_USE_IMAGE === 'true';
-  const imageTag = process.env.E2E_IMAGE_TAG || 'latest';
 
   // Configure image build strategy for TestEnvironment
   let imageBuildStrategy: {
@@ -50,10 +49,10 @@ async function globalSetup(_config: FullConfig) {
   } | undefined;
 
   if (usePublishedImages) {
-    console.log(`📋 Using published images (tag: ${imageTag})`);
+    console.log(`📋 Using 2ly-backend-test:latest and 2ly-runtime-test:latest images`);
     imageBuildStrategy = {
-      backendImage: `2ly-backend-test:${imageTag}`,
-      runtimeImage: `2ly-runtime-test:${imageTag}`,
+      backendImage: `2ly-backend-test:latest`,
+      runtimeImage: `2ly-runtime-test:latest`,
     };
   } else {
     console.log('📋 Building images locally');
