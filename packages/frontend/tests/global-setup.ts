@@ -38,42 +38,19 @@ interface TestEnvironmentState {
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 async function globalSetup(_config: FullConfig) {
   console.log('🚀 Starting test environment...');
-
-  // Check for published image usage
-  const usePublishedImages = process.env.E2E_USE_IMAGE === 'true';
-
-  // Configure image build strategy for TestEnvironment
-  let imageBuildStrategy: {
-    backendImage?: string;
-    runtimeImage?: string;
-  } | undefined;
-
-  if (usePublishedImages) {
-    console.log(`📋 Using 2ly-backend-test:latest and 2ly-runtime-test:latest images`);
-    imageBuildStrategy = {
-      backendImage: `2ly-backend-test:latest`,
-      runtimeImage: `2ly-runtime-test:latest`,
-    };
-  } else {
-    console.log('📋 Building images locally');
-  }
-
   console.log('📦 Starting containers (Dgraph, NATS, Backend)...');
 
   // Initialize test environment with minimal logging
   const testEnv = new TestEnvironment({
     exposeToHost: true,
     startBackend: true, // Enabled for backend integration tests
-    startRuntime: true, // Enable the runtime container 
-    runtimeEnv: {
-      RUNTIME_NAME: 'E2E Test Runtime',
-      GLOBAL_RUNTIME: 'true',
-    },
+    prepareRuntime: true, // Prepare the runtime container for testing
     logging: {
       enabled: false, // Disable verbose TestEnvironment logs
       verbose: false,
     },
-    imageBuildStrategy,
+    backendImage: process.env.E2E_USE_IMAGE === 'true' ? `2ly-backend-test:latest` : undefined,
+    runtimeImage: process.env.E2E_USE_IMAGE === 'true' ? `2ly-runtime-test:latest` : undefined,
   });
 
   try {

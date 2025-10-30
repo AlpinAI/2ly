@@ -66,10 +66,10 @@ export interface TestEnvironmentConfig {
   startBackend?: boolean;
 
   /**
-   * Whether to start the runtime container
+   * Whether to prepare the runtime container
    * @default false
    */
-  startRuntime?: boolean;
+  prepareRuntime?: boolean;
 
   /**
    * Project root directory (where packages/ folder is located)
@@ -83,36 +83,26 @@ export interface TestEnvironmentConfig {
   backendEnv?: Record<string, string>;
 
   /**
-   * Environment variables for the runtime
-   */
-  runtimeEnv?: Record<string, string>;
-
-  /**
    * Logging configuration
    */
   logging?: {
     enabled: boolean;
     verbose?: boolean;
   };
+  
+  /**
+   * Use existing backend image instead of building locally
+   * Format: '2ly-backend-test:latest'
+   * @default undefined (build locally)
+   */
+  backendImage?: string;
 
   /**
-   * Image build strategy configuration
+   * Use published runtime image instead of building locally
+   * Format: '2ly-runtime-test:latest'
+   * @default undefined (build locally)
    */
-  imageBuildStrategy?: {
-    /**
-     * Use published backend image instead of building locally
-     * Format: 'org/image:tag' (e.g., '2ly/backend:latest')
-     * @default undefined (build locally)
-     */
-    backendImage?: string;
-
-    /**
-     * Use published runtime image instead of building locally
-     * Format: 'org/image:tag' (e.g., '2ly/runtime:latest')
-     * @default undefined (build locally)
-     */
-    runtimeImage?: string;
-  };
+  runtimeImage?: string;
 }
 
 export interface TestEnvironmentServices {
@@ -141,24 +131,21 @@ export interface TestEnvironmentServices {
 export class TestEnvironment {
   private network?: StartedNetwork;
   private services?: TestEnvironmentServices;
-  private config: Required<TestEnvironmentConfig>;
+  private config: Omit<Required<TestEnvironmentConfig>, 'backendImage' | 'runtimeImage'> & { backendImage?: string; runtimeImage?: string };
 
   constructor(config: TestEnvironmentConfig = {}) {
     this.config = {
       exposeToHost: config.exposeToHost ?? true,
       startBackend: config.startBackend ?? true,
-      startRuntime: config.startRuntime ?? false,
+      prepareRuntime: config.prepareRuntime ?? false,
       projectRoot: config.projectRoot ?? findProjectRoot(),
       backendEnv: config.backendEnv ?? {},
-      runtimeEnv: config.runtimeEnv ?? {},
       logging: {
         enabled: config.logging?.enabled ?? false,
         verbose: config.logging?.verbose ?? false,
       },
-      imageBuildStrategy: {
-        backendImage: config.imageBuildStrategy?.backendImage,
-        runtimeImage: config.imageBuildStrategy?.runtimeImage,
-      },
+      backendImage: config.backendImage,
+      runtimeImage: config.runtimeImage,
     };
 
     process.env.TEST_LOGGING_ENABLED = this.config.logging.enabled ? 'true' : 'false';
@@ -202,7 +189,7 @@ export class TestEnvironment {
     }
 
     // Optionally start runtime
-    if (this.config.startRuntime) {
+    if (this.config.prepareRuntime) {
       await this.prepareRuntime();
     }
 
@@ -334,13 +321,10 @@ export class TestEnvironment {
 
     let containerImage: GenericContainer;
 
-    // Determine build strategy
-    const { backendImage } = this.config.imageBuildStrategy;
-
-    if (backendImage) {
-      // Use published image
-      this.log(`Using published backend image: ${backendImage}`);
-      containerImage = new GenericContainer(backendImage);
+    if (this.config.backendImage) {
+      // Use existing image
+      this.log(`Using published backend image: ${this.config.backendImage}`);
+      containerImage = new GenericContainer(this.config.backendImage);
     } else {
       // Build the Docker image
       this.log('Building backend Docker image...', { projectRoot: this.config.projectRoot });
@@ -439,14 +423,9 @@ export class TestEnvironment {
 
     this.log('Starting Runtime...');
 
-    
-
-    // Determine build strategy
-    const { runtimeImage } = this.config.imageBuildStrategy;
-
-    if (runtimeImage) {
+    if (this.config.runtimeImage) {
       // Use published image
-      this.log(`Using published runtime image: ${runtimeImage}`);
+      this.log(`Using published runtime image: ${this.config.runtimeImage}`);
     } else {
       // Build the Docker image
       this.log('Building runtime Docker image...', { projectRoot: this.config.projectRoot });
