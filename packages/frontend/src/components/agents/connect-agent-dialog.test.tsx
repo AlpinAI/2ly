@@ -36,6 +36,7 @@ describe('ConnectAgentDialog', () => {
       mcpTools: [],
       onboardingSteps: [],
       runtimes: [],
+      toolSets: [],
     },
   };
 

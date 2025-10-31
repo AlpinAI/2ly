@@ -125,6 +125,7 @@ export type McpTool = {
   name: Scalars['String']['output'];
   runtimes: Maybe<Array<Runtime>>;
   status: ActiveStatus;
+  toolSets: Maybe<Array<ToolSet>>;
   workspace: Workspace;
 };
 
@@ -549,6 +550,18 @@ export type ToolCallsResult = {
   totalCount: Scalars['Int']['output'];
 };
 
+export type ToolSet = {
+  __typename: 'ToolSet';
+  createdAt: Scalars['Date']['output'];
+  description: Maybe<Scalars['String']['output']>;
+  id: Scalars['ID']['output'];
+  lastSeenAt: Maybe<Scalars['Date']['output']>;
+  mcpToolCapabilities: Maybe<Array<McpTool>>;
+  name: Scalars['String']['output'];
+  status: ActiveStatus;
+  workspace: Workspace;
+};
+
 export type User = {
   __typename: 'User';
   adminOfWorkspaces: Maybe<Array<Workspace>>;
@@ -571,6 +584,7 @@ export type Workspace = {
   onboardingSteps: Maybe<Array<OnboardingStep>>;
   registryServers: Maybe<Array<McpRegistryServer>>;
   runtimes: Maybe<Array<Runtime>>;
+  toolSets: Maybe<Array<ToolSet>>;
 };
 
 export type LoginMutationVariables = Exact<{
