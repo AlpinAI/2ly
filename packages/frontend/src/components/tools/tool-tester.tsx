@@ -19,11 +19,12 @@
 
 import { useState, useMemo, useRef, useEffect } from 'react';
 import { useMutation } from '@apollo/client/react';
-import { Play, Loader2, CheckCircle, AlertCircle } from 'lucide-react';
+import { Play, Loader2, CheckCircle, AlertCircle, Maximize2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { CallMcpToolDocument } from '@/graphql/generated/graphql';
 import { SchemaInput } from './schema-input';
 import { parseJSONSchema, convertValueToType, validateSchemaValue } from '@/lib/jsonSchemaHelpers';
+import { CodeViewerDialog } from '@/components/ui/code-viewer-dialog';
 
 export interface ToolTesterProps {
   toolId: string;
@@ -43,8 +44,16 @@ export function ToolTester({ toolId, inputSchema }: ToolTesterProps) {
     error?: string;
   } | null>(null);
   const resultSectionRef = useRef<HTMLDivElement>(null);
+  const [viewerOpen, setViewerOpen] = useState(false);
+  const [viewerContent, setViewerContent] = useState<{ title: string; content: string; language: 'json' | 'text' }>({ title: '', content: '', language: 'json' });
 
   const [callTool, { loading: isExecuting }] = useMutation(CallMcpToolDocument);
+
+  // Open viewer with content
+  const openViewer = (title: string, content: string, language: 'json' | 'text' = 'json') => {
+    setViewerContent({ title, content, language });
+    setViewerOpen(true);
+  };
 
   // Parse inputSchema using new helper
   const inputProperties = useMemo(() => {
@@ -194,23 +203,42 @@ export function ToolTester({ toolId, inputSchema }: ToolTesterProps) {
           </>
         ) : executionResult ? (
           <>
-            <div className="flex items-center gap-2">
-              {executionResult.success ? (
-                <>
-                  <CheckCircle className="h-4 w-4 text-green-600 dark:text-green-400" />
-                  <span className="text-sm font-medium text-green-600 dark:text-green-400">Success</span>
-                </>
-              ) : (
-                <>
-                  <AlertCircle className="h-4 w-4 text-red-600 dark:text-red-400" />
-                  <span className="text-sm font-medium text-red-600 dark:text-red-400">Error</span>
-                </>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                {executionResult.success ? (
+                  <>
+                    <CheckCircle className="h-4 w-4 text-green-600 dark:text-green-400" />
+                    <span className="text-sm font-medium text-green-600 dark:text-green-400">Success</span>
+                  </>
+                ) : (
+                  <>
+                    <AlertCircle className="h-4 w-4 text-red-600 dark:text-red-400" />
+                    <span className="text-sm font-medium text-red-600 dark:text-red-400">Error</span>
+                  </>
+                )}
+              </div>
+              {(executionResult.result || executionResult.error) && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() =>
+                    openViewer(
+                      executionResult.success ? 'Test Result' : 'Test Error',
+                      executionResult.success ? executionResult.result || '' : executionResult.error || '',
+                      executionResult.success ? 'json' : 'text'
+                    )
+                  }
+                  className="h-7 gap-1.5 text-xs"
+                >
+                  <Maximize2 className="h-3.5 w-3.5" />
+                  Expand
+                </Button>
               )}
             </div>
 
             <div className="bg-gray-50 dark:bg-gray-900/50 rounded-lg p-3">
               {executionResult.success ? (
-                <pre className="text-xs font-mono text-gray-900 dark:text-gray-100 overflow-auto">
+                <pre className="text-xs font-mono text-gray-900 dark:text-gray-100 overflow-auto max-h-40">
                   {executionResult.result}
                 </pre>
               ) : (
@@ -220,6 +248,15 @@ export function ToolTester({ toolId, inputSchema }: ToolTesterProps) {
           </>
         ) : null}
       </div>
+
+      {/* Code Viewer Dialog */}
+      <CodeViewerDialog
+        open={viewerOpen}
+        onOpenChange={setViewerOpen}
+        title={viewerContent.title}
+        content={viewerContent.content}
+        language={viewerContent.language}
+      />
     </div>
   );
 }

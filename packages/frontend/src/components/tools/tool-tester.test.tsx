@@ -37,6 +37,16 @@ vi.mock('./schema-input', () => ({
   ),
 }));
 
+// Mock CodeViewerDialog component
+vi.mock('@/components/ui/code-viewer-dialog', () => ({
+  CodeViewerDialog: ({ open, title, content }: { open: boolean; title: string; content: string }) => (
+    open ? <div data-testid="code-viewer-dialog">
+      <div data-testid="viewer-title">{title}</div>
+      <div data-testid="viewer-content">{content}</div>
+    </div> : null
+  ),
+}));
+
 describe('ToolTester', () => {
   const mockCallTool = vi.fn();
 
@@ -498,5 +508,172 @@ describe('ToolTester', () => {
     expect(screen.queryByText('Success')).not.toBeInTheDocument();
     expect(screen.queryByText('Error')).not.toBeInTheDocument();
     expect(screen.queryByText('Testing tool...')).not.toBeInTheDocument();
+  });
+
+  it('renders expand button when result is available', async () => {
+    mockCallTool.mockResolvedValue({
+      data: {
+        callMCPTool: {
+          success: true,
+          result: '{"data": "test result"}',
+        },
+      },
+    });
+
+    render(
+      <ToolTester
+        toolId="tool-1"
+        toolName="test-tool"
+        inputSchema="{}"
+      />
+    );
+
+    const testButton = screen.getByRole('button', { name: /test/i });
+    fireEvent.click(testButton);
+
+    await waitFor(() => {
+      expect(screen.getByText('Success')).toBeInTheDocument();
+    });
+
+    // Should have expand button
+    expect(screen.getByText('Expand')).toBeInTheDocument();
+  });
+
+  it('renders expand button when error is available', async () => {
+    mockCallTool.mockRejectedValue(new Error('Test error'));
+
+    // Silence expected console.error
+    const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+    render(
+      <ToolTester
+        toolId="tool-1"
+        toolName="test-tool"
+        inputSchema="{}"
+      />
+    );
+
+    const testButton = screen.getByRole('button', { name: /test/i });
+    fireEvent.click(testButton);
+
+    await waitFor(() => {
+      expect(screen.getByText('Error')).toBeInTheDocument();
+    });
+
+    // Should have expand button
+    expect(screen.getByText('Expand')).toBeInTheDocument();
+
+    consoleErrorSpy.mockRestore();
+  });
+
+  it('does not render expand button before execution', () => {
+    render(
+      <ToolTester
+        toolId="tool-1"
+        toolName="test-tool"
+        inputSchema="{}"
+      />
+    );
+
+    // Should not have expand button before execution
+    expect(screen.queryByText('Expand')).not.toBeInTheDocument();
+  });
+
+  it('opens code viewer dialog when expand button is clicked for success result', async () => {
+    mockCallTool.mockResolvedValue({
+      data: {
+        callMCPTool: {
+          success: true,
+          result: '{"data": "test result"}',
+        },
+      },
+    });
+
+    render(
+      <ToolTester
+        toolId="tool-1"
+        toolName="test-tool"
+        inputSchema="{}"
+      />
+    );
+
+    const testButton = screen.getByRole('button', { name: /test/i });
+    fireEvent.click(testButton);
+
+    await waitFor(() => {
+      expect(screen.getByText('Success')).toBeInTheDocument();
+    });
+
+    // Click expand button
+    const expandButton = screen.getByText('Expand');
+    fireEvent.click(expandButton);
+
+    // Dialog should be open
+    expect(screen.getByTestId('code-viewer-dialog')).toBeInTheDocument();
+    expect(screen.getByTestId('viewer-title')).toHaveTextContent('Test Result');
+    expect(screen.getByTestId('viewer-content')).toHaveTextContent('test result');
+  });
+
+  it('opens code viewer dialog when expand button is clicked for error result', async () => {
+    mockCallTool.mockRejectedValue(new Error('Network error'));
+
+    // Silence expected console.error
+    const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+    render(
+      <ToolTester
+        toolId="tool-1"
+        toolName="test-tool"
+        inputSchema="{}"
+      />
+    );
+
+    const testButton = screen.getByRole('button', { name: /test/i });
+    fireEvent.click(testButton);
+
+    await waitFor(() => {
+      expect(screen.getByText('Error')).toBeInTheDocument();
+    });
+
+    // Click expand button
+    const expandButton = screen.getByText('Expand');
+    fireEvent.click(expandButton);
+
+    // Dialog should be open
+    expect(screen.getByTestId('code-viewer-dialog')).toBeInTheDocument();
+    expect(screen.getByTestId('viewer-title')).toHaveTextContent('Test Error');
+    expect(screen.getByTestId('viewer-content')).toHaveTextContent('Network error');
+
+    consoleErrorSpy.mockRestore();
+  });
+
+  it('expand button has proper icon', async () => {
+    mockCallTool.mockResolvedValue({
+      data: {
+        callMCPTool: {
+          success: true,
+          result: 'test result',
+        },
+      },
+    });
+
+    const { container } = render(
+      <ToolTester
+        toolId="tool-1"
+        toolName="test-tool"
+        inputSchema="{}"
+      />
+    );
+
+    const testButton = screen.getByRole('button', { name: /test/i });
+    fireEvent.click(testButton);
+
+    await waitFor(() => {
+      expect(screen.getByText('Success')).toBeInTheDocument();
+    });
+
+    // Maximize2 icon should be present (lucide uses lowercase without hyphen before number)
+    const maximizeIcon = container.querySelector('svg[class*="lucide"][class*="maximize"]');
+    expect(maximizeIcon).toBeInTheDocument();
   });
 });
