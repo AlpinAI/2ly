@@ -1,0 +1,68 @@
+# Get Knowledge Graph Data
+# WHY: Fetch all entities needed for knowledge graph visualization
+
+query GetKnowledgeGraphData($workspaceId: ID!) {
+  # Get MCP Servers (Sources)
+  mcpServers(workspaceId: $workspaceId) {
+    id
+    name
+    description
+    repositoryUrl
+    status: runOn
+    tools {
+      id
+    }
+    runtime {
+      id
+    }
+  }
+
+  # Get MCP Tools
+  mcpTools(workspaceId: $workspaceId) {
+    id
+    name
+    description
+    status
+    mcpServer {
+      id
+    }
+    runtimes {
+      id
+    }
+    toolSets {
+      id
+    }
+  }
+
+  # Get Runtimes
+  workspace {
+    id
+    name
+
+    # Get Tool Sets
+    toolSets {
+      id
+      name
+      description
+      status
+      mcpToolCapabilities {
+        id
+      }
+    }
+
+    # Get Runtimes
+    runtimes {
+      id
+      name
+      description
+      status
+      capabilities
+      mcpToolCapabilities {
+        id
+      }
+      mcpServers {
+        id
+      }
+    }
+  }
+}

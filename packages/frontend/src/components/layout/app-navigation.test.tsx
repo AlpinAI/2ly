@@ -78,9 +78,9 @@ describe('AppNavigation', () => {
       </BrowserRouter>
     );
 
-    // Should have 6 SVG icons (one for each nav item)
+    // Should have 7 SVG icons (one for each nav item)
     const icons = container.querySelectorAll('svg');
-    expect(icons.length).toBe(6);
+    expect(icons.length).toBe(7);
   });
 
   it('has correct links for each tab', () => {

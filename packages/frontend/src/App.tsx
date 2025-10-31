@@ -30,6 +30,7 @@ import ToolsPage from '@/pages/ToolsPage';
 import SourcesPage from '@/pages/SourcesPage';
 import SettingsPage from '@/pages/SettingsPage';
 import MonitoringPage from '@/pages/MonitoringPage';
+import KnowledgeGraphPage from '@/pages/knowledge-graph/knowledge-graph';
 import InitPage from '@/pages/InitPage';
 import BackendErrorPage from '@/pages/BackendErrorPage';
 import NotFoundPage from '@/pages/NotFoundPage';
@@ -84,6 +85,7 @@ function App() {
                   <Route path="tools" element={<ToolsPage />} />
                   <Route path="sources" element={<SourcesPage />} />
                   <Route path="monitoring" element={<MonitoringPage />} />
+                  <Route path="knowledge-graph" element={<KnowledgeGraphPage />} />
                   <Route path="settings" element={<SettingsPage />} />
 
                   {/* Redirect /w/:workspaceId to /w/:workspaceId/overview */}
