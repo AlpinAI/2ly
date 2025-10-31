@@ -129,10 +129,13 @@ export default function DashboardPage() {
   }, [filteredToolCalls]);
 
   // Resource stats
+  // Tool sets are runtimes with 'agent' capability (excludes global runtime)
+  const toolSetsCount = runtimes.filter((runtime) => runtime.capabilities?.includes('agent')).length;
+
   const resourceStats = {
     sources: servers.length,
     tools: tools.length,
-    toolSets: runtimes.length,
+    toolSets: toolSetsCount,
   };
 
   const loading = runtimesLoading || serversLoading || toolsLoading || toolCallsLoading;
