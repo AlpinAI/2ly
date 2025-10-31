@@ -161,6 +161,11 @@ export function CallVolumeChart({ data, loading, className }: CallVolumeChartPro
               const totalHeight = successHeight + failedHeight;
               const isHovered = hoveredIndex === index;
 
+              // Show labels intelligently based on number of data points
+              // For many bars, only show every nth label to avoid overlap
+              const labelInterval = data.length > 20 ? Math.ceil(data.length / 10) : data.length > 14 ? 2 : 1;
+              const showLabel = index % labelInterval === 0 || index === data.length - 1;
+
               return (
                 <g
                   key={index}
@@ -190,15 +195,17 @@ export function CallVolumeChart({ data, loading, className }: CallVolumeChartPro
                     rx="2"
                   />
 
-                  {/* X-axis label */}
-                  <text
-                    x={xPosition + barWidth / 2}
-                    y={chartHeight + 20}
-                    textAnchor="middle"
-                    className="text-xs fill-gray-600 dark:fill-gray-400"
-                  >
-                    {point.label}
-                  </text>
+                  {/* X-axis label - show selectively to avoid overlap */}
+                  {showLabel && (
+                    <text
+                      x={xPosition + barWidth / 2}
+                      y={chartHeight + 20}
+                      textAnchor="middle"
+                      className="text-xs fill-gray-600 dark:fill-gray-400"
+                    >
+                      {point.label}
+                    </text>
+                  )}
 
                   {/* Hover tooltip */}
                   {isHovered && (
