@@ -51,6 +51,7 @@ describe('OnboardingCard', () => {
         status: ActiveStatus.Active,
         mcpServer: createMockMcpServerRef('server-1', 'test-server'),
         workspace: null as never,
+        toolSets: [],
       },
     ],
     createdAt: new Date(),
@@ -71,6 +72,7 @@ describe('OnboardingCard', () => {
       mcpTools: [],
       onboardingSteps: [],
       runtimes: [],
+      toolSets: [],
     },
   };
 
@@ -399,6 +401,7 @@ describe('OnboardingCard', () => {
             status: ActiveStatus.Active,
             mcpServer: createMockMcpServerRef('server-1', 'test-server'),
             workspace: null as never,
+            toolSets: [],
           },
           {
             __typename: 'MCPTool',
@@ -413,6 +416,7 @@ describe('OnboardingCard', () => {
             status: ActiveStatus.Active,
             mcpServer: createMockMcpServerRef('server-1', 'test-server'),
             workspace: null as never,
+            toolSets: [],
           },
         ],
       };

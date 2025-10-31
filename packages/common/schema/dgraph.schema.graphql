@@ -35,6 +35,7 @@ type Workspace @withSubscription {
   mcpServers: [MCPServer!] @hasInverse(field: workspace)
   mcpTools: [MCPTool!] @hasInverse(field: workspace)
   runtimes: [Runtime!] @hasInverse(field: workspace)
+  toolSets: [ToolSet!] @hasInverse(field: workspace)
   registryServers: [MCPRegistryServer!] @hasInverse(field: workspace)
   admins: [User!] @hasInverse(field: adminOfWorkspaces)
   users: [User!] @hasInverse(field: membersOfWorkspaces)
@@ -99,8 +100,19 @@ type MCPTool @withSubscription {
   lastSeenAt: DateTime!
   mcpServer: MCPServer! @hasInverse(field: tools)
   runtimes: [Runtime!] @hasInverse(field: mcpToolCapabilities)
+  toolSets: [ToolSet!] @hasInverse(field: mcpTools)
   workspace: Workspace! @hasInverse(field: mcpTools)
   toolCalls: [ToolCall!] @hasInverse(field: mcpTool)
+}
+
+type ToolSet @withSubscription {
+  id: ID!
+  name: String! @search(by: [hash])
+  description: String
+  createdAt: DateTime!
+  updatedAt: DateTime
+  mcpTools: [MCPTool!] @hasInverse(field: toolSets)
+  workspace: Workspace! @hasInverse(field: toolSets)
 }
 
 type Runtime @withSubscription {

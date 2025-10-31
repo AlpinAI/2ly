@@ -11,6 +11,7 @@ import {
   SystemRepository,
   UserRepository,
   MonitoringRepository,
+  ToolSetRepository,
 } from '../repositories';
 import { createAuthResolvers } from '../resolvers/auth.resolver';
 import { AuthenticationService, JwtService, PasswordPolicyService } from '../services/auth';
@@ -32,6 +33,7 @@ export const resolvers = (container: Container = defaultContainer): apolloResolv
   const mcpServerRepository = container.get(MCPServerRepository);
   const runtimeRepository = container.get(RuntimeRepository);
   const workspaceRepository = container.get(WorkspaceRepository);
+  const toolSetRepository = container.get(ToolSetRepository);
   const mcpAutoConfigService = container.get(MCPServerAutoConfigService);
   const authenticationService = container.get(AuthenticationService);
   const jwtService = container.get(JwtService);
@@ -53,6 +55,9 @@ export const resolvers = (container: Container = defaultContainer): apolloResolv
       },
       mcpTools: async (_parent: unknown, { workspaceId }: { workspaceId: string }) => {
         return workspaceRepository.findMCPToolsByWorkspace(workspaceId);
+      },
+      toolSets: async (_parent: unknown, { workspaceId }: { workspaceId: string }) => {
+        return toolSetRepository.findByWorkspace(workspaceId);
       },
       system: async () => {
         return systemRepository.getSystem();
@@ -318,10 +323,44 @@ export const resolvers = (container: Container = defaultContainer): apolloResolv
         await workspaceRepository.dismissOnboardingStep(workspaceId, stepId);
         return true;
       },
+
+      // ToolSet mutations
+      createToolSet: async (
+        _parent: unknown,
+        { name, description, workspaceId }: { name: string; description: string; workspaceId: string },
+      ) => {
+        return toolSetRepository.create(name, description, workspaceId);
+      },
+
+      updateToolSet: async (
+        _parent: unknown,
+        { id, name, description }: { id: string; name: string; description: string },
+      ) => {
+        return toolSetRepository.update(id, name, description);
+      },
+
+      deleteToolSet: async (_parent: unknown, { id }: { id: string }) => {
+        return toolSetRepository.delete(id);
+      },
+
+      addMCPToolToToolSet: async (
+        _parent: unknown,
+        { mcpToolId, toolSetId }: { mcpToolId: string; toolSetId: string },
+      ) => {
+        return toolSetRepository.addMCPToolToToolSet(mcpToolId, toolSetId);
+      },
+
+      removeMCPToolFromToolSet: async (
+        _parent: unknown,
+        { mcpToolId, toolSetId }: { mcpToolId: string; toolSetId: string },
+      ) => {
+        return toolSetRepository.removeMCPToolFromToolSet(mcpToolId, toolSetId);
+      },
     },
     Runtime: {},
     MCPServer: {},
     MCPTool: {},
+    ToolSet: {},
     Subscription: {
       workspace: {
         subscribe: (_parent: unknown, { workspaceId }: { workspaceId: string }) => {
@@ -351,6 +390,12 @@ export const resolvers = (container: Container = defaultContainer): apolloResolv
         subscribe: (_parent: unknown, { workspaceId }: { workspaceId: string }) => {
           const observable = monitoringRepository.observeToolCalls(workspaceId);
           return observableToAsyncGenerator(observable, 'toolCalls');
+        },
+      },
+      toolSets: {
+        subscribe: (_parent: unknown, { workspaceId }: { workspaceId: string }) => {
+          const observable = toolSetRepository.observeToolSets(workspaceId);
+          return observableToAsyncGenerator(observable, 'toolSets');
         },
       },
     },

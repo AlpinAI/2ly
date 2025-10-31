@@ -1,0 +1,20 @@
+# Remove MCP Tool from ToolSet Mutation
+# WHY: Remove a tool from a tool set
+mutation RemoveMCPToolFromToolSet($mcpToolId: ID!, $toolSetId: ID!) {
+  removeMCPToolFromToolSet(mcpToolId: $mcpToolId, toolSetId: $toolSetId) {
+    id
+    name
+    description
+    updatedAt
+    mcpTools {
+      id
+      name
+      description
+      status
+      mcpServer {
+        id
+        name
+      }
+    }
+  }
+}

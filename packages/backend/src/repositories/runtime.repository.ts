@@ -28,6 +28,7 @@ import {
 import { map, Observable } from 'rxjs';
 import { createSubscriptionFromQuery, escapeValue } from '../helpers';
 import { MCPToolRepository } from './mcp-tool.repository';
+import { ToolSetRepository } from './toolset.repository';
 import pino from 'pino';
 import { QUERY_WORKSPACE } from './workspace.operations';
 import { WorkspaceRepository } from './workspace.repository';
@@ -41,6 +42,7 @@ export class RuntimeRepository {
     @inject(LoggerService) private readonly loggerService: LoggerService,
     @inject(NatsService) private readonly natsService: NatsService,
     @inject(WorkspaceRepository) private readonly workspaceRepository: WorkspaceRepository,
+    @inject(ToolSetRepository) private readonly toolSetRepository: ToolSetRepository,
   ) {
     this.logger = this.loggerService.getLogger('runtime-repository');
   }
@@ -341,6 +343,7 @@ export class RuntimeRepository {
   }
 
   async linkMCPToolToRuntime(mcpToolId: string, runtimeId: string): Promise<dgraphResolversTypes.Runtime> {
+    // Link tool to runtime (existing behavior)
     const res = await this.dgraphService.mutation<{
       updateRuntime: { runtime: dgraphResolversTypes.Runtime[] };
     }>(LINK_MCP_TOOL, {
@@ -349,9 +352,37 @@ export class RuntimeRepository {
     });
     const updated = res.updateRuntime.runtime[0];
 
-    // Check and complete onboarding steps if this is an agent runtime
+    // DUAL-WRITE PATTERN: Also add tool to a ToolSet
+    // Get or create a default toolset for this runtime
     const runtime = await this.getRuntime(runtimeId);
     const workspaceId = runtime.workspace?.id;
+
+    if (workspaceId) {
+      try {
+        // Find or create a default toolset named after the runtime
+        const existingToolSets = await this.toolSetRepository.findByWorkspace(workspaceId);
+        let toolSet = existingToolSets.find((ts) => ts.name === runtime.name);
+
+        if (!toolSet) {
+          // Create a new toolset with the runtime's name
+          toolSet = await this.toolSetRepository.create(
+            runtime.name,
+            runtime.description || `Tool set for ${runtime.name}`,
+            workspaceId,
+          );
+          this.logger.info(`Created default toolset ${toolSet.id} for runtime ${runtimeId}`);
+        }
+
+        // Add the tool to the toolset
+        await this.toolSetRepository.addMCPToolToToolSet(mcpToolId, toolSet.id);
+        this.logger.info(`Dual-write: Added tool ${mcpToolId} to toolset ${toolSet.id}`);
+      } catch (error) {
+        // Log error but don't fail the operation - backward compatibility
+        this.logger.error(`Failed to sync tool to toolset during dual-write: ${error}`);
+      }
+    }
+
+    // Check and complete onboarding steps if this is an agent runtime
     const hasAgentCapability = runtime.capabilities?.some((c) => c.toLowerCase() === 'agent');
     if (workspaceId && hasAgentCapability) {
       // Step 2: Create tool set (agent with tools exists)
@@ -364,12 +395,35 @@ export class RuntimeRepository {
   }
 
   async unlinkMCPToolFromRuntime(mcpToolId: string, runtimeId: string): Promise<dgraphResolversTypes.Runtime> {
+    // Unlink tool from runtime (existing behavior)
     const res = await this.dgraphService.mutation<{
       updateRuntime: { runtime: dgraphResolversTypes.Runtime[] };
     }>(UNLINK_MCP_TOOL, {
       mcpToolId,
       runtimeId,
     });
+
+    // DUAL-WRITE PATTERN: Also remove tool from ToolSet
+    const runtime = await this.getRuntime(runtimeId);
+    const workspaceId = runtime.workspace?.id;
+
+    if (workspaceId) {
+      try {
+        // Find the toolset with the runtime's name
+        const existingToolSets = await this.toolSetRepository.findByWorkspace(workspaceId);
+        const toolSet = existingToolSets.find((ts) => ts.name === runtime.name);
+
+        if (toolSet) {
+          // Remove the tool from the toolset
+          await this.toolSetRepository.removeMCPToolFromToolSet(mcpToolId, toolSet.id);
+          this.logger.info(`Dual-write: Removed tool ${mcpToolId} from toolset ${toolSet.id}`);
+        }
+      } catch (error) {
+        // Log error but don't fail the operation - backward compatibility
+        this.logger.error(`Failed to sync tool removal from toolset during dual-write: ${error}`);
+      }
+    }
+
     return res.updateRuntime.runtime[0];
   }
 

@@ -1,0 +1,11 @@
+# Update ToolSet Mutation
+# WHY: Update an existing tool set's name and description
+mutation UpdateToolSet($id: ID!, $name: String!, $description: String!) {
+  updateToolSet(id: $id, name: $name, description: $description) {
+    id
+    name
+    description
+    createdAt
+    updatedAt
+  }
+}

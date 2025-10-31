@@ -8,6 +8,7 @@ import { LoggerService } from '@2ly/common';
 import { Subject } from 'rxjs';
 import type { NatsService } from '@2ly/common';
 import type { WorkspaceRepository } from './workspace.repository';
+import type { ToolSetRepository } from './toolset.repository';
 
 describe('RuntimeRepository', () => {
     let dgraphService: DgraphServiceMock;
@@ -26,6 +27,7 @@ describe('RuntimeRepository', () => {
             getLogger: vi.fn().mockReturnValue({
                 debug: vi.fn(),
                 warn: vi.fn(),
+                error: vi.fn(),
             }),
         } as unknown as LoggerService;
         natsService = {
@@ -35,12 +37,17 @@ describe('RuntimeRepository', () => {
         workspaceRepository = {
             checkAndCompleteStep: vi.fn().mockResolvedValue(undefined),
         } as unknown as WorkspaceRepository;
+        const toolSetRepository = {
+            addToolsToToolSet: vi.fn().mockResolvedValue(undefined),
+            removeToolsFromToolSet: vi.fn().mockResolvedValue(undefined),
+        } as unknown as ToolSetRepository;
         runtimeRepository = new RuntimeRepository(
             dgraphService as unknown as DGraphService,
             mcpToolRepository,
             loggerService,
             natsService,
             workspaceRepository,
+            toolSetRepository,
         );
     });
 
@@ -445,8 +452,9 @@ describe('RuntimeRepository', () => {
     });
 
     it('unlinkMCPToolFromRuntime unlinks tool from runtime', async () => {
-        const runtime = { id: 'r1' } as unknown as dgraphResolversTypes.Runtime;
+        const runtime = { id: 'r1', workspace: { id: 'w1' } } as unknown as dgraphResolversTypes.Runtime;
         dgraphService.mutation.mockResolvedValue({ updateRuntime: { runtime: [runtime] } });
+        dgraphService.query.mockResolvedValue({ getRuntime: runtime });
 
         const result = await runtimeRepository.unlinkMCPToolFromRuntime('t1', 'r1');
 
