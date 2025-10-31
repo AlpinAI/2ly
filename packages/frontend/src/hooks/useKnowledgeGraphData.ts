@@ -86,6 +86,22 @@ export function useKnowledgeGraphData() {
     const toolSets = workspace?.toolSets ?? [];
     const runtimes = workspace?.runtimes ?? [];
 
+    // Debug logging
+    console.log('Knowledge Graph Data:', {
+      servers: mcpServers.length,
+      tools: mcpTools.length,
+      toolSets: toolSets.length,
+      runtimes: runtimes.length,
+    });
+
+    if (toolSets.length > 0) {
+      console.log('Tool Sets:', toolSets.map(ts => ({
+        id: ts?.id,
+        name: ts?.name,
+        toolCount: ts?.mcpToolCapabilities?.length || 0,
+      })));
+    }
+
     // Create nodes for MCP Servers (Sources)
     mcpServers.forEach((server) => {
       if (!server) return;
@@ -148,10 +164,15 @@ export function useKnowledgeGraphData() {
       });
 
       // Create edges: Tool Set → Tools
+      const toolSetEdgeCount = toolSet.mcpToolCapabilities?.length || 0;
+      console.log(`Creating ${toolSetEdgeCount} edges for tool set ${toolSet.name}`);
+
       toolSet.mcpToolCapabilities?.forEach((tool) => {
         if (!tool) return;
+        const edgeId = `edge-toolset-${toolSet.id}-tool-${tool.id}`;
+        console.log(`  Edge: ${toolSet.name} → tool-${tool.id}`);
         edges.push({
-          id: `edge-toolset-${toolSet.id}-tool-${tool.id}`,
+          id: edgeId,
           source: `toolset-${toolSet.id}`,
           target: `tool-${tool.id}`,
           type: 'smoothstep',
@@ -209,6 +230,24 @@ export function useKnowledgeGraphData() {
 
     // Apply circular layout for initial positioning
     const layoutedNodes = layoutNodes(nodes);
+
+    console.log('Knowledge Graph Summary:', {
+      totalNodes: layoutedNodes.length,
+      totalEdges: edges.length,
+      nodesByType: {
+        sources: layoutedNodes.filter(n => n.type === 'source').length,
+        tools: layoutedNodes.filter(n => n.type === 'tool').length,
+        toolsets: layoutedNodes.filter(n => n.type === 'toolset').length,
+        runtimes: layoutedNodes.filter(n => n.type === 'runtime').length,
+        agents: layoutedNodes.filter(n => n.type === 'agent').length,
+      },
+      edgeTypes: {
+        toolToSource: edges.filter(e => e.source.startsWith('source-')).length,
+        toolsetToTool: edges.filter(e => e.source.startsWith('toolset-')).length,
+        runtimeToTool: edges.filter(e => e.source.startsWith('runtime-') && e.target.startsWith('tool-')).length,
+        agentToTool: edges.filter(e => e.source.startsWith('agent-') && e.target.startsWith('tool-')).length,
+      }
+    });
 
     return { nodes: layoutedNodes, edges };
   }, [data]);
