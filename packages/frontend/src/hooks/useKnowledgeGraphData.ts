@@ -80,7 +80,8 @@ export function useKnowledgeGraphData() {
     const nodes: Node[] = [];
     const edges: Edge[] = [];
 
-    const workspace = data.workspace?.[0];
+    // Find the correct workspace by ID
+    const workspace = data.workspace?.find(w => w?.id === workspaceId) || data.workspace?.[0];
     const mcpServers = data.mcpServers ?? [];
     const mcpTools = data.mcpTools ?? [];
     const toolSets = workspace?.toolSets ?? [];
@@ -88,6 +89,9 @@ export function useKnowledgeGraphData() {
 
     // Debug logging
     console.log('Knowledge Graph Data:', {
+      workspaceId,
+      foundWorkspace: workspace?.id,
+      totalWorkspaces: data.workspace?.length || 0,
       servers: mcpServers.length,
       tools: mcpTools.length,
       toolSets: toolSets.length,
@@ -250,7 +254,7 @@ export function useKnowledgeGraphData() {
     });
 
     return { nodes: layoutedNodes, edges };
-  }, [data]);
+  }, [data, workspaceId]);
 
   return {
     nodes,
