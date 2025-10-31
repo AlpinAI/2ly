@@ -8,11 +8,11 @@
  * - Fetches all entity data with real-time polling
  * - Transforms entities into ReactFlow nodes with distinct styling
  * - Generates edges based on relationships:
- *   - Tool Set → Tools (tools in the set)
- *   - Runtime → Tool Sets (registered to runtime)
- *   - Agent → Runtime (agent uses runtime)
- *   - Tool → Source (tool comes from MCP server source)
- * - Auto-layout positioning with dagre
+ *   - Tool → Source (tools come from MCP servers)
+ *   - Tool Set → Tools (tools grouped in sets)
+ *   - Runtime → Tools (runtimes have access to tools)
+ *   - Runtime → Sources (runtimes manage MCP servers)
+ * - Circular layout for initial positioning
  * - Real-time updates via polling
  *
  * USAGE:
@@ -29,7 +29,6 @@ import { useQuery } from '@apollo/client/react';
 import { Node, Edge } from '@xyflow/react';
 import { GetKnowledgeGraphDataDocument } from '@/graphql/generated/graphql';
 import { useWorkspaceId } from '@/stores/workspaceStore';
-import dagre from '@dagrejs/dagre';
 
 export type EntityType = 'source' | 'tool' | 'toolset' | 'runtime' | 'agent';
 
@@ -42,34 +41,20 @@ export interface NodeData extends Record<string, unknown> {
 }
 
 /**
- * Auto-layout nodes using dagre
+ * Simple circular layout for initial positioning
+ * ReactFlow will handle the rest with its built-in force simulation
  */
-function layoutNodes(nodes: Node[], edges: Edge[]): Node[] {
-  const dagreGraph = new dagre.graphlib.Graph();
-  dagreGraph.setDefaultEdgeLabel(() => ({}));
-  dagreGraph.setGraph({ rankdir: 'TB', nodesep: 100, ranksep: 150 });
+function layoutNodes(nodes: Node[]): Node[] {
+  const radius = Math.max(300, nodes.length * 30);
+  const angleStep = (2 * Math.PI) / Math.max(nodes.length, 1);
 
-  // Add nodes to dagre
-  nodes.forEach((node) => {
-    dagreGraph.setNode(node.id, { width: 200, height: 80 });
-  });
-
-  // Add edges to dagre
-  edges.forEach((edge) => {
-    dagreGraph.setEdge(edge.source, edge.target);
-  });
-
-  // Calculate layout
-  dagre.layout(dagreGraph);
-
-  // Apply layout to nodes
-  return nodes.map((node) => {
-    const position = dagreGraph.node(node.id);
+  return nodes.map((node, index) => {
+    const angle = index * angleStep;
     return {
       ...node,
       position: {
-        x: position.x - 100, // Center the node
-        y: position.y - 40,
+        x: Math.cos(angle) * radius,
+        y: Math.sin(angle) * radius,
       },
     };
   });
@@ -197,20 +182,15 @@ export function useKnowledgeGraphData() {
         position: { x: 0, y: 0 },
       });
 
-      // Create edges: Runtime → Tool Sets (runtime has tools)
+      // Create edges: Runtime → Tools (direct connection to tools)
       runtime.mcpToolCapabilities?.forEach((tool) => {
         if (!tool) return;
-        // Find the tool set that contains this tool
-        toolSets.forEach((toolSet) => {
-          if (toolSet?.mcpToolCapabilities?.some((t) => t?.id === tool.id)) {
-            edges.push({
-              id: `edge-${nodeType}-${runtime.id}-toolset-${toolSet.id}`,
-              source: `${nodeType}-${runtime.id}`,
-              target: `toolset-${toolSet.id}`,
-              type: 'smoothstep',
-              animated: isAgent, // Animate edges for agents
-            });
-          }
+        edges.push({
+          id: `edge-${nodeType}-${runtime.id}-tool-${tool.id}`,
+          source: `${nodeType}-${runtime.id}`,
+          target: `tool-${tool.id}`,
+          type: 'smoothstep',
+          animated: isAgent, // Animate edges for agents
         });
       });
 
@@ -227,8 +207,8 @@ export function useKnowledgeGraphData() {
       });
     });
 
-    // Apply auto-layout
-    const layoutedNodes = layoutNodes(nodes, edges);
+    // Apply circular layout for initial positioning
+    const layoutedNodes = layoutNodes(nodes);
 
     return { nodes: layoutedNodes, edges };
   }, [data]);
