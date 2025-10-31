@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { describe, it, expect, beforeEach } from 'vitest';
 import { graphql, resetDatabase } from '../fixtures/database';
 
@@ -236,7 +237,7 @@ describe('Authentication Integration Tests', () => {
         expect(true).toBe(false); // Force failure
       } catch (error) {
         // Expected to throw due to GraphQL errors
-        expect(error.message).toContain('UNAUTHENTICATED');
+        expect((error as Error).message).toContain('UNAUTHENTICATED');
       }
     });
   });

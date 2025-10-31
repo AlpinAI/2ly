@@ -27,7 +27,6 @@ interface TestEnvironmentState {
   frontendPid?: number;
 }
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 async function globalTeardown(_config: FullConfig) {
   try {
     // Read state file
