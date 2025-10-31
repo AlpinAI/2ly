@@ -113,10 +113,10 @@ export function ConnectAgentDialog() {
             <div className="flex items-center justify-between mb-4">
               <div className="flex-1">
                 <Dialog.Title className="text-lg font-semibold text-gray-900 dark:text-white">
-                  Connect Agent to 2LY
+                  Connect Client
                 </Dialog.Title>
                 <Dialog.Description className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                  Agent: <span className="font-mono font-medium">{selectedAgent.name}</span>
+                  Tool Set: <span className="font-mono font-medium">{selectedAgent.name}</span>
                 </Dialog.Description>
               </div>
 

@@ -61,8 +61,8 @@ describe('ConnectAgentDialog', () => {
 
   it('renders dialog when open', () => {
     render(<ConnectAgentDialog />);
-    expect(screen.getByText('Connect Agent to 2LY')).toBeInTheDocument();
-    expect(screen.getByText(/Agent:/)).toBeInTheDocument();
+    expect(screen.getByText('Connect Client')).toBeInTheDocument();
+    expect(screen.getByText(/Tool Set:/)).toBeInTheDocument();
     expect(screen.getByText('Test Agent')).toBeInTheDocument();
   });
 
