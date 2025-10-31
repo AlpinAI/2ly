@@ -2,44 +2,20 @@
  * MCP Integration E2E Tests - Seeded Strategy with Containerized Runtime
  *
  * This test suite verifies the complete MCP server lifecycle with a real containerized runtime:
- * 1. Configure FileSystem MCP server from registry
- * 2. Deploy server to containerized runtime
- * 3. Discover tools dynamically from deployed server
- * 4. Create tool set from discovered tools
- * 5. Execute tool calls against the real MCP server
- * 6. Verify deep-linking across dynamically created entities
+ * 1. Use pre-seeded FileSystem MCP server from registry
+ * 2. Discover tools dynamically from deployed server
+ * 3. Create tool set from discovered tools
+ * 4. Execute tool calls against the real MCP server
+ * 5. Verify deep-linking across dynamically created entities
  *
  * Strategy: Seeded with Global Runtime
- * - Database is reset + seeded before tests (workspace/user exist)
+ * - Database is reset + seeded before tests (workspace/user/MCP server exist)
  * - Runtime container is started globally (shared across all E2E tests)
- * - MCP entities are created dynamically during test execution
+ * - MCP entities are pre-seeded for faster test execution
  * - Tests complete within 2 minutes with proper timeouts
  */
 
 import { test, expect, seedPresets } from '../../fixtures/database';
-import { mcpRegistry } from '@2ly/common';
-type Package = mcpRegistry.components['schemas']['Package'];
-type Argument = mcpRegistry.components['schemas']['Argument'];
-type AugmentedArgument = Argument & { isConfigurable: boolean };
-
-const config: Package & {packageArguments: AugmentedArgument[]} = {
-  registryType: 'npm',
-  identifier: "@modelcontextprotocol/server-filesystem",
-  version: '2025.8.21',
-  packageArguments: [
-    {
-      name: 'directory_path',
-      description: 'The directory path to allow access to',
-      format: 'string',
-      type: 'positional',
-      isRequired: false,
-      value: '/tmp',
-      isConfigurable: true,
-    },
-  ],
-  environmentVariables: [],
-  runtimeArguments: [],
-};
 
 // Test configuration
 const TEST_FILE_PATH = '/tmp/test.txt';
@@ -53,15 +29,17 @@ test.describe('MCP Integration with Containerized Runtime', () => {
   test.describe.configure({ mode: 'serial' });
 
   /**
-   * Setup: Reset and seed database with users and workspace
+   * Setup: Reset and seed database with users, workspace, and MCP server
    * Runtime container is started globally in global-setup.ts
    */
+  let entityIds: Record<string, string> = {};
+
   test.beforeAll(async ({ resetDatabase, seedDatabase }) => {
     await resetDatabase(true);
-    await seedDatabase(seedPresets.withUsers);
+    entityIds = await seedDatabase(seedPresets.withSingleMCPServer);
   });
 
-  test('should complete full MCP lifecycle: configure → deploy → discover → execute', async ({
+  test('should complete full MCP lifecycle: seeded server → discover → execute', async ({
     page,
     graphql,
   }) => {
@@ -79,103 +57,19 @@ test.describe('MCP Integration with Containerized Runtime', () => {
     expect(workspaceId).toBeDefined();
 
     // ========================================================================
-    // Step 2: Add FileSystem server to registry
+    // Step 2: Get seeded MCP server and registry server IDs
     // ========================================================================
-    const addRegistryServerMutation = `
-      mutation AddServerToRegistry(
-        $workspaceId: ID!
-        $name: String!
-        $description: String!
-        $title: String!
-        $repositoryUrl: String!
-        $version: String!
-        $packages: String!
-      ) {
-        addServerToRegistry(
-          workspaceId: $workspaceId
-          name: $name
-          description: $description
-          title: $title
-          repositoryUrl: $repositoryUrl
-          version: $version
-          packages: $packages
-        ) {
-          id
-          name
-          title
-        }
-      }
-    `;
+    // The withSingleMCPServer preset creates:
+    // - Registry server with name: '@modelcontextprotocol/server-filesystem'
+    // - MCP server with name: 'Test MCP Server'
+    const registryServerId = entityIds['registry-@modelcontextprotocol/server-filesystem'];
+    const mcpServerId = entityIds['server-@modelcontextprotocol/server-filesystem'];
 
-    const registryServerResult = await graphql<{
-      addServerToRegistry: { id: string; name: string; title: string };
-    }>(addRegistryServerMutation, {
-      workspaceId,
-      name: 'filesystem-test',
-      description: 'FileSystem MCP server for integration testing',
-      title: 'FileSystem Test Server',
-      repositoryUrl: 'https://github.com/modelcontextprotocol/servers',
-      version: '0.6.2',
-      packages: JSON.stringify([
-        {
-          identifier: '@modelcontextprotocol/server-filesystem',
-          packageArguments: ['/tmp/test-fs'],
-          runtimeArguments: ['-y'],
-        },
-      ]),
-    });
-
-    const registryServerId = registryServerResult.addServerToRegistry.id;
+    expect(registryServerId).toBeDefined();
+    expect(mcpServerId).toBeDefined();
 
     // ========================================================================
-    // Step 3: Configure MCP server from registry
-    // ========================================================================
-    const createMCPServerMutation = `
-      mutation CreateMCPServer(
-        $workspaceId: ID!
-        $name: String!
-        $description: String!
-        $repositoryUrl: String!
-        $transport: MCPTransportType!
-        $config: String!
-        $runOn: MCPServerRunOn!
-        $registryServerId: ID!
-      ) {
-        createMCPServer(
-          workspaceId: $workspaceId
-          name: $name
-          description: $description
-          repositoryUrl: $repositoryUrl
-          transport: $transport
-          config: $config
-          runOn: $runOn
-          registryServerId: $registryServerId
-        ) {
-          id
-          name
-          transport
-          runOn
-        }
-      }
-    `;
-
-    const mcpServerResult = await graphql<{
-      createMCPServer: { id: string; name: string; transport: string; runOn: string };
-    }>(createMCPServerMutation, {
-      workspaceId,
-      name: 'FileSystem Test Server',
-      description: 'FileSystem MCP server for E2E testing',
-      repositoryUrl: 'https://github.com/modelcontextprotocol/servers',
-      transport: 'STDIO',
-      config: JSON.stringify(config),
-      runOn: 'GLOBAL',
-      registryServerId,
-    });
-
-    const mcpServerId = mcpServerResult.createMCPServer.id;
-
-    // ========================================================================
-    // Step 4: Wait for tool discovery (runtime will load tools automatically)
+    // Step 3: Wait for tool discovery (runtime will load tools automatically)
     // ========================================================================
     let tools: Array<{ id: string; name: string; description: string }> = [];
     let discoveryAttempts = 0;
@@ -223,7 +117,7 @@ test.describe('MCP Integration with Containerized Runtime', () => {
     expect(listDirTool).toBeDefined();
 
     // ========================================================================
-    // Step 5: Create tool set from discovered tools (link tools to runtime)
+    // Step 4: Create tool set from discovered tools (link tools to runtime)
     // ========================================================================
     // Create a new runtime with agent capability (tool set)
     const createRuntimeMutation = `
@@ -287,7 +181,7 @@ test.describe('MCP Integration with Containerized Runtime', () => {
     });
 
     // ========================================================================
-    // Step 6: Execute tool calls against FileSystem server
+    // Step 5: Execute tool calls against FileSystem server
     // ========================================================================
     // Since the tool discovery, the runtime has restarted the MCP server, so we need to wait for it to be ready
     await new Promise((resolve) => setTimeout(resolve, 2000));
@@ -363,7 +257,7 @@ test.describe('MCP Integration with Containerized Runtime', () => {
     expect(listResult.callMCPTool.success).toBe(true);
 
     // ========================================================================
-    // Step 7: Verify deep-linking across dynamically created entities
+    // Step 6: Verify deep-linking across dynamically created entities
     // ========================================================================
 
     // Verify server → tools link

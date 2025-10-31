@@ -11,7 +11,14 @@
  * All data is deterministic and designed for fast, reliable test execution (<30s).
  */
 
-import type { SeedData } from '../fixtures/database';
+import type { SeedData } from '../../fixtures/database';
+import {
+  buildMinimalFilesystemServer,
+  buildWebFetchServer,
+  buildDevelopmentToolsServer,
+  buildDatabaseServer,
+} from '../../fixtures/mcp-builders';
+import { dgraphResolversTypes } from '@2ly/common';
 
 // ============================================================================
 // Realistic Input Schemas for Tools
@@ -184,14 +191,12 @@ export const comprehensiveSeededData: SeedData = {
   users: [
     {
       email: 'test@example.com',
-      password: 'testpassword123',
-      name: 'Test User',
+      password: 'testpassword123'
     },
   ],
   workspaces: [
     {
-      name: 'Test Workspace',
-      description: 'Test workspace with comprehensive data',
+      name: 'Test Workspace'
     },
   ],
   // Note: Registry servers need to be created first, then MCP servers reference them
@@ -203,13 +208,25 @@ export const comprehensiveSeededData: SeedData = {
       title: 'Filesystem MCP Server',
       repositoryUrl: 'https://github.com/modelcontextprotocol/servers',
       version: '0.6.2',
-      packages: JSON.stringify([
+      packages: [
         {
           identifier: '@modelcontextprotocol/server-filesystem',
-          packageArguments: ['/tmp'],
-          runtimeArguments: ['-y'],
+          packageArguments: [
+            {
+              name: 'directory_path',
+              description: 'The directory path to allow access to',
+              format: 'string',
+              type: 'positional',
+              isRequired: false,
+            },
+          ],
+          runtimeArguments: [],
+          environmentVariables: [],
+          registryType: 'npm',
+          version: '0.6.2',
         },
-      ]),
+      ],
+      remotes: [],
       workspaceId: '', // Will be set during seeding
     },
     {
@@ -218,13 +235,13 @@ export const comprehensiveSeededData: SeedData = {
       title: 'Web Fetch MCP Server',
       repositoryUrl: 'https://github.com/example/web-fetch-mcp',
       version: '1.0.0',
-      packages: JSON.stringify([]),
-      remotes: JSON.stringify([
+      packages: [],
+      remotes: [
         {
           type: 'sse',
           url: 'http://localhost:8080/sse',
         },
-      ]),
+      ],
       workspaceId: '', // Will be set during seeding
     },
     {
@@ -233,37 +250,21 @@ export const comprehensiveSeededData: SeedData = {
       title: 'Development Tools MCP Server',
       repositoryUrl: 'https://github.com/example/dev-tools-mcp',
       version: '2.1.0',
-      packages: JSON.stringify([]),
-      remotes: JSON.stringify([
+      packages: [],
+      remotes: [
         {
           type: 'streamableHttp',
           url: 'http://localhost:9090/stream',
         },
-      ]),
+      ],
       workspaceId: '', // Will be set during seeding
     },
   ],
   mcpServers: [
-    {
-      name: 'Filesystem Server',
-      transport: 'STDIO' as const,
-      command: 'npx',
-      args: ['-y', '@modelcontextprotocol/server-filesystem', '/tmp'],
-    },
-    {
-      name: 'Web Fetch Server',
-      transport: 'SSE' as const,
-    },
-    {
-      name: 'Development Tools',
-      transport: 'STREAM' as const,
-    },
-    {
-      name: 'Database Server',
-      transport: 'STDIO' as const,
-      command: 'npx',
-      args: ['-y', '@example/database-mcp-server'],
-    },
+    buildMinimalFilesystemServer({ name: 'Filesystem Server', runOn: 'AGENT' }),
+    buildWebFetchServer(),
+    buildDevelopmentToolsServer(),
+    buildDatabaseServer(),
   ],
   tools: [
     // Filesystem Server Tools (7 tools)
@@ -272,7 +273,7 @@ export const comprehensiveSeededData: SeedData = {
       description: 'Read the complete contents of a file from the file system',
       inputSchema: FILE_READ_SCHEMA,
       annotations: JSON.stringify({ category: 'filesystem', complexity: 'low' }),
-      status: 'ACTIVE' as const,
+      status: 'ACTIVE' as dgraphResolversTypes.ActiveStatus,
       mcpServerId: 'filesystem-server', // Placeholder, resolved during seeding
     },
     {
@@ -280,7 +281,7 @@ export const comprehensiveSeededData: SeedData = {
       description: 'Create a new file or completely overwrite an existing file with new content',
       inputSchema: FILE_WRITE_SCHEMA,
       annotations: JSON.stringify({ category: 'filesystem', complexity: 'medium' }),
-      status: 'ACTIVE' as const,
+      status: 'ACTIVE' as dgraphResolversTypes.ActiveStatus,
       mcpServerId: 'filesystem-server',
     },
     {
@@ -288,7 +289,7 @@ export const comprehensiveSeededData: SeedData = {
       description: 'Get a detailed listing of all files and directories in a specified path',
       inputSchema: DIRECTORY_LIST_SCHEMA,
       annotations: JSON.stringify({ category: 'filesystem', complexity: 'low' }),
-      status: 'ACTIVE' as const,
+      status: 'ACTIVE' as dgraphResolversTypes.ActiveStatus,
       mcpServerId: 'filesystem-server',
     },
     {
@@ -296,7 +297,7 @@ export const comprehensiveSeededData: SeedData = {
       description: 'Recursively search for files matching a pattern',
       inputSchema: FILE_SEARCH_SCHEMA,
       annotations: JSON.stringify({ category: 'filesystem', complexity: 'medium' }),
-      status: 'ACTIVE' as const,
+      status: 'ACTIVE' as dgraphResolversTypes.ActiveStatus,
       mcpServerId: 'filesystem-server',
     },
     {
@@ -311,7 +312,7 @@ export const comprehensiveSeededData: SeedData = {
         required: ['source', 'destination'],
       }),
       annotations: JSON.stringify({ category: 'filesystem', complexity: 'medium' }),
-      status: 'ACTIVE' as const,
+      status: 'ACTIVE' as dgraphResolversTypes.ActiveStatus,
       mcpServerId: 'filesystem-server',
     },
     {
@@ -325,7 +326,7 @@ export const comprehensiveSeededData: SeedData = {
         required: ['path'],
       }),
       annotations: JSON.stringify({ category: 'filesystem', complexity: 'high', dangerous: true }),
-      status: 'ACTIVE' as const,
+      status: 'ACTIVE' as dgraphResolversTypes.ActiveStatus,
       mcpServerId: 'filesystem-server',
     },
     {
@@ -339,7 +340,7 @@ export const comprehensiveSeededData: SeedData = {
         required: ['path'],
       }),
       annotations: JSON.stringify({ category: 'filesystem', complexity: 'low' }),
-      status: 'ACTIVE' as const,
+      status: 'ACTIVE' as dgraphResolversTypes.ActiveStatus,
       mcpServerId: 'filesystem-server',
     },
 
@@ -349,7 +350,7 @@ export const comprehensiveSeededData: SeedData = {
       description: 'Make an HTTP GET request to a specified URL',
       inputSchema: HTTP_GET_SCHEMA,
       annotations: JSON.stringify({ category: 'http', complexity: 'low' }),
-      status: 'ACTIVE' as const,
+      status: 'ACTIVE' as dgraphResolversTypes.ActiveStatus,
       mcpServerId: 'web-fetch-server',
     },
     {
@@ -357,7 +358,7 @@ export const comprehensiveSeededData: SeedData = {
       description: 'Make an HTTP POST request with a JSON body',
       inputSchema: HTTP_POST_SCHEMA,
       annotations: JSON.stringify({ category: 'http', complexity: 'medium' }),
-      status: 'ACTIVE' as const,
+      status: 'ACTIVE' as dgraphResolversTypes.ActiveStatus,
       mcpServerId: 'web-fetch-server',
     },
     {
@@ -365,7 +366,7 @@ export const comprehensiveSeededData: SeedData = {
       description: 'Make an HTTP PUT request to update a resource',
       inputSchema: HTTP_POST_SCHEMA,
       annotations: JSON.stringify({ category: 'http', complexity: 'medium' }),
-      status: 'ACTIVE' as const,
+      status: 'ACTIVE' as dgraphResolversTypes.ActiveStatus,
       mcpServerId: 'web-fetch-server',
     },
     {
@@ -373,7 +374,7 @@ export const comprehensiveSeededData: SeedData = {
       description: 'Make an HTTP DELETE request to remove a resource',
       inputSchema: HTTP_GET_SCHEMA,
       annotations: JSON.stringify({ category: 'http', complexity: 'medium' }),
-      status: 'ACTIVE' as const,
+      status: 'ACTIVE' as dgraphResolversTypes.ActiveStatus,
       mcpServerId: 'web-fetch-server',
     },
     {
@@ -381,7 +382,7 @@ export const comprehensiveSeededData: SeedData = {
       description: 'Fetch and parse JSON from a URL',
       inputSchema: HTTP_GET_SCHEMA,
       annotations: JSON.stringify({ category: 'http', complexity: 'low' }),
-      status: 'ACTIVE' as const,
+      status: 'ACTIVE' as dgraphResolversTypes.ActiveStatus,
       mcpServerId: 'web-fetch-server',
     },
 
@@ -391,7 +392,7 @@ export const comprehensiveSeededData: SeedData = {
       description: 'Execute a shell command',
       inputSchema: PROCESS_EXECUTE_SCHEMA,
       annotations: JSON.stringify({ category: 'process', complexity: 'high', dangerous: true }),
-      status: 'ACTIVE' as const,
+      status: 'ACTIVE' as dgraphResolversTypes.ActiveStatus,
       mcpServerId: 'development-tools',
     },
     {
@@ -399,7 +400,7 @@ export const comprehensiveSeededData: SeedData = {
       description: 'Get the current git repository status',
       inputSchema: GIT_STATUS_SCHEMA,
       annotations: JSON.stringify({ category: 'git', complexity: 'low' }),
-      status: 'ACTIVE' as const,
+      status: 'ACTIVE' as dgraphResolversTypes.ActiveStatus,
       mcpServerId: 'development-tools',
     },
     {
@@ -407,7 +408,7 @@ export const comprehensiveSeededData: SeedData = {
       description: 'Create a git commit with the specified message',
       inputSchema: GIT_COMMIT_SCHEMA,
       annotations: JSON.stringify({ category: 'git', complexity: 'medium' }),
-      status: 'ACTIVE' as const,
+      status: 'ACTIVE' as dgraphResolversTypes.ActiveStatus,
       mcpServerId: 'development-tools',
     },
     {
@@ -415,7 +416,7 @@ export const comprehensiveSeededData: SeedData = {
       description: 'Show git diff for staged or unstaged changes',
       inputSchema: GIT_STATUS_SCHEMA,
       annotations: JSON.stringify({ category: 'git', complexity: 'low' }),
-      status: 'ACTIVE' as const,
+      status: 'ACTIVE' as dgraphResolversTypes.ActiveStatus,
       mcpServerId: 'development-tools',
     },
     {
@@ -430,7 +431,7 @@ export const comprehensiveSeededData: SeedData = {
         required: ['repositoryPath'],
       }),
       annotations: JSON.stringify({ category: 'git', complexity: 'low' }),
-      status: 'ACTIVE' as const,
+      status: 'ACTIVE' as dgraphResolversTypes.ActiveStatus,
       mcpServerId: 'development-tools',
     },
     {
@@ -444,7 +445,7 @@ export const comprehensiveSeededData: SeedData = {
         required: ['projectPath'],
       }),
       annotations: JSON.stringify({ category: 'npm', complexity: 'medium' }),
-      status: 'ACTIVE' as const,
+      status: 'ACTIVE' as dgraphResolversTypes.ActiveStatus,
       mcpServerId: 'development-tools',
     },
 
@@ -454,7 +455,7 @@ export const comprehensiveSeededData: SeedData = {
       description: 'Execute a SQL query against the database',
       inputSchema: DATABASE_QUERY_SCHEMA,
       annotations: JSON.stringify({ category: 'database', complexity: 'medium' }),
-      status: 'ACTIVE' as const,
+      status: 'ACTIVE' as dgraphResolversTypes.ActiveStatus,
       mcpServerId: 'database-server',
     },
     {
@@ -469,7 +470,7 @@ export const comprehensiveSeededData: SeedData = {
         required: ['table', 'data'],
       }),
       annotations: JSON.stringify({ category: 'database', complexity: 'medium' }),
-      status: 'ACTIVE' as const,
+      status: 'ACTIVE' as dgraphResolversTypes.ActiveStatus,
       mcpServerId: 'database-server',
     },
     {
@@ -485,7 +486,7 @@ export const comprehensiveSeededData: SeedData = {
         required: ['table', 'data', 'where'],
       }),
       annotations: JSON.stringify({ category: 'database', complexity: 'high' }),
-      status: 'ACTIVE' as const,
+      status: 'ACTIVE' as dgraphResolversTypes.ActiveStatus,
       mcpServerId: 'database-server',
     },
     {
@@ -500,7 +501,7 @@ export const comprehensiveSeededData: SeedData = {
         required: ['table', 'where'],
       }),
       annotations: JSON.stringify({ category: 'database', complexity: 'high', dangerous: true }),
-      status: 'ACTIVE' as const,
+      status: 'ACTIVE' as dgraphResolversTypes.ActiveStatus,
       mcpServerId: 'database-server',
     },
     {
@@ -513,7 +514,7 @@ export const comprehensiveSeededData: SeedData = {
         },
       }),
       annotations: JSON.stringify({ category: 'database', complexity: 'low' }),
-      status: 'ACTIVE' as const,
+      status: 'ACTIVE' as dgraphResolversTypes.ActiveStatus,
       mcpServerId: 'database-server',
     },
   ],
@@ -521,21 +522,21 @@ export const comprehensiveSeededData: SeedData = {
     {
       name: 'Claude Desktop Agent',
       description: 'Primary agent runtime for Claude Desktop application',
-      status: 'ACTIVE' as const,
+      status: 'ACTIVE' as dgraphResolversTypes.ActiveStatus,
       capabilities: ['agent', 'mcp-client'],
       workspaceId: '', // Will be set during seeding
     },
     {
       name: 'Web Assistant Agent',
       description: 'Web-based assistant with limited tool access',
-      status: 'ACTIVE' as const,
+      status: 'ACTIVE' as dgraphResolversTypes.ActiveStatus,
       capabilities: ['agent', 'mcp-client', 'web'],
       workspaceId: '', // Will be set during seeding
     },
     {
       name: 'Edge Runtime',
       description: 'Edge runtime for processing tool calls',
-      status: 'ACTIVE' as const,
+      status: 'ACTIVE' as dgraphResolversTypes.ActiveStatus,
       capabilities: ['mcp-client', 'edge'],
       workspaceId: '', // Will be set during seeding
     },
@@ -546,7 +547,7 @@ export const comprehensiveSeededData: SeedData = {
       toolInput: JSON.stringify({ path: '/tmp/test.txt' }),
       calledAt: new Date(Date.now() - 3600000).toISOString(), // 1 hour ago
       completedAt: new Date(Date.now() - 3599000).toISOString(),
-      status: 'COMPLETED' as const,
+      status: 'COMPLETED' as dgraphResolversTypes.ToolCallStatus,
       toolOutput: JSON.stringify({ content: 'File contents here', size: 1024 }),
       mcpToolId: 'read_file',
       calledById: 'claude-desktop-agent',
@@ -556,7 +557,7 @@ export const comprehensiveSeededData: SeedData = {
       toolInput: JSON.stringify({ url: 'https://api.example.com/data' }),
       calledAt: new Date(Date.now() - 7200000).toISOString(), // 2 hours ago
       completedAt: new Date(Date.now() - 7198000).toISOString(),
-      status: 'COMPLETED' as const,
+      status: 'COMPLETED' as dgraphResolversTypes.ToolCallStatus,
       toolOutput: JSON.stringify({ status: 200, data: { message: 'Success' } }),
       mcpToolId: 'http_get',
       calledById: 'web-assistant-agent',
@@ -566,7 +567,7 @@ export const comprehensiveSeededData: SeedData = {
       toolInput: JSON.stringify({ repositoryPath: '/home/user/project' }),
       calledAt: new Date(Date.now() - 1800000).toISOString(), // 30 min ago
       completedAt: new Date(Date.now() - 1799000).toISOString(),
-      status: 'COMPLETED' as const,
+      status: 'COMPLETED' as dgraphResolversTypes.ToolCallStatus,
       toolOutput: JSON.stringify({ branch: 'main', modified: [], untracked: [] }),
       mcpToolId: 'git_status',
       calledById: 'claude-desktop-agent',
@@ -576,7 +577,7 @@ export const comprehensiveSeededData: SeedData = {
       toolInput: JSON.stringify({ path: '/tmp/data', pattern: '*.json' }),
       calledAt: new Date(Date.now() - 900000).toISOString(), // 15 min ago
       completedAt: new Date(Date.now() - 899000).toISOString(),
-      status: 'COMPLETED' as const,
+      status: 'COMPLETED' as dgraphResolversTypes.ToolCallStatus,
       toolOutput: JSON.stringify({ files: ['data1.json', 'data2.json', 'config.json'] }),
       mcpToolId: 'search_files',
       calledById: 'claude-desktop-agent',
@@ -586,7 +587,7 @@ export const comprehensiveSeededData: SeedData = {
       toolInput: JSON.stringify({ query: 'SELECT * FROM users LIMIT 10' }),
       calledAt: new Date(Date.now() - 600000).toISOString(), // 10 min ago
       completedAt: new Date(Date.now() - 599500).toISOString(),
-      status: 'COMPLETED' as const,
+      status: 'COMPLETED' as dgraphResolversTypes.ToolCallStatus,
       toolOutput: JSON.stringify({ rows: 10, data: [] }),
       mcpToolId: 'db_query',
       calledById: 'web-assistant-agent',
@@ -598,7 +599,7 @@ export const comprehensiveSeededData: SeedData = {
       toolInput: JSON.stringify({ path: '/nonexistent/file.txt' }),
       calledAt: new Date(Date.now() - 5400000).toISOString(), // 90 min ago
       completedAt: new Date(Date.now() - 5399000).toISOString(),
-      status: 'FAILED' as const,
+      status: 'FAILED' as dgraphResolversTypes.ToolCallStatus,
       error: 'ENOENT: no such file or directory',
       mcpToolId: 'read_file',
       calledById: 'claude-desktop-agent',
@@ -607,7 +608,7 @@ export const comprehensiveSeededData: SeedData = {
       toolInput: JSON.stringify({ url: 'https://invalid.example.com/404' }),
       calledAt: new Date(Date.now() - 4500000).toISOString(), // 75 min ago
       completedAt: new Date(Date.now() - 4499000).toISOString(),
-      status: 'FAILED' as const,
+      status: 'FAILED' as dgraphResolversTypes.ToolCallStatus,
       error: 'HTTP 404: Not Found',
       mcpToolId: 'http_get',
       calledById: 'web-assistant-agent',
@@ -616,7 +617,7 @@ export const comprehensiveSeededData: SeedData = {
       toolInput: JSON.stringify({ command: 'invalid-command', args: [] }),
       calledAt: new Date(Date.now() - 2700000).toISOString(), // 45 min ago
       completedAt: new Date(Date.now() - 2699000).toISOString(),
-      status: 'FAILED' as const,
+      status: 'FAILED' as dgraphResolversTypes.ToolCallStatus,
       error: 'Command not found: invalid-command',
       mcpToolId: 'execute_command',
       calledById: 'claude-desktop-agent',
@@ -625,7 +626,7 @@ export const comprehensiveSeededData: SeedData = {
       toolInput: JSON.stringify({ query: 'INVALID SQL QUERY' }),
       calledAt: new Date(Date.now() - 1200000).toISOString(), // 20 min ago
       completedAt: new Date(Date.now() - 1199000).toISOString(),
-      status: 'FAILED' as const,
+      status: 'FAILED' as dgraphResolversTypes.ToolCallStatus,
       error: 'Syntax error in SQL query',
       mcpToolId: 'db_query',
       calledById: 'web-assistant-agent',
@@ -635,42 +636,42 @@ export const comprehensiveSeededData: SeedData = {
     {
       toolInput: JSON.stringify({ path: '/tmp/large-file.dat' }),
       calledAt: new Date(Date.now() - 300000).toISOString(), // 5 min ago
-      status: 'PENDING' as const,
+      status: 'PENDING' as dgraphResolversTypes.ToolCallStatus,
       mcpToolId: 'read_file',
       calledById: 'claude-desktop-agent',
     },
     {
       toolInput: JSON.stringify({ url: 'https://api.slow-server.com/data' }),
       calledAt: new Date(Date.now() - 180000).toISOString(), // 3 min ago
-      status: 'PENDING' as const,
+      status: 'PENDING' as dgraphResolversTypes.ToolCallStatus,
       mcpToolId: 'http_get',
       calledById: 'web-assistant-agent',
     },
     {
       toolInput: JSON.stringify({ repositoryPath: '/home/user/large-repo' }),
       calledAt: new Date(Date.now() - 120000).toISOString(), // 2 min ago
-      status: 'PENDING' as const,
+      status: 'PENDING' as dgraphResolversTypes.ToolCallStatus,
       mcpToolId: 'git_log',
       calledById: 'claude-desktop-agent',
     },
     {
       toolInput: JSON.stringify({ projectPath: '/home/user/node-project' }),
       calledAt: new Date(Date.now() - 60000).toISOString(), // 1 min ago
-      status: 'PENDING' as const,
+      status: 'PENDING' as dgraphResolversTypes.ToolCallStatus,
       mcpToolId: 'npm_install',
       calledById: 'claude-desktop-agent',
     },
     {
       toolInput: JSON.stringify({ path: '/tmp/output.txt', content: 'Hello World' }),
       calledAt: new Date(Date.now() - 30000).toISOString(), // 30 sec ago
-      status: 'PENDING' as const,
+      status: 'PENDING' as dgraphResolversTypes.ToolCallStatus,
       mcpToolId: 'write_file',
       calledById: 'web-assistant-agent',
     },
     {
       toolInput: JSON.stringify({ url: 'https://api.example.com/create', body: { name: 'test' } }),
       calledAt: new Date(Date.now() - 10000).toISOString(), // 10 sec ago
-      status: 'PENDING' as const,
+      status: 'PENDING' as dgraphResolversTypes.ToolCallStatus,
       mcpToolId: 'http_post',
       calledById: 'claude-desktop-agent',
     },
