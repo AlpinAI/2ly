@@ -1,6 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { mcpRegistry } from '@2ly/common';
 import { test, expect, performLogin, seedPresets } from '../../fixtures/database';
+import { buildFilesystemServerConfig } from '../../fixtures/mcp-builders';
+import { Page } from '@playwright/test';
+import { dgraphQL } from '../../fixtures/dgraph-client';
 
 // TODO: unskip tests when we have a runtime running
 
@@ -18,10 +20,6 @@ import { test, expect, performLogin, seedPresets } from '../../fixtures/database
  * - Uses comprehensive seed data with servers, tools, and agents
  */
 
-type Package = mcpRegistry.components['schemas']['Package'];
-type Argument = mcpRegistry.components['schemas']['Argument'];
-type AugmentedArgument = Argument & { isConfigurable: boolean };
-
 const configureMCPServer = async (
   graphql: <T = any>(query: string, variables?: Record<string, any>) => Promise<T>,
   workspaceId: string,
@@ -32,7 +30,7 @@ const configureMCPServer = async (
     query GetRegistryServers($workspaceId: ID!) {
       getRegistryServers(workspaceId: $workspaceId) {
         id
-        name  
+        name
       }
     }
   `;
@@ -57,31 +55,12 @@ const configureMCPServer = async (
       }
     `;
 
-    const config: Package & {packageArguments: AugmentedArgument[]} = {
-      registryType: 'npm',
-      identifier: "@modelcontextprotocol/server-filesystem",
-      version: '2025.8.21',
-      packageArguments: [
-        {
-          name: 'directory_path',
-          description: 'The directory path to allow access to',
-          format: 'string',
-          type: 'positional',
-          isRequired: false,
-          value: '/tmp',
-          isConfigurable: true,
-        },
-      ],
-      environmentVariables: [],
-      runtimeArguments: [],
-    };
-
     await graphql<{ createMCPServer: { id: string; name: string; description: string; repositoryUrl: string; transport: string; config: string; runOn: string } }>(mutation, {
       name: 'Test MCP Server',
       description: 'Test MCP Server Description',
       repositoryUrl: 'https://github.com/test/test',
       transport: 'STDIO',
-      config: JSON.stringify(config),
+      config: JSON.stringify(buildFilesystemServerConfig('/tmp')),
       runOn,
       workspaceId,
       registryServerId,
@@ -90,10 +69,12 @@ const configureMCPServer = async (
 
 const createRuntime = async (
   graphql: <T = any>(query: string, variables?: Record<string, any>) => Promise<T>, 
+  page: Page,
   workspaceId: string,
   name: string,
   description: string,
   capabilities: string[],
+  nbToolsToLink = 1,
 ) => {
   const mutation = `
     mutation CreateRuntime($name: String!, $description: String!, $capabilities: [String!]!, $workspaceId: ID!) {
@@ -111,12 +92,72 @@ const createRuntime = async (
     capabilities,
     workspaceId,
   });
-  return result.createRuntime;
+
+  if (nbToolsToLink === 0) {
+    // small waiting time to let the frontend get notified of the new runtime
+    await page.waitForTimeout(1000);
+    return result.createRuntime.id;
+  }
+
+  // Wait 5s, letting the time to the runtime to spawn the server and discover the tools
+  await page.waitForTimeout(5000);
+
+  // get tools
+  const toolQuery = `
+    query GetTools($workspaceId: ID!) {
+      mcpTools(workspaceId: $workspaceId) {
+        id
+      }
+    }
+  `;
+  const toolResult = await graphql<{ mcpTools: Array<{ id: string }> }>(toolQuery, { workspaceId });
+
+  // Link tools to runtime (create tool set)
+  const linkToolMutation = `
+    mutation LinkToolToRuntime($mcpToolId: ID!, $runtimeId: ID!) {
+      linkMCPToolToRuntime(mcpToolId: $mcpToolId, runtimeId: $runtimeId) {
+        id
+        mcpToolCapabilities {
+          id
+          name
+        }
+      }
+    }
+  `;
+
+  // Link tools to runtime (create tool set)
+  for (let i = 0; i < nbToolsToLink; i++) {
+    await graphql(linkToolMutation, {
+      mcpToolId: toolResult.mcpTools[i]!.id,
+      runtimeId: result.createRuntime.id,
+    });
+  }
+
+  return result.createRuntime.id;
 };
 
-test.describe('Onboarding Flow', () => {
+// TODO: this method set the runtime active in the database, BUT since it doesn't use the NATS message
+// the backend doesn't catch the update and doesn't complete the onboarding step
+// fix this to unskip more tests below
+export const setRuntimeActive = async (
+  id: string,
+) => {
+  const mutation = `
+    mutation setRuntimeActive($id: ID!) {
+    updateRuntime(input: { filter: { id: [$id] }, set: { status: ACTIVE } }) {
+      runtime {
+        id
+        status
+      }
+    }
+  }
+  `;
+  await dgraphQL<{ updateRuntime: { runtime: { id: string; status: string }[] } }>(mutation, { id });
+};
+
+test.describe.only('Onboarding Flow', () => {
   test.beforeEach(async ({ page, resetDatabase, seedDatabase }) => {
-    await resetDatabase();
+    await resetDatabase(true);
 
     await seedDatabase(seedPresets.withUsers);
 
@@ -201,92 +242,76 @@ test.describe('Onboarding Flow', () => {
     await expect(step1Card.getByText('Test MCP Server', { exact: true })).toBeVisible();
   });
 
-  test.skip('step 3 shows Connect button when agent with tools exists', async ({ page, graphql, workspaceId }) => {
+  test('step 3 shows Connect button when agent with tools exists', async ({ page, graphql, workspaceId }) => {
     // complete step 1
     await configureMCPServer(graphql, workspaceId, 'GLOBAL');
 
     // complete step 2
-    await createRuntime(graphql, workspaceId, 'My tool set', 'My tool set description', ['agent']);
-
-    // get tools
-    const toolQuery = `
-      query GetTools($workspaceId: ID!) {
-        mcpTools(workspaceId: $workspaceId) {
-          id
-        }
-      }
-    `;
-    const toolResult = await graphql<{ mcpTools: Array<{ id: string }> }>(toolQuery, { workspaceId });
-    console.log('toolResult', JSON.stringify(toolResult, null, 2));
-
-    console.log('wait 20 seconds');
-    await page.waitForTimeout(20000);
-
-    const toolResult2 = await graphql<{ mcpTools: Array<{ id: string }> }>(toolQuery, { workspaceId });
-    console.log('toolResult2', JSON.stringify(toolResult2, null, 2));
-
-    // TODO: runtime must have tools linked to it
-
-    // Wait for UI to update with the completed steps
-    await page.waitForTimeout(1000);
+    await createRuntime(graphql, page, workspaceId, 'My tool set', 'My tool set description', ['agent'], 1);
 
     // Select the step 3 card containing the correct step title
     const step3Card = page
       .getByRole('heading', { name: 'Connect your Agent' })
       .locator('xpath=ancestor::*[contains(@class,"onboarding-card")][1]');
 
-    // Should show Connect button
+    // Wait for Connect button to be visible, replacing static timeout
     await expect(step3Card.getByRole('button', { name: /Connect/i })).toBeVisible();
   });
 
-  test.skip('step 3 Connect button opens Connect Agent dialog', async ({ page }) => {
-    // Find and click Connect button
-    const step3Card = page.locator('text=Connect your Agent').locator('..');
+  test('step 3 Connect button opens Connect Agent dialog', async ({ page, graphql, workspaceId }) => {
+    // complete step 1
+    await configureMCPServer(graphql, workspaceId, 'GLOBAL');
+
+    // complete step 2
+    await createRuntime(graphql, page, workspaceId, 'My tool set', 'My tool set description', ['agent'], 1);
+
+    // Select the step 3 card containing the correct step title
+    const step3Card = page
+      .getByRole('heading', { name: 'Connect your Agent' })
+      .locator('xpath=ancestor::*[contains(@class,"onboarding-card")][1]');
     const connectButton = step3Card.getByRole('button', { name: /Connect/i });
+    await expect(connectButton).toBeVisible();
     await connectButton.click();
 
     // Dialog should open
     await expect(page.getByRole('dialog')).toBeVisible();
     await expect(page.getByText('Connect Agent to 2LY')).toBeVisible();
-    await expect(page.getByText(/Agent:.*Test Agent/)).toBeVisible();
-  });
-
-  test.skip('step 3 Connect dialog shows platform selector', async ({ page }) => {
-    // Open Connect dialog
-    const step3Card = page.locator('text=Connect your Agent').locator('..');
-    const connectButton = step3Card.getByRole('button', { name: /Connect/i });
-    await connectButton.click();
-
-    // Check platform selector
+    await expect(page.getByText(/Agent:.*My tool set/)).toBeVisible();
     await expect(page.getByText('Select Platform')).toBeVisible();
   });
 
-  test.skip('step 3 shows message when no agent with tools exists', async ({ page, seedDatabase }) => {
-    // Reset and seed without tools
-    await seedDatabase({
-      runtimes: [
-        {
-          name: 'Empty Agent',
-          description: 'Agent without tools',
-          status: 'ACTIVE',
-          capabilities: ['agent'],
-          workspaceId: 'default-workspace',
-        },
-      ],
-    });
+  test('step 3 shows message when no agent with tools exists', async ({ page, graphql, workspaceId }) => {
+    // complete step 1
+    await configureMCPServer(graphql, workspaceId, 'GLOBAL');
 
-    // Find step 3 card
-    const step3Card = page.locator('text=Connect your Agent').locator('..');
+    // complete step 2
+    await createRuntime(graphql, page, workspaceId, 'My tool set', 'My tool set description', ['agent'], 0);
+
+    // Select the step 3 card containing the correct step title
+    const step3Card = page
+      .getByRole('heading', { name: 'Connect your Agent' })
+      .locator('xpath=ancestor::*[contains(@class,"onboarding-card")][1]');
 
     // Should show message
     await expect(step3Card.getByText(/Create a tool set first to connect to an agent/)).toBeVisible();
   });
 
-  test.skip('step 3 shows completed status after connection', async ({ page }) => {
-    // Step 3 should show completed
-    const step3Card = page.locator('text=Connect your Agent').locator('..').locator('..');
+  test.skip('step 3 shows completed status after connection', async ({ page, graphql, workspaceId }) => {
+    // complete step 1
+    await configureMCPServer(graphql, workspaceId, 'GLOBAL');
+
+    // complete step 2
+    const runtimeId = await createRuntime(graphql, page, workspaceId, 'My tool set', 'My tool set description', ['agent'], 1);
+
+    // set runtime active
+    await setRuntimeActive(runtimeId);
+
+    // Select the step 3 card containing the correct step title
+    const step3Card = page
+      .getByRole('heading', { name: 'Connect your Agent' })
+      .locator('xpath=ancestor::*[contains(@class,"onboarding-card")][1]');
     await expect(step3Card.getByText('Completed')).toBeVisible();
-    await expect(step3Card.getByText(/Test Agent connected/)).toBeVisible();
+    await expect(step3Card.getByText(/My tool set connected/)).toBeVisible();
   });
 
   test.skip('dismiss onboarding button is visible', async ({ page }) => {

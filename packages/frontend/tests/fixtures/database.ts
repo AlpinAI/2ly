@@ -3,6 +3,9 @@ import { test as base, type Page } from '@playwright/test';
 import { comprehensiveSeededData } from '../e2e/fixtures/seed-data';
 import { dgraphQL } from './dgraph-client';
 import { hashPassword, startRuntime, stopRuntime } from '@2ly/common/test/testcontainers';
+import { dgraphResolversTypes } from '@2ly/common';
+import type { RegistryServerSeed, MCPServerSeed, OmitGenerated } from './mcp-types';
+import { buildFilesystemRegistryServer, buildMinimalFilesystemServer } from './mcp-builders';
 
 /**
  * Database Fixture for Playwright Tests
@@ -19,58 +22,32 @@ import { hashPassword, startRuntime, stopRuntime } from '@2ly/common/test/testco
 // Types
 // ============================================================================
 
+/**
+ * Seed data interface - uses dgraphResolversTypes for consistency with schema
+ * Object references are converted to string IDs for seeding convenience
+ */
 export interface SeedData {
-  workspaces?: Array<{
-    name: string;
-    description?: string;
-  }>;
-  users?: Array<{
-    email: string;
-    password: string;
-    name?: string;
-  }>;
-  mcpServers?: Array<{
-    name: string;
-    transport: 'STDIO' | 'SSE' | 'STREAM';
-    command?: string;
-    args?: string[];
-  }>;
-  registryServers?: Array<{
-    name: string;
-    description: string;
-    title: string;
-    repositoryUrl: string;
-    version: string;
-    packages: string;
-    remotes?: string;
-    workspaceId: string;
-  }>;
-  tools?: Array<{
-    name: string;
-    description: string;
-    inputSchema: string;
-    annotations: string;
-    status: 'ACTIVE' | 'INACTIVE';
-    mcpServerId: string;
-  }>;
-  runtimes?: Array<{
-    name: string;
-    description: string;
-    status: 'ACTIVE' | 'INACTIVE';
-    capabilities: string[];
-    workspaceId: string;
-  }>;
-  toolCalls?: Array<{
-    toolInput: string;
-    calledAt: string;
-    completedAt?: string;
-    status: 'PENDING' | 'COMPLETED' | 'FAILED';
-    toolOutput?: string;
-    error?: string;
-    mcpToolId: string;
-    calledById: string;
-    executedById?: string;
-  }>;
+  workspaces?: Array<Pick<dgraphResolversTypes.Workspace, 'name'>>;
+  users?: Array<Pick<dgraphResolversTypes.User, 'email' | 'password'>>;
+  mcpServers?: Array<MCPServerSeed>;
+  registryServers?: Array<RegistryServerSeed>;
+  tools?: Array<OmitGenerated<dgraphResolversTypes.McpTool, 'runtimes' | 'toolCalls' | 'workspace' | 'mcpServer'> & {
+    mcpServerId: string; // ID reference for seeding
+  }
+  >;
+  runtimes?: Array<OmitGenerated<dgraphResolversTypes.Runtime, 'mcpToolCapabilities' | 'mcpServers' | 'toolCalls' | 'toolResponses' | 'workspace'> & {
+    workspaceId: string; // ID reference for seeding
+  }
+  >;
+  toolCalls?: Array<
+    OmitGenerated<dgraphResolversTypes.ToolCall, 'executedBy' | 'calledBy' | 'calledAt' | 'completedAt' | 'mcpTool'> & {
+      calledAt: string; // DateTime as string for seeding
+      completedAt?: string; // DateTime as string for seeding
+      mcpToolId: string; // ID reference for seeding
+      calledById: string; // ID reference for seeding
+      executedById?: string; // ID reference for seeding
+    }
+  >;
 }
 
 export interface DatabaseState {
@@ -89,8 +66,9 @@ export interface DatabaseFixture {
 
   /**
    * Seed the database with predefined test data
+   * Returns a map of entity keys to their generated IDs
    */
-  seedDatabase: (data: SeedData) => Promise<void>;
+  seedDatabase: (data: SeedData) => Promise<Record<string, string>>;
 
   /**
    * Execute a GraphQL query against the backend
@@ -196,8 +174,7 @@ export const test = base.extend<DatabaseFixture>({
    * including backend-only entities (tools, toolCalls) that shouldn't be
    * exposed via the client API.
    */
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  seedDatabase: async ({ graphql }, use) => {
+  seedDatabase: async ({ graphql: _graphql }, use) => {
     const seed = async (data: SeedData) => {
       const initialSystemQuery = `
         query {
@@ -297,8 +274,8 @@ export const test = base.extend<DatabaseFixture>({
                 title: "${registryServer.title}"
                 repositoryUrl: "${registryServer.repositoryUrl}"
                 version: "${registryServer.version}"
-                packages: "${registryServer.packages.replace(/"/g, '\\"')}"
-                ${registryServer.remotes ? `remotes: "${registryServer.remotes.replace(/"/g, '\\"')}"` : ''}
+                packages: "${JSON.stringify(registryServer.packages ?? []).replace(/"/g, '\\"')}"
+                remotes: "${JSON.stringify(registryServer.remotes ?? []).replace(/"/g, '\\"')}"
                 createdAt: "${now}"
                 lastSeenAt: "${now}"
                 workspace: { id: $workspaceId }
@@ -321,23 +298,23 @@ export const test = base.extend<DatabaseFixture>({
 
       // 5. Create MCP Servers
       if (data.mcpServers && workspaceId) {
-        const serverNames = ['filesystem-server', 'web-fetch-server', 'development-tools', 'database-server'];
-        for (let i = 0; i < data.mcpServers.length; i++) {
-          const server = data.mcpServers[i];
+        for (const server of data.mcpServers) {
           const normalizedName = server.name.toLowerCase().replace(/\s+/g, '-');
-          const registryServerId = entityIds[`registry-${normalizedName}`];
+
+          // Use provided registryServerId or look up by normalized name
+          const registryServerId = server.registryServerId ?? entityIds[`registry-${normalizedName}`];
 
           if (registryServerId) {
-            const config = JSON.stringify({ command: server.command, args: server.args }).replace(/"/g, '\\"');
+            const configStr = JSON.stringify(server.config).replace(/"/g, '\\"');
             const serverMutation = `
               mutation AddMCPServer($workspaceId: ID!, $registryServerId: ID!) {
                 addMCPServer(input: {
                   name: "${server.name}"
-                  description: "${server.name}"
-                  repositoryUrl: "https://github.com/example/repo"
+                  description: "${server.description}"
+                  repositoryUrl: "${server.repositoryUrl}"
                   transport: ${server.transport}
-                  config: "${config}"
-                  runOn: AGENT
+                  config: "${configStr}"
+                  runOn: ${server.runOn}
                   workspace: { id: $workspaceId }
                   registryServer: { id: $registryServerId }
                 }) {
@@ -351,8 +328,8 @@ export const test = base.extend<DatabaseFixture>({
             const result = await dgraphQL<{
               addMCPServer: { mCPServer: Array<{ id: string; name: string }> };
             }>(serverMutation, { workspaceId, registryServerId });
-            // Store server ID
-            entityIds[serverNames[i]] = result.addMCPServer.mCPServer[0].id;
+            // Store server ID for cross-referencing
+            entityIds[`server-${normalizedName}`] = result.addMCPServer.mCPServer[0].id;
           }
         }
       }
@@ -362,7 +339,7 @@ export const test = base.extend<DatabaseFixture>({
         const runtimeKeys = ['claude-desktop-agent', 'web-assistant-agent', 'edge-runtime'];
         for (let i = 0; i < data.runtimes.length; i++) {
           const runtime = data.runtimes[i];
-          const capsStr = runtime.capabilities.map((c: string) => `"${c}"`).join(', ');
+          const capsStr = runtime.capabilities?.map((c: string) => `"${c}"`).join(', ') ?? '';
           const runtimeMutation = `
             mutation AddRuntime($workspaceId: ID!) {
               addRuntime(input: {
@@ -479,6 +456,8 @@ export const test = base.extend<DatabaseFixture>({
 
       // Wait a bit for data to be committed
       await new Promise((resolve) => setTimeout(resolve, 500));
+
+      return entityIds;
     };
 
     await use(seed);
@@ -583,7 +562,6 @@ export const seedPresets = {
     workspaces: [
       {
         name: 'Default Workspace',
-        description: 'Default testing workspace',
       },
     ],
   },
@@ -595,15 +573,12 @@ export const seedPresets = {
     workspaces: [
       {
         name: 'Development',
-        description: 'Development environment',
       },
       {
         name: 'Production',
-        description: 'Production environment',
       },
       {
         name: 'Testing',
-        description: 'Testing environment',
       },
     ],
   },
@@ -615,22 +590,22 @@ export const seedPresets = {
     workspaces: [
       {
         name: 'Development',
-        description: 'Development workspace',
       },
     ],
+    registryServers: [
+      buildFilesystemRegistryServer(),
+      buildFilesystemRegistryServer({
+        name: '@modelcontextprotocol/server-github',
+        title: 'GitHub Server',
+        description: 'GitHub MCP server',
+      }),
+    ],
     mcpServers: [
-      {
-        name: 'Filesystem Server',
-        transport: 'STDIO' as const,
-        command: 'npx',
-        args: ['-y', '@modelcontextprotocol/server-filesystem', '/tmp'],
-      },
-      {
+      buildMinimalFilesystemServer({ name: 'Filesystem Server' }),
+      buildMinimalFilesystemServer({
         name: 'GitHub Server',
-        transport: 'STDIO' as const,
-        command: 'npx',
-        args: ['-y', '@modelcontextprotocol/server-github'],
-      },
+        description: 'GitHub MCP server',
+      }),
     ],
   },
 
@@ -641,24 +616,16 @@ export const seedPresets = {
     workspaces: [
       {
         name: 'Main Workspace',
-        description: 'Main testing workspace',
       },
     ],
     users: [
       {
         email: 'test@example.com',
         password: 'testpassword123',
-        name: 'Test User',
       },
     ],
-    mcpServers: [
-      {
-        name: 'Filesystem Server',
-        transport: 'STDIO' as const,
-        command: 'npx',
-        args: ['-y', '@modelcontextprotocol/server-filesystem', '/tmp'],
-      },
-    ],
+    registryServers: [buildFilesystemRegistryServer()],
+    mcpServers: [buildMinimalFilesystemServer({ name: 'Filesystem Server' })],
   },
 
   /**
@@ -684,6 +651,21 @@ export const seedPresets = {
    */
   get comprehensive() {
     return comprehensiveSeededData;
+  },
+
+  /**
+   * Minimal setup with a single MCP server (filesystem) using typed config
+   * Perfect for basic MCP server testing without the overhead of comprehensive data
+   */
+  withSingleMCPServer: {
+    users: [
+      {
+        email: 'user1@example.com',
+        password: 'password123',
+      },
+    ],
+    registryServers: [buildFilesystemRegistryServer()],
+    mcpServers: [buildMinimalFilesystemServer({ name: '@modelcontextprotocol/server-filesystem' })],
   },
 } satisfies Record<string, SeedData | { comprehensive: SeedData }>;
 
