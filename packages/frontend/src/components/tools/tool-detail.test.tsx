@@ -104,6 +104,7 @@ describe('ToolDetail', () => {
             onboardingSteps: null,
             registryServers: null,
             runtimes: null,
+            toolSets: null,
           },
           mcpServers: null,
           mcpToolCapabilities: null,

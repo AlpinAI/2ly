@@ -118,6 +118,7 @@ export type McpTool = {
   name: Scalars['String']['output'];
   runtimes?: Maybe<Array<Runtime>>;
   status: ActiveStatus;
+  toolSets?: Maybe<Array<ToolSet>>;
   workspace: Workspace;
 };
 
@@ -531,6 +532,17 @@ export type ToolCallsResult = {
   totalCount: Scalars['Int']['output'];
 };
 
+export type ToolSet = {
+  createdAt: Scalars['Date']['output'];
+  description?: Maybe<Scalars['String']['output']>;
+  id: Scalars['ID']['output'];
+  lastSeenAt?: Maybe<Scalars['Date']['output']>;
+  mcpToolCapabilities?: Maybe<Array<McpTool>>;
+  name: Scalars['String']['output'];
+  status: ActiveStatus;
+  workspace: Workspace;
+};
+
 export type User = {
   adminOfWorkspaces?: Maybe<Array<Workspace>>;
   createdAt: Scalars['Date']['output'];
@@ -551,6 +563,7 @@ export type Workspace = {
   onboardingSteps?: Maybe<Array<OnboardingStep>>;
   registryServers?: Maybe<Array<McpRegistryServer>>;
   runtimes?: Maybe<Array<Runtime>>;
+  toolSets?: Maybe<Array<ToolSet>>;
 };
 
 
@@ -663,6 +676,7 @@ export type ResolversTypes = {
   ToolCallStats: ResolverTypeWrapper<ToolCallStats>;
   ToolCallStatus: ToolCallStatus;
   ToolCallsResult: ResolverTypeWrapper<ToolCallsResult>;
+  ToolSet: ResolverTypeWrapper<ToolSet>;
   User: ResolverTypeWrapper<User>;
   Workspace: ResolverTypeWrapper<Workspace>;
 };
@@ -701,6 +715,7 @@ export type ResolversParentTypes = {
   ToolCallFilters: ToolCallFilters;
   ToolCallStats: ToolCallStats;
   ToolCallsResult: ToolCallsResult;
+  ToolSet: ToolSet;
   User: User;
   Workspace: Workspace;
 };
@@ -786,6 +801,7 @@ export type McpToolResolvers<ContextType = object, ParentType extends ResolversP
   name?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   runtimes?: Resolver<Maybe<Array<ResolversTypes['Runtime']>>, ParentType, ContextType>;
   status?: Resolver<ResolversTypes['ActiveStatus'], ParentType, ContextType>;
+  toolSets?: Resolver<Maybe<Array<ResolversTypes['ToolSet']>>, ParentType, ContextType>;
   workspace?: Resolver<ResolversTypes['Workspace'], ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 };
@@ -927,6 +943,18 @@ export type ToolCallsResultResolvers<ContextType = object, ParentType extends Re
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 };
 
+export type ToolSetResolvers<ContextType = object, ParentType extends ResolversParentTypes['ToolSet'] = ResolversParentTypes['ToolSet']> = {
+  createdAt?: Resolver<ResolversTypes['Date'], ParentType, ContextType>;
+  description?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
+  lastSeenAt?: Resolver<Maybe<ResolversTypes['Date']>, ParentType, ContextType>;
+  mcpToolCapabilities?: Resolver<Maybe<Array<ResolversTypes['MCPTool']>>, ParentType, ContextType>;
+  name?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  status?: Resolver<ResolversTypes['ActiveStatus'], ParentType, ContextType>;
+  workspace?: Resolver<ResolversTypes['Workspace'], ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+};
+
 export type UserResolvers<ContextType = object, ParentType extends ResolversParentTypes['User'] = ResolversParentTypes['User']> = {
   adminOfWorkspaces?: Resolver<Maybe<Array<ResolversTypes['Workspace']>>, ParentType, ContextType>;
   createdAt?: Resolver<ResolversTypes['Date'], ParentType, ContextType>;
@@ -948,6 +976,7 @@ export type WorkspaceResolvers<ContextType = object, ParentType extends Resolver
   onboardingSteps?: Resolver<Maybe<Array<ResolversTypes['OnboardingStep']>>, ParentType, ContextType>;
   registryServers?: Resolver<Maybe<Array<ResolversTypes['MCPRegistryServer']>>, ParentType, ContextType>;
   runtimes?: Resolver<Maybe<Array<ResolversTypes['Runtime']>>, ParentType, ContextType>;
+  toolSets?: Resolver<Maybe<Array<ResolversTypes['ToolSet']>>, ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 };
 
@@ -972,6 +1001,7 @@ export type Resolvers<ContextType = object> = {
   ToolCall?: ToolCallResolvers<ContextType>;
   ToolCallStats?: ToolCallStatsResolvers<ContextType>;
   ToolCallsResult?: ToolCallsResultResolvers<ContextType>;
+  ToolSet?: ToolSetResolvers<ContextType>;
   User?: UserResolvers<ContextType>;
   Workspace?: WorkspaceResolvers<ContextType>;
 };

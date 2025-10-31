@@ -36,6 +36,7 @@ type Workspace {
   mcpServers: [MCPServer!]
   mcpTools: [MCPTool!]
   runtimes: [Runtime!]
+  toolSets: [ToolSet!]
   registryServers: [MCPRegistryServer!]
   globalRuntime: Runtime
   onboardingSteps: [OnboardingStep!]
@@ -66,6 +67,18 @@ type MCPTool {
   lastSeenAt: Date!
   mcpServer: MCPServer!
   runtimes: [Runtime!]
+  toolSets: [ToolSet!]
+  workspace: Workspace!
+}
+
+type ToolSet {
+  id: ID!
+  name: String!
+  description: String
+  status: ActiveStatus!
+  createdAt: Date!
+  lastSeenAt: Date
+  mcpToolCapabilities: [MCPTool!]
   workspace: Workspace!
 }
 
