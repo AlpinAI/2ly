@@ -108,10 +108,10 @@ describe('ConnectAgentDialog', () => {
     expect(screen.getByText('Select Platform')).toBeInTheDocument();
   });
 
-  it('renders default platform instructions (Langchain)', () => {
+  it('renders default platform instructions (JSON Configuration)', () => {
     render(<ConnectAgentDialog />);
-    expect(screen.getByText('1. Install connector')).toBeInTheDocument();
-    expect(screen.getByText(/pip install langchain_2ly/)).toBeInTheDocument();
+    expect(screen.getByText('1. Create your configuration file')).toBeInTheDocument();
+    expect(screen.getByText('2. Configure your agent')).toBeInTheDocument();
   });
 
   it('shows close button', () => {
