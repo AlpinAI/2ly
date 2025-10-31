@@ -16,12 +16,14 @@
  */
 
 import { useState, useMemo } from 'react';
-import { Phone, TrendingUp, Server, Coins } from 'lucide-react';
+import { Phone, TrendingUp, Server, Clock, AlertCircle } from 'lucide-react';
 import { TimeRangeSelector, type TimeRange } from '@/components/dashboard/TimeRangeSelector';
 import { MetricCard } from '@/components/dashboard/MetricCard';
 import { ResourceStatsBar } from '@/components/dashboard/ResourceStatsBar';
 import { CallVolumeChart, type ChartDataPoint } from '@/components/dashboard/CallVolumeChart';
 import { RecentErrorsTable } from '@/components/dashboard/RecentErrorsTable';
+import { TopToolsList } from '@/components/dashboard/TopToolsList';
+import { RuntimeConnectionStatus } from '@/components/dashboard/RuntimeConnectionStatus';
 import { useRuntimeData } from '@/stores/runtimeStore';
 import { useMCPServers } from '@/hooks/useMCPServers';
 import { useMCPTools } from '@/hooks/useMCPTools';
@@ -149,6 +151,76 @@ export default function DashboardPage() {
     toolSets: toolSets.length,
   };
 
+  // New metrics: Average call duration, error rate, top tools
+  const avgCallDuration = useMemo(() => {
+    const completedCalls = filteredToolCalls.filter(
+      (call) => call.status === ToolCallStatus.Completed && call.completedAt
+    );
+    if (completedCalls.length === 0) return 0;
+
+    const totalDuration = completedCalls.reduce((sum, call) => {
+      const duration = new Date(call.completedAt!).getTime() - new Date(call.calledAt).getTime();
+      return sum + duration;
+    }, 0);
+
+    return Math.round(totalDuration / completedCalls.length);
+  }, [filteredToolCalls]);
+
+  const errorRate = totalCalls > 0 ? ((failedCalls / totalCalls) * 100).toFixed(1) : '0.0';
+
+  // Most used tools (top 5 by call volume)
+  const mostUsedTools = useMemo(() => {
+    const toolCallCounts = new Map<string, number>();
+
+    filteredToolCalls.forEach((call) => {
+      const toolName = call.mcpTool.name;
+      toolCallCounts.set(toolName, (toolCallCounts.get(toolName) || 0) + 1);
+    });
+
+    return Array.from(toolCallCounts.entries())
+      .map(([name, count]) => ({ name, count }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 5);
+  }, [filteredToolCalls]);
+
+  // Most problematic tools (top 5 by error count and rate)
+  const mostProblematicTools = useMemo(() => {
+    const toolStats = new Map<
+      string,
+      { total: number; errors: number }
+    >();
+
+    filteredToolCalls.forEach((call) => {
+      const toolName = call.mcpTool.name;
+      const stats = toolStats.get(toolName) || { total: 0, errors: 0 };
+      stats.total++;
+      if (call.status === ToolCallStatus.Failed) {
+        stats.errors++;
+      }
+      toolStats.set(toolName, stats);
+    });
+
+    return Array.from(toolStats.entries())
+      .map(([name, stats]) => ({
+        name,
+        count: stats.errors,
+        errorRate: (stats.errors / stats.total) * 100,
+      }))
+      .filter((tool) => tool.count > 0) // Only include tools with errors
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 5);
+  }, [filteredToolCalls]);
+
+  // Runtime connection status (tool sets only)
+  const runtimeConnectionStatus = useMemo(() => {
+    return toolSets.map((ts) => ({
+      id: ts.id,
+      name: ts.name,
+      status: ts.status,
+      lastSeenAt: ts.lastSeenAt,
+    }));
+  }, [toolSets]);
+
   const loading = runtimesLoading || serversLoading || toolsLoading || toolCallsLoading;
 
   return (
@@ -171,7 +243,7 @@ export default function DashboardPage() {
           </div>
 
           {/* Hero Section - Key Metrics */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
             <MetricCard
               title="Total Calls"
               value={totalCalls}
@@ -194,6 +266,29 @@ export default function DashboardPage() {
             />
 
             <MetricCard
+              title="Error Rate"
+              value={`${errorRate}%`}
+              icon={AlertCircle}
+              iconBgColor="bg-red-100 dark:bg-red-900/30"
+              iconColor="text-red-600 dark:text-red-400"
+              valueColor="text-red-600"
+              subtitle={`${failedCalls} failed calls`}
+              inverseTrend={true}
+              loading={loading}
+            />
+
+            <MetricCard
+              title="Avg Duration"
+              value={avgCallDuration > 0 ? `${avgCallDuration}ms` : '--'}
+              icon={Clock}
+              iconBgColor="bg-purple-100 dark:bg-purple-900/30"
+              iconColor="text-purple-600 dark:text-purple-400"
+              valueColor="text-purple-600"
+              subtitle={successfulCalls > 0 ? `${successfulCalls} completed calls` : 'No completed calls'}
+              loading={loading}
+            />
+
+            <MetricCard
               title="Active Tool Sets"
               value={toolSetStats.active}
               icon={Server}
@@ -202,17 +297,6 @@ export default function DashboardPage() {
               valueColor="text-blue-600"
               subtitle={`${toolSetStats.total} total, ${toolSetStats.inactive} inactive`}
               loading={runtimesLoading}
-            />
-
-            <MetricCard
-              title="Token Volume"
-              value="Coming Soon"
-              icon={Coins}
-              iconBgColor="bg-purple-100 dark:bg-purple-900/30"
-              iconColor="text-purple-600 dark:text-purple-400"
-              valueColor="text-purple-600"
-              subtitle="Token tracking in development"
-              loading={false}
             />
           </div>
 
@@ -224,6 +308,26 @@ export default function DashboardPage() {
 
           {/* Call Volume Visualization */}
           <CallVolumeChart data={chartData} loading={loading} />
+
+          {/* Tool Statistics */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <TopToolsList
+              title="Most Used Tools"
+              tools={mostUsedTools}
+              type="usage"
+              loading={loading}
+            />
+            <TopToolsList
+              title="Most Problematic Tools"
+              tools={mostProblematicTools}
+              type="problems"
+              loading={loading}
+            />
+            <RuntimeConnectionStatus
+              runtimes={runtimeConnectionStatus}
+              loading={runtimesLoading}
+            />
+          </div>
 
           {/* Recent Errors */}
           <RecentErrorsTable errors={recentErrors} loading={loading} />
