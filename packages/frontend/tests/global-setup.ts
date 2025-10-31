@@ -35,7 +35,6 @@ interface TestEnvironmentState {
   frontendPid?: number;
 }
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 async function globalSetup(_config: FullConfig) {
   console.log('🚀 Starting test environment...');
   console.log('📦 Starting containers (Dgraph, NATS, Backend)...');

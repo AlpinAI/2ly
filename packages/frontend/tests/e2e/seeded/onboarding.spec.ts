@@ -140,7 +140,6 @@ const createRuntime = async (
 // the backend doesn't catch the update and doesn't complete the onboarding step
 // fix this to unskip more tests below
 export const setRuntimeActive = async (
-  page: Page,
   id: string,
 ) => {
   const mutation = `
@@ -305,7 +304,7 @@ test.describe.only('Onboarding Flow', () => {
     const runtimeId = await createRuntime(graphql, page, workspaceId, 'My tool set', 'My tool set description', ['agent'], 1);
 
     // set runtime active
-    await setRuntimeActive(page, runtimeId);
+    await setRuntimeActive(runtimeId);
 
     // Select the step 3 card containing the correct step title
     const step3Card = page

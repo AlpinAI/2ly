@@ -174,8 +174,7 @@ export const test = base.extend<DatabaseFixture>({
    * including backend-only entities (tools, toolCalls) that shouldn't be
    * exposed via the client API.
    */
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  seedDatabase: async ({ graphql }, use) => {
+  seedDatabase: async ({ graphql: _graphql }, use) => {
     const seed = async (data: SeedData) => {
       const initialSystemQuery = `
         query {
