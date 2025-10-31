@@ -62,8 +62,8 @@ describe('ConnectAgentDialog', () => {
 
   it('renders dialog when open', () => {
     render(<ConnectAgentDialog />);
-    expect(screen.getByText('Connect Agent to 2LY')).toBeInTheDocument();
-    expect(screen.getByText(/Agent:/)).toBeInTheDocument();
+    expect(screen.getByText('Connect Client')).toBeInTheDocument();
+    expect(screen.getByText(/Tool Set:/)).toBeInTheDocument();
     expect(screen.getByText('Test Agent')).toBeInTheDocument();
   });
 
@@ -109,10 +109,10 @@ describe('ConnectAgentDialog', () => {
     expect(screen.getByText('Select Platform')).toBeInTheDocument();
   });
 
-  it('renders default platform instructions (Langchain)', () => {
+  it('renders default platform instructions (JSON Configuration)', () => {
     render(<ConnectAgentDialog />);
-    expect(screen.getByText('1. Install connector')).toBeInTheDocument();
-    expect(screen.getByText(/pip install langchain_2ly/)).toBeInTheDocument();
+    expect(screen.getByText('1. Create your configuration file')).toBeInTheDocument();
+    expect(screen.getByText('2. Configure your agent')).toBeInTheDocument();
   });
 
   it('shows close button', () => {

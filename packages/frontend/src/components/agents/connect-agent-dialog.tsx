@@ -45,7 +45,7 @@ export function ConnectAgentDialog() {
   const { open, setOpen, selectedAgentId } = useConnectAgentDialog();
   const { runtimes } = useRuntimeData();
 
-  const [selectedPlatform, setSelectedPlatform] = useState<PlatformOption>('langchain');
+  const [selectedPlatform, setSelectedPlatform] = useState<PlatformOption>('json');
   const [isConnected, setIsConnected] = useState(false);
 
   // Get selected agent from runtime store
@@ -85,7 +85,7 @@ export function ConnectAgentDialog() {
     setOpen(false);
     // Reset state after animation completes
     setTimeout(() => {
-      setSelectedPlatform('langchain');
+      setSelectedPlatform('json');
       setIsConnected(false);
     }, 300);
   }, [setOpen]);
@@ -113,10 +113,10 @@ export function ConnectAgentDialog() {
             <div className="flex items-center justify-between mb-4">
               <div className="flex-1">
                 <Dialog.Title className="text-lg font-semibold text-gray-900 dark:text-white">
-                  Connect Agent to 2LY
+                  Connect Client
                 </Dialog.Title>
                 <Dialog.Description className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                  Agent: <span className="font-mono font-medium">{selectedAgent.name}</span>
+                  Tool Set: <span className="font-mono font-medium">{selectedAgent.name}</span>
                 </Dialog.Description>
               </div>
 

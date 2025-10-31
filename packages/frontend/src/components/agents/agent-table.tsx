@@ -102,7 +102,7 @@ export function AgentTable({
       {/* Header with Search and Filters */}
       <div className="p-4 border-b border-gray-200 dark:border-gray-700 space-y-3">
         <Search
-          placeholder="Search agents..."
+          placeholder="Search tool sets..."
           value={search}
           onChange={(e) => onSearchChange(e.target.value)}
         />
@@ -118,7 +118,7 @@ export function AgentTable({
 
           <CheckboxDropdown
             label="Status"
-            placeholder="All statuses"
+            placeholder="All status"
             items={STATUS_OPTIONS}
             selectedIds={statusFilter}
             onChange={onStatusFilterChange}
@@ -152,7 +152,7 @@ export function AgentTable({
             <thead className="bg-gray-50 dark:bg-gray-900 sticky top-0">
               <tr>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  Agent
+                  Tool Set
                 </th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                   Status
@@ -245,7 +245,7 @@ export function AgentTable({
       {!loading && agents.length > 0 && (
         <div className="px-4 py-2 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900">
           <p className="text-xs text-gray-500 dark:text-gray-400">
-            Showing {agents.length} {agents.length === 1 ? 'agent' : 'agents'}
+            Showing {agents.length} {agents.length === 1 ? 'tool set' : 'tool sets'}
           </p>
         </div>
       )}

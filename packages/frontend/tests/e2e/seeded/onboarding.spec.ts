@@ -275,8 +275,8 @@ test.describe.only('Onboarding Flow', () => {
 
     // Dialog should open
     await expect(page.getByRole('dialog')).toBeVisible();
-    await expect(page.getByText('Connect Agent to 2LY')).toBeVisible();
-    await expect(page.getByText(/Agent:.*My tool set/)).toBeVisible();
+    await expect(page.getByText('Connect Client')).toBeVisible();
+    await expect(page.getByText(/Tool Set:.*My tool set/)).toBeVisible();
     await expect(page.getByText('Select Platform')).toBeVisible();
   });
 

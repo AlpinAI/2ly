@@ -260,7 +260,7 @@ test.describe('Deep Linking with Comprehensive Data', () => {
       // Wait for detail panel
       await page.waitForSelector('[role="complementary"], [data-testid="detail-panel"]', { timeout: 3000 });
 
-      // Look for agent link in "Available on Agents" section
+      // Look for agent link in "Available on Tool Sets" section
       const agentLink = page.locator('a[href*="/toolsets?id="]').first();
       if (await agentLink.count() > 0) {
         await agentLink.click();
