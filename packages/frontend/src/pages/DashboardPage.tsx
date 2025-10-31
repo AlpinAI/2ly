@@ -35,7 +35,7 @@ export default function DashboardPage() {
   const [timeRange, setTimeRange] = useState<TimeRange>('24h');
 
   // Data hooks with auto-refresh
-  const { runtimes, stats: runtimeStats, loading: runtimesLoading } = useRuntimeData();
+  const { runtimes, loading: runtimesLoading } = useRuntimeData();
   const { servers, loading: serversLoading } = useMCPServers();
   const { tools, loading: toolsLoading } = useMCPTools();
   const { toolCalls, loading: toolCallsLoading } = useToolCalls({
@@ -128,14 +128,25 @@ export default function DashboardPage() {
       .slice(0, 10);
   }, [filteredToolCalls]);
 
-  // Resource stats
-  // Tool sets are runtimes with 'agent' capability (excludes global runtime)
-  const toolSetsCount = runtimes.filter((runtime) => runtime.capabilities?.includes('agent')).length;
+  // Tool set stats (only count runtimes with 'agent' capability, excludes global runtime)
+  const toolSets = useMemo(() => {
+    return runtimes.filter((runtime) => runtime.capabilities?.includes('agent'));
+  }, [runtimes]);
+
+  const toolSetStats = useMemo(() => {
+    const active = toolSets.filter((ts) => ts.status === 'ACTIVE').length;
+    const inactive = toolSets.filter((ts) => ts.status === 'INACTIVE').length;
+    return {
+      total: toolSets.length,
+      active,
+      inactive,
+    };
+  }, [toolSets]);
 
   const resourceStats = {
     sources: servers.length,
     tools: tools.length,
-    toolSets: toolSetsCount,
+    toolSets: toolSets.length,
   };
 
   const loading = runtimesLoading || serversLoading || toolsLoading || toolCallsLoading;
@@ -184,12 +195,12 @@ export default function DashboardPage() {
 
             <MetricCard
               title="Active Tool Sets"
-              value={runtimeStats.active}
+              value={toolSetStats.active}
               icon={Server}
               iconBgColor="bg-blue-100 dark:bg-blue-900/30"
               iconColor="text-blue-600 dark:text-blue-400"
               valueColor="text-blue-600"
-              subtitle={`${runtimeStats.total} total, ${runtimeStats.inactive} inactive`}
+              subtitle={`${toolSetStats.total} total, ${toolSetStats.inactive} inactive`}
               loading={runtimesLoading}
             />
 
