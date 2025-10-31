@@ -71,9 +71,17 @@ export function CallVolumeChart({ data, loading, className }: CallVolumeChartPro
   // Calculate chart dimensions and scaling
   const maxValue = Math.max(...data.map((d) => d.success + d.failed), 1);
   const chartHeight = 240;
-  const barWidth = Math.max(100 / data.length - 2, 20); // percentage per bar with gap
   const yAxisSteps = 5;
   const yAxisMax = Math.ceil(maxValue / yAxisSteps) * yAxisSteps || yAxisSteps;
+
+  // Determine if we need horizontal scrolling (more than 20 bars)
+  const needsScroll = data.length > 20;
+  const minBarWidth = 30; // minimum pixels per bar
+  const barGap = 4; // pixels gap between bars
+
+  // Calculate SVG width
+  const svgWidth = needsScroll ? data.length * (minBarWidth + barGap) : 800;
+  const barWidth = needsScroll ? minBarWidth : Math.max((svgWidth / data.length) - barGap, minBarWidth);
 
   const getBarHeight = (value: number) => {
     return (value / yAxisMax) * chartHeight;
@@ -107,7 +115,7 @@ export function CallVolumeChart({ data, loading, className }: CallVolumeChartPro
       {/* Chart Container */}
       <div className="relative">
         {/* Y-axis labels */}
-        <div className="absolute left-0 top-0 bottom-8 w-12 flex flex-col justify-between text-xs text-gray-500 dark:text-gray-400">
+        <div className="absolute left-0 top-0 bottom-8 w-12 flex flex-col justify-between text-xs text-gray-500 dark:text-gray-400 z-10">
           {Array.from({ length: yAxisSteps + 1 }).map((_, i) => {
             const value = yAxisMax - (i * yAxisMax) / yAxisSteps;
             return (
@@ -118,12 +126,12 @@ export function CallVolumeChart({ data, loading, className }: CallVolumeChartPro
           })}
         </div>
 
-        {/* Chart area */}
-        <div className="ml-12">
+        {/* Chart area with horizontal scroll for many bars */}
+        <div className="ml-12 overflow-x-auto">
           <svg
-            width="100%"
+            width={svgWidth}
             height={chartHeight + 40}
-            className="overflow-visible"
+            className={cn(!needsScroll && 'w-full')}
             role="img"
             aria-label="Tool call volume chart"
           >
@@ -135,7 +143,7 @@ export function CallVolumeChart({ data, loading, className }: CallVolumeChartPro
                   key={i}
                   x1="0"
                   y1={y}
-                  x2="100%"
+                  x2={svgWidth}
                   y2={y}
                   stroke="currentColor"
                   strokeWidth="1"
@@ -147,7 +155,7 @@ export function CallVolumeChart({ data, loading, className }: CallVolumeChartPro
 
             {/* Bars */}
             {data.map((point, index) => {
-              const xPosition = (index / data.length) * 100;
+              const xPosition = index * (barWidth + barGap);
               const successHeight = getBarHeight(point.success);
               const failedHeight = getBarHeight(point.failed);
               const totalHeight = successHeight + failedHeight;
@@ -163,9 +171,9 @@ export function CallVolumeChart({ data, loading, className }: CallVolumeChartPro
                 >
                   {/* Failed (red) bar on top */}
                   <rect
-                    x={`${xPosition}%`}
+                    x={xPosition}
                     y={chartHeight - totalHeight}
-                    width={`${barWidth}%`}
+                    width={barWidth}
                     height={failedHeight}
                     fill="currentColor"
                     className="text-red-500 transition-all duration-200"
@@ -173,9 +181,9 @@ export function CallVolumeChart({ data, loading, className }: CallVolumeChartPro
                   />
                   {/* Success (green) bar on bottom */}
                   <rect
-                    x={`${xPosition}%`}
+                    x={xPosition}
                     y={chartHeight - successHeight}
-                    width={`${barWidth}%`}
+                    width={barWidth}
                     height={successHeight}
                     fill="currentColor"
                     className="text-green-500 transition-all duration-200"
@@ -184,7 +192,7 @@ export function CallVolumeChart({ data, loading, className }: CallVolumeChartPro
 
                   {/* X-axis label */}
                   <text
-                    x={`${xPosition + barWidth / 2}%`}
+                    x={xPosition + barWidth / 2}
                     y={chartHeight + 20}
                     textAnchor="middle"
                     className="text-xs fill-gray-600 dark:fill-gray-400"
@@ -196,7 +204,7 @@ export function CallVolumeChart({ data, loading, className }: CallVolumeChartPro
                   {isHovered && (
                     <g>
                       <rect
-                        x={`${xPosition}%`}
+                        x={xPosition}
                         y={chartHeight - totalHeight - 60}
                         width="120"
                         height="50"
@@ -206,7 +214,7 @@ export function CallVolumeChart({ data, loading, className }: CallVolumeChartPro
                         opacity="0.95"
                       />
                       <text
-                        x={`${xPosition}%`}
+                        x={xPosition}
                         y={chartHeight - totalHeight - 42}
                         className="text-xs fill-white dark:fill-gray-200 font-medium"
                         dx="8"
@@ -214,7 +222,7 @@ export function CallVolumeChart({ data, loading, className }: CallVolumeChartPro
                         {point.label}
                       </text>
                       <text
-                        x={`${xPosition}%`}
+                        x={xPosition}
                         y={chartHeight - totalHeight - 28}
                         className="text-xs fill-green-400"
                         dx="8"
@@ -222,7 +230,7 @@ export function CallVolumeChart({ data, loading, className }: CallVolumeChartPro
                         ✓ Success: {point.success}
                       </text>
                       <text
-                        x={`${xPosition}%`}
+                        x={xPosition}
                         y={chartHeight - totalHeight - 14}
                         className="text-xs fill-red-400"
                         dx="8"
