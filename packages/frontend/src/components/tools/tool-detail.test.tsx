@@ -177,7 +177,7 @@ describe('ToolDetail', () => {
   it('renders linked agents', () => {
     renderComponent(mockTool);
 
-    expect(screen.getByText(/Available on Agents \(1\)/)).toBeInTheDocument();
+    expect(screen.getByText(/Available on Tool Sets \(1\)/)).toBeInTheDocument();
     expect(screen.getByText('Test Agent')).toBeInTheDocument();
   });
 
