@@ -1,18 +1,11 @@
 /**
  * Graph Canvas Component
  *
- * WHY: Main ReactFlow canvas for rendering the knowledge graph.
- * Handles interactions, controls, and node selection.
- *
- * FEATURES:
- * - ReactFlow canvas with custom nodes
- * - Interactive controls (zoom, pan, fit view)
- * - Node click handling
- * - Background grid
- * - Dark mode support
+ * WHY: Simple ReactFlow canvas showing database relationships.
+ * Minimal complexity - just display nodes and edges as-is.
  */
 
-import { useCallback, useState } from 'react';
+import { useState, useCallback } from 'react';
 import {
   ReactFlow,
   Background,
@@ -20,12 +13,6 @@ import {
   MiniMap,
   type Node,
   type Edge,
-  type OnNodesChange,
-  type OnEdgesChange,
-  type OnConnect,
-  applyNodeChanges,
-  applyEdgeChanges,
-  addEdge,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import { nodeTypes } from './custom-nodes';
@@ -38,41 +25,14 @@ export interface GraphCanvasProps {
   loading?: boolean;
 }
 
-export function GraphCanvas({ nodes: initialNodes, edges: initialEdges, loading }: GraphCanvasProps) {
-  const [nodes, setNodes] = useState<Node[]>(initialNodes);
-  const [edges, setEdges] = useState<Edge[]>(initialEdges);
+export function GraphCanvas({ nodes, edges, loading }: GraphCanvasProps) {
   const [selectedNode, setSelectedNode] = useState<NodeData | null>(null);
-
-  // Update nodes and edges when props change
-  if (initialNodes !== nodes || initialEdges !== edges) {
-    setNodes(initialNodes);
-    setEdges(initialEdges);
-  }
-
-  const onNodesChange: OnNodesChange = useCallback(
-    (changes) => setNodes((nds) => applyNodeChanges(changes, nds)),
-    []
-  );
-
-  const onEdgesChange: OnEdgesChange = useCallback(
-    (changes) => setEdges((eds) => applyEdgeChanges(changes, eds)),
-    []
-  );
-
-  const onConnect: OnConnect = useCallback(
-    (connection) => setEdges((eds) => addEdge(connection, eds)),
-    []
-  );
 
   const onNodeClick = useCallback((_event: React.MouseEvent, node: Node) => {
     setSelectedNode(node.data as NodeData);
   }, []);
 
   const onPaneClick = useCallback(() => {
-    setSelectedNode(null);
-  }, []);
-
-  const handleClosePanel = useCallback(() => {
     setSelectedNode(null);
   }, []);
 
@@ -89,22 +49,15 @@ export function GraphCanvas({ nodes: initialNodes, edges: initialEdges, loading 
       <ReactFlow
         nodes={nodes}
         edges={edges}
-        onNodesChange={onNodesChange}
-        onEdgesChange={onEdgesChange}
-        onConnect={onConnect}
         onNodeClick={onNodeClick}
         onPaneClick={onPaneClick}
         nodeTypes={nodeTypes}
         fitView
         fitViewOptions={{
           padding: 0.2,
-          maxZoom: 1,
         }}
-        minZoom={0.1}
-        maxZoom={2}
         defaultEdgeOptions={{
-          type: 'smoothstep',
-          animated: false,
+          type: 'default',
           style: {
             stroke: '#94a3b8',
             strokeWidth: 2,
@@ -137,7 +90,7 @@ export function GraphCanvas({ nodes: initialNodes, edges: initialEdges, loading 
         />
       </ReactFlow>
 
-      <NodeDetailPanel node={selectedNode} onClose={handleClosePanel} />
+      <NodeDetailPanel node={selectedNode} onClose={() => setSelectedNode(null)} />
     </div>
   );
 }

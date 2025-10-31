@@ -1,27 +1,16 @@
 /**
  * useKnowledgeGraphData Hook
  *
- * WHY: Fetches and transforms all entities (Sources, Tools, Tool Sets, Runtimes, Agents)
- * into ReactFlow nodes and edges for knowledge graph visualization.
+ * WHY: Simple 1:1 mapping of GraphQL database relationships to graph nodes and edges.
+ * No complex logic, just direct representation of what's in the database.
  *
- * FEATURES:
- * - Fetches all entity data with real-time polling
- * - Transforms entities into ReactFlow nodes with distinct styling
- * - Generates edges based on relationships:
- *   - Tool → Source (tools come from MCP servers)
- *   - Tool Set → Tools (tools grouped in sets)
- *   - Runtime → Tools (runtimes have access to tools)
- *   - Runtime → Sources (runtimes manage MCP servers)
- * - Circular layout for initial positioning
- * - Real-time updates via polling
- *
- * USAGE:
- * ```tsx
- * function KnowledgeGraphPage() {
- *   const { nodes, edges, loading, error } = useKnowledgeGraphData();
- *   return <ReactFlow nodes={nodes} edges={edges} />;
- * }
- * ```
+ * RELATIONSHIPS (from GraphQL schema):
+ * - MCPTool.mcpServer → MCPServer (tool belongs to server)
+ * - MCPTool.runtimes → Runtime (tool available on runtimes)
+ * - MCPTool.toolSets → ToolSet (tool in tool sets)
+ * - Runtime.mcpToolCapabilities → MCPTool (runtime has tools)
+ * - Runtime.mcpServers → MCPServer (runtime manages servers)
+ * - ToolSet.mcpToolCapabilities → MCPTool (tool set contains tools)
  */
 
 import { useMemo } from 'react';
@@ -40,38 +29,16 @@ export interface NodeData extends Record<string, unknown> {
   entityId: string;
 }
 
-/**
- * Simple circular layout for initial positioning
- * ReactFlow will handle the rest with its built-in force simulation
- */
-function layoutNodes(nodes: Node[]): Node[] {
-  const radius = Math.max(300, nodes.length * 30);
-  const angleStep = (2 * Math.PI) / Math.max(nodes.length, 1);
-
-  return nodes.map((node, index) => {
-    const angle = index * angleStep;
-    return {
-      ...node,
-      position: {
-        x: Math.cos(angle) * radius,
-        y: Math.sin(angle) * radius,
-      },
-    };
-  });
-}
-
 export function useKnowledgeGraphData() {
   const workspaceId = useWorkspaceId();
 
-  // Fetch all knowledge graph data with polling for real-time updates
   const { data, loading, error } = useQuery(GetKnowledgeGraphDataDocument, {
     variables: { workspaceId: workspaceId || '' },
     skip: !workspaceId,
     fetchPolicy: 'cache-and-network',
-    pollInterval: 5000, // Poll every 5 seconds for real-time updates
+    pollInterval: 5000,
   });
 
-  // Transform data into ReactFlow nodes and edges
   const { nodes, edges } = useMemo(() => {
     if (!data) {
       return { nodes: [], edges: [] };
@@ -80,37 +47,24 @@ export function useKnowledgeGraphData() {
     const nodes: Node[] = [];
     const edges: Edge[] = [];
 
-    // Find the correct workspace by ID
+    // Get data
     const workspace = data.workspace?.find(w => w?.id === workspaceId) || data.workspace?.[0];
     const mcpServers = data.mcpServers ?? [];
     const mcpTools = data.mcpTools ?? [];
     const toolSets = workspace?.toolSets ?? [];
     const runtimes = workspace?.runtimes ?? [];
 
-    // Debug logging
-    console.log('Knowledge Graph Data:', {
-      workspaceId,
-      foundWorkspace: workspace?.id,
-      totalWorkspaces: data.workspace?.length || 0,
-      servers: mcpServers.length,
-      tools: mcpTools.length,
-      toolSets: toolSets.length,
-      runtimes: runtimes.length,
-    });
+    console.log('=== Knowledge Graph Data ===');
+    console.log('Servers:', mcpServers.length);
+    console.log('Tools:', mcpTools.length);
+    console.log('ToolSets:', toolSets.length);
+    console.log('Runtimes:', runtimes.length);
 
-    if (toolSets.length > 0) {
-      console.log('Tool Sets:', toolSets.map(ts => ({
-        id: ts?.id,
-        name: ts?.name,
-        toolCount: ts?.mcpToolCapabilities?.length || 0,
-      })));
-    }
-
-    // Create nodes for MCP Servers (Sources)
+    // Create nodes for MCP Servers
     mcpServers.forEach((server) => {
       if (!server) return;
       nodes.push({
-        id: `source-${server.id}`,
+        id: `server-${server.id}`,
         type: 'source',
         data: {
           label: server.name,
@@ -119,11 +73,11 @@ export function useKnowledgeGraphData() {
           status: server.status || undefined,
           entityId: server.id,
         },
-        position: { x: 0, y: 0 }, // Will be set by layout
+        position: { x: 0, y: 0 },
       });
     });
 
-    // Create nodes for MCP Tools
+    // Create nodes for Tools
     mcpTools.forEach((tool) => {
       if (!tool) return;
       nodes.push({
@@ -139,19 +93,40 @@ export function useKnowledgeGraphData() {
         position: { x: 0, y: 0 },
       });
 
-      // Create edge: Tool → Source (tool comes from MCP server)
+      // Edge: Tool → Server (MCPTool.mcpServer)
       if (tool.mcpServer) {
         edges.push({
-          id: `edge-tool-${tool.id}-source-${tool.mcpServer.id}`,
-          source: `source-${tool.mcpServer.id}`,
-          target: `tool-${tool.id}`,
-          type: 'smoothstep',
-          animated: false,
+          id: `tool-${tool.id}-to-server-${tool.mcpServer.id}`,
+          source: `tool-${tool.id}`,
+          target: `server-${tool.mcpServer.id}`,
+          label: 'belongs to',
         });
       }
+
+      // Edges: Tool → Runtimes (MCPTool.runtimes)
+      tool.runtimes?.forEach((runtime) => {
+        if (!runtime) return;
+        edges.push({
+          id: `tool-${tool.id}-to-runtime-${runtime.id}`,
+          source: `tool-${tool.id}`,
+          target: `runtime-${runtime.id}`,
+          label: 'available on',
+        });
+      });
+
+      // Edges: Tool → ToolSets (MCPTool.toolSets)
+      tool.toolSets?.forEach((toolSet) => {
+        if (!toolSet) return;
+        edges.push({
+          id: `tool-${tool.id}-to-toolset-${toolSet.id}`,
+          source: `tool-${tool.id}`,
+          target: `toolset-${toolSet.id}`,
+          label: 'in set',
+        });
+      });
     });
 
-    // Create nodes for Tool Sets
+    // Create nodes for ToolSets
     toolSets.forEach((toolSet) => {
       if (!toolSet) return;
       nodes.push({
@@ -166,40 +141,18 @@ export function useKnowledgeGraphData() {
         },
         position: { x: 0, y: 0 },
       });
-
-      // Create edges: Tool Set → Tools
-      const toolSetEdgeCount = toolSet.mcpToolCapabilities?.length || 0;
-      console.log(`Creating ${toolSetEdgeCount} edges for tool set ${toolSet.name}`);
-
-      toolSet.mcpToolCapabilities?.forEach((tool) => {
-        if (!tool) return;
-        const edgeId = `edge-toolset-${toolSet.id}-tool-${tool.id}`;
-        console.log(`  Edge: ${toolSet.name} → tool-${tool.id}`);
-        edges.push({
-          id: edgeId,
-          source: `toolset-${toolSet.id}`,
-          target: `tool-${tool.id}`,
-          type: 'smoothstep',
-          animated: false,
-        });
-      });
     });
 
-    // Create nodes for Runtimes and Agents
+    // Create nodes for Runtimes
     runtimes.forEach((runtime) => {
       if (!runtime) return;
-
-      // Determine if runtime is an agent (has 'agent' capability)
       const isAgent = runtime.capabilities?.includes('agent');
-      const nodeType = isAgent ? 'agent' : 'runtime';
-      const entityType: EntityType = isAgent ? 'agent' : 'runtime';
-
       nodes.push({
-        id: `${nodeType}-${runtime.id}`,
-        type: nodeType,
+        id: `runtime-${runtime.id}`,
+        type: isAgent ? 'agent' : 'runtime',
         data: {
           label: runtime.name,
-          entityType,
+          entityType: isAgent ? 'agent' : 'runtime',
           description: runtime.description || undefined,
           status: runtime.status,
           entityId: runtime.id,
@@ -207,53 +160,41 @@ export function useKnowledgeGraphData() {
         position: { x: 0, y: 0 },
       });
 
-      // Create edges: Runtime → Tools (direct connection to tools)
-      runtime.mcpToolCapabilities?.forEach((tool) => {
-        if (!tool) return;
-        edges.push({
-          id: `edge-${nodeType}-${runtime.id}-tool-${tool.id}`,
-          source: `${nodeType}-${runtime.id}`,
-          target: `tool-${tool.id}`,
-          type: 'smoothstep',
-          animated: isAgent, // Animate edges for agents
-        });
-      });
-
-      // Create edges: Runtime → MCP Servers
+      // Edges: Runtime → Servers (Runtime.mcpServers)
       runtime.mcpServers?.forEach((server) => {
         if (!server) return;
         edges.push({
-          id: `edge-${nodeType}-${runtime.id}-source-${server.id}`,
-          source: `${nodeType}-${runtime.id}`,
-          target: `source-${server.id}`,
-          type: 'smoothstep',
-          animated: false,
+          id: `runtime-${runtime.id}-to-server-${server.id}`,
+          source: `runtime-${runtime.id}`,
+          target: `server-${server.id}`,
+          label: 'manages',
         });
       });
     });
 
-    // Apply circular layout for initial positioning
-    const layoutedNodes = layoutNodes(nodes);
-
-    console.log('Knowledge Graph Summary:', {
-      totalNodes: layoutedNodes.length,
-      totalEdges: edges.length,
-      nodesByType: {
-        sources: layoutedNodes.filter(n => n.type === 'source').length,
-        tools: layoutedNodes.filter(n => n.type === 'tool').length,
-        toolsets: layoutedNodes.filter(n => n.type === 'toolset').length,
-        runtimes: layoutedNodes.filter(n => n.type === 'runtime').length,
-        agents: layoutedNodes.filter(n => n.type === 'agent').length,
-      },
-      edgeTypes: {
-        toolToSource: edges.filter(e => e.source.startsWith('source-')).length,
-        toolsetToTool: edges.filter(e => e.source.startsWith('toolset-')).length,
-        runtimeToTool: edges.filter(e => e.source.startsWith('runtime-') && e.target.startsWith('tool-')).length,
-        agentToTool: edges.filter(e => e.source.startsWith('agent-') && e.target.startsWith('tool-')).length,
-      }
+    // Simple grid layout
+    const cols = Math.ceil(Math.sqrt(nodes.length));
+    nodes.forEach((node, index) => {
+      const row = Math.floor(index / cols);
+      const col = index % cols;
+      node.position = {
+        x: col * 300,
+        y: row * 200,
+      };
     });
 
-    return { nodes: layoutedNodes, edges };
+    console.log('=== Graph Summary ===');
+    console.log('Total Nodes:', nodes.length);
+    console.log('Total Edges:', edges.length);
+    console.log('Nodes by type:', {
+      servers: nodes.filter(n => n.type === 'source').length,
+      tools: nodes.filter(n => n.type === 'tool').length,
+      toolsets: nodes.filter(n => n.type === 'toolset').length,
+      runtimes: nodes.filter(n => n.type === 'runtime').length,
+      agents: nodes.filter(n => n.type === 'agent').length,
+    });
+
+    return { nodes, edges };
   }, [data, workspaceId]);
 
   return {
