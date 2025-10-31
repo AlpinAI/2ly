@@ -203,7 +203,7 @@ export function CommandPalette() {
                   >
                     <FolderPlus className="h-4 w-4" />
                     <div className="flex flex-1 items-center justify-between">
-                      <span className="font-medium">New Tool Set</span>
+                      <span className="font-medium">Add Tool Set</span>
                       <span className="text-xs text-gray-500 dark:text-gray-400">Create a new tool set</span>
                     </div>
                   </CommandItem>

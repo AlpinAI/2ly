@@ -217,7 +217,7 @@ describe('AgentTable', () => {
   it('displays agent count in footer', () => {
     render(<AgentTable {...defaultProps} />);
 
-    expect(screen.getByText('Showing 2 agents')).toBeInTheDocument();
+    expect(screen.getByText('Showing 2 tool sets')).toBeInTheDocument();
   });
 
   it('displays hostname when available', () => {

@@ -82,17 +82,17 @@ export default function ToolSetsPage() {
   return (
     <div className="h-full flex flex-col">
       {/* Page Header */}
-      <div className="mb-6 flex items-start justify-between">
+      <div className="flex items-center justify-between mb-6">
         <div>
           <h2 className="text-3xl font-bold text-gray-900 dark:text-white">Tool Sets</h2>
           <p className="text-gray-500 dark:text-gray-400 mt-1">Manage AI tool sets and view their capabilities</p>
         </div>
         <Button
           onClick={handleCreateToolSet}
-          className="flex items-center gap-2"
+          className="gap-2"
         >
           <Plus className="h-4 w-4" />
-          New Tool Set
+          Add Tool Set
         </Button>
       </div>
 
