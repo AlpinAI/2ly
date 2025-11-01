@@ -27,9 +27,11 @@ describe('AppNavigation', () => {
     );
 
     expect(screen.getByText('Overview')).toBeDefined();
-    expect(screen.getByText('Tool Sets')).toBeDefined();
-    expect(screen.getByText('Tools')).toBeDefined();
     expect(screen.getByText('Sources')).toBeDefined();
+    expect(screen.getByText('Tools')).toBeDefined();
+    expect(screen.getByText('Tool Sets')).toBeDefined();
+    expect(screen.getByText('Monitoring')).toBeDefined();
+    expect(screen.getByText('Visualization')).toBeDefined();
     expect(screen.getByText('Settings')).toBeDefined();
   });
 
@@ -78,9 +80,9 @@ describe('AppNavigation', () => {
       </BrowserRouter>
     );
 
-    // Should have 6 SVG icons (one for each nav item)
+    // Should have 7 SVG icons (one for each nav item: 6 left + 1 right)
     const icons = container.querySelectorAll('svg');
-    expect(icons.length).toBe(6);
+    expect(icons.length).toBe(7);
   });
 
   it('has correct links for each tab', () => {
@@ -91,15 +93,19 @@ describe('AppNavigation', () => {
     );
 
     const overviewLink = screen.getByText('Overview').closest('a');
-    const toolSetsLink = screen.getByText('Tool Sets').closest('a');
-    const toolsLink = screen.getByText('Tools').closest('a');
     const sourcesLink = screen.getByText('Sources').closest('a');
+    const toolsLink = screen.getByText('Tools').closest('a');
+    const toolSetsLink = screen.getByText('Tool Sets').closest('a');
+    const monitoringLink = screen.getByText('Monitoring').closest('a');
+    const visualizationLink = screen.getByText('Visualization').closest('a');
     const settingsLink = screen.getByText('Settings').closest('a');
 
     expect(overviewLink?.getAttribute('href')).toBe('/w/test-workspace/overview');
-    expect(toolSetsLink?.getAttribute('href')).toBe('/w/test-workspace/toolsets');
-    expect(toolsLink?.getAttribute('href')).toBe('/w/test-workspace/tools');
     expect(sourcesLink?.getAttribute('href')).toBe('/w/test-workspace/sources');
+    expect(toolsLink?.getAttribute('href')).toBe('/w/test-workspace/tools');
+    expect(toolSetsLink?.getAttribute('href')).toBe('/w/test-workspace/toolsets');
+    expect(monitoringLink?.getAttribute('href')).toBe('/w/test-workspace/monitoring');
+    expect(visualizationLink?.getAttribute('href')).toBe('/w/test-workspace/visualization');
     expect(settingsLink?.getAttribute('href')).toBe('/w/test-workspace/settings');
   });
 });
