@@ -99,12 +99,21 @@ type MCPTool @withSubscription {
   createdAt: DateTime!
   lastSeenAt: DateTime!
   mcpServer: MCPServer! @hasInverse(field: tools)
+  # Relationship to Runtimes: represents which runtimes can EXECUTE this tool
+  # This is about runtime execution capability, not logical grouping
   runtimes: [Runtime!] @hasInverse(field: mcpToolCapabilities)
+  # Relationship to ToolSets: represents which tool collections include this tool
+  # This is about logical organization and grouping, separate from execution
   toolSets: [ToolSet!] @hasInverse(field: mcpTools)
   workspace: Workspace! @hasInverse(field: mcpTools)
   toolCalls: [ToolCall!] @hasInverse(field: mcpTool)
 }
 
+# ToolSet: A logical collection of tools for organization purposes
+# This type separates the concept of tool GROUPING from tool EXECUTION.
+# - ToolSets are about organizing tools into meaningful collections (e.g., "Data Analysis Tools")
+# - Runtimes are about execution environments that can run tools
+# This separation allows tools to be grouped logically while maintaining flexible execution models.
 type ToolSet @withSubscription {
   id: ID!
   name: String! @search(by: [hash])
