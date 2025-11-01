@@ -116,7 +116,6 @@ export type McpTool = {
   lastSeenAt: Scalars['Date']['output'];
   mcpServer: McpServer;
   name: Scalars['String']['output'];
-  runtimes?: Maybe<Array<Runtime>>;
   status: ActiveStatus;
   toolSets?: Maybe<Array<ToolSet>>;
   workspace: Workspace;
@@ -143,7 +142,6 @@ export type Mutation = {
   dismissOnboardingStep: Scalars['Boolean']['output'];
   initSystem: System;
   linkMCPServerToRuntime: McpServer;
-  linkMCPToolToRuntime: Runtime;
   login: AuthPayload;
   loginUser: AuthPayload;
   logout: Scalars['Boolean']['output'];
@@ -154,7 +152,6 @@ export type Mutation = {
   removeServerFromRegistry: McpRegistryServer;
   setGlobalRuntime: Workspace;
   unlinkMCPServerFromRuntime: McpServer;
-  unlinkMCPToolFromRuntime: Runtime;
   unsetGlobalRuntime: Workspace;
   updateMCPServer: McpServer;
   updateMCPServerRunOn: McpServer;
@@ -260,12 +257,6 @@ export type MutationLinkMcpServerToRuntimeArgs = {
 };
 
 
-export type MutationLinkMcpToolToRuntimeArgs = {
-  mcpToolId: Scalars['ID']['input'];
-  runtimeId: Scalars['ID']['input'];
-};
-
-
 export type MutationLoginArgs = {
   input: LoginInput;
 };
@@ -315,12 +306,6 @@ export type MutationSetGlobalRuntimeArgs = {
 
 export type MutationUnlinkMcpServerFromRuntimeArgs = {
   mcpServerId: Scalars['ID']['input'];
-};
-
-
-export type MutationUnlinkMcpToolFromRuntimeArgs = {
-  mcpToolId: Scalars['ID']['input'];
-  runtimeId: Scalars['ID']['input'];
 };
 
 
@@ -487,7 +472,6 @@ export type Runtime = {
   lastSeenAt?: Maybe<Scalars['Date']['output']>;
   mcpClientName?: Maybe<Scalars['String']['output']>;
   mcpServers?: Maybe<Array<McpServer>>;
-  mcpToolCapabilities?: Maybe<Array<McpTool>>;
   name: Scalars['String']['output'];
   roots?: Maybe<Scalars['String']['output']>;
   status: ActiveStatus;
@@ -852,7 +836,6 @@ export type McpToolResolvers<ContextType = object, ParentType extends ResolversP
   lastSeenAt?: Resolver<ResolversTypes['Date'], ParentType, ContextType>;
   mcpServer?: Resolver<ResolversTypes['MCPServer'], ParentType, ContextType>;
   name?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
-  runtimes?: Resolver<Maybe<Array<ResolversTypes['Runtime']>>, ParentType, ContextType>;
   status?: Resolver<ResolversTypes['ActiveStatus'], ParentType, ContextType>;
   toolSets?: Resolver<Maybe<Array<ResolversTypes['ToolSet']>>, ParentType, ContextType>;
   workspace?: Resolver<ResolversTypes['Workspace'], ParentType, ContextType>;
@@ -874,7 +857,6 @@ export type MutationResolvers<ContextType = object, ParentType extends Resolvers
   dismissOnboardingStep?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType, RequireFields<MutationDismissOnboardingStepArgs, 'stepId' | 'workspaceId'>>;
   initSystem?: Resolver<ResolversTypes['System'], ParentType, ContextType, RequireFields<MutationInitSystemArgs, 'adminPassword' | 'email'>>;
   linkMCPServerToRuntime?: Resolver<ResolversTypes['MCPServer'], ParentType, ContextType, RequireFields<MutationLinkMcpServerToRuntimeArgs, 'mcpServerId' | 'runtimeId'>>;
-  linkMCPToolToRuntime?: Resolver<ResolversTypes['Runtime'], ParentType, ContextType, RequireFields<MutationLinkMcpToolToRuntimeArgs, 'mcpToolId' | 'runtimeId'>>;
   login?: Resolver<ResolversTypes['AuthPayload'], ParentType, ContextType, RequireFields<MutationLoginArgs, 'input'>>;
   loginUser?: Resolver<ResolversTypes['AuthPayload'], ParentType, ContextType, RequireFields<MutationLoginUserArgs, 'input'>>;
   logout?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType, RequireFields<MutationLogoutArgs, 'input'>>;
@@ -885,7 +867,6 @@ export type MutationResolvers<ContextType = object, ParentType extends Resolvers
   removeServerFromRegistry?: Resolver<ResolversTypes['MCPRegistryServer'], ParentType, ContextType, RequireFields<MutationRemoveServerFromRegistryArgs, 'serverId'>>;
   setGlobalRuntime?: Resolver<ResolversTypes['Workspace'], ParentType, ContextType, RequireFields<MutationSetGlobalRuntimeArgs, 'id' | 'runtimeId'>>;
   unlinkMCPServerFromRuntime?: Resolver<ResolversTypes['MCPServer'], ParentType, ContextType, RequireFields<MutationUnlinkMcpServerFromRuntimeArgs, 'mcpServerId'>>;
-  unlinkMCPToolFromRuntime?: Resolver<ResolversTypes['Runtime'], ParentType, ContextType, RequireFields<MutationUnlinkMcpToolFromRuntimeArgs, 'mcpToolId' | 'runtimeId'>>;
   unsetGlobalRuntime?: Resolver<ResolversTypes['Workspace'], ParentType, ContextType, RequireFields<MutationUnsetGlobalRuntimeArgs, 'id'>>;
   updateMCPServer?: Resolver<ResolversTypes['MCPServer'], ParentType, ContextType, RequireFields<MutationUpdateMcpServerArgs, 'config' | 'description' | 'id' | 'name' | 'repositoryUrl' | 'transport'>>;
   updateMCPServerRunOn?: Resolver<ResolversTypes['MCPServer'], ParentType, ContextType, RequireFields<MutationUpdateMcpServerRunOnArgs, 'mcpServerId' | 'runOn'>>;
@@ -946,7 +927,6 @@ export type RuntimeResolvers<ContextType = object, ParentType extends ResolversP
   lastSeenAt?: Resolver<Maybe<ResolversTypes['Date']>, ParentType, ContextType>;
   mcpClientName?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   mcpServers?: Resolver<Maybe<Array<ResolversTypes['MCPServer']>>, ParentType, ContextType>;
-  mcpToolCapabilities?: Resolver<Maybe<Array<ResolversTypes['MCPTool']>>, ParentType, ContextType>;
   name?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   roots?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   status?: Resolver<ResolversTypes['ActiveStatus'], ParentType, ContextType>;

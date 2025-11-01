@@ -99,11 +99,7 @@ type MCPTool @withSubscription {
   createdAt: DateTime!
   lastSeenAt: DateTime!
   mcpServer: MCPServer! @hasInverse(field: tools)
-  # Relationship to Runtimes: represents which runtimes can EXECUTE this tool
-  # This is about runtime execution capability, not logical grouping
-  runtimes: [Runtime!] @hasInverse(field: mcpToolCapabilities)
   # Relationship to ToolSets: represents which tool collections include this tool
-  # This is about logical organization and grouping, separate from execution
   toolSets: [ToolSet!] @hasInverse(field: mcpTools)
   workspace: Workspace! @hasInverse(field: mcpTools)
   toolCalls: [ToolCall!] @hasInverse(field: mcpTool)
@@ -138,7 +134,6 @@ type Runtime @withSubscription {
   mcpClientName: String
   lastSeenAt: DateTime
   capabilities: [String!]
-  mcpToolCapabilities: [MCPTool!] @hasInverse(field: runtimes)
   mcpServers: [MCPServer!] @hasInverse(field: runtime)
   workspace: Workspace! @hasInverse(field: runtimes)
   toolCalls: [ToolCall!] @hasInverse(field: calledBy)

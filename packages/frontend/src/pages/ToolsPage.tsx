@@ -63,7 +63,6 @@ export default function ToolsPage() {
   }, [servers]);
 
   const availableToolSets = useMemo(() => {
-    console.log('computed available tool sets from', toolSets);
     return toolSets.map((toolSet: { id: string; name: string }) => ({
       id: toolSet.id,
       name: toolSet.name,

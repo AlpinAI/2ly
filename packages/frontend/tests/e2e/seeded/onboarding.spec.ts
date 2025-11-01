@@ -112,12 +112,31 @@ const createRuntime = async (
   `;
   const toolResult = await graphql<{ mcpTools: Array<{ id: string }> }>(toolQuery, { workspaceId });
 
-  // Link tools to runtime (create tool set)
-  const linkToolMutation = `
-    mutation LinkToolToRuntime($mcpToolId: ID!, $runtimeId: ID!) {
-      linkMCPToolToRuntime(mcpToolId: $mcpToolId, runtimeId: $runtimeId) {
+  // Create a ToolSet for the runtime
+  const createToolSetMutation = `
+    mutation CreateToolSet($name: String!, $description: String!, $workspaceId: ID!) {
+      createToolSet(name: $name, description: $description, workspaceId: $workspaceId) {
         id
-        mcpToolCapabilities {
+        name
+      }
+    }
+  `;
+
+  const toolSetResult = await graphql<{ createToolSet: { id: string; name: string } }>(
+    createToolSetMutation,
+    {
+      name: `${result.createRuntime.name} Tools`,
+      description: `Tools for ${result.createRuntime.name}`,
+      workspaceId,
+    }
+  );
+
+  // Add tools to the toolset
+  const addToolMutation = `
+    mutation AddToolToToolSet($mcpToolId: ID!, $toolSetId: ID!) {
+      addMCPToolToToolSet(mcpToolId: $mcpToolId, toolSetId: $toolSetId) {
+        id
+        mcpTools {
           id
           name
         }
@@ -125,11 +144,10 @@ const createRuntime = async (
     }
   `;
 
-  // Link tools to runtime (create tool set)
   for (let i = 0; i < nbToolsToLink; i++) {
-    await graphql(linkToolMutation, {
+    await graphql(addToolMutation, {
       mcpToolId: toolResult.mcpTools[i]!.id,
-      runtimeId: result.createRuntime.id,
+      toolSetId: toolSetResult.createToolSet.id,
     });
   }
 

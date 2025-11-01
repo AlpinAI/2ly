@@ -168,7 +168,7 @@ export function ToolTable({
                         <div className="text-xs text-gray-500 dark:text-gray-400 line-clamp-1 max-w-md">{tool.description}</div>
                       </td>
                       <td className="px-4 py-3 text-sm text-gray-700 dark:text-gray-300">{tool.mcpServer.name}</td>
-                      <td className="px-4 py-3 text-sm text-gray-700 dark:text-gray-300">{tool.runtimes?.length || 0}</td>
+                      <td className="px-4 py-3 text-sm text-gray-700 dark:text-gray-300">{tool.toolSets?.length || 0}</td>
                       <td className="px-4 py-3 text-sm">
                         <span
                           className={`inline-flex items-center px-2 py-1 rounded text-xs font-medium ${

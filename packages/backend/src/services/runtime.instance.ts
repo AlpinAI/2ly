@@ -214,12 +214,14 @@ export class RuntimeInstance extends Service {
             // ignore
             return;
           }
+          // Extract all tools from all servers assigned to this runtime
+          const capabilities = runtime?.mcpServers?.flatMap((server) => server.tools ?? []) ?? [];
           this.logger.debug(
-            `Capabilities for runtime ${this.instance.id}: ${JSON.stringify(runtime?.mcpToolCapabilities, null, 2)}`,
+            `Capabilities for runtime ${this.instance.id}: ${JSON.stringify(capabilities, null, 2)}`,
           );
           const message = AgentCapabilitiesMessage.create({
             RID: this.metadata.RID,
-            capabilities: runtime?.mcpToolCapabilities ?? [],
+            capabilities,
           }) as AgentCapabilitiesMessage;
           this.natsService.publishEphemeral(message);
         }),

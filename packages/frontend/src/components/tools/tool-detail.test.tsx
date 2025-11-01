@@ -63,7 +63,6 @@ describe('ToolDetail', () => {
       description: 'Test server description',
       repositoryUrl: 'https://github.com/test/server',
     },
-    runtimes: [],
     toolSets: [
       {
         __typename: 'ToolSet',

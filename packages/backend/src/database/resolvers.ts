@@ -179,30 +179,6 @@ export const resolvers = (container: Container = defaultContainer): apolloResolv
       deleteRuntime: async (_parent: unknown, { id }: { id: string }) => {
         return runtimeRepository.delete(id);
       },
-      linkMCPToolToRuntime: async (
-        _parent: unknown,
-        {
-          mcpToolId,
-          runtimeId,
-        }: {
-          mcpToolId: string;
-          runtimeId: string;
-        },
-      ) => {
-        return runtimeRepository.linkMCPToolToRuntime(mcpToolId, runtimeId);
-      },
-      unlinkMCPToolFromRuntime: async (
-        _parent: unknown,
-        {
-          mcpToolId,
-          runtimeId,
-        }: {
-          mcpToolId: string;
-          runtimeId: string;
-        },
-      ) => {
-        return runtimeRepository.unlinkMCPToolFromRuntime(mcpToolId, runtimeId);
-      },
       linkMCPServerToRuntime: async (
         _parent: unknown,
         {

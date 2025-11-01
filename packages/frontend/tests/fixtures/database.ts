@@ -31,11 +31,11 @@ export interface SeedData {
   users?: Array<Pick<dgraphResolversTypes.User, 'email' | 'password'>>;
   mcpServers?: Array<MCPServerSeed>;
   registryServers?: Array<RegistryServerSeed>;
-  tools?: Array<OmitGenerated<dgraphResolversTypes.McpTool, 'runtimes' | 'toolCalls' | 'workspace' | 'mcpServer'> & {
+  tools?: Array<OmitGenerated<dgraphResolversTypes.McpTool, 'toolSets' | 'toolCalls' | 'workspace' | 'mcpServer'> & {
     mcpServerId: string; // ID reference for seeding
   }
   >;
-  runtimes?: Array<OmitGenerated<dgraphResolversTypes.Runtime, 'mcpToolCapabilities' | 'mcpServers' | 'toolCalls' | 'toolResponses' | 'workspace'> & {
+  runtimes?: Array<OmitGenerated<dgraphResolversTypes.Runtime, 'mcpServers' | 'toolCalls' | 'toolResponses' | 'workspace'> & {
     workspaceId: string; // ID reference for seeding
   }
   >;

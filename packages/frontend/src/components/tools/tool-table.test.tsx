@@ -31,14 +31,14 @@ describe('ToolTable', () => {
         description: '',
         repositoryUrl: '',
       },
-      runtimes: [{
-        __typename: 'Runtime',
-        id: 'runtime-1',
-        name: 'Test Runtime',
-        status: ActiveStatus.Active,
-        capabilities: null,
-      }],
-      toolSets: null,
+      toolSets: [
+        {
+          __typename: 'ToolSet',
+          id: 'toolset-1',
+          name: 'Test ToolSet 1',
+          description: 'Test toolset description',
+        },
+      ],
     },
     {
       __typename: 'MCPTool',
@@ -57,7 +57,6 @@ describe('ToolTable', () => {
         description: '',
         repositoryUrl: '',
       },
-      runtimes: [],
       toolSets: null,
     },
   ];
@@ -137,7 +136,7 @@ describe('ToolTable', () => {
     expect(screen.getByText('Showing 2 tools')).toBeDefined();
   });
 
-  it('displays correct agent count (runtimes)', () => {
+  it('displays correct toolset count', () => {
     render(<ToolTable {...defaultProps} />);
 
     const cells = screen.getAllByText('1');

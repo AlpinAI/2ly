@@ -15,6 +15,7 @@ import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { createSubscriptionFromQuery } from '../helpers';
 import pino from 'pino';
+import { WorkspaceRepository } from './workspace.repository';
 
 @injectable()
 export class ToolSetRepository {
@@ -23,6 +24,7 @@ export class ToolSetRepository {
   constructor(
     @inject(DGraphService) private readonly dgraphService: DGraphService,
     @inject(LoggerService) private readonly loggerService: LoggerService,
+    @inject(WorkspaceRepository) private readonly workspaceRepository: WorkspaceRepository,
   ) {
     this.logger = this.loggerService.getLogger('toolset-repository');
   }
@@ -105,7 +107,17 @@ export class ToolSetRepository {
     });
 
     this.logger.info(`Added MCP tool ${mcpToolId} to toolset ${toolSetId}`);
-    return res.updateToolSet.toolSet[0];
+
+    // Trigger onboarding step completion check
+    const toolSet = res.updateToolSet.toolSet[0];
+    if (toolSet.workspace?.id) {
+      await this.workspaceRepository.checkAndCompleteStep(
+        toolSet.workspace.id,
+        'create-tool-set'
+      );
+    }
+
+    return toolSet;
   }
 
   async removeMCPToolFromToolSet(

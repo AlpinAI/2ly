@@ -3,11 +3,13 @@ import { Observable } from 'rxjs';
 import { ToolSetRepository } from './toolset.repository';
 import { DGraphService } from '../services/dgraph.service';
 import { LoggerService } from '@2ly/common';
+import type { WorkspaceRepository } from './workspace.repository';
 
 describe('ToolSetRepository', () => {
   let toolSetRepository: ToolSetRepository;
   let mockDGraphService: DGraphService;
   let mockLoggerService: LoggerService;
+  let mockWorkspaceRepository: WorkspaceRepository;
 
   beforeEach(() => {
     // Mock DGraphService
@@ -27,7 +29,12 @@ describe('ToolSetRepository', () => {
       })),
     } as unknown as LoggerService;
 
-    toolSetRepository = new ToolSetRepository(mockDGraphService, mockLoggerService);
+    // Mock WorkspaceRepository
+    mockWorkspaceRepository = {
+      checkAndCompleteStep: vi.fn().mockResolvedValue(undefined),
+    } as unknown as WorkspaceRepository;
+
+    toolSetRepository = new ToolSetRepository(mockDGraphService, mockLoggerService, mockWorkspaceRepository);
   });
 
   describe('create', () => {
