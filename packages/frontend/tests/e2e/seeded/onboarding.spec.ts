@@ -99,8 +99,8 @@ const createRuntime = async (
     return result.createRuntime.id;
   }
 
-  // Wait 5s, letting the time to the runtime to spawn the server and discover the tools
-  await page.waitForTimeout(5000);
+  // Wait 10s, letting the time to the runtime to spawn the server and discover the tools
+  await page.waitForTimeout(10000);
 
   // get tools
   const toolQuery = `

@@ -120,6 +120,7 @@ type ToolSet @withSubscription {
   description: String
   createdAt: DateTime!
   updatedAt: DateTime
+  # The tools that belong to this collection
   mcpTools: [MCPTool!] @hasInverse(field: toolSets)
   workspace: Workspace! @hasInverse(field: toolSets)
 }
