@@ -42,6 +42,7 @@ type Workspace @withSubscription {
   system: System! @hasInverse(field: workspaces)
   globalRuntime: Runtime
   onboardingSteps: [OnboardingStep!]
+  aiConfig: AIConfig
 }
 
 type MCPRegistryServer @withSubscription {
@@ -213,4 +214,19 @@ type ToolCall {
   mcpTool: MCPTool! @hasInverse(field: toolCalls)
   calledBy: Runtime! @hasInverse(field: toolCalls)
   executedBy: Runtime @hasInverse(field: toolResponses)
+}
+
+enum AIProvider {
+  OPENAI
+  ANTHROPIC
+}
+
+type AIConfig @withSubscription {
+  id: ID!
+  provider: AIProvider! @search
+  model: String!
+  encryptedApiKey: String!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+  workspace: Workspace! @hasInverse(field: aiConfig)
 }

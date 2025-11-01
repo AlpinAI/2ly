@@ -64,6 +64,12 @@ export interface FormDialogProps {
   onReset?: () => void;
   /** Optional icon to show in submit button */
   submitIcon?: React.ReactNode;
+  /** Whether to show cancel button (default: false) */
+  showCancel?: boolean;
+  /** Optional custom cancel handler */
+  onCancel?: () => void;
+  /** Size variant for the dialog (default: "md") */
+  size?: 'sm' | 'md' | 'lg' | 'xl' | '2xl';
 }
 
 export function FormDialog({
@@ -79,8 +85,20 @@ export function FormDialog({
   children,
   onReset,
   submitIcon,
+  showCancel = false,
+  onCancel,
+  size = 'md',
 }: FormDialogProps) {
   const formRef = useRef<HTMLFormElement>(null);
+
+  // Size class mapping
+  const sizeClasses = {
+    sm: 'max-w-sm',
+    md: 'max-w-md',
+    lg: 'max-w-lg',
+    xl: 'max-w-xl',
+    '2xl': 'max-w-2xl',
+  };
 
   // Handle form submission
   const handleSubmit = useCallback(
@@ -132,11 +150,11 @@ export function FormDialog({
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 bg-black/50 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 z-50" />
         <Dialog.Content
-          className="fixed left-[50%] top-[50%] max-h-[90vh] w-[90vw] max-w-md translate-x-[-50%] translate-y-[-50%] rounded-lg border border-gray-200 bg-white p-0 shadow-lg data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%] dark:border-gray-700 dark:bg-gray-800 z-50"
+          className={`fixed left-[50%] top-[50%] max-h-[90vh] w-[90vw] ${sizeClasses[size]} translate-x-[-50%] translate-y-[-50%] rounded-lg border border-gray-200 bg-white p-0 shadow-lg data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%] dark:border-gray-700 dark:bg-gray-800 z-50 flex flex-col`}
           onOpenAutoFocus={handleOpenAutoFocus}
         >
-          {/* Header */}
-          <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
+          {/* Header - Fixed */}
+          <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700 flex-shrink-0">
             <div>
               <Dialog.Title className="text-lg font-semibold text-gray-900 dark:text-white">
                 {title}
@@ -157,19 +175,27 @@ export function FormDialog({
             </Dialog.Close>
           </div>
 
-          {/* Form Content */}
-          <form ref={formRef} onSubmit={handleSubmit} className="p-6">
-            <fieldset disabled={isSubmitting} className="space-y-4">
-              {children}
-            </fieldset>
+          {/* Form Content - Scrollable */}
+          <form ref={formRef} onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-0">
+            <div className="flex-1 overflow-y-auto p-6">
+              <fieldset disabled={isSubmitting} className="space-y-4">
+                {children}
+              </fieldset>
+            </div>
 
-            {/* Footer Actions */}
-            <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-gray-200 dark:border-gray-700">
-              <Dialog.Close asChild>
-                <Button type="button" variant="outline" disabled={isSubmitting}>
+            {/* Footer Actions - Fixed */}
+            <div className="flex justify-end gap-3 px-6 py-4 border-t border-gray-200 dark:border-gray-700 flex-shrink-0 bg-white dark:bg-gray-800">
+              {showCancel ? (
+                <Button type="button" variant="outline" disabled={isSubmitting} onClick={onCancel}>
                   {cancelLabel}
                 </Button>
-              </Dialog.Close>
+              ) : (
+                <Dialog.Close asChild>
+                  <Button type="button" variant="outline" disabled={isSubmitting}>
+                    {cancelLabel}
+                  </Button>
+                </Dialog.Close>
+              )}
               <Button type="submit" disabled={isSubmitting || submitDisabled}>
                 {isSubmitting ? (
                   <>

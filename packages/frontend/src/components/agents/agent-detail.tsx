@@ -13,10 +13,10 @@
  * - Last seen timestamp
  */
 
-import { Bot, Wrench, Clock, Cpu, Settings, Cable, Trash2 } from 'lucide-react';
+import { Bot, Wrench, Clock, Cpu, Settings, Cable, Trash2, Sparkles } from 'lucide-react';
 import { Link, useParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { useManageToolsDialog, useConnectAgentDialog } from '@/stores/uiStore';
+import { useManageToolsDialog, useConnectAgentDialog, useAISuggesterDialog } from '@/stores/uiStore';
 import { useMutation } from '@apollo/client/react';
 import { useNotification } from '@/contexts/NotificationContext';
 import { DeleteRuntimeDocument } from '@/graphql/generated/graphql';
@@ -32,6 +32,7 @@ export function AgentDetail({ agent }: AgentDetailProps) {
   const { workspaceId } = useParams<{ workspaceId: string }>();
   const { setOpen, setSelectedToolSetId } = useManageToolsDialog();
   const { setOpen: setConnectDialogOpen, setSelectedAgentId } = useConnectAgentDialog();
+  const { setOpen: setAISuggesterOpen, setSelectedToolSetId: setAISuggesterToolSetId } = useAISuggesterDialog();
   const { confirm } = useNotification();
   const [deleteAgent] = useMutation(DeleteRuntimeDocument);
 
@@ -48,6 +49,11 @@ export function AgentDetail({ agent }: AgentDetailProps) {
   const handleConnectAgent = () => {
     setSelectedAgentId(agent.id);
     setConnectDialogOpen(true);
+  };
+
+  const handleAISuggester = () => {
+    setAISuggesterToolSetId(agent.id);
+    setAISuggesterOpen(true);
   };
 
   const handleDelete = async () => {
@@ -108,6 +114,15 @@ export function AgentDetail({ agent }: AgentDetailProps) {
           >
             <Settings className="h-4 w-4 mr-2" />
             Manage Tools
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleAISuggester}
+            className="h-8 px-3 text-sm"
+          >
+            <Sparkles className="h-4 w-4 mr-2" />
+            Build with AI
           </Button>
         </div>
 

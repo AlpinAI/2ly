@@ -17,8 +17,8 @@
  */
 
 import { useState } from 'react';
-import { useMutation } from '@apollo/client/react';
-import { Loader2 } from 'lucide-react';
+import { useMutation, useLazyQuery } from '@apollo/client/react';
+import { Loader2, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -30,7 +30,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { AddServerToRegistryDocument } from '@/graphql/generated/graphql';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { AddServerToRegistryDocument, AnalyzeRepositoryDocument } from '@/graphql/generated/graphql';
 import { useWorkspaceId } from '@/stores/workspaceStore';
 
 interface EasyManualServerFormProps {
@@ -58,6 +59,8 @@ export function EasyManualServerForm({
     },
   });
 
+  const [analyzeRepository, { loading: analyzing, error: analyzeError }] = useLazyQuery(AnalyzeRepositoryDocument);
+
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
@@ -73,6 +76,45 @@ export function EasyManualServerForm({
     url: '',
     headersText: '', // KEY=value per line
   });
+
+  const handleAnalyzeRepository = async () => {
+    if (!formData.repositoryUrl.trim() || !workspaceId) return;
+
+    try {
+      const result = await analyzeRepository({
+        variables: {
+          workspaceId,
+          repositoryUrl: formData.repositoryUrl.trim(),
+        },
+      });
+
+      const analysis = result.data?.analyzeRepository;
+      if (!analysis) {
+        console.error('No analysis data returned');
+        return;
+      }
+
+      // Auto-fill form with AI analysis results
+      setFormData((prev) => ({
+        ...prev,
+        name: analysis.name || prev.name,
+        description: analysis.description || prev.description,
+        version: analysis.version || prev.version,
+        transportType: (analysis.transportType as TransportType) || prev.transportType,
+        // STDIO fields
+        command: analysis.command || prev.command,
+        argsText: analysis.args?.join(' ') || prev.argsText,
+        envVarsText:
+          analysis.envVars?.map((env) => `${env.key}${env.value ? `=${env.value}` : ''}`).join('\n') ||
+          prev.envVarsText,
+        // SSE/STREAM fields
+        url: analysis.url || prev.url,
+        headersText: analysis.headers?.map((h) => `${h.key}=${h.value}`).join('\n') || prev.headersText,
+      }));
+    } catch (error) {
+      console.error('Failed to analyze repository:', error);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -205,6 +247,17 @@ export function EasyManualServerForm({
           Quick setup for common MCP servers. Arguments and environment variables will use fixed values.
         </p>
 
+        {/* AI Analysis Error */}
+        {analyzeError && (
+          <Alert variant="destructive">
+            <AlertDescription>
+              {analyzeError.message.includes('AI configuration not found')
+                ? 'Please configure your AI settings in the Settings page before using this feature.'
+                : `Failed to analyze repository: ${analyzeError.message}`}
+            </AlertDescription>
+          </Alert>
+        )}
+
         {/* Basic Info */}
         <div className="space-y-4">
           <div className="space-y-2">
@@ -231,14 +284,39 @@ export function EasyManualServerForm({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="repositoryUrl">Repository URL (optional)</Label>
-            <Input
-              id="repositoryUrl"
-              type="url"
-              placeholder="https://github.com/..."
-              value={formData.repositoryUrl}
-              onChange={(e) => setFormData((prev) => ({ ...prev, repositoryUrl: e.target.value }))}
-            />
+            <Label htmlFor="repositoryUrl">Repository URL</Label>
+            <div className="flex gap-2">
+              <Input
+                id="repositoryUrl"
+                type="url"
+                placeholder="https://github.com/..."
+                value={formData.repositoryUrl}
+                onChange={(e) => setFormData((prev) => ({ ...prev, repositoryUrl: e.target.value }))}
+              />
+              <Button
+                type="button"
+                variant="outline"
+                onClick={handleAnalyzeRepository}
+                disabled={!formData.repositoryUrl.trim() || analyzing}
+                className="flex-shrink-0 gap-2"
+                title="Analyze repository with AI"
+              >
+                {analyzing ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Analyzing...
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="h-4 w-4" />
+                    Analyze
+                  </>
+                )}
+              </Button>
+            </div>
+            <p className="text-xs text-gray-500 dark:text-gray-400">
+              Provide a GitHub repository URL and click "Analyze" to auto-fill form fields with AI
+            </p>
           </div>
 
           <div className="space-y-2">

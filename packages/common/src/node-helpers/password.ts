@@ -31,15 +31,16 @@ function getEncryptionKey(): string {
     );
   }
 
-  // Basic validation for key strength
+  // Accept either hex format (64 chars) or regular string (32+ chars)
+  // For password peppering, we use the raw key string regardless of format
   if (key.length < 32) {
     throw new Error(
-      'ENCRYPTION_KEY must be at least 32 characters long for adequate security.'
+      'ENCRYPTION_KEY must be at least 32 characters long (or 64 for hex format) for adequate security.'
     );
   }
 
   if (key === 'zR6xG6E9#h@dNquSM&DYwM#trbmn%nzR') {
-    console.warn('PRODUCTION ISSUE! ENCRYPTION_KEY is still the default value. Please set a strong, unique encryption key with at least 32 characters.');
+    console.warn('PRODUCTION ISSUE! ENCRYPTION_KEY is still the default value. Please set a strong, unique encryption key.');
   }
 
   return key;

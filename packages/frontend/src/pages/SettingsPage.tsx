@@ -20,7 +20,7 @@ import { Button } from '@/components/ui/button';
 import { PrivateRegistrySection } from '@/components/settings/private-registry-section';
 import { UsersRolesSection } from '@/components/settings/users-roles-section';
 import { RuntimesSection } from '@/components/settings/runtimes-section';
-import { ApiKeysSection } from '@/components/settings/api-keys-section';
+import { AISettingsSection } from '@/components/settings/ai-settings-section';
 import { useAddServerWorkflow } from '@/stores/uiStore';
 
 
@@ -51,9 +51,9 @@ export default function SettingsPage() {
               <Cpu className="h-4 w-4" />
               <span>Runtimes</span>
             </TabsTrigger>
-            <TabsTrigger value="api-keys" className="flex items-center gap-2">
+            <TabsTrigger value="ai-settings" className="flex items-center gap-2">
               <Key className="h-4 w-4" />
-              <span>API Keys</span>
+              <span>AI Settings</span>
             </TabsTrigger>
           </TabsList>
 
@@ -82,8 +82,8 @@ export default function SettingsPage() {
           <RuntimesSection />
         </TabsContent>
 
-        <TabsContent value="api-keys">
-          <ApiKeysSection />
+        <TabsContent value="ai-settings">
+          <AISettingsSection />
         </TabsContent>
       </Tabs>
     </div>

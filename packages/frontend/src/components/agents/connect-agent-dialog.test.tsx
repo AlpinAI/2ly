@@ -37,6 +37,7 @@ describe('ConnectAgentDialog', () => {
       onboardingSteps: [],
       runtimes: [],
       toolSets: [],
+      aiConfig: null,
     },
   };
 

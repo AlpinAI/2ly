@@ -1,0 +1,13 @@
+query SuggestToolSetMetadata($workspaceId: ID!, $userGoal: String!) {
+  suggestToolSetMetadata(workspaceId: $workspaceId, userGoal: $userGoal) {
+    name
+    description
+    suggestions {
+      toolId
+      toolName
+      reason
+      confidence
+    }
+    externalSuggestions
+  }
+}

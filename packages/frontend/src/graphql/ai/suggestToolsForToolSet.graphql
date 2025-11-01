@@ -1,0 +1,11 @@
+query SuggestToolsForToolSet($workspaceId: ID!, $description: String!) {
+  suggestToolsForToolSet(workspaceId: $workspaceId, description: $description) {
+    suggestions {
+      toolId
+      toolName
+      reason
+      confidence
+    }
+    externalSuggestions
+  }
+}

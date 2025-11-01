@@ -105,6 +105,7 @@ describe('ToolDetail', () => {
             registryServers: null,
             runtimes: null,
             toolSets: null,
+            aiConfig: null,
           },
           mcpServers: null,
           mcpToolCapabilities: null,

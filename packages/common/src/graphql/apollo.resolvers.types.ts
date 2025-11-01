@@ -17,6 +17,27 @@ export type Scalars = {
   Date: { input: Date; output: Date; }
 };
 
+export type AiConfig = {
+  createdAt: Scalars['Date']['output'];
+  encryptedApiKey: Scalars['String']['output'];
+  id: Scalars['ID']['output'];
+  model: Scalars['String']['output'];
+  provider: AiProvider;
+  updatedAt: Scalars['Date']['output'];
+};
+
+export enum AiProvider {
+  Anthropic = 'ANTHROPIC',
+  Openai = 'OPENAI'
+}
+
+export type AiToolSuggestion = {
+  confidence: Scalars['Float']['output'];
+  reason: Scalars['String']['output'];
+  toolId: Scalars['ID']['output'];
+  toolName: Scalars['String']['output'];
+};
+
 export enum ActiveStatus {
   Active = 'ACTIVE',
   Inactive = 'INACTIVE'
@@ -40,6 +61,16 @@ export type AuthTokens = {
 export type CallToolResult = {
   result: Scalars['String']['output'];
   success: Scalars['Boolean']['output'];
+};
+
+export type EnvVar = {
+  key: Scalars['String']['output'];
+  value: Scalars['String']['output'];
+};
+
+export type Header = {
+  key: Scalars['String']['output'];
+  value: Scalars['String']['output'];
 };
 
 export type Infra = {
@@ -134,6 +165,7 @@ export type Mutation = {
   completeOnboardingStep: Scalars['Boolean']['output'];
   createMCPServer: McpServer;
   createRuntime: Runtime;
+  deleteAIConfig: Scalars['Boolean']['output'];
   deleteMCPServer: McpServer;
   deleteMCPTool: McpTool;
   deleteRuntime: Runtime;
@@ -148,6 +180,7 @@ export type Mutation = {
   refreshToken: RefreshTokenPayload;
   registerUser: RegisterUserPayload;
   removeServerFromRegistry: McpRegistryServer;
+  setAIConfig: AiConfig;
   setGlobalRuntime: Workspace;
   unlinkMCPServerFromRuntime: McpServer;
   unlinkMCPToolFromRuntime: Runtime;
@@ -200,6 +233,11 @@ export type MutationCreateRuntimeArgs = {
   capabilities: Array<Scalars['String']['input']>;
   description: Scalars['String']['input'];
   name: Scalars['String']['input'];
+  workspaceId: Scalars['ID']['input'];
+};
+
+
+export type MutationDeleteAiConfigArgs = {
   workspaceId: Scalars['ID']['input'];
 };
 
@@ -275,6 +313,14 @@ export type MutationRegisterUserArgs = {
 
 export type MutationRemoveServerFromRegistryArgs = {
   serverId: Scalars['ID']['input'];
+};
+
+
+export type MutationSetAiConfigArgs = {
+  apiKey: Scalars['String']['input'];
+  model: Scalars['String']['input'];
+  provider: AiProvider;
+  workspaceId: Scalars['ID']['input'];
 };
 
 
@@ -370,16 +416,31 @@ export enum OrderDirection {
 }
 
 export type Query = {
+  analyzeRepository: RepositoryAnalysis;
+  getAIConfig?: Maybe<AiConfig>;
   getRegistryServers: Array<McpRegistryServer>;
   infra: Infra;
   isMCPAutoConfigEnabled: Scalars['Boolean']['output'];
   mcpServers?: Maybe<Array<McpServer>>;
   mcpTools?: Maybe<Array<McpTool>>;
   me?: Maybe<User>;
+  suggestToolSetMetadata: ToolSetMetadataSuggestion;
+  suggestToolsForToolSet: SuggestToolsResult;
   system?: Maybe<System>;
   toolCalls: ToolCallsResult;
   workspace?: Maybe<Array<Workspace>>;
   workspaceMCPTools?: Maybe<Workspace>;
+};
+
+
+export type QueryAnalyzeRepositoryArgs = {
+  repositoryUrl: Scalars['String']['input'];
+  workspaceId: Scalars['ID']['input'];
+};
+
+
+export type QueryGetAiConfigArgs = {
+  workspaceId: Scalars['ID']['input'];
 };
 
 
@@ -394,6 +455,18 @@ export type QueryMcpServersArgs = {
 
 
 export type QueryMcpToolsArgs = {
+  workspaceId: Scalars['ID']['input'];
+};
+
+
+export type QuerySuggestToolSetMetadataArgs = {
+  userGoal: Scalars['String']['input'];
+  workspaceId: Scalars['ID']['input'];
+};
+
+
+export type QuerySuggestToolsForToolSetArgs = {
+  description: Scalars['String']['input'];
   workspaceId: Scalars['ID']['input'];
 };
 
@@ -433,6 +506,18 @@ export type RegisterUserPayload = {
   success: Scalars['Boolean']['output'];
   tokens?: Maybe<AuthTokens>;
   user?: Maybe<User>;
+};
+
+export type RepositoryAnalysis = {
+  args?: Maybe<Array<Scalars['String']['output']>>;
+  command?: Maybe<Scalars['String']['output']>;
+  description: Scalars['String']['output'];
+  envVars?: Maybe<Array<EnvVar>>;
+  headers?: Maybe<Array<Header>>;
+  name: Scalars['String']['output'];
+  transportType: Scalars['String']['output'];
+  url?: Maybe<Scalars['String']['output']>;
+  version: Scalars['String']['output'];
 };
 
 export type Runtime = {
@@ -478,6 +563,11 @@ export type SubscriptionToolCallsArgs = {
 
 export type SubscriptionWorkspaceArgs = {
   workspaceId: Scalars['ID']['input'];
+};
+
+export type SuggestToolsResult = {
+  externalSuggestions: Array<Scalars['String']['output']>;
+  suggestions: Array<AiToolSuggestion>;
 };
 
 export type System = {
@@ -543,6 +633,13 @@ export type ToolSet = {
   workspace: Workspace;
 };
 
+export type ToolSetMetadataSuggestion = {
+  description: Scalars['String']['output'];
+  externalSuggestions: Array<Scalars['String']['output']>;
+  name: Scalars['String']['output'];
+  suggestions: Array<AiToolSuggestion>;
+};
+
 export type User = {
   adminOfWorkspaces?: Maybe<Array<Workspace>>;
   createdAt: Scalars['Date']['output'];
@@ -554,6 +651,7 @@ export type User = {
 };
 
 export type Workspace = {
+  aiConfig?: Maybe<AiConfig>;
   createdAt: Scalars['Date']['output'];
   globalRuntime?: Maybe<Runtime>;
   id: Scalars['ID']['output'];
@@ -637,13 +735,18 @@ export type DirectiveResolverFn<TResult = {}, TParent = {}, TContext = {}, TArgs
 
 /** Mapping between all available schema types and the resolvers types */
 export type ResolversTypes = {
+  AIConfig: ResolverTypeWrapper<AiConfig>;
+  AIProvider: AiProvider;
+  AIToolSuggestion: ResolverTypeWrapper<AiToolSuggestion>;
   ActiveStatus: ActiveStatus;
   AuthPayload: ResolverTypeWrapper<AuthPayload>;
   AuthTokens: ResolverTypeWrapper<AuthTokens>;
   Boolean: ResolverTypeWrapper<Scalars['Boolean']['output']>;
   CallToolResult: ResolverTypeWrapper<CallToolResult>;
   Date: ResolverTypeWrapper<Scalars['Date']['output']>;
+  EnvVar: ResolverTypeWrapper<EnvVar>;
   Float: ResolverTypeWrapper<Scalars['Float']['output']>;
+  Header: ResolverTypeWrapper<Header>;
   ID: ResolverTypeWrapper<Scalars['ID']['output']>;
   Infra: ResolverTypeWrapper<Infra>;
   Int: ResolverTypeWrapper<Scalars['Int']['output']>;
@@ -667,9 +770,11 @@ export type ResolversTypes = {
   RefreshTokenPayload: ResolverTypeWrapper<RefreshTokenPayload>;
   RegisterUserInput: RegisterUserInput;
   RegisterUserPayload: ResolverTypeWrapper<RegisterUserPayload>;
+  RepositoryAnalysis: ResolverTypeWrapper<RepositoryAnalysis>;
   Runtime: ResolverTypeWrapper<Runtime>;
   String: ResolverTypeWrapper<Scalars['String']['output']>;
   Subscription: ResolverTypeWrapper<{}>;
+  SuggestToolsResult: ResolverTypeWrapper<SuggestToolsResult>;
   System: ResolverTypeWrapper<System>;
   ToolCall: ResolverTypeWrapper<ToolCall>;
   ToolCallFilters: ToolCallFilters;
@@ -677,18 +782,23 @@ export type ResolversTypes = {
   ToolCallStatus: ToolCallStatus;
   ToolCallsResult: ResolverTypeWrapper<ToolCallsResult>;
   ToolSet: ResolverTypeWrapper<ToolSet>;
+  ToolSetMetadataSuggestion: ResolverTypeWrapper<ToolSetMetadataSuggestion>;
   User: ResolverTypeWrapper<User>;
   Workspace: ResolverTypeWrapper<Workspace>;
 };
 
 /** Mapping between all available schema types and the resolvers parents */
 export type ResolversParentTypes = {
+  AIConfig: AiConfig;
+  AIToolSuggestion: AiToolSuggestion;
   AuthPayload: AuthPayload;
   AuthTokens: AuthTokens;
   Boolean: Scalars['Boolean']['output'];
   CallToolResult: CallToolResult;
   Date: Scalars['Date']['output'];
+  EnvVar: EnvVar;
   Float: Scalars['Float']['output'];
+  Header: Header;
   ID: Scalars['ID']['output'];
   Infra: Infra;
   Int: Scalars['Int']['output'];
@@ -707,17 +817,38 @@ export type ResolversParentTypes = {
   RefreshTokenPayload: RefreshTokenPayload;
   RegisterUserInput: RegisterUserInput;
   RegisterUserPayload: RegisterUserPayload;
+  RepositoryAnalysis: RepositoryAnalysis;
   Runtime: Runtime;
   String: Scalars['String']['output'];
   Subscription: {};
+  SuggestToolsResult: SuggestToolsResult;
   System: System;
   ToolCall: ToolCall;
   ToolCallFilters: ToolCallFilters;
   ToolCallStats: ToolCallStats;
   ToolCallsResult: ToolCallsResult;
   ToolSet: ToolSet;
+  ToolSetMetadataSuggestion: ToolSetMetadataSuggestion;
   User: User;
   Workspace: Workspace;
+};
+
+export type AiConfigResolvers<ContextType = object, ParentType extends ResolversParentTypes['AIConfig'] = ResolversParentTypes['AIConfig']> = {
+  createdAt?: Resolver<ResolversTypes['Date'], ParentType, ContextType>;
+  encryptedApiKey?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
+  model?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  provider?: Resolver<ResolversTypes['AIProvider'], ParentType, ContextType>;
+  updatedAt?: Resolver<ResolversTypes['Date'], ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+};
+
+export type AiToolSuggestionResolvers<ContextType = object, ParentType extends ResolversParentTypes['AIToolSuggestion'] = ResolversParentTypes['AIToolSuggestion']> = {
+  confidence?: Resolver<ResolversTypes['Float'], ParentType, ContextType>;
+  reason?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  toolId?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
+  toolName?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 };
 
 export type AuthPayloadResolvers<ContextType = object, ParentType extends ResolversParentTypes['AuthPayload'] = ResolversParentTypes['AuthPayload']> = {
@@ -746,6 +877,18 @@ export type CallToolResultResolvers<ContextType = object, ParentType extends Res
 export interface DateScalarConfig extends GraphQLScalarTypeConfig<ResolversTypes['Date'], any> {
   name: 'Date';
 }
+
+export type EnvVarResolvers<ContextType = object, ParentType extends ResolversParentTypes['EnvVar'] = ResolversParentTypes['EnvVar']> = {
+  key?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  value?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+};
+
+export type HeaderResolvers<ContextType = object, ParentType extends ResolversParentTypes['Header'] = ResolversParentTypes['Header']> = {
+  key?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  value?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+};
 
 export type InfraResolvers<ContextType = object, ParentType extends ResolversParentTypes['Infra'] = ResolversParentTypes['Infra']> = {
   nats?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
@@ -812,6 +955,7 @@ export type MutationResolvers<ContextType = object, ParentType extends Resolvers
   completeOnboardingStep?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType, RequireFields<MutationCompleteOnboardingStepArgs, 'stepId' | 'workspaceId'>>;
   createMCPServer?: Resolver<ResolversTypes['MCPServer'], ParentType, ContextType, RequireFields<MutationCreateMcpServerArgs, 'config' | 'description' | 'name' | 'registryServerId' | 'repositoryUrl' | 'transport' | 'workspaceId'>>;
   createRuntime?: Resolver<ResolversTypes['Runtime'], ParentType, ContextType, RequireFields<MutationCreateRuntimeArgs, 'capabilities' | 'description' | 'name' | 'workspaceId'>>;
+  deleteAIConfig?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType, RequireFields<MutationDeleteAiConfigArgs, 'workspaceId'>>;
   deleteMCPServer?: Resolver<ResolversTypes['MCPServer'], ParentType, ContextType, RequireFields<MutationDeleteMcpServerArgs, 'id'>>;
   deleteMCPTool?: Resolver<ResolversTypes['MCPTool'], ParentType, ContextType, RequireFields<MutationDeleteMcpToolArgs, 'id'>>;
   deleteRuntime?: Resolver<ResolversTypes['Runtime'], ParentType, ContextType, RequireFields<MutationDeleteRuntimeArgs, 'id'>>;
@@ -826,6 +970,7 @@ export type MutationResolvers<ContextType = object, ParentType extends Resolvers
   refreshToken?: Resolver<ResolversTypes['RefreshTokenPayload'], ParentType, ContextType, RequireFields<MutationRefreshTokenArgs, 'input'>>;
   registerUser?: Resolver<ResolversTypes['RegisterUserPayload'], ParentType, ContextType, RequireFields<MutationRegisterUserArgs, 'input'>>;
   removeServerFromRegistry?: Resolver<ResolversTypes['MCPRegistryServer'], ParentType, ContextType, RequireFields<MutationRemoveServerFromRegistryArgs, 'serverId'>>;
+  setAIConfig?: Resolver<ResolversTypes['AIConfig'], ParentType, ContextType, RequireFields<MutationSetAiConfigArgs, 'apiKey' | 'model' | 'provider' | 'workspaceId'>>;
   setGlobalRuntime?: Resolver<ResolversTypes['Workspace'], ParentType, ContextType, RequireFields<MutationSetGlobalRuntimeArgs, 'id' | 'runtimeId'>>;
   unlinkMCPServerFromRuntime?: Resolver<ResolversTypes['MCPServer'], ParentType, ContextType, RequireFields<MutationUnlinkMcpServerFromRuntimeArgs, 'mcpServerId'>>;
   unlinkMCPToolFromRuntime?: Resolver<ResolversTypes['Runtime'], ParentType, ContextType, RequireFields<MutationUnlinkMcpToolFromRuntimeArgs, 'mcpToolId' | 'runtimeId'>>;
@@ -849,12 +994,16 @@ export type OnboardingStepResolvers<ContextType = object, ParentType extends Res
 };
 
 export type QueryResolvers<ContextType = object, ParentType extends ResolversParentTypes['Query'] = ResolversParentTypes['Query']> = {
+  analyzeRepository?: Resolver<ResolversTypes['RepositoryAnalysis'], ParentType, ContextType, RequireFields<QueryAnalyzeRepositoryArgs, 'repositoryUrl' | 'workspaceId'>>;
+  getAIConfig?: Resolver<Maybe<ResolversTypes['AIConfig']>, ParentType, ContextType, RequireFields<QueryGetAiConfigArgs, 'workspaceId'>>;
   getRegistryServers?: Resolver<Array<ResolversTypes['MCPRegistryServer']>, ParentType, ContextType, RequireFields<QueryGetRegistryServersArgs, 'workspaceId'>>;
   infra?: Resolver<ResolversTypes['Infra'], ParentType, ContextType>;
   isMCPAutoConfigEnabled?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
   mcpServers?: Resolver<Maybe<Array<ResolversTypes['MCPServer']>>, ParentType, ContextType, RequireFields<QueryMcpServersArgs, 'workspaceId'>>;
   mcpTools?: Resolver<Maybe<Array<ResolversTypes['MCPTool']>>, ParentType, ContextType, RequireFields<QueryMcpToolsArgs, 'workspaceId'>>;
   me?: Resolver<Maybe<ResolversTypes['User']>, ParentType, ContextType>;
+  suggestToolSetMetadata?: Resolver<ResolversTypes['ToolSetMetadataSuggestion'], ParentType, ContextType, RequireFields<QuerySuggestToolSetMetadataArgs, 'userGoal' | 'workspaceId'>>;
+  suggestToolsForToolSet?: Resolver<ResolversTypes['SuggestToolsResult'], ParentType, ContextType, RequireFields<QuerySuggestToolsForToolSetArgs, 'description' | 'workspaceId'>>;
   system?: Resolver<Maybe<ResolversTypes['System']>, ParentType, ContextType>;
   toolCalls?: Resolver<ResolversTypes['ToolCallsResult'], ParentType, ContextType, RequireFields<QueryToolCallsArgs, 'workspaceId'>>;
   workspace?: Resolver<Maybe<Array<ResolversTypes['Workspace']>>, ParentType, ContextType>;
@@ -874,6 +1023,19 @@ export type RegisterUserPayloadResolvers<ContextType = object, ParentType extend
   success?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
   tokens?: Resolver<Maybe<ResolversTypes['AuthTokens']>, ParentType, ContextType>;
   user?: Resolver<Maybe<ResolversTypes['User']>, ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+};
+
+export type RepositoryAnalysisResolvers<ContextType = object, ParentType extends ResolversParentTypes['RepositoryAnalysis'] = ResolversParentTypes['RepositoryAnalysis']> = {
+  args?: Resolver<Maybe<Array<ResolversTypes['String']>>, ParentType, ContextType>;
+  command?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  description?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  envVars?: Resolver<Maybe<Array<ResolversTypes['EnvVar']>>, ParentType, ContextType>;
+  headers?: Resolver<Maybe<Array<ResolversTypes['Header']>>, ParentType, ContextType>;
+  name?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  transportType?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  url?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  version?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 };
 
@@ -901,6 +1063,12 @@ export type SubscriptionResolvers<ContextType = object, ParentType extends Resol
   toolCalls?: SubscriptionResolver<Maybe<Array<ResolversTypes['ToolCall']>>, "toolCalls", ParentType, ContextType, RequireFields<SubscriptionToolCallsArgs, 'workspaceId'>>;
   workspace?: SubscriptionResolver<Maybe<ResolversTypes['Workspace']>, "workspace", ParentType, ContextType, RequireFields<SubscriptionWorkspaceArgs, 'workspaceId'>>;
   workspaces?: SubscriptionResolver<Maybe<Array<ResolversTypes['Workspace']>>, "workspaces", ParentType, ContextType>;
+};
+
+export type SuggestToolsResultResolvers<ContextType = object, ParentType extends ResolversParentTypes['SuggestToolsResult'] = ResolversParentTypes['SuggestToolsResult']> = {
+  externalSuggestions?: Resolver<Array<ResolversTypes['String']>, ParentType, ContextType>;
+  suggestions?: Resolver<Array<ResolversTypes['AIToolSuggestion']>, ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 };
 
 export type SystemResolvers<ContextType = object, ParentType extends ResolversParentTypes['System'] = ResolversParentTypes['System']> = {
@@ -955,6 +1123,14 @@ export type ToolSetResolvers<ContextType = object, ParentType extends ResolversP
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 };
 
+export type ToolSetMetadataSuggestionResolvers<ContextType = object, ParentType extends ResolversParentTypes['ToolSetMetadataSuggestion'] = ResolversParentTypes['ToolSetMetadataSuggestion']> = {
+  description?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  externalSuggestions?: Resolver<Array<ResolversTypes['String']>, ParentType, ContextType>;
+  name?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  suggestions?: Resolver<Array<ResolversTypes['AIToolSuggestion']>, ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+};
+
 export type UserResolvers<ContextType = object, ParentType extends ResolversParentTypes['User'] = ResolversParentTypes['User']> = {
   adminOfWorkspaces?: Resolver<Maybe<Array<ResolversTypes['Workspace']>>, ParentType, ContextType>;
   createdAt?: Resolver<ResolversTypes['Date'], ParentType, ContextType>;
@@ -967,6 +1143,7 @@ export type UserResolvers<ContextType = object, ParentType extends ResolversPare
 };
 
 export type WorkspaceResolvers<ContextType = object, ParentType extends ResolversParentTypes['Workspace'] = ResolversParentTypes['Workspace']> = {
+  aiConfig?: Resolver<Maybe<ResolversTypes['AIConfig']>, ParentType, ContextType>;
   createdAt?: Resolver<ResolversTypes['Date'], ParentType, ContextType>;
   globalRuntime?: Resolver<Maybe<ResolversTypes['Runtime']>, ParentType, ContextType>;
   id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
@@ -981,10 +1158,14 @@ export type WorkspaceResolvers<ContextType = object, ParentType extends Resolver
 };
 
 export type Resolvers<ContextType = object> = {
+  AIConfig?: AiConfigResolvers<ContextType>;
+  AIToolSuggestion?: AiToolSuggestionResolvers<ContextType>;
   AuthPayload?: AuthPayloadResolvers<ContextType>;
   AuthTokens?: AuthTokensResolvers<ContextType>;
   CallToolResult?: CallToolResultResolvers<ContextType>;
   Date?: GraphQLScalarType;
+  EnvVar?: EnvVarResolvers<ContextType>;
+  Header?: HeaderResolvers<ContextType>;
   Infra?: InfraResolvers<ContextType>;
   LogoutPayload?: LogoutPayloadResolvers<ContextType>;
   MCPRegistryServer?: McpRegistryServerResolvers<ContextType>;
@@ -995,13 +1176,16 @@ export type Resolvers<ContextType = object> = {
   Query?: QueryResolvers<ContextType>;
   RefreshTokenPayload?: RefreshTokenPayloadResolvers<ContextType>;
   RegisterUserPayload?: RegisterUserPayloadResolvers<ContextType>;
+  RepositoryAnalysis?: RepositoryAnalysisResolvers<ContextType>;
   Runtime?: RuntimeResolvers<ContextType>;
   Subscription?: SubscriptionResolvers<ContextType>;
+  SuggestToolsResult?: SuggestToolsResultResolvers<ContextType>;
   System?: SystemResolvers<ContextType>;
   ToolCall?: ToolCallResolvers<ContextType>;
   ToolCallStats?: ToolCallStatsResolvers<ContextType>;
   ToolCallsResult?: ToolCallsResultResolvers<ContextType>;
   ToolSet?: ToolSetResolvers<ContextType>;
+  ToolSetMetadataSuggestion?: ToolSetMetadataSuggestionResolvers<ContextType>;
   User?: UserResolvers<ContextType>;
   Workspace?: WorkspaceResolvers<ContextType>;
 };

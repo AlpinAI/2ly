@@ -16,6 +16,29 @@ export type Scalars = {
   Date: { input: Date; output: Date; }
 };
 
+export type AiConfig = {
+  __typename: 'AIConfig';
+  createdAt: Scalars['Date']['output'];
+  encryptedApiKey: Scalars['String']['output'];
+  id: Scalars['ID']['output'];
+  model: Scalars['String']['output'];
+  provider: AiProvider;
+  updatedAt: Scalars['Date']['output'];
+};
+
+export enum AiProvider {
+  Anthropic = 'ANTHROPIC',
+  Openai = 'OPENAI'
+}
+
+export type AiToolSuggestion = {
+  __typename: 'AIToolSuggestion';
+  confidence: Scalars['Float']['output'];
+  reason: Scalars['String']['output'];
+  toolId: Scalars['ID']['output'];
+  toolName: Scalars['String']['output'];
+};
+
 export enum ActiveStatus {
   Active = 'ACTIVE',
   Inactive = 'INACTIVE'
@@ -42,6 +65,18 @@ export type CallToolResult = {
   __typename: 'CallToolResult';
   result: Scalars['String']['output'];
   success: Scalars['Boolean']['output'];
+};
+
+export type EnvVar = {
+  __typename: 'EnvVar';
+  key: Scalars['String']['output'];
+  value: Scalars['String']['output'];
+};
+
+export type Header = {
+  __typename: 'Header';
+  key: Scalars['String']['output'];
+  value: Scalars['String']['output'];
 };
 
 export type Infra = {
@@ -142,6 +177,7 @@ export type Mutation = {
   completeOnboardingStep: Scalars['Boolean']['output'];
   createMCPServer: McpServer;
   createRuntime: Runtime;
+  deleteAIConfig: Scalars['Boolean']['output'];
   deleteMCPServer: McpServer;
   deleteMCPTool: McpTool;
   deleteRuntime: Runtime;
@@ -156,6 +192,7 @@ export type Mutation = {
   refreshToken: RefreshTokenPayload;
   registerUser: RegisterUserPayload;
   removeServerFromRegistry: McpRegistryServer;
+  setAIConfig: AiConfig;
   setGlobalRuntime: Workspace;
   unlinkMCPServerFromRuntime: McpServer;
   unlinkMCPToolFromRuntime: Runtime;
@@ -208,6 +245,11 @@ export type MutationCreateRuntimeArgs = {
   capabilities: Array<Scalars['String']['input']>;
   description: Scalars['String']['input'];
   name: Scalars['String']['input'];
+  workspaceId: Scalars['ID']['input'];
+};
+
+
+export type MutationDeleteAiConfigArgs = {
   workspaceId: Scalars['ID']['input'];
 };
 
@@ -283,6 +325,14 @@ export type MutationRegisterUserArgs = {
 
 export type MutationRemoveServerFromRegistryArgs = {
   serverId: Scalars['ID']['input'];
+};
+
+
+export type MutationSetAiConfigArgs = {
+  apiKey: Scalars['String']['input'];
+  model: Scalars['String']['input'];
+  provider: AiProvider;
+  workspaceId: Scalars['ID']['input'];
 };
 
 
@@ -380,16 +430,31 @@ export enum OrderDirection {
 
 export type Query = {
   __typename: 'Query';
+  analyzeRepository: RepositoryAnalysis;
+  getAIConfig: Maybe<AiConfig>;
   getRegistryServers: Array<McpRegistryServer>;
   infra: Infra;
   isMCPAutoConfigEnabled: Scalars['Boolean']['output'];
   mcpServers: Maybe<Array<McpServer>>;
   mcpTools: Maybe<Array<McpTool>>;
   me: Maybe<User>;
+  suggestToolSetMetadata: ToolSetMetadataSuggestion;
+  suggestToolsForToolSet: SuggestToolsResult;
   system: Maybe<System>;
   toolCalls: ToolCallsResult;
   workspace: Maybe<Array<Workspace>>;
   workspaceMCPTools: Maybe<Workspace>;
+};
+
+
+export type QueryAnalyzeRepositoryArgs = {
+  repositoryUrl: Scalars['String']['input'];
+  workspaceId: Scalars['ID']['input'];
+};
+
+
+export type QueryGetAiConfigArgs = {
+  workspaceId: Scalars['ID']['input'];
 };
 
 
@@ -404,6 +469,18 @@ export type QueryMcpServersArgs = {
 
 
 export type QueryMcpToolsArgs = {
+  workspaceId: Scalars['ID']['input'];
+};
+
+
+export type QuerySuggestToolSetMetadataArgs = {
+  userGoal: Scalars['String']['input'];
+  workspaceId: Scalars['ID']['input'];
+};
+
+
+export type QuerySuggestToolsForToolSetArgs = {
+  description: Scalars['String']['input'];
   workspaceId: Scalars['ID']['input'];
 };
 
@@ -445,6 +522,19 @@ export type RegisterUserPayload = {
   success: Scalars['Boolean']['output'];
   tokens: Maybe<AuthTokens>;
   user: Maybe<User>;
+};
+
+export type RepositoryAnalysis = {
+  __typename: 'RepositoryAnalysis';
+  args: Maybe<Array<Scalars['String']['output']>>;
+  command: Maybe<Scalars['String']['output']>;
+  description: Scalars['String']['output'];
+  envVars: Maybe<Array<EnvVar>>;
+  headers: Maybe<Array<Header>>;
+  name: Scalars['String']['output'];
+  transportType: Scalars['String']['output'];
+  url: Maybe<Scalars['String']['output']>;
+  version: Scalars['String']['output'];
 };
 
 export type Runtime = {
@@ -492,6 +582,12 @@ export type SubscriptionToolCallsArgs = {
 
 export type SubscriptionWorkspaceArgs = {
   workspaceId: Scalars['ID']['input'];
+};
+
+export type SuggestToolsResult = {
+  __typename: 'SuggestToolsResult';
+  externalSuggestions: Array<Scalars['String']['output']>;
+  suggestions: Array<AiToolSuggestion>;
 };
 
 export type System = {
@@ -562,6 +658,14 @@ export type ToolSet = {
   workspace: Workspace;
 };
 
+export type ToolSetMetadataSuggestion = {
+  __typename: 'ToolSetMetadataSuggestion';
+  description: Scalars['String']['output'];
+  externalSuggestions: Array<Scalars['String']['output']>;
+  name: Scalars['String']['output'];
+  suggestions: Array<AiToolSuggestion>;
+};
+
 export type User = {
   __typename: 'User';
   adminOfWorkspaces: Maybe<Array<Workspace>>;
@@ -575,6 +679,7 @@ export type User = {
 
 export type Workspace = {
   __typename: 'Workspace';
+  aiConfig: Maybe<AiConfig>;
   createdAt: Scalars['Date']['output'];
   globalRuntime: Maybe<Runtime>;
   id: Scalars['ID']['output'];
@@ -586,6 +691,54 @@ export type Workspace = {
   runtimes: Maybe<Array<Runtime>>;
   toolSets: Maybe<Array<ToolSet>>;
 };
+
+export type AnalyzeRepositoryQueryVariables = Exact<{
+  workspaceId: Scalars['ID']['input'];
+  repositoryUrl: Scalars['String']['input'];
+}>;
+
+
+export type AnalyzeRepositoryQuery = { analyzeRepository: { __typename: 'RepositoryAnalysis', name: string, description: string, version: string, transportType: string, command: string | null, args: Array<string> | null, url: string | null, envVars: Array<{ __typename: 'EnvVar', key: string, value: string }> | null, headers: Array<{ __typename: 'Header', key: string, value: string }> | null } };
+
+export type DeleteAiConfigMutationVariables = Exact<{
+  workspaceId: Scalars['ID']['input'];
+}>;
+
+
+export type DeleteAiConfigMutation = { deleteAIConfig: boolean };
+
+export type GetAiConfigQueryVariables = Exact<{
+  workspaceId: Scalars['ID']['input'];
+}>;
+
+
+export type GetAiConfigQuery = { getAIConfig: { __typename: 'AIConfig', id: string, provider: AiProvider, model: string, createdAt: Date, updatedAt: Date } | null };
+
+export type SetAiConfigMutationVariables = Exact<{
+  workspaceId: Scalars['ID']['input'];
+  provider: AiProvider;
+  model: Scalars['String']['input'];
+  apiKey: Scalars['String']['input'];
+}>;
+
+
+export type SetAiConfigMutation = { setAIConfig: { __typename: 'AIConfig', id: string, provider: AiProvider, model: string, createdAt: Date, updatedAt: Date } };
+
+export type SuggestToolSetMetadataQueryVariables = Exact<{
+  workspaceId: Scalars['ID']['input'];
+  userGoal: Scalars['String']['input'];
+}>;
+
+
+export type SuggestToolSetMetadataQuery = { suggestToolSetMetadata: { __typename: 'ToolSetMetadataSuggestion', name: string, description: string, externalSuggestions: Array<string>, suggestions: Array<{ __typename: 'AIToolSuggestion', toolId: string, toolName: string, reason: string, confidence: number }> } };
+
+export type SuggestToolsForToolSetQueryVariables = Exact<{
+  workspaceId: Scalars['ID']['input'];
+  description: Scalars['String']['input'];
+}>;
+
+
+export type SuggestToolsForToolSetQuery = { suggestToolsForToolSet: { __typename: 'SuggestToolsResult', externalSuggestions: Array<string>, suggestions: Array<{ __typename: 'AIToolSuggestion', toolId: string, toolName: string, reason: string, confidence: number }> } };
 
 export type LoginMutationVariables = Exact<{
   input: LoginInput;
@@ -840,6 +993,12 @@ export type ValidateWorkspaceQueryVariables = Exact<{
 export type ValidateWorkspaceQuery = { workspaceMCPTools: { __typename: 'Workspace', id: string, name: string } | null };
 
 
+export const AnalyzeRepositoryDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"AnalyzeRepository"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"workspaceId"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"repositoryUrl"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"analyzeRepository"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"workspaceId"},"value":{"kind":"Variable","name":{"kind":"Name","value":"workspaceId"}}},{"kind":"Argument","name":{"kind":"Name","value":"repositoryUrl"},"value":{"kind":"Variable","name":{"kind":"Name","value":"repositoryUrl"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"description"}},{"kind":"Field","name":{"kind":"Name","value":"version"}},{"kind":"Field","name":{"kind":"Name","value":"transportType"}},{"kind":"Field","name":{"kind":"Name","value":"command"}},{"kind":"Field","name":{"kind":"Name","value":"args"}},{"kind":"Field","name":{"kind":"Name","value":"envVars"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"key"}},{"kind":"Field","name":{"kind":"Name","value":"value"}}]}},{"kind":"Field","name":{"kind":"Name","value":"url"}},{"kind":"Field","name":{"kind":"Name","value":"headers"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"key"}},{"kind":"Field","name":{"kind":"Name","value":"value"}}]}}]}}]}}]} as unknown as DocumentNode<AnalyzeRepositoryQuery, AnalyzeRepositoryQueryVariables>;
+export const DeleteAiConfigDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"DeleteAIConfig"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"workspaceId"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"deleteAIConfig"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"workspaceId"},"value":{"kind":"Variable","name":{"kind":"Name","value":"workspaceId"}}}]}]}}]} as unknown as DocumentNode<DeleteAiConfigMutation, DeleteAiConfigMutationVariables>;
+export const GetAiConfigDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"GetAIConfig"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"workspaceId"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"getAIConfig"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"workspaceId"},"value":{"kind":"Variable","name":{"kind":"Name","value":"workspaceId"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"provider"}},{"kind":"Field","name":{"kind":"Name","value":"model"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}},{"kind":"Field","name":{"kind":"Name","value":"updatedAt"}}]}}]}}]} as unknown as DocumentNode<GetAiConfigQuery, GetAiConfigQueryVariables>;
+export const SetAiConfigDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"SetAIConfig"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"workspaceId"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"provider"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"AIProvider"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"model"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"apiKey"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"setAIConfig"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"workspaceId"},"value":{"kind":"Variable","name":{"kind":"Name","value":"workspaceId"}}},{"kind":"Argument","name":{"kind":"Name","value":"provider"},"value":{"kind":"Variable","name":{"kind":"Name","value":"provider"}}},{"kind":"Argument","name":{"kind":"Name","value":"model"},"value":{"kind":"Variable","name":{"kind":"Name","value":"model"}}},{"kind":"Argument","name":{"kind":"Name","value":"apiKey"},"value":{"kind":"Variable","name":{"kind":"Name","value":"apiKey"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"provider"}},{"kind":"Field","name":{"kind":"Name","value":"model"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}},{"kind":"Field","name":{"kind":"Name","value":"updatedAt"}}]}}]}}]} as unknown as DocumentNode<SetAiConfigMutation, SetAiConfigMutationVariables>;
+export const SuggestToolSetMetadataDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"SuggestToolSetMetadata"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"workspaceId"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"userGoal"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"suggestToolSetMetadata"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"workspaceId"},"value":{"kind":"Variable","name":{"kind":"Name","value":"workspaceId"}}},{"kind":"Argument","name":{"kind":"Name","value":"userGoal"},"value":{"kind":"Variable","name":{"kind":"Name","value":"userGoal"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"description"}},{"kind":"Field","name":{"kind":"Name","value":"suggestions"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"toolId"}},{"kind":"Field","name":{"kind":"Name","value":"toolName"}},{"kind":"Field","name":{"kind":"Name","value":"reason"}},{"kind":"Field","name":{"kind":"Name","value":"confidence"}}]}},{"kind":"Field","name":{"kind":"Name","value":"externalSuggestions"}}]}}]}}]} as unknown as DocumentNode<SuggestToolSetMetadataQuery, SuggestToolSetMetadataQueryVariables>;
+export const SuggestToolsForToolSetDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"SuggestToolsForToolSet"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"workspaceId"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"description"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"suggestToolsForToolSet"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"workspaceId"},"value":{"kind":"Variable","name":{"kind":"Name","value":"workspaceId"}}},{"kind":"Argument","name":{"kind":"Name","value":"description"},"value":{"kind":"Variable","name":{"kind":"Name","value":"description"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"suggestions"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"toolId"}},{"kind":"Field","name":{"kind":"Name","value":"toolName"}},{"kind":"Field","name":{"kind":"Name","value":"reason"}},{"kind":"Field","name":{"kind":"Name","value":"confidence"}}]}},{"kind":"Field","name":{"kind":"Name","value":"externalSuggestions"}}]}}]}}]} as unknown as DocumentNode<SuggestToolsForToolSetQuery, SuggestToolsForToolSetQueryVariables>;
 export const LoginDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"Login"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"LoginInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"login"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"success"}},{"kind":"Field","name":{"kind":"Name","value":"user"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"email"}}]}},{"kind":"Field","name":{"kind":"Name","value":"tokens"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"accessToken"}},{"kind":"Field","name":{"kind":"Name","value":"refreshToken"}}]}},{"kind":"Field","name":{"kind":"Name","value":"errors"}}]}}]}}]} as unknown as DocumentNode<LoginMutation, LoginMutationVariables>;
 export const LogoutDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"Logout"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"LogoutInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"logout"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}]}]}}]} as unknown as DocumentNode<LogoutMutation, LogoutMutationVariables>;
 export const RefreshTokenDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"RefreshToken"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"RefreshTokenInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"refreshToken"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"success"}},{"kind":"Field","name":{"kind":"Name","value":"accessToken"}},{"kind":"Field","name":{"kind":"Name","value":"errors"}}]}}]}}]} as unknown as DocumentNode<RefreshTokenMutation, RefreshTokenMutationVariables>;

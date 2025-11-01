@@ -1,0 +1,19 @@
+query AnalyzeRepository($workspaceId: ID!, $repositoryUrl: String!) {
+  analyzeRepository(workspaceId: $workspaceId, repositoryUrl: $repositoryUrl) {
+    name
+    description
+    version
+    transportType
+    command
+    args
+    envVars {
+      key
+      value
+    }
+    url
+    headers {
+      key
+      value
+    }
+  }
+}

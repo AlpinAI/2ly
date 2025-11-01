@@ -37,8 +37,16 @@ import { AddServerWorkflow } from '@/components/registry/add-server-workflow';
 import { ToolManagementPanel } from '@/components/toolsets/tool-management-panel';
 import { CreateToolSetDialog } from '@/components/tool-sets/create-tool-set-dialog';
 import { ConnectAgentDialog } from '@/components/agents/connect-agent-dialog';
+import { AIToolSuggesterDialog } from '@/components/toolsets/ai-tool-suggester-dialog';
+import { useAISuggesterDialog } from '@/stores/uiStore';
+import { useRuntimeData } from '@/stores/runtimeStore';
 
 export function AppLayout() {
+  const { open, setOpen, selectedToolSetId } = useAISuggesterDialog();
+  const { runtimes } = useRuntimeData();
+
+  // Get selected tool set details
+  const selectedToolSet = selectedToolSetId ? runtimes.find((r) => r.id === selectedToolSetId) : null;
 
   return (
     <div className="h-screen bg-gray-50 dark:bg-gray-900 transition-colors font-mono flex flex-col">
@@ -61,6 +69,14 @@ export function AppLayout() {
       {/* Global dialogs - accessible from any page */}
       <CreateToolSetDialog />
       <ConnectAgentDialog />
+      {selectedToolSet && (
+        <AIToolSuggesterDialog
+          open={open}
+          onOpenChange={setOpen}
+          toolSetId={selectedToolSet.id}
+          toolSetName={selectedToolSet.name}
+        />
+      )}
     </div>
   );
 }

@@ -1,0 +1,9 @@
+mutation SetAIConfig($workspaceId: ID!, $provider: AIProvider!, $model: String!, $apiKey: String!) {
+  setAIConfig(workspaceId: $workspaceId, provider: $provider, model: $model, apiKey: $apiKey) {
+    id
+    provider
+    model
+    createdAt
+    updatedAt
+  }
+}

@@ -27,12 +27,14 @@ import {
   MCPToolRepository,
   SystemRepository,
   MonitoringRepository,
+  AIConfigRepository,
 } from '../repositories';
 import { JwtService, AuthenticationService, AccountSecurityService, PasswordPolicyService } from '../services/auth';
 import { SecurityMiddleware, RateLimitMiddleware, GraphQLAuthMiddleware } from '../middleware';
 import { MCPServerAutoConfigService, AZURE_ENDPOINT, AZURE_API_KEY, BRAVE_SEARCH_API_KEY } from '../services/mcp-auto-config.service';
 import pino from 'pino';
 import { MonitoringService } from '../services/monitoring.service';
+import { AIService } from '../services/ai.service';
 
 const container = new Container();
 const start = () => {
@@ -80,6 +82,7 @@ const start = () => {
   container.bind(MCPToolRepository).toSelf().inSingletonScope();
   container.bind(SystemRepository).toSelf().inSingletonScope();
   container.bind(MonitoringRepository).toSelf().inSingletonScope();
+  container.bind(AIConfigRepository).toSelf().inSingletonScope();
 
   // Init authentication services
   container.bind(JwtService).toSelf().inSingletonScope();
@@ -99,6 +102,9 @@ const start = () => {
   container.bind(AZURE_API_KEY).toConstantValue(process.env.AZURE_API_KEY || '');
   container.bind(BRAVE_SEARCH_API_KEY).toConstantValue(process.env.BRAVE_SEARCH_API_KEY || '');
   container.bind(MCPServerAutoConfigService).toSelf().inSingletonScope();
+
+  // Init AI service
+  container.bind(AIService).toSelf().inSingletonScope();
 
   // Init logger service
   container.bind(MAIN_LOGGER_NAME).toConstantValue('2ly-backend');

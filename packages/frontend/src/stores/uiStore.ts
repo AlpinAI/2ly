@@ -66,6 +66,10 @@ interface UIState {
   setConnectAgentDialogOpen: (open: boolean) => void;
   selectedAgentForConnection: string | null;
   setSelectedAgentForConnection: (agentId: string | null) => void;
+  aiSuggesterDialogOpen: boolean;
+  setAISuggesterDialogOpen: (open: boolean) => void;
+  selectedToolSetForSuggester: string | null;
+  setSelectedToolSetForSuggester: (toolSetId: string | null) => void;
 
   // Tool Catalog Filters
   toolCategoryFilter: string;
@@ -162,6 +166,12 @@ export const useUIStore = create<UIState>()(
         setConnectAgentDialogOpen: (open) => set({ connectAgentDialogOpen: open }),
         selectedAgentForConnection: null,
         setSelectedAgentForConnection: (agentId) => set({ selectedAgentForConnection: agentId }),
+
+        // Initial State - AI Suggester Dialog
+        aiSuggesterDialogOpen: false,
+        setAISuggesterDialogOpen: (open) => set({ aiSuggesterDialogOpen: open }),
+        selectedToolSetForSuggester: null,
+        setSelectedToolSetForSuggester: (toolSetId) => set({ selectedToolSetForSuggester: toolSetId }),
 
         // Actions
         resetFilters: () =>
@@ -291,5 +301,19 @@ export const useAddServerWorkflow = () => {
     setOpen,
     initialStep,
     setInitialStep,
+  };
+};
+
+export const useAISuggesterDialog = () => {
+  const open = useUIStore((state) => state.aiSuggesterDialogOpen);
+  const setOpen = useUIStore((state) => state.setAISuggesterDialogOpen);
+  const selectedToolSetId = useUIStore((state) => state.selectedToolSetForSuggester);
+  const setSelectedToolSetId = useUIStore((state) => state.setSelectedToolSetForSuggester);
+
+  return {
+    open,
+    setOpen,
+    selectedToolSetId,
+    setSelectedToolSetId,
   };
 };

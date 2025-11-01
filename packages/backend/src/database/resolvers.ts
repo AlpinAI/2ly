@@ -1,6 +1,6 @@
 import { GraphQLDateTime } from 'graphql-scalars';
 import { container as defaultContainer } from '../di/container';
-import { apolloResolversTypes, MCP_SERVER_RUN_ON } from '@2ly/common';
+import { apolloResolversTypes, MCP_SERVER_RUN_ON, AiProvider } from '@2ly/common';
 import { Observable } from 'rxjs';
 import { latestValueFrom } from 'rxjs-for-await';
 import { MCPServerAutoConfigService } from '../services/mcp-auto-config.service';
@@ -11,10 +11,13 @@ import {
   SystemRepository,
   UserRepository,
   MonitoringRepository,
+  AIConfigRepository,
 } from '../repositories';
 import { createAuthResolvers } from '../resolvers/auth.resolver';
 import { AuthenticationService, JwtService, PasswordPolicyService } from '../services/auth';
 import { Container } from 'inversify';
+import { AIService, AIProvider as ServiceAIProvider } from '../services/ai.service';
+import { encrypt, decrypt } from '../helpers/encryption';
 
 const observableToAsyncGenerator = <T, K extends string>(
   observable: Observable<T>,
@@ -36,6 +39,8 @@ export const resolvers = (container: Container = defaultContainer): apolloResolv
   const authenticationService = container.get(AuthenticationService);
   const jwtService = container.get(JwtService);
   const monitoringRepository = container.get(MonitoringRepository);
+  const aiConfigRepository = container.get(AIConfigRepository);
+  const aiService = container.get(AIService);
 
   // Create authentication resolvers
   const userRepository = container.get(UserRepository);
@@ -90,6 +95,97 @@ export const resolvers = (container: Container = defaultContainer): apolloResolv
       },
       // Authentication queries
       ...authResolvers.Query,
+      // AI queries
+      getAIConfig: async (
+        _parent: unknown,
+        { workspaceId }: { workspaceId: string },
+      ): Promise<apolloResolversTypes.AiConfig | null> => {
+        return aiConfigRepository.getAIConfig(workspaceId);
+      },
+      suggestToolsForToolSet: async (
+        _parent: unknown,
+        { workspaceId, description }: { workspaceId: string; description: string },
+      ) => {
+        // Get AI config
+        const aiConfig = await aiConfigRepository.getAIConfig(workspaceId);
+        if (!aiConfig) {
+          throw new Error('AI configuration not found. Please configure AI settings first.');
+        }
+
+        // Decrypt API key
+        const apiKey = decrypt(aiConfig.encryptedApiKey);
+
+        // Get available tools
+        const tools = await workspaceRepository.findMCPToolsByWorkspace(workspaceId);
+        const toolsInfo = tools.map((tool) => ({
+          id: tool.id,
+          name: tool.name,
+          description: tool.description,
+        }));
+
+        // Get suggestions from AI - convert enum to service type
+        const serviceProvider =
+          aiConfig.provider === AiProvider.Openai ? ServiceAIProvider.OPENAI : ServiceAIProvider.ANTHROPIC;
+        const result = await aiService.suggestTools(serviceProvider, aiConfig.model, apiKey, description, toolsInfo);
+
+        return result;
+      },
+      suggestToolSetMetadata: async (
+        _parent: unknown,
+        { workspaceId, userGoal }: { workspaceId: string; userGoal: string },
+      ) => {
+        // Get AI config
+        const aiConfig = await aiConfigRepository.getAIConfig(workspaceId);
+        if (!aiConfig) {
+          throw new Error('AI configuration not found. Please configure AI settings first.');
+        }
+
+        // Decrypt API key
+        const apiKey = decrypt(aiConfig.encryptedApiKey);
+
+        // Get available tools
+        const tools = await workspaceRepository.findMCPToolsByWorkspace(workspaceId);
+        const toolsInfo = tools.map((tool) => ({
+          id: tool.id,
+          name: tool.name,
+          description: tool.description,
+        }));
+
+        // Get suggestions from AI - convert enum to service type
+        const serviceProvider =
+          aiConfig.provider === AiProvider.Openai ? ServiceAIProvider.OPENAI : ServiceAIProvider.ANTHROPIC;
+        const result = await aiService.suggestToolSetMetadata(
+          serviceProvider,
+          aiConfig.model,
+          apiKey,
+          userGoal,
+          toolsInfo,
+        );
+
+        return result;
+      },
+      analyzeRepository: async (
+        _parent: unknown,
+        { workspaceId, repositoryUrl }: { workspaceId: string; repositoryUrl: string },
+      ) => {
+        // Get AI config
+        const aiConfig = await aiConfigRepository.getAIConfig(workspaceId);
+        if (!aiConfig) {
+          throw new Error('AI configuration not found. Please configure AI settings first.');
+        }
+
+        // Decrypt API key
+        const apiKey = decrypt(aiConfig.encryptedApiKey);
+
+        // Convert enum to service type
+        const serviceProvider =
+          aiConfig.provider === AiProvider.Openai ? ServiceAIProvider.OPENAI : ServiceAIProvider.ANTHROPIC;
+
+        // Analyze repository URL with AI
+        const result = await aiService.analyzeRepositoryUrl(serviceProvider, aiConfig.model, apiKey, repositoryUrl);
+
+        return result;
+      },
     },
     Mutation: {
       // Authentication mutations
@@ -316,6 +412,70 @@ export const resolvers = (container: Container = defaultContainer): apolloResolv
         { workspaceId, stepId }: { workspaceId: string; stepId: string },
       ) => {
         await workspaceRepository.dismissOnboardingStep(workspaceId, stepId);
+        return true;
+      },
+
+      // AI mutations
+      setAIConfig: async (
+        _parent: unknown,
+        {
+          workspaceId,
+          provider,
+          model,
+          apiKey,
+        }: {
+          workspaceId: string;
+          provider: AiProvider;
+          model: string;
+          apiKey: string;
+        },
+      ): Promise<apolloResolversTypes.AiConfig> => {
+        // Convert enum to service type
+        const serviceProvider = provider === AiProvider.Openai ? ServiceAIProvider.OPENAI : ServiceAIProvider.ANTHROPIC;
+
+        // Check if config exists
+        const existingConfig = await aiConfigRepository.getAIConfig(workspaceId);
+
+        // Determine if we need to validate and encrypt a new API key
+        const isUpdatingKey = apiKey !== 'UNCHANGED';
+        let encryptedApiKey: string;
+
+        if (isUpdatingKey) {
+          // Validate new API key
+          const isValid = await aiService.validateApiKey(serviceProvider, apiKey);
+          if (!isValid) {
+            throw new Error('Invalid API key. Please check your credentials and try again.');
+          }
+
+          // Encrypt new API key
+          encryptedApiKey = encrypt(apiKey);
+        } else {
+          // Reuse existing encrypted API key
+          if (!existingConfig) {
+            throw new Error('No existing configuration found. API key is required.');
+          }
+          encryptedApiKey = existingConfig.encryptedApiKey;
+        }
+
+        if (existingConfig) {
+          // Update existing config
+          return aiConfigRepository.updateAIConfig(existingConfig.id, provider, model, encryptedApiKey);
+        } else {
+          // Create new config (API key must be provided)
+          if (!isUpdatingKey) {
+            throw new Error('API key is required for new configuration.');
+          }
+          return aiConfigRepository.createAIConfig(workspaceId, provider, model, encryptedApiKey);
+        }
+      },
+
+      deleteAIConfig: async (_parent: unknown, { workspaceId }: { workspaceId: string }) => {
+        const config = await aiConfigRepository.getAIConfig(workspaceId);
+        if (!config) {
+          throw new Error('AI configuration not found');
+        }
+
+        await aiConfigRepository.deleteAIConfig(config.id);
         return true;
       },
     },
