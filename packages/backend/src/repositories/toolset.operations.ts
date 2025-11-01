@@ -241,6 +241,10 @@ export const OBSERVE_TOOLSETS = (type: 'query' | 'subscription' = 'query') => gq
           name
           description
           status
+          mcpServer {
+            id
+            name
+          }
         }
       }
     }

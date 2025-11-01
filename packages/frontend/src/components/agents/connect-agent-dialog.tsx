@@ -48,9 +48,22 @@ export function ConnectAgentDialog() {
   const [selectedPlatform, setSelectedPlatform] = useState<PlatformOption>('langchain');
   const [isConnected, setIsConnected] = useState(false);
 
-  // Get selected agent from runtime store
+  // Get selected agent from runtime store, or create a mock one for new agents
   const selectedAgent = useMemo(() => {
-    return runtimes.find((runtime) => runtime.id === selectedAgentId);
+    // Try to find existing runtime first
+    const existingRuntime = runtimes.find((runtime) => runtime.id === selectedAgentId);
+    if (existingRuntime) return existingRuntime;
+
+    // If selectedAgentId is provided but no runtime found, treat it as a name for a new agent
+    if (selectedAgentId) {
+      return {
+        id: `new-${selectedAgentId}`,
+        name: selectedAgentId,
+        status: 'INACTIVE' as const,
+      };
+    }
+
+    return null;
   }, [runtimes, selectedAgentId]);
 
   // Get NATS server URL

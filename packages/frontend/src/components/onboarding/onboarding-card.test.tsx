@@ -5,13 +5,17 @@ import * as uiStore from '@/stores/uiStore';
 import * as runtimeStore from '@/stores/runtimeStore';
 import { ActiveStatus, OnboardingStepStatus, type OnboardingStep, type Runtime, OnboardingStepType, type McpServer, McpTransportType, McpServerRunOn } from '@/graphql/generated/graphql';
 import { useMCPServers } from '@/hooks/useMCPServers';
-import { useAgents } from '@/hooks/useAgents';
+import { useToolSets } from '@/hooks/useToolSets';
 
 // Mock stores and hooks
 vi.mock('@/stores/uiStore');
 vi.mock('@/stores/runtimeStore');
 vi.mock('@/hooks/useMCPServers');
-vi.mock('@/hooks/useAgents');
+vi.mock('@/hooks/useToolSets');
+vi.mock('react-router-dom', () => ({
+  ...vi.importActual('react-router-dom'),
+  useParams: () => ({ workspaceId: 'workspace-1' }),
+}));
 
 describe('OnboardingCard', () => {
   // Helper to create minimal MCP server mock for tool relations
@@ -61,6 +65,45 @@ describe('OnboardingCard', () => {
     lastSeenAt: null,
     mcpServers: null,
     roots: null,
+    workspace: {
+      __typename: 'Workspace',
+      id: 'workspace-1',
+      name: 'Test Workspace',
+      createdAt: new Date(),
+      globalRuntime: null,
+      registryServers: [],
+      mcpServers: [],
+      mcpTools: [],
+      onboardingSteps: [],
+      runtimes: [],
+      toolSets: [],
+    },
+  };
+
+  const mockToolSet = {
+    __typename: 'ToolSet' as const,
+    id: 'toolset-1',
+    name: 'Test Agent',
+    description: 'Test toolset description',
+    createdAt: new Date(),
+    updatedAt: null,
+    mcpTools: [
+      {
+        __typename: 'MCPTool' as const,
+        id: 'tool-1',
+        name: 'test_tool',
+        description: '',
+        inputSchema: '',
+        annotations: '{}',
+        createdAt: new Date(),
+        lastSeenAt: new Date(),
+        runtimes: null,
+        status: ActiveStatus.Active,
+        mcpServer: createMockMcpServerRef('server-1', 'test-server'),
+        workspace: null as never,
+        toolSets: [],
+      },
+    ],
     workspace: {
       __typename: 'Workspace',
       id: 'workspace-1',
@@ -143,15 +186,15 @@ describe('OnboardingCard', () => {
       error: undefined,
     });
 
-    vi.mocked(useAgents).mockReturnValue({
-      agents: [mockRuntime],
-      filteredAgents: [mockRuntime],
+    vi.mocked(useToolSets).mockReturnValue({
+      toolSets: [mockToolSet],
+      filteredToolSets: [mockToolSet],
       stats: { total: 1, filtered: 1, active: 1, inactive: 0 },
+      loading: false,
+      error: undefined,
       filters: {
         search: '',
         setSearch: vi.fn(),
-        serverIds: [],
-        setServerIds: vi.fn(),
         statuses: [],
         setStatuses: vi.fn(),
         reset: vi.fn(),
@@ -180,20 +223,20 @@ describe('OnboardingCard', () => {
       const button = screen.getByRole('button', { name: /Connect/i });
       fireEvent.click(button);
 
-      expect(mockSetSelectedAgentId).toHaveBeenCalledWith('runtime-1');
+      expect(mockSetSelectedAgentId).toHaveBeenCalledWith('Test Agent');
       expect(mockSetConnectAgentDialogOpen).toHaveBeenCalledWith(true);
     });
 
-    it('shows message when no agent with tools exists', () => {
-      vi.mocked(useAgents).mockReturnValue({
-        agents: [],
-        filteredAgents: [],
+    it('shows message when no tool set with tools exists', () => {
+      vi.mocked(useToolSets).mockReturnValue({
+        toolSets: [],
+        filteredToolSets: [],
         stats: { total: 0, filtered: 0, active: 0, inactive: 0 },
+        loading: false,
+        error: undefined,
         filters: {
           search: '',
           setSearch: vi.fn(),
-          serverIds: [],
-          setServerIds: vi.fn(),
           statuses: [],
           setStatuses: vi.fn(),
           reset: vi.fn(),
@@ -217,25 +260,17 @@ describe('OnboardingCard', () => {
       expect(screen.getByText(/Test Agent connected/)).toBeInTheDocument();
     });
 
-    it('shows truncated agent name when too long', () => {
+    it('shows truncated runtime name when too long', () => {
       const longNameRuntime = {
         ...mockRuntime,
-        name: 'This is a very long agent name that should be truncated',
+        name: 'This is a very long runtime name that should be truncated',
       };
 
-      vi.mocked(useAgents).mockReturnValue({
-        agents: [longNameRuntime],
-        filteredAgents: [longNameRuntime],
-        stats: { total: 1, filtered: 1, active: 1, inactive: 0 },
-        filters: {
-          search: '',
-          setSearch: vi.fn(),
-          serverIds: [],
-          setServerIds: vi.fn(),
-          statuses: [],
-          setStatuses: vi.fn(),
-          reset: vi.fn(),
-        },
+      vi.mocked(runtimeStore.useRuntimeData).mockReturnValue({
+        runtimes: [longNameRuntime],
+        loading: false,
+        error: null,
+        stats: { total: 1, active: 1, inactive: 0 },
       });
 
       const completedStep = {
@@ -245,7 +280,7 @@ describe('OnboardingCard', () => {
 
       render(<OnboardingCard step={completedStep} />);
 
-      const nameElement = screen.getByText(/This is a very long agent name that should be truncated connected/);
+      const nameElement = screen.getByText(/This is a very long runtime name that should be truncated connected/);
       expect(nameElement).toBeInTheDocument();
       expect(nameElement.className).toContain('truncate');
     });
@@ -372,7 +407,7 @@ describe('OnboardingCard', () => {
       expect(mockOpenCreateToolSetDialog).toHaveBeenCalled();
     });
 
-    it('shows completed agent with tool count when step is completed', () => {
+    it('shows completed tool set with tool count when step is completed', () => {
       const completedStep = {
         ...step2,
         status: OnboardingStepStatus.Completed,
@@ -384,12 +419,12 @@ describe('OnboardingCard', () => {
       expect(screen.getByText(/Test Agent \(1 tool\)/)).toBeInTheDocument();
     });
 
-    it('shows plural "tools" when agent has multiple tools', () => {
-      const multiToolRuntime: Runtime = {
-        ...mockRuntime,
-        mcpToolCapabilities: [
+    it('shows plural "tools" when tool set has multiple tools', () => {
+      const multiToolToolSet = {
+        ...mockToolSet,
+        mcpTools: [
           {
-            __typename: 'MCPTool',
+            __typename: 'MCPTool' as const,
             id: 'tool-1',
             name: 'test_tool_1',
             description: '',
@@ -404,7 +439,7 @@ describe('OnboardingCard', () => {
             toolSets: [],
           },
           {
-            __typename: 'MCPTool',
+            __typename: 'MCPTool' as const,
             id: 'tool-2',
             name: 'test_tool_2',
             description: '',
@@ -421,15 +456,15 @@ describe('OnboardingCard', () => {
         ],
       };
 
-      vi.mocked(useAgents).mockReturnValue({
-        agents: [multiToolRuntime],
-        filteredAgents: [multiToolRuntime],
+      vi.mocked(useToolSets).mockReturnValue({
+        toolSets: [multiToolToolSet],
+        filteredToolSets: [multiToolToolSet],
         stats: { total: 1, filtered: 1, active: 1, inactive: 0 },
+        loading: false,
+        error: undefined,
         filters: {
           search: '',
           setSearch: vi.fn(),
-          serverIds: [],
-          setServerIds: vi.fn(),
           statuses: [],
           setStatuses: vi.fn(),
           reset: vi.fn(),

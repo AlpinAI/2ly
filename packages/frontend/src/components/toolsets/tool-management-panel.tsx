@@ -27,13 +27,14 @@ import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { BottomPanel } from '@/components/ui/bottom-panel';
 import { ToolSelectionTable } from './tool-selection-table';
 import { useManageToolsDialog } from '@/stores/uiStore';
-import { useRuntimeData } from '@/stores/runtimeStore';
+import { useToolSets } from '@/hooks/useToolSets';
 import { useMCPServers } from '@/hooks/useMCPServers';
 import { useMCPTools } from '@/hooks/useMCPTools';
 import { useCloseOnNavigation } from '@/hooks/useCloseOnNavigation';
+import { useWorkspaceFromUrl } from '@/hooks/useWorkspaceFromUrl';
 import {
-  LinkMcpToolToRuntimeDocument,
-  UnlinkMcpToolFromRuntimeDocument,
+  AddMcpToolToToolSetDocument,
+  RemoveMcpToolFromToolSetDocument,
   type GetMcpToolsQuery,
 } from '@/graphql/generated/graphql';
 import { cn } from '@/lib/utils';
@@ -49,7 +50,8 @@ interface GroupedServer {
 
 export function ToolManagementPanel() {
   const { open, setOpen, selectedToolSetId, setSelectedToolSetId } = useManageToolsDialog();
-  const { runtimes } = useRuntimeData();
+  const workspaceId = useWorkspaceFromUrl();
+  const { toolSets } = useToolSets(workspaceId || '');
   const { servers } = useMCPServers();
   const { filteredTools, loading: toolsLoading } = useMCPTools();
 
@@ -64,8 +66,8 @@ export function ToolManagementPanel() {
   const [confirmRemoveToolId, setConfirmRemoveToolId] = useState<string | null>(null);
 
   // Mutations
-  const [linkTool] = useMutation(LinkMcpToolToRuntimeDocument);
-  const [unlinkTool] = useMutation(UnlinkMcpToolFromRuntimeDocument);
+  const [addTool] = useMutation(AddMcpToolToToolSetDocument);
+  const [removeTool] = useMutation(RemoveMcpToolFromToolSetDocument);
 
   // Close handler with cleanup
   const handleClose = useCallback(() => {
@@ -80,8 +82,8 @@ export function ToolManagementPanel() {
   // Get selected tool set
   const selectedToolSet = useMemo(() => {
     if (!selectedToolSetId) return null;
-    return runtimes.find((r) => r.id === selectedToolSetId) || null;
-  }, [selectedToolSetId, runtimes]);
+    return toolSets.find((ts) => ts.id === selectedToolSetId) || null;
+  }, [selectedToolSetId, toolSets]);
 
   // Group tools by server
   const groupedServers = useMemo((): GroupedServer[] => {
@@ -140,7 +142,7 @@ export function ToolManagementPanel() {
   // Initialize selected tools when tool set changes
   useEffect(() => {
     if (selectedToolSet) {
-      const currentToolIds = new Set((selectedToolSet.mcpToolCapabilities || []).map((tc) => tc.id));
+      const currentToolIds = new Set((selectedToolSet.mcpTools || []).map((tool) => tool.id));
       setSelectedToolIds(currentToolIds);
       setBaselineToolIds(currentToolIds);
     } else {
@@ -237,22 +239,22 @@ export function ToolManagementPanel() {
       const toolsToAdd = Array.from(selectedToolIds).filter((id) => !baselineToolIds.has(id));
       const toolsToRemove = Array.from(baselineToolIds).filter((id) => !selectedToolIds.has(id));
 
-      // Link new tools
+      // Add new tools
       for (const toolId of toolsToAdd) {
-        await linkTool({
+        await addTool({
           variables: {
             mcpToolId: toolId,
-            runtimeId: selectedToolSet.id,
+            toolSetId: selectedToolSet.id,
           },
         });
       }
 
-      // Unlink removed tools
+      // Remove tools
       for (const toolId of toolsToRemove) {
-        await unlinkTool({
+        await removeTool({
           variables: {
             mcpToolId: toolId,
-            runtimeId: selectedToolSet.id,
+            toolSetId: selectedToolSet.id,
           },
         });
       }
@@ -265,7 +267,7 @@ export function ToolManagementPanel() {
     } finally {
       setIsSaving(false);
     }
-  }, [selectedToolSet, selectedToolIds, baselineToolIds, linkTool, unlinkTool, setOpen]);
+  }, [selectedToolSet, selectedToolIds, baselineToolIds, addTool, removeTool, setOpen]);
 
   const handleCancel = useCallback(() => {
     setSelectedToolIds(new Set(baselineToolIds));

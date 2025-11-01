@@ -38,6 +38,7 @@ describe('ToolTable', () => {
         status: ActiveStatus.Active,
         capabilities: null,
       }],
+      toolSets: null,
     },
     {
       __typename: 'MCPTool',
@@ -57,6 +58,7 @@ describe('ToolTable', () => {
         repositoryUrl: '',
       },
       runtimes: [],
+      toolSets: null,
     },
   ];
 
@@ -68,10 +70,10 @@ describe('ToolTable', () => {
     onSearchChange: vi.fn(),
     serverFilter: [],
     onServerFilterChange: vi.fn(),
-    agentFilter: [],
-    onAgentFilterChange: vi.fn(),
+    toolSetFilter: [],
+    onToolSetFilterChange: vi.fn(),
     availableServers: [{ id: 'server-1', name: 'Test Server 1' }],
-    availableAgents: [{ id: 'agent-1', name: 'Test Agent 1' }],
+    availableToolSets: [{ id: 'toolset-1', name: 'Test ToolSet 1' }],
     loading: false,
   };
 

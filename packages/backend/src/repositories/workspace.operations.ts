@@ -157,6 +157,11 @@ export const QUERY_WORKSPACE_WITH_MCP_TOOLS = gql`
           status
           capabilities
         }
+        toolSets {
+          id
+          name
+          description
+        }
       }
     }
   }

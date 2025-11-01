@@ -7,21 +7,21 @@
  * DISPLAYS:
  * - Tool name and description
  * - Link to MCP Server
- * - Links to agents that use this tool
+ * - Links to tool sets that contain this tool
  * - ToolTester component for testing
  */
 
-import { ExternalLink, Wrench, Server, Bot, Plus, X } from 'lucide-react';
+import { ExternalLink, Wrench, Server, Settings, Plus, X } from 'lucide-react';
 import { useState, useMemo } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { useMutation } from '@apollo/client/react';
 import { ToolTester } from './tool-tester';
-import { LinkToolDialog } from './link-tool-dialog';
+import { LinkToolSetDialog } from './link-toolset-dialog';
 import { Button } from '@/components/ui/button';
-import { useRuntimeData } from '@/stores/runtimeStore';
+import { useToolSets } from '@/hooks/useToolSets';
 import { useNotification } from '@/contexts/NotificationContext';
 import type { GetMcpToolsQuery } from '@/graphql/generated/graphql';
-import { UnlinkMcpToolFromRuntimeDocument } from '@/graphql/generated/graphql';
+import { RemoveMcpToolFromToolSetDocument } from '@/graphql/generated/graphql';
 
 type McpTool = NonNullable<NonNullable<GetMcpToolsQuery['mcpTools']>[number]>;
 
@@ -31,41 +31,35 @@ export interface ToolDetailProps {
 
 export function ToolDetail({ tool }: ToolDetailProps) {
   const { workspaceId } = useParams<{ workspaceId: string }>();
-  const { runtimes } = useRuntimeData();
+  const { toolSets } = useToolSets(workspaceId!);
   const { toast } = useNotification();
   const [loadingStates, setLoadingStates] = useState<Record<string, boolean>>({});
   const [linkDialogOpen, setLinkDialogOpen] = useState(false);
 
   // Mutations
-  const [unlinkTool] = useMutation(UnlinkMcpToolFromRuntimeDocument);
+  const [unlinkTool] = useMutation(RemoveMcpToolFromToolSetDocument);
 
-  // Get available agents (runtimes with 'agent' capability)
-  const availableAgents = useMemo(() => {
-    return runtimes.filter((runtime) => runtime.capabilities?.includes('agent'));
-  }, [runtimes]);
+  // Get toolsets not yet linked to this tool
+  const unlinkedToolSets = useMemo(() => {
+    const linkedToolSetIds = new Set(tool.toolSets?.map((ts) => ts.id) || []);
+    return toolSets.filter((toolSet) => !linkedToolSetIds.has(toolSet.id));
+  }, [toolSets, tool.toolSets]);
 
-  // Get agents not yet linked to this tool
-  const unlinkedAgents = useMemo(() => {
-    const linkedAgentIds = new Set(tool.runtimes?.map((r) => r.id) || []);
-    return availableAgents.filter((agent) => !linkedAgentIds.has(agent.id));
-  }, [availableAgents, tool.runtimes]);
+  // Handle unlinking tool from toolset
+  const handleUnlinkTool = async (toolSetId: string) => {
+    setLoadingStates((prev) => ({ ...prev, [toolSetId]: true }));
 
-  // Handle unlinking tool from agent
-  const handleUnlinkTool = async (agentId: string) => {
-    setLoadingStates((prev) => ({ ...prev, [agentId]: true }));
-    
     try {
       await unlinkTool({
         variables: {
           mcpToolId: tool.id,
-          runtimeId: agentId,
+          toolSetId: toolSetId,
         },
-        refetchQueries: ['GetMCPTools'], // Force refresh tools query
       });
-      
+
       toast({
         title: 'Tool unlinked successfully',
-        description: 'Tool has been unlinked from the agent.',
+        description: 'Tool has been unlinked from the tool set.',
         variant: 'success',
       });
     } catch (error) {
@@ -76,7 +70,7 @@ export function ToolDetail({ tool }: ToolDetailProps) {
         variant: 'error',
       });
     } finally {
-      setLoadingStates((prev) => ({ ...prev, [agentId]: false }));
+      setLoadingStates((prev) => ({ ...prev, [toolSetId]: false }));
     }
   };
 
@@ -141,75 +135,59 @@ export function ToolDetail({ tool }: ToolDetailProps) {
           </div>
         </div>
 
-        {/* Agents */}
+        {/* Tool Sets */}
         <div>
           <div className="flex items-center justify-between mb-2">
             <h4 className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-              Available on Agents ({tool.runtimes?.length || 0})
+              Available in Tool Sets ({tool.toolSets?.length || 0})
             </h4>
-            {unlinkedAgents.length > 0 && (
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-6 w-6 p-0 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
-                onClick={() => setLinkDialogOpen(true)}
-              >
-                <Plus className="h-4 w-4" />
-              </Button>
-            )}
+            <Button
+              variant="ghost"
+              size="sm"
+              disabled={unlinkedToolSets.length === 0}
+              className="h-6 w-6 p-0 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+              onClick={() => setLinkDialogOpen(true)}
+            >
+              <Plus className="h-4 w-4" />
+            </Button>
           </div>
-          {tool.runtimes && tool.runtimes.length > 0 ? (
+          {tool.toolSets && tool.toolSets.length > 0 ? (
             <ul className="space-y-1">
-              {tool.runtimes.map((runtime) => {
-                const isAgent = runtime.capabilities?.includes('agent');
-                return (
-                  <li
-                    key={runtime.id}
-                    className="flex items-center gap-2 bg-white dark:bg-gray-800 px-3 py-2 rounded border border-gray-200 dark:border-gray-700"
+              {tool.toolSets.map((toolSet) => (
+                <li
+                  key={toolSet.id}
+                  className="flex items-center gap-2 bg-white dark:bg-gray-800 px-3 py-2 rounded border border-gray-200 dark:border-gray-700"
+                >
+                  <Settings className="h-4 w-4 text-gray-400" />
+                  <div className="flex-1 min-w-0">
+                    <Link
+                      to={`/w/${workspaceId}/toolsets?id=${toolSet.id}`}
+                      className="text-sm font-medium text-gray-900 dark:text-white hover:text-cyan-600 dark:hover:text-cyan-400 hover:underline truncate block"
+                    >
+                      {toolSet.name}
+                    </Link>
+                    {toolSet.description && (
+                      <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{toolSet.description}</p>
+                    )}
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-6 w-6 p-0 text-gray-400 hover:text-red-600 dark:hover:text-red-400"
+                    onClick={() => handleUnlinkTool(toolSet.id)}
+                    disabled={loadingStates[toolSet.id]}
                   >
-                    <Bot className="h-4 w-4 text-gray-400" />
-                    <div className="flex-1">
-                      {isAgent ? (
-                        <Link
-                          to={`/w/${workspaceId}/toolsets?id=${runtime.id}`}
-                          className="text-sm font-medium text-gray-900 dark:text-white hover:text-cyan-600 dark:hover:text-cyan-400 hover:underline"
-                        >
-                          {runtime.name}
-                        </Link>
-                      ) : (
-                        <p className="text-sm font-medium text-gray-900 dark:text-white">{runtime.name}</p>
-                      )}
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span
-                        className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
-                          runtime.status === 'ACTIVE'
-                            ? 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300'
-                            : 'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-300'
-                        }`}
-                      >
-                        {runtime.status}
-                      </span>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-6 w-6 p-0 text-gray-400 hover:text-red-600 dark:hover:text-red-400"
-                        onClick={() => handleUnlinkTool(runtime.id)}
-                        disabled={loadingStates[runtime.id]}
-                      >
-                        {loadingStates[runtime.id] ? (
-                          <div className="h-3 w-3 animate-spin rounded-full border-2 border-gray-300 border-t-gray-600" />
-                        ) : (
-                          <X className="h-3 w-3" />
-                        )}
-                      </Button>
-                    </div>
-                  </li>
-                );
-              })}
+                    {loadingStates[toolSet.id] ? (
+                      <div className="h-3 w-3 animate-spin rounded-full border-2 border-gray-300 border-t-gray-600" />
+                    ) : (
+                      <X className="h-3 w-3" />
+                    )}
+                  </Button>
+                </li>
+              ))}
             </ul>
           ) : (
-            <p className="text-sm text-gray-400 dark:text-gray-500">Not available on any agents yet</p>
+            <p className="text-sm text-gray-400 dark:text-gray-500">Not available in any tool sets yet</p>
           )}
         </div>
 
@@ -219,8 +197,8 @@ export function ToolDetail({ tool }: ToolDetailProps) {
         </div>
       </div>
 
-      {/* Link Tool Dialog */}
-      <LinkToolDialog
+      {/* Link ToolSet Dialog */}
+      <LinkToolSetDialog
         open={linkDialogOpen}
         onOpenChange={setLinkDialogOpen}
         tool={tool}

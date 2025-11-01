@@ -1,6 +1,6 @@
-# Get all MCP tools for a workspace
-# WHY: Tool catalog page with cache-and-network fetch policy
-query GetMCPTools($workspaceId: ID!) {
+# Subscribe to MCP Tools
+# WHY: Real-time monitoring of MCP tools with full details including toolSet relationships
+subscription SubscribeMCPTools($workspaceId: ID!) {
   mcpTools(workspaceId: $workspaceId) {
     id
     name

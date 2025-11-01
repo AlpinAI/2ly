@@ -1,7 +1,7 @@
 /**
  * Tool Sets Page
  *
- * WHY: Manage and view tool set runtimes with detailed information.
+ * WHY: Manage and view tool sets with detailed information.
  * Shows tool set list with filters and detail panel.
  *
  * LAYOUT:
@@ -11,53 +11,43 @@
  * FEATURES:
  * - Real-time tool set updates (subscription)
  * - Search by name/description/tool names
- * - Filter by source(s), status
+ * - Filter by status
  * - Click tool set to view details
- * - Show tool set capabilities, sources, and tools
+ * - Show tool set tools and metadata
  */
 
 import { useMemo, useEffect } from 'react';
 import { Plus } from 'lucide-react';
+import { useParams } from 'react-router-dom';
 import { MasterDetailLayout } from '@/components/layout/master-detail-layout';
-import { AgentTable } from '@/components/agents/agent-table';
-import { AgentDetail } from '@/components/agents/agent-detail';
+import { ToolSetTable } from '@/components/tool-sets/tool-set-table';
+import { ToolSetDetail } from '@/components/tool-sets/tool-set-detail';
 import { Button } from '@/components/ui/button';
-import { useAgents } from '@/hooks/useAgents';
-import { useMCPServers } from '@/hooks/useMCPServers';
-import { useRuntimeData } from '@/stores/runtimeStore';
+import { useToolSets } from '@/hooks/useToolSets';
 import { useCreateToolSetDialog, useManageToolsDialog } from '@/stores/uiStore';
 import { useUrlSync } from '@/hooks/useUrlSync';
 
 export default function ToolSetsPage() {
+  const { workspaceId } = useParams<{ workspaceId: string }>();
   const { selectedId, setSelectedId } = useUrlSync();
   const { openDialog } = useCreateToolSetDialog();
 
-  // Fetch runtimes and servers
-  const { runtimes, loading, error } = useRuntimeData();
-  const { filteredAgents, filters } = useAgents(runtimes);
-  const { servers } = useMCPServers();
+  // Fetch tool sets via Apollo subscription
+  const { filteredToolSets, loading, error, filters } = useToolSets(workspaceId || '');
 
-  // Get selected agent from URL
-  const selectedAgent = useMemo(() => {
+  // Get selected tool set from URL
+  const selectedToolSet = useMemo(() => {
     if (!selectedId) return null;
-    return filteredAgents.find((a) => a.id === selectedId) || null;
-  }, [selectedId, filteredAgents]);
+    return filteredToolSets.find((ts) => ts.id === selectedId) || null;
+  }, [selectedId, filteredToolSets]);
 
-  // Auto-open detail panel if ID in URL and agent exists
+  // Auto-close detail panel if tool set not found
   useEffect(() => {
-    if (selectedId && !selectedAgent && !loading) {
-      // Agent not found - might have been deleted or invalid ID
+    if (selectedId && !selectedToolSet && !loading) {
+      // Tool set not found - might have been deleted or invalid ID
       setSelectedId(null);
     }
-  }, [selectedId, selectedAgent, loading, setSelectedId]);
-
-  // Available servers for filter
-  const availableServers = useMemo(() => {
-    return servers.map((server) => ({
-      id: server.id,
-      name: server.name,
-    }));
-  }, [servers]);
+  }, [selectedId, selectedToolSet, loading, setSelectedId]);
 
   if (error) {
     return (
@@ -85,12 +75,11 @@ export default function ToolSetsPage() {
       <div className="mb-6 flex items-start justify-between">
         <div>
           <h2 className="text-3xl font-bold text-gray-900 dark:text-white">Tool Sets</h2>
-          <p className="text-gray-500 dark:text-gray-400 mt-1">Manage AI tool sets and view their capabilities</p>
+          <p className="text-gray-500 dark:text-gray-400 mt-1">
+            Manage your tool sets and organize your tools
+          </p>
         </div>
-        <Button
-          onClick={handleCreateToolSet}
-          className="flex items-center gap-2"
-        >
+        <Button onClick={handleCreateToolSet} className="flex items-center gap-2">
           <Plus className="h-4 w-4" />
           New Tool Set
         </Button>
@@ -99,21 +88,18 @@ export default function ToolSetsPage() {
       {/* Master-Detail Layout */}
       <MasterDetailLayout
         table={
-          <AgentTable
-            agents={filteredAgents}
-            selectedAgentId={selectedId}
-            onSelectAgent={setSelectedId}
+          <ToolSetTable
+            toolSets={filteredToolSets}
+            selectedToolSetId={selectedId}
+            onSelectToolSet={setSelectedId}
             search={filters.search}
             onSearchChange={filters.setSearch}
-            serverFilter={filters.serverIds}
-            onServerFilterChange={filters.setServerIds}
             statusFilter={filters.statuses}
             onStatusFilterChange={filters.setStatuses}
-            availableServers={availableServers}
             loading={loading}
           />
         }
-        detail={selectedAgent ? <AgentDetail agent={selectedAgent} /> : null}
+        detail={selectedToolSet ? <ToolSetDetail toolSet={selectedToolSet} /> : null}
         onCloseDetail={() => setSelectedId(null)}
       />
     </div>

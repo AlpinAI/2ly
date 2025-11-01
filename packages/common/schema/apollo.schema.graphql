@@ -402,6 +402,7 @@ type Subscription {
   workspace(workspaceId: ID!): Workspace
   runtimes(workspaceId: ID!): [Runtime!]
   mcpServers(workspaceId: ID!): [MCPServer!]
+  mcpTools(workspaceId: ID!): [MCPTool!]
   toolSets(workspaceId: ID!): [ToolSet!]
   toolCalls(workspaceId: ID!): [ToolCall!]
 }
