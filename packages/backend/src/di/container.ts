@@ -27,6 +27,7 @@ import {
   MCPToolRepository,
   SystemRepository,
   MonitoringRepository,
+  ToolSetRepository,
 } from '../repositories';
 import { JwtService, AuthenticationService, AccountSecurityService, PasswordPolicyService } from '../services/auth';
 import { SecurityMiddleware, RateLimitMiddleware, GraphQLAuthMiddleware } from '../middleware';
@@ -80,6 +81,7 @@ const start = () => {
   container.bind(MCPToolRepository).toSelf().inSingletonScope();
   container.bind(SystemRepository).toSelf().inSingletonScope();
   container.bind(MonitoringRepository).toSelf().inSingletonScope();
+  container.bind(ToolSetRepository).toSelf().inSingletonScope();
 
   // Init authentication services
   container.bind(JwtService).toSelf().inSingletonScope();

@@ -184,7 +184,8 @@ const GIT_COMMIT_SCHEMA = JSON.stringify({
  * - 4 MCP servers (different transports)
  * - 3 registry servers
  * - 23 tools across servers
- * - 3 runtimes (2 agent-capable, 1 edge)
+ * - 2 runtimes
+ * - 2 tool sets (agent-capable runtimes)
  * - 15 tool calls (various states)
  */
 export const comprehensiveSeededData: SeedData = {
@@ -274,7 +275,7 @@ export const comprehensiveSeededData: SeedData = {
       inputSchema: FILE_READ_SCHEMA,
       annotations: JSON.stringify({ category: 'filesystem', complexity: 'low' }),
       status: 'ACTIVE' as dgraphResolversTypes.ActiveStatus,
-      mcpServerId: 'filesystem-server', // Placeholder, resolved during seeding
+      mcpServerId: 'server-filesystem-server', // Placeholder, resolved during seeding
     },
     {
       name: 'write_file',
@@ -282,7 +283,7 @@ export const comprehensiveSeededData: SeedData = {
       inputSchema: FILE_WRITE_SCHEMA,
       annotations: JSON.stringify({ category: 'filesystem', complexity: 'medium' }),
       status: 'ACTIVE' as dgraphResolversTypes.ActiveStatus,
-      mcpServerId: 'filesystem-server',
+      mcpServerId: 'server-filesystem-server',
     },
     {
       name: 'list_directory',
@@ -290,7 +291,7 @@ export const comprehensiveSeededData: SeedData = {
       inputSchema: DIRECTORY_LIST_SCHEMA,
       annotations: JSON.stringify({ category: 'filesystem', complexity: 'low' }),
       status: 'ACTIVE' as dgraphResolversTypes.ActiveStatus,
-      mcpServerId: 'filesystem-server',
+      mcpServerId: 'server-filesystem-server',
     },
     {
       name: 'search_files',
@@ -298,7 +299,7 @@ export const comprehensiveSeededData: SeedData = {
       inputSchema: FILE_SEARCH_SCHEMA,
       annotations: JSON.stringify({ category: 'filesystem', complexity: 'medium' }),
       status: 'ACTIVE' as dgraphResolversTypes.ActiveStatus,
-      mcpServerId: 'filesystem-server',
+      mcpServerId: 'server-filesystem-server',
     },
     {
       name: 'move_file',
@@ -313,7 +314,7 @@ export const comprehensiveSeededData: SeedData = {
       }),
       annotations: JSON.stringify({ category: 'filesystem', complexity: 'medium' }),
       status: 'ACTIVE' as dgraphResolversTypes.ActiveStatus,
-      mcpServerId: 'filesystem-server',
+      mcpServerId: 'server-filesystem-server',
     },
     {
       name: 'delete_file',
@@ -327,7 +328,7 @@ export const comprehensiveSeededData: SeedData = {
       }),
       annotations: JSON.stringify({ category: 'filesystem', complexity: 'high', dangerous: true }),
       status: 'ACTIVE' as dgraphResolversTypes.ActiveStatus,
-      mcpServerId: 'filesystem-server',
+      mcpServerId: 'server-filesystem-server',
     },
     {
       name: 'get_file_info',
@@ -341,7 +342,7 @@ export const comprehensiveSeededData: SeedData = {
       }),
       annotations: JSON.stringify({ category: 'filesystem', complexity: 'low' }),
       status: 'ACTIVE' as dgraphResolversTypes.ActiveStatus,
-      mcpServerId: 'filesystem-server',
+      mcpServerId: 'server-filesystem-server',
     },
 
     // Web Fetch Server Tools (5 tools)
@@ -351,7 +352,7 @@ export const comprehensiveSeededData: SeedData = {
       inputSchema: HTTP_GET_SCHEMA,
       annotations: JSON.stringify({ category: 'http', complexity: 'low' }),
       status: 'ACTIVE' as dgraphResolversTypes.ActiveStatus,
-      mcpServerId: 'web-fetch-server',
+      mcpServerId: 'server-web-fetch-server',
     },
     {
       name: 'http_post',
@@ -359,7 +360,7 @@ export const comprehensiveSeededData: SeedData = {
       inputSchema: HTTP_POST_SCHEMA,
       annotations: JSON.stringify({ category: 'http', complexity: 'medium' }),
       status: 'ACTIVE' as dgraphResolversTypes.ActiveStatus,
-      mcpServerId: 'web-fetch-server',
+      mcpServerId: 'server-web-fetch-server',
     },
     {
       name: 'http_put',
@@ -367,7 +368,7 @@ export const comprehensiveSeededData: SeedData = {
       inputSchema: HTTP_POST_SCHEMA,
       annotations: JSON.stringify({ category: 'http', complexity: 'medium' }),
       status: 'ACTIVE' as dgraphResolversTypes.ActiveStatus,
-      mcpServerId: 'web-fetch-server',
+      mcpServerId: 'server-web-fetch-server',
     },
     {
       name: 'http_delete',
@@ -375,7 +376,7 @@ export const comprehensiveSeededData: SeedData = {
       inputSchema: HTTP_GET_SCHEMA,
       annotations: JSON.stringify({ category: 'http', complexity: 'medium' }),
       status: 'ACTIVE' as dgraphResolversTypes.ActiveStatus,
-      mcpServerId: 'web-fetch-server',
+      mcpServerId: 'server-web-fetch-server',
     },
     {
       name: 'fetch_json',
@@ -383,7 +384,7 @@ export const comprehensiveSeededData: SeedData = {
       inputSchema: HTTP_GET_SCHEMA,
       annotations: JSON.stringify({ category: 'http', complexity: 'low' }),
       status: 'ACTIVE' as dgraphResolversTypes.ActiveStatus,
-      mcpServerId: 'web-fetch-server',
+      mcpServerId: 'server-web-fetch-server',
     },
 
     // Development Tools Server (6 tools)
@@ -393,7 +394,7 @@ export const comprehensiveSeededData: SeedData = {
       inputSchema: PROCESS_EXECUTE_SCHEMA,
       annotations: JSON.stringify({ category: 'process', complexity: 'high', dangerous: true }),
       status: 'ACTIVE' as dgraphResolversTypes.ActiveStatus,
-      mcpServerId: 'development-tools',
+      mcpServerId: 'server-development-tools',
     },
     {
       name: 'git_status',
@@ -401,7 +402,7 @@ export const comprehensiveSeededData: SeedData = {
       inputSchema: GIT_STATUS_SCHEMA,
       annotations: JSON.stringify({ category: 'git', complexity: 'low' }),
       status: 'ACTIVE' as dgraphResolversTypes.ActiveStatus,
-      mcpServerId: 'development-tools',
+      mcpServerId: 'server-development-tools',
     },
     {
       name: 'git_commit',
@@ -409,7 +410,7 @@ export const comprehensiveSeededData: SeedData = {
       inputSchema: GIT_COMMIT_SCHEMA,
       annotations: JSON.stringify({ category: 'git', complexity: 'medium' }),
       status: 'ACTIVE' as dgraphResolversTypes.ActiveStatus,
-      mcpServerId: 'development-tools',
+      mcpServerId: 'server-development-tools',
     },
     {
       name: 'git_diff',
@@ -417,7 +418,7 @@ export const comprehensiveSeededData: SeedData = {
       inputSchema: GIT_STATUS_SCHEMA,
       annotations: JSON.stringify({ category: 'git', complexity: 'low' }),
       status: 'ACTIVE' as dgraphResolversTypes.ActiveStatus,
-      mcpServerId: 'development-tools',
+      mcpServerId: 'server-development-tools',
     },
     {
       name: 'git_log',
@@ -432,7 +433,7 @@ export const comprehensiveSeededData: SeedData = {
       }),
       annotations: JSON.stringify({ category: 'git', complexity: 'low' }),
       status: 'ACTIVE' as dgraphResolversTypes.ActiveStatus,
-      mcpServerId: 'development-tools',
+      mcpServerId: 'server-development-tools',
     },
     {
       name: 'npm_install',
@@ -446,7 +447,7 @@ export const comprehensiveSeededData: SeedData = {
       }),
       annotations: JSON.stringify({ category: 'npm', complexity: 'medium' }),
       status: 'ACTIVE' as dgraphResolversTypes.ActiveStatus,
-      mcpServerId: 'development-tools',
+      mcpServerId: 'server-development-tools',
     },
 
     // Database Server Tools (5 tools)
@@ -456,7 +457,7 @@ export const comprehensiveSeededData: SeedData = {
       inputSchema: DATABASE_QUERY_SCHEMA,
       annotations: JSON.stringify({ category: 'database', complexity: 'medium' }),
       status: 'ACTIVE' as dgraphResolversTypes.ActiveStatus,
-      mcpServerId: 'database-server',
+      mcpServerId: 'server-database-server',
     },
     {
       name: 'db_insert',
@@ -471,7 +472,7 @@ export const comprehensiveSeededData: SeedData = {
       }),
       annotations: JSON.stringify({ category: 'database', complexity: 'medium' }),
       status: 'ACTIVE' as dgraphResolversTypes.ActiveStatus,
-      mcpServerId: 'database-server',
+      mcpServerId: 'server-database-server',
     },
     {
       name: 'db_update',
@@ -487,7 +488,7 @@ export const comprehensiveSeededData: SeedData = {
       }),
       annotations: JSON.stringify({ category: 'database', complexity: 'high' }),
       status: 'ACTIVE' as dgraphResolversTypes.ActiveStatus,
-      mcpServerId: 'database-server',
+      mcpServerId: 'server-database-server',
     },
     {
       name: 'db_delete',
@@ -502,7 +503,7 @@ export const comprehensiveSeededData: SeedData = {
       }),
       annotations: JSON.stringify({ category: 'database', complexity: 'high', dangerous: true }),
       status: 'ACTIVE' as dgraphResolversTypes.ActiveStatus,
-      mcpServerId: 'database-server',
+      mcpServerId: 'server-database-server',
     },
     {
       name: 'db_schema',
@@ -515,30 +516,54 @@ export const comprehensiveSeededData: SeedData = {
       }),
       annotations: JSON.stringify({ category: 'database', complexity: 'low' }),
       status: 'ACTIVE' as dgraphResolversTypes.ActiveStatus,
-      mcpServerId: 'database-server',
+      mcpServerId: 'server-database-server',
     },
   ],
   runtimes: [
     {
-      name: 'Claude Desktop Agent',
-      description: 'Primary agent runtime for Claude Desktop application',
+      name: 'Main Runtime',
+      description: 'Primary runtime',
       status: 'ACTIVE' as dgraphResolversTypes.ActiveStatus,
-      capabilities: ['agent', 'mcp-client'],
-      workspaceId: '', // Will be set during seeding
-    },
-    {
-      name: 'Web Assistant Agent',
-      description: 'Web-based assistant with limited tool access',
-      status: 'ACTIVE' as dgraphResolversTypes.ActiveStatus,
-      capabilities: ['agent', 'mcp-client', 'web'],
+      capabilities: ['tool'],
       workspaceId: '', // Will be set during seeding
     },
     {
       name: 'Edge Runtime',
       description: 'Edge runtime for processing tool calls',
       status: 'ACTIVE' as dgraphResolversTypes.ActiveStatus,
-      capabilities: ['mcp-client', 'edge'],
+      capabilities: ['tool'],
       workspaceId: '', // Will be set during seeding
+    },
+  ],
+  toolSets: [
+    {
+      name: 'Claude Desktop Agent',
+      description: 'Primary agent runtime for Claude Desktop application with filesystem and development tools',
+      toolIds: [
+        'read_file',
+        'write_file',
+        'list_directory',
+        'search_files',
+        'move_file',
+        'get_file_info',
+        'git_status',
+        'git_commit',
+        'git_diff',
+        'git_log',
+        'execute_command',
+      ],
+    },
+    {
+      name: 'Web Assistant Agent',
+      description: 'Web-based assistant with HTTP and database capabilities',
+      toolIds: [
+        'http_get',
+        'http_post',
+        'http_put',
+        'fetch_json',
+        'db_query',
+        'db_schema',
+      ],
     },
   ],
   toolCalls: [

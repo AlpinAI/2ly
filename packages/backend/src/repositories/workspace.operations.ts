@@ -74,12 +74,6 @@ export const QUERY_WORKSPACE_WITH_RUNTIMES = gql`
         mcpClientName
         hostIP
         mcpClientName
-        mcpToolCapabilities {
-          id
-          name
-          description
-          status
-        }
         mcpServers {
           id
           name
@@ -151,11 +145,10 @@ export const QUERY_WORKSPACE_WITH_MCP_TOOLS = gql`
           description
           repositoryUrl
         }
-        runtimes {
+        toolSets {
           id
           name
-          status
-          capabilities
+          description
         }
       }
     }

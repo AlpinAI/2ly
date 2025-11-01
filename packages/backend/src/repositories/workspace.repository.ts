@@ -27,6 +27,7 @@ import { map } from 'rxjs/operators';
 import { createSubscriptionFromQuery } from '../helpers';
 import { INITIAL_ONBOARDING_STEPS } from './onboarding-step-definitions';
 import { INITIAL_FEATURED_SERVERS } from './initial-servers';
+import { QUERY_TOOLSETS_BY_WORKSPACE } from './toolset.operations';
 
 @injectable()
 export class WorkspaceRepository {
@@ -279,21 +280,12 @@ export class WorkspaceRepository {
         shouldComplete = (servers.getWorkspace.mcpServers?.length || 0) > 0;
         break; }
       case 'create-tool-set':
-        { const runtimes = await this.dgraphService.query<{
-          getWorkspace: {
-            runtimes: {
-              capabilities: string[];
-              mcpToolCapabilities: { id: string }[];
-            }[]
-          };
-        }>(QUERY_WORKSPACE_WITH_RUNTIMES, { workspaceId });
-        // Check if there's at least one runtime with 'agent' capability and at least one tool
-        shouldComplete = (
-          runtimes.getWorkspace.runtimes?.some(r =>
-            (r.capabilities || []).some(c => c.toUpperCase() === 'AGENT') &&
-            (r.mcpToolCapabilities?.length || 0) > 0
-          ) || false
-        );
+        { // Check if workspace has at least one ToolSet with at least one tool
+        const toolSets = await this.dgraphService.query<{
+          getWorkspace: { toolSets: dgraphResolversTypes.ToolSet[] } | null;
+        }>(QUERY_TOOLSETS_BY_WORKSPACE, { workspaceId });
+        
+        shouldComplete = (toolSets.getWorkspace?.toolSets.some(ts => ts.mcpTools && ts.mcpTools.length > 0) ?? false);
         break; }
       case 'connect-tool-set-to-agent':
         { const runtimes = await this.dgraphService.query<{

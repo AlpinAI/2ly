@@ -247,7 +247,7 @@ export function ToolSelectionTable({
                 {server.tools.map((tool) => (
                   <div
                     key={tool.id}
-                    className="flex items-center gap-3 p-3 border-b border-gray-200 dark:border-gray-700 last:border-b-0"
+                    className="tool-row flex items-center gap-3 p-3 border-b border-gray-200 dark:border-gray-700 last:border-b-0"
                   >
                     <Checkbox
                       checked={selectedToolIds.has(tool.id)}

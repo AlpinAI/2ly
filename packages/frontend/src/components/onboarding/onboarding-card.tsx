@@ -30,7 +30,8 @@ import { useUIStore, useCreateToolSetDialog, useManageToolsDialog, useConnectAge
 import { STEP_METADATA, ONBOARDING_STEPS } from '@/constants/onboarding-steps';
 import { useMCPServers } from '@/hooks/useMCPServers';
 import { useRuntimeData } from '@/stores/runtimeStore';
-import { useAgents } from '@/hooks/useAgents';
+import { useToolSets } from '@/hooks/useToolSets';
+import { useParams } from 'react-router-dom';
 import type { OnboardingStep } from '@/graphql/generated/graphql';
 
 interface OnboardingCardProps {
@@ -108,24 +109,24 @@ export function OnboardingCard({ step, isCurrentStep = false }: OnboardingCardPr
       }
         
       case ONBOARDING_STEPS.CREATE_TOOL_SET: {
-        const { runtimes } = useRuntimeData();
-        const { agents } = useAgents(runtimes);
+        const { workspaceId } = useParams<{ workspaceId: string }>();
+        const { toolSets } = useToolSets(workspaceId || '');
 
-        // Find first agent with at least one tool
-        const firstAgentWithTools = agents.find(agent =>
-          agent.mcpToolCapabilities && agent.mcpToolCapabilities.length > 0
+        // Find first tool set with at least one tool
+        const firstToolSetWithTools = toolSets.find(toolSet =>
+          toolSet.mcpTools && toolSet.mcpTools.length > 0
         );
 
-        if (isCompleted && firstAgentWithTools) {
-          const toolCount = firstAgentWithTools.mcpToolCapabilities?.length || 0;
+        if (isCompleted && firstToolSetWithTools) {
+          const toolCount = firstToolSetWithTools.mcpTools?.length || 0;
           return (
             <div className="space-y-3">
               <div className="rounded-lg bg-green-400/20 dark:bg-green-900/20 p-3">
                 <p className="text-sm text-green-800 dark:text-green-200">
                   <span className="flex items-center">
                     <Package className="mr-2 h-4 w-4" />
-                    <span className="font-medium truncate max-w-xs overflow-hidden whitespace-nowrap" title={firstAgentWithTools.name}>
-                      {firstAgentWithTools.name} ({toolCount} {toolCount === 1 ? 'tool' : 'tools'})
+                    <span className="font-medium truncate max-w-xs overflow-hidden whitespace-nowrap" title={firstToolSetWithTools.name}>
+                      {firstToolSetWithTools.name} ({toolCount} {toolCount === 1 ? 'tool' : 'tools'})
                     </span>
                   </span>
                 </p>
@@ -148,22 +149,26 @@ export function OnboardingCard({ step, isCurrentStep = false }: OnboardingCardPr
 
       case ONBOARDING_STEPS.CONNECT_AGENT: {
         const { runtimes } = useRuntimeData();
-        const { agents } = useAgents(runtimes);
+        const { workspaceId } = useParams<{ workspaceId: string }>();
+        const { toolSets } = useToolSets(workspaceId || '');
 
-        // Find first agent with tools
-        const firstAgentWithTools = agents.find(agent =>
-          agent.mcpToolCapabilities && agent.mcpToolCapabilities.length > 0
+        // Find first runtime
+        const firstRuntime = runtimes.find(runtime => runtime.status === 'ACTIVE');
+
+        // Find first tool set with tools
+        const firstToolSetWithTools = toolSets.find(toolSet =>
+          toolSet.mcpTools && toolSet.mcpTools.length > 0
         );
 
-        if (isCompleted && firstAgentWithTools) {
+        if (isCompleted && firstRuntime) {
           return (
             <div className="space-y-3">
               <div className="rounded-lg bg-green-400/20 dark:bg-green-900/20 p-3">
                 <p className="text-sm text-green-800 dark:text-green-200">
                   <span className="flex items-center">
                     <Link className="mr-2 h-4 w-4" />
-                    <span className="font-medium truncate max-w-xs overflow-hidden whitespace-nowrap" title={firstAgentWithTools.name}>
-                      {firstAgentWithTools.name} connected
+                    <span className="font-medium truncate max-w-xs overflow-hidden whitespace-nowrap" title={firstRuntime.name}>
+                      {firstRuntime.name} connected
                     </span>
                   </span>
                 </p>
@@ -172,8 +177,8 @@ export function OnboardingCard({ step, isCurrentStep = false }: OnboardingCardPr
           );
         }
 
-        // Need to have an agent with tools first
-        if (!firstAgentWithTools) {
+        // Need to have a tool set first
+        if (!firstToolSetWithTools) {
           return (
             <div className="space-y-3">
               <p className="text-sm text-gray-600 dark:text-gray-400 italic">
@@ -186,7 +191,8 @@ export function OnboardingCard({ step, isCurrentStep = false }: OnboardingCardPr
         return (
           <Button
             onClick={() => {
-              setSelectedAgentId(firstAgentWithTools.id);
+              // Use the first toolSet name for connection instructions
+              setSelectedAgentId(firstToolSetWithTools.name);
               setConnectAgentDialogOpen(true);
             }}
             className="w-full"

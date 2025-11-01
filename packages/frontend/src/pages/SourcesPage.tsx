@@ -23,8 +23,6 @@ import { MasterDetailLayout } from '@/components/layout/master-detail-layout';
 import { SourceTable } from '@/components/sources/source-table';
 import { SourceDetail } from '@/components/sources/source-detail';
 import { useMCPServers } from '@/hooks/useMCPServers';
-import { useAgents } from '@/hooks/useAgents';
-import { useRuntimeData } from '@/stores/runtimeStore';
 import { useUIStore } from '@/stores/uiStore';
 import { SourceType } from '@/types/sources';
 import { useUrlSync } from '@/hooks/useUrlSync';
@@ -33,10 +31,8 @@ export default function SourcesPage() {
   const { selectedId, setSelectedId } = useUrlSync();
   const [typeFilter, setTypeFilter] = useState<string[]>([]);
 
-  // Fetch servers and agents
-  const { runtimes } = useRuntimeData();
+  // Fetch servers
   const { servers, loading, error } = useMCPServers();
-  const { agents } = useAgents(runtimes);
 
   // UI store for opening add source workflow
   const setAddSourceWorkflowOpen = useUIStore((state) => state.setAddSourceWorkflowOpen);
@@ -71,13 +67,6 @@ export default function SourcesPage() {
     }
   }, [selectedId, selectedSource, loading, setSelectedId]);
 
-  // Available agents for filter
-  const availableAgents = useMemo(() => {
-    return agents.map((agent) => ({
-      id: agent.id,
-      name: agent.name,
-    }));
-  }, [agents]);
 
   // Handle add source button click
   const handleAddSource = () => {
@@ -129,7 +118,7 @@ export default function SourcesPage() {
             onRunOnFilterChange={() => {}}
             agentFilter={[]}
             onAgentFilterChange={() => {}}
-            availableAgents={availableAgents}
+            availableAgents={[]}
             loading={loading}
           />
         }

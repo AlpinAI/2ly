@@ -66,7 +66,6 @@ type MCPTool {
   createdAt: Date!
   lastSeenAt: Date!
   mcpServer: MCPServer!
-  runtimes: [Runtime!]
   toolSets: [ToolSet!]
   workspace: Workspace!
 }
@@ -75,10 +74,9 @@ type ToolSet {
   id: ID!
   name: String!
   description: String
-  status: ActiveStatus!
   createdAt: Date!
-  lastSeenAt: Date
-  mcpToolCapabilities: [MCPTool!]
+  updatedAt: Date
+  mcpTools: [MCPTool!]
   workspace: Workspace!
 }
 
@@ -91,7 +89,6 @@ type Runtime {
   lastSeenAt: Date
   roots: String
   capabilities: [String!]
-  mcpToolCapabilities: [MCPTool!]
   mcpServers: [MCPServer!]
   workspace: Workspace!
   hostIP: String
@@ -227,6 +224,7 @@ type Query {
   workspace: [Workspace!]
   mcpServers(workspaceId: ID!): [MCPServer!]
   mcpTools(workspaceId: ID!): [MCPTool!]
+  toolSets(workspaceId: ID!): [ToolSet!]
   system: System
   infra: Infra!
   workspaceMCPTools(workspaceId: ID!): Workspace
@@ -276,8 +274,12 @@ type Mutation {
   deleteRuntime(id: ID!): Runtime!
   deleteMCPTool(id: ID!): MCPTool!
   deleteMCPServer(id: ID!): MCPServer!
-  linkMCPToolToRuntime(mcpToolId: ID!, runtimeId: ID!): Runtime!
-  unlinkMCPToolFromRuntime(mcpToolId: ID!, runtimeId: ID!): Runtime!
+  # ToolSet mutations
+  createToolSet(name: String!, description: String!, workspaceId: ID!): ToolSet!
+  updateToolSet(id: ID!, name: String!, description: String!): ToolSet!
+  deleteToolSet(id: ID!): ToolSet!
+  addMCPToolToToolSet(mcpToolId: ID!, toolSetId: ID!): ToolSet!
+  removeMCPToolFromToolSet(mcpToolId: ID!, toolSetId: ID!): ToolSet!
   initSystem(adminPassword: String!, email: String!): System!
   updateWorkspace(id: ID!, name: String!): Workspace!
   setGlobalRuntime(id: ID!, runtimeId: ID!): Workspace!
@@ -396,5 +398,7 @@ type Subscription {
   workspace(workspaceId: ID!): Workspace
   runtimes(workspaceId: ID!): [Runtime!]
   mcpServers(workspaceId: ID!): [MCPServer!]
+  mcpTools(workspaceId: ID!): [MCPTool!]
+  toolSets(workspaceId: ID!): [ToolSet!]
   toolCalls(workspaceId: ID!): [ToolCall!]
 }

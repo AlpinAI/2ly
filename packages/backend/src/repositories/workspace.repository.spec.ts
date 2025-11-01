@@ -6,7 +6,6 @@ import { DgraphServiceMock } from '../services/dgraph.service.mock';
 import type { apolloResolversTypes } from '@2ly/common';
 
 describe('WorkspaceRepository', () => {
-
     it('create throws error when system not found', async () => {
         const dgraph = new DgraphServiceMock();
         dgraph.query.mockResolvedValue({ querySystem: [] });

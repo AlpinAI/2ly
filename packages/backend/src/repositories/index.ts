@@ -8,3 +8,4 @@ export * from './mcp-tool.repository';
 export * from './runtime.repository';
 export * from './system.repository';
 export * from './monitoring.repository';
+export * from './toolset.repository';

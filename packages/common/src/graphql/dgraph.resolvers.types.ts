@@ -66,7 +66,6 @@ export type McpTool = {
   lastSeenAt: Scalars['DateTime']['output'];
   mcpServer: McpServer;
   name: Scalars['String']['output'];
-  runtimes?: Maybe<Array<Runtime>>;
   status: ActiveStatus;
   toolCalls?: Maybe<Array<ToolCall>>;
   toolSets?: Maybe<Array<ToolSet>>;
@@ -111,7 +110,6 @@ export type Runtime = {
   lastSeenAt?: Maybe<Scalars['DateTime']['output']>;
   mcpClientName?: Maybe<Scalars['String']['output']>;
   mcpServers?: Maybe<Array<McpServer>>;
-  mcpToolCapabilities?: Maybe<Array<McpTool>>;
   name: Scalars['String']['output'];
   processId?: Maybe<Scalars['String']['output']>;
   roots?: Maybe<Scalars['String']['output']>;
@@ -169,10 +167,9 @@ export type ToolSet = {
   createdAt: Scalars['DateTime']['output'];
   description?: Maybe<Scalars['String']['output']>;
   id: Scalars['ID']['output'];
-  lastSeenAt?: Maybe<Scalars['DateTime']['output']>;
-  mcpToolCapabilities?: Maybe<Array<McpTool>>;
+  mcpTools?: Maybe<Array<McpTool>>;
   name: Scalars['String']['output'];
-  status: ActiveStatus;
+  updatedAt?: Maybe<Scalars['DateTime']['output']>;
   workspace: Workspace;
 };
 
@@ -367,7 +364,6 @@ export type McpToolResolvers<ContextType = any, ParentType extends ResolversPare
   lastSeenAt?: Resolver<ResolversTypes['DateTime'], ParentType, ContextType>;
   mcpServer?: Resolver<ResolversTypes['MCPServer'], ParentType, ContextType>;
   name?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
-  runtimes?: Resolver<Maybe<Array<ResolversTypes['Runtime']>>, ParentType, ContextType>;
   status?: Resolver<ResolversTypes['ActiveStatus'], ParentType, ContextType>;
   toolCalls?: Resolver<Maybe<Array<ResolversTypes['ToolCall']>>, ParentType, ContextType>;
   toolSets?: Resolver<Maybe<Array<ResolversTypes['ToolSet']>>, ParentType, ContextType>;
@@ -396,7 +392,6 @@ export type RuntimeResolvers<ContextType = any, ParentType extends ResolversPare
   lastSeenAt?: Resolver<Maybe<ResolversTypes['DateTime']>, ParentType, ContextType>;
   mcpClientName?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   mcpServers?: Resolver<Maybe<Array<ResolversTypes['MCPServer']>>, ParentType, ContextType>;
-  mcpToolCapabilities?: Resolver<Maybe<Array<ResolversTypes['MCPTool']>>, ParentType, ContextType>;
   name?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   processId?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   roots?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
@@ -452,10 +447,9 @@ export type ToolSetResolvers<ContextType = any, ParentType extends ResolversPare
   createdAt?: Resolver<ResolversTypes['DateTime'], ParentType, ContextType>;
   description?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
-  lastSeenAt?: Resolver<Maybe<ResolversTypes['DateTime']>, ParentType, ContextType>;
-  mcpToolCapabilities?: Resolver<Maybe<Array<ResolversTypes['MCPTool']>>, ParentType, ContextType>;
+  mcpTools?: Resolver<Maybe<Array<ResolversTypes['MCPTool']>>, ParentType, ContextType>;
   name?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
-  status?: Resolver<ResolversTypes['ActiveStatus'], ParentType, ContextType>;
+  updatedAt?: Resolver<Maybe<ResolversTypes['DateTime']>, ParentType, ContextType>;
   workspace?: Resolver<ResolversTypes['Workspace'], ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;

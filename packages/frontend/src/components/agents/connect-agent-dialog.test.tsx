@@ -17,7 +17,6 @@ describe('ConnectAgentDialog', () => {
     description: 'Test agent description',
     status: ActiveStatus.Active,
     capabilities: ['agent'],
-    mcpToolCapabilities: [],
     createdAt: new Date(),
     hostIP: null,
     hostname: null,

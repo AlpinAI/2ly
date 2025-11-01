@@ -17,12 +17,12 @@ subscription SubscribeRuntimes($workspaceId: ID!) {
       id
       name
       description
-    }
-    mcpToolCapabilities {
-      id
-      name
-      description
-      status
+      tools {
+        id
+        name
+        description
+        status
+      }
     }
   }
 }

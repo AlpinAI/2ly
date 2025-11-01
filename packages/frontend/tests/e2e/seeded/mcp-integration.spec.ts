@@ -119,48 +119,31 @@ test.describe('MCP Integration with Containerized Runtime', () => {
     // ========================================================================
     // Step 4: Create tool set from discovered tools (link tools to runtime)
     // ========================================================================
-    // Create a new runtime with agent capability (tool set)
-    const createRuntimeMutation = `
-      mutation CreateRuntime(
-        $workspaceId: ID!
-        $name: String!
-        $description: String!
-        $capabilities: [String!]!
-      ) {
-        createRuntime(
-          workspaceId: $workspaceId
-          name: $name
-          description: $description
-          capabilities: $capabilities
-        ) {
+    // Create a ToolSet for the runtime
+    const createToolSetMutation = `
+      mutation CreateToolSet($name: String!, $description: String!, $workspaceId: ID!) {
+        createToolSet(name: $name, description: $description, workspaceId: $workspaceId) {
           id
           name
-          description
-          capabilities
-          status
         }
       }
     `;
 
-    const runtimeResult = await graphql<{
-      createRuntime: { id: string; name: string; description: string; capabilities: string[]; status: string };
-    }>(createRuntimeMutation, {
-      workspaceId,
-      name: 'MCP Integration Test Runtime',
-      description: 'Runtime created for MCP integration E2E test',
-      capabilities: ['agent'],
-    });
+    const toolSetResult = await graphql<{ createToolSet: { id: string; name: string } }>(
+      createToolSetMutation,
+      {
+        name: 'Test Tools',
+        description: 'Tools for testing',
+        workspaceId: workspaceId!,
+      }
+    );
 
-    const runtime = runtimeResult.createRuntime;
-    expect(runtime).toBeDefined();
-    expect(runtime.capabilities).toContain('agent');
-
-    // Link tools to runtime (create tool set)
-    const linkToolMutation = `
-      mutation LinkToolToRuntime($mcpToolId: ID!, $runtimeId: ID!) {
-        linkMCPToolToRuntime(mcpToolId: $mcpToolId, runtimeId: $runtimeId) {
+    // Add tools to the toolset
+    const addToolMutation = `
+      mutation AddToolToToolSet($mcpToolId: ID!, $toolSetId: ID!) {
+        addMCPToolToToolSet(mcpToolId: $mcpToolId, toolSetId: $toolSetId) {
           id
-          mcpToolCapabilities {
+          mcpTools {
             id
             name
           }
@@ -168,16 +151,16 @@ test.describe('MCP Integration with Containerized Runtime', () => {
       }
     `;
 
-    // Link write_file tool
-    await graphql(linkToolMutation, {
+    // Add write_file tool
+    await graphql(addToolMutation, {
       mcpToolId: writeFileTool!.id,
-      runtimeId: runtime!.id,
+      toolSetId: toolSetResult.createToolSet.id,
     });
 
-    // Link read_file tool
-    await graphql(linkToolMutation, {
+    // Add read_file tool
+    await graphql(addToolMutation, {
       mcpToolId: readFileTool!.id,
-      runtimeId: runtime!.id,
+      toolSetId: toolSetResult.createToolSet.id,
     });
 
     // ========================================================================
@@ -293,7 +276,7 @@ test.describe('MCP Integration with Containerized Runtime', () => {
             id
             name
           }
-          runtimes {
+          toolSets {
             id
             name
           }
@@ -302,7 +285,7 @@ test.describe('MCP Integration with Containerized Runtime', () => {
     `;
 
     const toolServerResult = await graphql<{
-      mcpTools: Array<{ id: string; name: string; mcpServer: { id: string; name: string }; runtimes: Array<{ id: string; name: string }> }>;
+      mcpTools: Array<{ id: string; name: string; mcpServer: { id: string; name: string }; toolSets: Array<{ id: string; name: string }> }>;
     }>(toolServerQuery, { workspaceId });
 
     const testTools = toolServerResult.mcpTools.filter((t) => t.mcpServer.id === mcpServerId);
@@ -310,8 +293,8 @@ test.describe('MCP Integration with Containerized Runtime', () => {
     testTools.forEach((tool) => {
       expect(tool.mcpServer.id).toBe(mcpServerId);
       if (tool.name === 'write_file' || tool.name === 'read_file') {
-        expect(tool.runtimes.length).toBeGreaterThan(0);
-        expect(tool.runtimes.find((r) => r.id === runtime!.id)).toBeDefined();
+        expect(tool.toolSets.length).toBeGreaterThan(0);
+        expect(tool.toolSets.find((r) => r.id === toolSetResult.createToolSet.id)).toBeDefined();
       }
     });
   });
