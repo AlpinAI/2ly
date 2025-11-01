@@ -35,9 +35,10 @@ export interface BottomPanelProps {
   onClose: () => void;
   children: React.ReactNode;
   onEscape?: () => void; // Optional custom escape handler (e.g., for back navigation)
+  className?: string;
 }
 
-export function BottomPanel({ isOpen, onClose, children, onEscape }: BottomPanelProps) {
+export function BottomPanel({ isOpen, onClose, children, onEscape, className }: BottomPanelProps) {
   const [shouldRender, setShouldRender] = useState(false);
   const [isAnimating, setIsAnimating] = useState(false);
   const [topOffset, setTopOffset] = useState(0);
@@ -132,7 +133,7 @@ export function BottomPanel({ isOpen, onClose, children, onEscape }: BottomPanel
       ref={panelRef}
       className={`fixed inset-x-0 bottom-0 z-50 bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700 shadow-2xl transition-transform duration-300 ease-out ${
         isAnimating ? 'translate-y-0' : 'translate-y-full'
-      }`}
+      } ${className}`}
       style={{
         top: `${topOffset}px`,
       }}

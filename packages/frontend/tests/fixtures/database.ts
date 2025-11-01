@@ -39,6 +39,11 @@ export interface SeedData {
     workspaceId: string; // ID reference for seeding
   }
   >;
+  toolSets?: Array<{
+    name: string;
+    description?: string;
+    toolIds: string[]; // Tool name references
+  }>;
   toolCalls?: Array<
     OmitGenerated<dgraphResolversTypes.ToolCall, 'executedBy' | 'calledBy' | 'calledAt' | 'completedAt' | 'mcpTool'> & {
       calledAt: string; // DateTime as string for seeding
@@ -410,7 +415,76 @@ export const test = base.extend<DatabaseFixture>({
         }
       }
 
-      // 8. Create Tool Calls
+      // 8. Create ToolSets
+      if (data.toolSets && workspaceId) {
+        for (const toolSet of data.toolSets) {
+          // Create the toolSet first
+          const toolSetMutation = `
+            mutation AddToolSet($workspaceId: ID!) {
+              addToolSet(input: {
+                name: "${toolSet.name}"
+                description: "${toolSet.description ?? ''}"
+                createdAt: "${now}"
+                workspace: { id: $workspaceId }
+              }) {
+                toolSet {
+                  id
+                  name
+                }
+              }
+            }
+          `;
+          try {
+            const result = await dgraphQL<{
+              addToolSet: { toolSet: Array<{ id: string; name: string }> };
+            }>(toolSetMutation, { workspaceId });
+
+            const toolSetId = result.addToolSet.toolSet[0].id;
+            const toolSetKey = toolSet.name.toLowerCase().replace(/\s+/g, '-');
+            entityIds[`toolset-${toolSetKey}`] = toolSetId;
+
+            // Link tools to the toolSet using direct Dgraph mutations
+            if (toolSet.toolIds && toolSet.toolIds.length > 0) {
+              const toolIdsToLink: string[] = [];
+              for (const toolName of toolSet.toolIds) {
+                const toolKey = toolName.replace(/[^a-zA-Z0-9]/g, '_');
+                const toolId = entityIds[toolKey];
+                if (toolId) {
+                  toolIdsToLink.push(toolId);
+                }
+              }
+
+              if (toolIdsToLink.length > 0) {
+                const toolRefs = toolIdsToLink.map(id => `{ id: "${id}" }`).join(', ');
+                const linkMutation = `
+                  mutation LinkToolsToToolSet($toolSetId: ID!) {
+                    updateToolSet(input: {
+                      filter: { id: [$toolSetId] }
+                      set: {
+                        mcpTools: [${toolRefs}]
+                      }
+                    }) {
+                      toolSet {
+                        id
+                        name
+                      }
+                    }
+                  }
+                `;
+                try {
+                  await dgraphQL(linkMutation, { toolSetId });
+                } catch (error) {
+                  console.warn(`Failed to link tools to toolSet ${toolSet.name}:`, error);
+                }
+              }
+            }
+          } catch (error) {
+            console.warn(`Failed to seed toolSet ${toolSet.name}:`, error);
+          }
+        }
+      }
+
+      // 9. Create Tool Calls
       if (data.toolCalls) {
         for (const toolCall of data.toolCalls) {
           const mcpToolId = entityIds[toolCall.mcpToolId.replace(/[^a-zA-Z0-9]/g, '_')];

@@ -291,9 +291,9 @@ export function ToolManagementPanel() {
   }
 
   return (
-    <BottomPanel isOpen={open} onClose={handleCancel}>
+    <BottomPanel isOpen={open} onClose={handleCancel} className="tool-management-panel">
       {/* Header - natural height, no flex grow */}
-      <div className="flex-shrink-0 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-6 py-4 flex items-center justify-between">
+      <div className="tool-management-panel-header flex-shrink-0 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-6 py-4 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <div className="p-2 bg-cyan-100 dark:bg-cyan-900/30 rounded-lg">
             <Settings className="h-5 w-5 text-cyan-600 dark:text-cyan-400" />

@@ -24,7 +24,7 @@ test.describe('Tool Set Management', () => {
     await performLogin(page, 'test@example.com', 'testpassword123');
 
     // Step 2: Navigate to Tool Sets page
-    await page.goto(`/w/${workspaceId}/tool-sets`);
+    await page.goto(`/w/${workspaceId}/toolsets`);
 
     // Step 3: Wait for tool sets to load
     await page.waitForLoadState('networkidle');
@@ -37,8 +37,9 @@ test.describe('Tool Set Management', () => {
     // Step 5: Wait for detail panel to open and verify it's visible
     await expect(page.locator('text=/Tool Set|ToolSet/i').first()).toBeVisible({ timeout: 5000 });
 
-    // Step 6: Click "Manage Tools" button
-    const manageToolsButton = page.getByRole('button', { name: /Manage Tools/i });
+    // Step 6: Click "Manage Tools" button (scoped within the detail panel)
+    const detailPanel = page.getByRole('complementary');
+    const manageToolsButton = detailPanel.getByRole('button', { name: /Manage Tools/i });
     await expect(manageToolsButton).toBeVisible({ timeout: 5000 });
     await manageToolsButton.click();
 
@@ -54,9 +55,9 @@ test.describe('Tool Set Management', () => {
     await expect(page.getByRole('button', { name: /Cancel/i })).toBeVisible();
 
     // Step 10: Verify some tools are displayed (should have checkboxes)
-    const toolCheckboxes = page.locator('input[type="checkbox"]');
-    const checkboxCount = await toolCheckboxes.count();
-    expect(checkboxCount).toBeGreaterThan(0);
+    const toolRows = page.locator('.tool-management-panel .tool-row');
+    const toolRowCount = await toolRows.count();
+    expect(toolRowCount).toBeGreaterThan(0);
 
     // Step 11: Close panel
     await page.getByRole('button', { name: /Cancel/i }).click();
@@ -67,7 +68,7 @@ test.describe('Tool Set Management', () => {
 
   test('should display correct tool set name in panel header', async ({ page, workspaceId }) => {
     await performLogin(page, 'test@example.com', 'testpassword123');
-    await page.goto(`/w/${workspaceId}/tool-sets`);
+    await page.goto(`/w/${workspaceId}/toolsets`);
     await page.waitForLoadState('networkidle');
 
     // Get the tool set name from the first row
@@ -75,7 +76,7 @@ test.describe('Tool Set Management', () => {
     await expect(firstRow).toBeVisible({ timeout: 10000 });
 
     // Extract tool set name from the row
-    const toolSetNameCell = firstRow.locator('td').first();
+    const toolSetNameCell = firstRow.locator('td .tool-set-name').first();
     const toolSetName = await toolSetNameCell.textContent();
     expect(toolSetName).toBeTruthy();
 
@@ -83,7 +84,8 @@ test.describe('Tool Set Management', () => {
     await firstRow.click();
 
     // Click Manage Tools button
-    const manageToolsButton = page.getByRole('button', { name: /Manage Tools/i });
+    const detailPanel = page.getByRole('complementary');
+    const manageToolsButton = detailPanel.getByRole('button', { name: /Manage Tools/i });
     await expect(manageToolsButton).toBeVisible({ timeout: 5000 });
     await manageToolsButton.click();
 
@@ -93,7 +95,7 @@ test.describe('Tool Set Management', () => {
 
   test('should show Selection Summary section', async ({ page, workspaceId }) => {
     await performLogin(page, 'test@example.com', 'testpassword123');
-    await page.goto(`/w/${workspaceId}/tool-sets`);
+    await page.goto(`/w/${workspaceId}/toolsets`);
     await page.waitForLoadState('networkidle');
 
     // Click first row
@@ -102,7 +104,8 @@ test.describe('Tool Set Management', () => {
     await firstRow.click();
 
     // Open Manage Tools panel
-    const manageToolsButton = page.getByRole('button', { name: /Manage Tools/i });
+    const detailPanel = page.getByRole('complementary');
+    const manageToolsButton = detailPanel.getByRole('button', { name: /Manage Tools/i });
     await expect(manageToolsButton).toBeVisible({ timeout: 5000 });
     await manageToolsButton.click();
 
@@ -117,14 +120,15 @@ test.describe('Tool Set Management', () => {
 
   test('should filter tools by search term', async ({ page, workspaceId }) => {
     await performLogin(page, 'test@example.com', 'testpassword123');
-    await page.goto(`/w/${workspaceId}/tool-sets`);
+    await page.goto(`/w/${workspaceId}/toolsets`);
     await page.waitForLoadState('networkidle');
 
     const firstRow = page.locator('table tbody tr').first();
     await expect(firstRow).toBeVisible({ timeout: 10000 });
     await firstRow.click();
 
-    const manageToolsButton = page.getByRole('button', { name: /Manage Tools/i });
+    const detailPanel = page.getByRole('complementary');
+    const manageToolsButton = detailPanel.getByRole('button', { name: /Manage Tools/i });
     await expect(manageToolsButton).toBeVisible({ timeout: 5000 });
     await manageToolsButton.click();
 
@@ -150,14 +154,15 @@ test.describe('Tool Set Management', () => {
 
   test('should close panel when clicking X button', async ({ page, workspaceId }) => {
     await performLogin(page, 'test@example.com', 'testpassword123');
-    await page.goto(`/w/${workspaceId}/tool-sets`);
+    await page.goto(`/w/${workspaceId}/toolsets`);
     await page.waitForLoadState('networkidle');
 
     const firstRow = page.locator('table tbody tr').first();
     await expect(firstRow).toBeVisible({ timeout: 10000 });
     await firstRow.click();
 
-    const manageToolsButton = page.getByRole('button', { name: /Manage Tools/i });
+    const detailPanel = page.getByRole('complementary');
+    const manageToolsButton = detailPanel.getByRole('button', { name: /Manage Tools/i });
     await expect(manageToolsButton).toBeVisible({ timeout: 5000 });
     await manageToolsButton.click();
 
@@ -166,7 +171,7 @@ test.describe('Tool Set Management', () => {
     // Find and click the X (close) button in the panel header
     // Click the close button (should be near the header)
     // We'll use a more specific approach - find button near the "Manage Tools" heading
-    const panelHeader = page.locator('text="Manage Tools"').locator('..');
+    const panelHeader = page.locator('.tool-management-panel-header');
     const closeButton = panelHeader.getByRole('button').last();
     await closeButton.click();
 
@@ -176,14 +181,15 @@ test.describe('Tool Set Management', () => {
 
   test('should show "Show selected only" toggle', async ({ page, workspaceId }) => {
     await performLogin(page, 'test@example.com', 'testpassword123');
-    await page.goto(`/w/${workspaceId}/tool-sets`);
+    await page.goto(`/w/${workspaceId}/toolsets`);
     await page.waitForLoadState('networkidle');
 
     const firstRow = page.locator('table tbody tr').first();
     await expect(firstRow).toBeVisible({ timeout: 10000 });
     await firstRow.click();
 
-    const manageToolsButton = page.getByRole('button', { name: /Manage Tools/i });
+    const detailPanel = page.getByRole('complementary');
+    const manageToolsButton = detailPanel.getByRole('button', { name: /Manage Tools/i });
     await expect(manageToolsButton).toBeVisible({ timeout: 5000 });
     await manageToolsButton.click();
 

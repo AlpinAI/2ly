@@ -171,7 +171,7 @@ export function ToolSetTable({
                         selectedToolSetId === toolSet.id ? 'border-l-4 border-cyan-500 pl-3' : ''
                       }`}
                     >
-                      <div className="font-medium text-gray-900 dark:text-white">{toolSet.name}</div>
+                      <div className="tool-set-name font-medium text-gray-900 dark:text-white">{toolSet.name}</div>
                       {toolSet.description && (
                         <div className="text-xs text-gray-500 dark:text-gray-400 truncate max-w-md">
                           {toolSet.description}

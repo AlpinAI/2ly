@@ -184,7 +184,8 @@ const GIT_COMMIT_SCHEMA = JSON.stringify({
  * - 4 MCP servers (different transports)
  * - 3 registry servers
  * - 23 tools across servers
- * - 3 runtimes (2 agent-capable, 1 edge)
+ * - 2 runtimes
+ * - 2 tool sets (agent-capable runtimes)
  * - 15 tool calls (various states)
  */
 export const comprehensiveSeededData: SeedData = {
@@ -520,25 +521,49 @@ export const comprehensiveSeededData: SeedData = {
   ],
   runtimes: [
     {
-      name: 'Claude Desktop Agent',
-      description: 'Primary agent runtime for Claude Desktop application',
+      name: 'Main Runtime',
+      description: 'Primary runtime',
       status: 'ACTIVE' as dgraphResolversTypes.ActiveStatus,
-      capabilities: ['agent', 'mcp-client'],
-      workspaceId: '', // Will be set during seeding
-    },
-    {
-      name: 'Web Assistant Agent',
-      description: 'Web-based assistant with limited tool access',
-      status: 'ACTIVE' as dgraphResolversTypes.ActiveStatus,
-      capabilities: ['agent', 'mcp-client', 'web'],
+      capabilities: ['tool'],
       workspaceId: '', // Will be set during seeding
     },
     {
       name: 'Edge Runtime',
       description: 'Edge runtime for processing tool calls',
       status: 'ACTIVE' as dgraphResolversTypes.ActiveStatus,
-      capabilities: ['mcp-client', 'edge'],
+      capabilities: ['tool'],
       workspaceId: '', // Will be set during seeding
+    },
+  ],
+  toolSets: [
+    {
+      name: 'Claude Desktop Agent',
+      description: 'Primary agent runtime for Claude Desktop application with filesystem and development tools',
+      toolIds: [
+        'read_file',
+        'write_file',
+        'list_directory',
+        'search_files',
+        'move_file',
+        'get_file_info',
+        'git_status',
+        'git_commit',
+        'git_diff',
+        'git_log',
+        'execute_command',
+      ],
+    },
+    {
+      name: 'Web Assistant Agent',
+      description: 'Web-based assistant with HTTP and database capabilities',
+      toolIds: [
+        'http_get',
+        'http_post',
+        'http_put',
+        'fetch_json',
+        'db_query',
+        'db_schema',
+      ],
     },
   ],
   toolCalls: [
