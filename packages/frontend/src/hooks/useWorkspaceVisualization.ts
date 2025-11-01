@@ -80,12 +80,22 @@ export function useWorkspaceVisualization() {
 
     const nodes: GraphNode[] = [];
     const edges: GraphEdge[] = [];
+    const nodeIds = new Set<string>();
 
+    // Helper to add node if not exists
+    const addNode = (node: GraphNode) => {
+      if (!nodeIds.has(node.id)) {
+        nodes.push(node);
+        nodeIds.add(node.id);
+      }
+    };
+
+    // First pass: Add all nodes
     // Add MCP Servers as nodes
     (data.mcpServers ?? []).forEach((server) => {
       if (!server) return;
 
-      nodes.push({
+      addNode({
         id: server.id,
         label: server.name,
         type: 'server',
@@ -96,26 +106,24 @@ export function useWorkspaceVisualization() {
         },
       });
 
-      // Add edge from server to runtime (if exists)
+      // Add runtime node if exists (minimal data from nested query)
       if (server.runtime) {
-        edges.push({
-          id: `${server.id}-runtime-${server.runtime.id}`,
-          source: server.id,
-          target: server.runtime.id,
-          label: 'runs on',
-          type: 'server-runtime',
+        addNode({
+          id: server.runtime.id,
+          label: server.runtime.name,
+          type: 'runtime',
+          metadata: {},
         });
       }
 
-      // Add edges from server to its tools
+      // Add tool nodes from server (minimal data from nested query)
       (server.tools ?? []).forEach((tool) => {
         if (!tool) return;
-        edges.push({
-          id: `${server.id}-tool-${tool.id}`,
-          source: server.id,
-          target: tool.id,
-          label: 'provides',
-          type: 'server-tool',
+        addNode({
+          id: tool.id,
+          label: tool.name,
+          type: 'tool',
+          metadata: {},
         });
       });
     });
@@ -124,40 +132,35 @@ export function useWorkspaceVisualization() {
     (data.mcpTools ?? []).forEach((tool) => {
       if (!tool) return;
 
-      // Only add if not already added
-      if (!nodes.find((n) => n.id === tool.id)) {
-        nodes.push({
-          id: tool.id,
-          label: tool.name,
-          type: 'tool',
-          status: tool.status,
-          metadata: {
-            description: tool.description,
-          },
-        });
-      }
+      addNode({
+        id: tool.id,
+        label: tool.name,
+        type: 'tool',
+        status: tool.status,
+        metadata: {
+          description: tool.description,
+        },
+      });
 
-      // Add edges from tool to runtimes
+      // Add runtime nodes from tool (minimal data from nested query)
       (tool.runtimes ?? []).forEach((runtime) => {
         if (!runtime) return;
-        edges.push({
-          id: `${tool.id}-runtime-${runtime.id}`,
-          source: tool.id,
-          target: runtime.id,
-          label: 'available on',
-          type: 'tool-runtime',
+        addNode({
+          id: runtime.id,
+          label: runtime.name,
+          type: 'runtime',
+          metadata: {},
         });
       });
 
-      // Add edges from tool to toolsets
+      // Add toolset nodes from tool (minimal data from nested query)
       (tool.toolSets ?? []).forEach((toolset) => {
         if (!toolset) return;
-        edges.push({
-          id: `${tool.id}-toolset-${toolset.id}`,
-          source: tool.id,
-          target: toolset.id,
-          label: 'in',
-          type: 'tool-toolset',
+        addNode({
+          id: toolset.id,
+          label: toolset.name,
+          type: 'toolset',
+          metadata: {},
         });
       });
     });
@@ -167,25 +170,22 @@ export function useWorkspaceVisualization() {
     (workspaceData?.runtimes ?? []).forEach((runtime) => {
       if (!runtime) return;
 
-      // Only add if not already added
-      if (!nodes.find((n) => n.id === runtime.id)) {
-        nodes.push({
-          id: runtime.id,
-          label: runtime.name,
-          type: 'runtime',
-          status: runtime.status,
-          metadata: {
-            description: runtime.description,
-          },
-        });
-      }
+      addNode({
+        id: runtime.id,
+        label: runtime.name,
+        type: 'runtime',
+        status: runtime.status,
+        metadata: {
+          description: runtime.description,
+        },
+      });
     });
 
     // Add Tool Sets as nodes
     (workspaceData?.toolSets ?? []).forEach((toolset) => {
       if (!toolset) return;
 
-      nodes.push({
+      addNode({
         id: toolset.id,
         label: toolset.name,
         type: 'toolset',
@@ -201,7 +201,7 @@ export function useWorkspaceVisualization() {
       (data.toolCalls?.toolCalls ?? []).forEach((toolCall) => {
         if (!toolCall) return;
 
-        nodes.push({
+        addNode({
           id: toolCall.id,
           label: `Call ${toolCall.id.substring(0, 8)}`,
           type: 'toolcall',
@@ -211,9 +211,100 @@ export function useWorkspaceVisualization() {
           },
         });
 
+        // Add tool node if exists (minimal data from nested query)
+        if (toolCall.mcpTool) {
+          addNode({
+            id: toolCall.mcpTool.id,
+            label: toolCall.mcpTool.name,
+            type: 'tool',
+            metadata: {},
+          });
+        }
+
+        // Add runtime node if exists (minimal data from nested query)
+        if (toolCall.calledBy) {
+          addNode({
+            id: toolCall.calledBy.id,
+            label: toolCall.calledBy.name,
+            type: 'runtime',
+            metadata: {},
+          });
+        }
+      });
+    }
+
+    // Second pass: Add edges (only if both nodes exist)
+    const addEdge = (edge: GraphEdge) => {
+      if (nodeIds.has(edge.source) && nodeIds.has(edge.target)) {
+        edges.push(edge);
+      }
+    };
+
+    // Add edges from servers
+    (data.mcpServers ?? []).forEach((server) => {
+      if (!server) return;
+
+      // Add edge from server to runtime (if exists)
+      if (server.runtime) {
+        addEdge({
+          id: `${server.id}-runtime-${server.runtime.id}`,
+          source: server.id,
+          target: server.runtime.id,
+          label: 'runs on',
+          type: 'server-runtime',
+        });
+      }
+
+      // Add edges from server to its tools
+      (server.tools ?? []).forEach((tool) => {
+        if (!tool) return;
+        addEdge({
+          id: `${server.id}-tool-${tool.id}`,
+          source: server.id,
+          target: tool.id,
+          label: 'provides',
+          type: 'server-tool',
+        });
+      });
+    });
+
+    // Add edges from tools
+    (data.mcpTools ?? []).forEach((tool) => {
+      if (!tool) return;
+
+      // Add edges from tool to runtimes
+      (tool.runtimes ?? []).forEach((runtime) => {
+        if (!runtime) return;
+        addEdge({
+          id: `${tool.id}-runtime-${runtime.id}`,
+          source: tool.id,
+          target: runtime.id,
+          label: 'available on',
+          type: 'tool-runtime',
+        });
+      });
+
+      // Add edges from tool to toolsets
+      (tool.toolSets ?? []).forEach((toolset) => {
+        if (!toolset) return;
+        addEdge({
+          id: `${tool.id}-toolset-${toolset.id}`,
+          source: tool.id,
+          target: toolset.id,
+          label: 'in',
+          type: 'tool-toolset',
+        });
+      });
+    });
+
+    // Add edges from tool calls
+    if (showToolCalls) {
+      (data.toolCalls?.toolCalls ?? []).forEach((toolCall) => {
+        if (!toolCall) return;
+
         // Add edge from toolcall to tool
         if (toolCall.mcpTool) {
-          edges.push({
+          addEdge({
             id: `${toolCall.id}-tool-${toolCall.mcpTool.id}`,
             source: toolCall.id,
             target: toolCall.mcpTool.id,
@@ -224,7 +315,7 @@ export function useWorkspaceVisualization() {
 
         // Add edge from runtime to toolcall (caller)
         if (toolCall.calledBy) {
-          edges.push({
+          addEdge({
             id: `${toolCall.calledBy.id}-toolcall-${toolCall.id}`,
             source: toolCall.calledBy.id,
             target: toolCall.id,
