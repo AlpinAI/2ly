@@ -17,13 +17,12 @@ interface FakeMCPServerRepository {
 }
 interface FakeRuntimeRepository {
     findActive: () => Promise<{ id: string }[]>;
-    create: (name: string, _desc: string, status: string, workspaceId: string, capabilities: string[]) => Promise<{ id: string }>
+    create: (name: string, _desc: string, status: string, workspaceId: string, type: dgraphResolversTypes.RuntimeType) => Promise<{ id: string }>
     setActive: (id: string, processId: string, hostIP: string, hostname: string) => Promise<{ id: string }>;
     setInactive: (id: string) => Promise<{ id: string }>;
     upserTool: (mcpServerId: string, name: string, description: string, inputSchema: string, annotations: string) => Promise<void>;
     findByName: (workspaceId: string, name: string) => Promise<dgraphResolversTypes.Runtime | null>;
     setRoots: (runtimeId: string, roots: { name: string; uri: string }[]) => Promise<void>;
-    setCapabilities: (runtimeId: string, capabilities: string[]) => Promise<void>;
     getRuntime?: (id: string) => Promise<dgraphResolversTypes.Runtime>;
     observeRoots?: (id: string) => unknown;
     observeMCPServersOnEdge?: (id: string) => unknown;
@@ -65,7 +64,6 @@ function createService(deps?: Partial<{
         upserTool: vi.fn(async () => { }),
         findByName: vi.fn(async () => null),
         setRoots: vi.fn(async () => { }),
-        setCapabilities: vi.fn(async () => { }),
     };
     const mcpRepo: FakeMCPServerRepository = {
         getTools: vi.fn(async () => ({ tools: [] })),

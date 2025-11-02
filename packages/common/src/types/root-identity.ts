@@ -7,6 +7,5 @@ export interface RootIdentity {
   version: string;
   hostIP: string;
   hostname: string;
-  capabilities: string[];
   metadata: Record<string, unknown>;
 }

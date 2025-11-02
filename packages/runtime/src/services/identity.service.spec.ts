@@ -41,22 +41,6 @@ describe('IdentityService', () => {
     identityService = container.get(IdentityService);
   });
 
-  describe('Initialization', () => {
-    it('should start successfully with default capabilities', async () => {
-      await identityService.start('test');
-      const identity = identityService.getIdentity();
-      expect(identity.capabilities).toContain('tool');
-    });
-
-    it('should handle adding agent capability', async () => {
-      await identityService.start('test');
-      identityService.addCapability('agent');
-      const identity = identityService.getIdentity();
-      expect(identity.capabilities).toContain('agent');
-      expect(identity.capabilities).toContain('tool');
-    });
-  });
-
   describe('Identity Management', () => {
     beforeEach(async () => {
       await identityService.start('test');
@@ -74,7 +58,6 @@ describe('IdentityService', () => {
         version: '1.0.0',
         hostIP: '192.168.1.100',
         hostname: 'test-hostname',
-        capabilities: ['tool'],
         metadata: {
           platform: 'darwin',
           arch: 'arm64',
@@ -96,22 +79,6 @@ describe('IdentityService', () => {
       expect(identity.id).toBe(testId);
       expect(identity.RID).toBe(testRID);
       expect(identity.workspaceId).toBe(testWorkspaceId);
-    });
-
-    it('should return correct capabilities based on configuration', () => {
-      (identityService as any).agentCapability = true;
-      (identityService as any).toolCapability = false;
-
-      const identity = identityService.getIdentity();
-      expect(identity.capabilities).toEqual(['agent']);
-    });
-
-    it('should return empty capabilities when both are false', () => {
-      (identityService as any).agentCapability = false;
-      (identityService as any).toolCapability = false;
-
-      const identity = identityService.getIdentity();
-      expect(identity.capabilities).toEqual([]);
     });
   });
 

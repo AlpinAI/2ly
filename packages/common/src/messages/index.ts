@@ -11,7 +11,6 @@ export * from './agent-call-response.message';
 export * from './ack.message';
 export * from './update-configured-mcp-server.message';
 export * from './set-roots.message';
-export * from './set-runtime-capabilities.message';
 export * from './runtime-healthy.message';
 export * from './set-global-runtime.message';
 export * from './runtime-connect.message';

@@ -260,7 +260,6 @@ export class WorkspaceRepository {
         onboardingSteps: { stepId: string; status: string }[];
         registryServers: { id: string }[];
         mcpServers: { id: string }[];
-        runtimes: { capabilities: string[] }[];
       };
     }>(QUERY_WORKSPACE, { workspaceId });
 
@@ -288,25 +287,8 @@ export class WorkspaceRepository {
         shouldComplete = (toolSets.getWorkspace?.toolSets.some(ts => ts.mcpTools && ts.mcpTools.length > 0) ?? false);
         break; }
       case 'connect-tool-set-to-agent':
-        { const runtimes = await this.dgraphService.query<{
-          getWorkspace: {
-            runtimes: {
-              capabilities: string[];
-              mcpToolCapabilities: { id: string }[];
-              status: string;
-            }[]
-          };
-        }>(QUERY_WORKSPACE_WITH_RUNTIMES, { workspaceId });
-        // Check if there's at least one runtime with 'agent' capability and at least one tool
-        // (Same condition as create-tool-set - completing one should complete the other)
-        shouldComplete = (
-          runtimes.getWorkspace.runtimes?.some(r =>
-            (r.capabilities || []).some(c => c.toUpperCase() === 'AGENT') &&
-            (r.mcpToolCapabilities?.length || 0) > 0 && 
-            r.status === 'ACTIVE'
-          ) || false
-        );
-        break; }
+        shouldComplete = false
+        break;
       default:
         return; // Unknown step
     }

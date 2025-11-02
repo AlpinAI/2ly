@@ -308,31 +308,6 @@ export function MCPServerDetail({ server }: MCPServerDetailProps) {
           </Select>
         </div>
 
-        {/* Runtime */}
-        {server.runtime && (() => {
-          // Look up full runtime details from store to check capabilities
-          const fullRuntime = runtimes.find(r => r.id === server.runtime!.id);
-          const isAgent = fullRuntime?.capabilities?.includes('agent') ?? false;
-
-          return (
-            <div>
-              <h4 className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">
-                Connected Runtime
-              </h4>
-              {isAgent ? (
-                <Link
-                  to={`/w/${workspaceId}/toolsets?id=${server.runtime.id}`}
-                  className="text-sm text-gray-700 dark:text-gray-300 hover:text-cyan-600 dark:hover:text-cyan-400 hover:underline"
-                >
-                  {server.runtime.name}
-                </Link>
-              ) : (
-                <p className="text-sm text-gray-700 dark:text-gray-300">{server.runtime.name}</p>
-              )}
-            </div>
-          );
-        })()}
-
         {/* Repository URL */}
         {server.repositoryUrl && (
           <div>
