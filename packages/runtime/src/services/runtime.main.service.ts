@@ -112,8 +112,7 @@ export class MainService extends Service {
           await this.startService(this.toolService);
         }
 
-        // Agent service is initialized - the runtime type is now determined at creation time
-        // so no need to dynamically update capabilities
+        // Agent service is initialized - the runtime type is determined at creation time
         this.agentService.onInitializeMCPServer(async () => {
           this.logger.debug('Agent service initialized');
         });

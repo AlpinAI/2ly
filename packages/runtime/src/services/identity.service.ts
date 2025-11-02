@@ -74,25 +74,8 @@ export class IdentityService extends Service {
     this.workspaceId = process.env.WORKSPACE_ID || 'DEFAULT';
   }
 
-  addCapability(capability: string) {
-    if (capability === 'agent') {
-      this.agentCapability = true;
-    }
-    if (capability === 'tool') {
-      this.toolCapability = true;
-    }
-    return this.getIdentity().capabilities;
-  }
-
   getIdentity(): RootIdentity {
     this.startedAt = this.startedAt ?? new Date().toISOString();
-    const capabilities = [];
-    if (this.agentCapability === true) {
-      capabilities.push('agent');
-    }
-    if (this.toolCapability === true) {
-      capabilities.push('tool');
-    }
     return {
       id: this.id,
       RID: this.RID,
@@ -103,7 +86,6 @@ export class IdentityService extends Service {
       version: '1.0.0',
       hostIP: getHostIP(),
       hostname: os.hostname(),
-      capabilities,
       metadata: {
         platform: os.platform(),
         arch: os.arch(),

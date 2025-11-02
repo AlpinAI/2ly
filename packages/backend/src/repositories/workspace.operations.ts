@@ -69,7 +69,7 @@ export const QUERY_WORKSPACE_WITH_RUNTIMES = gql`
         createdAt
         lastSeenAt
         roots
-        capabilities
+        type
         hostname
         mcpClientName
         hostIP
