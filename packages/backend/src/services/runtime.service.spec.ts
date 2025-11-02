@@ -64,7 +64,6 @@ function createService(deps?: Partial<{
         upserTool: vi.fn(async () => { }),
         findByName: vi.fn(async () => null),
         setRoots: vi.fn(async () => { }),
-        setCapabilities: vi.fn(async () => { }),
     };
     const mcpRepo: FakeMCPServerRepository = {
         getTools: vi.fn(async () => ({ tools: [] })),
