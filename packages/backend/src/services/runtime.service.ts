@@ -140,10 +140,10 @@ export class RuntimeService extends Service {
     processId: string,
     hostIP: string,
     hostname: string,
-    capabilities: string[],
+    type: 'EDGE' | 'MCP',
   ) {
     this.logger.debug(`Creating runtime ${name}`);
-    const runtime = await this.runtimeRepository.create(name, '', 'ACTIVE', workspaceId, capabilities);
+    const runtime = await this.runtimeRepository.create(name, '', 'ACTIVE', workspaceId, type);
     return this.runtimeRepository.setActive(runtime.id, processId, hostIP, hostname);
   }
 
@@ -265,7 +265,8 @@ export class RuntimeService extends Service {
       }
       let instance = await this.runtimeRepository.findByName(workspace.id, msg.data.name);
       if (!instance) {
-        instance = await this.runtimeRepository.create(msg.data.name, '', 'ACTIVE', workspace.id, []);
+        // Default new runtimes to MCP type
+        instance = await this.runtimeRepository.create(msg.data.name, '', 'ACTIVE', workspace.id, 'MCP');
       }
       // Runtime ID is a unique identifier for the runtime, including its process id
       const RID = `${instance.id}-${msg.data.pid}`;

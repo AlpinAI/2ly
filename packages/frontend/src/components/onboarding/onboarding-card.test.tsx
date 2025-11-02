@@ -40,7 +40,7 @@ describe('OnboardingCard', () => {
     name: 'Test Agent',
     description: 'Test agent description',
     status: ActiveStatus.Active,
-    capabilities: ['agent'],
+    type: null,
     mcpServers: [
       {
         __typename: 'MCPServer',

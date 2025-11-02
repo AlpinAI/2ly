@@ -17,6 +17,11 @@ enum MCPServerRunOn {
   EDGE
 }
 
+enum RuntimeType {
+  EDGE
+  MCP
+}
+
 type System {
   id: ID!
   initialized: Boolean!
@@ -126,6 +131,7 @@ type Runtime @withSubscription {
   name: String! @search(by: [hash])
   description: String
   status: ActiveStatus! @search
+  type: RuntimeType @search
   roots: String
   createdAt: DateTime!
   processId: String
@@ -133,7 +139,6 @@ type Runtime @withSubscription {
   hostname: String
   mcpClientName: String
   lastSeenAt: DateTime
-  capabilities: [String!]
   mcpServers: [MCPServer!] @hasInverse(field: runtime)
   workspace: Workspace! @hasInverse(field: runtimes)
   toolCalls: [ToolCall!] @hasInverse(field: calledBy)

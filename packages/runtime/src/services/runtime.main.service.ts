@@ -7,7 +7,6 @@ import {
   RuntimeConnectMessage,
   RuntimeReconnectMessage,
   Service,
-  SetRuntimeCapabilitiesMessage,
 } from '@2ly/common';
 import { HealthService } from './runtime.health.service';
 import { AgentService } from './agent.service';
@@ -114,29 +113,9 @@ export class MainService extends Service {
         }
 
         // When agent service initializes, it means that the runtime is acting as an MCP server
-        // known as an agent runtime. We must ensure this capability is captured by the backend.
+        // known as an agent runtime.
         this.agentService.onInitializeMCPServer(async () => {
           this.logger.debug('Agent service initialized');
-          if (this.identityService.getAgentCapability() === 'auto') {
-            this.logger.info(`Agent service initialized, setting agent capability to true`);
-            const identity = this.identityService.getIdentity();
-            if (!identity.RID || !identity.capabilities || !Array.isArray(identity.capabilities)) {
-              this.logger.error('Identity not initialized');
-              return;
-            }
-            const capabilities = this.identityService.getIdentity().capabilities;
-            capabilities.push('agent');
-            const ack = (await this.natsService.request(
-              new SetRuntimeCapabilitiesMessage({
-                RID: identity.RID,
-                capabilities,
-              }),
-            )) as AckMessage;
-
-            if (ack.data) {
-              this.identityService.addCapability('agent');
-            }
-          }
         });
       } catch (error) {
         this.logger.error(`Failed to start the health service: ${error}`);

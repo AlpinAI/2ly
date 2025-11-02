@@ -16,7 +16,6 @@ import {
   SET_RUNTIME_ACTIVE,
   UPDATE_MCP_TOOL,
   ADD_MCP_TOOL,
-  SET_RUNTIME_CAPABILITIES,
   GET_RUNTIME_EDGE_MCP_SERVERS,
   GET_RUNTIME_AGENT_MCP_SERVERS_BY_LINK,
   GET_RUNTIME_GLOBAL_MCP_SERVERS,
@@ -50,7 +49,7 @@ export class RuntimeRepository {
     description: string,
     status: 'ACTIVE' | 'INACTIVE',
     workspaceId: string,
-    capabilities: string[],
+    type: 'EDGE' | 'MCP',
   ): Promise<dgraphResolversTypes.Runtime> {
     const now = new Date().toISOString();
     const res = await this.dgraphService.mutation<{
@@ -62,7 +61,7 @@ export class RuntimeRepository {
       createdAt: now,
       lastSeenAt: now,
       workspaceId,
-      capabilities,
+      type,
     });
 
 
@@ -299,21 +298,6 @@ export class RuntimeRepository {
     return res.updateRuntime.runtime[0];
   }
 
-  async setCapabilities(id: string, capabilities: string[]): Promise<dgraphResolversTypes.Runtime> {
-    // validate capabilities
-    for (const capability of capabilities) {
-      if (capability !== 'agent' && capability !== 'tool') {
-        throw new Error(`Invalid capability: ${capability}`);
-      }
-    }
-    const res = await this.dgraphService.mutation<{
-      updateRuntime: { runtime: dgraphResolversTypes.Runtime[] };
-    }>(SET_RUNTIME_CAPABILITIES, {
-      id,
-      capabilities,
-    });
-    return res.updateRuntime.runtime[0];
-  }
 
   async findByName(workspaceId: string, name: string): Promise<dgraphResolversTypes.Runtime | undefined> {
     const res = await this.dgraphService.query<{ getWorkspace: { runtimes: dgraphResolversTypes.Runtime[] } }>(

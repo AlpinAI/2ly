@@ -344,14 +344,13 @@ export const test = base.extend<DatabaseFixture>({
         const runtimeKeys = ['claude-desktop-agent', 'web-assistant-agent', 'edge-runtime'];
         for (let i = 0; i < data.runtimes.length; i++) {
           const runtime = data.runtimes[i];
-          const capsStr = runtime.capabilities?.map((c: string) => `"${c}"`).join(', ') ?? '';
           const runtimeMutation = `
             mutation AddRuntime($workspaceId: ID!) {
               addRuntime(input: {
                 name: "${runtime.name}"
                 description: "${runtime.description}"
                 status: ACTIVE
-                capabilities: [${capsStr}]
+                type: ${runtime.type}
                 createdAt: "${now}"
                 lastSeenAt: "${now}"
                 workspace: { id: $workspaceId }

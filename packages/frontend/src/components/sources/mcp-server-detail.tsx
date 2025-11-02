@@ -310,9 +310,9 @@ export function MCPServerDetail({ server }: MCPServerDetailProps) {
 
         {/* Runtime */}
         {server.runtime && (() => {
-          // Look up full runtime details from store to check capabilities
+          // Look up full runtime details from store to check type
           const fullRuntime = runtimes.find(r => r.id === server.runtime!.id);
-          const isAgent = fullRuntime?.capabilities?.includes('agent') ?? false;
+          const isAgent = fullRuntime?.type === 'MCP';
 
           return (
             <div>

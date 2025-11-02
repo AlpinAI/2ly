@@ -16,7 +16,7 @@ describe('ConnectAgentDialog', () => {
     name: 'Test Agent',
     description: 'Test agent description',
     status: ActiveStatus.Active,
-    capabilities: ['agent'],
+    type: null,
     createdAt: new Date(),
     hostIP: null,
     hostname: null,

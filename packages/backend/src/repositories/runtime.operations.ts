@@ -8,7 +8,7 @@ export const ADD_RUNTIME = gql`
     $createdAt: DateTime!
     $lastSeenAt: DateTime!
     $workspaceId: ID!
-    $capabilities: [String!]!
+    $type: RuntimeType!
   ) {
     addRuntime(
       input: {
@@ -18,7 +18,7 @@ export const ADD_RUNTIME = gql`
         createdAt: $createdAt
         lastSeenAt: $lastSeenAt
         workspace: { id: $workspaceId }
-        capabilities: $capabilities
+        type: $type
       }
     ) {
       runtime {
@@ -26,9 +26,9 @@ export const ADD_RUNTIME = gql`
         name
         description
         status
+        type
         createdAt
         lastSeenAt
-        capabilities
         workspace {
           id
           name
@@ -46,9 +46,9 @@ export const UPDATE_RUNTIME = gql`
         name
         description
         status
+        type
         createdAt
         lastSeenAt
-        capabilities
         workspace {
           id
           name
@@ -100,13 +100,13 @@ export const GET_RUNTIME = gql`
       name
       description
       status
+      type
       createdAt
       lastSeenAt
       processId
       hostIP
       hostname
       mcpClientName
-      capabilities
       roots
       workspace {
         id
@@ -432,13 +432,3 @@ export const SET_MCP_CLIENT_NAME = gql`
   }
 `;
 
-export const SET_RUNTIME_CAPABILITIES = gql`
-  mutation setRuntimeCapabilities($id: ID!, $capabilities: [String!]!) {
-    updateRuntime(input: { filter: { id: [$id] }, set: { capabilities: $capabilities } }) {
-      runtime {
-        id
-        capabilities
-      }
-    }
-  }
-`;
