@@ -152,15 +152,15 @@ export const resolvers = (container: Container = defaultContainer): apolloResolv
           name,
           description,
           workspaceId,
-          capabilities,
+          type,
         }: {
           name: string;
           description: string;
           workspaceId: string;
-          capabilities: string[];
+          type: 'EDGE' | 'MCP';
         },
       ) => {
-        return runtimeRepository.create(name, description, 'INACTIVE', workspaceId, capabilities);
+        return runtimeRepository.create(name, description, 'INACTIVE', workspaceId, type);
       },
       updateRuntime: async (
         _parent: unknown,

@@ -68,28 +68,28 @@ const configureMCPServer = async (
 };
 
 const createRuntime = async (
-  graphql: <T = any>(query: string, variables?: Record<string, any>) => Promise<T>, 
+  graphql: <T = any>(query: string, variables?: Record<string, any>) => Promise<T>,
   page: Page,
   workspaceId: string,
   name: string,
   description: string,
-  capabilities: string[],
+  type: 'EDGE' | 'MCP',
   nbToolsToLink = 1,
 ) => {
   const mutation = `
-    mutation CreateRuntime($name: String!, $description: String!, $capabilities: [String!]!, $workspaceId: ID!) {
-      createRuntime(name: $name, description: $description, capabilities: $capabilities, workspaceId: $workspaceId) {
+    mutation CreateRuntime($name: String!, $description: String!, $type: RuntimeType!, $workspaceId: ID!) {
+      createRuntime(name: $name, description: $description, type: $type, workspaceId: $workspaceId) {
         id
         name
         description
-        capabilities
+        type
       }
     }
   `;
-  const result = await graphql<{ createRuntime: { id: string; name: string; description: string; capabilities: string[] } }>(mutation, {
+  const result = await graphql<{ createRuntime: { id: string; name: string; description: string; type: 'EDGE' | 'MCP' } }>(mutation, {
     name,
     description,
-    capabilities,
+    type,
     workspaceId,
   });
 
@@ -265,7 +265,7 @@ test.describe.only('Onboarding Flow', () => {
     await configureMCPServer(graphql, workspaceId, 'GLOBAL');
 
     // complete step 2
-    await createRuntime(graphql, page, workspaceId, 'My tool set', 'My tool set description', ['agent'], 1);
+    await createRuntime(graphql, page, workspaceId, 'My tool set', 'My tool set description', 'MCP', 1);
 
     // Select the step 3 card containing the correct step title
     const step3Card = page
@@ -281,7 +281,7 @@ test.describe.only('Onboarding Flow', () => {
     await configureMCPServer(graphql, workspaceId, 'GLOBAL');
 
     // complete step 2
-    await createRuntime(graphql, page, workspaceId, 'My tool set', 'My tool set description', ['agent'], 1);
+    await createRuntime(graphql, page, workspaceId, 'My tool set', 'My tool set description', 'MCP', 1);
 
     // Select the step 3 card containing the correct step title
     const step3Card = page
@@ -303,7 +303,7 @@ test.describe.only('Onboarding Flow', () => {
     await configureMCPServer(graphql, workspaceId, 'GLOBAL');
 
     // complete step 2
-    await createRuntime(graphql, page, workspaceId, 'My tool set', 'My tool set description', ['agent'], 0);
+    await createRuntime(graphql, page, workspaceId, 'My tool set', 'My tool set description', 'MCP', 0);
 
     // Select the step 3 card containing the correct step title
     const step3Card = page
@@ -319,7 +319,7 @@ test.describe.only('Onboarding Flow', () => {
     await configureMCPServer(graphql, workspaceId, 'GLOBAL');
 
     // complete step 2
-    const runtimeId = await createRuntime(graphql, page, workspaceId, 'My tool set', 'My tool set description', ['agent'], 1);
+    const runtimeId = await createRuntime(graphql, page, workspaceId, 'My tool set', 'My tool set description', 'MCP', 1);
 
     // set runtime active
     await setRuntimeActive(runtimeId);

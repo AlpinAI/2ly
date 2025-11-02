@@ -7,9 +7,9 @@ subscription SubscribeRuntimes($workspaceId: ID!) {
     name
     description
     status
+    type
     createdAt
     lastSeenAt
-    capabilities
     hostIP
     hostname
     mcpClientName

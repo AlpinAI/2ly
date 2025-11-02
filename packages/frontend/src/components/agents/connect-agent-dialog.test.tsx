@@ -3,7 +3,7 @@ import { render, screen } from '@testing-library/react';
 import { ConnectAgentDialog } from './connect-agent-dialog';
 import * as uiStore from '@/stores/uiStore';
 import * as runtimeStore from '@/stores/runtimeStore';
-import { ActiveStatus, type Runtime } from '@/graphql/generated/graphql';
+import { ActiveStatus, RuntimeType, type Runtime } from '@/graphql/generated/graphql';
 
 // Mock the stores
 vi.mock('@/stores/uiStore');
@@ -16,7 +16,7 @@ describe('ConnectAgentDialog', () => {
     name: 'Test Agent',
     description: 'Test agent description',
     status: ActiveStatus.Active,
-    capabilities: ['agent'],
+    type: RuntimeType.Edge,
     createdAt: new Date(),
     hostIP: null,
     hostname: null,

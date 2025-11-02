@@ -17,6 +17,11 @@ enum MCPServerRunOn {
   EDGE
 }
 
+enum RuntimeType {
+  EDGE
+  MCP
+}
+
 type Infra {
   nats: String
 }
@@ -85,10 +90,10 @@ type Runtime {
   name: String!
   description: String
   status: ActiveStatus!
+  type: RuntimeType!
   createdAt: Date!
   lastSeenAt: Date
   roots: String
-  capabilities: [String!]
   mcpServers: [MCPServer!]
   workspace: Workspace!
   hostIP: String
@@ -269,7 +274,7 @@ type Mutation {
   ): MCPServer!
   linkMCPServerToRuntime(mcpServerId: ID!, runtimeId: ID!): MCPServer!
   unlinkMCPServerFromRuntime(mcpServerId: ID!): MCPServer!
-  createRuntime(name: String!, description: String!, capabilities: [String!]!, workspaceId: ID!): Runtime!
+  createRuntime(name: String!, description: String!, type: RuntimeType!, workspaceId: ID!): Runtime!
   updateRuntime(id: ID!, name: String!, description: String!): Runtime!
   deleteRuntime(id: ID!): Runtime!
   deleteMCPTool(id: ID!): MCPTool!

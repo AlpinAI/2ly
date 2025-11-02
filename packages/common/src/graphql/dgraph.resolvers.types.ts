@@ -101,7 +101,6 @@ export enum OnboardingStepType {
 }
 
 export type Runtime = {
-  capabilities?: Maybe<Array<Scalars['String']['output']>>;
   createdAt: Scalars['DateTime']['output'];
   description?: Maybe<Scalars['String']['output']>;
   hostIP?: Maybe<Scalars['String']['output']>;
@@ -116,8 +115,14 @@ export type Runtime = {
   status: ActiveStatus;
   toolCalls?: Maybe<Array<ToolCall>>;
   toolResponses?: Maybe<Array<ToolCall>>;
+  type: RuntimeType;
   workspace: Workspace;
 };
+
+export enum RuntimeType {
+  Edge = 'EDGE',
+  Mcp = 'MCP'
+}
 
 export type Session = {
   createdAt: Scalars['DateTime']['output'];
@@ -289,6 +294,7 @@ export type ResolversTypes = ResolversObject<{
   OnboardingStepStatus: OnboardingStepStatus;
   OnboardingStepType: OnboardingStepType;
   Runtime: ResolverTypeWrapper<Runtime>;
+  RuntimeType: RuntimeType;
   Session: ResolverTypeWrapper<Session>;
   String: ResolverTypeWrapper<Scalars['String']['output']>;
   System: ResolverTypeWrapper<System>;
@@ -383,7 +389,6 @@ export type OnboardingStepResolvers<ContextType = any, ParentType extends Resolv
 }>;
 
 export type RuntimeResolvers<ContextType = any, ParentType extends ResolversParentTypes['Runtime'] = ResolversParentTypes['Runtime']> = ResolversObject<{
-  capabilities?: Resolver<Maybe<Array<ResolversTypes['String']>>, ParentType, ContextType>;
   createdAt?: Resolver<ResolversTypes['DateTime'], ParentType, ContextType>;
   description?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   hostIP?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
@@ -398,6 +403,7 @@ export type RuntimeResolvers<ContextType = any, ParentType extends ResolversPare
   status?: Resolver<ResolversTypes['ActiveStatus'], ParentType, ContextType>;
   toolCalls?: Resolver<Maybe<Array<ResolversTypes['ToolCall']>>, ParentType, ContextType>;
   toolResponses?: Resolver<Maybe<Array<ResolversTypes['ToolCall']>>, ParentType, ContextType>;
+  type?: Resolver<ResolversTypes['RuntimeType'], ParentType, ContextType>;
   workspace?: Resolver<ResolversTypes['Workspace'], ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;

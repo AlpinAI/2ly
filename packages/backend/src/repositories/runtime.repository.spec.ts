@@ -56,7 +56,7 @@ describe('RuntimeRepository', () => {
 
         dgraphService.mutation.mockResolvedValue({ addRuntime: { runtime: [runtime] } });
 
-        const result = await runtimeRepository.create('Test Runtime', 'Description', 'ACTIVE', 'w1', ['tool']);
+        const result = await runtimeRepository.create('Test Runtime', 'Description', 'ACTIVE', 'w1', 'MCP');
 
         expect(dgraphService.mutation).toHaveBeenCalledWith(
             expect.any(Object),
@@ -64,8 +64,8 @@ describe('RuntimeRepository', () => {
                 name: 'Test Runtime',
                 description: 'Description',
                 status: 'ACTIVE',
+                type: 'MCP',
                 workspaceId: 'w1',
-                capabilities: ['tool'],
             })
         );
         expect(result.id).toBe('r1');
@@ -309,29 +309,6 @@ describe('RuntimeRepository', () => {
             .rejects.toThrow('Invalid root');
     });
 
-    it('setCapabilities validates and sets runtime capabilities', async () => {
-        const runtime = {
-            id: 'r1',
-            capabilities: ['tool', 'agent'],
-        } as unknown as dgraphResolversTypes.Runtime;
-        const capabilities = ['tool', 'agent'];
-        dgraphService.mutation.mockResolvedValue({ updateRuntime: { runtime: [runtime] } });
-
-        const result = await runtimeRepository.setCapabilities('r1', capabilities);
-
-        expect(dgraphService.mutation).toHaveBeenCalledWith(
-            expect.any(Object),
-            { id: 'r1', capabilities }
-        );
-        expect(result.id).toBe('r1');
-    });
-
-    it('setCapabilities throws error for invalid capability', async () => {
-        const invalidCapabilities = ['invalid'];
-
-        await expect(runtimeRepository.setCapabilities('r1', invalidCapabilities))
-            .rejects.toThrow('Invalid capability: invalid');
-    });
 
     it('findByName returns runtime by name in workspace', async () => {
         const runtime = { id: 'r1', name: 'test-runtime' } as unknown as dgraphResolversTypes.Runtime;
@@ -356,8 +333,8 @@ describe('RuntimeRepository', () => {
         expect(result).toBeUndefined();
     });
 
-    it('observeCapabilities returns runtime capabilities', async () => {
-        const runtime = { id: 'r1', capabilities: ['tool'] } as unknown as dgraphResolversTypes.Runtime;
+    it('observeCapabilities returns runtime with tools', async () => {
+        const runtime = { id: 'r1', type: 'MCP' } as unknown as dgraphResolversTypes.Runtime;
         const subject = new Subject<dgraphResolversTypes.Runtime>();
         dgraphService.observe.mockReturnValue(subject.asObservable());
 

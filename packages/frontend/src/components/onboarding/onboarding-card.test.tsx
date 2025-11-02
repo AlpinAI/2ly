@@ -3,7 +3,7 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import { OnboardingCard } from './onboarding-card';
 import * as uiStore from '@/stores/uiStore';
 import * as runtimeStore from '@/stores/runtimeStore';
-import { ActiveStatus, OnboardingStepStatus, type OnboardingStep, type Runtime, OnboardingStepType, type McpServer, McpTransportType, McpServerRunOn } from '@/graphql/generated/graphql';
+import { ActiveStatus, OnboardingStepStatus, type OnboardingStep, type Runtime, OnboardingStepType, type McpServer, McpTransportType, McpServerRunOn, RuntimeType } from '@/graphql/generated/graphql';
 import { useMCPServers } from '@/hooks/useMCPServers';
 import { useToolSets } from '@/hooks/useToolSets';
 
@@ -40,7 +40,7 @@ describe('OnboardingCard', () => {
     name: 'Test Agent',
     description: 'Test agent description',
     status: ActiveStatus.Active,
-    capabilities: ['agent'],
+    type: RuntimeType.Edge,
     mcpServers: [
       {
         __typename: 'MCPServer',

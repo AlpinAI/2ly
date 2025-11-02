@@ -524,14 +524,14 @@ export const comprehensiveSeededData: SeedData = {
       name: 'Main Runtime',
       description: 'Primary runtime',
       status: 'ACTIVE' as dgraphResolversTypes.ActiveStatus,
-      capabilities: ['tool'],
+      type: 'MCP' as dgraphResolversTypes.RuntimeType,
       workspaceId: '', // Will be set during seeding
     },
     {
       name: 'Edge Runtime',
       description: 'Edge runtime for processing tool calls',
       status: 'ACTIVE' as dgraphResolversTypes.ActiveStatus,
-      capabilities: ['tool'],
+      type: 'EDGE' as dgraphResolversTypes.RuntimeType,
       workspaceId: '', // Will be set during seeding
     },
   ],

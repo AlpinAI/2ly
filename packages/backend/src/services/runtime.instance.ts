@@ -8,7 +8,6 @@ import {
   AgentCapabilitiesMessage,
   RUNTIME_SUBJECT,
   HeartbeatMessage,
-  SetRuntimeCapabilitiesMessage,
   AckMessage,
   SetRootsMessage,
   SetGlobalRuntimeMessage,
@@ -102,10 +101,7 @@ export class RuntimeInstance extends Service {
     const msgSubscription = this.natsService.subscribe(`${RUNTIME_SUBJECT}.${this.metadata.RID}.*`);
     this.natsSubscriptions.push(msgSubscription);
     for await (const message of msgSubscription) {
-      if (message instanceof SetRuntimeCapabilitiesMessage) {
-        const instance = await this.runtimeRepository.setCapabilities(this.instance.id, message.data.capabilities);
-        message.respond(new AckMessage({ metadata: { id: instance.id, capabilities: instance.capabilities ?? [] } }));
-      } else if (message instanceof SetRootsMessage) {
+      if (message instanceof SetRootsMessage) {
         const instance = await this.runtimeRepository.setRoots(this.instance.id, message.data.roots);
         message.respond(new AckMessage({ metadata: { id: instance.id, roots: instance.roots ?? [] } }));
       } else if (message instanceof SetGlobalRuntimeMessage) {
