@@ -265,9 +265,9 @@ export class RuntimeService extends Service {
       }
       let instance = await this.runtimeRepository.findByName(workspace.id, msg.data.name);
       if (!instance) {
-        // Default to MCP type when runtime connects - this is the most common case
-        // MCP runtimes can run both agent and tool services
-        instance = await this.runtimeRepository.create(msg.data.name, '', 'ACTIVE', workspace.id, 'MCP');
+        // Use the runtime type specified in the connect message
+        // The runtime determines its own type based on environment variables
+        instance = await this.runtimeRepository.create(msg.data.name, '', 'ACTIVE', workspace.id, msg.data.type);
       }
       // Runtime ID is a unique identifier for the runtime, including its process id
       const RID = `${instance.id}-${msg.data.pid}`;

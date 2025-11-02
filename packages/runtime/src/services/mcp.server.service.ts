@@ -20,8 +20,6 @@ import { SSEServerTransport } from '@modelcontextprotocol/sdk/server/sse.js';
 import {
   CallToolRequestSchema,
   ListToolsRequestSchema,
-  // isInitializeRequest,
-  // ToolListChangedNotificationSchema,
   InitializeRequestSchema,
   InitializedNotificationSchema,
   RootsListChangedNotificationSchema,
@@ -33,12 +31,9 @@ import { isInitializeRequest } from '@modelcontextprotocol/sdk/types.js';
 import fastify, { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import cors from '@fastify/cors';
 
-export const AGENT_SERVER_TRANSPORT = 'agent.server.transport';
-export const AGENT_SERVER_TRANSPORT_PORT = 'agent.server.transport.port';
-
 @injectable()
-export class AgentServerService extends Service {
-  name = 'agent-server';
+export class McpServerService extends Service {
+  name = 'mcp-server';
   private logger: pino.Logger;
   private server: Server | undefined;
   private transport: StdioServerTransport | StreamableHTTPServerTransport | undefined;
@@ -60,8 +55,6 @@ export class AgentServerService extends Service {
     @inject(NatsService) private natsService: NatsService,
     @inject(HealthService) private healthService: HealthService,
     @inject(IdentityService) private identityService: IdentityService,
-    @inject(AGENT_SERVER_TRANSPORT) private readonly agentServerTransport: string,
-    @inject(AGENT_SERVER_TRANSPORT_PORT) private readonly agentServerTransportPort: string,
   ) {
     super();
     this.logger = this.loggerService.getLogger(this.name);
@@ -86,7 +79,17 @@ export class AgentServerService extends Service {
   }
 
   private async startServer() {
-    this.logger.info(`Starting server with transport: ${this.agentServerTransport}`);
+    const toolSet = process.env.TOOL_SET;
+    const remotePort = process.env.REMOTE_PORT;
+
+    // Determine transport type based on environment variables
+    const transport = toolSet ? 'stdio' : remotePort ? 'stream' : null;
+
+    if (!transport) {
+      throw new Error('Cannot start MCP server: neither TOOL_SET nor REMOTE_PORT is set');
+    }
+
+    this.logger.info(`Starting server with transport: ${transport}`);
     this.server = new Server(
       {
         name: this.identityService.getIdentity().name,
@@ -101,26 +104,26 @@ export class AgentServerService extends Service {
       },
     );
 
-    await this.setTransport();
+    await this.setTransport(transport, remotePort);
     await this.setServerHandlers();
     this.subscribeToCapabilities();
   }
 
-  private async setTransport() {
+  private async setTransport(transport: 'stdio' | 'stream', remotePort?: string) {
     if (!this.server) {
       throw new Error('Server not initialized');
     }
-    if (this.agentServerTransport === 'stdio') {
+    if (transport === 'stdio') {
       this.transport = new StdioServerTransport();
       this.server.connect(this.transport);
-    } else if (this.agentServerTransport === 'stream') {
-      await this.setupStreamableHttpTransport();
+    } else if (transport === 'stream') {
+      await this.setupStreamableHttpTransport(remotePort!);
     } else {
-      throw new Error(`Invalid transport: ${this.agentServerTransport}, must be either "stdio" or "stream"`);
+      throw new Error(`Invalid transport: ${transport}, must be either "stdio" or "stream"`);
     }
   }
 
-  private async setupStreamableHttpTransport() {
+  private async setupStreamableHttpTransport(portString: string) {
     this.logger.info('Setting up Streamable HTTP transport');
 
     this.fastifyInstance = fastify({
@@ -236,7 +239,7 @@ export class AgentServerService extends Service {
     });
 
     // Start the Fastify server
-    const port = parseInt(this.agentServerTransportPort) || 3000;
+    const port = parseInt(portString) || 3000;
 
     try {
       await this.fastifyInstance.listen({ port, host: '0.0.0.0' });

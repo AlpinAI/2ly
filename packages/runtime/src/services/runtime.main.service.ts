@@ -1,4 +1,4 @@
-import { inject, injectable } from 'inversify';
+import { inject, injectable, optional } from 'inversify';
 import pino from 'pino';
 import {
   AckMessage,
@@ -9,9 +9,10 @@ import {
   Service,
 } from '@2ly/common';
 import { HealthService } from './runtime.health.service';
-import { AgentService } from './agent.service';
+import { McpServerService } from './mcp.server.service';
 import { ToolService } from './tool.service';
 import { IdentityService } from './identity.service';
+import { RUNTIME_MODE, RUNTIME_TYPE, type RuntimeMode, type RuntimeType } from '../di/container';
 
 @injectable()
 export class MainService extends Service {
@@ -26,8 +27,10 @@ export class MainService extends Service {
     @inject(NatsService) private natsService: NatsService,
     @inject(IdentityService) private identityService: IdentityService,
     @inject(HealthService) private healthService: HealthService,
-    @inject(AgentService) private agentService: AgentService,
-    @inject(ToolService) private toolService: ToolService,
+    @inject(RUNTIME_MODE) private runtimeMode: RuntimeMode,
+    @inject(RUNTIME_TYPE) private runtimeType: RuntimeType,
+    @inject(McpServerService) @optional() private mcpServerService: McpServerService | undefined,
+    @inject(ToolService) @optional() private toolService: ToolService | undefined,
   ) {
     super();
     this.logger = this.loggerService.getLogger(this.name);
@@ -52,72 +55,79 @@ export class MainService extends Service {
   // Keeps trying to up the services until the main is considered stopped
   private async up() {
     if (this.state === 'STARTED' || this.state === 'STARTING') {
-      try {
-        await this.startService(this.natsService);
-        await this.startService(this.identityService);
-        // Subscribe to RuntimeReconnectMessage after NATS is connected
-        await this.subscribeToReconnectMessage();
-      } catch (error) {
-        this.logger.error(`Failed to start nats or identity service: ${error}`);
-        await this.reconnect();
-        return;
-      }
-
-      try {
-        // INIT PHASE
-        const identity = this.identityService.getIdentity();
-        const connectMessage = new RuntimeConnectMessage({
-          name: identity.name,
-          pid: identity.processId,
-          hostIP: identity.hostIP,
-          hostname: identity.hostname,
-          workspaceId: identity.workspaceId,
-        });
-        const ack = await this.natsService.request(connectMessage);
-        if (ack instanceof AckMessage) {
-          if (!ack.data.metadata?.id || !ack.data.metadata?.RID || !ack.data.metadata?.workspaceId) {
-            throw new Error('Runtime connected but no id, RID or workspaceId found');
-          }
-          this.logger.info(`Runtime connected with RID: ${ack.data.metadata?.RID}`);
-          this.identityService.setId(
-            ack.data.metadata?.id as string,
-            ack.data.metadata?.RID as string,
-            ack.data.metadata?.workspaceId as string,
-          );
-          // Reset failed connection counter on successful connection
-          this.failedConnectionCounter = 0;
-        } else {
-          throw new Error('Invalid Connection response received');
+      // In standalone MCP stream mode, we don't register with the runtime
+      if (this.runtimeMode !== 'STANDALONE_MCP_STREAM') {
+        try {
+          await this.startService(this.natsService);
+          await this.startService(this.identityService);
+          // Subscribe to RuntimeReconnectMessage after NATS is connected
+          await this.subscribeToReconnectMessage();
+        } catch (error) {
+          this.logger.error(`Failed to start nats or identity service: ${error}`);
+          await this.reconnect();
+          return;
         }
-      } catch (error) {
-        // When the INIT fails -> reconnect
-        this.logger.error(`Failed to connect to the backend: ${error}`);
-        await this.reconnect();
-        return;
+
+        try {
+          // INIT PHASE
+          const identity = this.identityService.getIdentity();
+          const connectMessage = new RuntimeConnectMessage({
+            name: identity.name,
+            pid: identity.processId,
+            hostIP: identity.hostIP,
+            hostname: identity.hostname,
+            workspaceId: identity.workspaceId,
+            type: this.runtimeType,
+          });
+          const ack = await this.natsService.request(connectMessage);
+          if (ack instanceof AckMessage) {
+            if (!ack.data.metadata?.id || !ack.data.metadata?.RID || !ack.data.metadata?.workspaceId) {
+              throw new Error('Runtime connected but no id, RID or workspaceId found');
+            }
+            this.logger.info(`Runtime connected with RID: ${ack.data.metadata?.RID}`);
+            this.identityService.setId(
+              ack.data.metadata?.id as string,
+              ack.data.metadata?.RID as string,
+              ack.data.metadata?.workspaceId as string,
+            );
+            // Reset failed connection counter on successful connection
+            this.failedConnectionCounter = 0;
+          } else {
+            throw new Error('Invalid Connection response received');
+          }
+        } catch (error) {
+          // When the INIT fails -> reconnect
+          this.logger.error(`Failed to connect to the backend: ${error}`);
+          await this.reconnect();
+          return;
+        }
+      } else {
+        this.logger.info('Running in standalone MCP stream mode - no runtime registration');
       }
 
       try {
         // START PHASE
-        await this.startService(this.healthService);
+        // Only start runtime services if not in standalone MCP mode
+        if (this.runtimeMode !== 'STANDALONE_MCP_STREAM') {
+          await this.startService(this.healthService);
 
-        if (
-          this.identityService.getAgentCapability() === true ||
-          this.identityService.getAgentCapability() === 'auto'
-        ) {
-          this.logger.info(`Starting agent service`);
-          await this.startService(this.agentService);
-        }
-        if (this.identityService.getToolCapability() === true) {
-          this.logger.info(`Starting tool service`);
-          await this.startService(this.toolService);
+          if (this.identityService.getToolCapability() === true && this.toolService) {
+            this.logger.info(`Starting tool service`);
+            await this.startService(this.toolService);
+          }
         }
 
-        // Agent service is initialized - the runtime type is determined at creation time
-        this.agentService.onInitializeMCPServer(async () => {
-          this.logger.debug('Agent service initialized');
-        });
+        // Start MCP server service if present (Mode 1, 3, 4)
+        if (this.mcpServerService) {
+          this.logger.info(`Starting MCP server service in ${this.runtimeMode} mode`);
+          await this.startService(this.mcpServerService);
+
+          this.mcpServerService.onInitializeMCPServer(async () => {
+            this.logger.debug('MCP server initialized');
+          });
+        }
       } catch (error) {
-        this.logger.error(`Failed to start the health service: ${error}`);
+        this.logger.error(`Failed to start services: ${error}`);
         await this.reconnect();
         return;
       }
@@ -126,9 +136,13 @@ export class MainService extends Service {
 
   private async down() {
     await this.unsubscribeFromMessages();
+    if (this.mcpServerService) {
+      await this.stopService(this.mcpServerService);
+    }
+    if (this.toolService) {
+      await this.stopService(this.toolService);
+    }
     await this.stopService(this.healthService);
-    await this.stopService(this.toolService);
-    await this.stopService(this.agentService);
     await this.stopService(this.natsService);
     await this.stopService(this.identityService);
   }
