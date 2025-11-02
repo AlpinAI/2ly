@@ -1,5 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { start, container, RUNTIME_MODE, RUNTIME_TYPE } from './container';
 
 describe('Runtime Container - Environment Variable Validation', () => {
