@@ -4,6 +4,7 @@ import { TOOLSETS_SUBJECT } from './constants';
 
 const type = 'agent-capabilities';
 
+// TODO: replace the toolset name by its ID when handshake is implemented
 export class AgentCapabilitiesMessage extends NatsPublish<{
   name: string;
   capabilities: dgraphResolversTypes.McpTool[];
@@ -15,11 +16,11 @@ export class AgentCapabilitiesMessage extends NatsPublish<{
   }
 
   getSubject(): string {
-    return `${TOOLSETS_SUBJECT}.${this.data.name}`;
+    return `${TOOLSETS_SUBJECT}.${this.data.name.replaceAll(' ', '_')}`;
   }
 
   static subscribeToName(name: string): string {
-    return `${TOOLSETS_SUBJECT}.${name}`;
+    return `${TOOLSETS_SUBJECT}.${name.replaceAll(' ', '_')}`;
   }
 }
 
