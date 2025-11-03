@@ -110,6 +110,17 @@ export class ToolSetService extends Service {
     const subscription = this.natsService.subscribe(RequestToolSetCapabilitiesMessage.subscribe());
     this.natsSubscriptions.push(subscription);
 
+    // Start the message processing loop in the background without blocking
+    this.processToolSetRequests(subscription as AsyncIterable<NatsRequest>).catch((error) => {
+      this.logger.error(`Error in toolset request processing loop: ${error}`);
+    });
+  }
+
+  /**
+   * Process incoming toolset capability requests in a loop.
+   * This runs in the background and doesn't block initialization.
+   */
+  private async processToolSetRequests(subscription: AsyncIterable<NatsRequest>) {
     for await (const msg of subscription) {
       try {
         if (msg instanceof RequestToolSetCapabilitiesMessage) {

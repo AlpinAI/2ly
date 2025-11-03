@@ -62,6 +62,7 @@ export class MainService extends Service {
     await this.stopService(this.dgraphService);
     await this.stopService(this.toolSetService);
     this.logActiveServices();
+    this.removeGracefulShutdownHandlers();
     this.logger.info('Stopped');
   }
 
@@ -128,25 +129,39 @@ export class MainService extends Service {
   }
 
   private isShuttingDown = false;
+
+  // Store handler references for cleanup
+  private sigintHandler = () => this.gracefulShutdown('SIGINT');
+  private sigtermHandler = () => this.gracefulShutdown('SIGTERM');
+  private uncaughtExceptionHandler = (error: Error) => {
+    this.logger.error(`Uncaught exception: ${error.message}`);
+    if (error.stack) {
+      this.logger.error(`Stack trace: ${error.stack}`);
+    }
+    console.error(error);
+    this.gracefulShutdown('uncaughtException');
+  };
+  private unhandledRejectionHandler = (error: unknown) => {
+    this.logger.error(`Unhandled rejection: ${error}`);
+    if (error instanceof Error && error.stack) {
+      this.logger.error(`Stack trace: ${error.stack}`);
+    }
+    console.error(error);
+    this.gracefulShutdown('unhandledRejection');
+  };
+
   private registerGracefulShutdown() {
-    process.on('SIGINT', () => this.gracefulShutdown('SIGINT'));
-    process.on('SIGTERM', () => this.gracefulShutdown('SIGTERM'));
-    process.on('uncaughtException', (error: Error) => {
-      this.logger.error(`Uncaught exception: ${error.message}`);
-      if (error.stack) {
-        this.logger.error(`Stack trace: ${error.stack}`);
-      }
-      console.error(error);
-      this.gracefulShutdown('uncaughtException');
-    });
-    process.on('unhandledRejection', (error) => {
-      this.logger.error(`Unhandled rejection: ${error}`);
-      if (error instanceof Error && error.stack) {
-        this.logger.error(`Stack trace: ${error.stack}`);
-      }
-      console.error(error);
-      this.gracefulShutdown('unhandledRejection');
-    });
+    process.on('SIGINT', this.sigintHandler);
+    process.on('SIGTERM', this.sigtermHandler);
+    process.on('uncaughtException', this.uncaughtExceptionHandler);
+    process.on('unhandledRejection', this.unhandledRejectionHandler);
+  }
+
+  private removeGracefulShutdownHandlers() {
+    process.off('SIGINT', this.sigintHandler);
+    process.off('SIGTERM', this.sigtermHandler);
+    process.off('uncaughtException', this.uncaughtExceptionHandler);
+    process.off('unhandledRejection', this.unhandledRejectionHandler);
   }
 
   private async gracefulShutdown(signal: string) {
