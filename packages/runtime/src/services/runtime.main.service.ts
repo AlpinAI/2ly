@@ -87,11 +87,9 @@ export class MainService extends Service {
               throw new Error('Runtime connected but no id, RID or workspaceId found');
             }
             this.logger.info(`Runtime connected with RID: ${ack.data.metadata?.RID}`);
-            this.authService.setId(
-              ack.data.metadata?.id as string,
-              ack.data.metadata?.RID as string,
-              ack.data.metadata?.workspaceId as string,
-            );
+            this.authService.setCredentials({
+              runtimeId: ack.data.metadata?.RID as string,
+            });
             // Reset failed connection counter on successful connection
             this.failedConnectionCounter = 0;
           } else {
@@ -110,13 +108,10 @@ export class MainService extends Service {
       try {
         // START PHASE
         // Only start runtime services if not in standalone MCP mode
-        if (this.runtimeMode !== 'STANDALONE_MCP_STREAM') {
+        if (this.runtimeMode !== 'STANDALONE_MCP_STREAM' && this.toolService) {
           await this.startService(this.healthService);
-
-          if (this.authService.getToolCapability() === true && this.toolService) {
-            this.logger.info(`Starting tool service`);
-            await this.startService(this.toolService);
-          }
+          this.logger.info(`Starting tool service`);
+          await this.startService(this.toolService);
         }
 
         // Start MCP server service if present (Mode 1, 3, 4)
@@ -201,7 +196,8 @@ export class MainService extends Service {
           if (msg instanceof RuntimeReconnectMessage) {
             this.logger.info(`Received RuntimeReconnectMessage: ${msg.data.reason || 'No reason provided'}`);
             // Clear identity to force re-registration
-            this.authService.clearIdentity();
+            // DO WE STILL NEED TO CLEAR IDENTITY ?
+            // this.authService.clearIdentity();
             // Trigger reconnection
             await this.reconnect();
           }

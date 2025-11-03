@@ -5,59 +5,52 @@ import { LoggerService, NatsService, RootIdentity, Service } from '@2ly/common';
 import { v4 as uuidv4 } from 'uuid';
 import pino from 'pino';
 
-export const IDENTITY_NAME = 'identity.name';
-export const WORKSPACE_ID = 'workspace.id';
-export const AGENT_CAPABILITY = 'agent.capability';
-export const TOOL_CAPABILITY = 'tool.capability';
-
 /**
  * Credentials for authentication and authorization
  */
 export interface RuntimeCredentials {
   accessToken?: string;
   natsJwt?: string;
-  toolsetId?: string;
+  toolsetId: string | null;
+  runtimeId: string | null;
 }
 
 /**
  * AuthService manages both runtime identity and authentication credentials.
  *
  * Responsibilities:
- * - Identity: id, RID, workspaceId, name, capabilities
+ * - Authentication:
+ *   - login with master key (workspace-level) or toolset/runtime level key
+ * - Identity:
+ *   - retrieve runtime id and toolset id (depending on the active services)
  * - Auth tokens: masterKey, toolsetKey, accessToken, natsJwt, toolsetId
- * - Process metadata: PID, hostname, host IP, platform info
+ * - Provide metadata during handshake: PID, hostname, host IP, platform info
  *
  * Environment variables (read-only, not stored):
- * - MASTER_KEY + TOOLSET_NAME (workspace-level access)
- * - TOOLSET_KEY (toolset-level access)
- */
+ * - MASTER_KEY (workspace-level access)
+ *   - require RUNTIME_NAME or TOOL-SET to be set
+ * - TOOLSET_KEY (toolset-level access, toolset name will be implied by the key upon auth)
+ * - RUNTIME_KEY (runtime-level access, runtime name will be implied by the key upon auth)
+*/
 @injectable()
 export class AuthService extends Service {
   name = 'auth';
 
-  @inject(IDENTITY_NAME)
-  protected identityName!: string;
-
-  @inject(WORKSPACE_ID)
   protected workspaceId!: string;
 
-  @inject(AGENT_CAPABILITY)
-  protected agentCapability: boolean | 'auto' = 'auto';
-
-  @inject(TOOL_CAPABILITY)
-  protected toolCapability: boolean = true;
-
   // Identity properties
-  protected id: string | null = null;
-  protected RID: string | null = null;
+  protected toolsetId: string | null = null;
+  protected runtimeId: string | null = null;
+  
 
   // Auth token properties (in-memory only, for long-lived process)
   protected masterKey?: string;
   protected toolsetKey?: string;
   protected toolsetName?: string;
+  protected runtimeKey?: string;
+  protected runtimeName?: string;
   protected accessToken?: string;
   protected natsJwt?: string;
-  protected toolsetId?: string;
 
   private logger: pino.Logger;
 
@@ -110,40 +103,22 @@ export class AuthService extends Service {
 
   // Identity methods (migrated from IdentityService)
 
-  getId() {
-    return this.id;
+  getToolsetId() {
+    return this.toolsetId;
   }
 
-  getAgentCapability() {
-    return this.agentCapability;
-  }
-
-  getToolCapability() {
-    return this.toolCapability;
-  }
-
-  setId(id: string, RID: string, workspaceId: string) {
-    this.id = id;
-    this.RID = RID;
-    this.workspaceId = workspaceId;
-  }
-
-  clearIdentity() {
-    this.logger.info('Clearing identity (id, RID, workspaceId)');
-    this.id = null;
-    this.RID = null;
-    // TODO: this value should come from the DI
-    this.workspaceId = process.env.WORKSPACE_ID || 'DEFAULT';
+  getRuntimeId() {
+    return this.runtimeId;
   }
 
   getIdentity(): RootIdentity {
     this.startedAt = this.startedAt ?? new Date().toISOString();
     return {
-      id: this.id,
-      RID: this.RID,
+      id: this.runtimeId,
+      RID: this.runtimeId,
       processId: process.pid.toString() ?? uuidv4(),
       workspaceId: this.workspaceId,
-      name: this.identityName,
+      name: this.runtimeName || this.toolsetName || 'DEFAULT',
       // TODO: get version from package.json
       version: '1.0.0',
       hostIP: getHostIP(),
@@ -162,7 +137,7 @@ export class AuthService extends Service {
    * Set authentication credentials
    * Used after successful authentication/handshake
    */
-  setCredentials(credentials: RuntimeCredentials) {
+  setCredentials(credentials: Partial<RuntimeCredentials>) {
     if (credentials.accessToken !== undefined) {
       this.accessToken = credentials.accessToken;
     }
@@ -171,6 +146,9 @@ export class AuthService extends Service {
     }
     if (credentials.toolsetId !== undefined) {
       this.toolsetId = credentials.toolsetId;
+    }
+    if (credentials.runtimeId !== undefined) {
+      this.runtimeId = credentials.runtimeId;
     }
   }
 
@@ -182,6 +160,7 @@ export class AuthService extends Service {
       accessToken: this.accessToken,
       natsJwt: this.natsJwt,
       toolsetId: this.toolsetId,
+      runtimeId: this.runtimeId,
     };
   }
 

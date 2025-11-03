@@ -195,7 +195,7 @@ export class ToolClientService extends Service {
 
   // Subscribe to a capability and return the subscription
   private subscribeToTool(toolId: string, runOn: MCP_SERVER_RUN_ON) {
-    const runtimeId = this.authService.getId();
+    const runtimeId = this.authService.getRuntimeId();
     if (!runtimeId) {
       throw new Error('Cannot subscribe to tool without runtimeId');
     }
@@ -238,7 +238,7 @@ export class ToolClientService extends Service {
           msg.respond(
             new AgentCallResponseMessage({
               result: result as CallToolResult,
-              executedById: this.authService.getId()!,
+              executedById: this.authService.getRuntimeId()!,
             }),
           );
         }

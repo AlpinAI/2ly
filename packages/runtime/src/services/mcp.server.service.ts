@@ -270,7 +270,7 @@ export class McpServerService extends Service {
       this.logger.info(`Setting MCP client name to ${request.params.clientInfo.name}`);
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const setMcpClientNameMessage = SetMcpClientNameMessage.create({
-        RID: this.authService.getId(),
+        RID: this.authService.getToolsetId()!,
         mcpClientName: request.params.clientInfo.name,
       }) as SetMcpClientNameMessage;
       // TODO: set the client name at the "right time" in the lifecycle
@@ -371,7 +371,7 @@ export class McpServerService extends Service {
         `Calling tool: ${toolCapability.name} (${toolCapability.id}), arguments: ${JSON.stringify(request.params.arguments)}`,
       );
       const message = AgentCallMCPToolMessage.create({
-        from: this.authService.getId(),
+        from: this.authService.getToolsetId()!,
         toolId: toolCapability.id,
         arguments: request.params.arguments,
       }) as AgentCallMCPToolMessage;

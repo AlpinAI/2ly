@@ -15,10 +15,6 @@ import {
 import { MainService } from '../services/runtime.main.service';
 import {
   AuthService,
-  IDENTITY_NAME,
-  WORKSPACE_ID,
-  AGENT_CAPABILITY,
-  TOOL_CAPABILITY,
 } from '../services/auth.service';
 import { HealthService, HEARTBEAT_INTERVAL } from '../services/runtime.health.service';
 import { ToolClientService } from '../services/tool.client.service';
@@ -35,8 +31,30 @@ const container = new Container();
  */
 function validateAndDetectMode(): { mode: RuntimeMode; runtimeType: RuntimeType; runtimeName: string } {
   const toolSet = process.env.TOOL_SET;
-  const runtimeName = process.env.RUNTIME_NAME;
   const remotePort = process.env.REMOTE_PORT;
+
+  const masterKey = process.env.MASTER_KEY;
+  const toolsetName = process.env.TOOLSET_NAME;
+  const runtimeName = process.env.RUNTIME_NAME;
+  const toolsetKey = process.env.TOOLSET_KEY;
+  const runtimeKey = process.env.RUNTIME_KEY;
+
+  // Validate mutually exclusive keys
+  if (masterKey && (toolsetKey || runtimeKey)) {
+    throw new Error('Invalid configuration: MASTER_KEY is mutually exclusive with TOOLSET_KEY and RUNTIME_KEY');
+  }
+
+  // Validate name with master key
+  if (masterKey) {
+    if (!toolsetName && !runtimeName) {
+      throw new Error('Invalid configuration: MASTER_KEY requires TOOLSET_NAME or RUNTIME_NAME');
+    }
+  }
+
+  // Validate no name with toolset/runtime keys
+  if ((toolsetName || runtimeName) && (masterKey || runtimeKey)) {
+    throw new Error('Invalid configuration: TOOLSET_NAME or RUNTIME_NAME is mutually exclusive with TOOLSET_KEY and RUNTIME_KEY');
+  }
 
   // Validate mutually exclusive environment variables
   if (toolSet && (runtimeName || remotePort)) {
@@ -45,6 +63,8 @@ function validateAndDetectMode(): { mode: RuntimeMode; runtimeType: RuntimeType;
         'Please use only TOOL_SET for MCP stdio mode, or RUNTIME_NAME/REMOTE_PORT for edge modes.',
     );
   }
+
+
 
   // Determine mode and runtime type based on environment variables
   if (toolSet) {
@@ -91,16 +111,7 @@ const start = () => {
   container.bind(RUNTIME_MODE).toConstantValue(mode);
   container.bind(RUNTIME_TYPE).toConstantValue(runtimeType);
 
-  container.bind(WORKSPACE_ID).toConstantValue(process.env.WORKSPACE_ID || 'DEFAULT');
-
-  // Init identity service
-  container.bind(IDENTITY_NAME).toConstantValue(runtimeName);
-  // by default, all runtimes have the tool capability
-  container.bind(TOOL_CAPABILITY).toConstantValue(process.env.TOOL_CAPABILITY === 'false' ? false : true);
-  // by default, runtimes don't have the agent capability but get it as soon as an agent is detected
-  // - detection is currently done when an MCP client launches the agent runtime and try to initialize the agent server
-  container.bind(AGENT_CAPABILITY).toConstantValue(process.env.AGENT_CAPABILITY === 'true' ? true : 'auto');
-
+  // Init auth service
   container.bind(AuthService).toSelf().inSingletonScope();
 
   // Conditionally bind MCP server service (Mode 1, 3, 4)
