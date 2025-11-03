@@ -11,7 +11,7 @@ import {
   UpdateConfiguredMCPServerMessage,
   MCP_SERVER_RUN_ON,
 } from '@2ly/common';
-import { IdentityService } from './identity.service';
+import { AuthService } from './auth.service';
 import { HealthService } from './runtime.health.service';
 import { ToolServerService, type ToolServerServiceFactory } from './tool.server.service';
 import { CallToolResult } from '@modelcontextprotocol/sdk/types.js';
@@ -31,7 +31,7 @@ export class ToolClientService extends Service {
   constructor(
     @inject(LoggerService) private loggerService: LoggerService,
     @inject(NatsService) private natsService: NatsService,
-    @inject(IdentityService) private identityService: IdentityService,
+    @inject(AuthService) private authService: AuthService,
     @inject(HealthService) private healthService: HealthService,
     @inject(ToolServerService) private toolServerServiceFactory: ToolServerServiceFactory,
     @inject(McpServerService) private mcpServerService: McpServerService,
@@ -42,7 +42,7 @@ export class ToolClientService extends Service {
 
   protected async initialize() {
     this.logger.info('Starting');
-    await this.identityService.waitForStarted();
+    await this.authService.waitForStarted();
     await this.natsService.waitForStarted();
     await this.healthService.waitForStarted();
     this.startObserveMCPServers();
@@ -70,7 +70,7 @@ export class ToolClientService extends Service {
   }
 
   private async startObserveMCPServers() {
-    const identity = this.identityService.getIdentity();
+    const identity = this.authService.getIdentity();
     if (!identity?.RID) {
       throw new Error('Cannot observe configured MCPServers for tool runtime: RID not found');
     }
@@ -112,7 +112,7 @@ export class ToolClientService extends Service {
   }
 
   private async stopObserveMCPServers() {
-    const identity = this.identityService.getIdentity();
+    const identity = this.authService.getIdentity();
     this.logger.debug(`Stopping to observe configured MCPServers for tool runtime ${identity?.RID ?? 'unknown RID'}`);
     // Drain NATS subscriptions before stopping services
     const drainPromises = this.natsSubscriptions.map(async (subscription) => {
@@ -195,7 +195,7 @@ export class ToolClientService extends Service {
 
   // Subscribe to a capability and return the subscription
   private subscribeToTool(toolId: string, runOn: MCP_SERVER_RUN_ON) {
-    const runtimeId = this.identityService.getId();
+    const runtimeId = this.authService.getId();
     if (!runtimeId) {
       throw new Error('Cannot subscribe to tool without runtimeId');
     }
@@ -238,7 +238,7 @@ export class ToolClientService extends Service {
           msg.respond(
             new AgentCallResponseMessage({
               result: result as CallToolResult,
-              executedById: this.identityService.getId()!,
+              executedById: this.authService.getId()!,
             }),
           );
         }

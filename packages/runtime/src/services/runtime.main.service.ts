@@ -11,7 +11,7 @@ import {
 import { HealthService } from './runtime.health.service';
 import { McpServerService } from './mcp.server.service';
 import { ToolService } from './tool.service';
-import { IdentityService } from './identity.service';
+import { AuthService } from './auth.service';
 import { RUNTIME_MODE, RUNTIME_TYPE, type RuntimeMode, type RuntimeType } from '../di/symbols';
 
 @injectable()
@@ -25,7 +25,7 @@ export class MainService extends Service {
   constructor(
     @inject(LoggerService) private loggerService: LoggerService,
     @inject(NatsService) private natsService: NatsService,
-    @inject(IdentityService) private identityService: IdentityService,
+    @inject(AuthService) private authService: AuthService,
     @inject(HealthService) private healthService: HealthService,
     @inject(RUNTIME_MODE) private runtimeMode: RuntimeMode,
     @inject(RUNTIME_TYPE) private runtimeType: RuntimeType,
@@ -61,18 +61,18 @@ export class MainService extends Service {
       if (this.runtimeMode !== 'STANDALONE_MCP_STREAM') {
         try {
           await this.startService(this.natsService);
-          await this.startService(this.identityService);
+          await this.startService(this.authService);
           // Subscribe to RuntimeReconnectMessage after NATS is connected
           await this.subscribeToReconnectMessage();
         } catch (error) {
-          this.logger.error(`Failed to start nats or identity service: ${error}`);
+          this.logger.error(`Failed to start nats or auth service: ${error}`);
           await this.reconnect();
           return;
         }
 
         try {
           // INIT PHASE
-          const identity = this.identityService.getIdentity();
+          const identity = this.authService.getIdentity();
           const connectMessage = new RuntimeConnectMessage({
             name: identity.name,
             pid: identity.processId,
@@ -87,7 +87,7 @@ export class MainService extends Service {
               throw new Error('Runtime connected but no id, RID or workspaceId found');
             }
             this.logger.info(`Runtime connected with RID: ${ack.data.metadata?.RID}`);
-            this.identityService.setId(
+            this.authService.setId(
               ack.data.metadata?.id as string,
               ack.data.metadata?.RID as string,
               ack.data.metadata?.workspaceId as string,
@@ -113,7 +113,7 @@ export class MainService extends Service {
         if (this.runtimeMode !== 'STANDALONE_MCP_STREAM') {
           await this.startService(this.healthService);
 
-          if (this.identityService.getToolCapability() === true && this.toolService) {
+          if (this.authService.getToolCapability() === true && this.toolService) {
             this.logger.info(`Starting tool service`);
             await this.startService(this.toolService);
           }
@@ -146,7 +146,7 @@ export class MainService extends Service {
     }
     await this.stopService(this.healthService);
     await this.stopService(this.natsService);
-    await this.stopService(this.identityService);
+    await this.stopService(this.authService);
   }
 
   public async reconnect() {
@@ -201,7 +201,7 @@ export class MainService extends Service {
           if (msg instanceof RuntimeReconnectMessage) {
             this.logger.info(`Received RuntimeReconnectMessage: ${msg.data.reason || 'No reason provided'}`);
             // Clear identity to force re-registration
-            this.identityService.clearIdentity();
+            this.authService.clearIdentity();
             // Trigger reconnection
             await this.reconnect();
           }

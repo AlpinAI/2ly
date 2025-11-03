@@ -14,12 +14,12 @@ import {
 } from '@2ly/common';
 import { MainService } from '../services/runtime.main.service';
 import {
-  IdentityService,
+  AuthService,
   IDENTITY_NAME,
   WORKSPACE_ID,
   AGENT_CAPABILITY,
   TOOL_CAPABILITY,
-} from '../services/identity.service';
+} from '../services/auth.service';
 import { HealthService, HEARTBEAT_INTERVAL } from '../services/runtime.health.service';
 import { ToolClientService } from '../services/tool.client.service';
 import { ToolServerService, type ToolServerServiceFactory } from '../services/tool.server.service';
@@ -101,7 +101,7 @@ const start = () => {
   // - detection is currently done when an MCP client launches the agent runtime and try to initialize the agent server
   container.bind(AGENT_CAPABILITY).toConstantValue(process.env.AGENT_CAPABILITY === 'true' ? true : 'auto');
 
-  container.bind(IdentityService).toSelf().inSingletonScope();
+  container.bind(AuthService).toSelf().inSingletonScope();
 
   // Conditionally bind MCP server service (Mode 1, 3, 4)
   if (mode === 'MCP_STDIO' || mode === 'EDGE_MCP_STREAM' || mode === 'STANDALONE_MCP_STREAM') {

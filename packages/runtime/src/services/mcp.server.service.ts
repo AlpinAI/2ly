@@ -26,7 +26,7 @@ import {
   InitializedNotificationSchema,
   RootsListChangedNotificationSchema,
 } from '@modelcontextprotocol/sdk/types.js';
-import { IdentityService } from './identity.service';
+import { AuthService } from './auth.service';
 import { BehaviorSubject, filter, firstValueFrom, Subscription } from 'rxjs';
 import { randomUUID } from 'node:crypto';
 import { isInitializeRequest } from '@modelcontextprotocol/sdk/types.js';
@@ -56,7 +56,7 @@ export class McpServerService extends Service {
     @inject(LoggerService) private loggerService: LoggerService,
     @inject(NatsService) private natsService: NatsService,
     @inject(HealthService) private healthService: HealthService,
-    @inject(IdentityService) private identityService: IdentityService,
+    @inject(AuthService) private authService: AuthService,
   ) {
     super();
     this.logger = this.loggerService.getLogger(this.name);
@@ -64,7 +64,7 @@ export class McpServerService extends Service {
 
   protected async initialize() {
     this.logger.info('Starting');
-    await this.startService(this.identityService);
+    await this.startService(this.authService);
     await this.startService(this.natsService);
     await this.startService(this.healthService);
     await this.startServer();
@@ -76,7 +76,7 @@ export class McpServerService extends Service {
     this.rxSubscriptions.forEach((subscription) => subscription.unsubscribe());
     this.rxSubscriptions = [];
     await this.stopService(this.natsService);
-    await this.stopService(this.identityService);
+    await this.stopService(this.authService);
     await this.stopService(this.healthService);
   }
 
@@ -94,8 +94,8 @@ export class McpServerService extends Service {
     this.logger.info(`Starting server with transport: ${transport}`);
     this.server = new Server(
       {
-        name: this.identityService.getIdentity().name,
-        version: this.identityService.getIdentity().version,
+        name: this.authService.getIdentity().name,
+        version: this.authService.getIdentity().version,
       },
       {
         capabilities: {
@@ -270,7 +270,7 @@ export class McpServerService extends Service {
       this.logger.info(`Setting MCP client name to ${request.params.clientInfo.name}`);
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const setMcpClientNameMessage = SetMcpClientNameMessage.create({
-        RID: this.identityService.getId(),
+        RID: this.authService.getId(),
         mcpClientName: request.params.clientInfo.name,
       }) as SetMcpClientNameMessage;
       // TODO: set the client name at the "right time" in the lifecycle
@@ -283,8 +283,8 @@ export class McpServerService extends Service {
       }
       const response = {
         serverInfo: {
-          name: this.identityService.getIdentity().name,
-          version: this.identityService.getIdentity().version,
+          name: this.authService.getIdentity().name,
+          version: this.authService.getIdentity().version,
         },
         protocolVersion: '2024-11-05',
         capabilities: {
@@ -371,7 +371,7 @@ export class McpServerService extends Service {
         `Calling tool: ${toolCapability.name} (${toolCapability.id}), arguments: ${JSON.stringify(request.params.arguments)}`,
       );
       const message = AgentCallMCPToolMessage.create({
-        from: this.identityService.getId(),
+        from: this.authService.getId(),
         toolId: toolCapability.id,
         arguments: request.params.arguments,
       }) as AgentCallMCPToolMessage;
