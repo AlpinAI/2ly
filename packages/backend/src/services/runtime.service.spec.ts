@@ -86,6 +86,8 @@ function createService(deps?: Partial<{
 
     const logger = { getLogger: () => ({ info: vi.fn(), error: vi.fn(), debug: vi.fn() }) } as unknown as import('@2ly/common').LoggerService;
 
+    const tokenService = { validateMasterKey: vi.fn(), generateNatsJwt: vi.fn(), generateAccessToken: vi.fn() } as unknown as import('./token.service').TokenService;
+
     const service = new RuntimeService(
         logger,
         dgraph,
@@ -95,6 +97,7 @@ function createService(deps?: Partial<{
         runtimeRepo as unknown as import('../repositories').RuntimeRepository,
         workspaceRepo as unknown as import('../repositories').WorkspaceRepository,
         systemRepo as unknown as import('../repositories').SystemRepository,
+        tokenService,
     );
     return { service, iterator, nats, dgraph, runtimeRepo, mcpRepo, workspaceRepo, systemRepo, factory };
 }

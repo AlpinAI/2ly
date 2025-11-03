@@ -29,10 +29,12 @@ import {
   SystemRepository,
   MonitoringRepository,
   ToolSetRepository,
+  TokenRepository,
 } from '../repositories';
 import { JwtService, AuthenticationService, AccountSecurityService, PasswordPolicyService } from '../services/auth';
 import { SecurityMiddleware, RateLimitMiddleware, GraphQLAuthMiddleware } from '../middleware';
 import { MCPServerAutoConfigService, AZURE_ENDPOINT, AZURE_API_KEY, BRAVE_SEARCH_API_KEY } from '../services/mcp-auto-config.service';
+import { TokenService } from '../services/token.service';
 import pino from 'pino';
 import { MonitoringService } from '../services/monitoring.service';
 
@@ -86,10 +88,14 @@ const start = () => {
   container.bind(SystemRepository).toSelf().inSingletonScope();
   container.bind(MonitoringRepository).toSelf().inSingletonScope();
   container.bind(ToolSetRepository).toSelf().inSingletonScope();
+  container.bind(TokenRepository).toSelf().inSingletonScope();
 
   // Init authentication services
   container.bind(JwtService).toSelf().inSingletonScope();
   container.bind(AuthenticationService).toSelf().inSingletonScope();
+
+  // Init token service
+  container.bind(TokenService).toSelf().inSingletonScope();
 
   // Init security services
   container.bind(AccountSecurityService).toSelf().inSingletonScope();

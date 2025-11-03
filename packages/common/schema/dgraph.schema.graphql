@@ -213,3 +213,23 @@ type ToolCall {
   calledBy: Runtime! @hasInverse(field: toolCalls)
   executedBy: Runtime @hasInverse(field: toolResponses)
 }
+
+enum TokenType {
+  MASTER_KEY
+  TOOLSET_KEY
+  RUNTIME_KEY
+}
+
+type Token @withSubscription {
+  id: ID!
+  key: String! @search(by: [hash])
+  type: TokenType! @search
+  workspaceId: String! @search(by: [hash])
+  toolsetId: String @search(by: [hash])
+  runtimeId: String @search(by: [hash])
+  createdAt: DateTime!
+  expiresAt: DateTime @search
+  revokedAt: DateTime @search
+  description: String
+  permissions: String
+}

@@ -142,6 +142,26 @@ type ToolCall {
   executedBy: Runtime
 }
 
+enum TokenType {
+  MASTER_KEY
+  TOOLSET_KEY
+  RUNTIME_KEY
+}
+
+type Token {
+  id: ID!
+  key: String!
+  type: TokenType!
+  workspaceId: String!
+  toolsetId: String
+  runtimeId: String
+  createdAt: Date!
+  expiresAt: Date
+  revokedAt: Date
+  description: String
+  permissions: String
+}
+
 type User {
   id: ID!
   email: String!

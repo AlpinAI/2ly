@@ -14,6 +14,7 @@ import {
   RuntimeReconnectMessage,
 } from '@2ly/common';
 import { DGraphService } from './dgraph.service';
+import { TokenService } from './token.service';
 import pino from 'pino';
 
 import { type RuntimeInstanceFactory, RuntimeInstance } from './runtime.instance';
@@ -43,6 +44,7 @@ export class RuntimeService extends Service {
     @inject(RuntimeRepository) private runtimeRepository: RuntimeRepository,
     @inject(WorkspaceRepository) private workspaceRepository: WorkspaceRepository,
     @inject(SystemRepository) private systemRepository: SystemRepository,
+    @inject(TokenService) private tokenService: TokenService,
   ) {
     super();
     this.logger = this.loggerService.getLogger(this.name);

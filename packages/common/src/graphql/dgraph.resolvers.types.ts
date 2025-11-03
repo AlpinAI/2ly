@@ -149,6 +149,26 @@ export type System = {
   workspaces?: Maybe<Array<Workspace>>;
 };
 
+export type Token = {
+  createdAt: Scalars['DateTime']['output'];
+  description?: Maybe<Scalars['String']['output']>;
+  expiresAt?: Maybe<Scalars['DateTime']['output']>;
+  id: Scalars['ID']['output'];
+  key: Scalars['String']['output'];
+  permissions?: Maybe<Scalars['String']['output']>;
+  revokedAt?: Maybe<Scalars['DateTime']['output']>;
+  runtimeId?: Maybe<Scalars['String']['output']>;
+  toolsetId?: Maybe<Scalars['String']['output']>;
+  type: TokenType;
+  workspaceId: Scalars['String']['output'];
+};
+
+export enum TokenType {
+  MasterKey = 'MASTER_KEY',
+  RuntimeKey = 'RUNTIME_KEY',
+  ToolsetKey = 'TOOLSET_KEY'
+}
+
 export type ToolCall = {
   calledAt: Scalars['DateTime']['output'];
   calledBy: Runtime;
@@ -298,6 +318,8 @@ export type ResolversTypes = ResolversObject<{
   Session: ResolverTypeWrapper<Session>;
   String: ResolverTypeWrapper<Scalars['String']['output']>;
   System: ResolverTypeWrapper<System>;
+  Token: ResolverTypeWrapper<Token>;
+  TokenType: TokenType;
   ToolCall: ResolverTypeWrapper<ToolCall>;
   ToolCallStatus: ToolCallStatus;
   ToolSet: ResolverTypeWrapper<ToolSet>;
@@ -319,6 +341,7 @@ export type ResolversParentTypes = ResolversObject<{
   Session: Session;
   String: Scalars['String']['output'];
   System: System;
+  Token: Token;
   ToolCall: ToolCall;
   ToolSet: ToolSet;
   User: User;
@@ -435,6 +458,21 @@ export type SystemResolvers<ContextType = any, ParentType extends ResolversParen
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
+export type TokenResolvers<ContextType = any, ParentType extends ResolversParentTypes['Token'] = ResolversParentTypes['Token']> = ResolversObject<{
+  createdAt?: Resolver<ResolversTypes['DateTime'], ParentType, ContextType>;
+  description?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  expiresAt?: Resolver<Maybe<ResolversTypes['DateTime']>, ParentType, ContextType>;
+  id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
+  key?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  permissions?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  revokedAt?: Resolver<Maybe<ResolversTypes['DateTime']>, ParentType, ContextType>;
+  runtimeId?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  toolsetId?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  type?: Resolver<ResolversTypes['TokenType'], ParentType, ContextType>;
+  workspaceId?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+}>;
+
 export type ToolCallResolvers<ContextType = any, ParentType extends ResolversParentTypes['ToolCall'] = ResolversParentTypes['ToolCall']> = ResolversObject<{
   calledAt?: Resolver<ResolversTypes['DateTime'], ParentType, ContextType>;
   calledBy?: Resolver<ResolversTypes['Runtime'], ParentType, ContextType>;
@@ -501,6 +539,7 @@ export type Resolvers<ContextType = any> = ResolversObject<{
   Runtime?: RuntimeResolvers<ContextType>;
   Session?: SessionResolvers<ContextType>;
   System?: SystemResolvers<ContextType>;
+  Token?: TokenResolvers<ContextType>;
   ToolCall?: ToolCallResolvers<ContextType>;
   ToolSet?: ToolSetResolvers<ContextType>;
   User?: UserResolvers<ContextType>;

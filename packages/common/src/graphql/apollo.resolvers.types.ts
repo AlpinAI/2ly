@@ -531,6 +531,26 @@ export type System = {
   updatedAt: Scalars['Date']['output'];
 };
 
+export type Token = {
+  createdAt: Scalars['Date']['output'];
+  description?: Maybe<Scalars['String']['output']>;
+  expiresAt?: Maybe<Scalars['Date']['output']>;
+  id: Scalars['ID']['output'];
+  key: Scalars['String']['output'];
+  permissions?: Maybe<Scalars['String']['output']>;
+  revokedAt?: Maybe<Scalars['Date']['output']>;
+  runtimeId?: Maybe<Scalars['String']['output']>;
+  toolsetId?: Maybe<Scalars['String']['output']>;
+  type: TokenType;
+  workspaceId: Scalars['String']['output'];
+};
+
+export enum TokenType {
+  MasterKey = 'MASTER_KEY',
+  RuntimeKey = 'RUNTIME_KEY',
+  ToolsetKey = 'TOOLSET_KEY'
+}
+
 export type ToolCall = {
   calledAt: Scalars['Date']['output'];
   calledBy: Runtime;
@@ -714,6 +734,8 @@ export type ResolversTypes = {
   String: ResolverTypeWrapper<Scalars['String']['output']>;
   Subscription: ResolverTypeWrapper<{}>;
   System: ResolverTypeWrapper<System>;
+  Token: ResolverTypeWrapper<Token>;
+  TokenType: TokenType;
   ToolCall: ResolverTypeWrapper<ToolCall>;
   ToolCallFilters: ToolCallFilters;
   ToolCallStats: ResolverTypeWrapper<ToolCallStats>;
@@ -754,6 +776,7 @@ export type ResolversParentTypes = {
   String: Scalars['String']['output'];
   Subscription: {};
   System: System;
+  Token: Token;
   ToolCall: ToolCall;
   ToolCallFilters: ToolCallFilters;
   ToolCallStats: ToolCallStats;
@@ -959,6 +982,21 @@ export type SystemResolvers<ContextType = object, ParentType extends ResolversPa
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 };
 
+export type TokenResolvers<ContextType = object, ParentType extends ResolversParentTypes['Token'] = ResolversParentTypes['Token']> = {
+  createdAt?: Resolver<ResolversTypes['Date'], ParentType, ContextType>;
+  description?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  expiresAt?: Resolver<Maybe<ResolversTypes['Date']>, ParentType, ContextType>;
+  id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
+  key?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  permissions?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  revokedAt?: Resolver<Maybe<ResolversTypes['Date']>, ParentType, ContextType>;
+  runtimeId?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  toolsetId?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  type?: Resolver<ResolversTypes['TokenType'], ParentType, ContextType>;
+  workspaceId?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+};
+
 export type ToolCallResolvers<ContextType = object, ParentType extends ResolversParentTypes['ToolCall'] = ResolversParentTypes['ToolCall']> = {
   calledAt?: Resolver<ResolversTypes['Date'], ParentType, ContextType>;
   calledBy?: Resolver<ResolversTypes['Runtime'], ParentType, ContextType>;
@@ -1044,6 +1082,7 @@ export type Resolvers<ContextType = object> = {
   Runtime?: RuntimeResolvers<ContextType>;
   Subscription?: SubscriptionResolvers<ContextType>;
   System?: SystemResolvers<ContextType>;
+  Token?: TokenResolvers<ContextType>;
   ToolCall?: ToolCallResolvers<ContextType>;
   ToolCallStats?: ToolCallStatsResolvers<ContextType>;
   ToolCallsResult?: ToolCallsResultResolvers<ContextType>;

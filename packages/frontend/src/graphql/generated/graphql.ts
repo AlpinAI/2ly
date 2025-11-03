@@ -546,6 +546,27 @@ export type System = {
   updatedAt: Scalars['Date']['output'];
 };
 
+export type Token = {
+  __typename: 'Token';
+  createdAt: Scalars['Date']['output'];
+  description: Maybe<Scalars['String']['output']>;
+  expiresAt: Maybe<Scalars['Date']['output']>;
+  id: Scalars['ID']['output'];
+  key: Scalars['String']['output'];
+  permissions: Maybe<Scalars['String']['output']>;
+  revokedAt: Maybe<Scalars['Date']['output']>;
+  runtimeId: Maybe<Scalars['String']['output']>;
+  toolsetId: Maybe<Scalars['String']['output']>;
+  type: TokenType;
+  workspaceId: Scalars['String']['output'];
+};
+
+export enum TokenType {
+  MasterKey = 'MASTER_KEY',
+  RuntimeKey = 'RUNTIME_KEY',
+  ToolsetKey = 'TOOLSET_KEY'
+}
+
 export type ToolCall = {
   __typename: 'ToolCall';
   calledAt: Scalars['Date']['output'];
