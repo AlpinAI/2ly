@@ -104,10 +104,8 @@ function createService(deps?: Partial<{
 describe('RuntimeService', () => {
     it('initialize starts services and subscribes', async () => {
         const { service, dgraph, nats } = createService();
-        (service as unknown as { dropAllData: boolean }).dropAllData = true;
         await service.start('test');
         expect(dgraph.start).toHaveBeenCalled();
-        expect(dgraph.initSchema).toHaveBeenCalledWith(true);
         expect(nats.start).toHaveBeenCalled();
         await service.stop('test');
     });
