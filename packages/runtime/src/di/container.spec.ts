@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { start, container, RUNTIME_MODE, RUNTIME_TYPE } from './container';
+import { start, container } from './container';
+import { RUNTIME_MODE, RUNTIME_TYPE } from './symbols';
 
 describe('Runtime Container - Environment Variable Validation', () => {
   let originalEnv: NodeJS.ProcessEnv;

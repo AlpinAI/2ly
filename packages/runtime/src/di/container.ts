@@ -25,14 +25,8 @@ import { ToolClientService } from '../services/tool.client.service';
 import { ToolServerService, type ToolServerServiceFactory } from '../services/tool.server.service';
 import { ROOTS, ToolService, GLOBAL_RUNTIME } from '../services/tool.service';
 import { McpServerService } from '../services/mcp.server.service';
+import { RUNTIME_MODE, RUNTIME_TYPE, type RuntimeMode, type RuntimeType } from './symbols';
 import pino from 'pino';
-
-// Runtime operational mode types
-export type RuntimeMode = 'MCP_STDIO' | 'EDGE' | 'EDGE_MCP_STREAM' | 'STANDALONE_MCP_STREAM';
-export type RuntimeType = 'MCP' | 'EDGE';
-
-export const RUNTIME_MODE = Symbol.for('RUNTIME_MODE');
-export const RUNTIME_TYPE = Symbol.for('RUNTIME_TYPE');
 
 const container = new Container();
 
@@ -112,11 +106,15 @@ const start = () => {
   // Conditionally bind MCP server service (Mode 1, 3, 4)
   if (mode === 'MCP_STDIO' || mode === 'EDGE_MCP_STREAM' || mode === 'STANDALONE_MCP_STREAM') {
     container.bind(McpServerService).toSelf().inSingletonScope();
+  } else {
+    container.bind<McpServerService | undefined>(McpServerService).toConstantValue(undefined);
   }
 
   // Conditionally bind Tool service (Mode 1, 2, 3)
   if (mode !== 'STANDALONE_MCP_STREAM') {
     container.bind(ToolService).toSelf().inSingletonScope();
+  } else {
+    container.bind<ToolService | undefined>(ToolService).toConstantValue(undefined);
   }
 
   // Init nats service

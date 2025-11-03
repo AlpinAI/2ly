@@ -12,7 +12,7 @@ import { HealthService } from './runtime.health.service';
 import { McpServerService } from './mcp.server.service';
 import { ToolService } from './tool.service';
 import { IdentityService } from './identity.service';
-import { RUNTIME_MODE, RUNTIME_TYPE, type RuntimeMode, type RuntimeType } from '../di/container';
+import { RUNTIME_MODE, RUNTIME_TYPE, type RuntimeMode, type RuntimeType } from '../di/symbols';
 
 @injectable()
 export class MainService extends Service {

@@ -47,7 +47,7 @@ export class ToolClientService extends Service {
     await this.healthService.waitForStarted();
     this.startObserveMCPServers();
     this.rxSubscriptions.push(
-      this.mcpServerService.observeClientRoots().subscribe(async (value) => {
+      this.mcpServerService?.observeClientRoots().subscribe(async (value) => {
         this.logger.debug(`Agent server client roots changed: ${JSON.stringify(value)}`);
         const roots = this.getRoots();
         for (const mcpServer of this.mcpServers.values()) {
@@ -59,7 +59,7 @@ export class ToolClientService extends Service {
   }
 
   private getRoots() {
-    return this.mcpServerService.getClientRoots().length ? this.mcpServerService.getClientRoots() : this.roots;
+    return this.mcpServerService?.getClientRoots().length ? this.mcpServerService.getClientRoots() : this.roots;
   }
 
   protected async shutdown() {
