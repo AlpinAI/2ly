@@ -65,7 +65,7 @@ export class ToolClientService extends Service {
   protected async shutdown() {
     this.logger.info('Stopping');
     await this.stopObserveMCPServers();
-    this.rxSubscriptions.forEach((subscription) => subscription.unsubscribe());
+    this.rxSubscriptions.forEach((subscription) => subscription?.unsubscribe());
     this.rxSubscriptions = [];
   }
 

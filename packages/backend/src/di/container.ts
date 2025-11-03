@@ -14,9 +14,9 @@ import {
 } from '@2ly/common';
 import { DGraphService, DGRAPH_URL } from '../services/dgraph.service';
 import { ApolloService } from '../services/apollo.service';
-import { RuntimeService, DROP_ALL_DATA } from '../services/runtime.service';
+import { RuntimeService } from '../services/runtime.service';
 import { FastifyService } from '../services/fastify.service';
-import { MainService } from '../services/backend.main.service';
+import { MainService, DROP_ALL_DATA } from '../services/backend.main.service';
 import { RuntimeInstance, RuntimeInstanceFactory, RuntimeInstanceMetadata } from '../services/runtime.instance';
 import {
   RuntimeRepository,

@@ -11,13 +11,19 @@ import { MCPServerAutoConfigService } from './mcp-auto-config.service';
 import { MonitoringService } from './monitoring.service';
 import packageJson from '../../package.json';
 
+export const DROP_ALL_DATA = 'dropAllData';
+
 @injectable()
 export class MainService extends Service {
   name = 'main';
   private logger: pino.Logger;
 
+  @inject(DROP_ALL_DATA)
+  private dropAllData!: boolean;
+
   constructor(
     @inject(LoggerService) private loggerService: LoggerService,
+    @inject(DGraphService) private dgraphService: DGraphService,
     @inject(ApolloService) private apolloService: ApolloService,
     @inject(RuntimeService) private runtimeService: RuntimeService,
     @inject(FastifyService) private fastifyService: FastifyService,
@@ -32,6 +38,8 @@ export class MainService extends Service {
 
   protected async initialize() {
     this.logger.info(`Starting backend, version: ${packageJson.version}`);
+    await this.startService(this.dgraphService);
+    await this.dgraphService.initSchema(this.dropAllData);
     await this.startService(this.runtimeService);
     this.registerHealthCheck();
     this.registerUtilityEndpoints();
@@ -48,6 +56,7 @@ export class MainService extends Service {
     await this.stopService(this.apolloService);
     await this.stopService(this.mcpServerAutoConfigService);
     await this.stopService(this.monitoringService);
+    await this.stopService(this.dgraphService);
     this.logActiveServices();
     this.logger.info('Stopped');
   }

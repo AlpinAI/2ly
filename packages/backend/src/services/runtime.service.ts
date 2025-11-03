@@ -25,7 +25,6 @@ import {
 } from '../repositories';
 import { gql } from 'urql';
 
-export const DROP_ALL_DATA = 'dropAllData';
 
 @injectable()
 export class RuntimeService extends Service {
@@ -34,9 +33,6 @@ export class RuntimeService extends Service {
 
   private subscriptions: { unsubscribe: () => void; drain: () => Promise<void>; isClosed: () => boolean }[] = [];
   private runtimeInstances: Map<string, RuntimeInstance> = new Map();
-
-  @inject(DROP_ALL_DATA)
-  private dropAllData!: boolean;
 
   constructor(
     @inject(LoggerService) private loggerService: LoggerService,
@@ -55,7 +51,6 @@ export class RuntimeService extends Service {
   protected async initialize() {
     this.logger.info('Starting');
     await this.startService(this.dgraphService);
-    await this.dgraphService.initSchema(this.dropAllData);
     await this.startService(this.natsService);
     await this.rehydrateRuntimes();
     this.subscribeToRuntime();
