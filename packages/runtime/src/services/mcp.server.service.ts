@@ -11,6 +11,8 @@ import {
   AgentCallResponseMessage,
   SetMcpClientNameMessage,
   MCP_CALL_TOOL_TIMEOUT,
+  RequestToolSetCapabilitiesMessage,
+  AckMessage,
 } from '@2ly/common';
 import { HealthService } from './runtime.health.service';
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
@@ -428,19 +430,54 @@ export class McpServerService extends Service {
   }
 
   private async subscribeToCapabilities() {
-    const identity = this.identityService.getIdentity();
-    if (!identity?.RID) {
-      throw new Error('Cannot subscribe to capabilities for agent server: RID not found');
+    const toolSetName = process.env.TOOL_SET;
+    if (!toolSetName) {
+      throw new Error('Cannot subscribe to capabilities: TOOL_SET environment variable not set');
     }
-    const subscription = await this.natsService.observeEphemeral(AgentCapabilitiesMessage.subscribeToRID(identity.RID));
+
+    this.logger.info(`Subscribing to capabilities for toolset: ${toolSetName}`);
+    const subscription = await this.natsService.observeEphemeral(AgentCapabilitiesMessage.subscribeToName(toolSetName));
     this.subscriptions.push(subscription);
-    for await (const message of subscription) {
-      if (message instanceof AgentCapabilitiesMessage) {
-        this.tools.next(message.data.capabilities);
-      } else if (message instanceof NatsErrorMessage) {
-        this.logger.error(`Error subscribing to tools: ${message.data.error}`);
+
+    // Check if there's an initial value in ephemeral storage
+    let hasInitialValue = false;
+    const initialValueTimeout = new Promise<void>((resolve) => setTimeout(resolve, 1000));
+
+    const checkInitialValue = (async () => {
+      for await (const message of subscription) {
+        if (message instanceof AgentCapabilitiesMessage) {
+          hasInitialValue = true;
+          this.tools.next(message.data.capabilities);
+          this.logger.debug(`Received capabilities for toolset ${toolSetName}: ${message.data.capabilities.length} tools`);
+        } else if (message instanceof NatsErrorMessage) {
+          this.logger.error(`Error subscribing to tools: ${message.data.error}`);
+        }
       }
-    }
+    })();
+
+    // Wait for either initial value or timeout
+    await Promise.race([
+      (async () => {
+        await initialValueTimeout;
+        if (!hasInitialValue) {
+          this.logger.info(`No initial capabilities found in ephemeral storage for toolset ${toolSetName}, requesting...`);
+          // Send request to backend to publish capabilities for this toolset
+          const requestMessage = new RequestToolSetCapabilitiesMessage({
+            toolSetName: toolSetName,
+          });
+          const response = await this.natsService.request(requestMessage);
+          if (response instanceof AckMessage) {
+            this.logger.debug(`Successfully requested capabilities for toolset ${toolSetName}`);
+          } else if (response instanceof NatsErrorMessage) {
+            this.logger.error(`Error requesting capabilities: ${response.data.error}`);
+          }
+        }
+      })(),
+      checkInitialValue,
+    ]);
+
+    // Continue listening for updates
+    await checkInitialValue;
   }
 
   public onInitializeMCPServer(callback: () => void) {

@@ -1,25 +1,25 @@
 import { NatsMessage, NatsPublish } from '../services/nats.message';
 import { dgraphResolversTypes } from '../graphql';
-import { RUNTIME_SUBJECT } from './constants';
+import { TOOLSETS_SUBJECT } from './constants';
 
 const type = 'agent-capabilities';
 
 export class AgentCapabilitiesMessage extends NatsPublish<{
-  RID: string;
+  name: string;
   capabilities: dgraphResolversTypes.McpTool[];
 }> {
   static type = type;
   type = type;
-  validate(data: { RID: string; capabilities: dgraphResolversTypes.McpTool[] }): boolean {
-    return data.RID !== undefined && data.capabilities !== undefined;
+  validate(data: { name: string; capabilities: dgraphResolversTypes.McpTool[] }): boolean {
+    return data.name !== undefined && data.capabilities !== undefined;
   }
 
   getSubject(): string {
-    return `${RUNTIME_SUBJECT}.${type}.${this.data.RID}`;
+    return `${TOOLSETS_SUBJECT}.${this.data.name}`;
   }
 
-  static subscribeToRID(RID: string): string {
-    return `${RUNTIME_SUBJECT}.${type}.${RID}`;
+  static subscribeToName(name: string): string {
+    return `${TOOLSETS_SUBJECT}.${name}`;
   }
 }
 

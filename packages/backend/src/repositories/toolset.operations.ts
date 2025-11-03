@@ -250,3 +250,63 @@ export const OBSERVE_TOOLSETS = (type: 'query' | 'subscription' = 'query') => gq
     }
   }
 `;
+
+export const QUERY_ALL_TOOLSETS = gql`
+  query queryAllToolSets {
+    queryToolSet {
+      id
+      name
+      description
+      createdAt
+      updatedAt
+      mcpTools {
+        id
+        name
+        description
+        inputSchema
+        annotations
+        status
+        createdAt
+        lastSeenAt
+        mcpServer {
+          id
+          name
+        }
+      }
+      workspace {
+        id
+        name
+      }
+    }
+  }
+`;
+
+export const QUERY_TOOLSET_BY_NAME = gql`
+  query queryToolSetByName($name: String!) {
+    queryToolSet(filter: { name: { eq: $name } }) {
+      id
+      name
+      description
+      createdAt
+      updatedAt
+      mcpTools {
+        id
+        name
+        description
+        inputSchema
+        annotations
+        status
+        createdAt
+        lastSeenAt
+        mcpServer {
+          id
+          name
+        }
+      }
+      workspace {
+        id
+        name
+      }
+    }
+  }
+`;

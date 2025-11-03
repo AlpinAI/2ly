@@ -10,6 +10,7 @@ import { WorkspaceRepository, SystemRepository } from '../repositories';
 import { MCPServerAutoConfigService } from './mcp-auto-config.service';
 import { MonitoringService } from './monitoring.service';
 import packageJson from '../../package.json';
+import { ToolSetService } from './tool-set.service';
 
 export const DROP_ALL_DATA = 'dropAllData';
 
@@ -26,6 +27,7 @@ export class MainService extends Service {
     @inject(DGraphService) private dgraphService: DGraphService,
     @inject(ApolloService) private apolloService: ApolloService,
     @inject(RuntimeService) private runtimeService: RuntimeService,
+    @inject(ToolSetService) private toolSetService: ToolSetService,
     @inject(FastifyService) private fastifyService: FastifyService,
     @inject(MCPServerAutoConfigService) private mcpServerAutoConfigService: MCPServerAutoConfigService,
     @inject(SystemRepository) private systemRepository: SystemRepository,
@@ -41,6 +43,7 @@ export class MainService extends Service {
     await this.startService(this.dgraphService);
     await this.dgraphService.initSchema(this.dropAllData);
     await this.startService(this.runtimeService);
+    await this.startService(this.toolSetService);
     this.registerHealthCheck();
     this.registerUtilityEndpoints();
     await this.startService(this.apolloService);
@@ -57,6 +60,7 @@ export class MainService extends Service {
     await this.stopService(this.mcpServerAutoConfigService);
     await this.stopService(this.monitoringService);
     await this.stopService(this.dgraphService);
+    await this.stopService(this.toolSetService);
     this.logActiveServices();
     this.logger.info('Stopped');
   }

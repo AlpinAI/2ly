@@ -9,6 +9,7 @@ export * from './agent-capabilities.message';
 export * from './agent-call-mcp-tool.message';
 export * from './agent-call-response.message';
 export * from './ack.message';
+export * from './request-toolset-capabilities.message';
 export * from './update-configured-mcp-server.message';
 export * from './set-roots.message';
 export * from './runtime-healthy.message';

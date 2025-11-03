@@ -15,6 +15,7 @@ import {
 import { DGraphService, DGRAPH_URL } from '../services/dgraph.service';
 import { ApolloService } from '../services/apollo.service';
 import { RuntimeService } from '../services/runtime.service';
+import { ToolSetService } from '../services/tool-set.service';
 import { FastifyService } from '../services/fastify.service';
 import { MainService, DROP_ALL_DATA } from '../services/backend.main.service';
 import { RuntimeInstance, RuntimeInstanceFactory, RuntimeInstanceMetadata } from '../services/runtime.instance';
@@ -62,6 +63,9 @@ const start = () => {
 
   // Init runtime service
   container.bind(RuntimeService).toSelf().inSingletonScope();
+
+  // Init tool set service
+  container.bind(ToolSetService).toSelf().inSingletonScope();
 
   // Init fastify service
   container.bind(FastifyService).toSelf().inSingletonScope();
