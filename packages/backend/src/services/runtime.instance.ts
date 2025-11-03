@@ -5,7 +5,6 @@ import {
   NatsService,
   Service,
   UpdateConfiguredMCPServerMessage,
-  AgentCapabilitiesMessage,
   RUNTIME_SUBJECT,
   HeartbeatMessage,
   AckMessage,
@@ -63,7 +62,6 @@ export class RuntimeInstance extends Service {
       this.observeHeartbeat();
       this.handleRuntimeMessages();
       this.observeMCPServers();
-      this.observeCapabilities();
       this.onReady();  
     } catch (error) {
       this.logger.error(`Error setting runtime active: ${error}`);
@@ -185,44 +183,6 @@ export class RuntimeInstance extends Service {
       )
       .subscribe();
 
-    this.rxjsSubscriptions.push(subscription);
-  }
-
-  /**
-   * Observe the list of Capabilities that an agent have access to
-   * - MCP Tools related with the mcpToolCapabilities edge
-   * - (future) API Tools related with the apiToolCapabilities edge
-   * - (future) Other types of tools
-   *
-   * Publish an AgentCapabilitiesMessage in the nats KV ephemeral store
-   * - the message will stay in the KV ephemeral long enough to be observed by the runtime
-   */
-  private observeCapabilities() {
-    if (!this.instance) {
-      throw new Error('Instance not initialized');
-    }
-    this.logger.info(`Observing capabilities for runtime ${this.instance.id}`);
-    const subscription = this.runtimeRepository
-      .observeCapabilities(this.instance.id)
-      .pipe(
-        tap((runtime) => {
-          if (!this.instance) {
-            // ignore
-            return;
-          }
-          // Extract all tools from all servers assigned to this runtime
-          const capabilities = runtime?.mcpServers?.flatMap((server) => server.tools ?? []) ?? [];
-          this.logger.debug(
-            `Capabilities for runtime ${this.instance.id}: ${JSON.stringify(capabilities, null, 2)}`,
-          );
-          const message = AgentCapabilitiesMessage.create({
-            RID: this.metadata.RID,
-            capabilities,
-          }) as AgentCapabilitiesMessage;
-          this.natsService.publishEphemeral(message);
-        }),
-      )
-      .subscribe();
     this.rxjsSubscriptions.push(subscription);
   }
 }

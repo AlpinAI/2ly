@@ -156,7 +156,7 @@ export const test = base.extend<DatabaseFixture>({
       }
 
       // Wait a bit for the reset to complete
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      await new Promise((resolve) => setTimeout(resolve, 100));
 
       // Start runtime container if requested
       if (shouldStartRuntime) {

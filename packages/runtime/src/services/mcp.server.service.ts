@@ -11,6 +11,8 @@ import {
   AgentCallResponseMessage,
   SetMcpClientNameMessage,
   MCP_CALL_TOOL_TIMEOUT,
+  RequestToolSetCapabilitiesMessage,
+  AckMessage,
 } from '@2ly/common';
 import { HealthService } from './runtime.health.service';
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
@@ -20,8 +22,6 @@ import { SSEServerTransport } from '@modelcontextprotocol/sdk/server/sse.js';
 import {
   CallToolRequestSchema,
   ListToolsRequestSchema,
-  // isInitializeRequest,
-  // ToolListChangedNotificationSchema,
   InitializeRequestSchema,
   InitializedNotificationSchema,
   RootsListChangedNotificationSchema,
@@ -33,12 +33,9 @@ import { isInitializeRequest } from '@modelcontextprotocol/sdk/types.js';
 import fastify, { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import cors from '@fastify/cors';
 
-export const AGENT_SERVER_TRANSPORT = 'agent.server.transport';
-export const AGENT_SERVER_TRANSPORT_PORT = 'agent.server.transport.port';
-
 @injectable()
-export class AgentServerService extends Service {
-  name = 'agent-server';
+export class McpServerService extends Service {
+  name = 'mcp-server';
   private logger: pino.Logger;
   private server: Server | undefined;
   private transport: StdioServerTransport | StreamableHTTPServerTransport | undefined;
@@ -60,8 +57,6 @@ export class AgentServerService extends Service {
     @inject(NatsService) private natsService: NatsService,
     @inject(HealthService) private healthService: HealthService,
     @inject(IdentityService) private identityService: IdentityService,
-    @inject(AGENT_SERVER_TRANSPORT) private readonly agentServerTransport: string,
-    @inject(AGENT_SERVER_TRANSPORT_PORT) private readonly agentServerTransportPort: string,
   ) {
     super();
     this.logger = this.loggerService.getLogger(this.name);
@@ -86,7 +81,17 @@ export class AgentServerService extends Service {
   }
 
   private async startServer() {
-    this.logger.info(`Starting server with transport: ${this.agentServerTransport}`);
+    const toolSet = process.env.TOOL_SET;
+    const remotePort = process.env.REMOTE_PORT;
+
+    // Determine transport type based on environment variables
+    const transport = toolSet ? 'stdio' : remotePort ? 'stream' : null;
+
+    if (!transport) {
+      throw new Error('Cannot start MCP server: neither TOOL_SET nor REMOTE_PORT is set');
+    }
+
+    this.logger.info(`Starting server with transport: ${transport}`);
     this.server = new Server(
       {
         name: this.identityService.getIdentity().name,
@@ -101,26 +106,26 @@ export class AgentServerService extends Service {
       },
     );
 
-    await this.setTransport();
+    await this.setTransport(transport, remotePort);
     await this.setServerHandlers();
     this.subscribeToCapabilities();
   }
 
-  private async setTransport() {
+  private async setTransport(transport: 'stdio' | 'stream', remotePort?: string) {
     if (!this.server) {
       throw new Error('Server not initialized');
     }
-    if (this.agentServerTransport === 'stdio') {
+    if (transport === 'stdio') {
       this.transport = new StdioServerTransport();
       this.server.connect(this.transport);
-    } else if (this.agentServerTransport === 'stream') {
-      await this.setupStreamableHttpTransport();
+    } else if (transport === 'stream') {
+      await this.setupStreamableHttpTransport(remotePort!);
     } else {
-      throw new Error(`Invalid transport: ${this.agentServerTransport}, must be either "stdio" or "stream"`);
+      throw new Error(`Invalid transport: ${transport}, must be either "stdio" or "stream"`);
     }
   }
 
-  private async setupStreamableHttpTransport() {
+  private async setupStreamableHttpTransport(portString: string) {
     this.logger.info('Setting up Streamable HTTP transport');
 
     this.fastifyInstance = fastify({
@@ -236,7 +241,7 @@ export class AgentServerService extends Service {
     });
 
     // Start the Fastify server
-    const port = parseInt(this.agentServerTransportPort) || 3000;
+    const port = parseInt(portString) || 3000;
 
     try {
       await this.fastifyInstance.listen({ port, host: '0.0.0.0' });
@@ -425,19 +430,54 @@ export class AgentServerService extends Service {
   }
 
   private async subscribeToCapabilities() {
-    const identity = this.identityService.getIdentity();
-    if (!identity?.RID) {
-      throw new Error('Cannot subscribe to capabilities for agent server: RID not found');
+    const toolSetName = process.env.TOOL_SET;
+    if (!toolSetName) {
+      throw new Error('Cannot subscribe to capabilities: TOOL_SET environment variable not set');
     }
-    const subscription = await this.natsService.observeEphemeral(AgentCapabilitiesMessage.subscribeToRID(identity.RID));
+
+    this.logger.info(`Subscribing to capabilities for toolset: ${toolSetName}`);
+    const subscription = await this.natsService.observeEphemeral(AgentCapabilitiesMessage.subscribeToName(toolSetName));
     this.subscriptions.push(subscription);
-    for await (const message of subscription) {
-      if (message instanceof AgentCapabilitiesMessage) {
-        this.tools.next(message.data.capabilities);
-      } else if (message instanceof NatsErrorMessage) {
-        this.logger.error(`Error subscribing to tools: ${message.data.error}`);
+
+    // Check if there's an initial value in ephemeral storage
+    let hasInitialValue = false;
+    const initialValueTimeout = new Promise<void>((resolve) => setTimeout(resolve, 1000));
+
+    const checkInitialValue = (async () => {
+      for await (const message of subscription) {
+        if (message instanceof AgentCapabilitiesMessage) {
+          hasInitialValue = true;
+          this.tools.next(message.data.capabilities);
+          this.logger.debug(`Received capabilities for toolset ${toolSetName}: ${message.data.capabilities.length} tools`);
+        } else if (message instanceof NatsErrorMessage) {
+          this.logger.error(`Error subscribing to tools: ${message.data.error}`);
+        }
       }
-    }
+    })();
+
+    // Wait for either initial value or timeout
+    await Promise.race([
+      (async () => {
+        await initialValueTimeout;
+        if (!hasInitialValue) {
+          this.logger.info(`No initial capabilities found in ephemeral storage for toolset ${toolSetName}, requesting...`);
+          // Send request to backend to publish capabilities for this toolset
+          const requestMessage = new RequestToolSetCapabilitiesMessage({
+            toolSetName: toolSetName,
+          });
+          const response = await this.natsService.request(requestMessage);
+          if (response instanceof AckMessage) {
+            this.logger.debug(`Successfully requested capabilities for toolset ${toolSetName}`);
+          } else if (response instanceof NatsErrorMessage) {
+            this.logger.error(`Error requesting capabilities: ${response.data.error}`);
+          }
+        }
+      })(),
+      checkInitialValue,
+    ]);
+
+    // Continue listening for updates
+    await checkInitialValue;
   }
 
   public onInitializeMCPServer(callback: () => void) {

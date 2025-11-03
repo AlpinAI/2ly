@@ -597,8 +597,6 @@ export const startRuntime = async (): Promise<void> => {
       RUNTIME_NAME: runtimeName,
       GLOBAL_RUNTIME: 'true',
       ROOTS: `TEMP:/tmp`,
-      AGENT_CAPABILITY: 'false', // Disable agent capability for testing
-      TOOL_CAPABILITY: 'true', // Enable tool capability for testing
     })
     // No exposed ports needed - runtime communicates via NATS
     .withWaitStrategy(Wait.forListeningPorts())

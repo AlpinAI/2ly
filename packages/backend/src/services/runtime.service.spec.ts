@@ -104,10 +104,8 @@ function createService(deps?: Partial<{
 describe('RuntimeService', () => {
     it('initialize starts services and subscribes', async () => {
         const { service, dgraph, nats } = createService();
-        (service as unknown as { dropAllData: boolean }).dropAllData = true;
         await service.start('test');
         expect(dgraph.start).toHaveBeenCalled();
-        expect(dgraph.initSchema).toHaveBeenCalledWith(true);
         expect(nats.start).toHaveBeenCalled();
         await service.stop('test');
     });
@@ -120,7 +118,7 @@ describe('RuntimeService', () => {
             system: { getDefaultWorkspace: vi.fn(async () => ({ id: 'ws1' })) },
         });
         await service.start('test');
-        const msg = new RuntimeConnectMessage({ name: 'node', pid: 'p', hostIP: 'ip', hostname: 'host', workspaceId: 'DEFAULT' });
+        const msg = new RuntimeConnectMessage({ name: 'node', pid: 'p', hostIP: 'ip', hostname: 'host', workspaceId: 'DEFAULT', type: 'EDGE' });
         iterator.push(msg);
         // allow message loop
         await new Promise((r) => setTimeout(r, 10));
@@ -134,7 +132,7 @@ describe('RuntimeService', () => {
             workspace: { findById: vi.fn(async () => ({ id: 'wsX' })) },
         });
         await service.start('test');
-        const msg = new RuntimeConnectMessage({ name: 'new-node', pid: 'p', hostIP: 'ip', hostname: 'host', workspaceId: 'wsX' });
+        const msg = new RuntimeConnectMessage({ name: 'new-node', pid: 'p', hostIP: 'ip', hostname: 'host', workspaceId: 'wsX', type: 'MCP' });
         iterator.push(msg);
         await new Promise((r) => setTimeout(r, 10));
         expect(runtimeRepo.create).toHaveBeenCalled();

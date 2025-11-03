@@ -10,6 +10,8 @@ import {
   ADD_MCP_TOOL_TO_TOOLSET,
   REMOVE_MCP_TOOL_FROM_TOOLSET,
   OBSERVE_TOOLSETS,
+  QUERY_ALL_TOOLSETS,
+  QUERY_TOOLSET_BY_NAME,
 } from './toolset.operations';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
@@ -86,6 +88,14 @@ export class ToolSetRepository {
     return response.getToolSet;
   }
 
+  async findByName(name: string): Promise<dgraphResolversTypes.ToolSet | null> {
+    const response = await this.dgraphService.query<{ queryToolSet: dgraphResolversTypes.ToolSet[] }>(
+      QUERY_TOOLSET_BY_NAME,
+      { name },
+    );
+    return response.queryToolSet?.[0] ?? null;
+  }
+
   async findByWorkspace(workspaceId: string): Promise<dgraphResolversTypes.ToolSet[]> {
     const response = await this.dgraphService.query<{
       getWorkspace: { toolSets: dgraphResolversTypes.ToolSet[] } | null;
@@ -147,5 +157,17 @@ export class ToolSetRepository {
         true,
       )
       .pipe(map((workspace) => workspace?.toolSets ?? []));
+  }
+
+  observeAllToolSets(): Observable<dgraphResolversTypes.ToolSet[]> {
+    const query = createSubscriptionFromQuery(QUERY_ALL_TOOLSETS);
+    return this.dgraphService
+      .observe<dgraphResolversTypes.ToolSet[]>(
+        query,
+        {},
+        'queryToolSet',
+        true,
+      )
+      .pipe(map((toolSets) => toolSets ?? []));
   }
 }

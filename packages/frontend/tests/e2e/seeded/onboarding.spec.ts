@@ -173,7 +173,7 @@ export const setRuntimeActive = async (
   await dgraphQL<{ updateRuntime: { runtime: { id: string; status: string }[] } }>(mutation, { id });
 };
 
-test.describe.only('Onboarding Flow', () => {
+test.describe('Onboarding Flow', () => {
   test.beforeEach(async ({ page, resetDatabase, seedDatabase }) => {
     await resetDatabase(true);
 

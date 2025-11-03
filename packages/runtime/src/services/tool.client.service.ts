@@ -15,7 +15,7 @@ import { IdentityService } from './identity.service';
 import { HealthService } from './runtime.health.service';
 import { ToolServerService, type ToolServerServiceFactory } from './tool.server.service';
 import { CallToolResult } from '@modelcontextprotocol/sdk/types.js';
-import { AgentServerService } from './agent.server.service';
+import { McpServerService } from './mcp.server.service';
 import { Subscription } from 'rxjs';
 
 @injectable()
@@ -34,7 +34,7 @@ export class ToolClientService extends Service {
     @inject(IdentityService) private identityService: IdentityService,
     @inject(HealthService) private healthService: HealthService,
     @inject(ToolServerService) private toolServerServiceFactory: ToolServerServiceFactory,
-    @inject(AgentServerService) private agentServerService: AgentServerService,
+    @inject(McpServerService) private mcpServerService: McpServerService,
   ) {
     super();
     this.logger = this.loggerService.getLogger(this.name);
@@ -47,7 +47,7 @@ export class ToolClientService extends Service {
     await this.healthService.waitForStarted();
     this.startObserveMCPServers();
     this.rxSubscriptions.push(
-      this.agentServerService.observeClientRoots().subscribe(async (value) => {
+      this.mcpServerService?.observeClientRoots().subscribe(async (value) => {
         this.logger.debug(`Agent server client roots changed: ${JSON.stringify(value)}`);
         const roots = this.getRoots();
         for (const mcpServer of this.mcpServers.values()) {
@@ -59,13 +59,13 @@ export class ToolClientService extends Service {
   }
 
   private getRoots() {
-    return this.agentServerService.getClientRoots().length ? this.agentServerService.getClientRoots() : this.roots;
+    return this.mcpServerService?.getClientRoots().length ? this.mcpServerService.getClientRoots() : this.roots;
   }
 
   protected async shutdown() {
     this.logger.info('Stopping');
     await this.stopObserveMCPServers();
-    this.rxSubscriptions.forEach((subscription) => subscription.unsubscribe());
+    this.rxSubscriptions.forEach((subscription) => subscription?.unsubscribe());
     this.rxSubscriptions = [];
   }
 

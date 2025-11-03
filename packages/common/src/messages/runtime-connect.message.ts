@@ -9,11 +9,12 @@ export class RuntimeConnectMessage extends NatsRequest<{
     hostIP: string;
     hostname: string;
     workspaceId: string;
+    type: 'MCP' | 'EDGE';
 }> {
     static type = type;
     type = type;
-    validate(data: { name: string; pid: string; hostIP: string; hostname: string; workspaceId: string }): boolean {
-        return data.name !== undefined && data.pid !== undefined && data.hostIP !== undefined && data.hostname !== undefined && data.workspaceId !== undefined;
+    validate(data: { name: string; pid: string; hostIP: string; hostname: string; workspaceId: string; type: 'MCP' | 'EDGE' }): boolean {
+        return data.name !== undefined && data.pid !== undefined && data.hostIP !== undefined && data.hostname !== undefined && data.workspaceId !== undefined && data.type !== undefined && (data.type === 'MCP' || data.type === 'EDGE');
     }
 
     getSubject(): string {
