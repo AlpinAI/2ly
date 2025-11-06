@@ -32,7 +32,6 @@ const container = new Container();
  */
 function validateAndDetectMode(): RuntimeMode {
   const remotePort = process.env.REMOTE_PORT;
-
   const masterKey = process.env.MASTER_KEY;
   const toolsetName = process.env.TOOLSET_NAME;
   const runtimeName = process.env.RUNTIME_NAME;

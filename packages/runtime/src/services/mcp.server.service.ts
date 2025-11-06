@@ -29,6 +29,22 @@ import { randomUUID } from 'node:crypto';
 import { isInitializeRequest } from '@modelcontextprotocol/sdk/types.js';
 import fastify, { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import cors from '@fastify/cors';
+import { RUNTIME_MODE, type RuntimeMode } from '../di/symbols';
+import { HandshakeRequest, HandshakeResponse } from '@2ly/common';
+import os from 'os';
+import { getHostIP } from '../utils';
+
+interface SessionIdentity {
+  workspaceId: string;
+  toolsetId: string;
+  toolsetName: string;
+}
+
+interface AuthHeaders {
+  masterKey?: string;
+  toolsetKey?: string;
+  toolsetName?: string;
+}
 
 @injectable()
 export class McpServerService extends Service {
@@ -44,8 +60,9 @@ export class McpServerService extends Service {
   private tools = new BehaviorSubject<dgraphResolversTypes.McpTool[] | null>(null);
   private subscriptions: { unsubscribe: () => void; drain: () => Promise<void>; isClosed?: () => boolean }[] = [];
   private fastifyInstance: FastifyInstance | undefined;
-  private streamTransports: Map<string, StreamableHTTPServerTransport> = new Map();
-  private sseTransports: Map<string, SSEServerTransport> = new Map();
+  private streamTransports: Map<string, { transport: StreamableHTTPServerTransport; identity: SessionIdentity }> =
+    new Map();
+  private sseTransports: Map<string, { transport: SSEServerTransport; identity: SessionIdentity }> = new Map();
   private onInitializeMCPServerCallbacks: (() => void)[] = [];
   private rxSubscriptions: Subscription[] = [];
 
@@ -54,6 +71,7 @@ export class McpServerService extends Service {
     @inject(NatsService) private natsService: NatsService,
     @inject(HealthService) private healthService: HealthService,
     @inject(AuthService) private authService: AuthService,
+    @inject(RUNTIME_MODE) private runtimeMode: RuntimeMode,
   ) {
     super();
     this.logger = this.loggerService.getLogger(this.name);
@@ -81,8 +99,21 @@ export class McpServerService extends Service {
     const identity = this.authService.getIdentity();
     const remotePort = process.env.REMOTE_PORT;
 
-    // Determine transport type based on environment variables
-    const transport = identity?.name ? 'stdio' : remotePort ? 'stream' : null;
+    let transport: 'stdio' | 'stream' | null = null;
+
+    if (this.runtimeMode === 'MCP_STDIO') {
+      transport = 'stdio';
+    } else if (this.runtimeMode === 'EDGE_MCP_STREAM' || this.runtimeMode === 'STANDALONE_MCP_STREAM') {
+      if (!remotePort) {
+        this.logger.warn(`REMOTE_PORT is not set for edge MCP stream mode, Remote MCP server will not start`);
+        return;
+      }
+      transport = 'stream';
+    } else {
+      throw new Error(`Invalid runtime mode: ${this.runtimeMode}`);
+    }
+
+    
 
     if (!transport) {
       throw new Error('Cannot start MCP server: neither TOOL_SET nor REMOTE_PORT is set');
@@ -134,7 +165,7 @@ export class McpServerService extends Service {
     await this.fastifyInstance.register(cors, {
       origin: '*',
       exposedHeaders: ['mcp-session-id'],
-      allowedHeaders: ['Content-Type', 'mcp-session-id'],
+      allowedHeaders: ['Content-Type', 'mcp-session-id', 'master_key', 'toolset_key', 'toolset_name'],
     });
 
     // Handle all MCP requests on a single endpoint
@@ -144,17 +175,38 @@ export class McpServerService extends Service {
       try {
         const sessionId = request.headers['mcp-session-id'] as string | undefined;
         let transport: StreamableHTTPServerTransport;
+        let identity: SessionIdentity;
 
         if (sessionId && this.streamTransports.has(sessionId)) {
-          // Reuse existing transport
-          transport = this.streamTransports.get(sessionId)!;
+          // Reuse existing transport and identity
+          const session = this.streamTransports.get(sessionId)!;
+          transport = session.transport;
+          identity = session.identity;
+          this.logger.debug(`Reusing session ${sessionId} for toolset: ${identity.toolsetName}`);
         } else if (!sessionId && isInitializeRequest(request.body as unknown)) {
-          // New initialization request
+          // New initialization request - authenticate first
+          try {
+            const authHeaders = this.extractAuthHeaders(request);
+            this.validateAuthHeaders(authHeaders);
+            identity = await this.authenticateViaHandshake(authHeaders);
+            this.logger.info(`Authenticated new MCP connection for toolset: ${identity.toolsetName}`);
+          } catch (authError) {
+            this.logger.error(`Authentication failed: ${authError}`);
+            return reply.send({
+              jsonrpc: '2.0',
+              error: {
+                code: -32000,
+                message: `Authentication failed: ${authError instanceof Error ? authError.message : String(authError)}`,
+              },
+              id: null,
+            });
+          }
+
           transport = new StreamableHTTPServerTransport({
             sessionIdGenerator: () => randomUUID(),
             onsessioninitialized: (sessionId) => {
               this.logger.debug(`Session initialized: ${sessionId}`);
-              this.streamTransports.set(sessionId, transport);
+              this.streamTransports.set(sessionId, { transport, identity });
             },
           });
 
@@ -170,7 +222,7 @@ export class McpServerService extends Service {
           await this.server!.connect(transport);
         } else {
           // Invalid request
-          return reply.status(400).send({
+          return reply.send({
             jsonrpc: '2.0',
             error: {
               code: -32000,
@@ -184,7 +236,7 @@ export class McpServerService extends Service {
         await transport.handleRequest(request.raw, reply.raw, request.body as unknown);
       } catch (error) {
         this.logger.error(`Error handling MCP request: ${error}`);
-        return reply.status(500).send({
+        return reply.send({
           jsonrpc: '2.0',
           error: {
             code: -32603,
@@ -199,8 +251,27 @@ export class McpServerService extends Service {
     this.fastifyInstance.get('/sse', async (request: FastifyRequest, reply: FastifyReply) => {
       this.logger.debug('Received GET request to /sse');
       try {
+        // Authenticate before creating transport
+        let identity: SessionIdentity;
+        try {
+          const authHeaders = this.extractAuthHeaders(request);
+          this.validateAuthHeaders(authHeaders);
+          identity = await this.authenticateViaHandshake(authHeaders);
+          this.logger.info(`Authenticated new SSE connection for toolset: ${identity.toolsetName}`);
+        } catch (authError) {
+          this.logger.error(`Authentication failed: ${authError}`);
+          return reply.status(401).send({
+            jsonrpc: '2.0',
+            error: {
+              code: -32000,
+              message: `Authentication failed: ${authError instanceof Error ? authError.message : String(authError)}`,
+            },
+            id: null,
+          });
+        }
+
         const transport = new SSEServerTransport('/messages', reply.raw);
-        this.sseTransports.set(transport.sessionId, transport);
+        this.sseTransports.set(transport.sessionId, { transport, identity });
 
         reply.raw.on('close', () => {
           this.logger.debug(`SSE session closed: ${transport.sessionId}`);
@@ -225,9 +296,9 @@ export class McpServerService extends Service {
           return reply.status(400).send('Missing sessionId');
         }
 
-        const transport = this.sseTransports.get(sessionId);
-        if (transport) {
-          await transport.handlePostMessage(request.raw, reply.raw, request.body as unknown);
+        const session = this.sseTransports.get(sessionId);
+        if (session) {
+          await session.transport.handlePostMessage(request.raw, reply.raw, request.body as unknown);
           return;
         }
 
@@ -250,22 +321,32 @@ export class McpServerService extends Service {
     }
   }
 
+  private getRequestIdentity(sessionId: string): SessionIdentity | undefined {
+    if (this.streamTransports.has(sessionId)) {
+      return this.streamTransports.get(sessionId)!.identity;
+    } else if (this.sseTransports.has(sessionId)) {
+      return this.sseTransports.get(sessionId)!.identity;
+    }
+    return undefined;
+  }
+
   private async setServerHandlers() {
     if (!this.server) {
       throw new Error('Server not initialized');
     }
 
-    this.server.setRequestHandler(InitializeRequestSchema, async (request) => {
+    this.server.setRequestHandler(InitializeRequestSchema, async (request, extra) => {
       this.logger.info('Initialize handler');
       this.onInitializeMCPServerCallbacks.forEach((callback) => callback());
       this.logger.debug(
         `Initializing client: ${JSON.stringify(request.params.clientInfo)}, protocol version: ${request.params.protocolVersion}`,
       );
-      const identity = this.authService.getIdentity();
+      const identity = this.getRequestIdentity(extra.sessionId!);
 
-      if (!identity || !identity.name) {
+      if (!identity || !identity.toolsetName) {
         throw new Error('Cannot start MCP server: identity not found or incomplete');
       }
+
       this.clientInfo = {
         name: request.params.clientInfo.name,
         version: request.params.clientInfo.version,
@@ -279,7 +360,7 @@ export class McpServerService extends Service {
       }
       const response = {
         serverInfo: {
-          name: identity.name,
+          name: identity.toolsetName,
           version: '1.0.0',
         },
         protocolVersion: '2024-11-05',
@@ -385,16 +466,16 @@ export class McpServerService extends Service {
 
   private async stopServer() {
     // Close all stream transports
-    for (const [sessionId, transport] of this.streamTransports) {
+    for (const [sessionId, session] of this.streamTransports) {
       this.logger.debug(`Closing stream transport for session: ${sessionId}`);
-      await transport.close();
+      await session.transport.close();
     }
     this.streamTransports.clear();
 
     // Close all SSE transports
-    for (const [sessionId, transport] of this.sseTransports) {
+    for (const [sessionId, session] of this.sseTransports) {
       this.logger.debug(`Closing SSE transport for session: ${sessionId}`);
-      await transport.close();
+      await session.transport.close();
     }
     this.sseTransports.clear();
 
@@ -423,6 +504,81 @@ export class McpServerService extends Service {
     if (this.fastifyInstance) {
       await this.fastifyInstance.close();
     }
+  }
+
+  private extractAuthHeaders(request: FastifyRequest): AuthHeaders {
+    const headers = request.headers;
+    return {
+      masterKey: typeof headers['master_key'] === 'string' ? headers['master_key'] : undefined,
+      toolsetKey: typeof headers['toolset_key'] === 'string' ? headers['toolset_key'] : undefined,
+      toolsetName: typeof headers['toolset_name'] === 'string' ? headers['toolset_name'] : undefined,
+    };
+  }
+
+  private validateAuthHeaders(headers: AuthHeaders): void {
+    const { masterKey, toolsetKey, toolsetName } = headers;
+
+    // Rule 1: MASTER_KEY and TOOLSET_KEY are mutually exclusive
+    if (masterKey && toolsetKey) {
+      throw new Error('MASTER_KEY and TOOLSET_KEY are mutually exclusive');
+    }
+
+    // Rule 2: At least one key must be provided
+    if (!masterKey && !toolsetKey) {
+      throw new Error('Either MASTER_KEY or TOOLSET_KEY is required');
+    }
+
+    // Rule 3: MASTER_KEY requires TOOLSET_NAME
+    if (masterKey && !toolsetName) {
+      throw new Error('MASTER_KEY requires TOOLSET_NAME');
+    }
+
+    // Rule 4: TOOLSET_KEY must not have TOOLSET_NAME
+    if (toolsetKey && toolsetName) {
+      throw new Error('TOOLSET_KEY must not be used with TOOLSET_NAME');
+    }
+  }
+
+  private async authenticateViaHandshake(headers: AuthHeaders): Promise<SessionIdentity> {
+    const { masterKey, toolsetKey, toolsetName } = headers;
+    const key = masterKey || toolsetKey!;
+
+    this.logger.debug(`Authenticating via handshake with key type: ${masterKey ? 'MASTER_KEY' : 'TOOLSET_KEY'}`);
+
+    // Create handshake request
+    const handshakeRequest = HandshakeRequest.create({
+      key,
+      nature: 'toolset',
+      name: toolsetName,
+      pid: process.pid.toString(),
+      hostIP: getHostIP(),
+      hostname: os.hostname(),
+    }) as HandshakeRequest;
+
+    // Send handshake request to backend via NATS
+    const response = await this.natsService.request(handshakeRequest, { timeout: 5000 });
+
+    if (response instanceof ErrorResponse) {
+      this.logger.error(`Handshake failed: ${response.data.error}`);
+      throw new Error(`Authentication failed: ${response.data.error}`);
+    }
+
+    if (!(response instanceof HandshakeResponse)) {
+      this.logger.error(`Invalid handshake response: ${JSON.stringify(response)}`);
+      throw new Error('Authentication failed: invalid response from backend');
+    }
+
+    if (response.data.nature !== 'toolset') {
+      throw new Error(`Authentication failed: expected toolset nature, got ${response.data.nature}`);
+    }
+
+    this.logger.info(`Successfully authenticated toolset: ${response.data.name} (${response.data.id})`);
+
+    return {
+      workspaceId: response.data.workspaceId,
+      toolsetId: response.data.id,
+      toolsetName: response.data.name,
+    };
   }
 
   private async subscribeToCapabilities() {
