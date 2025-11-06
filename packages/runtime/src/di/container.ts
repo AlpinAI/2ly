@@ -81,7 +81,7 @@ function validateAndDetectMode(): RuntimeMode {
     return 'STANDALONE_MCP_STREAM';
   } else {
     throw new Error(
-      'Invalid configuration: At least one of TOOL_SET, RUNTIME_NAME, or REMOTE_PORT must be set. ' +
+      'Invalid configuration: At least one of TOOLSET_NAME, TOOLSET_KEY, RUNTIME_NAME, RUNTIME_KEY, or REMOTE_PORT must be set. ' +
         'See documentation for valid operational modes.',
     );
   }

@@ -9,10 +9,13 @@ describe('Runtime Container - Environment Variable Validation', () => {
     // Save original environment
     originalEnv = { ...process.env };
     // Clear all runtime-related env vars
-    delete process.env.TOOL_SET;
+    delete process.env.TOOLSET_NAME;
+    delete process.env.TOOLSET_KEY;
     delete process.env.RUNTIME_NAME;
+    delete process.env.RUNTIME_KEY;
     delete process.env.REMOTE_PORT;
     delete process.env.WORKSPACE_ID;
+    delete process.env.MASTER_KEY;
   });
 
   afterEach(() => {
@@ -22,9 +25,9 @@ describe('Runtime Container - Environment Variable Validation', () => {
     container.unbindAll();
   });
 
-  describe('Mode 1: MCP stdio (TOOL_SET only)', () => {
-    it('should configure MCP stdio mode when only TOOL_SET is set', () => {
-      process.env.TOOL_SET = 'filesystem';
+  describe('Mode 1: MCP stdio (TOOLSET_NAME only)', () => {
+    it('should configure MCP stdio mode when only TOOLSET_NAME is set', () => {
+      process.env.TOOLSET_NAME = 'filesystem';
       process.env.WORKSPACE_ID = 'test-workspace';
 
       start();
@@ -34,34 +37,23 @@ describe('Runtime Container - Environment Variable Validation', () => {
       expect(mode).toBe('MCP_STDIO');
     });
 
-    it('should throw error when TOOL_SET is combined with RUNTIME_NAME', () => {
-      process.env.TOOL_SET = 'filesystem';
-      process.env.RUNTIME_NAME = 'edge-runtime';
-      process.env.WORKSPACE_ID = 'test-workspace';
-
-      expect(() => start()).toThrow(
-        'Invalid configuration: TOOL_SET is mutually exclusive with RUNTIME_NAME and REMOTE_PORT',
-      );
-    });
-
-    it('should throw error when TOOL_SET is combined with REMOTE_PORT', () => {
-      process.env.TOOL_SET = 'filesystem';
+    it('should throw error when TOOLSET_NAME is combined with REMOTE_PORT', () => {
+      process.env.TOOLSET_NAME = 'filesystem';
       process.env.REMOTE_PORT = '3000';
       process.env.WORKSPACE_ID = 'test-workspace';
 
       expect(() => start()).toThrow(
-        'Invalid configuration: TOOL_SET is mutually exclusive with RUNTIME_NAME and REMOTE_PORT',
+        'Invalid configuration: REMOTE_PORT is mutually exclusive with TOOLSET_NAME and TOOLSET_KEY',
       );
     });
 
-    it('should throw error when TOOL_SET is combined with both RUNTIME_NAME and REMOTE_PORT', () => {
-      process.env.TOOL_SET = 'filesystem';
-      process.env.RUNTIME_NAME = 'edge-runtime';
+    it('should throw error when TOOLSET_KEY is combined with REMOTE_PORT', () => {
+      process.env.TOOLSET_KEY = 'test-key-123';
       process.env.REMOTE_PORT = '3000';
       process.env.WORKSPACE_ID = 'test-workspace';
 
       expect(() => start()).toThrow(
-        'Invalid configuration: TOOL_SET is mutually exclusive with RUNTIME_NAME and REMOTE_PORT',
+        'Invalid configuration: REMOTE_PORT is mutually exclusive with TOOLSET_NAME and TOOLSET_KEY',
       );
     });
   });
@@ -111,14 +103,14 @@ describe('Runtime Container - Environment Variable Validation', () => {
       process.env.WORKSPACE_ID = 'test-workspace';
 
       expect(() => start()).toThrow(
-        'Invalid configuration: At least one of TOOL_SET, RUNTIME_NAME, or REMOTE_PORT must be set',
+        'Invalid configuration: At least one of TOOLSET_NAME, TOOLSET_KEY, RUNTIME_NAME, RUNTIME_KEY, or REMOTE_PORT must be set',
       );
     });
   });
 
   describe('Runtime name auto-generation', () => {
-    it('should auto-generate runtime name as "mcp:<TOOL_SET>" in MCP stdio mode', () => {
-      process.env.TOOL_SET = 'my-toolset';
+    it('should auto-generate runtime name as "mcp:<TOOLSET_NAME>" in MCP stdio mode', () => {
+      process.env.TOOLSET_NAME = 'my-toolset';
       process.env.WORKSPACE_ID = 'test-workspace';
 
       start();

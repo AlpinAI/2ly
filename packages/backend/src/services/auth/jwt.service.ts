@@ -50,6 +50,13 @@ export class JwtService {
       );
     }
 
+    // Validate that paths are absolute for security
+    if (!privateKeyPath.startsWith('/') || !publicKeyPath.startsWith('/')) {
+      throw new Error(
+        'JWT service initialization failed: JWT key paths must be absolute paths for security (start with /)'
+      );
+    }
+
     // Load RSA keys
     try {
       this.privateKey = readFileSync(privateKeyPath, 'utf8');
