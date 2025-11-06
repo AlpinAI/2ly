@@ -15,8 +15,9 @@ import { AuthService } from './auth.service';
 import { HealthService } from './runtime.health.service';
 import { ToolServerService, type ToolServerServiceFactory } from './tool.server.service';
 import { CallToolResult } from '@modelcontextprotocol/sdk/types.js';
-import { McpServerService } from './mcp.server.service';
+import { McpStdioService } from './mcp.stdio.service';
 import { Subscription } from 'rxjs';
+import { optional } from 'inversify';
 
 @injectable()
 export class ToolClientService extends Service {
@@ -34,7 +35,7 @@ export class ToolClientService extends Service {
     @inject(AuthService) private authService: AuthService,
     @inject(HealthService) private healthService: HealthService,
     @inject(ToolServerService) private toolServerServiceFactory: ToolServerServiceFactory,
-    @inject(McpServerService) private mcpServerService: McpServerService,
+    @inject(McpStdioService) @optional() private mcpStdioService: McpStdioService | undefined,
   ) {
     super();
     this.logger = this.loggerService.getLogger(this.name);
@@ -46,20 +47,24 @@ export class ToolClientService extends Service {
     await this.natsService.waitForStarted();
     await this.healthService.waitForStarted();
     this.startObserveMCPServers();
-    this.rxSubscriptions.push(
-      this.mcpServerService?.observeClientRoots().subscribe(async (value) => {
-        this.logger.debug(`Agent server client roots changed: ${JSON.stringify(value)}`);
-        const roots = this.getRoots();
-        for (const mcpServer of this.mcpServers.values()) {
-          this.logger.debug(`Updating ${mcpServer.getName()} roots: ${JSON.stringify(roots)}`);
-          mcpServer.updateRoots(roots);
-        }
-      }),
-    );
+
+    // Only subscribe to client roots if mcpStdioService is available
+    if (this.mcpStdioService) {
+      this.rxSubscriptions.push(
+        this.mcpStdioService.observeClientRoots().subscribe(async (value) => {
+          this.logger.debug(`Agent server client roots changed: ${JSON.stringify(value)}`);
+          const roots = this.getRoots();
+          for (const mcpServer of this.mcpServers.values()) {
+            this.logger.debug(`Updating ${mcpServer.getName()} roots: ${JSON.stringify(roots)}`);
+            mcpServer.updateRoots(roots);
+          }
+        }),
+      );
+    }
   }
 
   private getRoots() {
-    return this.mcpServerService?.getClientRoots().length ? this.mcpServerService.getClientRoots() : this.roots;
+    return this.mcpStdioService?.getClientRoots().length ? this.mcpStdioService.getClientRoots() : this.roots;
   }
 
   protected async shutdown() {

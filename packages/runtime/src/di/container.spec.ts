@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { start, container } from './container';
-import { RUNTIME_MODE, RUNTIME_TYPE } from './symbols';
+import { RUNTIME_MODE } from './symbols';
 
 describe('Runtime Container - Environment Variable Validation', () => {
   let originalEnv: NodeJS.ProcessEnv;
@@ -30,10 +30,8 @@ describe('Runtime Container - Environment Variable Validation', () => {
       start();
 
       const mode = container.get(RUNTIME_MODE);
-      const type = container.get(RUNTIME_TYPE);
 
       expect(mode).toBe('MCP_STDIO');
-      expect(type).toBe('MCP');
     });
 
     it('should throw error when TOOL_SET is combined with RUNTIME_NAME', () => {
@@ -76,10 +74,8 @@ describe('Runtime Container - Environment Variable Validation', () => {
       start();
 
       const mode = container.get(RUNTIME_MODE);
-      const type = container.get(RUNTIME_TYPE);
 
       expect(mode).toBe('EDGE');
-      expect(type).toBe('EDGE');
     });
   });
 
@@ -92,10 +88,8 @@ describe('Runtime Container - Environment Variable Validation', () => {
       start();
 
       const mode = container.get(RUNTIME_MODE);
-      const type = container.get(RUNTIME_TYPE);
 
       expect(mode).toBe('EDGE_MCP_STREAM');
-      expect(type).toBe('EDGE');
     });
   });
 
@@ -107,10 +101,8 @@ describe('Runtime Container - Environment Variable Validation', () => {
       start();
 
       const mode = container.get(RUNTIME_MODE);
-      const type = container.get(RUNTIME_TYPE);
 
       expect(mode).toBe('STANDALONE_MCP_STREAM');
-      expect(type).toBe('MCP');
     });
   });
 

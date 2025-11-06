@@ -184,12 +184,12 @@ export class NatsService extends Service {
     return keysArray;
   }
 
-  kill(id: string) {
+  async kill(id: string) {
     if (!this.heartbeatKV) {
       throw new Error('Heartbeat KV not initialized');
     }
     try {
-      this.heartbeatKV.delete(id);
+      await this.heartbeatKV.delete(id);
     } catch (error) {
       this.logger.warn(`Failed to delete the hearbeatKV for ${id}: ${error}`)
     }

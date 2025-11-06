@@ -10,7 +10,7 @@ import { WorkspaceRepository, SystemRepository } from '../repositories';
 import { MCPServerAutoConfigService } from './mcp-auto-config.service';
 import { MonitoringService } from './monitoring.service';
 import packageJson from '../../package.json';
-import { ToolSetService } from './tool-set.service';
+import { ToolSetService } from './toolset.service';
 import { IdentityService } from './identity.service';
 
 export const DROP_ALL_DATA = 'dropAllData';

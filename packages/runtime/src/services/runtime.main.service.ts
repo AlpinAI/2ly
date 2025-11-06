@@ -7,7 +7,8 @@ import {
   Service,
 } from '@2ly/common';
 import { HealthService } from './runtime.health.service';
-import { McpServerService } from './mcp.server.service';
+import { McpStdioService } from './mcp.stdio.service';
+import { McpRemoteService } from './mcp.remote.service';
 import { ToolService } from './tool.service';
 import { AuthService } from './auth.service';
 import { RUNTIME_MODE, type RuntimeMode } from '../di/symbols';
@@ -25,7 +26,8 @@ export class MainService extends Service {
     @inject(AuthService) private authService: AuthService,
     @inject(HealthService) private healthService: HealthService,
     @inject(RUNTIME_MODE) private runtimeMode: RuntimeMode,
-    @inject(McpServerService) @optional() private mcpServerService: McpServerService | undefined,
+    @inject(McpStdioService) @optional() private mcpStdioService: McpStdioService | undefined,
+    @inject(McpRemoteService) @optional() private mcpRemoteService: McpRemoteService | undefined,
     @inject(ToolService) @optional() private toolService: ToolService | undefined,
   ) {
     super();
@@ -84,14 +86,15 @@ export class MainService extends Service {
         await this.startService(this.toolService);
       }
 
-      // Start MCP server service if present (Mode 1, 3, 4)
-      if (this.mcpServerService) {
-        this.logger.info(`Starting MCP server service in ${this.runtimeMode} mode`);
-        await this.startService(this.mcpServerService);
+      // Start MCP services based on mode
+      if (this.mcpStdioService) {
+        this.logger.info(`Starting MCP stdio service in ${this.runtimeMode} mode`);
+        await this.startService(this.mcpStdioService);
+      }
 
-        this.mcpServerService.onInitializeMCPServer(async () => {
-          this.logger.debug('MCP server initialized');
-        });
+      if (this.mcpRemoteService) {
+        this.logger.info(`Starting MCP remote service in ${this.runtimeMode} mode`);
+        await this.startService(this.mcpRemoteService);
       }
     } catch (error) {
       this.logger.error(`Failed to start services: ${error}`);
@@ -102,8 +105,11 @@ export class MainService extends Service {
 
   private async down() {
     await this.unsubscribeFromMessages();
-    if (this.mcpServerService) {
-      await this.stopService(this.mcpServerService);
+    if (this.mcpStdioService) {
+      await this.stopService(this.mcpStdioService);
+    }
+    if (this.mcpRemoteService) {
+      await this.stopService(this.mcpRemoteService);
     }
     if (this.toolService) {
       await this.stopService(this.toolService);

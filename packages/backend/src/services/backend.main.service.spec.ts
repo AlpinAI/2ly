@@ -139,7 +139,7 @@ function createService(dropAllData: boolean = false) {
     dgraphService as unknown as import('./dgraph.service').DGraphService,
     apolloService as unknown as import('./apollo.service').ApolloService,
     runtimeService as unknown as import('./runtime.service').RuntimeService,
-    toolSetService as unknown as import('./tool-set.service').ToolSetService,
+    toolSetService as unknown as import('./toolset.service').ToolSetService,
     fastifyService as unknown as import('./fastify.service').FastifyService,
     mcpServerAutoConfigService as unknown as import('./mcp-auto-config.service').MCPServerAutoConfigService,
     systemRepository as unknown as import('../repositories').SystemRepository,

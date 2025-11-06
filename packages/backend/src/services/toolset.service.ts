@@ -20,7 +20,7 @@ export const DROP_ALL_DATA = 'dropAllData';
 
 @injectable()
 export class ToolSetService extends Service {
-  name = 'tool-set';
+  name = 'toolset';
   private logger: pino.Logger;
   private rxjsSubscriptions: Subscription[] = [];
   private natsSubscriptions: { unsubscribe: () => void; drain: () => Promise<void>; isClosed?: () => boolean }[] = [];
@@ -92,8 +92,6 @@ export class ToolSetService extends Service {
       .pipe(
         debounceTime(100), // Avoid spamming NATS
         tap((toolSets) => {
-          this.logger.debug(`Publishing ${toolSets.length} toolsets to ephemeral storage`);
-
           // Publish one message per toolset with toolset name as the key
           toolSets.forEach((toolSet) => {
             this.publishToolSetTools(toolSet);

@@ -15,7 +15,7 @@ import {
 import { DGraphService, DGRAPH_URL } from '../services/dgraph.service';
 import { ApolloService } from '../services/apollo.service';
 import { RuntimeService } from '../services/runtime.service';
-import { ToolSetService } from '../services/tool-set.service';
+import { ToolSetService } from '../services/toolset.service';
 import { FastifyService } from '../services/fastify.service';
 import { MainService, DROP_ALL_DATA } from '../services/backend.main.service';
 import { RuntimeInstance, RuntimeInstanceFactory, RuntimeInstanceMetadata } from '../services/runtime.instance';
@@ -127,6 +127,7 @@ const start = () => {
   loggerService.setLogLevel('runtime', (process.env.RUNTIME_LOG_LEVEL || 'info') as pino.Level);
   loggerService.setLogLevel('mcp-auto-config', (process.env.MCP_AUTO_CONFIG_LOG_LEVEL || 'info') as pino.Level);
   loggerService.setLogLevel('identity', (process.env.IDENTITY_LOG_LEVEL || 'info') as pino.Level);
+  loggerService.setLogLevel('toolset', (process.env.TOOLSET_LOG_LEVEL || 'info') as pino.Level);
   
   // Init Runtime Instance Factory
   container.bind<RuntimeInstanceFactory>(RuntimeInstance).toFactory((context) => {

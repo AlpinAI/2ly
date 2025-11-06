@@ -53,6 +53,6 @@ export class HealthService extends Service {
     if (!identity) {
       return;
     }
-    this.natsService.kill(identity.id!);
+    await this.natsService.kill(identity.id!);
   }
 }

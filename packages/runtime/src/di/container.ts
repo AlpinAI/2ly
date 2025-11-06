@@ -20,7 +20,8 @@ import { HealthService, HEARTBEAT_INTERVAL } from '../services/runtime.health.se
 import { ToolClientService } from '../services/tool.client.service';
 import { ToolServerService, type ToolServerServiceFactory } from '../services/tool.server.service';
 import { ToolService } from '../services/tool.service';
-import { McpServerService } from '../services/mcp.server.service';
+import { McpStdioService } from '../services/mcp.stdio.service';
+import { McpRemoteService } from '../services/mcp.remote.service';
 import { type RuntimeMode, RUNTIME_MODE } from './symbols';
 import pino from 'pino';
 import { v4 as uuidv4 } from 'uuid';
@@ -96,11 +97,19 @@ const start = () => {
   // Init auth service
   container.bind(AuthService).toSelf().inSingletonScope();
 
-  // Conditionally bind MCP server service (Mode 1, 3, 4)
-  if (mode === 'MCP_STDIO' || mode === 'EDGE_MCP_STREAM' || mode === 'STANDALONE_MCP_STREAM') {
-    container.bind(McpServerService).toSelf().inSingletonScope();
+  // Conditionally bind MCP services based on mode
+  if (mode === 'MCP_STDIO') {
+    // Stdio mode: bind McpStdioService
+    container.bind(McpStdioService).toSelf().inSingletonScope();
+    container.bind<McpRemoteService | undefined>(McpRemoteService).toConstantValue(undefined);
+  } else if (mode === 'EDGE_MCP_STREAM' || mode === 'STANDALONE_MCP_STREAM') {
+    // Remote mode: bind McpRemoteService
+    container.bind(McpRemoteService).toSelf().inSingletonScope();
+    container.bind<McpStdioService | undefined>(McpStdioService).toConstantValue(undefined);
   } else {
-    container.bind<McpServerService | undefined>(McpServerService).toConstantValue(undefined);
+    // EDGE mode: no MCP services
+    container.bind<McpStdioService | undefined>(McpStdioService).toConstantValue(undefined);
+    container.bind<McpRemoteService | undefined>(McpRemoteService).toConstantValue(undefined);
   }
 
   // Conditionally bind Tool service (Mode 1, 2, 3)
@@ -149,9 +158,11 @@ const start = () => {
   loggerService.setLogLevel('health', (process.env.LOG_LEVEL_HEALTH || 'info') as pino.Level);
   loggerService.setLogLevel('nats', (process.env.NATS_LOG_LEVEL || 'info') as pino.Level);
   loggerService.setLogLevel('mcp-server', (process.env.LOG_LEVEL_MCP_SERVER || 'info') as pino.Level);
+  loggerService.setLogLevel('mcp-stdio', (process.env.LOG_LEVEL_MCP_STDIO || 'info') as pino.Level);
+  loggerService.setLogLevel('mcp-remote', (process.env.LOG_LEVEL_MCP_REMOTE || 'info') as pino.Level);
   loggerService.setLogLevel('tool', (process.env.LOG_LEVEL_TOOL || 'info') as pino.Level);
   loggerService.setLogLevel('tool.client', (process.env.LOG_LEVEL_TOOL_CLIENT || 'info') as pino.Level);
-  
+  loggerService.setLogLevel('toolset', (process.env.LOG_LEVEL_TOOLSET || 'info') as pino.Level);
 
   // Init MCP server service factory
   container.bind<ToolServerServiceFactory>(ToolServerService).toFactory((context) => {
