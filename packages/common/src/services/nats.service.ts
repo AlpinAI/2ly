@@ -1,13 +1,12 @@
 import { NatsConnection, Msg, ConnectionOptions, RequestOptions } from '@nats-io/nats-core';
 import { connect } from '@nats-io/transport-node';
-import { jetstream, jetstreamManager, JetStreamClient, JetStreamManager } from "@nats-io/jetstream";
+import { JetStreamClient } from "@nats-io/jetstream";
 import { Kvm, KV } from "@nats-io/kv";
 import { injectable, inject } from 'inversify';
 import { LoggerService } from './logger.service';
 import pino from 'pino';
 import { Service } from './service.interface';
 import { NatsMessage, NatsPublish, NatsRequest, NatsResponse } from './nats.message';
-import { callToolStream, replyStream } from '../messages';
 import { DEFAULT_REQUEST_TIMEOUT } from '../constants';
 
 export const NATS_CONNECTION_OPTIONS = 'nats.connectionOptions';
@@ -22,11 +21,9 @@ export class NatsService extends Service {
   private nats: NatsConnection | null = null;
   private logger: pino.Logger;
   private jetstream: JetStreamClient | null = null;
-  private jetstreamManager: JetStreamManager | null = null;
   private kvManager: Kvm | null = null;
   private heartbeatKV: KV | null = null;
   private ephemeralKV: KV | null = null;
-  private jetstreamPendingRequests = new Map<string, { resolve: (value: NatsResponse) => void, reject: (reason: string) => void, timeout: NodeJS.Timeout }>();
   constructor(
     @inject(LoggerService) private loggerService: LoggerService,
     @inject(NATS_CONNECTION_OPTIONS) private readonly natsConnectionOptions: Partial<ConnectionOptions>,
@@ -41,13 +38,6 @@ export class NatsService extends Service {
     if (!this.natsConnectionOptions.name) {
       throw new Error('Name is required for NATS connection');
     }
-
-    // Fake usage to avoid TS6133 error - temporarily
-    // eslint-disable-next-line @typescript-eslint/no-unused-expressions
-    this.jetstreamPendingRequests;
-    // Fake usage to avoid TS6133 error - temporarily
-    // eslint-disable-next-line @typescript-eslint/no-unused-expressions
-    this.createStreams;
   }
 
   // Connects to NATS and initializes JetStream clients
@@ -61,8 +51,6 @@ export class NatsService extends Service {
         maxReconnectAttempts: -1,
         reconnectTimeWait: 1000,
       });
-      this.jetstreamManager = await jetstreamManager(this.nats);
-      this.jetstream = jetstream(this.nats);
       this.kvManager = new Kvm(this.nats);
       this.heartbeatKV = await this.kvManager.create('heartbeat', {
         ttl: this.heartbeatTTL,
@@ -70,8 +58,6 @@ export class NatsService extends Service {
       this.ephemeralKV = await this.kvManager.create('ephemeral', {
         ttl: this.ephemeralTTL,
       });
-      // Streams are not used yet
-      // await this.createStreams();
     } catch (error) {
       this.logger.error(`Error connecting to NATS: ${error}`);
       throw error as Error;
@@ -178,7 +164,8 @@ export class NatsService extends Service {
     if (!this.heartbeatKV) {
       throw new Error('Heartbeat KV not initialized');
     }
-    metadata.timestamp = Date.now().toString();
+    metadata.i = id;
+    metadata.t = Date.now().toString();
     this.heartbeatKV.put(id, JSON.stringify(metadata));
   }
 
@@ -352,15 +339,4 @@ export class NatsService extends Service {
       throw error;
     }
   }
-
-  private async createStreams() {
-    if (!this.jetstreamManager) {
-      throw new Error('JetstreamManager not initialized');
-    }
-    this.logger.debug(`Creating stream: ${callToolStream.getName()} - ${callToolStream.getSubjects().join(', ')}`);
-    await callToolStream.init(this.jetstream!, this.jetstreamManager!);
-    this.logger.debug(`Creating stream: ${replyStream.getName()} - ${replyStream.getSubjects().join(', ')}`);
-    await replyStream.init(this.jetstream!, this.jetstreamManager!);
-  }
-
 }

@@ -5,7 +5,7 @@ const type = 'ack';
 /**
  * Generic Acknoledge Message to send back to a request
  */
-export class AckMessage extends NatsResponse<{ metadata?: Record<string, unknown> }> {
+export class AckResponse extends NatsResponse<{ metadata?: Record<string, unknown> }> {
   static type = type;
   type = type;
   validate(data: { metadata?: Record<string, string> }): boolean {
@@ -13,4 +13,4 @@ export class AckMessage extends NatsResponse<{ metadata?: Record<string, unknown
   }
 }
 
-NatsMessage.register(AckMessage);
+NatsMessage.register(AckResponse);

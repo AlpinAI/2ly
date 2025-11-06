@@ -11,6 +11,7 @@ import { MCPServerAutoConfigService } from './mcp-auto-config.service';
 import { MonitoringService } from './monitoring.service';
 import packageJson from '../../package.json';
 import { ToolSetService } from './tool-set.service';
+import { IdentityService } from './identity.service';
 
 export const DROP_ALL_DATA = 'dropAllData';
 
@@ -33,6 +34,7 @@ export class MainService extends Service {
     @inject(SystemRepository) private systemRepository: SystemRepository,
     @inject(WorkspaceRepository) private workspaceRepository: WorkspaceRepository,
     @inject(MonitoringService) private monitoringService: MonitoringService,
+    @inject(IdentityService) private identityService: IdentityService,
   ) {
     super();
     this.logger = this.loggerService.getLogger(this.name);
@@ -42,6 +44,7 @@ export class MainService extends Service {
     this.logger.info(`Starting backend, version: ${packageJson.version}`);
     await this.startService(this.dgraphService);
     await this.dgraphService.initSchema(this.dropAllData);
+    await this.startService(this.identityService);
     await this.startService(this.runtimeService);
     await this.startService(this.toolSetService);
     this.registerHealthCheck();
@@ -55,6 +58,7 @@ export class MainService extends Service {
 
   protected async shutdown() {
     this.logger.info('Stopping');
+    await this.stopService(this.identityService);
     await this.stopService(this.runtimeService);
     await this.stopService(this.apolloService);
     await this.stopService(this.mcpServerAutoConfigService);
@@ -78,11 +82,12 @@ export class MainService extends Service {
       this.logger.info(`✅ Loaded system: ${system.instanceId}`);
     }
     const defaultWorkspace = system?.defaultWorkspace;
+    const defaultMasterKey = process.env.MASTER_KEY;
     this.logger.info(`Default workspace: ${defaultWorkspace?.name ?? 'not found'}`);
     if (!defaultWorkspace) {
       // create a default workspace
       this.logger.info('Creating default workspace');
-      const newDefaultWorkspace = await this.workspaceRepository.create('Default', system.admins![0].id);
+      const newDefaultWorkspace = await this.workspaceRepository.create('Default', system.admins![0].id, { masterKey: defaultMasterKey });
       await this.systemRepository.setDefaultWorkspace(newDefaultWorkspace.id);
       this.logger.info('Created default workspace');
     }

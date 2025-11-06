@@ -25,22 +25,22 @@ export class HealthService extends Service {
 
   protected async initialize() {
     const identity = this.authService.getIdentity();
-    if (!identity.RID) {
-      throw new Error('RID not set');
+    if (!identity) {
+      throw new Error('Identity not set');
     }
     if (!this.natsService.isConnected()) {
       throw new Error('NATS not connected');
     }
     this.logger.info('Starting');
-    this.natsService.heartbeat(identity.RID, {});
+    this.natsService.heartbeat(identity.id!, {});
     this.heartbeatIntervalRef = setInterval(async () => {
-      const RID = this.authService.getIdentity()?.RID;
-      if (!RID) {
+      if (!this.authService.getIdentity()) {
         // ignore
         return;
       }
-      this.natsService.heartbeat(RID, {});
+      this.natsService.heartbeat(identity.id!, {});
     }, this.heartbeatInterval);
+    this.logger.info(`Heartbeat started for ${identity.nature} ${identity.id}`);
   }
 
   protected async shutdown() {
@@ -48,9 +48,11 @@ export class HealthService extends Service {
     if (this.heartbeatIntervalRef) {
       clearInterval(this.heartbeatIntervalRef);
     }
-    const RID = this.authService.getIdentity()?.RID;
-    if (RID) {
-      this.natsService.kill(RID);
+    const identity = this.authService.getIdentity();
+    this.logger.info(`Heartbeat stopped for ${identity?.nature ?? 'unknown nature'} ${identity?.id ?? 'unknown id'}`);
+    if (!identity) {
+      return;
     }
+    this.natsService.kill(identity.id!);
   }
 }

@@ -1,11 +1,6 @@
 export interface RootIdentity {
+  nature: 'runtime' | 'toolset';
   id: string | null;
-  RID: string | null;
-  processId: string;
+  name: string | null;
   workspaceId: string;
-  name: string;
-  version: string;
-  hostIP: string;
-  hostname: string;
-  metadata: Record<string, unknown>;
 }

@@ -46,6 +46,34 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - With user permission, you CAN kill any process on port 3000 before launching your backend process
 - Only start services if the user explicitly requests it
 
+### Local Development with Key Sharing
+
+The project supports running backend/runtime locally (outside Docker) while sharing cryptographic keys with Docker services.
+
+**Setup (first time):**
+1. `npm run start:dev` - Starts Docker services and generates keys
+
+That's it! Keys are automatically available at `.docker-keys/` on your host via bind mount.
+
+**Daily workflow:**
+```bash
+npm run start:dev         # Start infrastructure (NATS, Dgraph) in Docker
+npm run dev:backend       # Run backend locally with hot reload
+npm run dev:frontend      # Run frontend locally with hot reload
+npm run build -w @2ly/runtime && npm run dev:main-runtime  # Run runtime locally without hot reload
+```
+
+**Key features:**
+- Automatic key sharing via bind mount
+- Keys available immediately at `.docker-keys/` on host
+- Backend/runtime load keys automatically from defaults
+
+**Key locations:**
+- Docker volume: `2ly-data:/data/keys/`
+- Host (bind mount): `.docker-keys/` (automatically created)
+- Local backend: Uses `.docker-keys/private.pem` and `.docker-keys/public.pem` by default
+- Local runtime: Loads `MASTER_KEY` from `.docker-keys/.env.generated` by default
+
 ## Monorepo Architecture
 
 ### Package Structure

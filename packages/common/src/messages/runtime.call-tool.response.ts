@@ -3,7 +3,7 @@ import { NatsMessage, NatsResponse } from '../services/nats.message';
 
 const type = 'agent-call-response';
 
-export class AgentCallResponseMessage extends NatsResponse<{
+export class RuntimeCallToolResponse extends NatsResponse<{
   result: CallToolResult;
   executedById: string;
 }> {
@@ -14,4 +14,4 @@ export class AgentCallResponseMessage extends NatsResponse<{
   }
 }
 
-NatsMessage.register(AgentCallResponseMessage);
+NatsMessage.register(RuntimeCallToolResponse);

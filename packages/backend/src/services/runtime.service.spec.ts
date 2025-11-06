@@ -4,9 +4,9 @@ import { RuntimeService } from './runtime.service';
 import { ControllableAsyncIterator } from '../../../common/src/test/utils';
 import { NatsServiceMock } from '@2ly/common/test/vitest';
 import {
-    UpdateMcpToolsMessage,
-    RuntimeConnectMessage,
-    NatsErrorMessage,
+    RuntimeDiscoveredToolsPublish,
+    HandshakeRequest,
+    ErrorResponse,
     type dgraphResolversTypes,
     NatsMessage,
 } from '@2ly/common';
@@ -121,7 +121,7 @@ describe('RuntimeService', () => {
             system: { getDefaultWorkspace: vi.fn(async () => ({ id: 'ws1' })) },
         });
         await service.start('test');
-        const msg = new RuntimeConnectMessage({ name: 'node', pid: 'p', hostIP: 'ip', hostname: 'host', workspaceId: 'DEFAULT', type: 'EDGE' });
+        const msg = new HandshakeRequest({ name: 'node', pid: 'p', hostIP: 'ip', hostname: 'host', workspaceId: 'DEFAULT', type: 'EDGE' });
         iterator.push(msg);
         // allow message loop
         await new Promise((r) => setTimeout(r, 10));
@@ -135,14 +135,12 @@ describe('RuntimeService', () => {
             workspace: { findById: vi.fn(async () => ({ id: 'wsX' })) },
         });
         await service.start('test');
-        const msg = new RuntimeConnectMessage({ name: 'new-node', pid: 'p', hostIP: 'ip', hostname: 'host', workspaceId: 'wsX', type: 'MCP' });
+        const msg = new HandshakeRequest({ name: 'new-node', pid: 'p', hostIP: 'ip', hostname: 'host', workspaceId: 'wsX', type: 'MCP' });
         iterator.push(msg);
         await new Promise((r) => setTimeout(r, 10));
         expect(runtimeRepo.create).toHaveBeenCalled();
         await service.stop('test');
     });
-
-    it('no longer handles RuntimeHealthyMessage or disconnect messages');
 
     it('handles UpdateMcpToolsMessage by disconnecting removed and upserting new', async () => {
         const { service, iterator } = createService({
@@ -152,7 +150,7 @@ describe('RuntimeService', () => {
         const disconnectToolSpy = vi.spyOn(service, 'disconnectTool');
         const upsertToolSpy = vi.spyOn(service, 'upsertTool');
         await service.start('test');
-        const msg = new UpdateMcpToolsMessage({ mcpServerId: 'm1', tools: [{ name: 'new', description: '', inputSchema: { type: 'object' as const }, annotations: {} }] });
+        const msg = new RuntimeDiscoveredToolsPublish({ mcpServerId: 'm1', tools: [{ name: 'new', description: '', inputSchema: { type: 'object' as const }, annotations: {} }] });
         iterator.push(msg);
         await new Promise((r) => setTimeout(r, 10));
         expect(disconnectToolSpy).toHaveBeenCalledWith('t1');
@@ -165,7 +163,7 @@ describe('RuntimeService', () => {
     it('logs error messages and ignores unknown', async () => {
         const { service, iterator } = createService();
         await service.start('test');
-        iterator.push(new NatsErrorMessage({ error: 'boom' }));
+        iterator.push(new ErrorResponse({ error: 'boom' }));
         // Unknown message: push a NatsMessage-like object with shouldRespond()
         iterator.push({ type: 'unknown', data: {}, shouldRespond: () => false } as unknown as NatsMessage);
         await new Promise((r) => setTimeout(r, 10));

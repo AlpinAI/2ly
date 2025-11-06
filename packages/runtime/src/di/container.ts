@@ -19,18 +19,18 @@ import {
 import { HealthService, HEARTBEAT_INTERVAL } from '../services/runtime.health.service';
 import { ToolClientService } from '../services/tool.client.service';
 import { ToolServerService, type ToolServerServiceFactory } from '../services/tool.server.service';
-import { ROOTS, ToolService, GLOBAL_RUNTIME } from '../services/tool.service';
+import { ToolService } from '../services/tool.service';
 import { McpServerService } from '../services/mcp.server.service';
-import { RUNTIME_MODE, RUNTIME_TYPE, type RuntimeMode, type RuntimeType } from './symbols';
+import { type RuntimeMode, RUNTIME_MODE } from './symbols';
 import pino from 'pino';
+import { v4 as uuidv4 } from 'uuid';
 
 const container = new Container();
 
 /**
  * Validates environment variables and determines the runtime operational mode
  */
-function validateAndDetectMode(): { mode: RuntimeMode; runtimeType: RuntimeType; runtimeName: string } {
-  const toolSet = process.env.TOOL_SET;
+function validateAndDetectMode(): RuntimeMode {
   const remotePort = process.env.REMOTE_PORT;
 
   const masterKey = process.env.MASTER_KEY;
@@ -39,9 +39,11 @@ function validateAndDetectMode(): { mode: RuntimeMode; runtimeType: RuntimeType;
   const toolsetKey = process.env.TOOLSET_KEY;
   const runtimeKey = process.env.RUNTIME_KEY;
 
-  // Validate mutually exclusive keys
-  if (masterKey && (toolsetKey || runtimeKey)) {
-    throw new Error('Invalid configuration: MASTER_KEY is mutually exclusive with TOOLSET_KEY and RUNTIME_KEY');
+  // Keys are mutually exclusive
+  const keyVariables = [masterKey, toolsetKey, runtimeKey];
+  const keyVariablesSetCount = keyVariables.filter((key) => !!key).length;
+  if (keyVariablesSetCount > 1) {
+    throw new Error('Invalid configuration: Only one of MASTER_KEY, TOOLSET_KEY, or RUNTIME_KEY can be set');
   }
 
   // Validate name with master key
@@ -49,52 +51,34 @@ function validateAndDetectMode(): { mode: RuntimeMode; runtimeType: RuntimeType;
     if (!toolsetName && !runtimeName) {
       throw new Error('Invalid configuration: MASTER_KEY requires TOOLSET_NAME or RUNTIME_NAME');
     }
+    if (toolsetName && toolsetKey) {
+      throw new Error('Invalid configuration: TOOLSET_NAME and TOOLSET_KEY are mutually exclusive');
+    }
   }
 
   // Validate no name with toolset/runtime keys
-  if ((toolsetName || runtimeName) && (masterKey || runtimeKey)) {
-    throw new Error('Invalid configuration: TOOLSET_NAME or RUNTIME_NAME is mutually exclusive with TOOLSET_KEY and RUNTIME_KEY');
+  if ((toolsetName && toolsetKey) || (runtimeName && runtimeKey)) {
+    throw new Error('Invalid configuration: TOOLSET_NAME and RUNTIME_NAME are mutually exclusive with TOOLSET_KEY and RUNTIME_KEY');
   }
 
   // Validate mutually exclusive environment variables
-  if (toolSet && (runtimeName || remotePort)) {
+  if (remotePort && (toolsetName || toolsetKey)) {
     throw new Error(
-      'Invalid configuration: TOOL_SET is mutually exclusive with RUNTIME_NAME and REMOTE_PORT. ' +
-        'Please use only TOOL_SET for MCP stdio mode, or RUNTIME_NAME/REMOTE_PORT for edge modes.',
+      'Invalid configuration: REMOTE_PORT is mutually exclusive with TOOLSET_NAME and TOOLSET_KEY. ' +
+        'Please use only REMOTE_PORT for edge runtimes',
     );
   }
 
-
-
   // Determine mode and runtime type based on environment variables
-  if (toolSet) {
-    // Mode 1: MCP stdio (TOOL_SET only)
-    return {
-      mode: 'MCP_STDIO',
-      runtimeType: 'MCP',
-      runtimeName: `mcp:${toolSet}`,
-    };
-  } else if (runtimeName && remotePort) {
-    // Mode 3: Edge + MCP stream (RUNTIME_NAME + REMOTE_PORT)
-    return {
-      mode: 'EDGE_MCP_STREAM',
-      runtimeType: 'EDGE',
-      runtimeName,
-    };
-  } else if (runtimeName) {
-    // Mode 2: Edge (RUNTIME_NAME only)
-    return {
-      mode: 'EDGE',
-      runtimeType: 'EDGE',
-      runtimeName,
-    };
+  if (toolsetName || toolsetKey) {
+    return 'MCP_STDIO';
+  } else if (runtimeName || runtimeKey) {
+    if (remotePort) {
+      return 'EDGE_MCP_STREAM';
+    }
+    return 'EDGE';
   } else if (remotePort) {
-    // Mode 4: Standalone MCP stream (REMOTE_PORT only)
-    return {
-      mode: 'STANDALONE_MCP_STREAM',
-      runtimeType: 'MCP',
-      runtimeName: 'standalone-mcp',
-    };
+    return 'STANDALONE_MCP_STREAM';
   } else {
     throw new Error(
       'Invalid configuration: At least one of TOOL_SET, RUNTIME_NAME, or REMOTE_PORT must be set. ' +
@@ -105,11 +89,10 @@ function validateAndDetectMode(): { mode: RuntimeMode; runtimeType: RuntimeType;
 
 const start = () => {
   // Validate environment variables and detect operational mode
-  const { mode, runtimeType, runtimeName } = validateAndDetectMode();
+  const mode = validateAndDetectMode();
 
   // Bind mode and type for other services to use
   container.bind(RUNTIME_MODE).toConstantValue(mode);
-  container.bind(RUNTIME_TYPE).toConstantValue(runtimeType);
 
   // Init auth service
   container.bind(AuthService).toSelf().inSingletonScope();
@@ -129,8 +112,9 @@ const start = () => {
   }
 
   // Init nats service
+  const runtimeId = 'runtime:' + uuidv4();
   const natsServers = process.env.NATS_SERVERS || 'localhost:4222';
-  const natsName = process.env.NATS_NAME || 'runtime:' + runtimeName;
+  const natsName = process.env.NATS_NAME || runtimeId;
   container.bind(NATS_CONNECTION_OPTIONS).toConstantValue({
     servers: natsServers,
     name: natsName,
@@ -143,8 +127,6 @@ const start = () => {
   container.bind(NatsService).toSelf().inSingletonScope();
 
   // Init tool client service
-  container.bind(ROOTS).toConstantValue(process.env.ROOTS || undefined);
-  container.bind(GLOBAL_RUNTIME).toConstantValue(process.env.GLOBAL_RUNTIME === 'true');
   container.bind(ToolClientService).toSelf().inSingletonScope();
 
   // Init health service
@@ -156,7 +138,7 @@ const start = () => {
 
   // Init logger service
   const defaultLevel = 'info';
-  container.bind(MAIN_LOGGER_NAME).toConstantValue(`${runtimeName}`);
+  container.bind(MAIN_LOGGER_NAME).toConstantValue(runtimeId);
   container.bind(FORWARD_STDERR).toConstantValue(process.env.FORWARD_STDERR === 'false' ? false : true);
   container.bind(LOG_LEVEL).toConstantValue(process.env.LOG_LEVEL || defaultLevel);
   container.bind(LoggerService).toSelf().inSingletonScope();
@@ -164,11 +146,13 @@ const start = () => {
   // Set child log levels
   const loggerService = container.get(LoggerService);
   loggerService.setLogLevel('main', (process.env.LOG_LEVEL_MAIN || 'info') as pino.Level);
+  loggerService.setLogLevel('auth', (process.env.LOG_LEVEL_AUTH || 'info') as pino.Level);
+  loggerService.setLogLevel('health', (process.env.LOG_LEVEL_HEALTH || 'info') as pino.Level);
   loggerService.setLogLevel('nats', (process.env.NATS_LOG_LEVEL || 'info') as pino.Level);
   loggerService.setLogLevel('mcp-server', (process.env.LOG_LEVEL_MCP_SERVER || 'info') as pino.Level);
   loggerService.setLogLevel('tool', (process.env.LOG_LEVEL_TOOL || 'info') as pino.Level);
   loggerService.setLogLevel('tool.client', (process.env.LOG_LEVEL_TOOL_CLIENT || 'info') as pino.Level);
-  loggerService.setLogLevel('health', (process.env.LOG_LEVEL_HEALTH || 'info') as pino.Level);
+  
 
   // Init MCP server service factory
   container.bind<ToolServerServiceFactory>(ToolServerService).toFactory((context) => {

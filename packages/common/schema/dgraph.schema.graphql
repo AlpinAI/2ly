@@ -214,19 +214,13 @@ type ToolCall {
   executedBy: Runtime @hasInverse(field: toolResponses)
 }
 
-enum TokenType {
-  MASTER_KEY
-  TOOLSET_KEY
-  RUNTIME_KEY
-}
-
-type Token @withSubscription {
+type IdentityKey @withSubscription {
   id: ID!
+  # Workspace Key       WSK_____
+  # Runtime Key         RTK_____
+  # Toolset Key         TSK_____
   key: String! @search(by: [hash])
-  type: TokenType! @search
-  workspaceId: String! @search(by: [hash])
-  toolsetId: String @search(by: [hash])
-  runtimeId: String @search(by: [hash])
+  relatedId: String!
   createdAt: DateTime!
   expiresAt: DateTime @search
   revokedAt: DateTime @search

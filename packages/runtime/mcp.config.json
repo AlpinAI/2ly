@@ -7,7 +7,7 @@
       ],
       "env": {
         "NATS_SERVERS": "nats://localhost:4222",
-        "TOOL_SET": "2ly-inspector",
+        "TOOLSET_NAME": "Test Toolset",
         "ROOTS": "tmp:/tmp"
       }
     },

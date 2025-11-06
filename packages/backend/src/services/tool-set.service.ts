@@ -1,13 +1,10 @@
 import { inject, injectable } from 'inversify';
 import {
   LoggerService,
-  NatsErrorMessage,
   NatsService,
   Service,
-  AckMessage,
-  NatsRequest,
-  AgentCapabilitiesMessage,
-  RequestToolSetCapabilitiesMessage,
+  ToolsetListToolsPublish,
+  dgraphResolversTypes,
 } from '@2ly/common';
 import { DGraphService } from './dgraph.service';
 import pino from 'pino';
@@ -17,6 +14,7 @@ import { tap, debounceTime } from 'rxjs/operators';
 import {
   ToolSetRepository,
 } from '../repositories';
+import { IdentityService } from './identity.service';
 
 export const DROP_ALL_DATA = 'dropAllData';
 
@@ -29,6 +27,7 @@ export class ToolSetService extends Service {
 
   constructor(
     @inject(LoggerService) private loggerService: LoggerService,
+    @inject(IdentityService) private identityService: IdentityService,
     @inject(DGraphService) private dgraphService: DGraphService,
     @inject(NatsService) private natsService: NatsService,
     @inject(ToolSetRepository) private toolSetRepository: ToolSetRepository,
@@ -42,7 +41,9 @@ export class ToolSetService extends Service {
     await this.startService(this.dgraphService);
     await this.startService(this.natsService);
     await this.subscribeToToolSet();
-    await this.subscribeToToolSetRequests();
+    this.identityService.onHandshake('toolset', (identity) => {
+      this.handleToolSetHandshake(identity);
+    });
   }
 
   protected async shutdown() {
@@ -69,6 +70,16 @@ export class ToolSetService extends Service {
     await this.stopService(this.dgraphService);
   }
 
+  private async handleToolSetHandshake(identity: { instance: dgraphResolversTypes.ToolSet; pid: string; hostIP: string; hostname: string; }) {
+    this.logger.debug(`Toolset ${identity.instance.id} connected`);
+    try {
+      this.publishToolSetTools(identity.instance);
+    } catch (error) {
+      this.logger.error(`Error handling toolset handshake: ${error}`);
+    }
+    
+  }
+
   /**
    * Subscribe to all the tool sets of the database and keep the NATS KV up-to-date.
    * TODO: this pattern is not resilient for high volume but is designed to test the tool-set concept quickly.
@@ -85,12 +96,7 @@ export class ToolSetService extends Service {
 
           // Publish one message per toolset with toolset name as the key
           toolSets.forEach((toolSet) => {
-            const message = AgentCapabilitiesMessage.create({
-              name: toolSet.name,
-              capabilities: toolSet.mcpTools ?? [],
-            }) as AgentCapabilitiesMessage;
-
-            this.natsService.publishEphemeral(message);
+            this.publishToolSetTools(toolSet);
           });
         }),
       )
@@ -100,68 +106,13 @@ export class ToolSetService extends Service {
     this.rxjsSubscriptions.push(subscription);
   }
 
-  /**
-   * Subscribe to toolset capability requests from runtimes.
-   * When a runtime doesn't find capabilities in ephemeral storage, it sends a request.
-   * This handler fetches the toolset and publishes ONE AgentCapabilitiesMessage for it.
-   */
-  private async subscribeToToolSetRequests() {
-    this.logger.info('Subscribing to toolset capability requests');
-    const subscription = this.natsService.subscribe(RequestToolSetCapabilitiesMessage.subscribe());
-    this.natsSubscriptions.push(subscription);
-
-    // Start the message processing loop in the background without blocking
-    this.processToolSetRequests(subscription as AsyncIterable<NatsRequest>).catch((error) => {
-      this.logger.error(`Error in toolset request processing loop: ${error}`);
-    });
-  }
-
-  /**
-   * Process incoming toolset capability requests in a loop.
-   * This runs in the background and doesn't block initialization.
-   */
-  private async processToolSetRequests(subscription: AsyncIterable<NatsRequest>) {
-    for await (const msg of subscription) {
-      try {
-        if (msg instanceof RequestToolSetCapabilitiesMessage) {
-          await this.handleToolSetCapabilitiesRequest(msg);
-        }
-      } catch (error) {
-        this.logger.error(`Error handling toolset capability request: ${error}`);
-        if (msg instanceof NatsRequest && msg.shouldRespond() && error instanceof Error) {
-          const response = new NatsErrorMessage({ error: error.message });
-          msg.respond(response);
-        }
-      }
-    }
-  }
-
-  /**
-   * Handle a request for toolset capabilities.
-   * Fetches the toolset by name and publishes ONE AgentCapabilitiesMessage.
-   */
-  private async handleToolSetCapabilitiesRequest(msg: RequestToolSetCapabilitiesMessage) {
-    const { toolSetName } = msg.data;
-    this.logger.info(`Received request for toolset capabilities: ${toolSetName}`);
-
-    const toolSet = await this.toolSetRepository.findByName(toolSetName);
-    if (!toolSet) {
-      const errorMsg = `ToolSet not found: ${toolSetName}`;
-      this.logger.error(errorMsg);
-      msg.respond(new NatsErrorMessage({ error: errorMsg }));
-      return;
-    }
-
-    // Publish capabilities to ephemeral storage
-    const message = AgentCapabilitiesMessage.create({
-      name: toolSet.name,
-      capabilities: toolSet.mcpTools ?? [],
-    }) as AgentCapabilitiesMessage;
-
-    await this.natsService.publishEphemeral(message);
-    this.logger.info(`Published capabilities for toolset ${toolSetName}: ${toolSet.mcpTools?.length ?? 0} tools`);
-
-    // Respond with acknowledgment
-    msg.respond(new AckMessage({ metadata: { toolSetName } }));
+  private publishToolSetTools(toolSet: dgraphResolversTypes.ToolSet) {
+    this.logger.debug(`Publishing ${toolSet.mcpTools?.length ?? 0} tools for toolset ${toolSet.id}`);
+    const message = ToolsetListToolsPublish.create({
+      workspaceId: toolSet.workspace.id,
+      toolsetId: toolSet.id,
+      mcpTools: toolSet.mcpTools ?? [],
+    }) as ToolsetListToolsPublish;
+    this.natsService.publishEphemeral(message);
   }
 }

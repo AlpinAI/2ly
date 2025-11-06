@@ -1,5 +1,17 @@
 name: 2ly
 services:
+  # Initialize cryptographic keys on first run
+  init-keys:
+    build:
+      context: ./scripts/init-keys
+      dockerfile: Dockerfile
+    container_name: 2ly-init-keys
+    volumes:
+      - ./.docker-keys:/data/keys:rw  # Bind mount keys directory to host
+    restart: "no"
+    profiles:
+      - init
+
   # NATS with JetStream for persistence
   nats:
     image: nats:2.10-alpine
@@ -7,9 +19,10 @@ services:
     ports:
       - '4222:4222' # Client connections
       - '8222:8222' # HTTP monitoring
-    command: [ '--jetstream', '--store_dir=/data', '--http_port=8222', '--server_name=2ly-nats-01' ]
+    command: [ '--jetstream', '--store_dir=/data/nats', '--http_port=8222', '--server_name=2ly-nats-01' ]
     volumes:
-      - nats_data:/data
+      - 2ly-data:/data:rw
+      - ./.docker-keys:/keys:ro  # Bind mount for operator.jwt access (future JWT auth)
     networks:
       - 2ly-network
     restart: unless-stopped
@@ -43,9 +56,9 @@ services:
     ports:
       - '5080:5080' # internal gRPC
       - '6080:6080' # HTTP
-    command: dgraph zero --my=dgraph-zero:5080
+    command: dgraph zero --my=dgraph-zero:5080 --wal=/data/dgraph/zero-wal
     volumes:
-      - dgraph_zero:/dgraph
+      - 2ly-data:/data:rw
     networks:
       - 2ly-network
     restart: unless-stopped
@@ -64,9 +77,9 @@ services:
       - '7080:7080' # internal gRPC
       - '8080:8080' # HTTP/GraphQL
       - '9080:9080' # external gRPC private
-    command: dgraph alpha --my=dgraph-alpha:7080 --zero=dgraph-zero:5080 --security whitelist=172.20.0.0/8,127.0.0.1/32,192.168.0.0/16
+    command: dgraph alpha --my=dgraph-alpha:7080 --zero=dgraph-zero:5080 --security whitelist=172.20.0.0/8,127.0.0.1/32,192.168.0.0/16 --postings=/data/dgraph/postings --wal=/data/dgraph/wal
     volumes:
-      - dgraph_data:/dgraph
+      - 2ly-data:/data:rw
     depends_on:
       dgraph-zero:
         condition: service_healthy
@@ -90,11 +103,15 @@ services:
       - DGRAPH_URL=dgraph-alpha:8080
       - NATS_SERVERS=nats:4222
       - EXPOSED_NATS_SERVERS=localhost:4222
-      - ENCRYPTION_KEY=zR6xG6E9#h@dNquSM&DYwM#trbmn%nzR
+      - JWT_PRIVATE_KEY_PATH=/keys/private.pem
+      - JWT_PUBLIC_KEY_PATH=/keys/public.pem
+    env_file:
+      - ./.docker-keys/.env.generated
     ports:
       - 3000:3000
     volumes:
-      - backend_logs:/app/logs
+      - 2ly-data:/data:ro
+      - ./.docker-keys:/keys:ro  # Bind mount keys to /keys (simpler mount path)
     depends_on:
       nats:
         condition: service_started
@@ -116,15 +133,17 @@ services:
     environment:
       - NATS_SERVERS=nats:4222
       - RUNTIME_NAME=Main Runtime
-      - GLOBAL_RUNTIME=true
-      - DEFAULT_TESTING_RUNTIME=true
       - ROOTS=TEMP:/tmp
-      - AGENT_SERVER_TRANSPORT=stream
-      - AGENT_SERVER_TRANSPORT_PORT=3001
+      - JWT_PRIVATE_KEY_PATH=/keys/private.pem
+      - JWT_PUBLIC_KEY_PATH=/keys/public.pem
+    env_file:
+      # MASTER_KEY will be injected by the .env.generated file
+      - ./.docker-keys/.env.generated
     ports:
       - 3001:3001
     volumes:
-      - main-runtime_logs:/app/logs
+      - 2ly-data:/data:ro
+      - ./.docker-keys:/keys:ro  # Bind mount keys to /keys (simpler mount path)
     depends_on:
       nats:
         condition: service_started
@@ -155,15 +174,7 @@ services:
     restart: unless-stopped
 
 volumes:
-  nats_data:
-    driver: local
-  dgraph_data:
-    driver: local
-  dgraph_zero:
-    driver: local
-  backend_logs:
-    driver: local
-  main-runtime_logs:
+  2ly-data:
     driver: local
 
 networks:

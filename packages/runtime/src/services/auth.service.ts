@@ -1,19 +1,10 @@
 import { inject, injectable } from 'inversify';
 import { getHostIP } from '../utils';
 import os from 'os';
-import { LoggerService, NatsService, RootIdentity, Service } from '@2ly/common';
+import { LoggerService, NatsService, RootIdentity, Service, HandshakeRequest, HandshakeResponse, ErrorResponse } from '@2ly/common';
 import { v4 as uuidv4 } from 'uuid';
 import pino from 'pino';
-
-/**
- * Credentials for authentication and authorization
- */
-export interface RuntimeCredentials {
-  accessToken?: string;
-  natsJwt?: string;
-  toolsetId: string | null;
-  runtimeId: string | null;
-}
+import fs from 'fs';
 
 /**
  * AuthService manages both runtime identity and authentication credentials.
@@ -36,21 +27,8 @@ export interface RuntimeCredentials {
 export class AuthService extends Service {
   name = 'auth';
 
-  protected workspaceId!: string;
-
   // Identity properties
-  protected toolsetId: string | null = null;
-  protected runtimeId: string | null = null;
-  
-
-  // Auth token properties (in-memory only, for long-lived process)
-  protected masterKey?: string;
-  protected toolsetKey?: string;
-  protected toolsetName?: string;
-  protected runtimeKey?: string;
-  protected runtimeName?: string;
-  protected accessToken?: string;
-  protected natsJwt?: string;
+  protected identity: RootIdentity | null = null;
 
   private logger: pino.Logger;
 
@@ -60,138 +38,96 @@ export class AuthService extends Service {
   ) {
     super();
     this.logger = this.loggerService.getLogger(this.name);
-    this.parseEnvironmentVariables();
-  }
-
-  /**
-   * Parse and validate environment variables for authentication
-   * Validates that at least one authentication method is provided
-   */
-  private parseEnvironmentVariables() {
-    const masterKey = process.env.MASTER_KEY;
-    const toolsetName = process.env.TOOLSET_NAME;
-    const toolsetKey = process.env.TOOLSET_KEY;
-
-    // Store credentials if present
-    if (masterKey) {
-      this.masterKey = masterKey;
-      this.toolsetName = toolsetName; // May be undefined, that's OK
-    }
-
-    if (toolsetKey) {
-      this.toolsetKey = toolsetKey;
-    }
-
-    // Validate that at least one auth method is provided (when not in standalone mode)
-    // Note: In standalone MCP stream mode, no auth is required
-    const isStandaloneMcpStream = !process.env.TOOL_SET && !process.env.RUNTIME_NAME && process.env.REMOTE_PORT;
-
-    if (!isStandaloneMcpStream && !this.masterKey && !this.toolsetKey) {
-      this.logger.warn('No authentication credentials found in environment variables (MASTER_KEY or TOOLSET_KEY)');
-    }
   }
 
   protected async initialize() {
     this.logger.info('Starting');
     await this.startService(this.natsService);
+    try {
+      await this.handshake();
+    } catch (error) {
+      this.logger.error(`Failed to handshake: ${error}`);
+      this.stopService(this.natsService);
+      throw error;
+    }
   }
 
   protected async shutdown() {
     this.logger.info('Stopping');
     await this.stopService(this.natsService);
+    this.logger.info('Stopped');
   }
 
-  // Identity methods (migrated from IdentityService)
-
-  getToolsetId() {
-    return this.toolsetId;
-  }
-
-  getRuntimeId() {
-    return this.runtimeId;
-  }
-
-  getIdentity(): RootIdentity {
-    this.startedAt = this.startedAt ?? new Date().toISOString();
-    return {
-      id: this.runtimeId,
-      RID: this.runtimeId,
-      processId: process.pid.toString() ?? uuidv4(),
-      workspaceId: this.workspaceId,
-      name: this.runtimeName || this.toolsetName || 'DEFAULT',
-      // TODO: get version from package.json
-      version: '1.0.0',
+  private prepareHandshakeRequest(): HandshakeRequest {
+    // The DI already validates the mutually exclusive keys
+    const key = process.env.MASTER_KEY || process.env.TOOLSET_KEY || process.env.RUNTIME_KEY;
+    if (!key) {
+      throw new Error('No key found in environment variables');
+    }
+    const nature = process.env.RUNTIME_NAME ? 'runtime' : process.env.TOOLSET_NAME ? 'toolset' : undefined;
+    const roots = this.prepareRoots();
+    const handshake = new HandshakeRequest({
+      key,
+      nature,
+      name: process.env.RUNTIME_NAME || process.env.TOOLSET_NAME || undefined,
+      pid: process.pid.toString() ?? uuidv4(),
       hostIP: getHostIP(),
       hostname: os.hostname(),
-      metadata: {
-        platform: os.platform(),
-        arch: os.arch(),
-        node_version: process.version,
-      },
-    };
+      roots,
+    });
+    return handshake;
   }
 
-  // Auth methods (new functionality)
-
-  /**
-   * Set authentication credentials
-   * Used after successful authentication/handshake
-   */
-  setCredentials(credentials: Partial<RuntimeCredentials>) {
-    if (credentials.accessToken !== undefined) {
-      this.accessToken = credentials.accessToken;
+  private prepareRoots(): { name: string; uri: string }[] | undefined {
+    const envRoots = process.env.ROOTS;
+    if (!envRoots) {
+      return undefined;
     }
-    if (credentials.natsJwt !== undefined) {
-      this.natsJwt = credentials.natsJwt;
+    this.logger.info(`Preparing roots from environment variable: ${envRoots}`);
+    // validate each root
+    for (const root of envRoots.split(',')) {
+      if (!root.includes(':')) {
+        throw new Error(`Invalid root: ${root} (should be in the format name:path)`);
+      }
+      const [name, uri] = root.split(':');
+      // check if file exist
+      if (!fs.existsSync(uri)) {
+        throw new Error(`Invalid root: ${name}:${uri} (file does not exist)`);
+      }
+      // check if file is a directory
+      if (!fs.statSync(uri).isDirectory()) {
+        throw new Error(`Invalid root: ${name}:${uri} (file is not a directory)`);
+      }
     }
-    if (credentials.toolsetId !== undefined) {
-      this.toolsetId = credentials.toolsetId;
+
+    return envRoots.split(',').map((root) => {
+      const [name, uri] = root.split(':');
+      return { name, uri: `file://${uri}` };
+    });
+  }
+
+  private async handshake() {
+    const handshakeRequest = this.prepareHandshakeRequest();
+    this.logger.info(`Sending handshake request: ${JSON.stringify(handshakeRequest.data)}`);
+    const handshakeResponse = await this.natsService.request(handshakeRequest);
+    this.logger.info(`Handshake response received: ${JSON.stringify(handshakeResponse.data)}`);
+    if (handshakeResponse instanceof HandshakeResponse) {
+      this.identity = {
+        nature: handshakeResponse.data.nature,
+        id: handshakeResponse.data.id,
+        name: handshakeResponse.data.name,
+        workspaceId: handshakeResponse.data.workspaceId,
+      };
+    } else if (handshakeResponse instanceof ErrorResponse) {
+      this.logger.error(`Handshake error message: ${handshakeResponse.data.error}`);
+      throw new Error(handshakeResponse.data.error);
+    } else {
+      this.logger.error(`Invalid handshake response received: ${JSON.stringify(handshakeResponse.data)}`);
+      throw new Error('Invalid handshake response received');
     }
-    if (credentials.runtimeId !== undefined) {
-      this.runtimeId = credentials.runtimeId;
-    }
   }
 
-  /**
-   * Get current authentication tokens
-   */
-  getTokens(): RuntimeCredentials {
-    return {
-      accessToken: this.accessToken,
-      natsJwt: this.natsJwt,
-      toolsetId: this.toolsetId,
-      runtimeId: this.runtimeId,
-    };
-  }
-
-  /**
-   * Check if runtime has valid authentication
-   * Returns true if at least one auth method is present
-   */
-  hasValidAuth(): boolean {
-    return !!(this.masterKey || this.toolsetKey || this.accessToken);
-  }
-
-  /**
-   * Get master key (if available)
-   * Only for internal use during authentication
-   */
-  getMasterKey(): string | undefined {
-    return this.masterKey;
-  }
-
-  /**
-   * Get toolset key (if available)
-   * Only for internal use during authentication
-   */
-  getToolsetKey(): string | undefined {
-    return this.toolsetKey;
-  }
-
-  /**
-   * Get toolset name (if provided with master key)
-   */
-  getToolsetName(): string | undefined {
-    return this.toolsetName;
+  getIdentity(): RootIdentity | null {
+    return this.identity ?? null;
   }
 }

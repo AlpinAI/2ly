@@ -29,12 +29,12 @@ import {
   SystemRepository,
   MonitoringRepository,
   ToolSetRepository,
-  TokenRepository,
+  IdentityRepository,
 } from '../repositories';
 import { JwtService, AuthenticationService, AccountSecurityService, PasswordPolicyService } from '../services/auth';
 import { SecurityMiddleware, RateLimitMiddleware, GraphQLAuthMiddleware } from '../middleware';
 import { MCPServerAutoConfigService, AZURE_ENDPOINT, AZURE_API_KEY, BRAVE_SEARCH_API_KEY } from '../services/mcp-auto-config.service';
-import { TokenService } from '../services/token.service';
+import { IdentityService } from '../services/identity.service';
 import pino from 'pino';
 import { MonitoringService } from '../services/monitoring.service';
 
@@ -88,14 +88,14 @@ const start = () => {
   container.bind(SystemRepository).toSelf().inSingletonScope();
   container.bind(MonitoringRepository).toSelf().inSingletonScope();
   container.bind(ToolSetRepository).toSelf().inSingletonScope();
-  container.bind(TokenRepository).toSelf().inSingletonScope();
+  container.bind(IdentityRepository).toSelf().inSingletonScope();
 
   // Init authentication services
   container.bind(JwtService).toSelf().inSingletonScope();
   container.bind(AuthenticationService).toSelf().inSingletonScope();
 
-  // Init token service
-  container.bind(TokenService).toSelf().inSingletonScope();
+  // Init identity service
+  container.bind(IdentityService).toSelf().inSingletonScope();
 
   // Init security services
   container.bind(AccountSecurityService).toSelf().inSingletonScope();
@@ -126,7 +126,8 @@ const start = () => {
   loggerService.setLogLevel('apollo', (process.env.APOLLO_LOG_LEVEL || 'info') as pino.Level);
   loggerService.setLogLevel('runtime', (process.env.RUNTIME_LOG_LEVEL || 'info') as pino.Level);
   loggerService.setLogLevel('mcp-auto-config', (process.env.MCP_AUTO_CONFIG_LOG_LEVEL || 'info') as pino.Level);
-
+  loggerService.setLogLevel('identity', (process.env.IDENTITY_LOG_LEVEL || 'info') as pino.Level);
+  
   // Init Runtime Instance Factory
   container.bind<RuntimeInstanceFactory>(RuntimeInstance).toFactory((context) => {
     return (
@@ -139,7 +140,6 @@ const start = () => {
       const runtimeInstance = new RuntimeInstance(
         logger,
         context.get(NatsService),
-        context.get(WorkspaceRepository),
         context.get(RuntimeRepository),
         instance,
         metadata,

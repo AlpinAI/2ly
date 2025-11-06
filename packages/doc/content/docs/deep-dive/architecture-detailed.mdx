@@ -1,6 +1,6 @@
 ---
-title: "Architecture Overview"
-description: "Distributed AI tool orchestration platform with MCP protocol integration"
+title: 'Architecture Overview'
+description: 'Distributed AI tool orchestration platform with MCP protocol integration'
 draft: true
 ---
 
@@ -28,50 +28,51 @@ graph TB
         Web[React Web App]
         SDK[Python SDK - twoly]
     end
-    
+
     subgraph "Backend Services"
         GraphQL[GraphQL API]
         FastifyAPI[Fastify HTTP Server]
         RuntimeService[Runtime Service]
         DGraphService[Database Service]
     end
-    
+
     subgraph "Message Infrastructure"
         NATS[NATS Core]
         JetStream[JetStream Persistence]
         KVStore[NATS KV Store]
     end
-    
+
     subgraph "Runtime Processes"
         GlobalRuntime[Global Runtime]
         AgentRuntime[Agent Runtime]
         EdgeRuntime[Edge Runtime]
     end
-    
+
     subgraph "MCP Servers"
         FileSystem[Filesystem Server]
         Database[SQLite Server]
         CustomTools[Custom Servers]
     end
-    
+
     Web --> GraphQL
     SDK --> AgentRuntime
-    
+
     GraphQL --> FastifyAPI
     FastifyAPI --> RuntimeService
     RuntimeService --> NATS
     DGraphService --> DGraph[(DGraph Database)]
-    
+
     NATS --> GlobalRuntime
     NATS --> AgentRuntime
     NATS --> EdgeRuntime
-    
+
     GlobalRuntime --> FileSystem
     AgentRuntime --> Database
     EdgeRuntime --> CustomTools
 ```
 
 **Technology Stack**:
+
 - **Fastify**: High-performance HTTP server
 - **Apollo GraphQL**: API layer with real-time subscriptions
 - **TypeScript**: Type-safe development across services
@@ -94,11 +95,11 @@ interface RuntimeInstance {
 // Runtime service orchestration
 class RuntimeService {
   private runtimeInstances = new Map<string, RuntimeInstance>();
-  
+
   async registerRuntime(config: RuntimeConfig): Promise<void> {
     // Runtime registration and heartbeat monitoring
   }
-  
+
   async distributeToolCall(call: ToolCall): Promise<ToolResult> {
     // Route tool calls to appropriate runtime
   }
@@ -106,6 +107,7 @@ class RuntimeService {
 ```
 
 **Runtime Types**:
+
 - **Global Runtime**: Centralized tool execution for shared services
 - **Agent Runtime**: Agent-specific tool execution environments
 - **Edge Runtime**: Distributed execution for latency-sensitive operations
@@ -130,7 +132,7 @@ class RuntimeCommunication {
   async publishToRuntime<T>(subject: string, message: T): Promise<void> {
     await this.natsService.publish(`runtime.${subject}`, message);
   }
-  
+
   subscribeToRuntimeEvents<T>(pattern: string): Observable<T> {
     return this.natsService.subscribe(pattern);
   }
@@ -138,6 +140,7 @@ class RuntimeCommunication {
 ```
 
 **Message Flow Patterns**:
+
 - **Runtime Registration**: Runtimes announce capabilities to backend
 - **Tool Discovery**: Backend publishes available tools to runtimes
 - **Execution Requests**: Agents request tool execution via message routing
@@ -157,7 +160,7 @@ interface DataModel {
     capabilities: Capability[];
     mcpServers: MCPServer[];
   };
-  
+
   MCPServer: {
     id: string;
     name: string;
@@ -165,7 +168,7 @@ interface DataModel {
     configuration: ServerConfig;
     tools: MCPTool[];
   };
-  
+
   Workspace: {
     id: string;
     name: string;
@@ -179,7 +182,7 @@ class RuntimeRepository {
   async getRuntimeById(id: string): Promise<Runtime> {
     return this.dgraphClient.query(GET_RUNTIME_BY_ID, { id });
   }
-  
+
   subscribeToRuntimeUpdates(): Observable<Runtime[]> {
     return this.dgraphClient.subscription(RUNTIME_SUBSCRIPTION);
   }
@@ -187,6 +190,7 @@ class RuntimeRepository {
 ```
 
 **Database Features**:
+
 - **GraphQL Schema**: Native GraphQL query and mutation support
 - **Real-time Subscriptions**: Live updates for runtime status changes
 - **ACID Transactions**: Consistent data operations
@@ -206,7 +210,7 @@ async def create_agent_with_tools():
     async with TwolyMCP("my-agent") as mcp:
         # Runtime automatically assigns agent to appropriate runtime
         tools = await mcp.get_langchain_tools()
-        
+
         # Tools are MCP-compatible and framework-agnostic
         agent = create_agent(llm=your_llm, tools=tools)
         return agent
@@ -217,7 +221,7 @@ async def create_edge_agent():
         runtime_preference="edge",
         tool_filter=["filesystem", "database"]
     )
-    
+
     async with TwolyMCP("edge-agent", config=config) as mcp:
         tools = await mcp.get_langchain_tools()
         return create_agent(llm=your_llm, tools=tools)
@@ -243,31 +247,31 @@ End-to-end tool execution through distributed architecture:
 interface ToolExecutionFlow {
   // 1. Agent discovers available tools
   agentDiscovery: {
-    agent: "my-agent";
-    runtime: "agent-runtime";
+    agent: 'my-agent';
+    runtime: 'agent-runtime';
     tools: MCPTool[];
   };
-  
+
   // 2. Agent invokes tool
   toolInvocation: {
-    toolName: "filesystem_read";
-    parameters: { path: "/data/file.txt" };
+    toolName: 'filesystem_read';
+    parameters: { path: '/data/file.txt' };
     correlationId: string;
   };
-  
+
   // 3. Runtime routes to appropriate MCP server
   runtimeRouting: {
-    targetRuntime: "edge-runtime";
-    mcpServer: "filesystem-server";
+    targetRuntime: 'edge-runtime';
+    mcpServer: 'filesystem-server';
     executionContext: ExecutionContext;
   };
-  
+
   // 4. Result returned through message correlation
   resultDelivery: {
     correlationId: string;
     result: ToolResult;
     executionTime: number;
-    status: "success" | "error";
+    status: 'success' | 'error';
   };
 }
 ```
@@ -282,14 +286,14 @@ class RuntimeLifecycle {
   async onRuntimeConnect(runtime: RuntimeInstance): Promise<void> {
     // Register runtime capabilities
     await this.registerCapabilities(runtime);
-    
+
     // Assign MCP servers based on runOn configuration
     await this.assignMCPServers(runtime);
-    
+
     // Start heartbeat monitoring
     this.startHeartbeatMonitoring(runtime);
   }
-  
+
   async routeToolCall(call: ToolCall): Promise<RuntimeInstance> {
     // Select optimal runtime based on:
     // - Tool requirements
@@ -317,16 +321,15 @@ services:
       - DGRAPH_ENDPOINT=http://dgraph-alpha:8080
       - RUNTIME_SERVICE_DISCOVERY=true
     depends_on: [nats, dgraph]
-  
+
   runtime-global:
     image: 2ly/runtime:latest
     environment:
       - RUNTIME_TYPE=GLOBAL
-      - GLOBAL_RUNTIME=true
       - MCP_SERVER_AUTO_DISCOVERY=true
     volumes:
       - ./mcp-servers:/app/servers
-  
+
   runtime-edge:
     image: 2ly/runtime:latest
     environment:
@@ -335,14 +338,10 @@ services:
       - LATENCY_SENSITIVE_TOOLS=true
     deploy:
       replicas: 3
-  
+
   nats:
     image: nats:jetstream
-    command: [
-      "--jetstream",
-      "--cluster_name", "2ly-cluster",
-      "--store_dir", "/data"
-    ]
+    command: ['--jetstream', '--cluster_name', '2ly-cluster', '--store_dir', '/data']
     volumes:
       - nats-data:/data
 ```
@@ -355,21 +354,21 @@ Flexible runtime deployment patterns:
 // Runtime deployment strategies
 interface RuntimeDeployment {
   global: {
-    purpose: "Centralized tool execution";
-    deployment: "Single instance with high availability";
-    mcpServers: "Shared services and databases";
+    purpose: 'Centralized tool execution';
+    deployment: 'Single instance with high availability';
+    mcpServers: 'Shared services and databases';
   };
-  
+
   agent: {
-    purpose: "Agent-specific tool isolation";
-    deployment: "Per-agent or per-workspace";
-    mcpServers: "Agent-scoped tools and data";
+    purpose: 'Agent-specific tool isolation';
+    deployment: 'Per-agent or per-workspace';
+    mcpServers: 'Agent-scoped tools and data';
   };
-  
+
   edge: {
-    purpose: "Distributed execution";
-    deployment: "Regional or proximity-based";
-    mcpServers: "Latency-sensitive operations";
+    purpose: 'Distributed execution';
+    deployment: 'Regional or proximity-based';
+    mcpServers: 'Latency-sensitive operations';
   };
 }
 ```
@@ -388,12 +387,12 @@ class MCPServerManager {
     const runtime = this.selectRuntime(config.runOn);
     return runtime.deployMCPServer(config);
   }
-  
+
   async discoverCapabilities(server: MCPServerInstance): Promise<Capability[]> {
     // Standard MCP capability discovery
     return server.listCapabilities();
   }
-  
+
   async executeToolCall(call: ToolCall): Promise<ToolResult> {
     // Route through appropriate runtime and MCP server
     const server = this.findServerForTool(call.toolName);
@@ -403,6 +402,7 @@ class MCPServerManager {
 ```
 
 **MCP Benefits**:
+
 - **Standardization**: Industry-standard protocol for AI tool integration
 - **Interoperability**: Compatible with LangChain, LangFlow, and other frameworks
 - **Community Ecosystem**: Access to growing MCP server catalog
@@ -432,17 +432,20 @@ Comprehensive observability across distributed components:
 
 **Architecture Issues**:
 
-*Runtime Connectivity*:
+_Runtime Connectivity_:
+
 - Verify NATS cluster connectivity and authentication
 - Check runtime registration and heartbeat messages
 - Validate MCP server deployment and discovery
 
-*Message Flow Problems*:
+_Message Flow Problems_:
+
 - Trace message correlation IDs through system
 - Monitor NATS JetStream persistence and delivery
 - Check runtime load balancing and tool routing
 
-*Performance Bottlenecks*:
+_Performance Bottlenecks_:
+
 - Analyze runtime distribution and load patterns
 - Profile MCP server execution and response times
 - Optimize message routing and runtime selection
@@ -450,16 +453,19 @@ Comprehensive observability across distributed components:
 ### Best Practices
 
 **System Design**:
+
 - Implement proper runtime isolation and resource limits
 - Use message correlation for distributed tracing
 - Design for eventual consistency in distributed operations
 
 **Deployment**:
+
 - Deploy multiple runtime instances for high availability
 - Use appropriate runtime types (GLOBAL/AGENT/EDGE) for use cases
 - Implement proper monitoring and alerting for production systems
 
 **Development**:
+
 - Follow MCP protocol standards for custom server development
 - Use TypeScript for type safety across distributed services
 - Implement comprehensive error handling and retry logic
@@ -474,6 +480,7 @@ Comprehensive observability across distributed components:
 ## Summary
 
 2LY architecture provides:
+
 - **Distributed Execution**: Scalable runtime orchestration with NATS messaging
 - **MCP Integration**: Standard protocol for AI tool interoperability
 - **Flexible Deployment**: Support for global, agent, and edge runtime patterns

@@ -8,7 +8,6 @@ const SettingsPage: React.FC = () => {
   const { currentWorkspace, setCurrentWorkspace } = useWorkspace();
   const [name, setName] = useState(currentWorkspace?.name || '');
   const [globalRuntimeId, setGlobalRuntimeId] = useState(currentWorkspace?.globalRuntime?.id || '');
-  const [defaultTestingRuntimeId, setDefaultTestingRuntimeId] = useState(currentWorkspace?.defaultTestingRuntime?.id || '');
   const [updateWorkspace, { loading: updateLoading, error: updateError }] = useMutation(UPDATE_WORKSPACE_MUTATION);
   const [setGlobalRuntime] = useMutation(SET_GLOBAL_RUNTIME_MUTATION);
   const [unsetGlobalRuntime] = useMutation(UNSET_GLOBAL_RUNTIME_MUTATION);

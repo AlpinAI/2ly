@@ -5,14 +5,11 @@ import {
   NatsService,
   Service,
   dgraphResolversTypes,
-  NatsErrorMessage,
-  AgentCapabilitiesMessage,
-  AgentCallMCPToolMessage,
-  AgentCallResponseMessage,
-  SetMcpClientNameMessage,
+  ErrorResponse,
+  ToolsetListToolsPublish,
+  ToolSetCallToolRequest,
+  RuntimeCallToolResponse,
   MCP_CALL_TOOL_TIMEOUT,
-  RequestToolSetCapabilitiesMessage,
-  AckMessage,
 } from '@2ly/common';
 import { HealthService } from './runtime.health.service';
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
@@ -81,21 +78,22 @@ export class McpServerService extends Service {
   }
 
   private async startServer() {
-    const toolSet = process.env.TOOL_SET;
+    const identity = this.authService.getIdentity();
     const remotePort = process.env.REMOTE_PORT;
 
     // Determine transport type based on environment variables
-    const transport = toolSet ? 'stdio' : remotePort ? 'stream' : null;
+    const transport = identity?.name ? 'stdio' : remotePort ? 'stream' : null;
 
     if (!transport) {
       throw new Error('Cannot start MCP server: neither TOOL_SET nor REMOTE_PORT is set');
     }
 
     this.logger.info(`Starting server with transport: ${transport}`);
+    
     this.server = new Server(
       {
-        name: this.authService.getIdentity().name,
-        version: this.authService.getIdentity().version,
+        name: identity?.name ?? 'Remote 2LY Server',
+        version: '1.0.0',
       },
       {
         capabilities: {
@@ -263,18 +261,16 @@ export class McpServerService extends Service {
       this.logger.debug(
         `Initializing client: ${JSON.stringify(request.params.clientInfo)}, protocol version: ${request.params.protocolVersion}`,
       );
+      const identity = this.authService.getIdentity();
+
+      if (!identity || !identity.name) {
+        throw new Error('Cannot start MCP server: identity not found or incomplete');
+      }
       this.clientInfo = {
         name: request.params.clientInfo.name,
         version: request.params.clientInfo.version,
       };
       this.logger.info(`Setting MCP client name to ${request.params.clientInfo.name}`);
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      const setMcpClientNameMessage = SetMcpClientNameMessage.create({
-        RID: this.authService.getToolsetId()!,
-        mcpClientName: request.params.clientInfo.name,
-      }) as SetMcpClientNameMessage;
-      // TODO: set the client name at the "right time" in the lifecycle
-      // await this.natsService.request(setMcpClientNameMessage);
       if (request.params.capabilities.roots) {
         this.clientCapabilities.roots = { listChanged: request.params.capabilities.roots.listChanged ?? false };
         // reset the client roots, will be checked upon initialized notification
@@ -283,8 +279,8 @@ export class McpServerService extends Service {
       }
       const response = {
         serverInfo: {
-          name: this.authService.getIdentity().name,
-          version: this.authService.getIdentity().version,
+          name: identity.name,
+          version: '1.0.0',
         },
         protocolVersion: '2024-11-05',
         capabilities: {
@@ -370,16 +366,16 @@ export class McpServerService extends Service {
       this.logger.debug(
         `Calling tool: ${toolCapability.name} (${toolCapability.id}), arguments: ${JSON.stringify(request.params.arguments)}`,
       );
-      const message = AgentCallMCPToolMessage.create({
-        from: this.authService.getToolsetId()!,
+      const message = ToolSetCallToolRequest.create({
+        from: this.authService.getIdentity()!.id!,
         toolId: toolCapability.id,
         arguments: request.params.arguments,
-      }) as AgentCallMCPToolMessage;
+      }) as ToolSetCallToolRequest;
       // TODO: evaluate if jetstream usage can increase robustness here
       const response = await this.natsService.request(message, { timeout: MCP_CALL_TOOL_TIMEOUT });
-      if (response instanceof NatsErrorMessage) {
+      if (response instanceof ErrorResponse) {
         throw new Error(`Error calling tool: ${response.data.error}`);
-      } else if (response instanceof AgentCallResponseMessage) {
+      } else if (response instanceof RuntimeCallToolResponse) {
         return response.data.result;
       } else {
         throw new Error(`Invalid response: ${JSON.stringify(response)}`);
@@ -430,54 +426,25 @@ export class McpServerService extends Service {
   }
 
   private async subscribeToCapabilities() {
-    const toolSetName = process.env.TOOL_SET;
-    if (!toolSetName) {
-      throw new Error('Cannot subscribe to capabilities: TOOL_SET environment variable not set');
+    const identity = this.authService.getIdentity();
+    if (!identity || !identity.workspaceId || !identity.id) {
+      throw new Error('Cannot subscribe to capabilities: identity not found or incomplete');
     }
 
-    this.logger.info(`Subscribing to capabilities for toolset: ${toolSetName}`);
-    const subscription = await this.natsService.observeEphemeral(AgentCapabilitiesMessage.subscribeToName(toolSetName));
+    this.logger.info(`Subscribing to List Tools for toolset: ${identity.workspaceId} - ${identity.id}`);
+    const subscription = await this.natsService.observeEphemeral(ToolsetListToolsPublish.subscribeToToolSet(identity.workspaceId, identity.id));
     this.subscriptions.push(subscription);
 
-    // Check if there's an initial value in ephemeral storage
-    let hasInitialValue = false;
-    const initialValueTimeout = new Promise<void>((resolve) => setTimeout(resolve, 1000));
-
-    const checkInitialValue = (async () => {
+    (async () => {
       for await (const message of subscription) {
-        if (message instanceof AgentCapabilitiesMessage) {
-          hasInitialValue = true;
-          this.tools.next(message.data.capabilities);
-          this.logger.debug(`Received capabilities for toolset ${toolSetName}: ${message.data.capabilities.length} tools`);
-        } else if (message instanceof NatsErrorMessage) {
+        if (message instanceof ToolsetListToolsPublish) {
+          this.tools.next(message.data.mcpTools);
+          this.logger.debug(`Received ${message.data.mcpTools.length} mcp tools for toolset ${identity.id}`);
+        } else if (message instanceof ErrorResponse) {
           this.logger.error(`Error subscribing to tools: ${message.data.error}`);
         }
       }
     })();
-
-    // Wait for either initial value or timeout
-    await Promise.race([
-      (async () => {
-        await initialValueTimeout;
-        if (!hasInitialValue) {
-          this.logger.info(`No initial capabilities found in ephemeral storage for toolset ${toolSetName}, requesting...`);
-          // Send request to backend to publish capabilities for this toolset
-          const requestMessage = new RequestToolSetCapabilitiesMessage({
-            toolSetName: toolSetName,
-          });
-          const response = await this.natsService.request(requestMessage);
-          if (response instanceof AckMessage) {
-            this.logger.debug(`Successfully requested capabilities for toolset ${toolSetName}`);
-          } else if (response instanceof NatsErrorMessage) {
-            this.logger.error(`Error requesting capabilities: ${response.data.error}`);
-          }
-        }
-      })(),
-      checkInitialValue,
-    ]);
-
-    // Continue listening for updates
-    await checkInitialValue;
   }
 
   public onInitializeMCPServer(callback: () => void) {

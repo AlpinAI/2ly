@@ -21,6 +21,17 @@ export enum ActiveStatus {
   Inactive = 'INACTIVE'
 }
 
+export type IdentityKey = {
+  createdAt: Scalars['DateTime']['output'];
+  description?: Maybe<Scalars['String']['output']>;
+  expiresAt?: Maybe<Scalars['DateTime']['output']>;
+  id: Scalars['ID']['output'];
+  key: Scalars['String']['output'];
+  permissions?: Maybe<Scalars['String']['output']>;
+  relatedId: Scalars['String']['output'];
+  revokedAt?: Maybe<Scalars['DateTime']['output']>;
+};
+
 export type McpRegistryServer = {
   _meta?: Maybe<Scalars['String']['output']>;
   configurations?: Maybe<Array<McpServer>>;
@@ -148,26 +159,6 @@ export type System = {
   updatedAt: Scalars['DateTime']['output'];
   workspaces?: Maybe<Array<Workspace>>;
 };
-
-export type Token = {
-  createdAt: Scalars['DateTime']['output'];
-  description?: Maybe<Scalars['String']['output']>;
-  expiresAt?: Maybe<Scalars['DateTime']['output']>;
-  id: Scalars['ID']['output'];
-  key: Scalars['String']['output'];
-  permissions?: Maybe<Scalars['String']['output']>;
-  revokedAt?: Maybe<Scalars['DateTime']['output']>;
-  runtimeId?: Maybe<Scalars['String']['output']>;
-  toolsetId?: Maybe<Scalars['String']['output']>;
-  type: TokenType;
-  workspaceId: Scalars['String']['output'];
-};
-
-export enum TokenType {
-  MasterKey = 'MASTER_KEY',
-  RuntimeKey = 'RUNTIME_KEY',
-  ToolsetKey = 'TOOLSET_KEY'
-}
 
 export type ToolCall = {
   calledAt: Scalars['DateTime']['output'];
@@ -304,6 +295,7 @@ export type ResolversTypes = ResolversObject<{
   Boolean: ResolverTypeWrapper<Scalars['Boolean']['output']>;
   DateTime: ResolverTypeWrapper<Scalars['DateTime']['output']>;
   ID: ResolverTypeWrapper<Scalars['ID']['output']>;
+  IdentityKey: ResolverTypeWrapper<IdentityKey>;
   Int: ResolverTypeWrapper<Scalars['Int']['output']>;
   MCPRegistryServer: ResolverTypeWrapper<McpRegistryServer>;
   MCPServer: ResolverTypeWrapper<McpServer>;
@@ -318,8 +310,6 @@ export type ResolversTypes = ResolversObject<{
   Session: ResolverTypeWrapper<Session>;
   String: ResolverTypeWrapper<Scalars['String']['output']>;
   System: ResolverTypeWrapper<System>;
-  Token: ResolverTypeWrapper<Token>;
-  TokenType: TokenType;
   ToolCall: ResolverTypeWrapper<ToolCall>;
   ToolCallStatus: ToolCallStatus;
   ToolSet: ResolverTypeWrapper<ToolSet>;
@@ -332,6 +322,7 @@ export type ResolversParentTypes = ResolversObject<{
   Boolean: Scalars['Boolean']['output'];
   DateTime: Scalars['DateTime']['output'];
   ID: Scalars['ID']['output'];
+  IdentityKey: IdentityKey;
   Int: Scalars['Int']['output'];
   MCPRegistryServer: McpRegistryServer;
   MCPServer: McpServer;
@@ -341,7 +332,6 @@ export type ResolversParentTypes = ResolversObject<{
   Session: Session;
   String: Scalars['String']['output'];
   System: System;
-  Token: Token;
   ToolCall: ToolCall;
   ToolSet: ToolSet;
   User: User;
@@ -351,6 +341,18 @@ export type ResolversParentTypes = ResolversObject<{
 export interface DateTimeScalarConfig extends GraphQLScalarTypeConfig<ResolversTypes['DateTime'], any> {
   name: 'DateTime';
 }
+
+export type IdentityKeyResolvers<ContextType = any, ParentType extends ResolversParentTypes['IdentityKey'] = ResolversParentTypes['IdentityKey']> = ResolversObject<{
+  createdAt?: Resolver<ResolversTypes['DateTime'], ParentType, ContextType>;
+  description?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  expiresAt?: Resolver<Maybe<ResolversTypes['DateTime']>, ParentType, ContextType>;
+  id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
+  key?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  permissions?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  relatedId?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  revokedAt?: Resolver<Maybe<ResolversTypes['DateTime']>, ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+}>;
 
 export type McpRegistryServerResolvers<ContextType = any, ParentType extends ResolversParentTypes['MCPRegistryServer'] = ResolversParentTypes['MCPRegistryServer']> = ResolversObject<{
   _meta?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
@@ -458,21 +460,6 @@ export type SystemResolvers<ContextType = any, ParentType extends ResolversParen
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
-export type TokenResolvers<ContextType = any, ParentType extends ResolversParentTypes['Token'] = ResolversParentTypes['Token']> = ResolversObject<{
-  createdAt?: Resolver<ResolversTypes['DateTime'], ParentType, ContextType>;
-  description?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
-  expiresAt?: Resolver<Maybe<ResolversTypes['DateTime']>, ParentType, ContextType>;
-  id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
-  key?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
-  permissions?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
-  revokedAt?: Resolver<Maybe<ResolversTypes['DateTime']>, ParentType, ContextType>;
-  runtimeId?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
-  toolsetId?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
-  type?: Resolver<ResolversTypes['TokenType'], ParentType, ContextType>;
-  workspaceId?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
-  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
-}>;
-
 export type ToolCallResolvers<ContextType = any, ParentType extends ResolversParentTypes['ToolCall'] = ResolversParentTypes['ToolCall']> = ResolversObject<{
   calledAt?: Resolver<ResolversTypes['DateTime'], ParentType, ContextType>;
   calledBy?: Resolver<ResolversTypes['Runtime'], ParentType, ContextType>;
@@ -532,6 +519,7 @@ export type WorkspaceResolvers<ContextType = any, ParentType extends ResolversPa
 
 export type Resolvers<ContextType = any> = ResolversObject<{
   DateTime?: GraphQLScalarType;
+  IdentityKey?: IdentityKeyResolvers<ContextType>;
   MCPRegistryServer?: McpRegistryServerResolvers<ContextType>;
   MCPServer?: McpServerResolvers<ContextType>;
   MCPTool?: McpToolResolvers<ContextType>;
@@ -539,7 +527,6 @@ export type Resolvers<ContextType = any> = ResolversObject<{
   Runtime?: RuntimeResolvers<ContextType>;
   Session?: SessionResolvers<ContextType>;
   System?: SystemResolvers<ContextType>;
-  Token?: TokenResolvers<ContextType>;
   ToolCall?: ToolCallResolvers<ContextType>;
   ToolSet?: ToolSetResolvers<ContextType>;
   User?: UserResolvers<ContextType>;

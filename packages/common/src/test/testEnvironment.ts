@@ -595,7 +595,6 @@ export const startRuntime = async (): Promise<void> => {
       LOG_LEVEL: 'error', // Only log errors in test environment
       NATS_SERVERS: natsUrl,
       RUNTIME_NAME: runtimeName,
-      GLOBAL_RUNTIME: 'true',
       ROOTS: `TEMP:/tmp`,
     })
     // No exposed ports needed - runtime communicates via NATS

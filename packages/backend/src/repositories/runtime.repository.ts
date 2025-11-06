@@ -1,10 +1,9 @@
 import { injectable, inject } from 'inversify';
 import { DGraphService } from '../services/dgraph.service';
-import { dgraphResolversTypes, NatsService, LoggerService, AgentCallMCPToolMessage, AgentCallResponseMessage, NatsErrorMessage, apolloResolversTypes } from '@2ly/common';
+import { dgraphResolversTypes, NatsService, LoggerService, ToolSetCallToolRequest, RuntimeCallToolResponse, ErrorResponse, apolloResolversTypes } from '@2ly/common';
 import {
   QUERY_MCPSERVER_WITH_TOOL,
   SET_ROOTS,
-  SET_MCP_CLIENT_NAME,
   DELETE_RUNTIME,
   UPDATE_RUNTIME,
   ADD_RUNTIME,
@@ -25,7 +24,6 @@ import {
 import { map, Observable } from 'rxjs';
 import { createSubscriptionFromQuery, escapeValue } from '../helpers';
 import { MCPToolRepository } from './mcp-tool.repository';
-import { ToolSetRepository } from './toolset.repository';
 import pino from 'pino';
 import { QUERY_WORKSPACE } from './workspace.operations';
 import { WorkspaceRepository } from './workspace.repository';
@@ -39,7 +37,6 @@ export class RuntimeRepository {
     @inject(LoggerService) private readonly loggerService: LoggerService,
     @inject(NatsService) private readonly natsService: NatsService,
     @inject(WorkspaceRepository) private readonly workspaceRepository: WorkspaceRepository,
-    @inject(ToolSetRepository) private readonly toolSetRepository: ToolSetRepository,
   ) {
     this.logger = this.loggerService.getLogger('runtime-repository');
   }
@@ -64,8 +61,16 @@ export class RuntimeRepository {
       workspaceId,
     });
 
+    const runtime = res.addRuntime.runtime[0];
 
-    return res.addRuntime.runtime[0];
+    // Automatically set as global runtime if this is the first runtime in the workspace
+    const runtimes = await this.workspaceRepository.getRuntimes(workspaceId);
+    if (runtimes.length === 1) {
+      this.logger.info(`Setting runtime ${runtime.id} as global runtime for workspace ${workspaceId} (first runtime)`);
+      await this.workspaceRepository.setGlobalRuntime(runtime.id);
+    }
+
+    return runtime;
   }
 
   async update(id: string, name: string, description: string): Promise<dgraphResolversTypes.Runtime> {
@@ -267,8 +272,8 @@ export class RuntimeRepository {
       updateRuntime: { runtime: dgraphResolversTypes.Runtime[] };
     }>(UPDATE_RUNTIME_LAST_SEEN, {
       id,
+      now: new Date().toISOString(),
     });
-
     return res.updateRuntime.runtime[0];
   }
 
@@ -288,16 +293,13 @@ export class RuntimeRepository {
     return res.updateRuntime.runtime[0];
   }
 
-  async setMcpClientName(id: string, mcpClientName: string): Promise<dgraphResolversTypes.Runtime> {
-    const res = await this.dgraphService.mutation<{
-      updateRuntime: { runtime: dgraphResolversTypes.Runtime[] };
-    }>(SET_MCP_CLIENT_NAME, {
-      id,
-      mcpClientName,
-    });
-    return res.updateRuntime.runtime[0];
+  async findById(id: string): Promise<dgraphResolversTypes.Runtime | null> {
+    const response = await this.dgraphService.query<{ getRuntime: dgraphResolversTypes.Runtime | null }>(
+      GET_RUNTIME,
+      { id },
+    );
+    return response.getRuntime;
   }
-
 
   async findByName(workspaceId: string, name: string): Promise<dgraphResolversTypes.Runtime | undefined> {
     const res = await this.dgraphService.query<{ getWorkspace: { runtimes: dgraphResolversTypes.Runtime[] } }>(
@@ -356,19 +358,20 @@ export class RuntimeRepository {
       throw new Error(`Invalid input: ${input}`);
     }
 
-    const message = new AgentCallMCPToolMessage({
+    const message = new ToolSetCallToolRequest({
+      workspaceId: tool.workspace.id,
       toolId,
       arguments: args,
       from: globalRuntime.id,
     });
 
     const response = await this.natsService.request(message);
-    if (response instanceof AgentCallResponseMessage) {
+    if (response instanceof RuntimeCallToolResponse) {
       return {
         success: !response.data.result.isError,
         result: JSON.stringify(response.data.result.content, null, 2),
       };
-    } else if (response instanceof NatsErrorMessage) {
+    } else if (response instanceof ErrorResponse) {
       throw new Error(`Error calling tool: ${response.data.error}`);
     } else {
       throw new Error(`Invalid response: ${JSON.stringify(response)}`);

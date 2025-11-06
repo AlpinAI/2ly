@@ -326,8 +326,8 @@ export const SET_RUNTIME_ACTIVE = gql`
 `;
 
 export const UPDATE_RUNTIME_LAST_SEEN = gql`
-  mutation updateRuntimeLastSeen($id: ID!) {
-    updateRuntime(input: { filter: { id: [$id] }, set: { lastSeenAt: "${new Date().toISOString()}" } }) {
+  mutation updateRuntimeLastSeen($id: ID!, $now: DateTime!) {
+    updateRuntime(input: { filter: { id: [$id] }, set: { lastSeenAt: $now } }) {
       runtime {
         id
         lastSeenAt
@@ -416,17 +416,6 @@ export const SET_ROOTS = gql`
       runtime {
         id
         roots
-      }
-    }
-  }
-`;
-
-export const SET_MCP_CLIENT_NAME = gql`
-  mutation setMcpClientName($id: ID!, $mcpClientName: String!) {
-    updateRuntime(input: { filter: { id: [$id] }, set: { mcpClientName: $mcpClientName } }) {
-      runtime {
-        id
-        mcpClientName
       }
     }
   }

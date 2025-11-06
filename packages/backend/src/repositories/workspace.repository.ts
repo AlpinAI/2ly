@@ -28,15 +28,19 @@ import { createSubscriptionFromQuery } from '../helpers';
 import { INITIAL_ONBOARDING_STEPS } from './onboarding-step-definitions';
 import { INITIAL_FEATURED_SERVERS } from './initial-servers';
 import { QUERY_TOOLSETS_BY_WORKSPACE } from './toolset.operations';
+import { IdentityRepository } from './identity.repository';
 
 @injectable()
 export class WorkspaceRepository {
   constructor(
     @inject(DGraphService) private readonly dgraphService: DGraphService,
+    @inject(IdentityRepository) private readonly identityRepository: IdentityRepository,
   ) { }
 
-  async create(name: string, adminId: string): Promise<apolloResolversTypes.Workspace> {
+  async create(name: string, adminId: string, options: { masterKey?: string } = {}): Promise<apolloResolversTypes.Workspace> {
     const now = new Date().toISOString();
+
+    // 1. Get system
     const system = await this.dgraphService.query<{
       querySystem: dgraphResolversTypes.System[];
     }>(QUERY_SYSTEM, {});
@@ -44,7 +48,8 @@ export class WorkspaceRepository {
       throw new Error('System not found');
     }
     const systemId = system.querySystem[0].id;
-    // Create workspace
+
+    // 2. Create workspace
     const res = await this.dgraphService.mutation<{
       addWorkspace: { workspace: apolloResolversTypes.Workspace[] };
     }>(ADD_WORKSPACE, {
@@ -55,7 +60,11 @@ export class WorkspaceRepository {
     });
     const workspace = res.addWorkspace.workspace[0];
 
-    // Create featured servers directly on workspace from INITIAL_FEATURED_SERVERS
+    // 3. Create master key
+    const identityOptions = { key: options?.masterKey };
+    await this.identityRepository.createKey('workspace', workspace.id, 'Default Workspace Master key', '', identityOptions);
+
+    // 4. Create featured servers directly on workspace from INITIAL_FEATURED_SERVERS
     const failedServers: string[] = [];
     for (const server of INITIAL_FEATURED_SERVERS) {
       try {
@@ -82,7 +91,7 @@ export class WorkspaceRepository {
       console.warn(`Workspace ${workspace.id} (${workspace.name}) created with ${failedServers.length} failed servers: ${failedServers.join(', ')}`);
     }
 
-    // Initialize onboarding steps for new workspace
+    // 5. Initialize onboarding steps for new workspace
     await this.initializeOnboardingSteps(workspace.id);
 
     return workspace;
@@ -101,6 +110,13 @@ export class WorkspaceRepository {
       getWorkspace: dgraphResolversTypes.Workspace;
     }>(QUERY_WORKSPACE, { workspaceId });
     return res.getWorkspace;
+  }
+
+  async getRuntimes(workspaceId: string): Promise<apolloResolversTypes.Runtime[]> {
+    const res = await this.dgraphService.query<{
+      getWorkspace: apolloResolversTypes.Workspace;
+    }>(QUERY_WORKSPACE_WITH_RUNTIMES, { workspaceId });
+    return res.getWorkspace.runtimes || [];
   }
 
   async update(id: string, name: string): Promise<apolloResolversTypes.Workspace> {

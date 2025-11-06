@@ -2,7 +2,7 @@ import { NatsMessage, NatsPublish } from '../services/nats.message';
 
 const type = 'reconnect-runtimes';
 
-export class RuntimeReconnectMessage extends NatsPublish<{
+export class RuntimeReconnectPublish extends NatsPublish<{
   reason?: string;
 }> {
   static type = type;
@@ -20,4 +20,4 @@ export class RuntimeReconnectMessage extends NatsPublish<{
   }
 }
 
-NatsMessage.register(RuntimeReconnectMessage);
+NatsMessage.register(RuntimeReconnectPublish);

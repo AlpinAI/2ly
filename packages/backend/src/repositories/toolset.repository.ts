@@ -88,12 +88,12 @@ export class ToolSetRepository {
     return response.getToolSet;
   }
 
-  async findByName(name: string): Promise<dgraphResolversTypes.ToolSet | null> {
-    const response = await this.dgraphService.query<{ queryToolSet: dgraphResolversTypes.ToolSet[] }>(
+  async findByName(workspaceId: string, name: string): Promise<dgraphResolversTypes.ToolSet | null> {
+    const response = await this.dgraphService.query<{ getWorkspace: { toolSets: dgraphResolversTypes.ToolSet[] } }>(
       QUERY_TOOLSET_BY_NAME,
-      { name },
+      { workspaceId, name },
     );
-    return response.queryToolSet?.[0] ?? null;
+    return response.getWorkspace?.toolSets?.[0] ?? null;
   }
 
   async findByWorkspace(workspaceId: string): Promise<dgraphResolversTypes.ToolSet[]> {
