@@ -85,7 +85,7 @@ export class RuntimeInstance extends Service {
     this.logger.debug(`Listening for ${RUNTIME_SUBJECT}.${this.instance.id}.* messages`);
     const msgSubscription = this.natsService.subscribe(`${RUNTIME_SUBJECT}.${this.instance.id}.*`);
     this.natsSubscriptions.push(msgSubscription);
-    for await (const message of msgSubscription) {
+    for await (const _message of msgSubscription) {
       // TODO: handle runtime messages ?
     }
   }
