@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { WorkspaceRepository } from './workspace.repository';
 import { Subject } from 'rxjs';
 import type { DGraphService } from '../services/dgraph.service';

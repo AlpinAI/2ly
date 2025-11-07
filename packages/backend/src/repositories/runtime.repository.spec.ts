@@ -8,7 +8,6 @@ import { LoggerService } from '@2ly/common';
 import { Subject } from 'rxjs';
 import type { NatsService } from '@2ly/common';
 import type { WorkspaceRepository } from './workspace.repository';
-import type { ToolSetRepository } from './toolset.repository';
 
 describe('RuntimeRepository', () => {
     let dgraphService: DgraphServiceMock;
