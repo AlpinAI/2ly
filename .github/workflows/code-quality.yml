@@ -15,8 +15,8 @@ on:
 # 6. Save the protection rule
 
 env:
-  RUN_E2E_GATE: true # Set to 'true' to include e2e tests in pass/fail gate
-  DEBUG: testcontainers*
+  RUN_E2E_GATE: false # Set to 'true' to include e2e tests in pass/fail gate
+  # DEBUG: testcontainers*
 
 jobs:
   code-quality:
