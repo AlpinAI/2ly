@@ -40,17 +40,12 @@ describe('RuntimeRepository', () => {
             getRuntimes: vi.fn().mockResolvedValue([{ id: 'r1', name: 'Test Runtime' }]),
             setGlobalRuntime: vi.fn().mockResolvedValue(undefined),
         } as unknown as WorkspaceRepository;
-        const toolSetRepository = {
-            addToolsToToolSet: vi.fn().mockResolvedValue(undefined),
-            removeToolsFromToolSet: vi.fn().mockResolvedValue(undefined),
-        } as unknown as ToolSetRepository;
         runtimeRepository = new RuntimeRepository(
             dgraphService as unknown as DGraphService,
             mcpToolRepository,
             loggerService,
             natsService,
             workspaceRepository,
-            toolSetRepository,
         );
     });
 

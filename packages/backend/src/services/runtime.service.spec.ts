@@ -144,7 +144,7 @@ describe('RuntimeService', () => {
         const disconnectToolSpy = vi.spyOn(service, 'disconnectTool');
         const upsertToolSpy = vi.spyOn(service, 'upsertTool');
         await service.start('test');
-        const msg = new RuntimeDiscoveredToolsPublish({ mcpServerId: 'm1', tools: [{ name: 'new', description: '', inputSchema: { type: 'object' as const }, annotations: {} }] });
+        const msg = new RuntimeDiscoveredToolsPublish({ workspaceId: 'w1', mcpServerId: 'm1', tools: [{ name: 'new', description: '', inputSchema: { type: 'object' as const }, annotations: {} }] });
         iterator.push(msg);
         await new Promise((r) => setTimeout(r, 10));
         expect(disconnectToolSpy).toHaveBeenCalledWith('t1');
