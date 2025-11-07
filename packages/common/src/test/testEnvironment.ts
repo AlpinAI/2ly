@@ -172,6 +172,35 @@ export class TestEnvironment {
   }
 
   /**
+   * Wait for a health endpoint to become available
+   * @param url - The health endpoint URL to check
+   * @param maxRetries - Maximum number of retry attempts
+   * @param intervalMs - Delay between retries in milliseconds
+   */
+  private async waitForHealth(url: string, maxRetries: number, intervalMs: number): Promise<void> {
+    this.log(`Waiting for health check: ${url}`, { maxRetries, intervalMs });
+
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        const response = await fetch(url);
+        if (response.ok) {
+          this.log(`Health check passed: ${url}`, { attempt, status: response.status });
+          return;
+        }
+        this.log(`Health check failed: ${url}`, { attempt, status: response.status });
+      } catch (error) {
+        this.log(`Health check error: ${url}`, { attempt, error: error instanceof Error ? error.message : String(error) });
+      }
+
+      if (attempt < maxRetries) {
+        await new Promise((resolve) => setTimeout(resolve, intervalMs));
+      }
+    }
+
+    throw new Error(`Health check failed after ${maxRetries} attempts: ${url}`);
+  }
+
+  /**
    * Generate JWT keys for test environment
    * Creates a temporary directory with RSA key pair
    */
@@ -313,6 +342,12 @@ export class TestEnvironment {
 
     this.log('Dgraph Zero started', { grpcUrl, httpUrl });
 
+    // Wait for Dgraph Zero to be healthy
+    if (this.config.exposeToHost) {
+      const healthUrl = `http://localhost:${container.getMappedPort(6080)}/health`;
+      await this.waitForHealth(healthUrl, 30, 1000); // 30 retries, 1 second interval
+    }
+
     return { container, grpcUrl, httpUrl };
   }
 
@@ -350,10 +385,12 @@ export class TestEnvironment {
 
     this.log('Dgraph Alpha started', { grpcUrl, graphqlUrl });
 
-    // Wait longer to ensure Dgraph is fully ready for connections
+    // Wait for Dgraph Alpha to be healthy
     // Dgraph Alpha needs time to connect to Zero and initialize
-    this.log('Waiting for Dgraph Alpha to fully initialize...');
-    await new Promise((resolve) => setTimeout(resolve, 5000)); // 5 seconds
+    if (this.config.exposeToHost) {
+      const healthUrl = `http://localhost:${container.getMappedPort(8080)}/health`;
+      await this.waitForHealth(healthUrl, 60, 1000); // 60 retries, 1 second interval
+    }
 
     return { container, grpcUrl, graphqlUrl };
   }
