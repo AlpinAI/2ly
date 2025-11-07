@@ -13,6 +13,8 @@ on:
 # 5. Optional: Enable "Allow specified actors to bypass required pull requests"
 #    and add maintainers who can override this check if necessary
 # 6. Save the protection rule
+env:
+  DEBUG: testcontainers*
 
 jobs:
   code-quality:
@@ -51,6 +53,16 @@ jobs:
         id: integration-test
         run: npm run test:integration
         continue-on-error: true
+
+      - name: Show Docker logs and status
+        if: steps.integration-test.outcome == 'failure'
+        run: |
+          echo "==== Docker containers ===="
+          docker ps -a
+          echo "==== Docker system df ===="
+          docker system df
+          echo "==== Docker logs ===="
+          docker logs $(docker ps -aq) || true
 
       # Temporarily disabled e2e tests
       # - name: Run e2e tests
