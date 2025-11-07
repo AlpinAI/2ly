@@ -27,6 +27,13 @@ import * as path from 'path';
 export const TEST_ENCRYPTION_KEY = 'test-encryption-key-for-playwright-integration-tests-minimum-32-chars';
 
 /**
+ * Workspace master key used for runtime authentication in test environments.
+ * This follows the workspace key format (WSK prefix) and must be at least 32 characters long.
+ * Used by the runtime container to authenticate with the backend.
+ */
+export const TEST_MASTER_KEY = 'WSKTestMasterKey1234567890123456';
+
+/**
  * Find the project root by looking for package.json with workspaces
  */
 function findProjectRoot(startDir: string = process.cwd()): string {
@@ -380,8 +387,17 @@ export class TestEnvironment {
           EXPOSED_NATS_SERVERS: this.services.nats.clientUrl,
           CORS_ORIGINS: 'http://localhost:8888,http://localhost:9999',
           ENCRYPTION_KEY: TEST_ENCRYPTION_KEY,
+          MASTER_KEY: TEST_MASTER_KEY,
+          JWT_PRIVATE_KEY_PATH: '/keys/private.pem',
+          JWT_PUBLIC_KEY_PATH: '/keys/public.pem',
+          IDENTITY_LOG_LEVEL: 'debug',
           ...this.config.backendEnv,
         })
+        .withBindMounts([{
+          source: path.join(this.config.projectRoot, '.docker-keys'),
+          target: '/keys',
+          mode: 'ro',
+        }])
         .withExposedPorts(...(this.config.exposeToHost ? [3000] : []))
         // Wait for HTTP port (backend Dockerfile has curl for healthcheck)
         .withWaitStrategy(Wait.forListeningPorts())
@@ -596,6 +612,7 @@ export const startRuntime = async (): Promise<void> => {
       NATS_SERVERS: natsUrl,
       RUNTIME_NAME: runtimeName,
       ROOTS: `TEMP:/tmp`,
+      MASTER_KEY: TEST_MASTER_KEY,
     })
     // No exposed ports needed - runtime communicates via NATS
     .withWaitStrategy(Wait.forListeningPorts())
