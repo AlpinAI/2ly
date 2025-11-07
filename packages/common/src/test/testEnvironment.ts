@@ -16,7 +16,9 @@ import {
   StartedNetwork,
   Wait,
 } from 'testcontainers';
+import { generateKeyPairSync } from 'crypto';
 import * as fs from 'fs';
+import * as os from 'os';
 import * as path from 'path';
 
 /**
@@ -138,6 +140,7 @@ export interface TestEnvironmentServices {
 export class TestEnvironment {
   private network?: StartedNetwork;
   private services?: TestEnvironmentServices;
+  private tempKeyDir?: string;
   private config: Omit<Required<TestEnvironmentConfig>, 'backendImage' | 'runtimeImage'> & { backendImage?: string; runtimeImage?: string };
 
   constructor(config: TestEnvironmentConfig = {}) {
@@ -166,6 +169,45 @@ export class TestEnvironment {
         console.log(JSON.stringify(data, null, 2));
       }
     }
+  }
+
+  /**
+   * Generate JWT keys for test environment
+   * Creates a temporary directory with RSA key pair
+   */
+  private generateJWTKeys(): string {
+    this.log('Generating JWT keys...');
+
+    // Create unique temp directory
+    const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), '2ly-test-keys-'));
+    this.log('Created temp key directory', { path: tempDir });
+
+    // Generate RSA key pair with same parameters as production
+    const { publicKey, privateKey } = generateKeyPairSync('rsa', {
+      modulusLength: 2048,
+      publicKeyEncoding: {
+        type: 'spki',
+        format: 'pem',
+      },
+      privateKeyEncoding: {
+        type: 'pkcs8',
+        format: 'pem',
+      },
+    });
+
+    // Write keys to temp directory
+    const privateKeyPath = path.join(tempDir, 'private.pem');
+    const publicKeyPath = path.join(tempDir, 'public.pem');
+
+    fs.writeFileSync(privateKeyPath, privateKey);
+    fs.writeFileSync(publicKeyPath, publicKey);
+
+    this.log('JWT keys generated and written to temp directory');
+
+    // Store temp directory for cleanup
+    this.tempKeyDir = tempDir;
+
+    return tempDir;
   }
 
   /**
@@ -326,6 +368,9 @@ export class TestEnvironment {
 
     this.log('Starting Backend...');
 
+    // Generate JWT keys for test environment
+    const keyDir = this.generateJWTKeys();
+
     let containerImage: GenericContainer;
 
     if (this.config.backendImage) {
@@ -394,7 +439,7 @@ export class TestEnvironment {
           ...this.config.backendEnv,
         })
         .withBindMounts([{
-          source: path.join(this.config.projectRoot, '.docker-keys'),
+          source: keyDir,
           target: '/keys',
           mode: 'ro',
         }])
@@ -533,6 +578,21 @@ export class TestEnvironment {
           this.log('Backend stopped');
         } catch (error) {
           this.log('Error stopping backend', error);
+          errors.push(error instanceof Error ? error : new Error(String(error)));
+        }
+      }
+
+      // Clean up temp JWT keys
+      if (this.tempKeyDir) {
+        try {
+          this.log('Cleaning up temp JWT keys', { path: this.tempKeyDir });
+          fs.unlinkSync(path.join(this.tempKeyDir, 'private.pem'));
+          fs.unlinkSync(path.join(this.tempKeyDir, 'public.pem'));
+          fs.rmdirSync(this.tempKeyDir);
+          this.tempKeyDir = undefined;
+          this.log('Temp JWT keys cleaned up');
+        } catch (error) {
+          this.log('Error cleaning up temp JWT keys', error);
           errors.push(error instanceof Error ? error : new Error(String(error)));
         }
       }
