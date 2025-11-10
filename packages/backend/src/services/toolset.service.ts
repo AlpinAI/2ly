@@ -49,6 +49,8 @@ export class ToolSetService extends Service {
   protected async shutdown() {
     this.logger.info('Stopping');
 
+    await this.stopService(this.dgraphService);
+
     // Clean up RxJS subscriptions
     this.rxjsSubscriptions.forEach((subscription) => subscription.unsubscribe());
     this.rxjsSubscriptions = [];
@@ -67,7 +69,6 @@ export class ToolSetService extends Service {
     this.natsSubscriptions = [];
 
     await this.stopService(this.natsService);
-    await this.stopService(this.dgraphService);
   }
 
   private async handleToolSetHandshake(identity: { instance: dgraphResolversTypes.ToolSet; pid: string; hostIP: string; hostname: string; }) {
