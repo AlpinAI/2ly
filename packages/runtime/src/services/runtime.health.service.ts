@@ -1,7 +1,7 @@
 import { inject, injectable } from 'inversify';
 import pino from 'pino';
 import { LoggerService, NatsService, Service } from '@2ly/common';
-import { IdentityService } from './identity.service';
+import { AuthService } from './auth.service';
 
 export const HEARTBEAT_INTERVAL = 'heartbeat.interval';
 
@@ -17,14 +17,14 @@ export class HealthService extends Service {
   constructor(
     @inject(LoggerService) private loggerService: LoggerService,
     @inject(NatsService) private natsService: NatsService,
-    @inject(IdentityService) private identityService: IdentityService,
+    @inject(AuthService) private authService: AuthService,
   ) {
     super();
     this.logger = this.loggerService.getLogger(this.name);
   }
 
   protected async initialize() {
-    const identity = this.identityService.getIdentity();
+    const identity = this.authService.getIdentity();
     if (!identity.RID) {
       throw new Error('RID not set');
     }
@@ -34,7 +34,7 @@ export class HealthService extends Service {
     this.logger.info('Starting');
     this.natsService.heartbeat(identity.RID, {});
     this.heartbeatIntervalRef = setInterval(async () => {
-      const RID = this.identityService.getIdentity()?.RID;
+      const RID = this.authService.getIdentity()?.RID;
       if (!RID) {
         // ignore
         return;
@@ -48,7 +48,7 @@ export class HealthService extends Service {
     if (this.heartbeatIntervalRef) {
       clearInterval(this.heartbeatIntervalRef);
     }
-    const RID = this.identityService.getIdentity()?.RID;
+    const RID = this.authService.getIdentity()?.RID;
     if (RID) {
       this.natsService.kill(RID);
     }

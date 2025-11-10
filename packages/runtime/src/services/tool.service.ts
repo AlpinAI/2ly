@@ -11,7 +11,7 @@ import {
 import { ToolClientService } from './tool.client.service';
 import fs from 'fs';
 import { HealthService } from './runtime.health.service';
-import { IdentityService } from './identity.service';
+import { AuthService } from './auth.service';
 
 export const ROOTS = 'ROOTS';
 export const GLOBAL_RUNTIME = 'GLOBAL_RUNTIME';
@@ -27,7 +27,7 @@ export class ToolService extends Service {
   constructor(
     @inject(LoggerService) private loggerService: LoggerService,
     @inject(ToolClientService) private toolClientService: ToolClientService,
-    @inject(IdentityService) private identityService: IdentityService,
+    @inject(AuthService) private authService: AuthService,
     @inject(HealthService) private healthService: HealthService,
     @inject(NatsService) private natsService: NatsService,
   ) {
@@ -37,7 +37,7 @@ export class ToolService extends Service {
 
   protected async initialize() {
     this.logger.info('Starting');
-    await this.startService(this.identityService);
+    await this.startService(this.authService);
     await this.healthService.waitForStarted();
     await this.startService(this.toolClientService);
     this.setRoots();
@@ -47,12 +47,12 @@ export class ToolService extends Service {
   protected async shutdown() {
     this.logger.info('Stopping');
     await this.stopService(this.toolClientService);
-    await this.stopService(this.identityService);
+    await this.stopService(this.authService);
   }
 
   private async setRoots() {
     if (this.roots) {
-      const identity = this.identityService.getIdentity();
+      const identity = this.authService.getIdentity();
       if (!identity.RID) {
         throw new Error('Cannot set roots without RID');
       }
@@ -92,7 +92,7 @@ export class ToolService extends Service {
 
   private async setGlobalRuntime() {
     if (this.globalRuntime) {
-      const identity = this.identityService.getIdentity();
+      const identity = this.authService.getIdentity();
       if (!identity.RID) {
         throw new Error('Cannot set global runtime without RID');
       }
