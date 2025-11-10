@@ -16,7 +16,7 @@ import {
   RootsListChangedNotificationSchema,
 } from '@modelcontextprotocol/sdk/types.js';
 import { AuthService } from './auth.service';
-import { BehaviorSubject } from 'rxjs';
+import { BehaviorSubject, Subscription, tap } from 'rxjs';
 import { ToolsetService } from './toolset.service';
 
 /**
@@ -35,6 +35,7 @@ export class McpStdioService extends Service {
     { name: string; uri: string }[]
   >([]);
   private toolsetService: ToolsetService | undefined;
+  private rxjsSubscriptions: Subscription[] = [];
 
   constructor(
     @inject(LoggerService) private loggerService: LoggerService,
@@ -99,6 +100,10 @@ export class McpStdioService extends Service {
 
     // Setup handlers
     await this.setServerHandlers();
+
+    // Notify changes
+    const sub = this.toolsetService.observeTools().pipe(tap(() => this.server?.sendToolListChanged())).subscribe();
+    this.rxjsSubscriptions.push(sub);
   }
 
   private async setServerHandlers() {
@@ -194,6 +199,7 @@ export class McpStdioService extends Service {
   }
 
   private async stopServer() {
+    this.rxjsSubscriptions.forEach(sub => sub.unsubscribe());
     await this.transport?.close();
     await this.server?.close();
 

@@ -46,15 +46,14 @@ Self-hosted and open source. Your tools, your infrastructure, your data.
 ## 🚀 Quick Start
 
 ### Prerequisites
-- Node.js v18+
-- Docker
-- Docker Compose
+- Node.js v22+
+- [Docker](https://docs.docker.com/)
 
 ### Installation
 ```bash
 git clone https://github.com/AlpinAI/2ly.git
 cd 2ly
-npm run start
+npm run start # calls docker compose
 ```
 
 Access the dashboard at **http://localhost:8888**, create your workspace, and follow our 3-step onboarding (takes 2 minutes).

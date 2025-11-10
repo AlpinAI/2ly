@@ -20,10 +20,12 @@ import fastify, { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify'
 import cors from '@fastify/cors';
 import { SessionAuthService, AuthHeaders } from './session.auth.service';
 import { ToolsetService } from './toolset.service';
+import { Subscription, tap } from 'rxjs';
 
 interface SessionContext {
   transport: StreamableHTTPServerTransport | SSEServerTransport;
   toolsetService: ToolsetService;
+  drain: () => void;
 }
 
 /**
@@ -262,10 +264,18 @@ export class McpRemoteService extends Service {
       const toolsetService = new ToolsetService(this.loggerService, this.natsService, identity);
       await this.startService(toolsetService);
 
+      // Listen for tool changes
+      const subscription = toolsetService.observeTools().pipe(tap(() => {
+        transport.send({
+          jsonrpc: '2.0',
+          method: 'notifications/tools/list_changed',
+        });
+      })).subscribe();
+
       // Store session context
       session.transport = transport;
       session.toolsetService = toolsetService;
-
+      session.drain = () => subscription?.unsubscribe();
       
       this.logger.info(`Created session ${sessionId} for toolset: ${identity.toolsetName}`);
 
@@ -299,6 +309,7 @@ export class McpRemoteService extends Service {
     const session = this.sessions.get(sessionId);
     if (session) {
       this.logger.info(`Cleaning up session ${sessionId}`);
+      session.drain();
       await this.stopService(session.toolsetService);
       this.sessions.delete(sessionId);
     }

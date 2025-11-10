@@ -11,7 +11,7 @@ import {
   MCP_CALL_TOOL_TIMEOUT,
   RuntimeCallToolResponse,
 } from '@2ly/common';
-import { BehaviorSubject, filter, firstValueFrom } from 'rxjs';
+import { BehaviorSubject, filter, firstValueFrom, map } from 'rxjs';
 
 export interface ToolsetIdentity {
   workspaceId: string;
@@ -88,6 +88,20 @@ export class ToolsetService extends Service {
     return this.tools.getValue();
   }
 
+  public observeTools() {
+    return this.tools.asObservable().pipe(map(tools => tools?.map(tool => this.parseToolProperties(tool))));
+  }
+
+  private parseToolProperties(tool: dgraphResolversTypes.McpTool) {
+    return {
+      name: tool.name,
+      title: tool.name,
+      description: tool.description,
+      inputSchema: JSON.parse(tool.inputSchema),
+      annotations: JSON.parse(tool.annotations),
+    };
+  }
+
   /**
    * Wait for tools to be available and return them
    */
@@ -102,13 +116,7 @@ export class ToolsetService extends Service {
 
   public async getToolsForMCP() {
     const tools = await this.waitForTools();
-    return tools.map((tool) => ({
-      name: tool.name,
-      title: tool.name,
-      description: tool.description,
-      inputSchema: JSON.parse(tool.inputSchema),
-      annotations: JSON.parse(tool.annotations),
-    }));
+    return tools.map((tool) => this.parseToolProperties(tool));
   }
 
   public async callTool(name: string, args: Record<string, unknown>) {
