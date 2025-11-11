@@ -18,6 +18,7 @@ import { map } from 'rxjs/operators';
 import { createSubscriptionFromQuery } from '../helpers';
 import pino from 'pino';
 import { WorkspaceRepository } from './workspace.repository';
+import { IdentityRepository } from './identity.repository';
 
 @injectable()
 export class ToolSetRepository {
@@ -27,6 +28,7 @@ export class ToolSetRepository {
     @inject(DGraphService) private readonly dgraphService: DGraphService,
     @inject(LoggerService) private readonly loggerService: LoggerService,
     @inject(WorkspaceRepository) private readonly workspaceRepository: WorkspaceRepository,
+    @inject(IdentityRepository) private readonly identityRepository: IdentityRepository,
   ) {
     this.logger = this.loggerService.getLogger('toolset-repository');
   }
@@ -37,6 +39,8 @@ export class ToolSetRepository {
     workspaceId: string,
   ): Promise<dgraphResolversTypes.ToolSet> {
     const now = new Date().toISOString();
+
+    // 1. Create the toolset
     const res = await this.dgraphService.mutation<{
       addToolSet: { toolSet: dgraphResolversTypes.ToolSet[] };
     }>(ADD_TOOLSET, {
@@ -46,8 +50,13 @@ export class ToolSetRepository {
       createdAt: now,
     });
 
-    this.logger.info(`Created toolset ${name} with id ${res.addToolSet.toolSet[0].id}`);
-    return res.addToolSet.toolSet[0];
+    const toolSet = res.addToolSet.toolSet[0];
+    this.logger.debug(`Created toolset ${name} with id ${toolSet.id}`);
+
+    // 2. Create the toolset key
+    await this.identityRepository.createKey('toolset', toolSet.id, `${name} Toolset Key`, '');
+
+    return toolSet;
   }
 
   async update(

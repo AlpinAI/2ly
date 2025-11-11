@@ -7,6 +7,8 @@ import {
   REVOKE_IDENTITY_KEY,
   FIND_IDENTITY_KEY,
   DELETE_IDENTITY_KEY,
+  FIND_KEYS_BY_RELATED_ID,
+  FIND_KEY_BY_ID,
 } from './identity.operations';
 
 export interface CreateIdentityKeyData {
@@ -117,6 +119,38 @@ export class IdentityRepository {
     } catch (error) {
       console.error('Failed to delete identity key:', error);
       throw new Error('Failed to delete identity key');
+    }
+  }
+
+  /**
+   * Find all identity keys by relatedId.
+   */
+  async findKeysByRelatedId(relatedId: string): Promise<dgraphResolversTypes.IdentityKey[]> {
+    try {
+      const res = await this.dgraphService.query<{
+        queryIdentityKey: dgraphResolversTypes.IdentityKey[];
+      }>(FIND_KEYS_BY_RELATED_ID, { relatedId });
+
+      return res.queryIdentityKey || [];
+    } catch (error) {
+      console.error('Failed to find keys by relatedId:', error);
+      throw new Error('Failed to find keys by relatedId');
+    }
+  }
+
+  /**
+   * Find an identity key by its ID.
+   */
+  async findKeyById(keyId: string): Promise<dgraphResolversTypes.IdentityKey | null> {
+    try {
+      const res = await this.dgraphService.query<{
+        getIdentityKey: dgraphResolversTypes.IdentityKey;
+      }>(FIND_KEY_BY_ID, { id: keyId });
+
+      return res.getIdentityKey || null;
+    } catch (error) {
+      console.error('Failed to find key by ID:', error);
+      throw new Error('Failed to find key by ID');
     }
   }
 

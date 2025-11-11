@@ -1,18 +1,18 @@
 /**
- * ToolSelectionTable Component Tests
+ * ToolsetSelectionTable Component Tests
  *
- * WHY: Test the ToolSelectionTable component for tool selection with proper description truncation
+ * WHY: Test the ToolsetSelectionTable component for tool selection with proper description truncation
  */
 
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
-import { ToolSelectionTable } from './tool-selection-table';
+import { ToolsetSelectionTable } from './toolset-selection-table';
 import type { GetMcpToolsQuery } from '@/graphql/generated/graphql';
 import { ActiveStatus } from '@/graphql/generated/graphql';
 
 type McpTool = NonNullable<NonNullable<GetMcpToolsQuery['mcpTools']>[number]>;
 
-describe('ToolSelectionTable', () => {
+describe('ToolsetSelectionTable', () => {
   const mockServers = [
     {
       id: 'server-1',
@@ -99,7 +99,7 @@ describe('ToolSelectionTable', () => {
   };
 
   it('renders server groups with tools', () => {
-    render(<ToolSelectionTable {...defaultProps} />);
+    render(<ToolsetSelectionTable {...defaultProps} />);
 
     expect(screen.getByText('Test Server 1')).toBeDefined();
     expect(screen.getByText('Test Server 2')).toBeDefined();
@@ -108,14 +108,14 @@ describe('ToolSelectionTable', () => {
   });
 
   it('applies line-clamp-1 to tool descriptions for single-line truncation', () => {
-    const { container } = render(<ToolSelectionTable {...defaultProps} />);
+    const { container } = render(<ToolsetSelectionTable {...defaultProps} />);
 
     const descriptions = container.querySelectorAll('.line-clamp-1');
     expect(descriptions.length).toBeGreaterThan(0);
   });
 
   it('renders tool descriptions with proper truncation', () => {
-    const { container } = render(<ToolSelectionTable {...defaultProps} />);
+    const { container } = render(<ToolsetSelectionTable {...defaultProps} />);
 
     const longDescription = container.querySelector('.line-clamp-1');
     expect(longDescription).toBeDefined();
@@ -123,7 +123,7 @@ describe('ToolSelectionTable', () => {
   });
 
   it('displays tool status badges', () => {
-    render(<ToolSelectionTable {...defaultProps} />);
+    render(<ToolsetSelectionTable {...defaultProps} />);
 
     const activeStatuses = screen.getAllByText('ACTIVE');
     expect(activeStatuses.length).toBe(2);
@@ -132,13 +132,13 @@ describe('ToolSelectionTable', () => {
 
   it('shows selection count', () => {
     const selectedToolIds = new Set(['tool-1', 'tool-2']);
-    render(<ToolSelectionTable {...defaultProps} selectedToolIds={selectedToolIds} />);
+    render(<ToolsetSelectionTable {...defaultProps} selectedToolIds={selectedToolIds} />);
 
     expect(screen.getByText('2 of 3 tools selected')).toBeDefined();
   });
 
   it('shows loading state', () => {
-    render(<ToolSelectionTable {...defaultProps} loading={true} />);
+    render(<ToolsetSelectionTable {...defaultProps} loading={true} />);
 
     const loadingElements = screen.getAllByRole('generic');
     const hasAnimatePulse = loadingElements.some((el) =>
@@ -148,19 +148,19 @@ describe('ToolSelectionTable', () => {
   });
 
   it('shows empty state when no servers', () => {
-    render(<ToolSelectionTable {...defaultProps} servers={[]} />);
+    render(<ToolsetSelectionTable {...defaultProps} servers={[]} />);
 
     expect(screen.getByText('No tools available.')).toBeDefined();
   });
 
   it('shows search empty state', () => {
-    render(<ToolSelectionTable {...defaultProps} servers={[]} searchTerm="nonexistent" />);
+    render(<ToolsetSelectionTable {...defaultProps} servers={[]} searchTerm="nonexistent" />);
 
     expect(screen.getByText('No tools found matching your search.')).toBeDefined();
   });
 
   it('displays tool count per server', () => {
-    render(<ToolSelectionTable {...defaultProps} />);
+    render(<ToolsetSelectionTable {...defaultProps} />);
 
     expect(screen.getByText('2 tools')).toBeDefined();
     expect(screen.getByText('1 tool')).toBeDefined();
@@ -168,7 +168,7 @@ describe('ToolSelectionTable', () => {
 
   it('highlights search terms in tool names and descriptions', () => {
     const { container } = render(
-      <ToolSelectionTable {...defaultProps} searchTerm="Tool" />
+      <ToolsetSelectionTable {...defaultProps} searchTerm="Tool" />
     );
 
     const marks = container.querySelectorAll('mark');
@@ -177,13 +177,13 @@ describe('ToolSelectionTable', () => {
 
   it('shows clear all button when tools are selected', () => {
     const selectedToolIds = new Set(['tool-1']);
-    render(<ToolSelectionTable {...defaultProps} selectedToolIds={selectedToolIds} />);
+    render(<ToolsetSelectionTable {...defaultProps} selectedToolIds={selectedToolIds} />);
 
     expect(screen.getByText('Clear all')).toBeDefined();
   });
 
   it('displays all tools when server is expanded', () => {
-    render(<ToolSelectionTable {...defaultProps} />);
+    render(<ToolsetSelectionTable {...defaultProps} />);
 
     // All tools should be visible by default (not collapsed)
     expect(screen.getByText('Tool 1')).toBeDefined();
@@ -195,7 +195,7 @@ describe('ToolSelectionTable', () => {
     it('shows only selected tools when showSelectedOnly is true', () => {
       const selectedToolIds = new Set(['tool-1', 'tool-3']);
       render(
-        <ToolSelectionTable
+        <ToolsetSelectionTable
           {...defaultProps}
           selectedToolIds={selectedToolIds}
           showSelectedOnly={true}
@@ -213,7 +213,7 @@ describe('ToolSelectionTable', () => {
     it('shows all tools when showSelectedOnly is false', () => {
       const selectedToolIds = new Set(['tool-1']);
       render(
-        <ToolSelectionTable
+        <ToolsetSelectionTable
           {...defaultProps}
           selectedToolIds={selectedToolIds}
           showSelectedOnly={false}
@@ -229,7 +229,7 @@ describe('ToolSelectionTable', () => {
     it('hides servers with no selected tools when showSelectedOnly is true', () => {
       const selectedToolIds = new Set(['tool-1']); // Only tool from server 1
       render(
-        <ToolSelectionTable
+        <ToolsetSelectionTable
           {...defaultProps}
           selectedToolIds={selectedToolIds}
           showSelectedOnly={true}
@@ -245,7 +245,7 @@ describe('ToolSelectionTable', () => {
 
     it('shows "No selected tools" message when filter is active and nothing is selected', () => {
       render(
-        <ToolSelectionTable
+        <ToolsetSelectionTable
           {...defaultProps}
           selectedToolIds={new Set()}
           showSelectedOnly={true}
@@ -258,7 +258,7 @@ describe('ToolSelectionTable', () => {
     it('updates filtered list when selection changes with showSelectedOnly active', () => {
       const selectedToolIds = new Set(['tool-1']);
       const { rerender } = render(
-        <ToolSelectionTable
+        <ToolsetSelectionTable
           {...defaultProps}
           selectedToolIds={selectedToolIds}
           showSelectedOnly={true}
@@ -271,7 +271,7 @@ describe('ToolSelectionTable', () => {
       // Update selection
       const updatedSelection = new Set(['tool-1', 'tool-2']);
       rerender(
-        <ToolSelectionTable
+        <ToolsetSelectionTable
           {...defaultProps}
           selectedToolIds={updatedSelection}
           showSelectedOnly={true}

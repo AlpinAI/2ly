@@ -1,5 +1,5 @@
 /**
- * ToolManagementPanel Component Tests
+ * ToolsetManagementPanel Component Tests
  *
  * WHY: Test the tool management panel features including tool removal and filtering
  *
@@ -12,7 +12,7 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
 // Test the auto-clear logic in isolation
-describe('ToolManagementPanel - Auto-clear logic', () => {
+describe('ToolsetManagementPanel - Auto-clear logic', () => {
   it('auto-clear useEffect should clear filter when selectedToolIds is empty', () => {
     let showSelectedOnly = true;
     const setShowSelectedOnly = vi.fn((value) => {
@@ -56,7 +56,7 @@ describe('ToolManagementPanel - Auto-clear logic', () => {
 });
 
 // Test handler functions in isolation
-describe('ToolManagementPanel - Handler functions', () => {
+describe('ToolsetManagementPanel - Handler functions', () => {
   it('handleRemoveToolClick sets the confirmRemoveToolId', () => {
     const setConfirmRemoveToolId = vi.fn();
 
@@ -122,7 +122,7 @@ describe('ToolManagementPanel - Handler functions', () => {
 });
 
 // Test state reset logic
-describe('ToolManagementPanel - State reset', () => {
+describe('ToolsetManagementPanel - State reset', () => {
   it('resets showSelectedOnly when panel closes', () => {
     const open = false;
     const setShowSelectedOnly = vi.fn();

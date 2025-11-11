@@ -1,8 +1,8 @@
 /**
- * ToolSetDetail Component
+ * ToolsetDetail Component
  *
- * WHY: Displays detailed information about a selected tool set.
- * Used by Tool Sets Page as the detail panel.
+ * WHY: Displays detailed information about a selected toolset.
+ * Used by Toolsets Page as the detail panel.
  *
  * DISPLAYS:
  * - Name and description
@@ -14,7 +14,7 @@
 import { Bot, Wrench, Clock, Settings, Trash2, Cable } from 'lucide-react';
 import { Link, useParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { useManageToolsDialog, useConnectAgentDialog } from '@/stores/uiStore';
+import { useManageToolsDialog, useConnectToolsetDialog } from '@/stores/uiStore';
 import { useMutation } from '@apollo/client/react';
 import { useNotification } from '@/contexts/NotificationContext';
 import { DeleteToolSetDocument } from '@/graphql/generated/graphql';
@@ -22,14 +22,14 @@ import type { SubscribeToolSetsSubscription } from '@/graphql/generated/graphql'
 
 type ToolSet = NonNullable<SubscribeToolSetsSubscription['toolSets']>[number];
 
-export interface ToolSetDetailProps {
+export interface ToolsetDetailProps {
   toolSet: ToolSet;
 }
 
-export function ToolSetDetail({ toolSet }: ToolSetDetailProps) {
+export function ToolsetDetail({ toolSet }: ToolsetDetailProps) {
   const { workspaceId } = useParams<{ workspaceId: string }>();
-  const { setOpen, setSelectedToolSetId } = useManageToolsDialog();
-  const { setOpen: setConnectDialogOpen, setSelectedAgentId } = useConnectAgentDialog();
+  const { setOpen, setSelectedToolsetId } = useManageToolsDialog();
+  const { setOpen: setConnectDialogOpen, setSelectedToolsetName, setSelectedToolsetId: setConnectToolsetId } = useConnectToolsetDialog();
   const { confirm } = useNotification();
   const [deleteToolSet] = useMutation(DeleteToolSetDocument);
 
@@ -39,22 +39,23 @@ export function ToolSetDetail({ toolSet }: ToolSetDetailProps) {
   };
 
   const handleManageTools = () => {
-    setSelectedToolSetId(toolSet.id);
+    setSelectedToolsetId(toolSet.id);
     setOpen(true);
   };
 
   const handleConnect = () => {
     // Use the toolSet name as a pseudo-agent ID for connection instructions
-    // The ConnectAgentDialog will show instructions for this name
-    setSelectedAgentId(toolSet.name);
+    // The ConnectToolsetDialog will show instructions for this name
+    setSelectedToolsetName(toolSet.name);
+    setConnectToolsetId(toolSet.id);
     setConnectDialogOpen(true);
   };
 
   const handleDelete = async () => {
     const confirmed = await confirm({
-      title: 'Delete Tool Set',
+      title: 'Delete Toolset',
       description: `Are you sure you want to delete "${toolSet.name}"? This action cannot be undone.`,
-      confirmLabel: 'Delete Tool Set',
+      confirmLabel: 'Delete Toolset',
       cancelLabel: 'Cancel',
       variant: 'destructive',
     });
@@ -69,7 +70,7 @@ export function ToolSetDetail({ toolSet }: ToolSetDetailProps) {
         refetchQueries: ['SubscribeToolSets'],
       });
     } catch (error) {
-      console.error('Failed to delete tool set:', error);
+      console.error('Failed to delete toolset:', error);
     }
   };
 
@@ -204,11 +205,11 @@ export function ToolSetDetail({ toolSet }: ToolSetDetailProps) {
           )}
         </div>
 
-        {/* Delete Tool Set Button */}
+        {/* Delete Toolset Button */}
         <div className="pt-4 border-t border-gray-200 dark:border-gray-700 flex justify-end">
           <Button variant="destructive" onClick={handleDelete} size="sm" className="h-7 px-2 text-xs">
             <Trash2 className="h-3 w-3 mr-1" />
-            Delete Tool Set
+            Delete Toolset
           </Button>
         </div>
       </div>

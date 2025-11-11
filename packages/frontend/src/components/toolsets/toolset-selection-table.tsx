@@ -1,8 +1,8 @@
 /**
- * ToolSelectionTable Component
+ * ToolsetSelectionTable Component
  *
  * WHY: Displays tools grouped by MCP server with checkbox selection for tool management.
- * Used by ToolManagementDialog to show available tools and their selection state.
+ * Used by ToolsetManagementPanel to show available tools and their selection state.
  *
  * FEATURES:
  * - Tools grouped by MCP server (collapsible sections)
@@ -29,7 +29,7 @@ interface GroupedServer {
   tools: McpTool[];
 }
 
-export interface ToolSelectionTableProps {
+export interface ToolsetSelectionTableProps {
   servers: GroupedServer[];
   selectedToolIds: Set<string>;
   onToolToggle: (toolId: string) => void;
@@ -41,7 +41,7 @@ export interface ToolSelectionTableProps {
   loading?: boolean;
 }
 
-export function ToolSelectionTable({
+export function ToolsetSelectionTable({
   servers,
   selectedToolIds,
   onToolToggle,
@@ -51,7 +51,7 @@ export function ToolSelectionTable({
   searchTerm,
   showSelectedOnly = false,
   loading,
-}: ToolSelectionTableProps) {
+}: ToolsetSelectionTableProps) {
   const [collapsedServers, setCollapsedServers] = useState<Set<string>>(new Set());
 
   // Filter servers and tools based on showSelectedOnly

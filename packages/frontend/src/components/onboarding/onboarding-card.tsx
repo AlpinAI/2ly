@@ -26,7 +26,7 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { useUIStore, useCreateToolSetDialog, useManageToolsDialog, useConnectAgentDialog } from '@/stores/uiStore';
+import { useUIStore, useCreateToolsetDialog, useManageToolsDialog, useConnectToolsetDialog } from '@/stores/uiStore';
 import { STEP_METADATA, ONBOARDING_STEPS } from '@/constants/onboarding-steps';
 import { useMCPServers } from '@/hooks/useMCPServers';
 import { useRuntimeData } from '@/stores/runtimeStore';
@@ -43,9 +43,9 @@ interface OnboardingCardProps {
 export function OnboardingCard({ step, isCurrentStep = false }: OnboardingCardProps) {
   const setAddSourceWorkflowOpen = useUIStore((state) => state.setAddSourceWorkflowOpen);
 
-  const { openDialog: openCreateToolSetDialog } = useCreateToolSetDialog();
+  const { openDialog: openCreateToolsetDialog } = useCreateToolsetDialog();
   const manageToolsDialog = useManageToolsDialog();
-  const { setOpen: setConnectAgentDialogOpen, setSelectedAgentId } = useConnectAgentDialog();
+  const { setOpen: setConnectToolsetDialogOpen, setSelectedToolsetName } = useConnectToolsetDialog();
 
   const metadata = STEP_METADATA[step.stepId];
   const isCompleted = step.status === 'COMPLETED';
@@ -66,8 +66,8 @@ export function OnboardingCard({ step, isCurrentStep = false }: OnboardingCardPr
   
   // Handle creating tool set with callback to open manage tools dialog
   const handleCreateToolSet = () => {
-    openCreateToolSetDialog((toolSetId) => {
-      manageToolsDialog.setSelectedToolSetId(toolSetId);
+    openCreateToolsetDialog((toolSetId) => {
+      manageToolsDialog.setSelectedToolsetId(toolSetId);
       manageToolsDialog.setOpen(true);
     });
   };
@@ -192,8 +192,8 @@ export function OnboardingCard({ step, isCurrentStep = false }: OnboardingCardPr
           <Button
             onClick={() => {
               // Use the first toolSet name for connection instructions
-              setSelectedAgentId(firstToolSetWithTools.name);
-              setConnectAgentDialogOpen(true);
+              setSelectedToolsetName(firstToolSetWithTools.name);
+              setConnectToolsetDialogOpen(true);
             }}
             className="w-full"
             variant={isCurrentStep ? "default" : "outline"}

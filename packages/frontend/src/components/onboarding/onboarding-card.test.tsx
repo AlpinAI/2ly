@@ -147,8 +147,8 @@ describe('OnboardingCard', () => {
   const mockOpenCreateToolSetDialog = vi.fn();
   const mockSetManageToolsDialogOpen = vi.fn();
   const mockSetSelectedToolSetForManagement = vi.fn();
-  const mockSetConnectAgentDialogOpen = vi.fn();
-  const mockSetSelectedAgentId = vi.fn();
+  const mockSetConnectToolsetDialogOpen = vi.fn();
+  const mockSetSelectedToolsetName = vi.fn();
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -164,7 +164,7 @@ describe('OnboardingCard', () => {
       }
     );
 
-    vi.mocked(uiStore.useCreateToolSetDialog).mockReturnValue({
+    vi.mocked(uiStore.useCreateToolsetDialog).mockReturnValue({
       open: false,
       callback: null,
       openDialog: mockOpenCreateToolSetDialog,
@@ -174,15 +174,17 @@ describe('OnboardingCard', () => {
     vi.mocked(uiStore.useManageToolsDialog).mockReturnValue({
       open: false,
       setOpen: mockSetManageToolsDialogOpen,
-      selectedToolSetId: null,
-      setSelectedToolSetId: mockSetSelectedToolSetForManagement,
+      selectedToolsetId: null,
+      setSelectedToolsetId: mockSetSelectedToolSetForManagement,
     });
 
-    vi.mocked(uiStore.useConnectAgentDialog).mockReturnValue({
+    vi.mocked(uiStore.useConnectToolsetDialog).mockReturnValue({
       open: false,
-      setOpen: mockSetConnectAgentDialogOpen,
-      selectedAgentId: null,
-      setSelectedAgentId: mockSetSelectedAgentId,
+      setOpen: mockSetConnectToolsetDialogOpen,
+      selectedToolsetName: null,
+      setSelectedToolsetName: mockSetSelectedToolsetName,
+      selectedToolsetId: null,
+      setSelectedToolsetId: vi.fn(),
     });
 
     vi.mocked(runtimeStore.useRuntimeData).mockReturnValue({
@@ -230,14 +232,14 @@ describe('OnboardingCard', () => {
       expect(button).toBeInTheDocument();
     });
 
-    it('opens Connect Agent dialog when Connect button is clicked', () => {
+    it('opens Connect Toolset dialog when Connect button is clicked', () => {
       render(<OnboardingCard step={mockStep} isCurrentStep={true} />);
 
       const button = screen.getByRole('button', { name: /Connect/i });
       fireEvent.click(button);
 
-      expect(mockSetSelectedAgentId).toHaveBeenCalledWith('Test Agent');
-      expect(mockSetConnectAgentDialogOpen).toHaveBeenCalledWith(true);
+      expect(mockSetSelectedToolsetName).toHaveBeenCalledWith('Test Agent');
+      expect(mockSetConnectToolsetDialogOpen).toHaveBeenCalledWith(true);
     });
 
     it('shows message when no tool set with tools exists', () => {

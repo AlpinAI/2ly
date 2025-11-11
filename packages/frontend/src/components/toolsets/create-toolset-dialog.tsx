@@ -1,7 +1,7 @@
 /**
- * Create Tool Set Dialog Component
+ * Create Toolset Dialog Component
  *
- * WHY: Allows users to create new tool sets with a name and description.
+ * WHY: Allows users to create new toolsets with a name and description.
  * ToolSets are logical groupings of tools (replaces the old "agent" concept).
  *
  * FEATURES:
@@ -12,7 +12,7 @@
  *
  * USAGE:
  * ```tsx
- * const { setOpen } = useCreateToolSetDialog();
+ * const { setOpen } = useCreateToolsetDialog();
  *
  * // Open dialog
  * setOpen(true);
@@ -25,14 +25,14 @@ import * as Dialog from '@radix-ui/react-dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { useCreateToolSetDialog } from '@/stores/uiStore';
+import { useCreateToolsetDialog } from '@/stores/uiStore';
 import { useParams } from 'react-router-dom';
 import { useMutation } from '@apollo/client/react';
 import { CreateToolSetDocument } from '@/graphql/generated/graphql';
 import { useNotification } from '@/contexts/NotificationContext';
 
-export function CreateToolSetDialog() {
-  const { open, close, callback } = useCreateToolSetDialog();
+export function CreateToolsetDialog() {
+  const { open, close, callback } = useCreateToolsetDialog();
   const { workspaceId } = useParams<{ workspaceId: string }>();
   const { toast } = useNotification();
 
@@ -45,7 +45,7 @@ export function CreateToolSetDialog() {
       const toolSetId = data.createToolSet.id;
 
       toast({
-        title: 'Tool Set Created',
+        title: 'Toolset Created',
         description: `"${name}" has been created successfully.`,
         variant: 'success',
       });
@@ -59,7 +59,7 @@ export function CreateToolSetDialog() {
     },
     onError: (error) => {
       toast({
-        title: 'Error Creating Tool Set',
+        title: 'Error Creating Toolset',
         description: error.message,
         variant: 'error',
       });
@@ -112,10 +112,10 @@ export function CreateToolSetDialog() {
             <div className="flex items-center justify-between">
               <div className="flex-1">
                 <Dialog.Title className="text-lg font-semibold text-gray-900 dark:text-white">
-                  Create Tool Set
+                  Create Toolset
                 </Dialog.Title>
                 <Dialog.Description className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                  Create a new tool set to organize your tools
+                  Create a new toolset to organize your tools
                 </Dialog.Description>
               </div>
 
@@ -140,7 +140,7 @@ export function CreateToolSetDialog() {
                 </label>
                 <Input
                   id="toolset-name"
-                  placeholder="Enter tool set name"
+                  placeholder="Enter toolset name"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   required
@@ -159,7 +159,7 @@ export function CreateToolSetDialog() {
                 </label>
                 <Textarea
                   id="toolset-description"
-                  placeholder="Enter tool set description (optional)"
+                  placeholder="Enter toolset description (optional)"
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
                   rows={4}
@@ -174,7 +174,7 @@ export function CreateToolSetDialog() {
                 Cancel
               </Button>
               <Button type="submit" disabled={!isValid || loading}>
-                {loading ? 'Creating...' : 'Create Tool Set'}
+                {loading ? 'Creating...' : 'Create Toolset'}
               </Button>
             </div>
           </form>

@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
-import { ConnectAgentDialog } from './connect-agent-dialog';
+import { ConnectToolsetDialog } from './connect-toolset-dialog';
 import * as uiStore from '@/stores/uiStore';
 import * as runtimeStore from '@/stores/runtimeStore';
 import { ActiveStatus, RuntimeType, type Runtime } from '@/graphql/generated/graphql';
@@ -9,12 +9,12 @@ import { ActiveStatus, RuntimeType, type Runtime } from '@/graphql/generated/gra
 vi.mock('@/stores/uiStore');
 vi.mock('@/stores/runtimeStore');
 
-describe('ConnectAgentDialog', () => {
-  const mockAgent: Runtime = {
+describe('ConnectToolsetDialog', () => {
+  const mockToolset: Runtime = {
     __typename: 'Runtime',
-    id: 'agent-1',
-    name: 'Test Agent',
-    description: 'Test agent description',
+    id: 'Test Toolset',
+    name: 'Test Toolset',
+    description: 'Test toolset description',
     status: ActiveStatus.Active,
     type: RuntimeType.Edge,
     createdAt: new Date(),
@@ -44,15 +44,17 @@ describe('ConnectAgentDialog', () => {
     vi.clearAllMocks();
 
     // Default mock implementations
-    vi.mocked(uiStore.useConnectAgentDialog).mockReturnValue({
+    vi.mocked(uiStore.useConnectToolsetDialog).mockReturnValue({
       open: true,
       setOpen: vi.fn(),
-      selectedAgentId: 'agent-1',
-      setSelectedAgentId: vi.fn(),
+      selectedToolsetName: 'Test Toolset',
+      setSelectedToolsetName: vi.fn(),
+      selectedToolsetId: 'test-id',
+      setSelectedToolsetId: vi.fn(),
     });
 
     vi.mocked(runtimeStore.useRuntimeData).mockReturnValue({
-      runtimes: [mockAgent],
+      runtimes: [mockToolset],
       loading: false,
       error: null,
       stats: { total: 1, active: 1, inactive: 0 },
@@ -60,62 +62,66 @@ describe('ConnectAgentDialog', () => {
   });
 
   it('renders dialog when open', () => {
-    render(<ConnectAgentDialog />);
-    expect(screen.getByText('Connect Agent to 2LY')).toBeInTheDocument();
-    expect(screen.getByText(/Agent:/)).toBeInTheDocument();
-    expect(screen.getByText('Test Agent')).toBeInTheDocument();
+    render(<ConnectToolsetDialog />);
+    expect(screen.getByText('Connect Toolset to 2LY')).toBeInTheDocument();
+    expect(screen.getByText(/Toolset:/)).toBeInTheDocument();
+    expect(screen.getByText('Test Toolset')).toBeInTheDocument();
   });
 
   it('does not render when closed', () => {
-    vi.mocked(uiStore.useConnectAgentDialog).mockReturnValue({
+    vi.mocked(uiStore.useConnectToolsetDialog).mockReturnValue({
       open: false,
       setOpen: vi.fn(),
-      selectedAgentId: 'agent-1',
-      setSelectedAgentId: vi.fn(),
+      selectedToolsetName: 'Test Toolset',
+      setSelectedToolsetName: vi.fn(),
+      selectedToolsetId: 'test-id',
+      setSelectedToolsetId: vi.fn(),
     });
 
-    const { container } = render(<ConnectAgentDialog />);
+    const { container } = render(<ConnectToolsetDialog />);
     expect(container.querySelector('[role="dialog"]')).not.toBeInTheDocument();
   });
 
-  it('does not render when no agent is selected', () => {
-    vi.mocked(uiStore.useConnectAgentDialog).mockReturnValue({
+  it('does not render when no toolset is selected', () => {
+    vi.mocked(uiStore.useConnectToolsetDialog).mockReturnValue({
       open: true,
       setOpen: vi.fn(),
-      selectedAgentId: null,
-      setSelectedAgentId: vi.fn(),
+      selectedToolsetName: null,
+      setSelectedToolsetName: vi.fn(),
+      selectedToolsetId: null,
+      setSelectedToolsetId: vi.fn(),
     });
 
-    const { container } = render(<ConnectAgentDialog />);
+    const { container } = render(<ConnectToolsetDialog />);
     expect(container.querySelector('[role="dialog"]')).not.toBeInTheDocument();
   });
 
   it('displays waiting status initially', () => {
     // Mock agent as not yet connected (INACTIVE status)
     vi.mocked(runtimeStore.useRuntimeData).mockReturnValue({
-      runtimes: [{ ...mockAgent, status: ActiveStatus.Inactive }],
+      runtimes: [{ ...mockToolset, status: ActiveStatus.Inactive }],
       loading: false,
       error: null,
       stats: { total: 1, active: 0, inactive: 1 },
     });
 
-    render(<ConnectAgentDialog />);
+    render(<ConnectToolsetDialog />);
     expect(screen.getByText('Waiting...')).toBeInTheDocument();
   });
 
   it('shows platform selector', () => {
-    render(<ConnectAgentDialog />);
+    render(<ConnectToolsetDialog />);
     expect(screen.getByText('Select Platform')).toBeInTheDocument();
   });
 
   it('renders default platform instructions (Langchain)', () => {
-    render(<ConnectAgentDialog />);
+    render(<ConnectToolsetDialog />);
     expect(screen.getByText('1. Install connector')).toBeInTheDocument();
     expect(screen.getByText(/pip install langchain_2ly/)).toBeInTheDocument();
   });
 
   it('shows close button', () => {
-    render(<ConnectAgentDialog />);
+    render(<ConnectToolsetDialog />);
     // Look for the close button by finding the button with X icon
     const buttons = screen.getAllByRole('button');
     expect(buttons.length).toBeGreaterThan(0);

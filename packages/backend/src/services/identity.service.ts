@@ -130,6 +130,10 @@ export class IdentityService extends Service {
         if (!toolset) {
           throw new Error(`Toolset ${relatedId} not found`);
         }
+        workspaceId = toolset.workspace.id;
+        finalNature = 'toolset';
+        finalRelatedId = toolset.id;
+        finalRelatedName = toolset.name;
       } else {
         throw new Error(`Unknown nature: ${nature}`);
       }
@@ -137,12 +141,10 @@ export class IdentityService extends Service {
       if (!workspaceId || !finalNature || !finalRelatedId || !finalRelatedName) {
         throw new Error('Could not retrieve identity');
       }
-
       // set roots if provided
       if (finalNature === 'runtime' && runtime && msg.data.roots) {
         await this.runtimeRepository.setRoots(runtime.id, msg.data.roots);
       }
-
       if (finalNature === 'runtime' && runtime) {
         for (const callback of this.onRuntimeHandshakeCallbacks.values()) {
           callback({ instance: runtime, pid: msg.data.pid, hostIP: msg.data.hostIP, hostname: msg.data.hostname });
@@ -158,6 +160,7 @@ export class IdentityService extends Service {
         id: finalRelatedId,
         name: finalRelatedName,
       });
+      this.logger.debug(`Sending handshake response: ${JSON.stringify(handshakeResponse.data)}`);
       msg.respond(handshakeResponse);
     } catch (error) {
       this.logger.error(`Handshake failed: ${error instanceof Error ? error.message : 'Unknown error'}`);

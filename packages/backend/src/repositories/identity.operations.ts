@@ -74,3 +74,33 @@ export const DELETE_IDENTITY_KEY = gql`
     }
   }
 `;
+
+export const FIND_KEYS_BY_RELATED_ID = gql`
+  query findKeysByRelatedId($relatedId: String!) {
+    queryIdentityKey(filter: { relatedId: { eq: $relatedId } }) {
+      id
+      key
+      relatedId
+      createdAt
+      expiresAt
+      revokedAt
+      description
+      permissions
+    }
+  }
+`;
+
+export const FIND_KEY_BY_ID = gql`
+  query findKeyById($id: ID!) {
+    getIdentityKey(id: $id) {
+      id
+      key
+      relatedId
+      createdAt
+      expiresAt
+      revokedAt
+      description
+      permissions
+    }
+  }
+`;

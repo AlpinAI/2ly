@@ -1,29 +1,29 @@
 /**
- * Connect Agent Dialog Component
+ * Connect Toolset Dialog Component
  *
- * WHY: Provides platform-specific instructions for connecting agents to 2LY.
+ * WHY: Provides platform-specific instructions for connecting toolsets to 2LY.
  * Users can select their platform (Langchain, Langflow, N8N, JSON) and see
  * tailored connection instructions with code examples.
  *
  * FEATURES:
  * - Platform selection via Radix Select
  * - Dynamic instructions based on selected platform
- * - Real-time connection detection (shows when agent connects)
+ * - Real-time connection detection (shows when toolset connects)
  * - Code snippets with copy functionality
- * - Agent name pre-filled in all examples
+ * - Toolset name pre-filled in all examples
  *
  * USAGE:
  * ```tsx
- * const { setOpen, setSelectedAgentId } = useConnectAgentDialog();
+ * const { setOpen, setSelectedToolsetName } = useConnectToolsetDialog();
  *
- * // Open dialog for specific agent
- * setSelectedAgentId(agent.id);
+ * // Open dialog for specific toolset
+ * setSelectedToolsetName(toolset.name);
  * setOpen(true);
  * ```
  */
 
 import { useState, useEffect, useMemo, useCallback } from 'react';
-import { X, CheckCircle2, Loader2 } from 'lucide-react';
+import { X, CheckCircle2, Loader2, Copy, Key, AlertCircle } from 'lucide-react';
 import * as Dialog from '@radix-ui/react-dialog';
 import {
   Select,
@@ -33,38 +33,57 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
-import { useConnectAgentDialog } from '@/stores/uiStore';
+import { useConnectToolsetDialog } from '@/stores/uiStore';
 import { useRuntimeData } from '@/stores/runtimeStore';
 import { CONNECTION_OPTIONS, type PlatformOption } from './connection-options';
 import { LangchainInstructions } from './instructions/langchain-instructions';
 import { LangflowInstructions } from './instructions/langflow-instructions';
 import { N8NInstructions } from './instructions/n8n-instructions';
 import { JSONInstructions } from './instructions/json-instructions';
+import { useQuery } from '@apollo/client/react';
+import { GetToolsetKeyDocument } from '@/graphql/generated/graphql';
+import { useNotification } from '@/contexts/NotificationContext';
 
-export function ConnectAgentDialog() {
-  const { open, setOpen, selectedAgentId } = useConnectAgentDialog();
+export function ConnectToolsetDialog() {
+  const { open, setOpen, selectedToolsetName, selectedToolsetId } = useConnectToolsetDialog();
   const { runtimes } = useRuntimeData();
+  const { toast } = useNotification();
 
   const [selectedPlatform, setSelectedPlatform] = useState<PlatformOption>('langchain');
   const [isConnected, setIsConnected] = useState(false);
 
-  // Get selected agent from runtime store, or create a mock one for new agents
-  const selectedAgent = useMemo(() => {
+  // Fetch toolset key
+  const { data: keyData, loading: keyLoading } = useQuery(GetToolsetKeyDocument, {
+    variables: { toolsetId: selectedToolsetId || '' },
+    skip: !selectedToolsetId || !open,
+  });
+
+  const toolsetKey = keyData?.toolsetKey?.key;
+
+  const handleCopyKey = () => {
+    if (toolsetKey) {
+      navigator.clipboard.writeText(toolsetKey);
+      toast({ description: 'Toolset key copied to clipboard', variant: 'success' });
+    }
+  };
+
+  // Get selected toolset from runtime store, or create a mock one for new toolsets
+  const selectedToolset = useMemo(() => {
     // Try to find existing runtime first
-    const existingRuntime = runtimes.find((runtime) => runtime.id === selectedAgentId);
+    const existingRuntime = runtimes.find((runtime) => runtime.name === selectedToolsetName);
     if (existingRuntime) return existingRuntime;
 
-    // If selectedAgentId is provided but no runtime found, treat it as a name for a new agent
-    if (selectedAgentId) {
+    // If selectedToolsetName is provided but no runtime found, treat it as a name for a new toolset
+    if (selectedToolsetName) {
       return {
-        id: `new-${selectedAgentId}`,
-        name: selectedAgentId,
+        id: `new-${selectedToolsetName}`,
+        name: selectedToolsetName,
         status: 'INACTIVE' as const,
       };
     }
 
     return null;
-  }, [runtimes, selectedAgentId]);
+  }, [runtimes, selectedToolsetName]);
 
   // Get NATS server URL
   // WHY: Use window.location.hostname as default since NATS typically runs on same host
@@ -75,12 +94,12 @@ export function ConnectAgentDialog() {
   // Real-time connection detection
   // WHY: Watch for new runtimes with matching name and show feedback
   useEffect(() => {
-    if (!open || !selectedAgent) return;
+    if (!open || !selectedToolset) return;
 
     const checkForConnection = () => {
       const matchingRuntime = runtimes.find(
         (runtime) =>
-          runtime.name === selectedAgent.name &&
+          runtime.name === selectedToolset.name &&
           runtime.status === 'ACTIVE'
       );
 
@@ -91,7 +110,7 @@ export function ConnectAgentDialog() {
 
     // Check immediately and on runtime changes
     checkForConnection();
-  }, [runtimes, selectedAgent, open, isConnected]);
+  }, [runtimes, selectedToolset, open, isConnected]);
 
   // Handle dialog close
   const handleClose = useCallback(() => {
@@ -113,8 +132,8 @@ export function ConnectAgentDialog() {
     [handleClose]
   );
 
-  // Don't render if no agent selected
-  if (!selectedAgent) return null;
+  // Don't render if no toolset selected
+  if (!selectedToolset) return null;
 
   return (
     <Dialog.Root open={open} onOpenChange={handleOpenChange}>
@@ -126,10 +145,10 @@ export function ConnectAgentDialog() {
             <div className="flex items-center justify-between mb-4">
               <div className="flex-1">
                 <Dialog.Title className="text-lg font-semibold text-gray-900 dark:text-white">
-                  Connect Agent to 2LY
+                  Connect Toolset to 2LY
                 </Dialog.Title>
                 <Dialog.Description className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                  Agent: <span className="font-mono font-medium">{selectedAgent.name}</span>
+                  Toolset: <span className="font-mono font-medium">{selectedToolset.name}</span>
                 </Dialog.Description>
               </div>
 
@@ -154,6 +173,57 @@ export function ConnectAgentDialog() {
                 </Button>
               </Dialog.Close>
             </div>
+
+            {/* Toolset Key Display */}
+            {keyLoading ? (
+              <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4 mb-4">
+                <div className="flex items-center gap-2 text-sm text-blue-700 dark:text-blue-300">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Loading toolset key...
+                </div>
+              </div>
+            ) : toolsetKey ? (
+              <div className="bg-cyan-50 dark:bg-cyan-900/20 border border-cyan-200 dark:border-cyan-800 rounded-lg p-4 mb-4">
+                <div className="flex items-start gap-3">
+                  <Key className="h-5 w-5 text-cyan-600 dark:text-cyan-400 flex-shrink-0 mt-0.5" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-cyan-900 dark:text-cyan-100 mb-2">
+                      Toolset Authentication Key
+                    </p>
+                    <div className="flex items-center gap-2">
+                      <code className="flex-1 px-3 py-2 bg-white dark:bg-gray-900 border border-cyan-200 dark:border-cyan-800 rounded text-xs font-mono text-cyan-900 dark:text-cyan-100 truncate">
+                        {toolsetKey}
+                      </code>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={handleCopyKey}
+                        className="flex-shrink-0"
+                      >
+                        <Copy className="h-4 w-4" />
+                      </Button>
+                    </div>
+                    <p className="text-xs text-cyan-700 dark:text-cyan-300 mt-2">
+                      Use this key to authenticate your toolset connection
+                    </p>
+                  </div>
+                </div>
+              </div>
+            ) : selectedToolsetId ? (
+              <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-4 mb-4">
+                <div className="flex gap-3">
+                  <AlertCircle className="h-5 w-5 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
+                  <div className="text-sm">
+                    <p className="font-medium text-amber-900 dark:text-amber-100 mb-1">
+                      No Key Found
+                    </p>
+                    <p className="text-amber-700 dark:text-amber-300">
+                      This toolset doesn't have an authentication key yet.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            ) : null}
 
             {/* Platform Selector */}
             <div>
@@ -189,22 +259,22 @@ export function ConnectAgentDialog() {
             <div>
               {selectedPlatform === 'langchain' && (
                 <LangchainInstructions
-                  agentName={selectedAgent.name}
+                  agentName={selectedToolset.name}
                   natsServer={natsServer}
                 />
               )}
               {selectedPlatform === 'langflow' && (
                 <LangflowInstructions
-                  agentName={selectedAgent.name}
+                  agentName={selectedToolset.name}
                   natsServer={natsServer}
                 />
               )}
               {selectedPlatform === 'n8n' && (
-                <N8NInstructions agentName={selectedAgent.name} />
+                <N8NInstructions agentName={selectedToolset.name} />
               )}
               {selectedPlatform === 'json' && (
                 <JSONInstructions
-                  agentName={selectedAgent.name}
+                  agentName={selectedToolset.name}
                   natsServer={natsServer}
                 />
               )}

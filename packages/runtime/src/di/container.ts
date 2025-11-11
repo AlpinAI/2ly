@@ -32,6 +32,10 @@ const container = new Container();
  * Validates environment variables and determines the runtime operational mode
  */
 function validateAndDetectMode(): RuntimeMode {
+  if (process.env.MASTER_KEY && process.env.TOOLSET_KEY) {
+    delete process.env.MASTER_KEY;
+  }
+
   const remotePort = process.env.REMOTE_PORT;
   const masterKey = process.env.MASTER_KEY;
   const toolsetName = process.env.TOOLSET_NAME;
@@ -41,9 +45,9 @@ function validateAndDetectMode(): RuntimeMode {
 
   // Keys are mutually exclusive
   const keyVariables = [masterKey, toolsetKey, runtimeKey];
-  const keyVariablesSetCount = keyVariables.filter((key) => !!key).length;
-  if (keyVariablesSetCount > 1) {
-    throw new Error('Invalid configuration: Only one of MASTER_KEY, TOOLSET_KEY, or RUNTIME_KEY can be set');
+  const keyVariablesSet = keyVariables.filter((key) => !!key);
+  if (keyVariablesSet.length > 1) {
+    throw new Error(`Invalid configuration: Only one of MASTER_KEY, TOOLSET_KEY, or RUNTIME_KEY can be set but found values for ${keyVariablesSet.join(', ')}`);
   }
 
   // Validate name with master key

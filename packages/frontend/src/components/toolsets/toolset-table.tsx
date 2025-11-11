@@ -1,8 +1,8 @@
 /**
- * ToolSetTable Component
+ * ToolsetTable Component
  *
- * WHY: Displays tool sets in a table with search and filters.
- * Used by Tool Sets Page as the master list.
+ * WHY: Displays toolsets in a table with search and filters.
+ * Used by Toolsets Page as the master list.
  *
  * COLUMNS:
  * - Name & Description
@@ -27,9 +27,9 @@ import { useScrollToEntity } from '@/hooks/useScrollToEntity';
 
 type ToolSet = NonNullable<SubscribeToolSetsSubscription['toolSets']>[number];
 
-export interface ToolSetTableProps {
+export interface ToolsetTableProps {
   toolSets: ToolSet[];
-  selectedToolSetId: string | null;
+  selectedToolsetId: string | null;
   onSelectToolSet: (toolSetId: string) => void;
   search: string;
   onSearchChange: (search: string) => void;
@@ -43,33 +43,33 @@ const STATUS_OPTIONS = [
   { id: 'INACTIVE', label: 'Inactive' },
 ];
 
-export function ToolSetTable({
+export function ToolsetTable({
   toolSets,
-  selectedToolSetId,
+  selectedToolsetId,
   onSelectToolSet,
   search,
   onSearchChange,
   statusFilter,
   onStatusFilterChange,
   loading,
-}: ToolSetTableProps) {
+}: ToolsetTableProps) {
   const scrollToEntity = useScrollToEntity();
   const rowRefs = useRef<Map<string, HTMLTableRowElement>>(new Map());
 
   const hasActiveFilters = search.length > 0 || statusFilter.length > 0;
-  const { setOpen: setManageToolsOpen, setSelectedToolSetId } = useManageToolsDialog();
+  const { setOpen: setManageToolsOpen, setSelectedToolsetId } = useManageToolsDialog();
 
   // Scroll to selected entity when ID changes and element is ready
   useEffect(() => {
-    if (selectedToolSetId && !loading) {
-      const element = rowRefs.current.get(selectedToolSetId);
+    if (selectedToolsetId && !loading) {
+      const element = rowRefs.current.get(selectedToolsetId);
       if (element) {
         setTimeout(() => {
           scrollToEntity(element);
         }, 100);
       }
     }
-  }, [selectedToolSetId, loading, scrollToEntity]);
+  }, [selectedToolsetId, loading, scrollToEntity]);
 
   const handleClearFilters = () => {
     onSearchChange('');
@@ -78,11 +78,11 @@ export function ToolSetTable({
 
   const handleManageToolsClick = (e: React.MouseEvent, toolSetId: string) => {
     e.stopPropagation();
-    setSelectedToolSetId(toolSetId);
+    setSelectedToolsetId(toolSetId);
     setManageToolsOpen(true);
   };
 
-  // Calculate status for a tool set (active if any tool is active)
+  // Calculate status for a toolset (active if any tool is active)
   const getToolSetStatus = (toolSet: ToolSet): 'ACTIVE' | 'INACTIVE' => {
     if (!toolSet.mcpTools || toolSet.mcpTools.length === 0) return 'INACTIVE';
     return toolSet.mcpTools.some((tool) => tool.status === 'ACTIVE') ? 'ACTIVE' : 'INACTIVE';
@@ -93,7 +93,7 @@ export function ToolSetTable({
       {/* Header with Search and Filters */}
       <div className="p-4 border-b border-gray-200 dark:border-gray-700 space-y-3">
         <Search
-          placeholder="Search tool sets..."
+          placeholder="Search toolsets..."
           value={search}
           onChange={(e) => onSearchChange(e.target.value)}
         />
@@ -120,13 +120,13 @@ export function ToolSetTable({
       <div className="flex-1 overflow-auto">
         {loading ? (
           <div className="flex items-center justify-center h-full">
-            <p className="text-sm text-muted-foreground">Loading tool sets...</p>
+            <p className="text-sm text-muted-foreground">Loading toolsets...</p>
           </div>
         ) : toolSets.length === 0 ? (
           <div className="flex items-center justify-center h-full">
             <div className="text-center">
               <p className="text-sm text-muted-foreground">
-                {hasActiveFilters ? 'No tool sets match your filters' : 'No tool sets found'}
+                {hasActiveFilters ? 'No toolsets match your filters' : 'No toolsets found'}
               </p>
             </div>
           </div>
@@ -135,7 +135,7 @@ export function ToolSetTable({
             <thead className="bg-gray-50 dark:bg-gray-900 sticky top-0">
               <tr>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  Tool Set
+                  Toolset
                 </th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                   Status
@@ -163,12 +163,12 @@ export function ToolSetTable({
                     }}
                     onClick={() => onSelectToolSet(toolSet.id)}
                     className={`cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors ${
-                      selectedToolSetId === toolSet.id ? 'bg-cyan-50 dark:bg-cyan-900/20' : ''
+                      selectedToolsetId === toolSet.id ? 'bg-cyan-50 dark:bg-cyan-900/20' : ''
                     }`}
                   >
                     <td
                       className={`px-4 py-3 text-sm ${
-                        selectedToolSetId === toolSet.id ? 'border-l-4 border-cyan-500 pl-3' : ''
+                        selectedToolsetId === toolSet.id ? 'border-l-4 border-cyan-500 pl-3' : ''
                       }`}
                     >
                       <div className="tool-set-name font-medium text-gray-900 dark:text-white">{toolSet.name}</div>
@@ -217,7 +217,7 @@ export function ToolSetTable({
       {!loading && toolSets.length > 0 && (
         <div className="px-4 py-2 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900">
           <p className="text-xs text-gray-500 dark:text-gray-400">
-            Showing {toolSets.length} {toolSets.length === 1 ? 'tool set' : 'tool sets'}
+            Showing {toolSets.length} {toolSets.length === 1 ? 'toolset' : 'toolsets'}
           </p>
         </div>
       )}

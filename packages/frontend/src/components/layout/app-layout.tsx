@@ -8,7 +8,7 @@
  * - AppHeader (logo, search, notifications, user menu, theme)
  * - AppNavigation (horizontal menu bar)
  * - Content area with React Router Outlet
- * - Global bottom panels (AddSourceWorkflow, ToolManagementPanel)
+ * - Global bottom panels (AddSourceWorkflow, ToolsetManagementPanel)
  * - Toast notifications
  * - Responsive container with max-width
  *
@@ -34,9 +34,9 @@ import { AppHeader } from './app-header';
 import { AppNavigation } from './app-navigation';
 import { AddSourceWorkflow } from '@/components/sources/add-source-workflow';
 import { AddServerWorkflow } from '@/components/registry/add-server-workflow';
-import { ToolManagementPanel } from '@/components/toolsets/tool-management-panel';
-import { CreateToolSetDialog } from '@/components/tool-sets/create-tool-set-dialog';
-import { ConnectAgentDialog } from '@/components/agents/connect-agent-dialog';
+import { ToolsetManagementPanel } from '@/components/toolsets/toolset-management-panel';
+import { CreateToolsetDialog } from '@/components/toolsets/create-toolset-dialog';
+import { ConnectToolsetDialog } from '@/components/toolsets/connect-toolset-dialog';
 
 export function AppLayout() {
 
@@ -56,11 +56,11 @@ export function AppLayout() {
       {/* Global bottom panels - self-contained, accessible from any page */}
       <AddSourceWorkflow />
       <AddServerWorkflow />
-      <ToolManagementPanel />
+      <ToolsetManagementPanel />
 
       {/* Global dialogs - accessible from any page */}
-      <CreateToolSetDialog />
-      <ConnectAgentDialog />
+      <CreateToolsetDialog />
+      <ConnectToolsetDialog />
     </div>
   );
 }

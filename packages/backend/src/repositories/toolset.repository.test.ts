@@ -34,7 +34,12 @@ describe('ToolSetRepository', () => {
       checkAndCompleteStep: vi.fn().mockResolvedValue(undefined),
     } as unknown as WorkspaceRepository;
 
-    toolSetRepository = new ToolSetRepository(mockDGraphService, mockLoggerService, mockWorkspaceRepository);
+    // Mock IdentityRepository
+    const mockIdentityRepository = {
+      createKey: vi.fn().mockResolvedValue({ id: '0x1', key: 'TSK_test123' }),
+    } as any;
+
+    toolSetRepository = new ToolSetRepository(mockDGraphService, mockLoggerService, mockWorkspaceRepository, mockIdentityRepository);
   });
 
   describe('create', () => {
