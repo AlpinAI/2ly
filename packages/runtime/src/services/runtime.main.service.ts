@@ -8,7 +8,9 @@ import {
 } from '@2ly/common';
 import { HealthService } from './runtime.health.service';
 import { McpStdioService } from './mcp.stdio.service';
-import { McpRemoteService } from './mcp.remote.service';
+import { FastifyManagerService } from './fastify.manager.service';
+import { McpSseService } from './mcp.sse.service';
+import { McpStreamableService } from './mcp.streamable.service';
 import { ToolService } from './tool.service';
 import { AuthService } from './auth.service';
 import { RUNTIME_MODE, type RuntimeMode } from '../di/symbols';
@@ -27,7 +29,9 @@ export class MainService extends Service {
     @inject(HealthService) private healthService: HealthService,
     @inject(RUNTIME_MODE) private runtimeMode: RuntimeMode,
     @inject(McpStdioService) @optional() private mcpStdioService: McpStdioService | undefined,
-    @inject(McpRemoteService) @optional() private mcpRemoteService: McpRemoteService | undefined,
+    @inject(FastifyManagerService) @optional() private fastifyManager: FastifyManagerService | undefined,
+    @inject(McpSseService) @optional() private mcpSseService: McpSseService | undefined,
+    @inject(McpStreamableService) @optional() private mcpStreamableService: McpStreamableService | undefined,
     @inject(ToolService) @optional() private toolService: ToolService | undefined,
   ) {
     super();
@@ -92,9 +96,27 @@ export class MainService extends Service {
         await this.startService(this.mcpStdioService);
       }
 
-      if (this.mcpRemoteService) {
-        this.logger.info(`Starting MCP remote service in ${this.runtimeMode} mode`);
-        await this.startService(this.mcpRemoteService);
+      // Start Fastify Manager first (creates Fastify instance and MCP Server, but doesn't listen yet)
+      if (this.fastifyManager) {
+        this.logger.info(`Starting Fastify Manager in ${this.runtimeMode} mode`);
+        await this.startService(this.fastifyManager);
+      }
+
+      // Then start transport services (they register routes on the shared Fastify instance)
+      if (this.mcpSseService) {
+        this.logger.info(`Starting MCP SSE service in ${this.runtimeMode} mode`);
+        await this.startService(this.mcpSseService);
+      }
+
+      if (this.mcpStreamableService) {
+        this.logger.info(`Starting MCP Streamable HTTP service in ${this.runtimeMode} mode`);
+        await this.startService(this.mcpStreamableService);
+      }
+
+      // Finally, start listening on the port (after all routes are registered)
+      if (this.fastifyManager) {
+        this.logger.info('Starting Fastify server to listen for connections');
+        await this.fastifyManager.startListening();
       }
     } catch (error) {
       this.logger.error(`Failed to start services: ${error}`);
@@ -108,8 +130,16 @@ export class MainService extends Service {
     if (this.mcpStdioService) {
       await this.stopService(this.mcpStdioService);
     }
-    if (this.mcpRemoteService) {
-      await this.stopService(this.mcpRemoteService);
+    // Stop transport services first (before closing the Fastify instance)
+    if (this.mcpSseService) {
+      await this.stopService(this.mcpSseService);
+    }
+    if (this.mcpStreamableService) {
+      await this.stopService(this.mcpStreamableService);
+    }
+    // Then stop Fastify Manager (closes Fastify instance and MCP Server)
+    if (this.fastifyManager) {
+      await this.stopService(this.fastifyManager);
     }
     if (this.toolService) {
       await this.stopService(this.toolService);

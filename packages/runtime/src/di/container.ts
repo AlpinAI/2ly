@@ -21,7 +21,9 @@ import { ToolClientService } from '../services/tool.client.service';
 import { ToolServerService, type ToolServerServiceFactory } from '../services/tool.server.service';
 import { ToolService } from '../services/tool.service';
 import { McpStdioService } from '../services/mcp.stdio.service';
-import { McpRemoteService } from '../services/mcp.remote.service';
+import { McpSseService } from '../services/mcp.sse.service';
+import { McpStreamableService } from '../services/mcp.streamable.service';
+import { FastifyManagerService } from '../services/fastify.manager.service';
 import { type RuntimeMode, RUNTIME_MODE } from './symbols';
 import pino from 'pino';
 import { v4 as uuidv4 } from 'uuid';
@@ -105,15 +107,21 @@ const start = () => {
   if (mode === 'MCP_STDIO') {
     // Stdio mode: bind McpStdioService
     container.bind(McpStdioService).toSelf().inSingletonScope();
-    container.bind<McpRemoteService | undefined>(McpRemoteService).toConstantValue(undefined);
+    container.bind<FastifyManagerService | undefined>(FastifyManagerService).toConstantValue(undefined);
+    container.bind<McpSseService | undefined>(McpSseService).toConstantValue(undefined);
+    container.bind<McpStreamableService | undefined>(McpStreamableService).toConstantValue(undefined);
   } else if (mode === 'EDGE_MCP_STREAM' || mode === 'STANDALONE_MCP_STREAM') {
-    // Remote mode: bind McpRemoteService
-    container.bind(McpRemoteService).toSelf().inSingletonScope();
+    // Remote mode: bind FastifyManager and both transport services
+    container.bind(FastifyManagerService).toSelf().inSingletonScope();
+    container.bind(McpSseService).toSelf().inSingletonScope();
+    container.bind(McpStreamableService).toSelf().inSingletonScope();
     container.bind<McpStdioService | undefined>(McpStdioService).toConstantValue(undefined);
   } else {
     // EDGE mode: no MCP services
     container.bind<McpStdioService | undefined>(McpStdioService).toConstantValue(undefined);
-    container.bind<McpRemoteService | undefined>(McpRemoteService).toConstantValue(undefined);
+    container.bind<FastifyManagerService | undefined>(FastifyManagerService).toConstantValue(undefined);
+    container.bind<McpSseService | undefined>(McpSseService).toConstantValue(undefined);
+    container.bind<McpStreamableService | undefined>(McpStreamableService).toConstantValue(undefined);
   }
 
   // Conditionally bind Tool service (Mode 1, 2, 3)
@@ -163,7 +171,9 @@ const start = () => {
   loggerService.setLogLevel('nats', (process.env.NATS_LOG_LEVEL || 'info') as pino.Level);
   loggerService.setLogLevel('mcp-server', (process.env.LOG_LEVEL_MCP_SERVER || 'info') as pino.Level);
   loggerService.setLogLevel('mcp-stdio', (process.env.LOG_LEVEL_MCP_STDIO || 'info') as pino.Level);
-  loggerService.setLogLevel('mcp-remote', (process.env.LOG_LEVEL_MCP_REMOTE || 'info') as pino.Level);
+  loggerService.setLogLevel('fastify-manager', (process.env.LOG_LEVEL_FASTIFY_MANAGER || 'info') as pino.Level);
+  loggerService.setLogLevel('mcp-sse', (process.env.LOG_LEVEL_MCP_SSE || 'info') as pino.Level);
+  loggerService.setLogLevel('mcp-streamable', (process.env.LOG_LEVEL_MCP_STREAMABLE || 'info') as pino.Level);
   loggerService.setLogLevel('tool', (process.env.LOG_LEVEL_TOOL || 'info') as pino.Level);
   loggerService.setLogLevel('tool.client', (process.env.LOG_LEVEL_TOOL_CLIENT || 'info') as pino.Level);
   loggerService.setLogLevel('toolset', (process.env.LOG_LEVEL_TOOLSET || 'info') as pino.Level);
