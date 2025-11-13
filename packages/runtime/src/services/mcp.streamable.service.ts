@@ -1,20 +1,32 @@
 import { inject, injectable } from 'inversify';
 import { FastifyRequest, FastifyReply } from 'fastify';
-import { LoggerService, NatsService } from '@2ly/common';
+import { LoggerService, NatsService, Service } from '@2ly/common';
 import { HealthService } from './runtime.health.service';
 import { FastifyManagerService } from './fastify.manager.service';
-import { McpRemoteBaseService } from './mcp.remote.base.service';
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
 import { isInitializeRequest } from '@modelcontextprotocol/sdk/types.js';
 import { injectCorsHeaders } from '../helpers/cors.helper';
 import { sendJsonRpcError, JsonRpcErrorCode } from '../helpers/jsonrpc.helper';
 import { extractSessionId, isValidSessionId } from '../helpers/session.helper';
+import { getJsonRpcMessageType, JsonRpcMessageType } from '../helpers/security.helper';
 import {
-  validateOrigin,
-  validateProtocolVersion,
-  getJsonRpcMessageType,
-  JsonRpcMessageType,
-} from '../helpers/security.helper';
+  validateOriginHeaderForRequest,
+  validateProtocolVersionHeaderForRequest,
+  validateAcceptHeaderForRequest,
+  loadSecurityConfig,
+  logSecurityConfig,
+} from '../helpers/validation.helper';
+import {
+  SessionContext,
+  authenticateSession,
+  createToolsetService,
+  completeSessionContext,
+  cleanupSession,
+  cleanupAllSessions,
+} from '../helpers/mcp-session.helper';
+import { registerMcpHandlers } from '../helpers/mcp-handlers.helper';
+import { randomUUID } from 'node:crypto';
+import pino from 'pino';
 
 /**
  * McpStreamableService handles MCP server with Streamable HTTP transport.
@@ -23,8 +35,10 @@ import {
  * Spec: https://modelcontextprotocol.io/specification/2025-06-18/basic/transports#streamable-http
  */
 @injectable()
-export class McpStreamableService extends McpRemoteBaseService {
+export class McpStreamableService extends Service {
   name = 'mcp-streamable';
+  private logger!: pino.Logger;
+  private sessions: Map<string, SessionContext> = new Map();
 
   /**
    * Allowed origins for remote access (configurable via environment variable)
@@ -37,46 +51,77 @@ export class McpStreamableService extends McpRemoteBaseService {
   private preventDnsRebindingAttack = false;
 
   constructor(
-    @inject(LoggerService) loggerService: LoggerService,
-    @inject(NatsService) natsService: NatsService,
-    @inject(HealthService) healthService: HealthService,
-    @inject(FastifyManagerService) fastifyManager: FastifyManagerService,
+    @inject(LoggerService) private loggerService: LoggerService,
+    @inject(NatsService) private natsService: NatsService,
+    @inject(HealthService) private healthService: HealthService,
+    @inject(FastifyManagerService) private fastifyManager: FastifyManagerService,
   ) {
-    super(loggerService, natsService, healthService, fastifyManager);
+    super();
   }
 
   protected async initialize() {
-    // Load allowed origins from environment before starting
-    const originsEnv = process.env.MCP_ALLOWED_ORIGINS;
-    if (originsEnv) {
-      this.allowedOrigins = originsEnv.split(',').map((o) => o.trim());
+    // Initialize logger
+    this.logger = this.loggerService.getLogger(this.name);
+
+    // Load security configuration from environment
+    const securityConfig = loadSecurityConfig();
+    this.allowedOrigins = securityConfig.allowedOrigins;
+    this.preventDnsRebindingAttack = securityConfig.preventDnsRebindingAttack;
+
+    // Start dependent services
+    this.logger.info(`Starting ${this.name} service`);
+    await this.startService(this.natsService);
+    await this.startService(this.healthService);
+    await this.startService(this.fastifyManager);
+
+    // Setup transport
+    await this.setupTransport();
+
+    // Log security configuration
+    logSecurityConfig(this.logger, this.preventDnsRebindingAttack, this.allowedOrigins);
+  }
+
+  protected async shutdown() {
+    this.logger.info(`Stopping ${this.name} service`);
+    await cleanupAllSessions(this.sessions, this.healthService, this.logger);
+    await this.stopService(this.natsService);
+    await this.stopService(this.healthService);
+    await this.stopService(this.fastifyManager);
+  }
+
+  /**
+   * Setup transport by registering routes and MCP handlers
+   */
+  private async setupTransport() {
+    const remotePort = process.env.REMOTE_PORT;
+    if (!remotePort) {
+      this.logger.warn('REMOTE_PORT is not set, transport will not be configured');
+      return;
     }
 
-    // Check if DNS rebinding attack prevention is enabled
-    const preventDnsRebinding = process.env.PREVENT_DNS_REBINDING_ATTACK;
-    this.preventDnsRebindingAttack = preventDnsRebinding === 'true' || preventDnsRebinding === '1';
+    this.logger.info(`Setting up ${this.name} transport`);
 
-    // Call parent initialize (which will initialize logger and start services)
-    await super.initialize();
+    // Register transport-specific routes on shared Fastify instance
+    this.registerRoutes();
 
-    // Log configuration after logger is initialized
-    if (this.preventDnsRebindingAttack) {
-      this.logger.info('DNS rebinding attack prevention ENABLED');
-      if (this.allowedOrigins.length > 0) {
-        this.logger.info(`Configured allowed origins: ${this.allowedOrigins.join(', ')}`);
-      } else {
-        this.logger.info('Only localhost origins will be allowed');
-      }
-    } else {
-      this.logger.warn('DNS rebinding attack prevention DISABLED - Origin header validation skipped');
-    }
+    // Register MCP request handlers on shared MCP Server
+    registerMcpHandlers(this.getFastifyManager().getServer(), this.sessions, this.logger);
+
+    this.logger.info(`${this.name} transport configured`);
   }
 
   /**
    * Register Streamable HTTP-specific routes
    */
-  protected registerRoutes() {
+  private registerRoutes() {
     this.registerMcpRoute();
+  }
+
+  /**
+   * Get the Fastify manager service
+   */
+  private getFastifyManager() {
+    return this.fastifyManager;
   }
 
   /**
@@ -84,7 +129,7 @@ export class McpStreamableService extends McpRemoteBaseService {
    * Handles GET (listen streams), POST (JSON-RPC messages), and DELETE (session termination).
    */
   private registerMcpRoute() {
-    const fastify = this.getFastifyInstance();
+    const fastify = this.fastifyManager.getInstance();
 
     // GET handler for listen-only SSE streams
     fastify.get('/mcp', async (request: FastifyRequest, reply: FastifyReply) => {
@@ -93,23 +138,28 @@ export class McpStreamableService extends McpRemoteBaseService {
 
       try {
         // Validate Origin header (security requirement)
-        if (!this.validateOriginHeader(request, reply)) {
+        if (
+          !validateOriginHeaderForRequest(
+            request,
+            reply,
+            this.logger,
+            this.preventDnsRebindingAttack,
+            this.allowedOrigins,
+          )
+        ) {
           return;
         }
 
         // Validate protocol version header
-        if (!this.validateProtocolVersionHeader(request, reply)) {
+        if (!validateProtocolVersionHeaderForRequest(request, reply, this.logger)) {
           return;
         }
 
         // Validate Accept header for SSE
-        const accept = request.headers['accept'];
-        if (!accept || !accept.includes('text/event-stream')) {
-          this.logger.warn('GET request missing Accept: text/event-stream header');
-          return reply.status(406).send({
-            error: 'Not Acceptable',
-            message: 'Accept header must include text/event-stream',
-          });
+        if (
+          !validateAcceptHeaderForRequest(request, reply, this.logger, 'text/event-stream', 'Accept header must include text/event-stream')
+        ) {
+          return;
         }
 
         // Check if session ID is provided for existing session
@@ -164,23 +214,34 @@ export class McpStreamableService extends McpRemoteBaseService {
 
       try {
         // Validate Origin header (security requirement)
-        if (!this.validateOriginHeader(request, reply)) {
+        if (
+          !validateOriginHeaderForRequest(
+            request,
+            reply,
+            this.logger,
+            this.preventDnsRebindingAttack,
+            this.allowedOrigins,
+          )
+        ) {
           return;
         }
 
         // Validate protocol version header
-        if (!this.validateProtocolVersionHeader(request, reply)) {
+        if (!validateProtocolVersionHeaderForRequest(request, reply, this.logger)) {
           return;
         }
 
         // Validate Accept header for POST
-        const accept = request.headers['accept'];
-        if (!accept || (!accept.includes('application/json') && !accept.includes('text/event-stream'))) {
-          this.logger.warn('POST request missing proper Accept header');
-          return reply.status(406).send({
-            error: 'Not Acceptable',
-            message: 'Accept header must include application/json and/or text/event-stream',
-          });
+        if (
+          !validateAcceptHeaderForRequest(
+            request,
+            reply,
+            this.logger,
+            ['application/json', 'text/event-stream'],
+            'Accept header must include application/json and/or text/event-stream',
+          )
+        ) {
+          return;
         }
 
         const sessionId = extractSessionId(request);
@@ -217,7 +278,7 @@ export class McpStreamableService extends McpRemoteBaseService {
         } else if (!sessionId && isInitializeRequest(request.body as unknown)) {
           // New initialization request - authenticate and create session
           this.logger.info('Processing new initialization request');
-          const newSession = await this.createNewSession(request, reply, 'stream');
+          const newSession = await this.createNewSession(request, reply);
           if (!newSession) {
             return; // Error response already sent
           }
@@ -268,12 +329,20 @@ export class McpStreamableService extends McpRemoteBaseService {
 
       try {
         // Validate Origin header (security requirement)
-        if (!this.validateOriginHeader(request, reply)) {
+        if (
+          !validateOriginHeaderForRequest(
+            request,
+            reply,
+            this.logger,
+            this.preventDnsRebindingAttack,
+            this.allowedOrigins,
+          )
+        ) {
           return;
         }
 
         // Validate protocol version header
-        if (!this.validateProtocolVersionHeader(request, reply)) {
+        if (!validateProtocolVersionHeaderForRequest(request, reply, this.logger)) {
           return;
         }
 
@@ -322,62 +391,78 @@ export class McpStreamableService extends McpRemoteBaseService {
   }
 
   /**
-   * Validates the Origin header to prevent DNS rebinding attacks.
-   * Returns false and sends error response if validation fails.
-   * Skips validation if PREVENT_DNS_REBINDING_ATTACK is not enabled.
+   * Create a StreamableHTTP transport with session lifecycle callbacks
    */
-  private validateOriginHeader(request: FastifyRequest, reply: FastifyReply): boolean {
-    // Skip validation if DNS rebinding attack prevention is disabled
-    if (!this.preventDnsRebindingAttack) {
-      return true;
-    }
+  private async createStreamableTransport(): Promise<{
+    transport: StreamableHTTPServerTransport;
+    sessionId: string;
+    partialSession: Partial<SessionContext>;
+  }> {
+    const sessionId = randomUUID();
+    const partialSession: Partial<SessionContext> = {};
 
-    const origin = request.headers['origin'] as string | undefined;
+    const transport = new StreamableHTTPServerTransport({
+      sessionIdGenerator: () => sessionId,
+      onsessioninitialized: (sid) => {
+        this.sessions.set(sid, partialSession as SessionContext);
+        this.logger.debug(`Session initialized: ${sid}`);
+      },
+      onsessionclosed: (sid) => {
+        this.logger.debug(`Session closed: ${sid}`);
+        this.handleSessionClosed(sid!);
+      },
+    });
 
-    if (!validateOrigin(origin, this.allowedOrigins)) {
-      this.logger.warn(`Invalid or missing Origin header: ${origin || 'none'}`);
-      reply.status(403).send({
-        error: 'Forbidden',
-        message: 'Invalid origin. Please check CORS configuration.',
-      });
-      return false;
-    }
+    await this.fastifyManager.getServer().connect(transport);
 
-    return true;
+    return { transport, sessionId, partialSession };
   }
 
   /**
-   * Validates the MCP protocol version header.
-   * Returns false and sends error response if validation fails.
-   *
-   * Per spec: "For backwards compatibility, if the server does not receive an
-   * MCP-Protocol-Version header, and has no other way to identify the version -
-   * for example, by relying on the protocol version negotiated during initialization -
-   * the server SHOULD assume protocol version 2025-03-26."
+   * Creates a new session for an authenticated request
    */
-  private validateProtocolVersionHeader(request: FastifyRequest, reply: FastifyReply): boolean {
-    const protocolVersion = request.headers['mcp-protocol-version'] as string | undefined;
+  private async createNewSession(
+    request: FastifyRequest,
+    reply: FastifyReply,
+  ): Promise<SessionContext | null> {
+    try {
+      // Authenticate the request
+      const identity = await authenticateSession(request, this.loggerService, this.natsService);
+      this.logger.info(`Authenticated new stream connection for toolset: ${identity.toolsetName}`);
 
-    // If no protocol version header is present, assume backwards compatible version per spec
-    if (!protocolVersion) {
-      this.logger.debug('No mcp-protocol-version header provided, assuming backwards compatible version 2025-03-26');
-      return true;
+      // Create the toolset service first
+      const toolsetService = await createToolsetService(
+        identity,
+        this.loggerService,
+        this.natsService,
+        this.healthService,
+      );
+
+      // Create the transport (which may trigger protocol initialization)
+      const { transport, sessionId, partialSession } = await this.createStreamableTransport();
+
+      // Complete the session context by mutating the partial session
+      completeSessionContext(transport, toolsetService, partialSession);
+
+      this.logger.info(`Created session ${sessionId} for toolset: ${identity.toolsetName}`);
+
+      return partialSession as SessionContext;
+    } catch (authError) {
+      this.logger.error(`Authentication failed: ${authError}`);
+      const errorMessage = `Authentication failed: ${authError instanceof Error ? authError.message : String(authError)}`;
+
+      // Return 401 status
+      return reply.status(401).send({
+        error: 'Unauthorized',
+        message: errorMessage,
+      }) as never;
     }
+  }
 
-    // Validate the provided protocol version
-    if (!validateProtocolVersion(protocolVersion)) {
-      this.logger.warn(`Unsupported protocol version: ${protocolVersion}. Supported versions: 2024-11-05`);
-
-      reply.status(400).send({
-        error: 'Bad Request',
-        message: 'Unsupported mcp-protocol-version header. Supported versions: 2024-11-05',
-      });
-      return false;
-    }
-
-    // Log protocol version for debugging
-    this.logger.debug(`Request using protocol version: ${protocolVersion}`);
-
-    return true;
+  /**
+   * Handle session closed callback
+   */
+  private handleSessionClosed(sessionId: string): void {
+    cleanupSession(sessionId, this.sessions, this.healthService, this.logger);
   }
 }
