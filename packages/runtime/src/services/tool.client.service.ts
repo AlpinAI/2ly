@@ -215,19 +215,19 @@ export class ToolClientService extends Service {
     }
     const subject =
       runOn === 'AGENT'
-        ? ToolSetCallToolRequest.subscribeToOneRuntime(toolId, workspaceId, runtimeId)
-        : ToolSetCallToolRequest.subscribeToAll(toolId);
+        ? ToolSetCallToolRequest.subscribeToToolOnOneRuntime(toolId, workspaceId, runtimeId)
+        : ToolSetCallToolRequest.subscribeToTool(toolId);
     const subscription = this.natsService.subscribe(subject);
-    this.handleAgentCallCapabilityMessages(subscription);
+    this.handleToolCall(subscription);
     return subscription;
   }
 
   // Handle Agent Call Capability Messages
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  private async handleAgentCallCapabilityMessages(subscription: any) {
+  private async handleToolCall(subscription: any) {
     for await (const msg of subscription) {
       if (msg instanceof ToolSetCallToolRequest) {
-        this.logger.info(`Received agent-call-capability: ${JSON.stringify(msg.data)}`);
+        this.logger.info(`Tool call request: ${JSON.stringify(msg.data)}`);
         // find the capability
         for (const [mcpServerId, tools] of this.mcpTools.entries()) {
           const tool = tools.find((tool) => tool.id === msg.data.toolId);
@@ -247,7 +247,7 @@ export class ToolClientService extends Service {
           };
           // call the capability
           this.logger.debug(`Calling tool ${tool.name} with arguments ${JSON.stringify(toolCall)}`);
-          const result = await mcpServer.callCapability(toolCall);
+          const result = await mcpServer.callTool(toolCall);
           this.logger.debug(`Result: ${JSON.stringify(result)}`);
           msg.respond(
             new RuntimeCallToolResponse({

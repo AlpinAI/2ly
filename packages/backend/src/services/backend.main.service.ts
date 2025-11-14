@@ -58,13 +58,15 @@ export class MainService extends Service {
 
   protected async shutdown() {
     this.logger.info('Stopping');
-    await this.stopService(this.identityService);
-    await this.stopService(this.runtimeService);
-    await this.stopService(this.apolloService);
-    await this.stopService(this.mcpServerAutoConfigService);
-    await this.stopService(this.monitoringService);
-    await this.stopService(this.dgraphService);
-    await this.stopService(this.toolSetService);
+    await Promise.all([
+      this.stopService(this.identityService),
+      this.stopService(this.runtimeService),
+      this.stopService(this.apolloService),
+      this.stopService(this.mcpServerAutoConfigService),
+      this.stopService(this.monitoringService),
+      this.stopService(this.dgraphService),
+      this.stopService(this.toolSetService),
+    ]);
     this.logActiveServices();
     this.removeGracefulShutdownHandlers();
     this.logger.info('Stopped');

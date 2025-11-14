@@ -322,6 +322,8 @@ export class RuntimeRepository {
   /**
    * Method to simulate a tool call to a MCP Tool
    * Uses the workspace's global runtime to execute the tool
+   * 
+   * TODO: Allow to specify the runtime on which the tool should be executed, particulary necessary for tool belonging to MCP server set to run on agent side
    */
   async callMCPTool(toolId: string, input: string): Promise<apolloResolversTypes.CallToolResult> {
     // Get the tool with its workspace to determine which runtime to use
@@ -346,9 +348,7 @@ export class RuntimeRepository {
       );
     }
 
-    this.logger.info(
-      `Calling tool ${tool.name} using global runtime ${globalRuntime.name} (${globalRuntime.id})`
-    );
+    this.logger.info(`Calling tool ${tool.name}`);
 
     // Arguments as JSON
     let args: Record<string, unknown>;
@@ -360,9 +360,9 @@ export class RuntimeRepository {
 
     const message = new ToolSetCallToolRequest({
       workspaceId: tool.workspace.id,
+      isTest: true,
       toolId,
       arguments: args,
-      from: globalRuntime.id,
     });
 
     const response = await this.natsService.request(message);

@@ -31,10 +31,10 @@ query GetToolCalls(
           name
         }
       }
+      isTest
       calledBy {
         id
         name
-        hostname
       }
       executedBy {
         id

@@ -34,7 +34,7 @@ export class MonitoringService extends Service {
     }
 
     private async monitorCallTools() {
-        const messages = this.natsService.subscribe('agent.call.tool.>');
+        const messages = this.natsService.subscribe(ToolSetCallToolRequest.subscribeToAll());
         for await (const message of messages) {
 
             if (message instanceof ToolSetCallToolRequest) {
@@ -71,6 +71,7 @@ export class MonitoringService extends Service {
                         toolInput: JSON.stringify(message.data.arguments),
                         calledById: message.data.from,
                         mcpToolId: message.data.toolId,
+                        isTest: message.data.isTest,
                     }).then((result) => {
                         toolCall = result;
                         this.logger.info(`Tool call persisted: ${toolCall.id}`);

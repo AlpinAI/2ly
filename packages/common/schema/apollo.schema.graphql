@@ -83,6 +83,7 @@ type ToolSet {
   updatedAt: Date
   mcpTools: [MCPTool!]
   workspace: Workspace!
+  toolCalls: [ToolCall!]
 }
 
 type IdentityKey {
@@ -109,6 +110,7 @@ type Runtime {
   hostIP: String
   hostname: String
   mcpClientName: String
+  toolResponses: [ToolCall!]
 }
 
 enum OnboardingStepType {
@@ -147,8 +149,9 @@ type ToolCall {
   status: ToolCallStatus!
   toolOutput: String
   error: String
+  isTest: Boolean!
   mcpTool: MCPTool!
-  calledBy: Runtime!
+  calledBy: ToolSet
   executedBy: Runtime
 }
 

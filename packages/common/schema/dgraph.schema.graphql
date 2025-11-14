@@ -124,6 +124,7 @@ type ToolSet @withSubscription {
   # The tools that belong to this collection
   mcpTools: [MCPTool!] @hasInverse(field: toolSets)
   workspace: Workspace! @hasInverse(field: toolSets)
+  toolCalls: [ToolCall!] @hasInverse(field: calledBy)
 }
 
 type Runtime @withSubscription {
@@ -141,7 +142,6 @@ type Runtime @withSubscription {
   lastSeenAt: DateTime
   mcpServers: [MCPServer!] @hasInverse(field: runtime)
   workspace: Workspace! @hasInverse(field: runtimes)
-  toolCalls: [ToolCall!] @hasInverse(field: calledBy)
   toolResponses: [ToolCall!] @hasInverse(field: executedBy)
 }
 
@@ -209,8 +209,9 @@ type ToolCall {
   status: ToolCallStatus!
   toolOutput: String
   error: String
+  isTest: Boolean!
   mcpTool: MCPTool! @hasInverse(field: toolCalls)
-  calledBy: Runtime! @hasInverse(field: toolCalls)
+  calledBy: ToolSet @hasInverse(field: toolCalls)
   executedBy: Runtime @hasInverse(field: toolResponses)
 }
 
