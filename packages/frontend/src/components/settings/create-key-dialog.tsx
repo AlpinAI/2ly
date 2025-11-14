@@ -15,9 +15,10 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useMutation } from '@apollo/client/react';
-import { CreateWorkspaceKeyDocument, GetWorkspaceKeysDocument } from '@/graphql/generated/graphql';
+import { CreateWorkspaceKeyDocument, CreateWorkspaceKeyMutation, GetWorkspaceKeysDocument } from '@/graphql/generated/graphql';
 import { useNotification } from '@/contexts/NotificationContext';
 import { Copy, Key, AlertCircle, X } from 'lucide-react';
+import type { ErrorLike } from '@apollo/client';
 
 interface CreateKeyDialogProps {
   workspaceId: string;
@@ -32,13 +33,13 @@ export function CreateKeyDialog({ workspaceId, open, onOpenChange }: CreateKeyDi
 
   const [createKey, { loading }] = useMutation(CreateWorkspaceKeyDocument, {
     refetchQueries: [{ query: GetWorkspaceKeysDocument, variables: { workspaceId } }],
-    onCompleted: (data: any) => {
+    onCompleted: (data: CreateWorkspaceKeyMutation) => {
       if (data.createWorkspaceKey) {
         setNewKeyValue(data.createWorkspaceKey.key);
         toast({ description: 'Key generated successfully', variant: 'success' });
       }
     },
-    onError: (error: any) => {
+    onError: (error: ErrorLike) => {
       toast({ description: 'Failed to generate key', variant: 'error' });
       console.error('Error generating key:', error);
     },

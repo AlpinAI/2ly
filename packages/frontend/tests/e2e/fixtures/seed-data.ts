@@ -552,6 +552,7 @@ export const comprehensiveSeededData: SeedData = {
         'git_log',
         'execute_command',
       ],
+      workspaceId: '', // Will be set during seeding
     },
     {
       name: 'Web Assistant Agent',
@@ -564,6 +565,7 @@ export const comprehensiveSeededData: SeedData = {
         'db_query',
         'db_schema',
       ],
+      workspaceId: '', // Will be set during seeding
     },
   ],
   toolCalls: [
@@ -577,6 +579,7 @@ export const comprehensiveSeededData: SeedData = {
       mcpToolId: 'read_file',
       calledById: 'claude-desktop-agent',
       executedById: 'edge-runtime',
+      isTest: false,
     },
     {
       toolInput: JSON.stringify({ url: 'https://api.example.com/data' }),
@@ -587,6 +590,7 @@ export const comprehensiveSeededData: SeedData = {
       mcpToolId: 'http_get',
       calledById: 'web-assistant-agent',
       executedById: 'edge-runtime',
+      isTest: false,
     },
     {
       toolInput: JSON.stringify({ repositoryPath: '/home/user/project' }),
@@ -597,6 +601,7 @@ export const comprehensiveSeededData: SeedData = {
       mcpToolId: 'git_status',
       calledById: 'claude-desktop-agent',
       executedById: 'edge-runtime',
+      isTest: false,
     },
     {
       toolInput: JSON.stringify({ path: '/tmp/data', pattern: '*.json' }),
@@ -607,6 +612,7 @@ export const comprehensiveSeededData: SeedData = {
       mcpToolId: 'search_files',
       calledById: 'claude-desktop-agent',
       executedById: 'edge-runtime',
+      isTest: false,
     },
     {
       toolInput: JSON.stringify({ query: 'SELECT * FROM users LIMIT 10' }),
@@ -617,6 +623,7 @@ export const comprehensiveSeededData: SeedData = {
       mcpToolId: 'db_query',
       calledById: 'web-assistant-agent',
       executedById: 'edge-runtime',
+      isTest: false,
     },
 
     // Failed tool calls
@@ -628,6 +635,7 @@ export const comprehensiveSeededData: SeedData = {
       error: 'ENOENT: no such file or directory',
       mcpToolId: 'read_file',
       calledById: 'claude-desktop-agent',
+      isTest: false,
     },
     {
       toolInput: JSON.stringify({ url: 'https://invalid.example.com/404' }),
@@ -637,6 +645,7 @@ export const comprehensiveSeededData: SeedData = {
       error: 'HTTP 404: Not Found',
       mcpToolId: 'http_get',
       calledById: 'web-assistant-agent',
+      isTest: false,
     },
     {
       toolInput: JSON.stringify({ command: 'invalid-command', args: [] }),
@@ -646,6 +655,7 @@ export const comprehensiveSeededData: SeedData = {
       error: 'Command not found: invalid-command',
       mcpToolId: 'execute_command',
       calledById: 'claude-desktop-agent',
+      isTest: false,
     },
     {
       toolInput: JSON.stringify({ query: 'INVALID SQL QUERY' }),
@@ -655,6 +665,7 @@ export const comprehensiveSeededData: SeedData = {
       error: 'Syntax error in SQL query',
       mcpToolId: 'db_query',
       calledById: 'web-assistant-agent',
+      isTest: false,
     },
 
     // Pending tool calls
@@ -664,6 +675,7 @@ export const comprehensiveSeededData: SeedData = {
       status: 'PENDING' as dgraphResolversTypes.ToolCallStatus,
       mcpToolId: 'read_file',
       calledById: 'claude-desktop-agent',
+      isTest: false,
     },
     {
       toolInput: JSON.stringify({ url: 'https://api.slow-server.com/data' }),
@@ -671,6 +683,7 @@ export const comprehensiveSeededData: SeedData = {
       status: 'PENDING' as dgraphResolversTypes.ToolCallStatus,
       mcpToolId: 'http_get',
       calledById: 'web-assistant-agent',
+      isTest: false,
     },
     {
       toolInput: JSON.stringify({ repositoryPath: '/home/user/large-repo' }),
@@ -678,6 +691,7 @@ export const comprehensiveSeededData: SeedData = {
       status: 'PENDING' as dgraphResolversTypes.ToolCallStatus,
       mcpToolId: 'git_log',
       calledById: 'claude-desktop-agent',
+      isTest: false,
     },
     {
       toolInput: JSON.stringify({ projectPath: '/home/user/node-project' }),
@@ -685,6 +699,7 @@ export const comprehensiveSeededData: SeedData = {
       status: 'PENDING' as dgraphResolversTypes.ToolCallStatus,
       mcpToolId: 'npm_install',
       calledById: 'claude-desktop-agent',
+      isTest: false,
     },
     {
       toolInput: JSON.stringify({ path: '/tmp/output.txt', content: 'Hello World' }),
@@ -692,6 +707,7 @@ export const comprehensiveSeededData: SeedData = {
       status: 'PENDING' as dgraphResolversTypes.ToolCallStatus,
       mcpToolId: 'write_file',
       calledById: 'web-assistant-agent',
+      isTest: false,
     },
     {
       toolInput: JSON.stringify({ url: 'https://api.example.com/create', body: { name: 'test' } }),
@@ -699,6 +715,7 @@ export const comprehensiveSeededData: SeedData = {
       status: 'PENDING' as dgraphResolversTypes.ToolCallStatus,
       mcpToolId: 'http_post',
       calledById: 'claude-desktop-agent',
+      isTest: false,
     },
   ],
 };

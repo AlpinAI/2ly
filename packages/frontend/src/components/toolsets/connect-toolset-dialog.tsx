@@ -42,7 +42,7 @@ import { N8NInstructions } from './instructions/n8n-instructions';
 import { JSONInstructions } from './instructions/json-instructions';
 
 export function ConnectToolsetDialog() {
-  const { open, setOpen, selectedToolsetName, selectedToolsetId } = useConnectToolsetDialog();
+  const { open, setOpen, selectedToolsetName } = useConnectToolsetDialog();
   const { runtimes } = useRuntimeData();
 
   const [selectedPlatform, setSelectedPlatform] = useState<PlatformOption>('langchain');

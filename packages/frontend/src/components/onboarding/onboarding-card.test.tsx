@@ -91,6 +91,7 @@ describe('OnboardingCard', () => {
       runtimes: [],
       toolSets: [],
     },
+    toolResponses: [],
   };
 
   const mockToolSet = {

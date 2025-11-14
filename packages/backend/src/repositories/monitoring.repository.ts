@@ -139,7 +139,7 @@ export class MonitoringRepository {
 
         if (params.filters?.runtimeIds && params.filters.runtimeIds.length > 0) {
             filteredCalls = filteredCalls.filter((call) =>
-                params.filters!.runtimeIds!.includes(call.calledBy.id) ||
+                call.calledBy && params.filters!.runtimeIds!.includes(call.calledBy.id) ||
                 (call.executedBy && params.filters!.runtimeIds!.includes(call.executedBy.id))
             );
         }

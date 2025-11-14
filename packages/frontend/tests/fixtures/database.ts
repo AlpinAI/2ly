@@ -35,14 +35,13 @@ export interface SeedData {
     mcpServerId: string; // ID reference for seeding
   }
   >;
-  runtimes?: Array<OmitGenerated<dgraphResolversTypes.Runtime, 'mcpServers' | 'toolCalls' | 'toolResponses' | 'workspace'> & {
+  runtimes?: Array<OmitGenerated<dgraphResolversTypes.Runtime, 'mcpServers' | 'toolResponses' | 'workspace'> & {
     workspaceId: string; // ID reference for seeding
   }
   >;
-  toolSets?: Array<{
-    name: string;
-    description?: string;
+  toolSets?: Array<OmitGenerated<dgraphResolversTypes.ToolSet, 'mcpTools' | 'toolCalls' | 'workspace'> & {
     toolIds: string[]; // Tool name references
+    workspaceId: string; // ID reference for seeding
   }>;
   toolCalls?: Array<
     OmitGenerated<dgraphResolversTypes.ToolCall, 'executedBy' | 'calledBy' | 'calledAt' | 'completedAt' | 'mcpTool'> & {

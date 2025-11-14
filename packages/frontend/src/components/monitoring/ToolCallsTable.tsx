@@ -40,7 +40,7 @@ interface ToolCall {
   };
   calledBy?: {
     name: string;
-  };
+  } | null;
 }
 
 interface ToolCallsTableProps {

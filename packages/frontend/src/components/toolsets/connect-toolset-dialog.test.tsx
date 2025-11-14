@@ -24,6 +24,7 @@ describe('ConnectToolsetDialog', () => {
     lastSeenAt: null,
     mcpServers: null,
     roots: null,
+    toolResponses: [],
     workspace: {
       __typename: 'Workspace',
       id: 'workspace-1',

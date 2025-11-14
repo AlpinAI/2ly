@@ -30,7 +30,7 @@ interface ToolCall {
   calledBy?: {
     id: string;
     name: string;
-  };
+  } | null;
   executedBy?: {
     id: string;
     name: string;
