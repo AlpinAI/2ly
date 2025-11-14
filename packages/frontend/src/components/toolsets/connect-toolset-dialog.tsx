@@ -23,7 +23,7 @@
  */
 
 import { useState, useEffect, useMemo, useCallback } from 'react';
-import { X, CheckCircle2, Loader2, Copy, Key, AlertCircle } from 'lucide-react';
+import { X, CheckCircle2, Loader2 } from 'lucide-react';
 import * as Dialog from '@radix-ui/react-dialog';
 import {
   Select,
@@ -40,32 +40,13 @@ import { LangchainInstructions } from './instructions/langchain-instructions';
 import { LangflowInstructions } from './instructions/langflow-instructions';
 import { N8NInstructions } from './instructions/n8n-instructions';
 import { JSONInstructions } from './instructions/json-instructions';
-import { useQuery } from '@apollo/client/react';
-import { GetToolsetKeyDocument } from '@/graphql/generated/graphql';
-import { useNotification } from '@/contexts/NotificationContext';
 
 export function ConnectToolsetDialog() {
   const { open, setOpen, selectedToolsetName, selectedToolsetId } = useConnectToolsetDialog();
   const { runtimes } = useRuntimeData();
-  const { toast } = useNotification();
 
   const [selectedPlatform, setSelectedPlatform] = useState<PlatformOption>('langchain');
   const [isConnected, setIsConnected] = useState(false);
-
-  // Fetch toolset key
-  const { data: keyData, loading: keyLoading } = useQuery(GetToolsetKeyDocument, {
-    variables: { toolsetId: selectedToolsetId || '' },
-    skip: !selectedToolsetId || !open,
-  });
-
-  const toolsetKey = keyData?.toolsetKey?.key;
-
-  const handleCopyKey = () => {
-    if (toolsetKey) {
-      navigator.clipboard.writeText(toolsetKey);
-      toast({ description: 'Toolset key copied to clipboard', variant: 'success' });
-    }
-  };
 
   // Get selected toolset from runtime store, or create a mock one for new toolsets
   const selectedToolset = useMemo(() => {
@@ -173,57 +154,6 @@ export function ConnectToolsetDialog() {
                 </Button>
               </Dialog.Close>
             </div>
-
-            {/* Toolset Key Display */}
-            {keyLoading ? (
-              <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4 mb-4">
-                <div className="flex items-center gap-2 text-sm text-blue-700 dark:text-blue-300">
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  Loading toolset key...
-                </div>
-              </div>
-            ) : toolsetKey ? (
-              <div className="bg-cyan-50 dark:bg-cyan-900/20 border border-cyan-200 dark:border-cyan-800 rounded-lg p-4 mb-4">
-                <div className="flex items-start gap-3">
-                  <Key className="h-5 w-5 text-cyan-600 dark:text-cyan-400 flex-shrink-0 mt-0.5" />
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-cyan-900 dark:text-cyan-100 mb-2">
-                      Toolset Authentication Key
-                    </p>
-                    <div className="flex items-center gap-2">
-                      <code className="flex-1 px-3 py-2 bg-white dark:bg-gray-900 border border-cyan-200 dark:border-cyan-800 rounded text-xs font-mono text-cyan-900 dark:text-cyan-100 truncate">
-                        {toolsetKey}
-                      </code>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={handleCopyKey}
-                        className="flex-shrink-0"
-                      >
-                        <Copy className="h-4 w-4" />
-                      </Button>
-                    </div>
-                    <p className="text-xs text-cyan-700 dark:text-cyan-300 mt-2">
-                      Use this key to authenticate your toolset connection
-                    </p>
-                  </div>
-                </div>
-              </div>
-            ) : selectedToolsetId ? (
-              <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-4 mb-4">
-                <div className="flex gap-3">
-                  <AlertCircle className="h-5 w-5 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
-                  <div className="text-sm">
-                    <p className="font-medium text-amber-900 dark:text-amber-100 mb-1">
-                      No Key Found
-                    </p>
-                    <p className="text-amber-700 dark:text-amber-300">
-                      This toolset doesn't have an authentication key yet.
-                    </p>
-                  </div>
-                </div>
-              </div>
-            ) : null}
 
             {/* Platform Selector */}
             <div>

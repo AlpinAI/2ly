@@ -11,13 +11,14 @@
  * - Created/Updated timestamps
  */
 
-import { Bot, Wrench, Clock, Settings, Trash2, Cable } from 'lucide-react';
+import { useState } from 'react';
+import { Bot, Wrench, Clock, Settings, Trash2, Cable, Eye, EyeOff, Copy } from 'lucide-react';
 import { Link, useParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { useManageToolsDialog, useConnectToolsetDialog } from '@/stores/uiStore';
-import { useMutation } from '@apollo/client/react';
+import { useMutation, useLazyQuery } from '@apollo/client/react';
 import { useNotification } from '@/contexts/NotificationContext';
-import { DeleteToolSetDocument } from '@/graphql/generated/graphql';
+import { DeleteToolSetDocument, GetToolsetKeyDocument, GetKeyValueDocument } from '@/graphql/generated/graphql';
 import type { SubscribeToolSetsSubscription } from '@/graphql/generated/graphql';
 
 type ToolSet = NonNullable<SubscribeToolSetsSubscription['toolSets']>[number];
@@ -30,8 +31,14 @@ export function ToolsetDetail({ toolSet }: ToolsetDetailProps) {
   const { workspaceId } = useParams<{ workspaceId: string }>();
   const { setOpen, setSelectedToolsetId } = useManageToolsDialog();
   const { setOpen: setConnectDialogOpen, setSelectedToolsetName, setSelectedToolsetId: setConnectToolsetId } = useConnectToolsetDialog();
-  const { confirm } = useNotification();
+  const { confirm, toast } = useNotification();
   const [deleteToolSet] = useMutation(DeleteToolSetDocument);
+
+  // Key visibility state
+  const [keyVisible, setKeyVisible] = useState(false);
+  const [keyValue, setKeyValue] = useState<string | null>(null);
+  const [getToolsetKey, { loading: loadingKey }] = useLazyQuery(GetToolsetKeyDocument);
+  const [getKeyValue, { loading: loadingKeyValue }] = useLazyQuery(GetKeyValueDocument);
 
   const formatDate = (dateString: string | Date) => {
     const date = typeof dateString === 'string' ? new Date(dateString) : dateString;
@@ -71,6 +78,44 @@ export function ToolsetDetail({ toolSet }: ToolsetDetailProps) {
       });
     } catch (error) {
       console.error('Failed to delete toolset:', error);
+    }
+  };
+
+  const handleToggleKeyVisibility = async () => {
+    if (keyVisible) {
+      // Hide the key
+      setKeyVisible(false);
+      setKeyValue(null);
+    } else {
+      // Fetch and show the key
+      try {
+        // First get the key metadata
+        const keyResult = await getToolsetKey({ variables: { toolsetId: toolSet.id } });
+        if (keyResult.data?.toolsetKey) {
+          // Then get the actual key value
+          const valueResult = await getKeyValue({ variables: { keyId: keyResult.data.toolsetKey.id } });
+          if (valueResult.data?.keyValue) {
+            setKeyValue(valueResult.data.keyValue);
+            setKeyVisible(true);
+          }
+        }
+      } catch (error) {
+        console.error('Failed to fetch key:', error);
+        toast({
+          description: 'Failed to fetch toolset key',
+          variant: 'error',
+        });
+      }
+    }
+  };
+
+  const handleCopyKey = () => {
+    if (keyValue) {
+      navigator.clipboard.writeText(keyValue);
+      toast({
+        description: 'Key copied to clipboard',
+        variant: 'success',
+      });
     }
   };
 
@@ -139,6 +184,45 @@ export function ToolsetDetail({ toolSet }: ToolsetDetailProps) {
           >
             {status}
           </span>
+        </div>
+
+        {/* Identity Key */}
+        <div>
+          <h4 className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">
+            Identity Key
+          </h4>
+          <div className="bg-gray-50 dark:bg-gray-900/50 rounded-lg p-3">
+            <div className="flex items-center gap-2">
+              <code className="flex-1 text-sm font-mono text-gray-900 dark:text-white truncate">
+                {keyVisible && keyValue ? keyValue : '••••••••••••••••••••••••••••••••'}
+              </code>
+              {keyVisible && keyValue && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleCopyKey}
+                  className="h-7 w-7 p-0 hover:bg-cyan-100 dark:hover:bg-cyan-900/30"
+                  title="Copy to clipboard"
+                >
+                  <Copy className="h-3 w-3 text-cyan-600 dark:text-cyan-400" />
+                </Button>
+              )}
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleToggleKeyVisibility}
+                disabled={loadingKey || loadingKeyValue}
+                className="h-7 w-7 p-0"
+                title={keyVisible ? 'Hide key' : 'Show key'}
+              >
+                {keyVisible ? (
+                  <EyeOff className="h-3 w-3 text-gray-600 dark:text-gray-400" />
+                ) : (
+                  <Eye className="h-3 w-3 text-gray-600 dark:text-gray-400" />
+                )}
+              </Button>
+            </div>
+          </div>
         </div>
 
         {/* Created/Updated */}
