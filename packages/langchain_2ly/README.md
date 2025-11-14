@@ -2,84 +2,168 @@
 
 2ly python module providing helpers to quickly connect [2ly](https://github.com/2ly-ai/2ly) to your agents in Python.
 
-# Usage
-
-Install the module
+## Installation
 
 ```bash
 pip install langchain_2ly
 ```
 
-Connects your LangGraph agent:
+## Authentication
+
+Before using the package, you need authentication credentials from your 2ly workspace. There are two authentication approaches:
+
+### Approach 1: Workspace Key (Auto-Discovery)
+
+Use a workspace-level key that can create and access any toolset in your workspace. This approach enables auto-discovery and creation of toolsets at runtime.
+
+**Get your key:**
+1. Open the 2ly UI
+2. Go to Settings > API Keys
+3. Click "Generate New Master Key"
+4. Copy the key (starts with `WSK_`)
+
+### Approach 2: Toolset-Specific Key (Recommended)
+
+Use a toolset-specific key for granular security - each key only has access to one specific toolset. This is the recommended approach due to better security through limited scope.
+
+**Get your key:**
+1. Open the 2ly UI
+2. Go to the Toolsets page
+3. Create or select a toolset
+4. Copy the toolset key (starts with `TSK_`)
+
+## Quick Start
+
+### Using Workspace Key (Auto-Discovery)
 
 ```python
-# Import MCPAdapter
-from langchain_2ly import MCPAdapter
-mcp = MCPAdapter("my-runtime")
+import asyncio
+from langchain_2ly import MCPToolset
+from langgraph.prebuilt import create_react_agent
+
+async def main():
+    # Automatically creates or connects to a toolset named "My Agent"
+    async with MCPToolset.with_workspace_key(
+        name="My Agent",
+        master_key="WSK_your_workspace_key_here"
+    ) as mcp:
+        tools = await mcp.get_langchain_tools()
+        agent = create_react_agent(llm, tools)
+        response = await agent.ainvoke({"messages": [{"role": "user", "content": "Hello!"}]})
+
+if __name__ == "__main__":
+    asyncio.run(main())
+```
+
+### Using Toolset-Specific Key (Recommended)
+
+```python
+import asyncio
+from langchain_2ly import MCPToolset
+
+async def main():
+    # Uses a pre-created toolset with its own key
+    async with MCPToolset.with_toolset_key(
+        toolset_key="TSK_your_toolset_key_here"
+    ) as mcp:
+        tools = await mcp.get_langchain_tools()
+        agent = create_react_agent(llm, tools)
+        response = await agent.ainvoke({"messages": [{"role": "user", "content": "Hello!"}]})
+
+if __name__ == "__main__":
+    asyncio.run(main())
+```
+
+## API Classes
+
+### MCPToolset
+
+`MCPToolset` uses the [Langchain MCP adapters](https://github.com/langchain-ai/langchain-mcp-adapters) internally. This is the recommended class for most use cases.
+
+**Factory methods:**
+- `MCPToolset.with_workspace_key(name, master_key, ...)` - Auto-discovery mode
+- `MCPToolset.with_toolset_key(toolset_key, ...)` - Toolset-specific mode (recommended)
+
+**Constructor:**
+```python
+MCPToolset(
+    name=None,                      # Toolset name (required with master_key)
+    master_key=None,                # Workspace key WSK_...
+    toolset_key=None,               # Toolset key TSK_...
+    nats_servers="nats://localhost:4222",
+    version="latest",               # @2ly/runtime npm version
+    startup_timeout_seconds=20.0
+)
+```
+
+### MCPClient
+
+`MCPClient` is based strictly on the [Official MCP Python SDK](https://github.com/modelcontextprotocol/python-sdk) without the Langchain adapter dependency. The API is identical to `MCPToolset`.
+
+**Factory methods:**
+- `MCPClient.with_workspace_key(name, master_key, ...)` - Auto-discovery mode
+- `MCPClient.with_toolset_key(toolset_key, ...)` - Toolset-specific mode (recommended)
+
+**Constructor:**
+```python
+MCPClient(
+    name=None,                      # Toolset name (required with master_key)
+    master_key=None,                # Workspace key WSK_...
+    toolset_key=None,               # Toolset key TSK_...
+    nats_servers="nats://localhost:4222",
+    version="latest",               # @2ly/runtime npm version
+    startup_timeout_seconds=20.0,
+    log_level=None                  # Optional: "info", "debug", "warn"
+)
+```
+
+## Lifecycle Management
+
+Both classes start the MCP runtime process lazily when you first call `get_langchain_tools()`. Using the `async with` context manager automatically handles cleanup:
+
+```python
+async with MCPToolset.with_workspace_key(name="Agent", master_key=key) as mcp:
+    tools = await mcp.get_langchain_tools()
+    # Use tools...
+    # Automatic cleanup when exiting context
+```
+
+Alternatively, call `start()` and `stop()` manually:
+
+```python
+mcp = MCPToolset.with_workspace_key(name="Agent", master_key=key)
+await mcp.start()
 tools = await mcp.get_langchain_tools()
-agent = create_react_agent(llm, tools)
+# Use tools...
 await mcp.stop()
 ```
 
-Under the hood our connector leverages [Langchain MCP adapters](https://github.com/langchain-ai/langchain-mcp-adapters). You can also use our variant which is strictly based on the [Official MCP Python SDK](https://github.com/modelcontextprotocol/python-sdk) (see [Using MCP without Langchain MCP Adapter](#using-mcp-without-langchain-mcp-adapter)).
+## Examples
 
-## MCPAdapter lifecycle
+All examples are in the `examples/` directory:
 
-MCP Adapter will start an MCP Server lazily when you first call `get_langchain_tools()` or when the agent call a given tool. In practice the call to retrieve the list of tools must always come first.
+* **[langgraph_agent.py](examples/langgraph_agent.py)** - LangGraph agent with MCPToolset (workspace key)
+* **[toolset_key_agent.py](examples/toolset_key_agent.py)** - LangGraph agent with toolset-specific key
+* **[langgraph_without_adapter.py](examples/langgraph_without_adapter.py)** - LangGraph agent with MCPClient
+* **[list_tools.py](examples/list_tools.py)** - Simple tool listing example
 
-Since this is an async task, we provide a way to instantiate MCPAdapter with `async` and thus it will automatically stop itself when the agent is done.
+### Running Examples
 
-```python
-async def main():
-    async with MCPAdapter("My agent name") as mcp:
-        tools = await mcp.get_langchain_tools()
-        agent = create_react_agent(llm, tools)
-        agent_response = await agent.ainvoke() # as usual
-
-if __name__ == "__main__":
-    asyncio.run(main())
+1. Copy the example environment file:
+```bash
+cp examples/env.example examples/.env
 ```
 
-# Using MCP without Langchain MCP Adapter
-
-Simply replace `MCPAdapter` with `MCPClient`. The API is identical.
-
-```python
-```python
-async def main():
-    async with MCPClient("My agent name") as mcp:
-        tools = await mcp.get_langchain_tools()
-        agent = create_react_agent(llm, tools)
-        agent_response = await agent.ainvoke() # as usual
-
-if __name__ == "__main__":
-    asyncio.run(main())
+2. Edit `examples/.env` and add your credentials:
+```bash
+GITHUB_TOKEN=github_pat_your_token_here
+MASTER_KEY=WSK_your_workspace_key_here
 ```
 
-## Usage examples
-
-* [examples/list_tools.py](examples/list_tools.py): list tools available for a given 2ly agent
-* [examples/langgraph.py](examples/langgraph.py): connect 2ly to a LangGraph agent
-* [examples/langgraph_without_adapter.py](examples/langgraph_without_adapter.py): another LangGraph example but without Langchain adapter
-
-### Options
-
-Both variants accept optional configuration to control how the MCP runtime is started via `npx` and how the client behaves:
-
-```python
-from langchain_2ly import MCPAdapter, MCPClient
-
-options = {
-  "workspace": "my-workspace-id",           # forwarded to runtime as WORKSPACE_ID
-  "nats_servers": "nats://localhost:4222",  # NATS URL used by runtime
-  "version": "latest",                      # @2ly/runtime version for npx
-  "startup_timeout_seconds": 20.0,            # wait for initialize()
-  "log_level": "info",                       # forwarded to runtime as LOG_LEVEL
-}
-
-mcp = MCPAdapter("my-runtime", options)
-# or
-mcp = MCPClient("my-runtime", options)
+3. Run an example:
+```bash
+cd examples
+python langgraph_agent.py
 ```
 
 # Development
@@ -110,8 +194,7 @@ python -m build
 
 ```bash
 # update the filename to the build version
-# update the filename to the build version
-pip install dist/langchain_2ly-0.0.1-py3-none-any.whl --force-reinstall
+pip install dist/langchain_2ly-0.1.0-py3-none-any.whl --force-reinstall
 ```
 
 ## Run the examples

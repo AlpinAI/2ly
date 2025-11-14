@@ -3,7 +3,7 @@ import os
 from dotenv import load_dotenv
 from langchain_openai import ChatOpenAI
 from pydantic import SecretStr
-from langchain_2ly import MCPClient
+from langchain_2ly import MCPToolset
 from langgraph.prebuilt import create_react_agent
 from format_response import format_agent_response
 import openai
@@ -15,12 +15,15 @@ if not token:
     print("Error: Please set the GITHUB_TOKEN environment variable with a valid GitHub token to access Github models")
     exit(1)
 
-# Get 2ly authentication - workspace key for auto-discovery
-# Get your workspace key from: Settings > API Keys in the 2ly UI
-master_key = os.environ.get("MASTER_KEY")
-if not master_key:
-    print("Error: Please set the MASTER_KEY environment variable with a workspace key from 2ly")
-    print("Get your key from the 2ly UI: Settings > API Keys > Generate New Master Key")
+# Get 2ly authentication - toolset-specific key (recommended)
+# Get your toolset key from: Toolsets page in the 2ly UI
+# 1. Create a toolset in the UI first
+# 2. Click on the toolset to view details
+# 3. Copy the toolset key
+toolset_key = os.environ.get("TOOLSET_KEY")
+if not toolset_key:
+    print("Error: Please set the TOOLSET_KEY environment variable with a toolset key from 2ly")
+    print("Get your key from the 2ly UI: Toolsets page > Select toolset > Copy key")
     exit(1)
 
 endpoint = "https://models.inference.ai.azure.com"
@@ -37,17 +40,17 @@ llm = ChatOpenAI(
 
 # Set the prompts
 system_prompt = """
-    You are a funny assistant adding jokes to any conversations.
+    You are a helpful assistant that can access tools to complete tasks.
 """
 user_prompt = "Tell me how many tools you have access to and their names. If you have a tool called 'list_allowed_directories', call it and list the result of this tool call."
 
 async def main():
     try:
-        # Using workspace key + toolset name for auto-discovery
-        # MCPClient provides the same functionality without the langchain_mcp_adapters dependency
-        async with MCPClient.with_workspace_key(
-            name="Langgraph Agent without adapter",
-            master_key=master_key
+        # Using toolset-specific key (recommended for better security)
+        # Provides granular access - each key only has access to one toolset
+        # Requires pre-creating the toolset in the 2ly UI
+        async with MCPToolset.with_toolset_key(
+            toolset_key=toolset_key
         ) as mcp:
             tools = await mcp.get_langchain_tools()
             agent = create_react_agent(llm, tools)
