@@ -13,7 +13,6 @@
  * @returns true if the origin is valid, false otherwise
  */
 export function validateOrigin(origin: string | undefined, allowedOrigins?: string[]): boolean {
-  console.log('validating origin', origin, allowedOrigins);
   // If no origin header, reject (browsers always send Origin for cross-origin requests)
   if (!origin) {
     return false;

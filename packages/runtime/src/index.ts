@@ -7,7 +7,7 @@ import { loadEnv } from '@2ly/common';
 // Load environment variables in layers (shared keys first, then package-specific)
 const projectRoot = resolve(__dirname, '../../..');
 const packagePath = resolve(__dirname, '../');
-loadEnv(projectRoot, packagePath);
+loadEnv(projectRoot, packagePath, process.env.FORWARD_STDERR !== 'false');
 
 start();
 
