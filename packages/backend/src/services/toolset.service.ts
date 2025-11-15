@@ -13,6 +13,7 @@ import { tap, debounceTime } from 'rxjs/operators';
 
 import {
   ToolSetRepository,
+  WorkspaceRepository,
 } from '../repositories';
 import { IdentityService } from './identity.service';
 
@@ -31,6 +32,7 @@ export class ToolSetService extends Service {
     @inject(DGraphService) private dgraphService: DGraphService,
     @inject(NatsService) private natsService: NatsService,
     @inject(ToolSetRepository) private toolSetRepository: ToolSetRepository,
+    @inject(WorkspaceRepository) private workspaceRepository: WorkspaceRepository,
   ) {
     super();
     this.logger = this.loggerService.getLogger(this.name);
@@ -75,6 +77,7 @@ export class ToolSetService extends Service {
     this.logger.debug(`Toolset ${identity.instance.id} connected`);
     try {
       this.publishToolSetTools(identity.instance);
+      this.workspaceRepository.completeOnboardingStep(identity.instance.workspace.id, 'connect-tool-set-to-agent');
     } catch (error) {
       this.logger.error(`Error handling toolset handshake: ${error}`);
     }

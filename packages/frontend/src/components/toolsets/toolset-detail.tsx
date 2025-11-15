@@ -6,7 +6,6 @@
  *
  * DISPLAYS:
  * - Name and description
- * - Status (based on tool statuses)
  * - Available Tools (with links)
  * - Created/Updated timestamps
  */
@@ -119,14 +118,6 @@ export function ToolsetDetail({ toolSet }: ToolsetDetailProps) {
     }
   };
 
-  // Calculate status based on tool statuses
-  const getStatus = (): 'ACTIVE' | 'INACTIVE' => {
-    if (!toolSet.mcpTools || toolSet.mcpTools.length === 0) return 'INACTIVE';
-    return toolSet.mcpTools.some((tool) => tool.status === 'ACTIVE') ? 'ACTIVE' : 'INACTIVE';
-  };
-
-  const status = getStatus();
-
   return (
     <div className="flex flex-col h-full overflow-auto">
       {/* Header */}
@@ -170,22 +161,6 @@ export function ToolsetDetail({ toolSet }: ToolsetDetailProps) {
 
       {/* Content */}
       <div className="flex-1 p-4 space-y-4">
-        {/* Status */}
-        <div>
-          <h4 className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">
-            Status
-          </h4>
-          <span
-            className={`inline-flex items-center px-2 py-1 rounded text-sm font-medium ${
-              status === 'ACTIVE'
-                ? 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300'
-                : 'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-300'
-            }`}
-          >
-            {status}
-          </span>
-        </div>
-
         {/* Identity Key */}
         <div>
           <h4 className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">
@@ -272,15 +247,6 @@ export function ToolsetDetail({ toolSet }: ToolsetDetailProps) {
                       </p>
                     )}
                   </div>
-                  <span
-                    className={`inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium flex-shrink-0 ${
-                      tool.status === 'ACTIVE'
-                        ? 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300'
-                        : 'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-300'
-                    }`}
-                  >
-                    {tool.status}
-                  </span>
                 </li>
               ))}
             </ul>

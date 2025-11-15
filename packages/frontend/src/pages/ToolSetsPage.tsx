@@ -5,13 +5,12 @@
  * Shows toolset list with filters and detail panel.
  *
  * LAYOUT:
- * - 2/3: Tool set table with search and filters
+ * - 2/3: Tool set table with search
  * - 1/3: Tool set detail panel
  *
  * FEATURES:
  * - Real-time toolset updates (subscription)
  * - Search by name/description/tool names
- * - Filter by status
  * - Click toolset to view details
  * - Show toolset tools and metadata
  */
@@ -34,6 +33,8 @@ export default function ToolSetsPage() {
 
   // Fetch toolsets via Apollo subscription
   const { filteredToolSets, loading, error, filters } = useToolSets(workspaceId || '');
+
+  console.log('filteredToolSets', filteredToolSets);
 
   // Get selected toolset from URL
   const selectedToolSet = useMemo(() => {
@@ -94,8 +95,6 @@ export default function ToolSetsPage() {
             onSelectToolSet={setSelectedId}
             search={filters.search}
             onSearchChange={filters.setSearch}
-            statusFilter={filters.statuses}
-            onStatusFilterChange={filters.setStatuses}
             loading={loading}
           />
         }

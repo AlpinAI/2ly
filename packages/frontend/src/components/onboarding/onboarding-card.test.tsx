@@ -205,14 +205,12 @@ describe('OnboardingCard', () => {
     vi.mocked(useToolSets).mockReturnValue({
       toolSets: [mockToolSet],
       filteredToolSets: [mockToolSet],
-      stats: { total: 1, filtered: 1, active: 1, inactive: 0 },
+      stats: { total: 1, filtered: 1 },
       loading: false,
       error: undefined,
       filters: {
         search: '',
         setSearch: vi.fn(),
-        statuses: [],
-        setStatuses: vi.fn(),
         reset: vi.fn(),
       },
     });
@@ -247,14 +245,12 @@ describe('OnboardingCard', () => {
       vi.mocked(useToolSets).mockReturnValue({
         toolSets: [],
         filteredToolSets: [],
-        stats: { total: 0, filtered: 0, active: 0, inactive: 0 },
+        stats: { total: 0, filtered: 0 },
         loading: false,
         error: undefined,
         filters: {
           search: '',
           setSearch: vi.fn(),
-          statuses: [],
-          setStatuses: vi.fn(),
           reset: vi.fn(),
         },
       });
@@ -473,14 +469,12 @@ describe('OnboardingCard', () => {
       vi.mocked(useToolSets).mockReturnValue({
         toolSets: [multiToolToolSet],
         filteredToolSets: [multiToolToolSet],
-        stats: { total: 1, filtered: 1, active: 1, inactive: 0 },
+        stats: { total: 1, filtered: 1 },
         loading: false,
         error: undefined,
         filters: {
           search: '',
           setSearch: vi.fn(),
-          statuses: [],
-          setStatuses: vi.fn(),
           reset: vi.fn(),
         },
       });

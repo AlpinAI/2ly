@@ -260,10 +260,6 @@ export class RuntimeRepository {
       hostIP,
       hostname,
     });
-    const runtime = res.updateRuntime.runtime[0]!;
-    if (runtime.workspace) {
-      await this.workspaceRepository.checkAndCompleteStep(runtime.workspace.id, 'connect-tool-set-to-agent');
-    }
     return res.updateRuntime.runtime[0];
   }
 

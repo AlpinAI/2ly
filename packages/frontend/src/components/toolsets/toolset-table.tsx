@@ -6,19 +6,16 @@
  *
  * COLUMNS:
  * - Name & Description
- * - Status (Active/Inactive based on tool statuses)
  * - # Tools
  *
  * FEATURES:
  * - Search by name/description/tool names
- * - Filter by status
  * - Click row to select
  * - Highlight selected row
  */
 
 import { useEffect, useRef } from 'react';
 import { Search } from '@/components/ui/search';
-import { CheckboxDropdown } from '@/components/ui/checkbox-dropdown';
 import { Button } from '@/components/ui/button';
 import { X, Settings } from 'lucide-react';
 import { useManageToolsDialog } from '@/stores/uiStore';
@@ -33,15 +30,8 @@ export interface ToolsetTableProps {
   onSelectToolSet: (toolSetId: string) => void;
   search: string;
   onSearchChange: (search: string) => void;
-  statusFilter: string[];
-  onStatusFilterChange: (statuses: string[]) => void;
   loading?: boolean;
 }
-
-const STATUS_OPTIONS = [
-  { id: 'ACTIVE', label: 'Active' },
-  { id: 'INACTIVE', label: 'Inactive' },
-];
 
 export function ToolsetTable({
   toolSets,
@@ -49,14 +39,12 @@ export function ToolsetTable({
   onSelectToolSet,
   search,
   onSearchChange,
-  statusFilter,
-  onStatusFilterChange,
   loading,
 }: ToolsetTableProps) {
   const scrollToEntity = useScrollToEntity();
   const rowRefs = useRef<Map<string, HTMLTableRowElement>>(new Map());
 
-  const hasActiveFilters = search.length > 0 || statusFilter.length > 0;
+  const hasActiveFilters = search.length > 0;
   const { setOpen: setManageToolsOpen, setSelectedToolsetId } = useManageToolsDialog();
 
   // Scroll to selected entity when ID changes and element is ready
@@ -73,19 +61,12 @@ export function ToolsetTable({
 
   const handleClearFilters = () => {
     onSearchChange('');
-    onStatusFilterChange([]);
   };
 
   const handleManageToolsClick = (e: React.MouseEvent, toolSetId: string) => {
     e.stopPropagation();
     setSelectedToolsetId(toolSetId);
     setManageToolsOpen(true);
-  };
-
-  // Calculate status for a toolset (active if any tool is active)
-  const getToolSetStatus = (toolSet: ToolSet): 'ACTIVE' | 'INACTIVE' => {
-    if (!toolSet.mcpTools || toolSet.mcpTools.length === 0) return 'INACTIVE';
-    return toolSet.mcpTools.some((tool) => tool.status === 'ACTIVE') ? 'ACTIVE' : 'INACTIVE';
   };
 
   return (
@@ -98,22 +79,14 @@ export function ToolsetTable({
           onChange={(e) => onSearchChange(e.target.value)}
         />
 
-        <div className="flex flex-wrap gap-2">
-          <CheckboxDropdown
-            label="Status"
-            placeholder="All statuses"
-            items={STATUS_OPTIONS}
-            selectedIds={statusFilter}
-            onChange={onStatusFilterChange}
-          />
-
-          {hasActiveFilters && (
+        {hasActiveFilters && (
+          <div className="flex flex-wrap gap-2">
             <Button variant="ghost" size="sm" onClick={handleClearFilters}>
               <X className="h-4 w-4 mr-1" />
               Clear filters
             </Button>
-          )}
-        </div>
+          </div>
+        )}
       </div>
 
       {/* Table */}
@@ -138,9 +111,6 @@ export function ToolsetTable({
                   Toolset
                 </th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  Status
-                </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                   Tools
                 </th>
                 <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
@@ -150,7 +120,6 @@ export function ToolsetTable({
             </thead>
             <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
               {toolSets.map((toolSet) => {
-                const status = getToolSetStatus(toolSet);
                 return (
                   <tr
                     key={toolSet.id}
@@ -177,17 +146,6 @@ export function ToolsetTable({
                           {toolSet.description}
                         </div>
                       )}
-                    </td>
-                    <td className="px-4 py-3 text-sm">
-                      <span
-                        className={`inline-flex items-center px-2 py-1 rounded text-xs font-medium ${
-                          status === 'ACTIVE'
-                            ? 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300'
-                            : 'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-300'
-                        }`}
-                      >
-                        {status}
-                      </span>
                     </td>
                     <td className="px-4 py-3 text-sm text-gray-700 dark:text-gray-300">
                       {toolSet.mcpTools?.length || 0}

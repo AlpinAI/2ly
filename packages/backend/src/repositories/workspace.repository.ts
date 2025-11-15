@@ -12,7 +12,6 @@ import {
   UNSET_GLOBAL_RUNTIME,
   CREATE_ONBOARDING_STEP,
   LINK_ONBOARDING_STEP_TO_WORKSPACE,
-  QUERY_ONBOARDING_STEP_BY_STEP_ID,
   UPDATE_ONBOARDING_STEP_STATUS,
   ADD_REGISTRY_SERVER,
   UPDATE_REGISTRY_SERVER,
@@ -188,15 +187,19 @@ export class WorkspaceRepository {
       .observe<apolloResolversTypes.Workspace>(query, { workspaceId }, 'getWorkspace', true);
   }
 
+  async getWorkspaceOnboardingSteps(workspaceId: string): Promise<apolloResolversTypes.OnboardingStep[]> {
+    const res = await this.dgraphService.query<{
+      getWorkspace: { onboardingSteps: apolloResolversTypes.OnboardingStep[] };
+    }>(QUERY_WORKSPACE, { workspaceId });
+    return res.getWorkspace.onboardingSteps || [];
+  }
+
   async initializeOnboardingSteps(workspaceId: string): Promise<void> {
     const now = new Date().toISOString();
     
     // Get existing onboarding steps to avoid duplicates
-    const workspace = await this.dgraphService.query<{
-      getWorkspace: { onboardingSteps: { stepId: string }[] };
-    }>(QUERY_WORKSPACE, { workspaceId });
-    
-    const existingStepIds = new Set(workspace.getWorkspace.onboardingSteps?.map(s => s.stepId) || []);
+    const existingSteps = await this.getWorkspaceOnboardingSteps(workspaceId);
+    const existingStepIds = new Set(existingSteps.map(s => s.stepId));
     
     // Create only missing steps
     for (const stepDef of INITIAL_ONBOARDING_STEPS) {
@@ -225,22 +228,22 @@ export class WorkspaceRepository {
 
   async completeOnboardingStep(workspaceId: string, stepId: string): Promise<void> {
     const now = new Date().toISOString();
-    
-    // First, query for the onboarding step by stepId to get the dgraph ID
-    const stepQuery = await this.dgraphService.query<{
-      queryOnboardingStep: { id: string; stepId: string; status: string }[];
-    }>(QUERY_ONBOARDING_STEP_BY_STEP_ID, { stepId });
-    
-    const step = stepQuery.queryOnboardingStep?.[0];
-    if (!step) {
+
+    const existingSteps = await this.getWorkspaceOnboardingSteps(workspaceId);
+    const existingStep = existingSteps.find(s => s.stepId === stepId);
+    if (!existingStep) {
       throw new Error(`Onboarding step with stepId '${stepId}' not found`);
+    }
+
+    if (existingStep.status === 'COMPLETED') {
+      return;
     }
     
     // Update the onboarding step status to COMPLETED
     await this.dgraphService.mutation<{
       updateOnboardingStep: { onboardingStep: { id: string }[] };
     }>(UPDATE_ONBOARDING_STEP_STATUS, {
-      id: step.id,
+      id: existingStep.id,
       status: 'COMPLETED',
       now,
     });
@@ -248,22 +251,22 @@ export class WorkspaceRepository {
 
   async dismissOnboardingStep(workspaceId: string, stepId: string): Promise<void> {
     const now = new Date().toISOString();
-    
-    // First, query for the onboarding step by stepId to get the dgraph ID
-    const stepQuery = await this.dgraphService.query<{
-      queryOnboardingStep: { id: string; stepId: string; status: string }[];
-    }>(QUERY_ONBOARDING_STEP_BY_STEP_ID, { stepId });
-    
-    const step = stepQuery.queryOnboardingStep?.[0];
-    if (!step) {
+
+    const existingSteps = await this.getWorkspaceOnboardingSteps(workspaceId);
+    const existingStep = existingSteps.find(s => s.stepId === stepId);
+    if (!existingStep) {
       throw new Error(`Onboarding step with stepId '${stepId}' not found`);
+    }
+
+    if (existingStep.status === 'DISMISSED') {
+      return;
     }
     
     // Update the onboarding step status to DISMISSED
     await this.dgraphService.mutation<{
       updateOnboardingStep: { onboardingStep: { id: string }[] };
     }>(UPDATE_ONBOARDING_STEP_STATUS, {
-      id: step.id,
+      id: existingStep.id,
       status: 'DISMISSED',
       now,
     });
@@ -302,9 +305,6 @@ export class WorkspaceRepository {
         
         shouldComplete = (toolSets.getWorkspace?.toolSets.some(ts => ts.mcpTools && ts.mcpTools.length > 0) ?? false);
         break; }
-      case 'connect-tool-set-to-agent':
-        shouldComplete = false
-        break;
       default:
         return; // Unknown step
     }
