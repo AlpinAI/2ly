@@ -578,7 +578,7 @@ export const comprehensiveSeededData: SeedData = {
       toolOutput: JSON.stringify({ content: 'File contents here', size: 1024 }),
       mcpToolId: 'read_file',
       calledById: 'claude-desktop-agent',
-      executedById: 'edge-runtime',
+      executedById: 'main-runtime',
       isTest: false,
     },
     {
@@ -589,7 +589,7 @@ export const comprehensiveSeededData: SeedData = {
       toolOutput: JSON.stringify({ status: 200, data: { message: 'Success' } }),
       mcpToolId: 'http_get',
       calledById: 'web-assistant-agent',
-      executedById: 'edge-runtime',
+      executedById: 'stage-runtime',
       isTest: false,
     },
     {
