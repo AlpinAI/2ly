@@ -226,7 +226,7 @@ export class WorkspaceRepository {
     }
   }
 
-  async completeOnboardingStep(workspaceId: string, stepId: string): Promise<void> {
+  async completeOnboardingStep(workspaceId: string, stepId: string, metadata?: Record<string, unknown>): Promise<void> {
     const now = new Date().toISOString();
 
     const existingSteps = await this.getWorkspaceOnboardingSteps(workspaceId);
@@ -238,7 +238,7 @@ export class WorkspaceRepository {
     if (existingStep.status === 'COMPLETED') {
       return;
     }
-    
+
     // Update the onboarding step status to COMPLETED
     await this.dgraphService.mutation<{
       updateOnboardingStep: { onboardingStep: { id: string }[] };
@@ -246,6 +246,7 @@ export class WorkspaceRepository {
       id: existingStep.id,
       status: 'COMPLETED',
       now,
+      metadata: metadata ? JSON.stringify(metadata) : undefined,
     });
   }
 

@@ -137,6 +137,7 @@ type OnboardingStep {
   type: OnboardingStepType!
   status: OnboardingStepStatus!
   priority: Int
+  metadata: String
   createdAt: Date!
   updatedAt: Date
 }

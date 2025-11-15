@@ -140,6 +140,7 @@ describe('OnboardingCard', () => {
     status: OnboardingStepStatus.Pending,
     type: OnboardingStepType.Onboarding,
     priority: 3,
+    metadata: null,
     createdAt: new Date(),
     updatedAt: null,
   };

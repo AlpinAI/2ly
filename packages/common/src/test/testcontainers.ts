@@ -13,3 +13,6 @@ export type {
   TestEnvironmentServices,
 } from './testEnvironment';
 export * from '../node-helpers/password';
+export * from '../messages/handshake.request';
+export * from '../messages/handshake.response';
+export * from '../services/nats.message';

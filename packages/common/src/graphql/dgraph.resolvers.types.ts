@@ -92,6 +92,7 @@ export enum McpTransportType {
 export type OnboardingStep = {
   createdAt: Scalars['DateTime']['output'];
   id: Scalars['ID']['output'];
+  metadata?: Maybe<Scalars['String']['output']>;
   priority?: Maybe<Scalars['Int']['output']>;
   status: OnboardingStepStatus;
   stepId: Scalars['String']['output'];
@@ -406,6 +407,7 @@ export type McpToolResolvers<ContextType = any, ParentType extends ResolversPare
 export type OnboardingStepResolvers<ContextType = any, ParentType extends ResolversParentTypes['OnboardingStep'] = ResolversParentTypes['OnboardingStep']> = ResolversObject<{
   createdAt?: Resolver<ResolversTypes['DateTime'], ParentType, ContextType>;
   id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
+  metadata?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   priority?: Resolver<Maybe<ResolversTypes['Int']>, ParentType, ContextType>;
   status?: Resolver<ResolversTypes['OnboardingStepStatus'], ParentType, ContextType>;
   stepId?: Resolver<ResolversTypes['String'], ParentType, ContextType>;

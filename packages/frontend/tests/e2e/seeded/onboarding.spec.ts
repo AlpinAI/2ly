@@ -2,7 +2,7 @@
 import { test, expect, performLogin, seedPresets } from '../../fixtures/database';
 import { buildFilesystemServerConfig } from '../../fixtures/mcp-builders';
 import { Page } from '@playwright/test';
-import { dgraphQL } from '../../fixtures/dgraph-client';
+import { sendToolsetHandshake, waitForOnboardingStepComplete } from '../../fixtures/nats-helpers';
 
 // TODO: unskip tests when we have a runtime running
 
@@ -74,7 +74,6 @@ const createRuntime = async (
   name: string,
   description: string,
   type: 'EDGE' | 'MCP',
-  nbToolsToLink = 1,
 ) => {
   const mutation = `
     mutation CreateRuntime($name: String!, $description: String!, $type: RuntimeType!, $workspaceId: ID!) {
@@ -93,15 +92,21 @@ const createRuntime = async (
     workspaceId,
   });
 
-  if (nbToolsToLink === 0) {
-    // small waiting time to let the frontend get notified of the new runtime
-    await page.waitForTimeout(1000);
-    return result.createRuntime.id;
-  }
-
   // Wait 10s, letting the time to the runtime to spawn the server and discover the tools
   await page.waitForTimeout(10000);
 
+  return {
+    runtimeId: result.createRuntime.id,
+  };
+};
+
+const createToolset = async (
+  graphql: <T = any>(query: string, variables?: Record<string, any>) => Promise<T>,
+  workspaceId: string,
+  name: string,
+  description: string,
+  nbToolsToLink: number,
+) => {
   // get tools
   const toolQuery = `
     query GetTools($workspaceId: ID!) {
@@ -112,7 +117,7 @@ const createRuntime = async (
   `;
   const toolResult = await graphql<{ mcpTools: Array<{ id: string }> }>(toolQuery, { workspaceId });
 
-  // Create a ToolSet for the runtime
+  // Create a ToolSet
   const createToolSetMutation = `
     mutation CreateToolSet($name: String!, $description: String!, $workspaceId: ID!) {
       createToolSet(name: $name, description: $description, workspaceId: $workspaceId) {
@@ -125,8 +130,8 @@ const createRuntime = async (
   const toolSetResult = await graphql<{ createToolSet: { id: string; name: string } }>(
     createToolSetMutation,
     {
-      name: `${result.createRuntime.name} Tools`,
-      description: `Tools for ${result.createRuntime.name}`,
+      name,
+      description,
       workspaceId,
     }
   );
@@ -151,27 +156,11 @@ const createRuntime = async (
     });
   }
 
-  return result.createRuntime.id;
+  return {
+    toolsetId: toolSetResult.createToolSet.id,
+  };
 };
 
-// TODO: this method set the runtime active in the database, BUT since it doesn't use the NATS message
-// the backend doesn't catch the update and doesn't complete the onboarding step
-// fix this to unskip more tests below
-export const setRuntimeActive = async (
-  id: string,
-) => {
-  const mutation = `
-    mutation setRuntimeActive($id: ID!) {
-    updateRuntime(input: { filter: { id: [$id] }, set: { status: ACTIVE } }) {
-      runtime {
-        id
-        status
-      }
-    }
-  }
-  `;
-  await dgraphQL<{ updateRuntime: { runtime: { id: string; status: string }[] } }>(mutation, { id });
-};
 
 test.describe('Onboarding Flow', () => {
   test.beforeEach(async ({ page, resetDatabase, seedDatabase }) => {
@@ -265,7 +254,8 @@ test.describe('Onboarding Flow', () => {
     await configureMCPServer(graphql, workspaceId, 'GLOBAL');
 
     // complete step 2
-    await createRuntime(graphql, page, workspaceId, 'My tool set', 'My tool set description', 'MCP', 1);
+    await createRuntime(graphql, page, workspaceId, 'My Runtime', 'My runtime description', 'MCP');
+    await createToolset(graphql, workspaceId, 'My tool set', 'My tool set description', 1);
 
     // Select the step 3 card containing the correct step title
     const step3Card = page
@@ -281,7 +271,8 @@ test.describe('Onboarding Flow', () => {
     await configureMCPServer(graphql, workspaceId, 'GLOBAL');
 
     // complete step 2
-    await createRuntime(graphql, page, workspaceId, 'My tool set', 'My tool set description', 'MCP', 1);
+    await createRuntime(graphql, page, workspaceId, 'My Runtime', 'My runtime description', 'MCP');
+    await createToolset(graphql, workspaceId, 'My tool set', 'My tool set description', 1);
 
     // Select the step 3 card containing the correct step title
     const step3Card = page
@@ -302,8 +293,8 @@ test.describe('Onboarding Flow', () => {
     // complete step 1
     await configureMCPServer(graphql, workspaceId, 'GLOBAL');
 
-    // complete step 2
-    await createRuntime(graphql, page, workspaceId, 'My tool set', 'My tool set description', 'MCP', 0);
+    // complete step 2 - create runtime but no toolset
+    await createRuntime(graphql, page, workspaceId, 'My Runtime', 'My runtime description', 'MCP');
 
     // Select the step 3 card containing the correct step title
     const step3Card = page
@@ -314,15 +305,32 @@ test.describe('Onboarding Flow', () => {
     await expect(step3Card.getByText(/Create a tool set first to connect to an agent/)).toBeVisible();
   });
 
-  test.skip('step 3 shows completed status after connection', async ({ page, graphql, workspaceId }) => {
+  test('step 3 shows completed status after connection', async ({ page, graphql, workspaceId }) => {
     // complete step 1
     await configureMCPServer(graphql, workspaceId, 'GLOBAL');
 
     // complete step 2
-    const runtimeId = await createRuntime(graphql, page, workspaceId, 'My tool set', 'My tool set description', 'MCP', 1);
+    await createRuntime(graphql, page, workspaceId, 'My Runtime', 'My runtime description', 'MCP');
+    const { toolsetId } = await createToolset(graphql, workspaceId, 'My tool set', 'My tool set description', 1);
 
-    // set runtime active
-    await setRuntimeActive(runtimeId);
+    // Get the toolset key
+    const toolsetKeyQuery = `
+      query GetToolsetKey($toolsetId: ID!) {
+        toolsetKey(toolsetId: $toolsetId) {
+          key
+        }
+      }
+    `;
+    const keyResult = await graphql<{ toolsetKey: { key: string } }>(toolsetKeyQuery, { toolsetId });
+
+    // Send toolset handshake to complete step 3
+    await sendToolsetHandshake({
+      toolsetKey: keyResult.toolsetKey.key,
+      toolsetName: 'My tool set',
+    });
+
+    // Wait for the onboarding step to be marked as complete
+    await waitForOnboardingStepComplete(workspaceId, 'connect-tool-set-to-agent');
 
     // Select the step 3 card containing the correct step title
     const step3Card = page
@@ -332,41 +340,43 @@ test.describe('Onboarding Flow', () => {
     await expect(step3Card.getByText(/My tool set connected/)).toBeVisible();
   });
 
-  test.skip('dismiss onboarding button is visible', async ({ page }) => {
+  test('dismiss onboarding button is visible', async ({ page }) => {
     // Check dismiss button
     await expect(page.getByRole('button', { name: /Dismiss onboarding/i })).toBeVisible();
   });
 
-  test.skip('all completed steps show green styling', async ({ page }) => {
+  test('all completed steps show green styling', async ({ page, graphql, workspaceId }) => {
+    // complete step 1
+    await configureMCPServer(graphql, workspaceId, 'GLOBAL');
+
+    // complete step 2
+    await createRuntime(graphql, page, workspaceId, 'My Runtime', 'My runtime description', 'MCP');
+    const { toolsetId } = await createToolset(graphql, workspaceId, 'My tool set', 'My tool set description', 1);
+
+    // Get the toolset key
+    const toolsetKeyQuery = `
+      query GetToolsetKey($toolsetId: ID!) {
+        toolsetKey(toolsetId: $toolsetId) {
+          key
+        }
+      }
+    `;
+    const keyResult = await graphql<{ toolsetKey: { key: string } }>(toolsetKeyQuery, { toolsetId });
+
+    // Send toolset handshake to complete step 3
+    await sendToolsetHandshake({
+      toolsetKey: keyResult.toolsetKey.key,
+      toolsetName: 'My tool set',
+    });
+
+    // Wait for the onboarding step to be marked as complete
+    await waitForOnboardingStepComplete(workspaceId, 'connect-tool-set-to-agent');
+
     // All steps should show Completed badge
     const completedBadges = page.locator('text=Completed');
     await expect(completedBadges).toHaveCount(3);
 
     // Check dismiss button text changes
     await expect(page.getByRole('button', { name: /Close onboarding/i })).toBeVisible();
-  });
-
-  test.skip('step 3 uses different icon (Link) compared to step 1 and 2', async ({ page }) => {
-    // Get all three step cards by their titles
-    const step1 = page.locator('text=Install an MCP Server').locator('..').locator('..');
-    const step2 = page.locator('text=Create Your First Tool Set').locator('..').locator('..');
-    const step3 = page.locator('text=Connect your Agent').locator('..').locator('..');
-
-    // Each should have an icon (SVG element)
-    await expect(step1.locator('svg').first()).toBeVisible();
-    await expect(step2.locator('svg').first()).toBeVisible();
-    await expect(step3.locator('svg').first()).toBeVisible();
-
-    // Note: Testing the specific icon type (Server vs Package vs Link) is difficult
-    // in E2E tests without checking SVG paths, so we just verify icons exist
-  });
-
-  test.skip('Connect button variant changes based on isCurrentStep', async ({ page }) => {
-    // Step 3 Connect button should be the default variant (not outline)
-    const step3Card = page.locator('text=Connect your Agent').locator('..');
-    const connectButton = step3Card.getByRole('button', { name: /Connect/i });
-
-    // Check button exists and is visible (detailed styling check is difficult in E2E)
-    await expect(connectButton).toBeVisible();
   });
 });

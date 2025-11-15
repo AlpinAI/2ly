@@ -38,6 +38,7 @@ export const QUERY_WORKSPACE = gql`
         priority
         createdAt
         updatedAt
+        metadata
       }
     }
   }
@@ -210,12 +211,13 @@ export const CREATE_ONBOARDING_STEP = gql`
 `;
 
 export const UPDATE_ONBOARDING_STEP_STATUS = gql`
-  mutation updateOnboardingStepCompleted($id: ID!, $status: OnboardingStepStatus!, $now: DateTime!) {
+  mutation updateOnboardingStepCompleted($id: ID!, $status: OnboardingStepStatus!, $now: DateTime!, $metadata: String) {
     updateOnboardingStep(input: {
       filter: { id: [$id] }
       set: {
         status: $status
         updatedAt: $now
+        metadata: $metadata
       }
     }) {
       onboardingStep {
@@ -224,6 +226,7 @@ export const UPDATE_ONBOARDING_STEP_STATUS = gql`
         type
         status
         priority
+        metadata
         createdAt
         updatedAt
       }

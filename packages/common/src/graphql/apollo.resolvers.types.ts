@@ -389,6 +389,7 @@ export type MutationUpdateWorkspaceArgs = {
 export type OnboardingStep = {
   createdAt: Scalars['Date']['output'];
   id: Scalars['ID']['output'];
+  metadata?: Maybe<Scalars['String']['output']>;
   priority?: Maybe<Scalars['Int']['output']>;
   status: OnboardingStepStatus;
   stepId: Scalars['String']['output'];
@@ -944,6 +945,7 @@ export type MutationResolvers<ContextType = object, ParentType extends Resolvers
 export type OnboardingStepResolvers<ContextType = object, ParentType extends ResolversParentTypes['OnboardingStep'] = ResolversParentTypes['OnboardingStep']> = {
   createdAt?: Resolver<ResolversTypes['Date'], ParentType, ContextType>;
   id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
+  metadata?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   priority?: Resolver<Maybe<ResolversTypes['Int']>, ParentType, ContextType>;
   status?: Resolver<ResolversTypes['OnboardingStepStatus'], ParentType, ContextType>;
   stepId?: Resolver<ResolversTypes['String'], ParentType, ContextType>;

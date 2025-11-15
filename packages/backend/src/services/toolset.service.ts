@@ -77,11 +77,17 @@ export class ToolSetService extends Service {
     this.logger.debug(`Toolset ${identity.instance.id} connected`);
     try {
       this.publishToolSetTools(identity.instance);
-      this.workspaceRepository.completeOnboardingStep(identity.instance.workspace.id, 'connect-tool-set-to-agent');
+      this.workspaceRepository.completeOnboardingStep(
+        identity.instance.workspace.id,
+        'connect-tool-set-to-agent',
+        {
+          toolsetName: identity.instance.name,
+          toolsetId: identity.instance.id,
+        }
+      );
     } catch (error) {
       this.logger.error(`Error handling toolset handshake: ${error}`);
     }
-    
   }
 
   /**

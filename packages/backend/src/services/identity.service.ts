@@ -120,13 +120,17 @@ export class IdentityService extends Service {
         }
       } else if (nature === 'runtime') {
         this.logger.debug(`Handshake with runtime identity: ${relatedId}`);
-        const runtime = await this.runtimeRepository.findById(relatedId);
+        runtime = await this.runtimeRepository.findById(relatedId);
         if (!runtime) {
           throw new Error(`Runtime ${relatedId} not found`);
         }
+        workspaceId = runtime.workspace.id;
+        finalNature = 'runtime';
+        finalRelatedId = runtime.id;
+        finalRelatedName = runtime.name;
       } else if (nature === 'toolset') {
         this.logger.debug(`Handshake with toolset identity: ${relatedId}`);
-        const toolset = await this.toolsetRepository.findById(relatedId);
+        toolset = await this.toolsetRepository.findById(relatedId);
         if (!toolset) {
           throw new Error(`Toolset ${relatedId} not found`);
         }
