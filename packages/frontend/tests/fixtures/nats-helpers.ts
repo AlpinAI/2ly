@@ -101,9 +101,6 @@ export async function waitForOnboardingStepComplete(
         onboardingSteps: Array<{ id: string; stepId: string; status: string }>;
       };
     }>(query, { workspaceId });
-
-    console.log('result', JSON.stringify(result, null, 2));
-
     const step = result.getWorkspace?.onboardingSteps?.find(s => s.stepId === stepId);
 
     if (step?.status === 'COMPLETED') {
