@@ -1,48 +1,24 @@
 ---
 title: Installation
-description: Install and set up 2LY locally
 draft: false
 ---
 
-Get 2LY running on your local machine.
+Installing 2LY takes 2 minutes.
 
 ## Prerequisites
 
-- Node.js 22.x or higher
-- Docker and Docker Compose
-- Git
+- Node.js 22+
+- [Docker](https://docs.docker.com/)
 
 ## Installation
-
-### 1. Clone Repository
 
 ```bash
 git clone https://github.com/AlpinAI/2ly.git
 cd 2ly
+npm run start # calls docker compose
 ```
 
-### 2. Install Dependencies
-
-```bash
-npm install
-```
-
-### 3. Start Services
-
-```bash
-npm run start
-```
-
-This starts:
-- Backend (GraphQL API)
-- Frontend (React UI)
-- DGraph (database)
-- NATS (message broker)
-
-### 4. Access Application
-
-- **Frontend**: http://localhost:8888
-- **GraphQL API**: http://localhost:4000/graphql
+Access the dashboard at **http://localhost:8888**, create your workspace, and follow our 3-step onboarding (takes 2 minutes).
 
 ## Runtime Only
 
@@ -66,15 +42,17 @@ pip install twoly
 
 ## Troubleshooting
 
-**Port conflicts:** Ports 8888, 4000, 4222 must be available
+**Port conflicts:** Ports 8888, 3000, 4222 must be available
 
 **Docker not running:**
+
 ```bash
 docker --version
 docker-compose --version
 ```
 
 **NATS connection failed:**
+
 ```bash
 docker logs 2ly_nats
 ```

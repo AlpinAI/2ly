@@ -282,30 +282,33 @@ export const QUERY_ALL_TOOLSETS = gql`
 `;
 
 export const QUERY_TOOLSET_BY_NAME = gql`
-  query queryToolSetByName($name: String!) {
-    queryToolSet(filter: { name: { eq: $name } }) {
+  query getWorkspaceToolSetByName($workspaceId: ID!, $name: String!) {
+    getWorkspace(id: $workspaceId) {
       id
-      name
-      description
-      createdAt
-      updatedAt
-      mcpTools {
+      toolSets(filter: { name: { eq: $name } }) {
         id
         name
         description
-        inputSchema
-        annotations
-        status
         createdAt
-        lastSeenAt
-        mcpServer {
+        updatedAt
+        mcpTools {
+          id
+          name
+          description
+          inputSchema
+          annotations
+          status
+          createdAt
+          lastSeenAt
+          mcpServer {
+            id
+            name
+          }
+        }
+        workspace {
           id
           name
         }
-      }
-      workspace {
-        id
-        name
       }
     }
   }

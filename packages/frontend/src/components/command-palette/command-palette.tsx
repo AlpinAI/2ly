@@ -26,7 +26,7 @@ import { Search, Layers, Palette, Moon, Sun, Check, Plus, FolderPlus, Database }
 import { Command, CommandInput, CommandList, CommandEmpty, CommandGroup, CommandItem } from '@/components/ui/command';
 import { useWorkspaceId } from '@/stores/workspaceStore';
 import { useTheme } from '@/contexts/ThemeContext';
-import { useUIStore, useCreateToolSetDialog, useManageToolsDialog } from '@/stores/uiStore';
+import { useUIStore, useCreateToolsetDialog, useManageToolsDialog } from '@/stores/uiStore';
 import { GetWorkspacesDocument, type GetWorkspacesQuery } from '@/graphql/generated/graphql';
 
 type CommandMode = 'main' | 'search' | 'workspace' | 'theme';
@@ -40,7 +40,7 @@ export function CommandPalette() {
   const { theme, setTheme } = useTheme();
   const setAddSourceWorkflowOpen = useUIStore((state) => state.setAddSourceWorkflowOpen);
   const setAddServerWorkflowOpen = useUIStore((state) => state.setAddServerWorkflowOpen);
-  const { openDialog: openCreateToolSetDialog } = useCreateToolSetDialog();
+  const { openDialog: openCreateToolsetDialog } = useCreateToolsetDialog();
 
   const { data, loading } = useQuery(GetWorkspacesDocument);
 
@@ -87,8 +87,8 @@ export function CommandPalette() {
 
   const manageToolsDialog = useManageToolsDialog();
   const handleCreateToolSet = () => {
-    openCreateToolSetDialog((toolSetId: string) => {
-      manageToolsDialog.setSelectedToolSetId(toolSetId);
+    openCreateToolsetDialog((toolSetId: string) => {
+      manageToolsDialog.setSelectedToolsetId(toolSetId);
       manageToolsDialog.setOpen(true);
     });
     setOpen(false);

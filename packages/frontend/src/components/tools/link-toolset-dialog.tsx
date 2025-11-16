@@ -21,7 +21,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useToolSets } from '@/hooks/useToolSets';
 import { useNotification } from '@/contexts/NotificationContext';
-import { useCreateToolSetDialog } from '@/stores/uiStore';
+import { useCreateToolsetDialog } from '@/stores/uiStore';
 import { AddMcpToolToToolSetDocument } from '@/graphql/generated/graphql';
 import type { GetMcpToolsQuery } from '@/graphql/generated/graphql';
 
@@ -37,7 +37,7 @@ export function LinkToolSetDialog({ open, onOpenChange, tool }: LinkToolSetDialo
   const { workspaceId } = useParams<{ workspaceId: string }>();
   const { toolSets } = useToolSets(workspaceId!);
   const { toast } = useNotification();
-  const { openDialog: openCreateToolSetDialog } = useCreateToolSetDialog();
+  const { openDialog: openCreateToolsetDialog } = useCreateToolsetDialog();
   const [searchTerm, setSearchTerm] = useState('');
   const [isLinking, setIsLinking] = useState<string | null>(null);
 
@@ -93,12 +93,12 @@ export function LinkToolSetDialog({ open, onOpenChange, tool }: LinkToolSetDialo
 
   // Handle clicking "+Tool Set" button
   const handleCreateToolSet = useCallback(() => {
-    // Open the shared CreateToolSetDialog with callback to auto-link
-    openCreateToolSetDialog(async (toolSetId: string) => {
+    // Open the shared CreateToolsetDialog with callback to auto-link
+    openCreateToolsetDialog(async (toolSetId: string) => {
       setSearchTerm('');
       await handleLinkTool(toolSetId);
     });
-  }, [openCreateToolSetDialog, handleLinkTool]);
+  }, [openCreateToolsetDialog, handleLinkTool]);
 
   // Reset state when dialog closes
   const handleOpenChange = useCallback((newOpen: boolean) => {

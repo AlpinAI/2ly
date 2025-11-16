@@ -1,7 +1,6 @@
 import * as jwt from 'jsonwebtoken';
 import { injectable } from 'inversify';
 import { readFileSync } from 'fs';
-import { join } from 'path';
 
 export interface JwtPayload {
   userId: string;
@@ -40,19 +39,18 @@ export class JwtService {
     this.accessTokenTtl = parseInt(process.env.JWT_ACCESS_TOKEN_TTL || '900', 10); // 15 minutes
     this.refreshTokenTtl = parseInt(process.env.JWT_REFRESH_TOKEN_TTL || '604800', 10); // 7 days
 
-    // Require absolute paths for JWT keys for security
-
-    const backendRoot = join(__dirname, '..', '..', '..', 'packages', 'backend', 'keys');
-    const privateKeyPath = process.env.JWT_PRIVATE_KEY_PATH || join(backendRoot, 'private-dev.pem');
-    const publicKeyPath = process.env.JWT_PUBLIC_KEY_PATH || join(backendRoot, 'public-dev.pem');
+    // Get key paths from environment (auto-loaded from .docker-keys/.env.generated)
+    const privateKeyPath = process.env.JWT_PRIVATE_KEY_PATH;
+    const publicKeyPath = process.env.JWT_PUBLIC_KEY_PATH;
 
     if (!privateKeyPath || !publicKeyPath) {
       throw new Error(
-        'JWT service initialization failed: JWT_PRIVATE_KEY_PATH and JWT_PUBLIC_KEY_PATH environment variables are required and must be absolute paths'
+        'JWT service initialization failed: JWT_PRIVATE_KEY_PATH and JWT_PUBLIC_KEY_PATH must be set in environment. ' +
+          'These should be auto-loaded from .docker-keys/.env.generated'
       );
     }
 
-    // Validate that paths are absolute (security requirement)
+    // Validate that paths are absolute for security
     if (!privateKeyPath.startsWith('/') || !publicKeyPath.startsWith('/')) {
       throw new Error(
         'JWT service initialization failed: JWT key paths must be absolute paths for security (start with /)'
@@ -66,7 +64,8 @@ export class JwtService {
     } catch (error) {
       console.error('Failed to load JWT keys:', error);
       throw new Error(
-        `JWT service initialization failed: unable to load RSA keys from ${privateKeyPath} and ${publicKeyPath}. Ensure files exist and are readable.`
+        `JWT service initialization failed: unable to load RSA keys from ${privateKeyPath} and ${publicKeyPath}. ` +
+          'Ensure .docker-keys/.env.generated exists and paths are correct.'
       );
     }
   }

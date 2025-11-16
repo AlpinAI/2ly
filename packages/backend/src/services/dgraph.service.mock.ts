@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
 import { vi } from 'vitest';
 import '../../mocks/urql.mock';
 import '../../mocks/subscriptions-transport-ws.mock';

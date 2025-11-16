@@ -36,13 +36,11 @@ import { useQuery, useSubscription } from '@apollo/client/react';
 import {
   GetToolSetsDocument,
   SubscribeToolSetsDocument,
-  type ActiveStatus,
 } from '@/graphql/generated/graphql';
 
 export function useToolSets(workspaceId: string) {
   // Filter state
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedStatuses, setSelectedStatuses] = useState<string[]>([]);
 
   // 1️⃣ Read cached toolsets first (fetchPolicy: cache-only)
   const { data: queryData, loading: queryLoading, error: queryError } = useQuery(
@@ -95,36 +93,14 @@ export function useToolSets(workspaceId: string) {
       });
     }
 
-    // Status filter (based on tool statuses)
-    if (selectedStatuses.length > 0) {
-      result = result.filter((toolSet) => {
-        if (!toolSet.mcpTools || toolSet.mcpTools.length === 0) {
-          return selectedStatuses.includes('INACTIVE');
-        }
-        // ToolSet is active if any of its tools are active
-        const hasActiveTool = toolSet.mcpTools.some(
-          (tool: { status: ActiveStatus }) => tool.status === 'ACTIVE'
-        );
-        const status = hasActiveTool ? 'ACTIVE' : 'INACTIVE';
-        return selectedStatuses.includes(status);
-      });
-    }
-
     return result;
-  }, [allToolSets, searchTerm, selectedStatuses]);
+  }, [allToolSets, searchTerm]);
 
   // Calculate stats
   const stats = useMemo(() => {
-    const activeCount = allToolSets.filter((toolSet) => {
-      if (!toolSet.mcpTools || toolSet.mcpTools.length === 0) return false;
-      return toolSet.mcpTools.some((tool: { status: ActiveStatus }) => tool.status === 'ACTIVE');
-    }).length;
-
     return {
       total: allToolSets.length,
       filtered: filteredToolSets.length,
-      active: activeCount,
-      inactive: allToolSets.length - activeCount,
     };
   }, [allToolSets, filteredToolSets]);
 
@@ -137,11 +113,8 @@ export function useToolSets(workspaceId: string) {
     filters: {
       search: searchTerm,
       setSearch: setSearchTerm,
-      statuses: selectedStatuses,
-      setStatuses: setSelectedStatuses,
       reset: () => {
         setSearchTerm('');
-        setSelectedStatuses([]);
       },
     },
   };

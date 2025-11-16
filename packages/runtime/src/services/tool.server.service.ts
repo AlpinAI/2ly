@@ -209,7 +209,7 @@ export class ToolServerService extends Service {
     this.onShutdownCallback = callback;
   }
 
-  callCapability(toolCall: { name: string; arguments: Record<string, unknown> }): Promise<unknown> {
+  callTool(toolCall: { name: string; arguments: Record<string, unknown> }): Promise<unknown> {
     return this.client.callTool({
       name: toolCall.name,
       arguments: toolCall.arguments,

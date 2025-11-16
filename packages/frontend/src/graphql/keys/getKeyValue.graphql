@@ -1,0 +1,5 @@
+# Get Key Value Query
+# WHY: Fetch the sensitive key value on demand (e.g., when user clicks the eye icon)
+query GetKeyValue($keyId: ID!) {
+  keyValue(keyId: $keyId)
+}

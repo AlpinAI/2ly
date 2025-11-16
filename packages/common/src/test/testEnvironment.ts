@@ -16,7 +16,9 @@ import {
   StartedNetwork,
   Wait,
 } from 'testcontainers';
+import { generateKeyPairSync } from 'crypto';
 import * as fs from 'fs';
+import * as os from 'os';
 import * as path from 'path';
 
 /**
@@ -25,6 +27,13 @@ import * as path from 'path';
  * Used by both the backend container and test runners that call hashPassword.
  */
 export const TEST_ENCRYPTION_KEY = 'test-encryption-key-for-playwright-integration-tests-minimum-32-chars';
+
+/**
+ * Workspace master key used for runtime authentication in test environments.
+ * This follows the workspace key format (WSK prefix) and must be at least 32 characters long.
+ * Used by the runtime container to authenticate with the backend.
+ */
+export const TEST_MASTER_KEY = 'WSKTestMasterKey1234567890123456';
 
 /**
  * Find the project root by looking for package.json with workspaces
@@ -131,6 +140,7 @@ export interface TestEnvironmentServices {
 export class TestEnvironment {
   private network?: StartedNetwork;
   private services?: TestEnvironmentServices;
+  private tempKeyDir?: string;
   private config: Omit<Required<TestEnvironmentConfig>, 'backendImage' | 'runtimeImage'> & { backendImage?: string; runtimeImage?: string };
 
   constructor(config: TestEnvironmentConfig = {}) {
@@ -159,6 +169,74 @@ export class TestEnvironment {
         console.log(JSON.stringify(data, null, 2));
       }
     }
+  }
+
+  /**
+   * Wait for a health endpoint to become available
+   * @param url - The health endpoint URL to check
+   * @param maxRetries - Maximum number of retry attempts
+   * @param intervalMs - Delay between retries in milliseconds
+   */
+  private async waitForHealth(url: string, maxRetries: number, intervalMs: number): Promise<void> {
+    this.log(`Waiting for health check: ${url}`, { maxRetries, intervalMs });
+
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        const response = await fetch(url);
+        if (response.ok) {
+          this.log(`Health check passed: ${url}`, { attempt, status: response.status });
+          return;
+        }
+        this.log(`Health check failed: ${url}`, { attempt, status: response.status });
+      } catch (error) {
+        this.log(`Health check error: ${url}`, { attempt, error: error instanceof Error ? error.message : String(error) });
+      }
+
+      if (attempt < maxRetries) {
+        await new Promise((resolve) => setTimeout(resolve, intervalMs));
+      }
+    }
+
+    throw new Error(`Health check failed after ${maxRetries} attempts: ${url}`);
+  }
+
+  /**
+   * Generate JWT keys for test environment
+   * Creates a temporary directory with RSA key pair
+   */
+  private generateJWTKeys(): string {
+    this.log('Generating JWT keys...');
+
+    // Create unique temp directory
+    const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), '2ly-test-keys-'));
+    this.log('Created temp key directory', { path: tempDir });
+
+    // Generate RSA key pair with same parameters as production
+    const { publicKey, privateKey } = generateKeyPairSync('rsa', {
+      modulusLength: 2048,
+      publicKeyEncoding: {
+        type: 'spki',
+        format: 'pem',
+      },
+      privateKeyEncoding: {
+        type: 'pkcs8',
+        format: 'pem',
+      },
+    });
+
+    // Write keys to temp directory
+    const privateKeyPath = path.join(tempDir, 'private.pem');
+    const publicKeyPath = path.join(tempDir, 'public.pem');
+
+    fs.writeFileSync(privateKeyPath, privateKey);
+    fs.writeFileSync(publicKeyPath, publicKey);
+
+    this.log('JWT keys generated and written to temp directory');
+
+    // Store temp directory for cleanup
+    this.tempKeyDir = tempDir;
+
+    return tempDir;
   }
 
   /**
@@ -264,6 +342,12 @@ export class TestEnvironment {
 
     this.log('Dgraph Zero started', { grpcUrl, httpUrl });
 
+    // Wait for Dgraph Zero to be healthy
+    if (this.config.exposeToHost) {
+      const healthUrl = `http://localhost:${container.getMappedPort(6080)}/health`;
+      await this.waitForHealth(healthUrl, 30, 1000); // 30 retries, 1 second interval
+    }
+
     return { container, grpcUrl, httpUrl };
   }
 
@@ -301,10 +385,12 @@ export class TestEnvironment {
 
     this.log('Dgraph Alpha started', { grpcUrl, graphqlUrl });
 
-    // Wait longer to ensure Dgraph is fully ready for connections
+    // Wait for Dgraph Alpha to be healthy
     // Dgraph Alpha needs time to connect to Zero and initialize
-    this.log('Waiting for Dgraph Alpha to fully initialize...');
-    await new Promise((resolve) => setTimeout(resolve, 5000)); // 5 seconds
+    if (this.config.exposeToHost) {
+      const healthUrl = `http://localhost:${container.getMappedPort(8080)}/health`;
+      await this.waitForHealth(healthUrl, 60, 1000); // 60 retries, 1 second interval
+    }
 
     return { container, grpcUrl, graphqlUrl };
   }
@@ -318,6 +404,9 @@ export class TestEnvironment {
     }
 
     this.log('Starting Backend...');
+
+    // Generate JWT keys for test environment
+    const keyDir = this.generateJWTKeys();
 
     let containerImage: GenericContainer;
 
@@ -380,8 +469,17 @@ export class TestEnvironment {
           EXPOSED_NATS_SERVERS: this.services.nats.clientUrl,
           CORS_ORIGINS: 'http://localhost:8888,http://localhost:9999',
           ENCRYPTION_KEY: TEST_ENCRYPTION_KEY,
+          MASTER_KEY: TEST_MASTER_KEY,
+          JWT_PRIVATE_KEY_PATH: '/keys/private.pem',
+          JWT_PUBLIC_KEY_PATH: '/keys/public.pem',
+          IDENTITY_LOG_LEVEL: 'debug',
           ...this.config.backendEnv,
         })
+        .withBindMounts([{
+          source: keyDir,
+          target: '/keys',
+          mode: 'ro',
+        }])
         .withExposedPorts(...(this.config.exposeToHost ? [3000] : []))
         // Wait for HTTP port (backend Dockerfile has curl for healthcheck)
         .withWaitStrategy(Wait.forListeningPorts())
@@ -521,6 +619,21 @@ export class TestEnvironment {
         }
       }
 
+      // Clean up temp JWT keys
+      if (this.tempKeyDir) {
+        try {
+          this.log('Cleaning up temp JWT keys', { path: this.tempKeyDir });
+          fs.unlinkSync(path.join(this.tempKeyDir, 'private.pem'));
+          fs.unlinkSync(path.join(this.tempKeyDir, 'public.pem'));
+          fs.rmdirSync(this.tempKeyDir);
+          this.tempKeyDir = undefined;
+          this.log('Temp JWT keys cleaned up');
+        } catch (error) {
+          this.log('Error cleaning up temp JWT keys', error);
+          errors.push(error instanceof Error ? error : new Error(String(error)));
+        }
+      }
+
       if (this.services?.dgraphAlpha) {
         try {
           await this.services.dgraphAlpha.container.stop({ timeout: 5000 });
@@ -595,8 +708,8 @@ export const startRuntime = async (): Promise<void> => {
       LOG_LEVEL: 'error', // Only log errors in test environment
       NATS_SERVERS: natsUrl,
       RUNTIME_NAME: runtimeName,
-      GLOBAL_RUNTIME: 'true',
       ROOTS: `TEMP:/tmp`,
+      MASTER_KEY: TEST_MASTER_KEY,
     })
     // No exposed ports needed - runtime communicates via NATS
     .withWaitStrategy(Wait.forListeningPorts())

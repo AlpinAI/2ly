@@ -35,14 +35,13 @@ export interface SeedData {
     mcpServerId: string; // ID reference for seeding
   }
   >;
-  runtimes?: Array<OmitGenerated<dgraphResolversTypes.Runtime, 'mcpServers' | 'toolCalls' | 'toolResponses' | 'workspace'> & {
+  runtimes?: Array<OmitGenerated<dgraphResolversTypes.Runtime, 'mcpServers' | 'toolResponses' | 'workspace'> & {
     workspaceId: string; // ID reference for seeding
   }
   >;
-  toolSets?: Array<{
-    name: string;
-    description?: string;
+  toolSets?: Array<OmitGenerated<dgraphResolversTypes.ToolSet, 'mcpTools' | 'toolCalls' | 'workspace'> & {
     toolIds: string[]; // Tool name references
+    workspaceId: string; // ID reference for seeding
   }>;
   toolCalls?: Array<
     OmitGenerated<dgraphResolversTypes.ToolCall, 'executedBy' | 'calledBy' | 'calledAt' | 'completedAt' | 'mcpTool'> & {
@@ -341,7 +340,7 @@ export const test = base.extend<DatabaseFixture>({
 
       // 6. Create Runtimes (agents and edge runtimes)
       if (data.runtimes && workspaceId) {
-        const runtimeKeys = ['claude-desktop-agent', 'web-assistant-agent', 'edge-runtime'];
+        const runtimeKeys = ['main-runtime', 'stage-runtime', 'edge-runtime'];
         for (let i = 0; i < data.runtimes.length; i++) {
           const runtime = data.runtimes[i];
           const type = runtime.type ?? 'MCP';
@@ -417,7 +416,9 @@ export const test = base.extend<DatabaseFixture>({
 
       // 8. Create ToolSets
       if (data.toolSets && workspaceId) {
-        for (const toolSet of data.toolSets) {
+        const toolsetKeys = ['claude-desktop-agent', 'web-assistant-agent'];
+        for (let i = 0; i < data.toolSets.length; i++) {
+          const toolSet = data.toolSets[i];
           // Create the toolSet first
           const toolSetMutation = `
             mutation AddToolSet($workspaceId: ID!) {
@@ -442,6 +443,8 @@ export const test = base.extend<DatabaseFixture>({
             const toolSetId = result.addToolSet.toolSet[0].id;
             const toolSetKey = toolSet.name.toLowerCase().replace(/\s+/g, '-');
             entityIds[`toolset-${toolSetKey}`] = toolSetId;
+            // Store toolset ID for cross-referencing
+            entityIds[toolsetKeys[i]] = toolSetId;
 
             // Link tools to the toolSet using direct Dgraph mutations
             if (toolSet.toolIds && toolSet.toolIds.length > 0) {
@@ -507,6 +510,7 @@ export const test = base.extend<DatabaseFixture>({
                   ${toolCall.error ? `error: "${escapedError}"` : ''}
                   calledBy: { id: $calledById }
                   mcpTool: { id: $mcpToolId }
+                  isTest: ${toolCall.isTest}
                   ${executedById ? 'executedBy: { id: $executedById }' : ''}
                 }) {
                   toolCall {

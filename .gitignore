@@ -2,10 +2,13 @@ node_modules
 dist
 build
 .env
+.env.backup-*
 .idea
 .DS_Store
 coverage
 *.egg-info
-keys/private.pem
-keys/public.pem
-test-keys/
+private.pem
+public.pem
+
+# Docker-generated keys (shared between Docker and local dev)
+.docker-keys/

@@ -8,7 +8,6 @@ import { LoggerService } from '@2ly/common';
 import { Subject } from 'rxjs';
 import type { NatsService } from '@2ly/common';
 import type { WorkspaceRepository } from './workspace.repository';
-import type { ToolSetRepository } from './toolset.repository';
 
 describe('RuntimeRepository', () => {
     let dgraphService: DgraphServiceMock;
@@ -26,6 +25,7 @@ describe('RuntimeRepository', () => {
         loggerService = {
             getLogger: vi.fn().mockReturnValue({
                 debug: vi.fn(),
+                info: vi.fn(),
                 warn: vi.fn(),
                 error: vi.fn(),
             }),
@@ -36,18 +36,15 @@ describe('RuntimeRepository', () => {
         } as unknown as NatsService;
         workspaceRepository = {
             checkAndCompleteStep: vi.fn().mockResolvedValue(undefined),
+            getRuntimes: vi.fn().mockResolvedValue([{ id: 'r1', name: 'Test Runtime' }]),
+            setGlobalRuntime: vi.fn().mockResolvedValue(undefined),
         } as unknown as WorkspaceRepository;
-        const toolSetRepository = {
-            addToolsToToolSet: vi.fn().mockResolvedValue(undefined),
-            removeToolsFromToolSet: vi.fn().mockResolvedValue(undefined),
-        } as unknown as ToolSetRepository;
         runtimeRepository = new RuntimeRepository(
             dgraphService as unknown as DGraphService,
             mcpToolRepository,
             loggerService,
             natsService,
             workspaceRepository,
-            toolSetRepository,
         );
     });
 
@@ -284,7 +281,10 @@ describe('RuntimeRepository', () => {
 
         const result = await runtimeRepository.updateLastSeen('r1');
 
-        expect(dgraphService.mutation).toHaveBeenCalledWith(expect.any(Object), { id: 'r1' });
+        expect(dgraphService.mutation).toHaveBeenCalledWith(
+            expect.any(Object),
+            expect.objectContaining({ id: 'r1', now: expect.any(String) })
+        );
         expect(result.id).toBe('r1');
     });
 

@@ -63,6 +63,11 @@ interface FakeMonitoringService {
   stop: () => Promise<void>;
 }
 
+interface FakeIdentityService {
+  start: () => Promise<void>;
+  stop: () => Promise<void>;
+}
+
 function createService(dropAllData: boolean = false) {
   const logger = {
     getLogger: () => ({
@@ -134,17 +139,23 @@ function createService(dropAllData: boolean = false) {
     stop: vi.fn(async () => {}),
   };
 
+  const identityService: FakeIdentityService = {
+    start: vi.fn(async () => {}),
+    stop: vi.fn(async () => {}),
+  };
+
   const service = new MainService(
     logger,
     dgraphService as unknown as import('./dgraph.service').DGraphService,
     apolloService as unknown as import('./apollo.service').ApolloService,
     runtimeService as unknown as import('./runtime.service').RuntimeService,
-    toolSetService as unknown as import('./tool-set.service').ToolSetService,
+    toolSetService as unknown as import('./toolset.service').ToolSetService,
     fastifyService as unknown as import('./fastify.service').FastifyService,
     mcpServerAutoConfigService as unknown as import('./mcp-auto-config.service').MCPServerAutoConfigService,
     systemRepository as unknown as import('../repositories').SystemRepository,
     workspaceRepository as unknown as import('../repositories').WorkspaceRepository,
     monitoringService as unknown as import('./monitoring.service').MonitoringService,
+    identityService as unknown as import('./identity.service').IdentityService,
   );
 
   // Set the dropAllData property
@@ -161,6 +172,7 @@ function createService(dropAllData: boolean = false) {
     systemRepository,
     workspaceRepository,
     monitoringService,
+    identityService,
     healthCheckHandler: () => healthCheckHandler,
     resetHandler: () => resetHandler,
   };
@@ -183,10 +195,11 @@ describe('MainService', () => {
     });
 
     it('starts all services in correct order', async () => {
-      const { service, dgraphService, runtimeService, toolSetService, apolloService, mcpServerAutoConfigService, monitoringService } = createService();
+      const { service, dgraphService, identityService, runtimeService, toolSetService, apolloService, mcpServerAutoConfigService, monitoringService } = createService();
       const callOrder: string[] = [];
 
       dgraphService.start = vi.fn(async () => { callOrder.push('dgraph'); });
+      identityService.start = vi.fn(async () => { callOrder.push('identity'); });
       runtimeService.start = vi.fn(async () => { callOrder.push('runtime'); });
       toolSetService.start = vi.fn(async () => { callOrder.push('toolset'); });
       apolloService.start = vi.fn(async () => { callOrder.push('apollo'); });
@@ -195,7 +208,7 @@ describe('MainService', () => {
 
       await service.start('test');
 
-      expect(callOrder).toEqual(['dgraph', 'runtime', 'toolset', 'apollo', 'mcp', 'monitoring']);
+      expect(callOrder).toEqual(['dgraph', 'identity', 'runtime', 'toolset', 'apollo', 'mcp', 'monitoring']);
       await service.stop('test');
     });
 
@@ -204,7 +217,7 @@ describe('MainService', () => {
       await service.start('test');
       expect(systemRepository.getSystem).toHaveBeenCalled();
       expect(systemRepository.createSystem).toHaveBeenCalled();
-      expect(workspaceRepository.create).toHaveBeenCalledWith('Default', 'admin-1');
+      expect(workspaceRepository.create).toHaveBeenCalledWith('Default', 'admin-1', expect.objectContaining({ masterKey: undefined }));
       expect(systemRepository.setDefaultWorkspace).toHaveBeenCalledWith('ws-1');
       await service.stop('test');
     });
@@ -364,9 +377,10 @@ describe('MainService', () => {
 
   describe('shutdown', () => {
     it('stops all services in correct order', async () => {
-      const { service, runtimeService, apolloService, mcpServerAutoConfigService, monitoringService, dgraphService, toolSetService } = createService();
+      const { service, identityService, runtimeService, apolloService, mcpServerAutoConfigService, monitoringService, dgraphService, toolSetService } = createService();
       const callOrder: string[] = [];
 
+      identityService.stop = vi.fn(async () => { callOrder.push('identity'); });
       runtimeService.stop = vi.fn(async () => { callOrder.push('runtime'); });
       apolloService.stop = vi.fn(async () => { callOrder.push('apollo'); });
       mcpServerAutoConfigService.stop = vi.fn(async () => { callOrder.push('mcp'); });
@@ -377,7 +391,7 @@ describe('MainService', () => {
       await service.start('test');
       await service.stop('test');
 
-      expect(callOrder).toEqual(['runtime', 'apollo', 'mcp', 'monitoring', 'dgraph', 'toolset']);
+      expect(callOrder).toEqual(['identity', 'runtime', 'apollo', 'mcp', 'monitoring', 'dgraph', 'toolset']);
     });
   });
 });

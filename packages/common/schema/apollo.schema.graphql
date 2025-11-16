@@ -83,6 +83,17 @@ type ToolSet {
   updatedAt: Date
   mcpTools: [MCPTool!]
   workspace: Workspace!
+  toolCalls: [ToolCall!]
+}
+
+type IdentityKey {
+  id: ID!
+  key: String!
+  description: String
+  createdAt: Date!
+  expiresAt: Date
+  revokedAt: Date
+  relatedId: String!
 }
 
 type Runtime {
@@ -99,6 +110,7 @@ type Runtime {
   hostIP: String
   hostname: String
   mcpClientName: String
+  toolResponses: [ToolCall!]
 }
 
 enum OnboardingStepType {
@@ -125,6 +137,7 @@ type OnboardingStep {
   type: OnboardingStepType!
   status: OnboardingStepStatus!
   priority: Int
+  metadata: String
   createdAt: Date!
   updatedAt: Date
 }
@@ -137,8 +150,9 @@ type ToolCall {
   status: ToolCallStatus!
   toolOutput: String
   error: String
+  isTest: Boolean!
   mcpTool: MCPTool!
-  calledBy: Runtime!
+  calledBy: ToolSet
   executedBy: Runtime
 }
 
@@ -243,6 +257,10 @@ type Query {
     filters: ToolCallFilters
     orderDirection: OrderDirection
   ): ToolCallsResult!
+  # Key management queries
+  workspaceKeys(workspaceId: ID!): [IdentityKey!]!
+  toolsetKey(toolsetId: ID!): IdentityKey
+  keyValue(keyId: ID!): String!
   # Authentication queries
   me: User
 }
@@ -320,6 +338,10 @@ type Mutation {
   # Onboarding mutations
   completeOnboardingStep(workspaceId: ID!, stepId: String!): Boolean!
   dismissOnboardingStep(workspaceId: ID!, stepId: String!): Boolean!
+
+  # Key management mutations
+  createWorkspaceKey(workspaceId: ID!, description: String!): IdentityKey!
+  revokeKey(keyId: ID!): IdentityKey!
 
   # Authentication mutations
   registerUser(input: RegisterUserInput!): RegisterUserPayload!

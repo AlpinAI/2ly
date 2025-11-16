@@ -326,9 +326,6 @@ TOOL_CAPABILITY=true                   # true|false
 
 # Filesystem access
 ROOTS=NAME:path,NAME:path              # Filesystem roots
-
-# Special flags
-GLOBAL_RUNTIME=false                   # Is global runtime
 ```
 
 ## Deployment Patterns
@@ -364,7 +361,6 @@ npx @2ly/runtime
 ```bash
 # Shared runtime in Docker
 RUNTIME_NAME=global \
-GLOBAL_RUNTIME=true \
 npx @2ly/runtime
 ```
 

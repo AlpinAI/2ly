@@ -3,6 +3,7 @@ import { DGraphService } from '../services/dgraph.service';
 import { apolloResolversTypes, dgraphResolversTypes } from '@2ly/common';
 import {
     ADD_TOOL_CALL,
+    SET_CALLED_BY,
     COMPLETE_TOOL_CALL_ERROR,
     COMPLETE_TOOL_CALL_SUCCESS,
     QUERY_TOOL_CALLS,
@@ -16,20 +17,37 @@ export class MonitoringRepository {
     constructor(@inject(DGraphService) private readonly dgraphService: DGraphService) { }
 
     async createToolCall(params: {
-        calledById: string;
+        isTest?: boolean;
+        calledById?: string;
         toolInput: string;
         mcpToolId: string;
     }): Promise<dgraphResolversTypes.ToolCall> {
         const now = new Date().toISOString();
+
+        // Step 1: Create ToolCall (without calledBy)
         const res = await this.dgraphService.mutation<{
             addToolCall: { toolCall: dgraphResolversTypes.ToolCall[] };
         }>(ADD_TOOL_CALL, {
             toolInput: params.toolInput,
             calledAt: now,
-            calledById: params.calledById,
+            isTest: params.isTest ?? false,
             mcpToolId: params.mcpToolId
         });
-        return res.addToolCall.toolCall[0];
+
+        const toolCall = res.addToolCall.toolCall[0];
+
+        // Step 2: If calledById provided, link the caller
+        if (params.calledById) {
+            const updateRes = await this.dgraphService.mutation<{
+                updateToolCall: { toolCall: dgraphResolversTypes.ToolCall[] };
+            }>(SET_CALLED_BY, {
+                id: toolCall.id,
+                calledById: params.calledById
+            });
+            return updateRes.updateToolCall.toolCall[0];
+        }
+
+        return toolCall;
     }
 
     async completeToolCall(id: string, toolOutput: string, executedById: string): Promise<dgraphResolversTypes.ToolCall> {
@@ -121,7 +139,7 @@ export class MonitoringRepository {
 
         if (params.filters?.runtimeIds && params.filters.runtimeIds.length > 0) {
             filteredCalls = filteredCalls.filter((call) =>
-                params.filters!.runtimeIds!.includes(call.calledBy.id) ||
+                call.calledBy && params.filters!.runtimeIds!.includes(call.calledBy.id) ||
                 (call.executedBy && params.filters!.runtimeIds!.includes(call.executedBy.id))
             );
         }

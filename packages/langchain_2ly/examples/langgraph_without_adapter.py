@@ -15,6 +15,14 @@ if not token:
     print("Error: Please set the GITHUB_TOKEN environment variable with a valid GitHub token to access Github models")
     exit(1)
 
+# Get 2ly authentication - workspace key for auto-discovery
+# Get your workspace key from: Settings > API Keys in the 2ly UI
+master_key = os.environ.get("MASTER_KEY")
+if not master_key:
+    print("Error: Please set the MASTER_KEY environment variable with a workspace key from 2ly")
+    print("Get your key from the 2ly UI: Settings > API Keys > Generate New Master Key")
+    exit(1)
+
 endpoint = "https://models.inference.ai.azure.com"
 model_name = "gpt-4o-mini"
 
@@ -35,7 +43,12 @@ user_prompt = "Tell me how many tools you have access to and their names. If you
 
 async def main():
     try:
-        async with MCPClient("Langgraph Agent without adapter") as mcp:
+        # Using workspace key + toolset name for auto-discovery
+        # MCPClient provides the same functionality without the langchain_mcp_adapters dependency
+        async with MCPClient.with_workspace_key(
+            name="Langgraph Agent without adapter",
+            master_key=master_key
+        ) as mcp:
             tools = await mcp.get_langchain_tools()
             agent = create_react_agent(llm, tools)
             agent_response = await agent.ainvoke({"messages": [{"role": "system", "content": system_prompt}, {"role": "user", "content": user_prompt}]})

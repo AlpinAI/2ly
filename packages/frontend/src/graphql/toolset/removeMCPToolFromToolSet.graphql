@@ -10,7 +10,6 @@ mutation RemoveMCPToolFromToolSet($mcpToolId: ID!, $toolSetId: ID!) {
       id
       name
       description
-      status
       mcpServer {
         id
         name

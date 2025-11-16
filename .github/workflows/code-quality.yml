@@ -14,6 +14,10 @@ on:
 #    and add maintainers who can override this check if necessary
 # 6. Save the protection rule
 
+env:
+  RUN_E2E_GATE: false # Set to 'true' to include e2e tests in pass/fail gate
+  # DEBUG: testcontainers*
+
 jobs:
   code-quality:
     name: Lint, Type Check & Test
@@ -52,14 +56,34 @@ jobs:
         run: npm run test:integration
         continue-on-error: true
 
-      # Temporarily disabled e2e tests
-      # - name: Run e2e tests
-      #   id: e2e-test
-      #   run: npm run test:e2e
-      #   continue-on-error: true
+      - name: Show failed integration Docker logs and status
+        if: steps.integration-test.outcome == 'failure'
+        run: |
+          echo "==== Docker containers ===="
+          docker ps -a
+          echo "==== Docker system df ===="
+          docker system df
+          echo "==== Docker logs ===="
+          docker logs $(docker ps -aq) || true
+
+      - name: Run e2e tests
+        id: e2e-test
+        if: env.RUN_E2E_GATE == 'true'
+        run: npm run test:e2e
+        continue-on-error: true
+
+      - name: Show failed e2e Docker logs and status
+        if: env.RUN_E2E_GATE == 'true' && steps.e2e-test.outcome == 'failure'
+        run: |
+          echo "==== Docker containers ===="
+          docker ps -a
+          echo "==== Docker system df ===="
+          docker system df
+          echo "==== Docker logs ===="
+          docker logs $(docker ps -aq) || true
 
       - name: Check results and fail if any step failed
-        if: steps.lint.outcome == 'failure' || steps.typecheck.outcome == 'failure' || steps.unit-test.outcome == 'failure' || steps.integration-test.outcome == 'failure'
+        if: steps.lint.outcome == 'failure' || steps.typecheck.outcome == 'failure' || steps.unit-test.outcome == 'failure' || steps.integration-test.outcome == 'failure' || (env.RUN_E2E_GATE == 'true' && steps.e2e-test.outcome == 'failure')
         run: |
           echo "❌ Code quality checks failed:"
           echo ""
@@ -75,12 +99,15 @@ jobs:
           if [ "${{ steps.integration-test.outcome }}" == "failure" ]; then
             echo "  - Integration tests failed"
           fi
+          if [ "${{ env.RUN_E2E_GATE }}" == "true" ] && [ "${{ steps.e2e-test.outcome }}" == "failure" ]; then
+            echo "  - E2E tests failed"
+          fi
           echo ""
           echo "Please fix the issues and push again."
           exit 1
 
       - name: All checks passed
-        if: steps.lint.outcome == 'success' && steps.typecheck.outcome == 'success' && steps.unit-test.outcome == 'success' && steps.integration-test.outcome == 'success'
+        if: steps.lint.outcome == 'success' && steps.typecheck.outcome == 'success' && steps.unit-test.outcome == 'success' && steps.integration-test.outcome == 'success' && (env.RUN_E2E_GATE != 'true' || steps.e2e-test.outcome == 'success')
         run: |
           echo "✅ All code quality checks passed!"
           echo ""
@@ -88,3 +115,6 @@ jobs:
           echo "  ✓ Type checking passed"
           echo "  ✓ Unit tests passed"
           echo "  ✓ Integration tests passed"
+          if [ "${{ env.RUN_E2E_GATE }}" == "true" ]; then
+            echo "  ✓ E2E tests passed"
+          fi

@@ -1,0 +1,13 @@
+# Revoke Key Mutation
+# WHY: Revoke a key by setting its revokedAt timestamp
+mutation RevokeKey($keyId: ID!) {
+  revokeKey(keyId: $keyId) {
+    id
+    key
+    description
+    createdAt
+    expiresAt
+    revokedAt
+    relatedId
+  }
+}

@@ -62,8 +62,8 @@ describe('JwtService', () => {
       const originalPrivateKeyPath = process.env.JWT_PRIVATE_KEY_PATH;
       const originalPublicKeyPath = process.env.JWT_PUBLIC_KEY_PATH;
 
-      process.env.JWT_PRIVATE_KEY_PATH = './keys/private-dev.pem';
-      process.env.JWT_PUBLIC_KEY_PATH = './keys/public-dev.pem';
+      process.env.JWT_PRIVATE_KEY_PATH = './keys/private.pem';
+      process.env.JWT_PUBLIC_KEY_PATH = './keys/public.pem';
 
       expect(() => new JwtService()).toThrow(
         'JWT service initialization failed: JWT key paths must be absolute paths for security (start with /)'

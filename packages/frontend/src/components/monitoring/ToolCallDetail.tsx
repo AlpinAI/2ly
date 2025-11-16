@@ -26,11 +26,11 @@ interface ToolCall {
       name: string;
     };
   };
-  calledBy: {
+  isTest: boolean;
+  calledBy?: {
     id: string;
     name: string;
-    hostname: string | null;
-  };
+  } | null;
   executedBy?: {
     id: string;
     name: string;
@@ -113,11 +113,8 @@ export function ToolCallDetail({ toolCall }: ToolCallDetailProps) {
         <div>
           <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Called By</p>
           <p className="text-sm font-medium text-gray-900 dark:text-white">
-            {toolCall.calledBy.name}
+            {toolCall.isTest ? 'Test' : ''} {toolCall.calledBy?.name}
           </p>
-          {toolCall.calledBy.hostname && (
-            <p className="text-xs text-gray-500 dark:text-gray-400">{toolCall.calledBy.hostname}</p>
-          )}
         </div>
         {toolCall.executedBy && (
           <div>
