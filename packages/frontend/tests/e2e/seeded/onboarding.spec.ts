@@ -18,7 +18,7 @@ import { sendToolsetHandshake, waitForOnboardingStepComplete } from '../../fixtu
  * - Uses comprehensive seed data with servers, tools, and agents
  */
 
-test.describe.only('Onboarding Flow', () => {
+test.describe('Onboarding Flow', () => {
   test.beforeEach(async ({ page, resetDatabase, seedDatabase }) => {
     await resetDatabase(true);
 

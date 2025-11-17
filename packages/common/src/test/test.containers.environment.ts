@@ -537,9 +537,6 @@ export class TestEnvironment {
       console.log(error instanceof Error ? error.message : String(error));
       throw error;
     }
-  
-    // Wait a bit for the runtime to fully start and register with NATS
-    await new Promise((resolve) => setTimeout(resolve, 1000));
   };
   
   async stopRuntime(): Promise<void> {
