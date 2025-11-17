@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeAll } from 'vitest';
-import { graphql, resetDatabase, seedDatabase, seedPresets } from '../fixtures/database';
+import { graphql, resetDatabase, seedDatabase, seedPresets } from '@2ly/common/test/fixtures';
 
 /**
  * Workspace Management Integration Tests - Seeded Strategy

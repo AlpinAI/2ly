@@ -24,6 +24,27 @@
         "default": "./src/test/vitest.ts"
       },
       "types": "./src/test/vitest.ts"
+    },
+    "./test/fixtures": {
+      "import": {
+        "types": "./src/test/fixtures/index.ts",
+        "default": "./src/test/fixtures/index.ts"
+      },
+      "types": "./src/test/fixtures/index.ts"
+    },
+    "./test/fixtures/mcp-builders": {
+      "import": {
+        "types": "./src/test/fixtures/mcp-builders.ts",
+        "default": "./src/test/fixtures/mcp-builders.ts"
+      },
+      "types": "./src/test/fixtures/mcp-builders.ts"
+    },
+    "./test/fixtures/playwright": {
+      "import": {
+        "types": "./src/test/playwright/index.ts",
+        "default": "./src/test/playwright/index.ts"
+      },
+      "types": "./src/test/playwright/index.ts"
     }
   },
   "scripts": {

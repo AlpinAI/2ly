@@ -15,7 +15,7 @@
  * - Tests complete within 2 minutes with proper timeouts
  */
 
-import { test, expect, seedPresets } from '../../fixtures/database';
+import { test, expect, seedPresets } from '@2ly/common/test/fixtures/playwright';
 
 // Test configuration
 const TEST_FILE_PATH = '/tmp/test.txt';

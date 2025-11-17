@@ -11,7 +11,6 @@ import type {
   MCPServerSeed,
   AugmentedArgument,
 } from './mcp-types';
-import { Page } from '@playwright/test';
 import { apolloResolversTypes } from '@2ly/common';
 
 type McpTransportType = apolloResolversTypes.McpTransportType;
@@ -234,6 +233,10 @@ export function buildDatabaseServer(options?: {
   });
 }
 
+/**
+ * Helper function to configure a FileSystem MCP server dynamically via GraphQL
+ * This is used in tests that need to create servers on the fly
+ */
 export const configureFileSystemMCPServer = async (
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   graphql: <T = any>(query: string, variables?: Record<string, any>) => Promise<T>,
@@ -269,7 +272,7 @@ export const configureFileSystemMCPServer = async (
         }
       }
     `;
-  
+
     await graphql<{ createMCPServer: { id: string; name: string; description: string; repositoryUrl: string; transport: string; config: string; runOn: string } }>(mutation, {
       name: 'Test MCP Server',
       description: 'Test MCP Server Description',
@@ -282,10 +285,16 @@ export const configureFileSystemMCPServer = async (
     });
 };
 
+/**
+ * Helper function to create a runtime dynamically via GraphQL
+ * This is used in tests that need to create runtimes on the fly
+ *
+ * Note: The page parameter is Playwright-specific and should be passed from the test
+ */
 export const createRuntime = async (
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   graphql: <T = any>(query: string, variables?: Record<string, any>) => Promise<T>,
-  page: Page,
+  pageOrWaitFn: { waitForTimeout: (ms: number) => Promise<void> } | ((ms: number) => Promise<void>),
   workspaceId: string,
   name: string,
   description: string,
@@ -309,13 +318,21 @@ export const createRuntime = async (
   });
 
   // Wait 10s, letting the time to the runtime to spawn the server and discover the tools
-  await page.waitForTimeout(10000);
+  if (typeof pageOrWaitFn === 'function') {
+    await pageOrWaitFn(10000);
+  } else {
+    await pageOrWaitFn.waitForTimeout(10000);
+  }
 
   return {
     runtimeId: result.createRuntime.id,
   };
 };
 
+/**
+ * Helper function to create a toolset dynamically via GraphQL
+ * This is used in tests that need to create toolsets on the fly
+ */
 export const createToolset = async (
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   graphql: <T = any>(query: string, variables?: Record<string, any>) => Promise<T>,

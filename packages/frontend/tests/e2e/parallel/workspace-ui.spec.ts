@@ -1,4 +1,4 @@
-import { test, expect, seedPresets } from '../../fixtures/database';
+import { test, expect, seedPresets } from '@2ly/common/test/fixtures/playwright';
 
 /**
  * Workspace UI Tests - Parallel Strategy

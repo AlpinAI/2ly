@@ -12,7 +12,7 @@
  * - Tests verify both new ToolSet API and backward compatibility
  */
 
-import { test, expect, performLogin, seedPresets } from '../../fixtures/database';
+import { test, expect, performLogin, seedPresets } from '@2ly/common/test/fixtures/playwright';
 
 test.describe('ToolSet API', () => {
   test.describe.configure({ mode: 'serial' });

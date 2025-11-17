@@ -1,4 +1,4 @@
-import { test, expect, seedPresets } from '../../fixtures/database';
+import { test, expect, seedPresets } from '@2ly/common/test/fixtures/playwright';
 
 /**
  * Routing E2E Tests - Parallel Strategy

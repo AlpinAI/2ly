@@ -14,9 +14,9 @@
  * runtime configurations not suitable for the current test setup.
  */
 
-import { test, expect, seedPresets } from '../../fixtures/database';
-import { createToolset } from '../../fixtures/mcp-builders';
-import { createMCPClient } from '../../fixtures/mcp-client';
+import { test, expect, seedPresets } from '@2ly/common/test/fixtures/playwright';
+import { createToolset } from '@2ly/common/test/fixtures/mcp-builders';
+import { createMCPClient } from '@2ly/common/test/fixtures/playwright';
 import { TEST_MASTER_KEY } from '@2ly/common/test/test.containers';
 
 test.describe.skip('MCP Client Transports', () => {

@@ -11,13 +11,13 @@
  * All data is deterministic and designed for fast, reliable test execution (<30s).
  */
 
-import type { SeedData } from '../../fixtures/database';
+import type { SeedData } from './seed-data.types';
 import {
   buildMinimalFilesystemServer,
   buildWebFetchServer,
   buildDevelopmentToolsServer,
   buildDatabaseServer,
-} from '../../fixtures/mcp-builders';
+} from './mcp-builders';
 import { dgraphResolversTypes } from '@2ly/common';
 
 // ============================================================================

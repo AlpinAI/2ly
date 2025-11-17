@@ -9,7 +9,7 @@
  * and run serially to maintain database consistency.
  */
 
-import { test, expect, seedPresets, performLogin } from '../../fixtures/database';
+import { test, expect, seedPresets, performLogin } from '@2ly/common/test/fixtures/playwright';
 
 test.describe('Deep Linking with Comprehensive Data', () => {
   // Reset and seed database before all tests

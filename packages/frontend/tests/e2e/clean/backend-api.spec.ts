@@ -1,4 +1,4 @@
-import { test, expect } from '../../fixtures/database';
+import { test, expect } from '@2ly/common/test/fixtures/playwright';
 
 /**
  * Clean Slate Strategy - Example Tests

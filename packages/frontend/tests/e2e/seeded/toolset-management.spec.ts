@@ -9,7 +9,7 @@
  * - Tests verify the Manage Tools panel opens and displays correctly
  */
 
-import { test, expect, performLogin, seedPresets } from '../../fixtures/database';
+import { test, expect, performLogin, seedPresets } from '@2ly/common/test/fixtures/playwright';
 
 test.describe('Tool Set Management', () => {
   test.describe.configure({ mode: 'serial' });

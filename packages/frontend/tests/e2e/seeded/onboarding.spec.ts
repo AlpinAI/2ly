@@ -1,6 +1,6 @@
-import { test, expect, performLogin, seedPresets } from '../../fixtures/database';
-import { configureFileSystemMCPServer, createRuntime, createToolset } from '../../fixtures/mcp-builders';
-import { sendToolsetHandshake, waitForOnboardingStepComplete } from '../../fixtures/nats-helpers';
+import { test, expect, performLogin, seedPresets } from '@2ly/common/test/fixtures/playwright';
+import { configureFileSystemMCPServer, createRuntime, createToolset } from '@2ly/common/test/fixtures/mcp-builders';
+import { sendToolsetHandshake, waitForOnboardingStepComplete } from '@2ly/common/test/fixtures';
 
 // TODO: unskip tests when we have a runtime running
 
