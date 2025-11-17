@@ -10,7 +10,7 @@
  */
 
 import { chromium, FullConfig } from '@playwright/test';
-import { TestEnvironment, TEST_ENCRYPTION_KEY } from '@2ly/common/test/testcontainers';
+import { TestEnvironment, TEST_ENCRYPTION_KEY } from '@2ly/common/test/test.containers';
 import { exec } from 'child_process';
 // import { promisify } from 'util';
 import * as fs from 'fs';
@@ -41,12 +41,11 @@ async function globalSetup(_config: FullConfig) {
 
   // Initialize test environment with minimal logging
   const testEnv = new TestEnvironment({
-    exposeToHost: true,
     startBackend: true, // Enabled for backend integration tests
     prepareRuntime: true, // Prepare the runtime container for testing
     logging: {
-      enabled: false, // Disable verbose TestEnvironment logs
-      verbose: false,
+      enabled: true, // Disable verbose TestEnvironment logs
+      verbose: true,
     },
     backendImage: process.env.E2E_USE_IMAGE === 'true' ? `2ly-backend-test:latest` : undefined,
     runtimeImage: process.env.E2E_USE_IMAGE === 'true' ? `2ly-runtime-test:latest` : undefined,

@@ -17,7 +17,7 @@
 import { test, expect, seedPresets } from '../../fixtures/database';
 import { createToolset } from '../../fixtures/mcp-builders';
 import { createMCPClient } from '../../fixtures/mcp-client';
-import { TEST_MASTER_KEY } from '@2ly/common/test/testcontainers';
+import { TEST_MASTER_KEY } from '@2ly/common/test/test.containers';
 
 test.describe.skip('MCP Client Transports', () => {
   // Configure tests to run serially (one at a time)

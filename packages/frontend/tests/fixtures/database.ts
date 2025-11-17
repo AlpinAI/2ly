@@ -2,7 +2,7 @@
 import { test as base, type Page } from '@playwright/test';
 import { comprehensiveSeededData } from '../e2e/fixtures/seed-data';
 import { dgraphQL } from './dgraph-client';
-import { hashPassword, startRuntime, stopRuntime } from '@2ly/common/test/testcontainers';
+import { hashPassword, startRuntime, stopRuntime } from '@2ly/common/test/test.containers';
 import { dgraphResolversTypes } from '@2ly/common';
 import type { RegistryServerSeed, MCPServerSeed, OmitGenerated } from './mcp-types';
 import {

@@ -155,6 +155,10 @@ export class FastifyManagerService extends Service {
       ],
     });
 
+    this.fastifyInstance.get('/health', (req, res) => {
+      res.send({ status: 'ok' });
+    });
+
     this.logger.info('Fastify instance configured (not listening yet)');
   }
 }

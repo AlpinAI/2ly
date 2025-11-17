@@ -280,7 +280,6 @@ export const configureFileSystemMCPServer = async (
       workspaceId,
       registryServerId,
     });
-  console.log('mcp server created');
 };
 
 export const createRuntime = async (

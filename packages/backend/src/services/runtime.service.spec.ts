@@ -5,7 +5,6 @@ import { ControllableAsyncIterator } from '../../../common/src/test/utils';
 import { NatsServiceMock } from '@2ly/common/test/vitest';
 import {
     RuntimeDiscoveredToolsPublish,
-    HandshakeRequest,
     ErrorResponse,
     type dgraphResolversTypes,
     NatsMessage,

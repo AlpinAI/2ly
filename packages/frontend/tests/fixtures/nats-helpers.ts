@@ -1,7 +1,7 @@
 import { connect, NatsConnection } from '@nats-io/transport-node';
 import { v4 as uuidv4 } from 'uuid';
 import { dgraphQL } from './dgraph-client';
-import { HandshakeRequest, HandshakeResponse, NatsMessage } from '@2ly/common/test/testcontainers';
+import { HandshakeRequest, HandshakeResponse, NatsMessage } from '@2ly/common/test/test.containers';
 
 let natsConnection: NatsConnection | null = null;
 

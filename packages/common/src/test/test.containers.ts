@@ -7,12 +7,9 @@
  * For Vitest unit tests that need mocks, use '@2ly/common/test/vitest' instead.
  */
 
-export { startRuntime, stopRuntime, TestEnvironment,  } from './testEnvironment';
-export { TEST_ENCRYPTION_KEY, TEST_MASTER_KEY } from './test.constants';
-export type {
-  TestEnvironmentConfig,
-  TestEnvironmentServices,
-} from './testEnvironment';
+export { startRuntime, stopRuntime, TestEnvironment, type TestEnvironmentConfig,
+  type TestEnvironmentServices, } from './test.containers.environment';
+export { TEST_ENCRYPTION_KEY, TEST_MASTER_KEY } from './test.containers.constants';
 export * from '../node-helpers/password';
 export * from '../messages/handshake.request';
 export * from '../messages/handshake.response';

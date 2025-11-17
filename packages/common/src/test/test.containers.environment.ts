@@ -21,17 +21,11 @@ import { generateKeyPairSync } from 'crypto';
 import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
-import { TEST_ENCRYPTION_KEY, TEST_MASTER_KEY, TEST_RUNTIME_ROUTE, TEST_RUNTIME_STOP_ROUTE } from './test.constants';
-import { findProjectRoot, waitForHealth } from './test.helpers';
-import { startControllerServer, registerRoute, callRoute } from './test.web-server';
+import { TEST_ENCRYPTION_KEY, TEST_MASTER_KEY, TEST_RUNTIME_ROUTE, TEST_RUNTIME_STOP_ROUTE } from './test.containers.constants';
+import { findProjectRoot, waitForHealth } from './test.containers.helpers';
+import { startControllerServer, registerRoute, callRoute } from './test.containers.web-server';
 
 export interface TestEnvironmentConfig {
-  /**
-   * Whether to expose ports to host (needed for Playwright tests)
-   * @default true
-   */
-  exposeToHost?: boolean;
-
   /**
    * Whether to start the backend container
    * @default true
@@ -111,7 +105,6 @@ export class TestEnvironment {
 
   constructor(config: TestEnvironmentConfig = {}) {
     this.config = {
-      exposeToHost: config.exposeToHost ?? true,
       startBackend: config.startBackend ?? true,
       prepareRuntime: config.prepareRuntime ?? false,
       projectRoot: config.projectRoot ?? findProjectRoot(),
@@ -242,20 +235,13 @@ export class TestEnvironment {
         '--http_port=8222',
         '--name=2ly-test-nats',
       ])
-      .withExposedPorts(
-        ...(this.config.exposeToHost ? [4222, 8222] : [])
-      )
+      .withExposedPorts(4222, 8222)
       .withWaitStrategy(Wait.forListeningPorts())
       .withStartupTimeout(30000)
       .start();
 
-    const clientUrl = this.config.exposeToHost
-      ? `localhost:${container.getMappedPort(4222)}`
-      : 'nats:4222';
-
-    const httpUrl = this.config.exposeToHost
-      ? `http://localhost:${container.getMappedPort(8222)}`
-      : 'http://nats:8222';
+    const clientUrl = `localhost:${container.getMappedPort(4222)}`;
+    const httpUrl = `http://localhost:${container.getMappedPort(8222)}`;
 
     this.log('NATS started', { clientUrl, httpUrl });
 
@@ -274,29 +260,21 @@ export class TestEnvironment {
       .withNetwork(this.network!)
       .withNetworkAliases('dgraph-zero')
       .withCommand(['dgraph', 'zero', '--my=dgraph-zero:5080'])
-      .withExposedPorts(
-        ...(this.config.exposeToHost ? [5080, 6080] : [])
-      )
+      .withExposedPorts(5080, 6080)
       // Wait for port to be open instead of health check (dgraph image doesn't have curl)
       .withWaitStrategy(Wait.forListeningPorts())
       .withStartupTimeout(30000) // 30 seconds
       .start();
 
-    const grpcUrl = this.config.exposeToHost
-      ? `localhost:${container.getMappedPort(5080)}`
-      : 'dgraph-zero:5080';
+    const grpcUrl = `localhost:${container.getMappedPort(5080)}`;
 
-    const httpUrl = this.config.exposeToHost
-      ? `http://localhost:${container.getMappedPort(6080)}`
-      : 'http://dgraph-zero:6080';
+    const httpUrl = `http://localhost:${container.getMappedPort(6080)}`;
 
     this.log('Dgraph Zero started', { grpcUrl, httpUrl });
 
     // Wait for Dgraph Zero to be healthy
-    if (this.config.exposeToHost) {
-      const healthUrl = `http://localhost:${container.getMappedPort(6080)}/health`;
-      await waitForHealth(healthUrl, 30, 1000); // 30 retries, 1 second interval
-    }
+    const healthUrl = `http://localhost:${container.getMappedPort(6080)}/health`;
+    await waitForHealth(healthUrl, 30, 1000); // 30 retries, 1 second interval
 
     return { container, grpcUrl, httpUrl };
   }
@@ -317,30 +295,22 @@ export class TestEnvironment {
         '--zero=dgraph-zero:5080',
         '--security', 'whitelist=0.0.0.0/0', // Allow all IPs in test environment
       ])
-      .withExposedPorts(
-        ...(this.config.exposeToHost ? [7080, 8080, 9080] : [])
-      )
+      .withExposedPorts(7080, 8080, 9080)
       // Wait for GraphQL port to be open
       .withWaitStrategy(Wait.forListeningPorts())
       .withStartupTimeout(60000) // 60 seconds - Dgraph Alpha takes longer
       .start();
 
-    const grpcUrl = this.config.exposeToHost
-      ? `localhost:${container.getMappedPort(7080)}`
-      : 'dgraph-alpha:7080';
+    const grpcUrl = `localhost:${container.getMappedPort(7080)}`;
 
-    const graphqlUrl = this.config.exposeToHost
-      ? `http://localhost:${container.getMappedPort(8080)}`
-      : 'http://dgraph-alpha:8080';
+    const graphqlUrl = `http://localhost:${container.getMappedPort(8080)}`;
 
     this.log('Dgraph Alpha started', { grpcUrl, graphqlUrl });
 
     // Wait for Dgraph Alpha to be healthy
     // Dgraph Alpha needs time to connect to Zero and initialize
-    if (this.config.exposeToHost) {
-      const healthUrl = `http://localhost:${container.getMappedPort(8080)}/health`;
-      await waitForHealth(healthUrl, 60, 1000); // 60 retries, 1 second interval
-    }
+    const healthUrl = `http://localhost:${container.getMappedPort(8080)}/health`;
+    await waitForHealth(healthUrl, 60, 1000); // 60 retries, 1 second interval
 
     return { container, grpcUrl, graphqlUrl };
   }
@@ -430,7 +400,7 @@ export class TestEnvironment {
           target: '/keys',
           mode: 'ro',
         }])
-        .withExposedPorts(...(this.config.exposeToHost ? [3000] : []))
+        .withExposedPorts(3000)
         // Wait for HTTP port (backend Dockerfile has curl for healthcheck)
         .withWaitStrategy(Wait.forListeningPorts())
         .withStartupTimeout(120000) // 2 minutes for startup
@@ -451,9 +421,7 @@ export class TestEnvironment {
       throw error;
     }
 
-    const apiUrl = this.config.exposeToHost
-      ? `http://localhost:${started.getMappedPort(3000)}`
-      : 'http://backend:3000';
+    const apiUrl = `http://localhost:${started.getMappedPort(3000)}`;
 
     const healthUrl = `${apiUrl}/health`;
 
@@ -522,7 +490,7 @@ export class TestEnvironment {
       console.log('Starting runtime...');
     }
     const runtimeName = 'Test Runtime';
-    const runtimePort = 3001; // await getPort();
+    const runtimePort = 3001;
     const container = new GenericContainer('2ly-runtime-test:latest')
       .withNetwork(this.network!)
       .withEnvironment({
@@ -537,7 +505,7 @@ export class TestEnvironment {
         FORWARD_STDERR: 'false',  // Disable forwarding of stderr to the parent process
       })
       // No exposed ports needed - runtime communicates via NATS
-      .withExposedPorts(...(this.config.exposeToHost ? [runtimePort] : []))
+      .withExposedPorts(runtimePort)
       .withWaitStrategy(Wait.forListeningPorts())
       .withStartupTimeout(60000) // 1 minute for startup
       .withLogConsumer((stream) => {
@@ -553,18 +521,17 @@ export class TestEnvironment {
     this.config.startedRuntime = await container.start();
   
     // Store mapped port for tests to access
-    process.env.TEST_RUNTIME_PORT = String(runtimePort);
-    if (process.env.TEST_LOGGING_ENABLED === 'true') {
-      console.log(`Runtime HTTP server listening on port ${runtimePort}`);
-    }
-  
     const runtimeExposedPort = this.config.startedRuntime?.getMappedPort(runtimePort);
+    process.env.TEST_RUNTIME_PORT = String(runtimeExposedPort);
+    if (process.env.TEST_LOGGING_ENABLED === 'true') {
+      console.log(`Runtime HTTP server listening on port ${runtimeExposedPort}`);
+    }
     const healthUrl = `http://localhost:${runtimeExposedPort}/health`;
     const maxRetries = 60;
     const intervalMs = 1000;
     console.log(`Waiting for health check: ${healthUrl}`, { maxRetries, intervalMs });
     try {
-      await waitForHealth(healthUrl, maxRetries, intervalMs);
+      await waitForHealth(healthUrl, maxRetries, intervalMs, true);
       console.log('Runtime health check passed');
     } catch (error) {
       console.log(error instanceof Error ? error.message : String(error));

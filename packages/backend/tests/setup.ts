@@ -10,7 +10,7 @@
  * It ensures only ONE test environment is created for the entire test suite.
  */
 
-import { TestEnvironment } from '@2ly/common/test/testcontainers';
+import { TestEnvironment } from '@2ly/common/test/test.containers';
 
 let testEnv: TestEnvironment;
 
@@ -23,7 +23,6 @@ export default async function globalSetup() {
 
   // Initialize test environment with minimal logging
   testEnv = new TestEnvironment({
-    exposeToHost: true,
     startBackend: true,
     logging: {
       enabled: false, // Disable verbose TestEnvironment logs
