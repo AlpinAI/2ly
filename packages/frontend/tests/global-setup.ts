@@ -45,8 +45,8 @@ async function globalSetup(_config: FullConfig) {
     startBackend: true, // Enabled for backend integration tests
     prepareRuntime: true, // Prepare the runtime container for testing
     logging: {
-      enabled: true, // Disable verbose TestEnvironment logs
-      verbose: true,
+      enabled: false, // Disable verbose TestEnvironment logs
+      verbose: false,
     },
     backendImage: process.env.E2E_USE_IMAGE === 'true' ? `2ly-backend-test:latest` : undefined,
     runtimeImage: process.env.E2E_USE_IMAGE === 'true' ? `2ly-runtime-test:latest` : undefined,

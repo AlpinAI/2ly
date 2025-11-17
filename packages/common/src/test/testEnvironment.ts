@@ -5,6 +5,7 @@
  * - Dgraph (Zero + Alpha) for database
  * - NATS with JetStream for messaging
  * - Backend API server
+ * - Runtime, including MCP server and toolset
  *
  * Can be used for both frontend (Playwright) and backend integration tests
  */
@@ -20,46 +21,9 @@ import { generateKeyPairSync } from 'crypto';
 import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
-
-/**
- * Encryption key used for password hashing in test environments.
- * This must be at least 32 characters long.
- * Used by both the backend container and test runners that call hashPassword.
- */
-export const TEST_ENCRYPTION_KEY = 'test-encryption-key-for-playwright-integration-tests-minimum-32-chars';
-
-/**
- * Workspace master key used for runtime authentication in test environments.
- * This follows the workspace key format (WSK prefix) and must be at least 32 characters long.
- * Used by the runtime container to authenticate with the backend.
- */
-export const TEST_MASTER_KEY = 'WSKTestMasterKey1234567890123456';
-
-/**
- * Find the project root by looking for package.json with workspaces
- */
-function findProjectRoot(startDir: string = process.cwd()): string {
-  let currentDir = startDir;
-
-  while (currentDir !== path.parse(currentDir).root) {
-    const packageJsonPath = path.join(currentDir, 'package.json');
-
-    if (fs.existsSync(packageJsonPath)) {
-      const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf-8'));
-
-      // Check if this is a workspace root (has workspaces field)
-      if (packageJson.workspaces) {
-        return currentDir;
-      }
-    }
-
-    // Move up one directory
-    currentDir = path.dirname(currentDir);
-  }
-
-  // Fallback to current directory
-  return process.cwd();
-}
+import { TEST_ENCRYPTION_KEY, TEST_MASTER_KEY, TEST_RUNTIME_ROUTE, TEST_RUNTIME_STOP_ROUTE } from './test.constants';
+import { findProjectRoot, waitForHealth } from './test.helpers';
+import { startControllerServer, registerRoute, callRoute } from './test.web-server';
 
 export interface TestEnvironmentConfig {
   /**
@@ -112,6 +76,8 @@ export interface TestEnvironmentConfig {
    * @default undefined (build locally)
    */
   runtimeImage?: string;
+
+  startedRuntime?: StartedTestContainer | null;
 }
 
 export interface TestEnvironmentServices {
@@ -156,6 +122,7 @@ export class TestEnvironment {
       },
       backendImage: config.backendImage,
       runtimeImage: config.runtimeImage,
+      startedRuntime: null
     };
 
     process.env.TEST_LOGGING_ENABLED = this.config.logging.enabled ? 'true' : 'false';
@@ -169,35 +136,6 @@ export class TestEnvironment {
         console.log(JSON.stringify(data, null, 2));
       }
     }
-  }
-
-  /**
-   * Wait for a health endpoint to become available
-   * @param url - The health endpoint URL to check
-   * @param maxRetries - Maximum number of retry attempts
-   * @param intervalMs - Delay between retries in milliseconds
-   */
-  private async waitForHealth(url: string, maxRetries: number, intervalMs: number): Promise<void> {
-    this.log(`Waiting for health check: ${url}`, { maxRetries, intervalMs });
-
-    for (let attempt = 1; attempt <= maxRetries; attempt++) {
-      try {
-        const response = await fetch(url);
-        if (response.ok) {
-          this.log(`Health check passed: ${url}`, { attempt, status: response.status });
-          return;
-        }
-        this.log(`Health check failed: ${url}`, { attempt, status: response.status });
-      } catch (error) {
-        this.log(`Health check error: ${url}`, { attempt, error: error instanceof Error ? error.message : String(error) });
-      }
-
-      if (attempt < maxRetries) {
-        await new Promise((resolve) => setTimeout(resolve, intervalMs));
-      }
-    }
-
-    throw new Error(`Health check failed after ${maxRetries} attempts: ${url}`);
   }
 
   /**
@@ -272,6 +210,19 @@ export class TestEnvironment {
     }
 
     this.log('Test environment started successfully');
+
+    registerRoute(TEST_RUNTIME_ROUTE, async (_request, reply) => {
+      await this.startRuntime();
+      reply.send({ status: 'ok' });
+    });
+
+    registerRoute(TEST_RUNTIME_STOP_ROUTE, async (_request, reply) => {
+      await this.stopRuntime();
+      reply.send({ status: 'ok' });
+    });
+
+    await startControllerServer();
+
     return this.services;
   }
 
@@ -298,9 +249,6 @@ export class TestEnvironment {
       .withStartupTimeout(30000)
       .start();
 
-    const mappedPort = container.getMappedPort(4222);
-    process.env.TEST_NATS_CLIENT_URL = `localhost:${mappedPort}`;
-
     const clientUrl = this.config.exposeToHost
       ? `localhost:${container.getMappedPort(4222)}`
       : 'nats:4222';
@@ -310,6 +258,8 @@ export class TestEnvironment {
       : 'http://nats:8222';
 
     this.log('NATS started', { clientUrl, httpUrl });
+
+    process.env.TEST_NATS_CLIENT_URL = clientUrl;
 
     return { container, clientUrl, httpUrl };
   }
@@ -345,7 +295,7 @@ export class TestEnvironment {
     // Wait for Dgraph Zero to be healthy
     if (this.config.exposeToHost) {
       const healthUrl = `http://localhost:${container.getMappedPort(6080)}/health`;
-      await this.waitForHealth(healthUrl, 30, 1000); // 30 retries, 1 second interval
+      await waitForHealth(healthUrl, 30, 1000); // 30 retries, 1 second interval
     }
 
     return { container, grpcUrl, httpUrl };
@@ -389,7 +339,7 @@ export class TestEnvironment {
     // Dgraph Alpha needs time to connect to Zero and initialize
     if (this.config.exposeToHost) {
       const healthUrl = `http://localhost:${container.getMappedPort(8080)}/health`;
-      await this.waitForHealth(healthUrl, 60, 1000); // 60 retries, 1 second interval
+      await waitForHealth(healthUrl, 60, 1000); // 60 retries, 1 second interval
     }
 
     return { container, grpcUrl, graphqlUrl };
@@ -564,6 +514,78 @@ export class TestEnvironment {
     }
   }
 
+  async startRuntime(): Promise<void> {
+    if (this.config.startedRuntime) {
+      return;
+    }
+    if (process.env.TEST_LOGGING_ENABLED === 'true') {
+      console.log('Starting runtime...');
+    }
+    const runtimeName = 'Test Runtime';
+    const runtimePort = 3001; // await getPort();
+    const container = new GenericContainer('2ly-runtime-test:latest')
+      .withNetwork(this.network!)
+      .withEnvironment({
+        NODE_ENV: 'test',
+        LOG_LEVEL: 'debug',
+        NATS_SERVERS: 'nats:4222',
+        RUNTIME_NAME: runtimeName,
+        ROOTS: `TEMP:/tmp`,
+        MASTER_KEY: TEST_MASTER_KEY,
+        REMOTE_PORT: String(runtimePort),      // Enable HTTP server for SSE/STREAM transports 
+        REMOTE_HOST: '0.0.0.0',
+        FORWARD_STDERR: 'false',  // Disable forwarding of stderr to the parent process
+      })
+      // No exposed ports needed - runtime communicates via NATS
+      .withExposedPorts(...(this.config.exposeToHost ? [runtimePort] : []))
+      .withWaitStrategy(Wait.forListeningPorts())
+      .withStartupTimeout(60000) // 1 minute for startup
+      .withLogConsumer((stream) => {
+        // Only log ERROR and WARN lines to reduce noise
+        stream.on('data', (line) => {
+          if (process.env.TEST_LOGGING_ENABLED === 'true') {
+            console.log(`[Runtime] ${line}`);
+          }
+        });
+        stream.on('err', (line) => console.log(`[Runtime ERROR] ${line}`));
+      });
+  
+    this.config.startedRuntime = await container.start();
+  
+    // Store mapped port for tests to access
+    process.env.TEST_RUNTIME_PORT = String(runtimePort);
+    if (process.env.TEST_LOGGING_ENABLED === 'true') {
+      console.log(`Runtime HTTP server listening on port ${runtimePort}`);
+    }
+  
+    const runtimeExposedPort = this.config.startedRuntime?.getMappedPort(runtimePort);
+    const healthUrl = `http://localhost:${runtimeExposedPort}/health`;
+    const maxRetries = 60;
+    const intervalMs = 1000;
+    console.log(`Waiting for health check: ${healthUrl}`, { maxRetries, intervalMs });
+    try {
+      await waitForHealth(healthUrl, maxRetries, intervalMs);
+      console.log('Runtime health check passed');
+    } catch (error) {
+      console.log(error instanceof Error ? error.message : String(error));
+      throw error;
+    }
+  
+    // Wait a bit for the runtime to fully start and register with NATS
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+  };
+  
+  async stopRuntime(): Promise<void> {
+    if (this.config.startedRuntime !== null) {
+      await this.config.startedRuntime.stop({ timeout: 10000 });
+      this.config.startedRuntime = null;
+      delete process.env.TEST_RUNTIME_PORT;
+      if (process.env.TEST_LOGGING_ENABLED === 'true') {
+        console.log('Runtime stopped');
+      }
+    }
+  };
+
   /**
    * Get service URLs (useful for tests)
    */
@@ -690,50 +712,10 @@ export class TestEnvironment {
   }
 }
 
+export async function startRuntime(): Promise<void> {
+  await callRoute(TEST_RUNTIME_ROUTE);
+}
 
-let startedContainer: StartedTestContainer | undefined = undefined;
-export const startRuntime = async (): Promise<void> => {
-  if (startedContainer) {
-    return;
-  }
-  if (process.env.TEST_LOGGING_ENABLED === 'true') {
-    console.log('Starting runtime...');
-  }
-  const natsUrl = process.env.TEST_NATS_CLIENT_URL ?? 'nats:4222';
-  const runtimeName = 'Test Runtime';
-  const container = new GenericContainer('2ly-runtime-test:latest')
-    .withNetworkMode('host')
-    .withEnvironment({
-      NODE_ENV: 'test',
-      LOG_LEVEL: 'error', // Only log errors in test environment
-      NATS_SERVERS: natsUrl,
-      RUNTIME_NAME: runtimeName,
-      ROOTS: `TEMP:/tmp`,
-      MASTER_KEY: TEST_MASTER_KEY,
-    })
-    // No exposed ports needed - runtime communicates via NATS
-    .withWaitStrategy(Wait.forListeningPorts())
-    .withStartupTimeout(60000) // 1 minute for startup
-    .withLogConsumer((stream) => {
-      // Only log ERROR and WARN lines to reduce noise
-      stream.on('data', (line) => {
-        if (process.env.TEST_LOGGING_ENABLED === 'true') {
-          console.log(`[Runtime] ${line}`);
-        }
-      });
-      stream.on('err', (line) => console.log(`[Runtime ERROR] ${line}`));
-    });
-  startedContainer = await container.start();
-  // Wait a bit for the runtime to fully start and register with NATS
-  await new Promise((resolve) => setTimeout(resolve, 1000));
-};
-
-export const stopRuntime = async (): Promise<void> => {
-  if (startedContainer) {
-    await startedContainer.stop({ timeout: 10000 });
-    startedContainer = undefined;
-    if (process.env.TEST_LOGGING_ENABLED === 'true') {
-      console.log('Runtime stopped');
-    }
-  }
-};
+export async function stopRuntime(): Promise<void> {
+  await callRoute(TEST_RUNTIME_STOP_ROUTE);
+}

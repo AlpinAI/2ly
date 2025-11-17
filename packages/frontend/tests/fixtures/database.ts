@@ -5,7 +5,10 @@ import { dgraphQL } from './dgraph-client';
 import { hashPassword, startRuntime, stopRuntime } from '@2ly/common/test/testcontainers';
 import { dgraphResolversTypes } from '@2ly/common';
 import type { RegistryServerSeed, MCPServerSeed, OmitGenerated } from './mcp-types';
-import { buildFilesystemRegistryServer, buildMinimalFilesystemServer } from './mcp-builders';
+import {
+  buildFilesystemRegistryServer,
+  buildMinimalFilesystemServer,
+} from './mcp-builders';
 
 /**
  * Database Fixture for Playwright Tests

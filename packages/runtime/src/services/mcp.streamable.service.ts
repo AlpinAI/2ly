@@ -93,12 +93,6 @@ export class McpStreamableService extends Service {
    * Setup transport by registering routes and MCP handlers
    */
   private async setupTransport() {
-    const remotePort = process.env.REMOTE_PORT;
-    if (!remotePort) {
-      this.logger.warn('REMOTE_PORT is not set, transport will not be configured');
-      return;
-    }
-
     this.logger.info(`Setting up ${this.name} transport`);
 
     // Register transport-specific routes on shared Fastify instance

@@ -1,7 +1,5 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { test, expect, performLogin, seedPresets } from '../../fixtures/database';
-import { buildFilesystemServerConfig } from '../../fixtures/mcp-builders';
-import { Page } from '@playwright/test';
+import { configureFileSystemMCPServer, createRuntime, createToolset } from '../../fixtures/mcp-builders';
 import { sendToolsetHandshake, waitForOnboardingStepComplete } from '../../fixtures/nats-helpers';
 
 // TODO: unskip tests when we have a runtime running
@@ -19,148 +17,6 @@ import { sendToolsetHandshake, waitForOnboardingStepComplete } from '../../fixtu
  * - Tests run sequentially to follow the onboarding progression
  * - Uses comprehensive seed data with servers, tools, and agents
  */
-
-const configureMCPServer = async (
-  graphql: <T = any>(query: string, variables?: Record<string, any>) => Promise<T>,
-  workspaceId: string,
-  runOn: 'GLOBAL' | 'AGENT' | 'EDGE',
-) => {
-  // Get the FileSystem MCP Server from the registry
-  const registryServersQuery = `
-    query GetRegistryServers($workspaceId: ID!) {
-      getRegistryServers(workspaceId: $workspaceId) {
-        id
-        name
-      }
-    }
-  `;
-  const registryServersResult = await graphql<{ getRegistryServers: { id: string; name: string }[] }>(registryServersQuery, { workspaceId });
-  const registryServer = registryServersResult.getRegistryServers.find(r => r.name === '@modelcontextprotocol/server-filesystem');
-  if (!registryServer) {
-    throw new Error('Filesystem MCP Server not found in registry');
-  }
-  const registryServerId = registryServer.id;
-
-  const mutation = `
-      mutation CreateMCPServer($name: String!, $description: String!, $repositoryUrl: String!, $transport: MCPTransportType!, $config: String!, $runOn: MCPServerRunOn!, $workspaceId: ID!, $registryServerId: ID!) {
-        createMCPServer(name: $name, description: $description, repositoryUrl: $repositoryUrl, transport: $transport, config: $config, runOn: $runOn, workspaceId: $workspaceId, registryServerId: $registryServerId) {
-          id
-          name
-          description
-          repositoryUrl
-          transport
-          config
-          runOn
-        }
-      }
-    `;
-
-    await graphql<{ createMCPServer: { id: string; name: string; description: string; repositoryUrl: string; transport: string; config: string; runOn: string } }>(mutation, {
-      name: 'Test MCP Server',
-      description: 'Test MCP Server Description',
-      repositoryUrl: 'https://github.com/test/test',
-      transport: 'STDIO',
-      config: JSON.stringify(buildFilesystemServerConfig('/tmp')),
-      runOn,
-      workspaceId,
-      registryServerId,
-    });
-};
-
-const createRuntime = async (
-  graphql: <T = any>(query: string, variables?: Record<string, any>) => Promise<T>,
-  page: Page,
-  workspaceId: string,
-  name: string,
-  description: string,
-  type: 'EDGE' | 'MCP',
-) => {
-  const mutation = `
-    mutation CreateRuntime($name: String!, $description: String!, $type: RuntimeType!, $workspaceId: ID!) {
-      createRuntime(name: $name, description: $description, type: $type, workspaceId: $workspaceId) {
-        id
-        name
-        description
-        type
-      }
-    }
-  `;
-  const result = await graphql<{ createRuntime: { id: string; name: string; description: string; type: 'EDGE' | 'MCP' } }>(mutation, {
-    name,
-    description,
-    type,
-    workspaceId,
-  });
-
-  // Wait 10s, letting the time to the runtime to spawn the server and discover the tools
-  await page.waitForTimeout(10000);
-
-  return {
-    runtimeId: result.createRuntime.id,
-  };
-};
-
-const createToolset = async (
-  graphql: <T = any>(query: string, variables?: Record<string, any>) => Promise<T>,
-  workspaceId: string,
-  name: string,
-  description: string,
-  nbToolsToLink: number,
-) => {
-  // get tools
-  const toolQuery = `
-    query GetTools($workspaceId: ID!) {
-      mcpTools(workspaceId: $workspaceId) {
-        id
-      }
-    }
-  `;
-  const toolResult = await graphql<{ mcpTools: Array<{ id: string }> }>(toolQuery, { workspaceId });
-
-  // Create a ToolSet
-  const createToolSetMutation = `
-    mutation CreateToolSet($name: String!, $description: String!, $workspaceId: ID!) {
-      createToolSet(name: $name, description: $description, workspaceId: $workspaceId) {
-        id
-        name
-      }
-    }
-  `;
-
-  const toolSetResult = await graphql<{ createToolSet: { id: string; name: string } }>(
-    createToolSetMutation,
-    {
-      name,
-      description,
-      workspaceId,
-    }
-  );
-
-  // Add tools to the toolset
-  const addToolMutation = `
-    mutation AddToolToToolSet($mcpToolId: ID!, $toolSetId: ID!) {
-      addMCPToolToToolSet(mcpToolId: $mcpToolId, toolSetId: $toolSetId) {
-        id
-        mcpTools {
-          id
-          name
-        }
-      }
-    }
-  `;
-
-  for (let i = 0; i < nbToolsToLink; i++) {
-    await graphql(addToolMutation, {
-      mcpToolId: toolResult.mcpTools[i]!.id,
-      toolSetId: toolSetResult.createToolSet.id,
-    });
-  }
-
-  return {
-    toolsetId: toolSetResult.createToolSet.id,
-  };
-};
-
 
 test.describe('Onboarding Flow', () => {
   test.beforeEach(async ({ page, resetDatabase, seedDatabase }) => {
@@ -209,7 +65,7 @@ test.describe('Onboarding Flow', () => {
 
   test('step 1 shows completed status after server is installed', async ({ page, graphql, workspaceId }) => {
     // complete step 1
-    await configureMCPServer(graphql, workspaceId, 'GLOBAL');
+    await configureFileSystemMCPServer(graphql, workspaceId, 'GLOBAL');
 
     // Select the step 1 card containing the step title
     const step1Card = page
@@ -225,7 +81,7 @@ test.describe('Onboarding Flow', () => {
 
   test('step 2 shows Create Tool Set button when pending', async ({ page, graphql, workspaceId }) => {
     // complete step 1
-    await configureMCPServer(graphql, workspaceId, 'GLOBAL');
+    await configureFileSystemMCPServer(graphql, workspaceId, 'GLOBAL');
 
     // Select the step 1 card containing the step title
     const step2Card = page
@@ -238,7 +94,7 @@ test.describe('Onboarding Flow', () => {
 
   test('step 2 shows the installed server name', async ({ page, graphql, workspaceId }) => {
     // complete step 1
-    await configureMCPServer(graphql, workspaceId, 'GLOBAL');
+    await configureFileSystemMCPServer(graphql, workspaceId, 'GLOBAL');
 
     // Select the step 1 card containing the step title
     const step1Card = page
@@ -251,7 +107,7 @@ test.describe('Onboarding Flow', () => {
 
   test('step 3 shows Connect button when agent with tools exists', async ({ page, graphql, workspaceId }) => {
     // complete step 1
-    await configureMCPServer(graphql, workspaceId, 'GLOBAL');
+    await configureFileSystemMCPServer(graphql, workspaceId, 'GLOBAL');
 
     // complete step 2
     await createRuntime(graphql, page, workspaceId, 'My Runtime', 'My runtime description', 'MCP');
@@ -268,7 +124,7 @@ test.describe('Onboarding Flow', () => {
 
   test('step 3 Connect button opens Connect Agent dialog', async ({ page, graphql, workspaceId }) => {
     // complete step 1
-    await configureMCPServer(graphql, workspaceId, 'GLOBAL');
+    await configureFileSystemMCPServer(graphql, workspaceId, 'GLOBAL');
 
     // complete step 2
     await createRuntime(graphql, page, workspaceId, 'My Runtime', 'My runtime description', 'MCP');
@@ -291,7 +147,7 @@ test.describe('Onboarding Flow', () => {
 
   test('step 3 shows message when no agent with tools exists', async ({ page, graphql, workspaceId }) => {
     // complete step 1
-    await configureMCPServer(graphql, workspaceId, 'GLOBAL');
+    await configureFileSystemMCPServer(graphql, workspaceId, 'GLOBAL');
 
     // complete step 2 - create runtime but no toolset
     await createRuntime(graphql, page, workspaceId, 'My Runtime', 'My runtime description', 'MCP');
@@ -307,7 +163,7 @@ test.describe('Onboarding Flow', () => {
 
   test('step 3 shows completed status after connection', async ({ page, graphql, workspaceId }) => {
     // complete step 1
-    await configureMCPServer(graphql, workspaceId, 'GLOBAL');
+    await configureFileSystemMCPServer(graphql, workspaceId, 'GLOBAL');
 
     // complete step 2
     await createRuntime(graphql, page, workspaceId, 'My Runtime', 'My runtime description', 'MCP');
@@ -347,7 +203,7 @@ test.describe('Onboarding Flow', () => {
 
   test('all completed steps show green styling', async ({ page, graphql, workspaceId }) => {
     // complete step 1
-    await configureMCPServer(graphql, workspaceId, 'GLOBAL');
+    await configureFileSystemMCPServer(graphql, workspaceId, 'GLOBAL');
 
     // complete step 2
     await createRuntime(graphql, page, workspaceId, 'My Runtime', 'My runtime description', 'MCP');

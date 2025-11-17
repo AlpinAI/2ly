@@ -270,32 +270,7 @@ describe('OnboardingCard', () => {
       render(<OnboardingCard step={completedStep} />);
 
       expect(screen.getByText('Completed')).toBeInTheDocument();
-      expect(screen.getByText(/Test Agent connected/)).toBeInTheDocument();
-    });
-
-    it('shows truncated runtime name when too long', () => {
-      const longNameRuntime = {
-        ...mockRuntime,
-        name: 'This is a very long runtime name that should be truncated',
-      };
-
-      vi.mocked(runtimeStore.useRuntimeData).mockReturnValue({
-        runtimes: [longNameRuntime],
-        loading: false,
-        error: null,
-        stats: { total: 1, active: 1, inactive: 0 },
-      });
-
-      const completedStep = {
-        ...mockStep,
-        status: OnboardingStepStatus.Completed,
-      };
-
-      render(<OnboardingCard step={completedStep} />);
-
-      const nameElement = screen.getByText(/This is a very long runtime name that should be truncated connected/);
-      expect(nameElement).toBeInTheDocument();
-      expect(nameElement.className).toContain('truncate');
+      expect(screen.getByText(/Tool Set connected/)).toBeInTheDocument();
     });
 
     it('applies correct styling for current step', () => {

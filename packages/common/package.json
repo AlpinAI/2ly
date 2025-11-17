@@ -42,7 +42,8 @@
   },
   "devDependencies": {
     "@testcontainers/nats": "^11.7.1",
-    "testcontainers": "^11.7.1"
+    "testcontainers": "^11.7.1",
+    "get-port": "^7.1.0"
   },
   "overrides": {}
 }
