@@ -191,15 +191,27 @@ export class TestEnvironment {
       dgraphAlpha,
     };
 
-    // Optionally start backend
+    // Build Docker images in parallel (if needed)
+    const buildPromises: Promise<void>[] = [];
+
     if (this.config.startBackend) {
-      const backend = await this.startBackend();
-      this.services.backend = backend;
+      buildPromises.push(this.buildBackendImage());
     }
 
-    // Optionally start runtime
     if (this.config.prepareRuntime) {
-      await this.prepareRuntime();
+      buildPromises.push(this.buildRuntimeImage());
+    }
+
+    if (buildPromises.length > 0) {
+      this.log(`Building ${buildPromises.length} Docker image(s) in parallel...`);
+      await Promise.all(buildPromises);
+      this.log('All Docker images built successfully');
+    }
+
+    // Start containers sequentially (still depends on service dependencies)
+    if (this.config.startBackend) {
+      const backend = await this.startBackendContainer();
+      this.services.backend = backend;
     }
 
     this.log('Test environment started successfully');
@@ -316,66 +328,109 @@ export class TestEnvironment {
   }
 
   /**
-   * Start Backend API server
+   * Build backend Docker image
    */
-  private async startBackend(): Promise<NonNullable<TestEnvironmentServices['backend']>> {
+  private async buildBackendImage(): Promise<void> {
+    if (this.config.backendImage) {
+      this.log(`Using published backend image: ${this.config.backendImage}`);
+      return;
+    }
+
+    this.log('Building backend Docker image...', { projectRoot: this.config.projectRoot });
+
+    let progressInterval: NodeJS.Timeout | undefined = undefined;
+    let promiseTimeout: NodeJS.Timeout | undefined = undefined;
+
+    try {
+      progressInterval = setInterval(() => {
+        this.log('[Backend] Docker build still in progress...');
+      }, 10000);
+
+      const buildPromise = GenericContainer.fromDockerfile(
+        this.config.projectRoot,
+        'packages/backend/Dockerfile'
+      ).build('2ly-backend-test', { deleteOnExit: false });
+
+      const timeoutPromise = new Promise((_, reject) => {
+        promiseTimeout = setTimeout(
+          () => reject(new Error('Backend Docker build timed out after 5 minutes')),
+          5 * 60 * 1000
+        );
+      });
+
+      await Promise.race([buildPromise, timeoutPromise]);
+      this.log('Backend Docker image built successfully');
+    } catch (error) {
+      this.log('Failed to build backend Docker image', error);
+      throw new Error(`Backend Docker build failed: ${error instanceof Error ? error.message : String(error)}`);
+    } finally {
+      if (progressInterval) clearInterval(progressInterval);
+      if (promiseTimeout) clearTimeout(promiseTimeout);
+    }
+  }
+
+  /**
+   * Build runtime Docker image
+   */
+  private async buildRuntimeImage(): Promise<void> {
+    if (this.config.runtimeImage) {
+      this.log(`Using published runtime image: ${this.config.runtimeImage}`);
+      return;
+    }
+
+    this.log('Building runtime Docker image...', { projectRoot: this.config.projectRoot });
+
+    let progressInterval: NodeJS.Timeout | undefined = undefined;
+    let promiseTimeout: NodeJS.Timeout | undefined = undefined;
+
+    try {
+      progressInterval = setInterval(() => {
+        this.log('[Runtime] Docker build still in progress...');
+      }, 10000);
+
+      const buildPromise = GenericContainer.fromDockerfile(
+        this.config.projectRoot,
+        'packages/runtime/Dockerfile'
+      ).build('2ly-runtime-test', { deleteOnExit: false });
+
+      const timeoutPromise = new Promise((_, reject) => {
+        promiseTimeout = setTimeout(
+          () => reject(new Error('Runtime Docker build timed out after 5 minutes')),
+          5 * 60 * 1000
+        );
+      });
+
+      await Promise.race([buildPromise, timeoutPromise]);
+      this.log('Runtime Docker image built successfully');
+    } catch (error) {
+      this.log('Failed to build runtime Docker image', error);
+      throw new Error(`Runtime Docker build failed: ${error instanceof Error ? error.message : String(error)}`);
+    } finally {
+      if (progressInterval) clearInterval(progressInterval);
+      if (promiseTimeout) clearTimeout(promiseTimeout);
+    }
+  }
+
+  /**
+   * Start Backend API server container (assumes image is already built)
+   */
+  private async startBackendContainer(): Promise<NonNullable<TestEnvironmentServices['backend']>> {
     if (!this.services?.nats || !this.services?.dgraphAlpha) {
       throw new Error('Cannot start backend: NATS and Dgraph must be started first');
     }
 
-    this.log('Starting Backend...');
+    this.log('Starting Backend container...');
 
     // Generate JWT keys for test environment
     const keyDir = this.generateJWTKeys();
 
-    let containerImage: GenericContainer;
+    // Use the appropriate image (pre-built or locally built)
+    const imageName = this.config.backendImage || '2ly-backend-test:latest';
+    this.log(`Using backend image: ${imageName}`);
 
-    if (this.config.backendImage) {
-      // Use existing image
-      this.log(`Using published backend image: ${this.config.backendImage}`);
-      containerImage = new GenericContainer(this.config.backendImage);
-    } else {
-      // Build the Docker image
-      this.log('Building backend Docker image...', { projectRoot: this.config.projectRoot });
+    const containerImage = new GenericContainer(imageName);
 
-      let builtImage: GenericContainer | undefined = undefined;
-      let progressInterval: NodeJS.Timeout | undefined = undefined;
-      let promiseTimeout: NodeJS.Timeout | undefined = undefined;
-      try {
-        // Log progress every 10 seconds during build
-        progressInterval = setInterval(() => {
-          this.log('Docker build still in progress...');
-        }, 10000);
-
-        const buildPromise = GenericContainer.fromDockerfile(
-          this.config.projectRoot,
-          'packages/backend/Dockerfile'
-        ).build('2ly-backend-test', { deleteOnExit: false });
-
-        // Add timeout to prevent hanging indefinitely
-        const timeoutPromise = new Promise((_, reject) => {
-          promiseTimeout = setTimeout(() => reject(new Error('Docker build timed out after 5 minutes')), 5 * 60 * 1000);
-        });
-
-        builtImage = await Promise.race([
-          buildPromise, timeoutPromise
-        ]) as GenericContainer;
-        this.log('Backend Docker image built successfully');
-        containerImage = builtImage;
-      } catch (error) {
-        this.log('Failed to build backend Docker image', error);
-        throw new Error(`Docker build failed: ${error instanceof Error ? error.message : String(error)}`);
-      } finally {
-        if (progressInterval) {
-          clearInterval(progressInterval);
-        }
-        if (promiseTimeout) {
-          clearTimeout(promiseTimeout);
-        }
-      }
-    }
-
-    // Then create and configure the container
+    // Create and configure the container
     let started;
     try {
       started = await containerImage
@@ -429,58 +484,6 @@ export class TestEnvironment {
     return { container: started, apiUrl, healthUrl };
   }
 
-  /**
-   * Start Runtime container
-   */
-  private async prepareRuntime(): Promise<void> {
-    if (!this.services?.nats || !this.services?.dgraphAlpha) {
-      throw new Error('Cannot start runtime: NATS and Dgraph must be started first');
-    }
-
-    this.log('Starting Runtime...');
-
-    if (this.config.runtimeImage) {
-      // Use published image
-      this.log(`Using published runtime image: ${this.config.runtimeImage}`);
-    } else {
-      // Build the Docker image
-      this.log('Building runtime Docker image...', { projectRoot: this.config.projectRoot });
-
-      let progressInterval: NodeJS.Timeout | undefined = undefined;
-      let promiseTimeout: NodeJS.Timeout | undefined = undefined;
-      try {
-        // Log progress every 10 seconds during build
-        progressInterval = setInterval(() => {
-          this.log('Docker build still in progress...');
-        }, 10000);
-
-        const buildPromise = GenericContainer.fromDockerfile(
-          this.config.projectRoot,
-          'packages/runtime/Dockerfile'
-        ).build('2ly-runtime-test', { deleteOnExit: false });
-
-        // Add timeout to prevent hanging indefinitely
-        const timeoutPromise = new Promise((_, reject) => {
-          promiseTimeout = setTimeout(() => reject(new Error('Docker build timed out after 5 minutes')), 5 * 60 * 1000);
-        });
-
-        await Promise.race([
-          buildPromise, timeoutPromise
-        ]) as GenericContainer;
-        this.log('Runtime Docker image built successfully');
-      } catch (error) {
-        this.log('Failed to build runtime Docker image', error);
-        throw new Error(`Docker build failed: ${error instanceof Error ? error.message : String(error)}`);
-      } finally {
-        if (progressInterval) {
-          clearInterval(progressInterval);
-        }
-        if (promiseTimeout) {
-          clearTimeout(promiseTimeout);
-        }
-      }
-    }
-  }
 
   async startRuntime(): Promise<void> {
     if (this.config.startedRuntime) {
@@ -491,7 +494,10 @@ export class TestEnvironment {
     }
     const runtimeName = 'Test Runtime';
     const runtimePort = 3001;
-    const container = new GenericContainer('2ly-runtime-test:latest')
+
+    // Use the appropriate image (pre-built or locally built)
+    const imageName = this.config.runtimeImage || '2ly-runtime-test:latest';
+    const container = new GenericContainer(imageName)
       .withNetwork(this.network!)
       .withEnvironment({
         NODE_ENV: 'test',
