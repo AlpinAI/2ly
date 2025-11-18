@@ -41,6 +41,7 @@ export function findProjectRoot(startDir: string = process.cwd()): string {
       try {
         const response = await fetch(url);
         if (response.ok) {
+          testLog(`Health check passed: ${url}, attempt: ${attempt}`);
           return;
         }
       } catch (error) {
