@@ -20,11 +20,11 @@ export const registerRoute = (route: string, handler: (request: FastifyRequest, 
     });
 };
 
-export const callRoute = async (route: string): Promise<void> => {
+export const callRoute = async <T = void>(route: string): Promise<T> => {
     const url = `http://localhost:${process.env.TEST_CONTROLLER_SERVER_PORT}${route}`;
     const response = await fetch(url);
     if (!response.ok) {
         throw new Error(`Failed to call route ${route}: ${response.status} ${response.statusText}`);
     }
-    return response.json();
+    return response.json() as Promise<T>;
 };

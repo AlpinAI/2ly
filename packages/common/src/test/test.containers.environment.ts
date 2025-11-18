@@ -165,8 +165,8 @@ export class TestEnvironment {
     testLog('Test environment started successfully');
 
     registerRoute(TEST_RUNTIME_ROUTE, async (_request, reply) => {
-      await this.startRuntime();
-      reply.send({ status: 'ok' });
+      const port = await this.startRuntime();
+      reply.send({ status: 'ok', port });
     });
 
     registerRoute(TEST_RUNTIME_STOP_ROUTE, async (_request, reply) => {
@@ -424,9 +424,12 @@ export class TestEnvironment {
   }
 
 
-  async startRuntime(): Promise<void> {
+  async startRuntime(): Promise<number> {
     if (this.services?.runtime?.startedContainer) {
-      return;
+      // Return the existing port if already started
+      const runtimePort = 3001;
+      const existingPort = this.services.runtime.startedContainer.getMappedPort(runtimePort);
+      return existingPort;
     }
     testLog('Starting runtime...');
     const runtimeName = 'Test Runtime';
@@ -444,7 +447,7 @@ export class TestEnvironment {
           RUNTIME_NAME: runtimeName,
           ROOTS: `TEMP:/tmp`,
           MASTER_KEY: TEST_MASTER_KEY,
-          REMOTE_PORT: String(runtimePort),      // Enable HTTP server for SSE/STREAM transports 
+          REMOTE_PORT: String(runtimePort),      // Enable HTTP server for SSE/STREAM transports
           REMOTE_HOST: '0.0.0.0',
           FORWARD_STDERR: 'false',  // Disable forwarding of stderr to the parent process
         })
@@ -461,9 +464,9 @@ export class TestEnvironment {
         });
       this.services!.runtime = { container };
     }
-  
+
     this.services!.runtime!.startedContainer = await this.services!.runtime!.container.start();
-  
+
     // Store mapped port for tests to access
     const runtimeExposedPort = this.services!.runtime!.startedContainer?.getMappedPort(runtimePort);
     process.env.TEST_RUNTIME_PORT = String(runtimeExposedPort);
@@ -471,6 +474,8 @@ export class TestEnvironment {
 
     const healthUrl = `http://localhost:${runtimeExposedPort}/health`;
     await waitForHealth(healthUrl);
+
+    return runtimeExposedPort;
   };
   
   async stopRuntime(): Promise<void> {
@@ -615,8 +620,9 @@ export class TestEnvironment {
   }
 }
 
-export async function startRuntime(): Promise<void> {
-  await callRoute(TEST_RUNTIME_ROUTE);
+export async function startRuntime(): Promise<number> {
+  const response = await callRoute<{ status: string; port: number }>(TEST_RUNTIME_ROUTE);
+  return response.port;
 }
 
 export async function stopRuntime(): Promise<void> {

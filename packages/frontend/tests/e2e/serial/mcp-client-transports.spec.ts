@@ -19,29 +19,26 @@ import { createToolset } from '@2ly/common/test/fixtures/mcp-builders';
 import { createMCPClient } from '@2ly/common/test/fixtures/playwright';
 import { TEST_MASTER_KEY } from '@2ly/common/test/test.containers';
 
-test.describe.skip('MCP Client Transports', () => {
+test.describe.only('MCP Client Transports', () => {
   // Configure tests to run serially (one at a time)
   // test.describe.configure({ mode: 'serial' });
   test.beforeEach(async ({ page, resetDatabase, seedDatabase, graphql }) => {
     // Reset database and start runtime with HTTP server (port 3001)
-    console.log('resetting database');
     await resetDatabase(true);
 
     // Seed database with single MCP server (filesystem - STDIO transport)
     // This is a proven working setup from mcp-integration.spec.ts
     const entityIds = await seedDatabase(seedPresets.withSingleMCPServer);
     const workspaceId = entityIds['default-workspace'];
-    console.log('workspace id', workspaceId);
 
     // Wait for runtime to fully initialize and discover tools
     // The runtime needs time to connect to the MCP server and load its tools
-    console.log('here1');
     await page.waitForTimeout(15000);
-    console.log('here2');
   
     // the workspace id is the one from the previous reset ?
     // use value from the seed database above and fix
-    await createToolset(graphql, workspaceId, 'My tool set', 'My tool set description', 1);
+    // add 20 tools => will add all
+    await createToolset(graphql, workspaceId, 'My tool set', 'My tool set description', 100);
   });
 
   /**
@@ -117,11 +114,9 @@ test.describe.skip('MCP Client Transports', () => {
    * 4. DELETE /mcp with session ID → terminates session
    */
   test.describe('STREAM Transport', () => {
-    test('should connect, list tools, call tool, and disconnect via STREAM', async () => {
-      const runtimePort = Number(process.env.TEST_RUNTIME_PORT);
-      console.log('runtime port', runtimePort);
+    test('should connect, list tools, call tool, and disconnect via STREAM', async ({ runtimePort }) => {
       if (!runtimePort) {
-        throw new Error('Runtime port not available. Ensure runtime was started with withRemotePort=true');
+        throw new Error('Runtime port not available. Ensure runtime was started with resetDatabase(true)');
       }
 
       const baseUrl = `http://localhost:${runtimePort}`;
@@ -129,8 +124,6 @@ test.describe.skip('MCP Client Transports', () => {
 
       try {
         // Step 1: Connect to runtime via STREAM transport
-        console.log(`[STREAM Test] Connecting to ${baseUrl}/mcp...`);
-
         await mcpClient.connectSTREAM(baseUrl, {
           masterKey: TEST_MASTER_KEY,
           toolsetName: 'My tool set',
@@ -139,60 +132,63 @@ test.describe.skip('MCP Client Transports', () => {
         const status = mcpClient.getConnectionStatus();
         expect(status.connected).toBe(true);
         expect(status.type).toBe('STREAM');
-        console.log('[STREAM Test] ✓ Connected successfully');
 
         // Step 2: List tools from runtime
-        console.log('[STREAM Test] Listing tools...');
         const toolsResult = await mcpClient.listTools();
 
         expect(toolsResult).toBeDefined();
         expect(toolsResult.tools).toBeDefined();
         expect(Array.isArray(toolsResult.tools)).toBe(true);
+        expect(toolsResult.tools.length).toBeGreaterThan(0);
 
-        console.log(`[STREAM Test] ✓ Listed ${toolsResult.tools.length} tools`);
+        // Validate tool structure
+        toolsResult.tools.forEach(tool => {
+          expect(tool.name).toBeDefined();
+          expect(typeof tool.name).toBe('string');
+          expect(tool.name.length).toBeGreaterThan(0);
+        });
 
-        // For debugging: log tool names
-        if (toolsResult.tools.length > 0) {
-          console.log('[STREAM Test] Available tools:', toolsResult.tools.map(t => t.name).join(', '));
-        } else {
-          console.warn('[STREAM Test] ⚠ No tools discovered yet. Runtime may still be loading MCP servers.');
+        // Step 3: Call a tool without arguments
+        const listAllowedDirectories = toolsResult.tools.find(t => t.name === 'list_allowed_directories');
+        expect(listAllowedDirectories).toBeDefined();
+        try {
+          const callResult = (await mcpClient.callTool('list_allowed_directories', {})) as {content: {type: string, text: string}[]};
+          expect(callResult).toBeDefined();
+          expect(callResult.content[0].text).toBe('Allowed directories:\n/tmp');
+        } catch (error) {
+          console.log(`[STREAM Test] ⚠ Tool call failed:`, error instanceof Error ? error.message : String(error));
+          throw error; // This should succeed, so throw if it fails
         }
 
-        // Step 3: Call a tool (if any tools are available)
-        if (toolsResult.tools.length > 0) {
-          // The filesystem server should provide tools like read_file, write_file, list_directory
-          // Try to find list_directory as it's the safest to test (read-only, minimal args)
-          const listDirectoryTool = toolsResult.tools.find(t => t.name === 'list_directory');
+        // Step 4: Call a tool with arguments
+        // The filesystem server should provide tools like read_file, write_file, list_directory
+        // Try to find list_directory as it's the safest to test (read-only, minimal args)
+        const listDirectoryTool = toolsResult.tools.find(t => t.name === 'list_directory');
+        expect(listDirectoryTool).toBeDefined();
 
-          if (listDirectoryTool) {
-            console.log(`[STREAM Test] Calling tool: ${listDirectoryTool.name}...`);
+        try {
+          // Call list_directory with /tmp path (configured in the filesystem server)
+          const callResult = await mcpClient.callTool('list_directory', {
+            path: '/tmp',
+          });
 
-            try {
-              // Call list_directory with /tmp path (configured in the filesystem server)
-              const callResult = await mcpClient.callTool('list_directory', {
-                path: '/tmp',
-              });
-
-              expect(callResult).toBeDefined();
-              console.log(`[STREAM Test] ✓ Tool call completed successfully`);
-              console.log(`[STREAM Test] Result:`, JSON.stringify(callResult, null, 2));
-            } catch (error) {
-              console.log(`[STREAM Test] ⚠ Tool call failed:`, error instanceof Error ? error.message : String(error));
-              throw error; // This should succeed, so throw if it fails
-            }
-          } else {
-            console.log(`[STREAM Test] ⚠ list_directory tool not found. Available tools:`, toolsResult.tools.map(t => t.name).join(', '));
-          }
+          expect(callResult).toBeDefined();
+        } catch (error) {
+          console.log(`[STREAM Test] ⚠ Tool call failed:`, error instanceof Error ? error.message : String(error));
+          throw error; // This should succeed, so throw if it fails
         }
 
-        // Step 4: Disconnect cleanly
-        console.log('[STREAM Test] Disconnecting...');
+        // Step 5: Disconnect cleanly
         await mcpClient.disconnect();
 
         const finalStatus = mcpClient.getConnectionStatus();
         expect(finalStatus.connected).toBe(false);
         expect(finalStatus.type).toBe(null);
-        console.log('[STREAM Test] ✓ Disconnected successfully');
+
+        // Verify client cannot be used after disconnect
+        await expect(async () => {
+          await mcpClient.listTools();
+        }).rejects.toThrow('Client not connected');
 
       } catch (error) {
         console.error('[STREAM Test] ✗ Test failed:', error);
@@ -202,8 +198,7 @@ test.describe.skip('MCP Client Transports', () => {
       }
     });
 
-    test('should handle authentication failures via STREAM', async () => {
-      const runtimePort = Number(process.env.TEST_RUNTIME_PORT);
+    test('should handle authentication failures via STREAM', async ({ runtimePort }) => {
       if (!runtimePort) {
         throw new Error('Runtime port not available');
       }
@@ -212,16 +207,12 @@ test.describe.skip('MCP Client Transports', () => {
       const mcpClient = createMCPClient();
 
       try {
-        // Try to connect with invalid master key
-        console.log('[STREAM Auth Test] Testing with invalid master key...');
-
+        // Try to connect with invalid master key - should reject
         await expect(async () => {
           await mcpClient.connectSTREAM(baseUrl, {
             masterKey: 'WSK_INVALID_KEY_FOR_TESTING',
           });
         }).rejects.toThrow();
-
-        console.log('[STREAM Auth Test] ✓ Correctly rejected invalid authentication');
 
       } finally {
         // Clean up
@@ -233,16 +224,12 @@ test.describe.skip('MCP Client Transports', () => {
       const mcpClient = createMCPClient();
 
       try {
-        console.log('[STREAM Connection Test] Testing invalid endpoint...');
-
-        // Try to connect to non-existent server
+        // Try to connect to non-existent server - should reject
         await expect(async () => {
           await mcpClient.connectSTREAM('http://localhost:9999', {
             masterKey: TEST_MASTER_KEY,
           });
         }).rejects.toThrow();
-
-        console.log('[STREAM Connection Test] ✓ Correctly handled connection failure');
 
       } finally {
         await mcpClient.disconnect();
@@ -270,8 +257,7 @@ test.describe.skip('MCP Client Transports', () => {
       }).rejects.toThrow('Client not connected');
     });
 
-    test('should throw error when connecting twice without disconnect', async () => {
-      const runtimePort = Number(process.env.TEST_RUNTIME_PORT);
+    test('should throw error when connecting twice without disconnect', async ({ runtimePort }) => {
       if (!runtimePort) {
         throw new Error('Runtime port not available');
       }

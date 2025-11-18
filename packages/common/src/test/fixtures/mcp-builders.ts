@@ -382,7 +382,9 @@ export const createToolset = async (
     }
   `;
 
-  for (let i = 0; i < nbToolsToLink; i++) {
+  const maxTools = Math.min(nbToolsToLink, toolResult.mcpTools.length);
+
+  for (let i = 0; i < maxTools; i++) {
     await graphql(addToolMutation, {
       mcpToolId: toolResult.mcpTools[i]!.id,
       toolSetId: toolSetResult.createToolSet.id,

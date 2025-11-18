@@ -18,6 +18,9 @@ import type { SeedData, DatabaseState } from '../fixtures/seed-data.types';
 import { startRuntime, stopRuntime } from '@2ly/common/test/test.containers';
 import { seedPresets } from '../fixtures/seed-data.presets';
 
+// Worker-scoped storage for runtime port
+let currentRuntimePort: number | null = null;
+
 /**
  * Playwright-specific database fixture interface
  */
@@ -48,6 +51,11 @@ export interface DatabaseFixture {
    * Default workspace ID (available after resetDatabase)
    */
   workspaceId: string;
+
+  /**
+   * Runtime port (available after resetDatabase with shouldStartRuntime=true)
+   */
+  runtimePort: number | null;
 }
 
 /**
@@ -68,7 +76,10 @@ export const test = base.extend<DatabaseFixture>({
       }
       await coreResetDatabase();
       if (shouldStartRuntime) {
-        await startRuntime();
+        const port = await startRuntime();
+        currentRuntimePort = port;
+      } else {
+        currentRuntimePort = null;
       }
     };
     await use(reset);
@@ -113,6 +124,15 @@ export const test = base.extend<DatabaseFixture>({
       throw new Error('No workspace found. Did you call resetDatabase first?');
     }
     await use(workspaceId);
+  },
+
+  /**
+   * Runtime port fixture
+   * Makes runtime port available in tests after resetDatabase(true) is called
+   */
+  // eslint-disable-next-line no-empty-pattern
+  runtimePort: async ({ }, use) => {
+    await use(currentRuntimePort);
   },
 });
 
