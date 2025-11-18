@@ -15,6 +15,7 @@
 import type { SeedData } from './seed-data.types';
 import { dgraphQL } from './dgraph-client';
 import { hashPassword } from '@2ly/common/test/test.containers';
+import { testWarn } from '../test.containers.logger';
 
 // ============================================================================
 // Helper Functions
@@ -327,7 +328,7 @@ export async function seedDatabase(data: SeedData): Promise<Record<string, strin
           const toolKey = tool.name.replace(/[^a-zA-Z0-9]/g, '_');
           entityIds[toolKey] = result.addMCPTool.mCPTool[0].id;
         } catch (error) {
-          console.warn(`Failed to seed tool ${tool.name}:`, error);
+          testWarn(`Failed to seed tool ${tool.name}:`, error);
         }
       }
     }
@@ -396,12 +397,12 @@ export async function seedDatabase(data: SeedData): Promise<Record<string, strin
             try {
               await dgraphQL(linkMutation, { toolSetId });
             } catch (error) {
-              console.warn(`Failed to link tools to toolSet ${toolSet.name}:`, error);
+              testWarn(`Failed to link tools to toolSet ${toolSet.name}:`, error);
             }
           }
         }
       } catch (error) {
-        console.warn(`Failed to seed toolSet ${toolSet.name}:`, error);
+        testWarn(`Failed to seed toolSet ${toolSet.name}:`, error);
       }
     }
   }
@@ -445,7 +446,7 @@ export async function seedDatabase(data: SeedData): Promise<Record<string, strin
             ...(executedById ? { executedById } : {}),
           });
         } catch (error) {
-          console.warn('Failed to seed tool call:', error);
+          testWarn('Failed to seed tool call:', error);
         }
       }
     }

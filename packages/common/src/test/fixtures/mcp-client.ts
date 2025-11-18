@@ -137,9 +137,6 @@ export class MCPClientFixture {
     if (auth.toolsetName) headers['toolset_name'] = auth.toolsetName;
 
     const url = new URL(`${baseUrl}/mcp`);
-    const url2 = `${baseUrl}/mcp`;
-    console.log('connectSTREAM url', url2);
-    console.log('connectSTREAM headers', headers);
 
     this.transport = new StreamableHTTPClientTransport(url, {
       requestInit: {

@@ -22,7 +22,6 @@ import { TEST_MASTER_KEY } from '@2ly/common/test/test.containers';
 test.describe.skip('MCP Client Transports', () => {
   // Configure tests to run serially (one at a time)
   // test.describe.configure({ mode: 'serial' });
-  console.log('testing transports');
   test.beforeEach(async ({ page, resetDatabase, seedDatabase, graphql }) => {
     // Reset database and start runtime with HTTP server (port 3001)
     console.log('resetting database');

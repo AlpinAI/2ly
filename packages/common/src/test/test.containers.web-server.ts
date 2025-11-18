@@ -1,5 +1,6 @@
 import Fastify, { FastifyRequest, FastifyReply } from 'fastify';
 import getPort from 'get-port';
+import { testLog } from './test.containers.logger';
 
 const fastify = Fastify();
 
@@ -7,7 +8,7 @@ export const startControllerServer = async (): Promise<number> => {
     const port = await getPort();
     process.env.TEST_CONTROLLER_SERVER_PORT = String(port);
     await fastify.listen({ port, host: '0.0.0.0' });
-    console.log('Test web server listening on port', port);
+    testLog(`Test web server listening on port: ${port}`);
     return port;
 };
 

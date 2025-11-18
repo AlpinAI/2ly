@@ -23,11 +23,7 @@ export default async function globalSetup() {
 
   // Initialize test environment with minimal logging
   testEnv = new TestEnvironment({
-    startBackend: true,
-    logging: {
-      enabled: false, // Disable verbose TestEnvironment logs
-      verbose: false,
-    },
+    logging: false,
   });
 
   try {

@@ -24,19 +24,9 @@ import * as path from 'path';
 import { TEST_ENCRYPTION_KEY, TEST_MASTER_KEY, TEST_RUNTIME_ROUTE, TEST_RUNTIME_STOP_ROUTE } from './test.containers.constants';
 import { findProjectRoot, waitForHealth } from './test.containers.helpers';
 import { startControllerServer, registerRoute, callRoute } from './test.containers.web-server';
+import { testLog, testError } from './test.containers.logger';
 
 export interface TestEnvironmentConfig {
-  /**
-   * Whether to start the backend container
-   * @default true
-   */
-  startBackend?: boolean;
-
-  /**
-   * Whether to prepare the runtime container
-   * @default false
-   */
-  prepareRuntime?: boolean;
 
   /**
    * Project root directory (where packages/ folder is located)
@@ -52,26 +42,7 @@ export interface TestEnvironmentConfig {
   /**
    * Logging configuration
    */
-  logging?: {
-    enabled: boolean;
-    verbose?: boolean;
-  };
-  
-  /**
-   * Use existing backend image instead of building locally
-   * Format: '2ly-backend-test:latest'
-   * @default undefined (build locally)
-   */
-  backendImage?: string;
-
-  /**
-   * Use published runtime image instead of building locally
-   * Format: '2ly-runtime-test:latest'
-   * @default undefined (build locally)
-   */
-  runtimeImage?: string;
-
-  startedRuntime?: StartedTestContainer | null;
+  logging?: boolean;
 }
 
 export interface TestEnvironmentServices {
@@ -95,40 +66,26 @@ export interface TestEnvironmentServices {
     apiUrl: string;
     healthUrl: string;
   };
+  runtime?: {
+    container: GenericContainer;
+    startedContainer?: StartedTestContainer;
+  }
 }
 
 export class TestEnvironment {
   private network?: StartedNetwork;
   private services?: TestEnvironmentServices;
   private tempKeyDir?: string;
-  private config: Omit<Required<TestEnvironmentConfig>, 'backendImage' | 'runtimeImage'> & { backendImage?: string; runtimeImage?: string };
+  private config: Required<TestEnvironmentConfig>;
 
   constructor(config: TestEnvironmentConfig = {}) {
     this.config = {
-      startBackend: config.startBackend ?? true,
-      prepareRuntime: config.prepareRuntime ?? false,
       projectRoot: config.projectRoot ?? findProjectRoot(),
       backendEnv: config.backendEnv ?? {},
-      logging: {
-        enabled: config.logging?.enabled ?? false,
-        verbose: config.logging?.verbose ?? false,
-      },
-      backendImage: config.backendImage,
-      runtimeImage: config.runtimeImage,
-      startedRuntime: null
+      logging: config.logging ?? false,
     };
 
-    process.env.TEST_LOGGING_ENABLED = this.config.logging.enabled ? 'true' : 'false';
-  }
-
-  private log(message: string, data?: unknown): void {
-    if (this.config.logging.enabled) {
-      const timestamp = new Date().toISOString();
-      console.log(`[TestEnvironment ${timestamp}] ${message}`);
-      if (data && this.config.logging.verbose) {
-        console.log(JSON.stringify(data, null, 2));
-      }
-    }
+    process.env.TEST_LOGGING_ENABLED = this.config.logging ? 'true' : 'false';
   }
 
   /**
@@ -136,11 +93,11 @@ export class TestEnvironment {
    * Creates a temporary directory with RSA key pair
    */
   private generateJWTKeys(): string {
-    this.log('Generating JWT keys...');
+    testLog('Generating JWT keys...');
 
     // Create unique temp directory
     const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), '2ly-test-keys-'));
-    this.log('Created temp key directory', { path: tempDir });
+    testLog(`Created temp key directory: ${tempDir}`);
 
     // Generate RSA key pair with same parameters as production
     const { publicKey, privateKey } = generateKeyPairSync('rsa', {
@@ -162,7 +119,7 @@ export class TestEnvironment {
     fs.writeFileSync(privateKeyPath, privateKey);
     fs.writeFileSync(publicKeyPath, publicKey);
 
-    this.log('JWT keys generated and written to temp directory');
+    testLog('JWT keys generated and written to temp directory');
 
     // Store temp directory for cleanup
     this.tempKeyDir = tempDir;
@@ -174,11 +131,11 @@ export class TestEnvironment {
    * Start all test environment services
    */
   async start(): Promise<TestEnvironmentServices> {
-    this.log('Starting test environment...');
+    testLog('Starting test environment...');
 
     // Create network for container communication
     this.network = await new Network().start();
-    this.log('Network created', { networkId: this.network?.getId() });
+    testLog(`Network created: ${this.network?.getId()}`);
 
     // Start services in dependency order
     const natsContainer = await this.startNats();
@@ -192,29 +149,20 @@ export class TestEnvironment {
     };
 
     // Build Docker images in parallel (if needed)
-    const buildPromises: Promise<void>[] = [];
+    testLog(`Building backend and runtime Docker images in parallel...`);
+    const buildPromises: Promise<void>[] = [
+      this.buildBackendImage(),
+      this.buildRuntimeImage(),
+    ];
+    await Promise.all(buildPromises);
+    testLog('Backend and runtime Docker images built successfully');
+    
 
-    if (this.config.startBackend) {
-      buildPromises.push(this.buildBackendImage());
-    }
-
-    if (this.config.prepareRuntime) {
-      buildPromises.push(this.buildRuntimeImage());
-    }
-
-    if (buildPromises.length > 0) {
-      this.log(`Building ${buildPromises.length} Docker image(s) in parallel...`);
-      await Promise.all(buildPromises);
-      this.log('All Docker images built successfully');
-    }
-
-    // Start containers sequentially (still depends on service dependencies)
-    if (this.config.startBackend) {
-      const backend = await this.startBackendContainer();
-      this.services.backend = backend;
-    }
-
-    this.log('Test environment started successfully');
+    // Start containers sequentially
+    const backend = await this.startBackendContainer();
+    this.services.backend = backend;
+    
+    testLog('Test environment started successfully');
 
     registerRoute(TEST_RUNTIME_ROUTE, async (_request, reply) => {
       await this.startRuntime();
@@ -235,7 +183,7 @@ export class TestEnvironment {
    * Start NATS with JetStream
    */
   private async startNats(): Promise<TestEnvironmentServices['nats']> {
-    this.log('Starting NATS...');
+    testLog('Starting NATS...');
 
     // Use GenericContainer instead of NatsContainer to have full control over configuration
     const container = await new GenericContainer('nats:2.10-alpine')
@@ -255,7 +203,7 @@ export class TestEnvironment {
     const clientUrl = `localhost:${container.getMappedPort(4222)}`;
     const httpUrl = `http://localhost:${container.getMappedPort(8222)}`;
 
-    this.log('NATS started', { clientUrl, httpUrl });
+    testLog(`NATS started: ${clientUrl}`);
 
     process.env.TEST_NATS_CLIENT_URL = clientUrl;
 
@@ -266,7 +214,7 @@ export class TestEnvironment {
    * Start Dgraph Zero (cluster coordinator)
    */
   private async startDgraphZero(): Promise<TestEnvironmentServices['dgraphZero']> {
-    this.log('Starting Dgraph Zero...');
+    testLog('Starting Dgraph Zero...');
 
     const container = await new GenericContainer('dgraph/dgraph:latest')
       .withNetwork(this.network!)
@@ -282,11 +230,11 @@ export class TestEnvironment {
 
     const httpUrl = `http://localhost:${container.getMappedPort(6080)}`;
 
-    this.log('Dgraph Zero started', { grpcUrl, httpUrl });
+    testLog('Dgraph Zero started');
 
     // Wait for Dgraph Zero to be healthy
     const healthUrl = `http://localhost:${container.getMappedPort(6080)}/health`;
-    await waitForHealth(healthUrl, 30, 1000); // 30 retries, 1 second interval
+    await waitForHealth(healthUrl);
 
     return { container, grpcUrl, httpUrl };
   }
@@ -295,7 +243,7 @@ export class TestEnvironment {
    * Start Dgraph Alpha (data node)
    */
   private async startDgraphAlpha(): Promise<TestEnvironmentServices['dgraphAlpha']> {
-    this.log('Starting Dgraph Alpha...');
+    testLog('Starting Dgraph Alpha...');
 
     const container = await new GenericContainer('dgraph/dgraph:latest')
       .withNetwork(this.network!)
@@ -317,12 +265,12 @@ export class TestEnvironment {
 
     const graphqlUrl = `http://localhost:${container.getMappedPort(8080)}`;
 
-    this.log('Dgraph Alpha started', { grpcUrl, graphqlUrl });
+    testLog('Dgraph Alpha started');
 
     // Wait for Dgraph Alpha to be healthy
     // Dgraph Alpha needs time to connect to Zero and initialize
     const healthUrl = `http://localhost:${container.getMappedPort(8080)}/health`;
-    await waitForHealth(healthUrl, 60, 1000); // 60 retries, 1 second interval
+    await waitForHealth(healthUrl);
 
     return { container, grpcUrl, graphqlUrl };
   }
@@ -331,19 +279,14 @@ export class TestEnvironment {
    * Build backend Docker image
    */
   private async buildBackendImage(): Promise<void> {
-    if (this.config.backendImage) {
-      this.log(`Using published backend image: ${this.config.backendImage}`);
-      return;
-    }
-
-    this.log('Building backend Docker image...', { projectRoot: this.config.projectRoot });
+    testLog('Building backend Docker image...');
 
     let progressInterval: NodeJS.Timeout | undefined = undefined;
     let promiseTimeout: NodeJS.Timeout | undefined = undefined;
 
     try {
       progressInterval = setInterval(() => {
-        this.log('[Backend] Docker build still in progress...');
+        testLog('[Backend] Docker build still in progress...');
       }, 10000);
 
       const buildPromise = GenericContainer.fromDockerfile(
@@ -359,9 +302,9 @@ export class TestEnvironment {
       });
 
       await Promise.race([buildPromise, timeoutPromise]);
-      this.log('Backend Docker image built successfully');
+      testLog('Backend Docker image built successfully');
     } catch (error) {
-      this.log('Failed to build backend Docker image', error);
+      testError('Failed to build backend Docker image', error);
       throw new Error(`Backend Docker build failed: ${error instanceof Error ? error.message : String(error)}`);
     } finally {
       if (progressInterval) clearInterval(progressInterval);
@@ -373,19 +316,14 @@ export class TestEnvironment {
    * Build runtime Docker image
    */
   private async buildRuntimeImage(): Promise<void> {
-    if (this.config.runtimeImage) {
-      this.log(`Using published runtime image: ${this.config.runtimeImage}`);
-      return;
-    }
-
-    this.log('Building runtime Docker image...', { projectRoot: this.config.projectRoot });
+    testLog('Building runtime Docker image...');
 
     let progressInterval: NodeJS.Timeout | undefined = undefined;
     let promiseTimeout: NodeJS.Timeout | undefined = undefined;
 
     try {
       progressInterval = setInterval(() => {
-        this.log('[Runtime] Docker build still in progress...');
+        testLog('[Runtime] Docker build still in progress...');
       }, 10000);
 
       const buildPromise = GenericContainer.fromDockerfile(
@@ -401,9 +339,9 @@ export class TestEnvironment {
       });
 
       await Promise.race([buildPromise, timeoutPromise]);
-      this.log('Runtime Docker image built successfully');
+      testLog('Runtime Docker image built successfully');
     } catch (error) {
-      this.log('Failed to build runtime Docker image', error);
+      testError('Failed to build runtime Docker image', error);
       throw new Error(`Runtime Docker build failed: ${error instanceof Error ? error.message : String(error)}`);
     } finally {
       if (progressInterval) clearInterval(progressInterval);
@@ -419,14 +357,14 @@ export class TestEnvironment {
       throw new Error('Cannot start backend: NATS and Dgraph must be started first');
     }
 
-    this.log('Starting Backend container...');
+    testLog('Starting Backend container...');
 
     // Generate JWT keys for test environment
     const keyDir = this.generateJWTKeys();
 
     // Use the appropriate image (pre-built or locally built)
-    const imageName = this.config.backendImage || '2ly-backend-test:latest';
-    this.log(`Using backend image: ${imageName}`);
+    const imageName = '2ly-backend-test:latest';
+    testLog(`Using backend image: ${imageName}`);
 
     const containerImage = new GenericContainer(imageName);
 
@@ -462,17 +400,17 @@ export class TestEnvironment {
         .withLogConsumer((stream) => {
           // Only log ERROR and WARN lines to reduce noise
           stream.on('data', (line) => {
-            this.log(`[Backend] ${line}`);
+            testLog(`[Backend] ${line.trim()}`);
           });
-          stream.on('err', (line) => this.log(`[Backend ERROR] ${line}`));
+          stream.on('err', (line) => testError(`[Backend ERROR] ${line}`));
         })
         .start();
 
-      this.log('Backend container started, waiting for initialization...');
+      testLog('Backend container started, waiting for initialization...');
       // Give backend time to initialize connections
       await new Promise((resolve) => setTimeout(resolve, 3000)); // 3 seconds
     } catch (error) {
-      this.log('Failed to start backend container', error);
+      testError('Failed to start backend container', error);
       throw error;
     }
 
@@ -480,79 +418,67 @@ export class TestEnvironment {
 
     const healthUrl = `${apiUrl}/health`;
 
-    this.log('Backend started', { apiUrl, healthUrl });
+    await waitForHealth(healthUrl);
+    testLog(`Backend started: ${apiUrl}`);
     return { container: started, apiUrl, healthUrl };
   }
 
 
   async startRuntime(): Promise<void> {
-    if (this.config.startedRuntime) {
+    if (this.services?.runtime?.startedContainer) {
       return;
     }
-    if (process.env.TEST_LOGGING_ENABLED === 'true') {
-      console.log('Starting runtime...');
-    }
+    testLog('Starting runtime...');
     const runtimeName = 'Test Runtime';
     const runtimePort = 3001;
 
     // Use the appropriate image (pre-built or locally built)
-    const imageName = this.config.runtimeImage || '2ly-runtime-test:latest';
-    const container = new GenericContainer(imageName)
-      .withNetwork(this.network!)
-      .withEnvironment({
-        NODE_ENV: 'test',
-        LOG_LEVEL: 'debug',
-        NATS_SERVERS: 'nats:4222',
-        RUNTIME_NAME: runtimeName,
-        ROOTS: `TEMP:/tmp`,
-        MASTER_KEY: TEST_MASTER_KEY,
-        REMOTE_PORT: String(runtimePort),      // Enable HTTP server for SSE/STREAM transports 
-        REMOTE_HOST: '0.0.0.0',
-        FORWARD_STDERR: 'false',  // Disable forwarding of stderr to the parent process
-      })
-      // No exposed ports needed - runtime communicates via NATS
-      .withExposedPorts(runtimePort)
-      .withWaitStrategy(Wait.forListeningPorts())
-      .withStartupTimeout(60000) // 1 minute for startup
-      .withLogConsumer((stream) => {
-        // Only log ERROR and WARN lines to reduce noise
-        stream.on('data', (line) => {
-          if (process.env.TEST_LOGGING_ENABLED === 'true') {
-            console.log(`[Runtime] ${line}`);
-          }
+    const imageName = '2ly-runtime-test:latest';
+    if (!this.services?.runtime?.container) {
+      const container = new GenericContainer(imageName)
+        .withNetwork(this.network!)
+        .withEnvironment({
+          NODE_ENV: 'test',
+          LOG_LEVEL: 'debug',
+          NATS_SERVERS: 'nats:4222',
+          RUNTIME_NAME: runtimeName,
+          ROOTS: `TEMP:/tmp`,
+          MASTER_KEY: TEST_MASTER_KEY,
+          REMOTE_PORT: String(runtimePort),      // Enable HTTP server for SSE/STREAM transports 
+          REMOTE_HOST: '0.0.0.0',
+          FORWARD_STDERR: 'false',  // Disable forwarding of stderr to the parent process
+        })
+        // No exposed ports needed - runtime communicates via NATS
+        .withExposedPorts(runtimePort)
+        .withWaitStrategy(Wait.forListeningPorts())
+        .withStartupTimeout(60000) // 1 minute for startup
+        .withLogConsumer((stream) => {
+          // Only log ERROR and WARN lines to reduce noise
+          stream.on('data', (line) => {
+            testLog(`[Runtime] ${line.trim()}`);
+          });
+          stream.on('err', (line) => testError(`[Runtime ERROR] ${line}`));
         });
-        stream.on('err', (line) => console.log(`[Runtime ERROR] ${line}`));
-      });
+      this.services!.runtime = { container };
+    }
   
-    this.config.startedRuntime = await container.start();
+    this.services!.runtime!.startedContainer = await this.services!.runtime!.container.start();
   
     // Store mapped port for tests to access
-    const runtimeExposedPort = this.config.startedRuntime?.getMappedPort(runtimePort);
+    const runtimeExposedPort = this.services!.runtime!.startedContainer?.getMappedPort(runtimePort);
     process.env.TEST_RUNTIME_PORT = String(runtimeExposedPort);
-    if (process.env.TEST_LOGGING_ENABLED === 'true') {
-      console.log(`Runtime HTTP server listening on port ${runtimeExposedPort}`);
-    }
+    testLog(`Runtime HTTP server listening on port ${runtimeExposedPort}`);
+
     const healthUrl = `http://localhost:${runtimeExposedPort}/health`;
-    const maxRetries = 60;
-    const intervalMs = 1000;
-    console.log(`Waiting for health check: ${healthUrl}`, { maxRetries, intervalMs });
-    try {
-      await waitForHealth(healthUrl, maxRetries, intervalMs, true);
-      console.log('Runtime health check passed');
-    } catch (error) {
-      console.log(error instanceof Error ? error.message : String(error));
-      throw error;
-    }
+    await waitForHealth(healthUrl);
   };
   
   async stopRuntime(): Promise<void> {
-    if (this.config.startedRuntime !== null) {
-      await this.config.startedRuntime.stop({ timeout: 10000 });
-      this.config.startedRuntime = null;
+    if (this.services?.runtime?.startedContainer) {
+      await this.services.runtime.startedContainer.stop({ timeout: 10000 });
+      this.services.runtime.startedContainer = undefined;
       delete process.env.TEST_RUNTIME_PORT;
-      if (process.env.TEST_LOGGING_ENABLED === 'true') {
-        console.log('Runtime stopped');
-      }
+      testLog('Runtime stopped');
     }
   };
 
@@ -595,18 +521,25 @@ export class TestEnvironment {
    * Stop all services and cleanup
    */
   async stop(): Promise<void> {
-    this.log('Stopping test environment...');
+    testLog('Stopping test environment...');
 
     const errors: Error[] = [];
 
     try {
 
+      try {
+        await this.stopRuntime();
+      } catch (error) {
+        testError('Error stopping runtime', error);
+        errors.push(error instanceof Error ? error : new Error(String(error)));
+      }
+
       if (this.services?.backend) {
         try {
           await this.services.backend.container.stop({ timeout: 10000 });
-          this.log('Backend stopped');
+          testLog('Backend stopped');
         } catch (error) {
-          this.log('Error stopping backend', error);
+          testError('Error stopping backend', error);
           errors.push(error instanceof Error ? error : new Error(String(error)));
         }
       }
@@ -614,14 +547,14 @@ export class TestEnvironment {
       // Clean up temp JWT keys
       if (this.tempKeyDir) {
         try {
-          this.log('Cleaning up temp JWT keys', { path: this.tempKeyDir });
+          testLog('Cleaning up temp JWT keys');
           fs.unlinkSync(path.join(this.tempKeyDir, 'private.pem'));
           fs.unlinkSync(path.join(this.tempKeyDir, 'public.pem'));
           fs.rmdirSync(this.tempKeyDir);
           this.tempKeyDir = undefined;
-          this.log('Temp JWT keys cleaned up');
+          testLog('Temp JWT keys cleaned up');
         } catch (error) {
-          this.log('Error cleaning up temp JWT keys', error);
+          testError('Error cleaning up temp JWT keys', error);
           errors.push(error instanceof Error ? error : new Error(String(error)));
         }
       }
@@ -629,9 +562,9 @@ export class TestEnvironment {
       if (this.services?.dgraphAlpha) {
         try {
           await this.services.dgraphAlpha.container.stop({ timeout: 5000 });
-          this.log('Dgraph Alpha stopped');
+          testLog('Dgraph Alpha stopped');
         } catch (error) {
-          this.log('Error stopping Dgraph Alpha', error);
+          testError('Error stopping Dgraph Alpha', error);
           errors.push(error instanceof Error ? error : new Error(String(error)));
         }
       }
@@ -639,9 +572,9 @@ export class TestEnvironment {
       if (this.services?.dgraphZero) {
         try {
           await this.services.dgraphZero.container.stop({ timeout: 5000 });
-          this.log('Dgraph Zero stopped');
+          testLog('Dgraph Zero stopped');
         } catch (error) {
-          this.log('Error stopping Dgraph Zero', error);
+          testError('Error stopping Dgraph Zero', error);
           errors.push(error instanceof Error ? error : new Error(String(error)));
         }
       }
@@ -649,9 +582,9 @@ export class TestEnvironment {
       if (this.services?.nats) {
         try {
           await this.services.nats.container.stop({ timeout: 5000 });
-          this.log('NATS stopped');
+          testLog('NATS stopped');
         } catch (error) {
-          this.log('Error stopping NATS', error);
+          testError('Error stopping NATS', error);
           errors.push(error instanceof Error ? error : new Error(String(error)));
         }
       }
@@ -659,9 +592,9 @@ export class TestEnvironment {
       if (this.network) {
         try {
           await this.network.stop();
-          this.log('Network stopped');
+          testLog('Network stopped');
         } catch (error) {
-          this.log('Error stopping network', error);
+          testError('Error stopping network', error);
           errors.push(error instanceof Error ? error : new Error(String(error)));
         }
       }
@@ -669,14 +602,14 @@ export class TestEnvironment {
       this.services = undefined;
       this.network = undefined;
 
-      this.log('Test environment stopped successfully');
+      testLog('Test environment stopped successfully');
 
       if (errors.length > 0) {
-        this.log(`Encountered ${errors.length} errors during cleanup`);
+        testError(`Encountered ${errors.length} errors during cleanup`);
         // Don't throw, just log - we want cleanup to complete
       }
     } catch (error) {
-      this.log('Error stopping test environment', error);
+      testError('Error stopping test environment', error);
       throw error;
     }
   }

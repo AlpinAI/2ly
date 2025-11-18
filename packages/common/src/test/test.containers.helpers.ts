@@ -1,5 +1,6 @@
 import * as path from 'path';
 import * as fs from 'fs';
+import { testLog, testError } from './test.containers.logger';
 
 /**
  * Find the project root by looking for package.json with workspaces
@@ -33,10 +34,9 @@ export function findProjectRoot(startDir: string = process.cwd()): string {
      * @param maxRetries - Maximum number of retry attempts
      * @param intervalMs - Delay between retries in milliseconds
      */
-  export async function waitForHealth(url: string, maxRetries: number, intervalMs: number, log = false): Promise<void> {
-    if (log) {
-      console.log(`Waiting for health check: ${url}`, { maxRetries, intervalMs });
-    }
+  export async function waitForHealth(url: string, maxRetries: number = 10, intervalMs: number = 1000): Promise<void> {
+    testLog(`Waiting for health check: ${url}, maxRetries: ${maxRetries}, intervalMs: ${intervalMs}`);
+
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
       try {
         const response = await fetch(url);
@@ -44,17 +44,14 @@ export function findProjectRoot(startDir: string = process.cwd()): string {
           return;
         }
       } catch (error) {
-        if (log) {
-          console.log(`Health check failed: ${url}`, { attempt, error: error instanceof Error ? error.message : String(error) });
-        }
+        testLog(`Health check failed: ${url}, attempt: ${attempt}, error: ${error instanceof Error ? error.message : String(error)}`);
       }
-  
+
       if (attempt < maxRetries) {
         await new Promise((resolve) => setTimeout(resolve, intervalMs));
       }
     }
-    if (log) {
-      console.log(`Health check failed after ${maxRetries} attempts: ${url}`);
-    }
+
+    testError(`Health check failed after ${maxRetries} attempts: ${url}`);
     throw new Error(`Health check failed after ${maxRetries} attempts: ${url}`);
   }

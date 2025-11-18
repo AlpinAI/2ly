@@ -383,14 +383,12 @@ export const createToolset = async (
   `;
 
   for (let i = 0; i < nbToolsToLink; i++) {
-    console.log('adding tool', i, toolResult.mcpTools[i]!.id);
     await graphql(addToolMutation, {
       mcpToolId: toolResult.mcpTools[i]!.id,
       toolSetId: toolSetResult.createToolSet.id,
     });
   }
 
-  console.log('toolset created', toolSetResult.createToolSet.id);
   return {
     toolsetId: toolSetResult.createToolSet.id,
   };

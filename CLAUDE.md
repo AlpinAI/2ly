@@ -143,24 +143,19 @@ The project uses three types of tests with different tools and purposes:
 - **Run**: `npm run test:e2e`
 
 #### E2E Test Organization
-Tests are organized into three strategies:
+Tests are organized into two strategies:
 
-**clean/** - Fresh database for each test
-- Tests that need an empty database
-- Run sequentially (workers: 1)
-- Example: `init.spec.ts`, `backend-api.spec.ts`
+**serial/** - Sequential execution
+- Tests that need specific database states and must run sequentially
+- Run sequentially (workers: 1) to prevent database race conditions
+- Each test chooses its own reset/seed strategy (beforeEach vs beforeAll)
+- Example: `init.spec.ts`, `login.spec.ts`, `routing.spec.ts`, `onboarding.spec.ts`
 
-**seeded/** - Pre-populated database
-- Tests that need predefined data (workspaces, users, etc.)
-- Database is reset and seeded before each describe block
-- Run sequentially (workers: 1)
-- Example: `login.spec.ts`, `routing.spec.ts`
-
-**parallel/** - Order-independent UI tests
-- UI-focused tests that can run in any order
-- Pre-seeded database shared across tests
-- Run in parallel for speed
-- Example: `workspace-ui.spec.ts`, `password-validation.spec.ts`
+**parallel/** - Parallel execution
+- UI-focused tests that can run with multiple workers
+- Tests don't depend on specific database state
+- Can run in any order for speed
+- Example: `password-validation.spec.ts`
 
 ### Test Mocking Patterns
 - **Apollo Mocks**: Mock components using Apollo hooks instead of wrapping in providers
