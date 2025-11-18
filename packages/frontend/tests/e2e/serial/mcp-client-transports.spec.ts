@@ -19,7 +19,7 @@ import { createToolset } from '@2ly/common/test/fixtures/mcp-builders';
 import { createMCPClient } from '@2ly/common/test/fixtures/playwright';
 import { TEST_MASTER_KEY } from '@2ly/common/test/test.containers';
 
-test.describe.only('MCP Client Transports', () => {
+test.describe('MCP Client Transports', () => {
   // Configure tests to run serially (one at a time)
   // test.describe.configure({ mode: 'serial' });
   test.beforeEach(async ({ page, resetDatabase, seedDatabase, graphql }) => {
@@ -269,12 +269,14 @@ test.describe.only('MCP Client Transports', () => {
         // First connection
         await mcpClient.connectSTREAM(baseUrl, {
           masterKey: TEST_MASTER_KEY,
+          toolsetName: 'My tool set',
         });
 
         // Try to connect again without disconnecting
         await expect(async () => {
           await mcpClient.connectSTREAM(baseUrl, {
             masterKey: TEST_MASTER_KEY,
+            toolsetName: 'My tool set',
           });
         }).rejects.toThrow('Client already connected');
 
@@ -287,9 +289,7 @@ test.describe.only('MCP Client Transports', () => {
       const mcpClient = createMCPClient();
 
       // Should not throw error
-      await expect(async () => {
-        await mcpClient.disconnect();
-      }).resolves.not.toThrow();
+      await mcpClient.disconnect();
 
       // Verify still not connected
       const status = mcpClient.getConnectionStatus();
