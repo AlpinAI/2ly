@@ -8,8 +8,6 @@
     "declaration": true,
     "skipLibCheck": true,
     "experimentalDecorators": true,
-    "emitDecoratorMetadata": true,
-    "noEmit": true,
-    "allowImportingTsExtensions": true,
+    "emitDecoratorMetadata": true
   }
 }
