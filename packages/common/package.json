@@ -45,6 +45,13 @@
         "default": "./src/test/playwright/index.ts"
       },
       "types": "./src/test/playwright/index.ts"
+    },
+    "./test/fixtures/mcp-test-helpers": {
+      "import": {
+        "types": "./src/test/fixtures/mcp-test-helpers.ts",
+        "default": "./src/test/fixtures/mcp-test-helpers.ts"
+      },
+      "types": "./src/test/fixtures/mcp-test-helpers.ts"
     }
   },
   "scripts": {

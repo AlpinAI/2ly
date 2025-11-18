@@ -48,8 +48,8 @@ export function testError(message: string, error?: unknown): void {
  * @param data Optional data to log
  */
 export function testWarn(message: string, data?: unknown): void {
-  const timestamp = new Date().toISOString();
-  console.warn(`[TestEnvironment WARN ${timestamp}] ${message}`);
+  const time = new Date().toISOString().slice(11, 23);
+  console.warn(`[TestEnvironment WARN ${time}] ${message}`);
   if (data !== undefined) {
     console.warn(JSON.stringify(data, null, 2));
   }

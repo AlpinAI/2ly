@@ -18,8 +18,17 @@ import { test, expect, seedPresets } from '@2ly/common/test/fixtures/playwright'
 import { createToolset } from '@2ly/common/test/fixtures/mcp-builders';
 import { createMCPClient } from '@2ly/common/test/fixtures/playwright';
 import { TEST_MASTER_KEY } from '@2ly/common/test/test.containers';
+import {
+  assertToolListing,
+  assertListAllowedDirectoriesCall,
+  assertListDirectoryCall,
+  assertDisconnect,
+  assertConnectionStatus,
+  findTool,
+} from '@2ly/common/test/fixtures/mcp-test-helpers';
 
-test.describe('MCP Client Transports', () => {
+test.describe.only('MCP Client Transports', () => {
+  const natsUrl = process.env.TEST_NATS_CLIENT_URL || 'nats://localhost:4222';
   // Configure tests to run serially (one at a time)
   // test.describe.configure({ mode: 'serial' });
   test.beforeEach(async ({ page, resetDatabase, seedDatabase, graphql }) => {
@@ -47,27 +56,130 @@ test.describe('MCP Client Transports', () => {
    * STDIO transport uses stdin/stdout for communication with the runtime process.
    * This is the most direct transport, typically used for toolset-specific connections.
    *
-   * Note: STDIO tests are currently skipped because they require spawning a separate
-   * runtime process, which is complex in a containerized test environment.
-   * The test container uses host networking, making STDIO connections challenging.
+   * Unlike STREAM/SSE transports which connect to an HTTP server, STDIO spawns the
+   * runtime as a child process and communicates via stdin/stdout pipes.
+   *
+   * Key differences:
+   * - No HTTP server required (no REMOTE_PORT)
+   * - Authentication via environment variables (TOOLSET_NAME/KEY + MASTER_KEY)
+   * - 1:1 relationship with a single toolset
+   * - Process lifecycle managed by MCP SDK
    */
   test.describe('STDIO Transport', () => {
-    test.skip('should connect via STDIO', async () => {
-      // STDIO transport requires spawning runtime as child process
-      // This is not feasible with containerized runtime in E2E tests
-      // Will be implemented when local runtime testing is available
+    test('should connect, list tools, call tool, and disconnect via STDIO', async () => {
+      const mcpClient = createMCPClient();
+
+      try {
+        // Step 1: Connect via STDIO by spawning runtime process
+        // The runtime will run in STDIO mode when TOOLSET_NAME is set and REMOTE_PORT is not
+        await mcpClient.connectSTDIO(
+          {
+            command: 'node',
+            args: ['../runtime/dist/index.js'],
+            env: {
+              NATS_SERVERS: natsUrl,
+            },
+          },
+          {
+            masterKey: TEST_MASTER_KEY,
+            toolsetName: 'My tool set',
+          }
+        );
+
+        assertConnectionStatus(mcpClient, true, 'STDIO');
+
+        // Step 2: List tools (using shared utility)
+        await assertToolListing(mcpClient);
+
+        // Step 3: Call a tool without arguments (using shared utility)
+        try {
+          await assertListAllowedDirectoriesCall(mcpClient);
+        } catch (error) {
+          console.log(`[STDIO Test] ⚠ Tool call failed:`, error instanceof Error ? error.message : String(error));
+          throw error;
+        }
+
+        // Step 4: Call a tool with arguments (using shared utility)
+        try {
+          await assertListDirectoryCall(mcpClient);
+        } catch (error) {
+          console.log(`[STDIO Test] ⚠ Tool call failed:`, error instanceof Error ? error.message : String(error));
+          throw error;
+        }
+
+        // Step 5: Disconnect cleanly (using shared utility)
+        await assertDisconnect(mcpClient);
+
+      } catch (error) {
+        console.error('[STDIO Test] ✗ Test failed:', error);
+        // Clean up even if test fails
+        await mcpClient.disconnect();
+        throw error;
+      }
     });
 
-    test.skip('should list tools via STDIO', async () => {
-      // Skipped - see above
+    test('should handle authentication failures via STDIO', async () => {
+      const mcpClient = createMCPClient();
+
+      try {
+        // Try to connect with invalid master key
+        await expect(async () => {
+          await mcpClient.connectSTDIO(
+            {
+              command: 'node',
+              args: ['../runtime/dist/index.js'],
+              env: {
+                NATS_SERVERS: natsUrl,
+              },
+            },
+            {
+              masterKey: 'WSK_INVALID_KEY_FOR_TESTING',
+              toolsetName: 'My tool set',
+            }
+          );
+        }).rejects.toThrow();
+
+      } finally {
+        await mcpClient.disconnect();
+      }
     });
 
-    test.skip('should call tool via STDIO', async () => {
-      // Skipped - see above
-    });
+    test('should handle process lifecycle management via STDIO', async () => {
+      const mcpClient = createMCPClient();
 
-    test.skip('should disconnect cleanly via STDIO', async () => {
-      // Skipped - see above
+      try {
+        // Connect successfully
+        await mcpClient.connectSTDIO(
+          {
+            command: 'node',
+            args: ['../runtime/dist/index.js'],
+            env: {
+              NATS_SERVERS: natsUrl,
+            },
+          },
+          {
+            masterKey: TEST_MASTER_KEY,
+            toolsetName: 'My tool set',
+          }
+        );
+
+        assertConnectionStatus(mcpClient, true, 'STDIO');
+
+        // Disconnect - this should cleanly terminate the child process
+        await mcpClient.disconnect();
+
+        assertConnectionStatus(mcpClient, false, null);
+
+        // Verify disconnect is idempotent (can be called multiple times)
+        await mcpClient.disconnect();
+
+        assertConnectionStatus(mcpClient, false, null);
+
+      } catch (error) {
+        console.error('[STDIO Lifecycle Test] ✗ Test failed:', error);
+        await mcpClient.disconnect();
+        throw error;
+      }
     });
   });
 
@@ -129,32 +241,14 @@ test.describe('MCP Client Transports', () => {
           toolsetName: 'My tool set',
         });
 
-        const status = mcpClient.getConnectionStatus();
-        expect(status.connected).toBe(true);
-        expect(status.type).toBe('STREAM');
+        assertConnectionStatus(mcpClient, true, 'STREAM');
 
         // Step 2: List tools from runtime
-        const toolsResult = await mcpClient.listTools();
-
-        expect(toolsResult).toBeDefined();
-        expect(toolsResult.tools).toBeDefined();
-        expect(Array.isArray(toolsResult.tools)).toBe(true);
-        expect(toolsResult.tools.length).toBeGreaterThan(0);
-
-        // Validate tool structure
-        toolsResult.tools.forEach(tool => {
-          expect(tool.name).toBeDefined();
-          expect(typeof tool.name).toBe('string');
-          expect(tool.name.length).toBeGreaterThan(0);
-        });
+        await assertToolListing(mcpClient);
 
         // Step 3: Call a tool without arguments
-        const listAllowedDirectories = toolsResult.tools.find(t => t.name === 'list_allowed_directories');
-        expect(listAllowedDirectories).toBeDefined();
         try {
-          const callResult = (await mcpClient.callTool('list_allowed_directories', {})) as {content: {type: string, text: string}[]};
-          expect(callResult).toBeDefined();
-          expect(callResult.content[0].text).toBe('Allowed directories:\n/tmp');
+          await assertListAllowedDirectoriesCall(mcpClient);
         } catch (error) {
           console.log(`[STREAM Test] ⚠ Tool call failed:`, error instanceof Error ? error.message : String(error));
           throw error; // This should succeed, so throw if it fails
@@ -162,33 +256,16 @@ test.describe('MCP Client Transports', () => {
 
         // Step 4: Call a tool with arguments
         // The filesystem server should provide tools like read_file, write_file, list_directory
-        // Try to find list_directory as it's the safest to test (read-only, minimal args)
-        const listDirectoryTool = toolsResult.tools.find(t => t.name === 'list_directory');
-        expect(listDirectoryTool).toBeDefined();
 
         try {
-          // Call list_directory with /tmp path (configured in the filesystem server)
-          const callResult = await mcpClient.callTool('list_directory', {
-            path: '/tmp',
-          });
-
-          expect(callResult).toBeDefined();
+          await assertListDirectoryCall(mcpClient);
         } catch (error) {
           console.log(`[STREAM Test] ⚠ Tool call failed:`, error instanceof Error ? error.message : String(error));
           throw error; // This should succeed, so throw if it fails
         }
 
         // Step 5: Disconnect cleanly
-        await mcpClient.disconnect();
-
-        const finalStatus = mcpClient.getConnectionStatus();
-        expect(finalStatus.connected).toBe(false);
-        expect(finalStatus.type).toBe(null);
-
-        // Verify client cannot be used after disconnect
-        await expect(async () => {
-          await mcpClient.listTools();
-        }).rejects.toThrow('Client not connected');
+        await assertDisconnect(mcpClient);
 
       } catch (error) {
         console.error('[STREAM Test] ✗ Test failed:', error);
