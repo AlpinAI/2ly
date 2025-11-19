@@ -58,6 +58,7 @@ export class IdentityService extends Service {
     }
     this.subscriptions = [];
     await this.stopService(this.natsService);
+    this.logger.info('Stopped');
   }
 
   private async handleHandshakes() {

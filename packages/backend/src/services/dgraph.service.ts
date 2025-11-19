@@ -77,6 +77,7 @@ export class DGraphService extends Service {
     this.subscriptionClient?.close();
     this.subscriptionClient = undefined;
     this.urqlClient = undefined;
+    this.logger.info('Stopped');
   }
 
   private async initGraphQLSchema() {

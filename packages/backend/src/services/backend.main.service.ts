@@ -67,6 +67,7 @@ export class MainService extends Service {
       this.stopService(this.dgraphService),
       this.stopService(this.toolSetService),
     ]);
+    this.logger.info('All services stopped');
     this.logActiveServices();
     this.removeGracefulShutdownHandlers();
     this.logger.info('Stopped');

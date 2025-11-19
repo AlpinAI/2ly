@@ -96,7 +96,7 @@ export class ToolServerService extends Service {
 
       // Use common transport builder
       const defaultEnv = getDefaultEnvironment();
-      const stdioConfig = buildStdioTransport(parsedConfig as ServerPackage, defaultEnv);
+      const stdioConfig = buildStdioTransport(parsedConfig as ServerPackage, {...defaultEnv, LOG_LEVEL: 'silent'});
       this.logger.info(`STDIO config: ${stdioConfig}`);
 
       this.transport = new StdioClientTransport({

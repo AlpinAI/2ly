@@ -442,7 +442,7 @@ export class TestEnvironment {
         .withNetwork(this.network!)
         .withEnvironment({
           NODE_ENV: 'test',
-          LOG_LEVEL: 'info',
+          LOG_LEVEL: 'silent',
           NATS_SERVERS: 'nats:4222',
           RUNTIME_NAME: runtimeName,
           ROOTS: `TEMP:/tmp`,

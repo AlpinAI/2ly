@@ -78,6 +78,7 @@ export class RuntimeService extends Service {
     this.runtimeInstances.clear();
     await this.stopService(this.natsService);
     await this.stopService(this.dgraphService);
+    this.logger.info('Stopped');
   }
 
   isRunning(): boolean {
