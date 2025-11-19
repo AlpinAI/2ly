@@ -12,7 +12,7 @@ import { FastifyManagerService } from './fastify.manager.service';
 import { McpSseService } from './mcp.sse.service';
 import { McpStreamableService } from './mcp.streamable.service';
 import { ToolService } from './tool.service';
-import { AuthService } from './auth.service';
+import { AuthService, PermanentAuthenticationError } from './auth.service';
 import { RUNTIME_MODE, type RuntimeMode } from '../di/symbols';
 
 @injectable()
@@ -70,7 +70,17 @@ export class MainService extends Service {
         // Start NATS service
         await this.startService(this.natsService);
         // Login and retrieve identity
-        await this.startService(this.authService);
+        try {
+          await this.startService(this.authService);
+        } catch (error) {
+          if (error instanceof PermanentAuthenticationError) {
+            this.logger.error(`Permanent authentication failure: ${error.message}`);
+            this.logger.error('Cannot recover from authentication failure. Process will exit.');
+            await this.gracefulShutdown('AUTH_FAILURE');
+            return;
+          }
+          throw error;
+        }
         // Start heartbeat
         await this.startService(this.healthService);
         // Subscribe to RuntimeReconnectMessage after NATS is connected

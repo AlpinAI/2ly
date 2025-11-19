@@ -6,6 +6,8 @@ import { v4 as uuidv4 } from 'uuid';
 import pino from 'pino';
 import fs from 'fs';
 
+export class PermanentAuthenticationError extends Error {};
+
 /**
  * AuthService manages both runtime identity and authentication credentials.
  *
@@ -47,7 +49,18 @@ export class AuthService extends Service {
       await this.handshake();
     } catch (error) {
       this.logger.error(`Failed to handshake: ${error}`);
-      this.stopService(this.natsService);
+      await this.stopService(this.natsService);
+      const errorMessage = error instanceof Error ? error.message : String(error);
+
+      // Detect permanent authentication failures that should not retry
+      const isPermanentAuthFailure =
+        errorMessage.includes('NOT_FOUND') ||
+        errorMessage.includes('EXPIRED') ||
+        errorMessage.includes('REVOKED');
+
+      if (isPermanentAuthFailure) {
+        throw new PermanentAuthenticationError(errorMessage);
+      }
       throw error;
     }
   }
