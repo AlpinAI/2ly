@@ -24,7 +24,7 @@ type McpServerRunOn = apolloResolversTypes.McpServerRunOn;
  * @returns Typed MCPServerConfig for filesystem server
  */
 export function buildFilesystemServerConfig(directoryPath = '/tmp'): MCPServerConfig {
-  return {
+  const officialFilesystemServer = {
     registryType: 'npm',
     identifier: '@modelcontextprotocol/server-filesystem',
     version: '2025.8.21',
@@ -42,6 +42,32 @@ export function buildFilesystemServerConfig(directoryPath = '/tmp'): MCPServerCo
     environmentVariables: [],
     runtimeArguments: [],
   };
+  // eslint-disable-next-line @typescript-eslint/no-unused-expressions
+  officialFilesystemServer;
+  const agentInfraFilesystemServer = {
+    registryType: 'npm',
+    registryBaseUrl: 'https://registry.npmjs.org',
+    identifier: '@agent-infra/mcp-server-filesystem',
+    version: 'latest',
+    transport: {
+      type: 'stdio',
+    },
+    packageArguments: [
+      {
+        name: 'allowed-directories',
+        description: 'Comma-separated list of allowed directories for file operations',
+        format: 'string',
+        type: 'named',
+        isRequired: true,
+        value: directoryPath,
+        isConfigurable: true,
+      } as AugmentedArgument,
+    ],
+    runtimeHint: 'npx',
+    environmentVariables: [],
+    runtimeArguments: [],
+  };
+  return agentInfraFilesystemServer;
 }
 
 /**
@@ -56,7 +82,8 @@ export function buildFilesystemRegistryServer(options?: {
   title?: string;
   workspaceId?: string;
 }): RegistryServerSeed {
-  return {
+
+  const officialFilesystemRegistryServer = {
     name: options?.name ?? '@modelcontextprotocol/server-filesystem',
     description: options?.description ?? 'FileSystem MCP server for integration testing',
     title: options?.title ?? 'FileSystem Test Server',
@@ -80,6 +107,38 @@ export function buildFilesystemRegistryServer(options?: {
         version: '2025.8.21',
       },
     ],
+  };
+  // eslint-disable-next-line @typescript-eslint/no-unused-expressions
+  officialFilesystemRegistryServer;
+  const agentInfraFilesystemRegistryServer = {
+    name: options?.name ?? '@agent-infra/mcp-server-filesystem',
+    description: options?.description ?? 'FileSystem MCP server for integration testing',
+    title: options?.title ?? 'FileSystem Test Server',
+    repositoryUrl: 'https://github.com/agent-infra/mcp-server-filesystem',
+    version: 'latest',
+    packages: [
+      {
+        identifier: '@agent-infra/mcp-server-filesystem',
+        packageArguments: [
+          {
+            name: 'allowed-directories',
+            description: 'Comma-separated list of allowed directories for file operations',
+            format: 'string',
+            type: 'named',
+            isRequired: true,
+          },
+        ],
+        runtimeArguments: [],
+        environmentVariables: [],
+        registryType: 'npm',
+        version: '2025.8.21',
+      },
+    ],
+  };
+
+
+  return {
+    ...agentInfraFilesystemRegistryServer,
     remotes: [],
     workspaceId: options?.workspaceId,
   };

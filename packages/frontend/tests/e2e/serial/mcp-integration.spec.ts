@@ -60,10 +60,10 @@ test.describe('MCP Integration with Containerized Runtime', () => {
     // Step 2: Get seeded MCP server and registry server IDs
     // ========================================================================
     // The withSingleMCPServer preset creates:
-    // - Registry server with name: '@modelcontextprotocol/server-filesystem'
+    // - Registry server with name: 'file-system'
     // - MCP server with name: 'Test MCP Server'
-    const registryServerId = entityIds['registry-@modelcontextprotocol/server-filesystem'];
-    const mcpServerId = entityIds['server-@modelcontextprotocol/server-filesystem'];
+    const registryServerId = entityIds['registry-file-system'];
+    const mcpServerId = entityIds['server-file-system'];
 
     expect(registryServerId).toBeDefined();
     expect(mcpServerId).toBeDefined();

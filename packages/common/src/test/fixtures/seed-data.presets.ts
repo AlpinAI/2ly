@@ -125,7 +125,7 @@ export const seedPresets = {
         password: 'password123',
       },
     ],
-    registryServers: [buildFilesystemRegistryServer()],
-    mcpServers: [buildMinimalFilesystemServer({ name: '@modelcontextprotocol/server-filesystem' })],
+    registryServers: [buildFilesystemRegistryServer({ name: 'file-system' })],
+    mcpServers: [buildMinimalFilesystemServer({ name: 'file-system' })],
   },
 } satisfies Record<string, SeedData | { comprehensive: SeedData }>;

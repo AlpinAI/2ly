@@ -26,7 +26,7 @@ import {
   assertConnectionStatus,
 } from '@2ly/common/test/fixtures/mcp-test-helpers';
 
-test.describe.only('MCP Client Transports', () => {
+test.describe('MCP Client Transports', () => {
   const natsUrl = process.env.TEST_NATS_CLIENT_URL || 'nats://localhost:4222';
   // Configure tests to run serially (one at a time)
   // test.describe.configure({ mode: 'serial' });
@@ -65,7 +65,7 @@ test.describe.only('MCP Client Transports', () => {
    * - Process lifecycle managed by MCP SDK
    */
   test.describe('STDIO Transport', () => {
-    test.only('should connect, list tools, call tool, and disconnect via STDIO', async () => {
+    test('should connect, list tools, call tool, and disconnect via STDIO', async () => {
       const mcpClient = createMCPClient();
 
       try {
