@@ -55,7 +55,7 @@
     }
   },
   "scripts": {
-    "build": "tsc",
+    "build": "tsc -p tsconfig.build.json",
     "lint": "eslint \"{src,test}/**/*.{js,ts}\" --format unix --quiet",
     "lint:full": "eslint \"{src,test}/**/*.{js,ts}\"",
     "format": "prettier --write \"{src,test}/**/*.*\" && rm -rf node_modules/.cache/prettier",

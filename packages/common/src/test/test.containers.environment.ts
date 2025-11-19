@@ -292,7 +292,7 @@ export class TestEnvironment {
       const buildPromise = GenericContainer.fromDockerfile(
         this.config.projectRoot,
         'packages/backend/Dockerfile'
-      ).build('2ly-backend-test', { deleteOnExit: false });
+      ).build('2ly-backend-test');
 
       const timeoutPromise = new Promise((_, reject) => {
         promiseTimeout = setTimeout(
@@ -329,7 +329,7 @@ export class TestEnvironment {
       const buildPromise = GenericContainer.fromDockerfile(
         this.config.projectRoot,
         'packages/runtime/Dockerfile'
-      ).build('2ly-runtime-test', { deleteOnExit: false });
+      ).build('2ly-runtime-test');
 
       const timeoutPromise = new Promise((_, reject) => {
         promiseTimeout = setTimeout(
@@ -442,14 +442,13 @@ export class TestEnvironment {
         .withNetwork(this.network!)
         .withEnvironment({
           NODE_ENV: 'test',
-          LOG_LEVEL: 'debug',
+          LOG_LEVEL: 'info',
           NATS_SERVERS: 'nats:4222',
           RUNTIME_NAME: runtimeName,
           ROOTS: `TEMP:/tmp`,
           MASTER_KEY: TEST_MASTER_KEY,
           REMOTE_PORT: String(runtimePort),      // Enable HTTP server for SSE/STREAM transports
           REMOTE_HOST: '0.0.0.0',
-          FORWARD_STDERR: 'false',  // Disable forwarding of stderr to the parent process
         })
         // No exposed ports needed - runtime communicates via NATS
         .withExposedPorts(runtimePort)

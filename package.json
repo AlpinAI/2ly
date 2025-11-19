@@ -12,8 +12,8 @@
   "scripts": {
     "build": "npm run build --workspaces --if-present",
     "start": "docker compose --profile init up -d --build && docker compose -f docker-compose.yml up -d --pull=always",
-    "start:dev": "docker compose -f dev/docker-compose.dev.yml --profile init up -d --build && docker compose -f dev/docker-compose.dev.yml up -d --build",
-    "start:dev:full": "docker compose -f dev/docker-compose.dev.yml --profile init up -d --build && docker compose -f dev/docker-compose.dev.yml --profile all up -d --build",
+    "start:dev": "docker compose -f dev/docker-compose.dev.yml --profile init up -d --build --no-cache && docker compose -f dev/docker-compose.dev.yml up -d --build --no-cache",
+    "start:dev:full": "docker compose -f dev/docker-compose.dev.yml --profile init up -d --build --no-cache && docker compose -f dev/docker-compose.dev.yml --profile all up -d --build --no-cache",
     "clean:volumes": "docker compose down -v && docker compose -f docker-compose.yml down -v",
     "setup-local": "bash scripts/setup-local-dev.sh",
     "lint": "npm run lint --workspaces --if-present",

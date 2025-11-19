@@ -24,7 +24,6 @@ import {
   assertListDirectoryCall,
   assertDisconnect,
   assertConnectionStatus,
-  findTool,
 } from '@2ly/common/test/fixtures/mcp-test-helpers';
 
 test.describe.only('MCP Client Transports', () => {
@@ -66,7 +65,7 @@ test.describe.only('MCP Client Transports', () => {
    * - Process lifecycle managed by MCP SDK
    */
   test.describe('STDIO Transport', () => {
-    test('should connect, list tools, call tool, and disconnect via STDIO', async () => {
+    test.only('should connect, list tools, call tool, and disconnect via STDIO', async () => {
       const mcpClient = createMCPClient();
 
       try {

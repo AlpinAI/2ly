@@ -115,16 +115,3 @@ export function assertConnectionStatus(
   expect(status.connected).toBe(expectedConnected);
   expect(status.type).toBe(expectedType);
 }
-
-/**
- * Finds a specific tool in the tools list by name
- * Asserts that the tool exists
- */
-export function findTool(
-  tools: Array<{ name: string; [key: string]: unknown }>,
-  toolName: string
-) {
-  const tool = tools.find((t) => t.name === toolName);
-  expect(tool).toBeDefined();
-  return tool!;
-}
