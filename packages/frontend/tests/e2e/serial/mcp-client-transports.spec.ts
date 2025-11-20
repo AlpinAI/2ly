@@ -188,27 +188,95 @@ test.describe('MCP Client Transports', () => {
    * SSE (Server-Sent Events) transport uses HTTP streaming for real-time communication.
    * The runtime exposes an /sse endpoint for client connections.
    *
-   * Note: SSE tests are currently skipped because the SSE implementation appears to be
-   * deprecated in favor of Streamable HTTP (/mcp endpoint). The SSE service has its own
-   * Fastify instance (port 3002) that's not integrated with the shared FastifyManagerService.
+   * Connection flow:
+   * 1. GET /sse with auth headers → establishes SSE stream and returns session ID
+   * 2. POST /messages with session ID → sends JSON-RPC messages (list_tools, call_tool)
+   * 3. Disconnect → closes SSE stream
    */
   test.describe('SSE Transport', () => {
-    test.skip('should connect via SSE', async () => {
-      // SSE implementation appears deprecated - uses separate Fastify instance on port 3002
-      // STREAM transport (/mcp endpoint) is the modern replacement
-      // Keeping tests for documentation but skipping execution
+    test('should connect, list tools, call tool, and disconnect via SSE', async ({ runtimePort }) => {
+      if (!runtimePort) {
+        throw new Error('Runtime port not available. Ensure runtime was started with resetDatabase(true)');
+      }
+
+      const baseUrl = `http://localhost:${runtimePort}`;
+      const mcpClient = createMCPClient();
+
+      try {
+        // Step 1: Connect to runtime via SSE transport
+        await mcpClient.connectSSE(baseUrl, {
+          masterKey: TEST_MASTER_KEY,
+          toolsetName: 'My tool set',
+        });
+
+        assertConnectionStatus(mcpClient, true, 'SSE');
+
+        // Step 2: List tools from runtime
+        await assertToolListing(mcpClient);
+
+        // Step 3: Call a tool without arguments
+        try {
+          await assertListAllowedDirectoriesCall(mcpClient);
+        } catch (error) {
+          console.log(`[SSE Test] ⚠ Tool call failed:`, error instanceof Error ? error.message : String(error));
+          throw error; // This should succeed, so throw if it fails
+        }
+
+        // Step 4: Call a tool with arguments
+        try {
+          await assertListDirectoryCall(mcpClient);
+        } catch (error) {
+          console.log(`[SSE Test] ⚠ Tool call failed:`, error instanceof Error ? error.message : String(error));
+          throw error; // This should succeed, so throw if it fails
+        }
+
+        // Step 5: Disconnect cleanly
+        await assertDisconnect(mcpClient);
+
+      } catch (error) {
+        console.error('[SSE Test] ✗ Test failed:', error);
+        // Clean up even if test fails
+        await mcpClient.disconnect();
+        throw error;
+      }
     });
 
-    test.skip('should list tools via SSE', async () => {
-      // Skipped - see above
+    test('should handle authentication failures via SSE', async ({ runtimePort }) => {
+      if (!runtimePort) {
+        throw new Error('Runtime port not available');
+      }
+
+      const baseUrl = `http://localhost:${runtimePort}`;
+      const mcpClient = createMCPClient();
+
+      try {
+        // Try to connect with invalid master key - should reject
+        await expect(async () => {
+          await mcpClient.connectSSE(baseUrl, {
+            masterKey: 'WSK_INVALID_KEY_FOR_TESTING',
+          });
+        }).rejects.toThrow();
+
+      } finally {
+        // Clean up
+        await mcpClient.disconnect();
+      }
     });
 
-    test.skip('should call tool via SSE', async () => {
-      // Skipped - see above
-    });
+    test('should handle connection to invalid endpoint via SSE', async () => {
+      const mcpClient = createMCPClient();
 
-    test.skip('should disconnect cleanly via SSE', async () => {
-      // Skipped - see above
+      try {
+        // Try to connect to non-existent server - should reject
+        await expect(async () => {
+          await mcpClient.connectSSE('http://localhost:9999', {
+            masterKey: TEST_MASTER_KEY,
+          });
+        }).rejects.toThrow();
+
+      } finally {
+        await mcpClient.disconnect();
+      }
     });
   });
 

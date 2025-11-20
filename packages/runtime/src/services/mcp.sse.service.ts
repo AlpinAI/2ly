@@ -1,82 +1,93 @@
 import { inject, injectable } from 'inversify';
 import pino from 'pino';
-import {
-  LoggerService,
-  NatsService,
-  Service,
-} from '@2ly/common';
+import { LoggerService, NatsService, Service } from '@2ly/common';
 import { HealthService } from './runtime.health.service';
+import { FastifyManagerService } from './fastify.manager.service';
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
-import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
 import { SSEServerTransport } from '@modelcontextprotocol/sdk/server/sse.js';
-import {
-  CallToolRequestSchema,
-  ListToolsRequestSchema,
-  InitializeRequestSchema,
-} from '@modelcontextprotocol/sdk/types.js';
-import { randomUUID } from 'node:crypto';
-import fastify, { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
-import cors from '@fastify/cors';
-import { SessionAuthService, AuthHeaders } from './session.auth.service';
-import { ToolsetService, ToolsetIdentity } from './toolset.service';
-import { tap } from 'rxjs';
+import { FastifyRequest, FastifyReply } from 'fastify';
 import { injectCorsHeaders } from '../helpers/cors.helper';
 import { sendJsonRpcError, JsonRpcErrorCode } from '../helpers/jsonrpc.helper';
 import { extractSessionIdFromQuery, isValidSessionId } from '../helpers/session.helper';
-
-interface SessionContext {
-  transport: StreamableHTTPServerTransport | SSEServerTransport;
-  toolsetService: ToolsetService;
-  drain: () => void;
-}
+import {
+  SessionContext,
+  authenticateSession,
+  createToolsetService,
+  completeSessionContext,
+  cleanupSession,
+  cleanupAllSessions,
+} from '../helpers/mcp-session.helper';
+import { registerMcpHandlers } from '../helpers/mcp-handlers.helper';
+import {
+  validateOriginHeaderForRequest,
+  validateProtocolVersionHeaderForRequest,
+  loadSecurityConfig,
+  logSecurityConfig,
+} from '../helpers/validation.helper';
 
 /**
- * McpRemoteService handles MCP server with stream/sse transports.
- * This service manages multiple sessions, each with their own identity and toolset.
+ * McpSseService handles MCP server with SSE (Server-Sent Events) transport.
+ *
+ * Architecture:
+ * - Uses shared Fastify instance from FastifyManagerService (shared port with STREAM transport)
+ * - Manages own MCP Server instance for SSE-specific session handling
+ * - Uses shared helper functions for authentication, session management, and security validation
+ *
+ * SSE Transport Flow:
+ * 1. Client connects via GET /sse with auth headers → server authenticates and establishes SSE stream
+ * 2. Client sends messages via POST /messages?sessionId=... → server processes JSON-RPC requests
+ * 3. Server sends responses and notifications via SSE stream
+ * 4. Client disconnects → server cleans up session resources
+ *
+ * Security:
+ * - Origin header validation for DNS rebinding protection (configurable)
+ * - Protocol version validation
+ * - Master key or toolset key authentication
+ *
+ * Spec: https://modelcontextprotocol.io/specification/2025-06-18/basic/transports#server-sent-events-sse
  */
 @injectable()
 export class McpSseService extends Service {
-  name = 'mcp-remote';
-  private logger: pino.Logger;
+  name = 'mcp-sse';
+  private logger!: pino.Logger;
   private server: Server | undefined;
-  private fastifyInstance: FastifyInstance | undefined;
   private sessions: Map<string, SessionContext> = new Map();
+
+  /**
+   * Allowed origins for remote access (configurable via environment variable)
+   */
+  private allowedOrigins: string[] = [];
+
+  /**
+   * Whether to validate Origin header to prevent DNS rebinding attacks
+   */
+  private preventDnsRebindingAttack = false;
 
   constructor(
     @inject(LoggerService) private loggerService: LoggerService,
     @inject(NatsService) private natsService: NatsService,
     @inject(HealthService) private healthService: HealthService,
+    @inject(FastifyManagerService) private fastifyManager: FastifyManagerService,
   ) {
     super();
-    this.logger = this.loggerService.getLogger(this.name);
   }
 
   protected async initialize() {
-    this.logger.info('Starting MCP remote service');
-    await this.startService(this.natsService);
-    await this.startService(this.healthService);
-    await this.startServer();
-  }
+    // Initialize logger
+    this.logger = this.loggerService.getLogger(this.name);
 
-  protected async shutdown() {
-    this.logger.info('Stopping MCP remote service');
-    await this.stopServer();
-    await this.stopService(this.natsService);
-    await this.stopService(this.healthService);
-  }
+    this.logger.info('Starting MCP SSE service');
 
-  private async startServer() {
-    const remotePort = process.env.REMOTE_PORT;
-    if (!remotePort) {
-      this.logger.warn('REMOTE_PORT is not set, Remote MCP server will not start');
-      return;
-    }
+    // Load security configuration from environment
+    const securityConfig = loadSecurityConfig();
+    this.allowedOrigins = securityConfig.allowedOrigins;
+    this.preventDnsRebindingAttack = securityConfig.preventDnsRebindingAttack;
 
-    this.logger.info('Starting remote MCP server');
-
+    // Create dedicated MCP Server for SSE transport
+    // Each transport needs its own Server instance to manage its own sessions
     this.server = new Server(
       {
-        name: 'Remote 2LY Server',
+        name: 'Remote 2LY Server (SSE)',
         version: '1.0.0',
       },
       {
@@ -88,384 +99,168 @@ export class McpSseService extends Service {
       },
     );
 
-    await this.setupStreamableHttpTransport(remotePort);
+    // Register MCP handlers on this transport's server
+    registerMcpHandlers(this.server, this.sessions, this.logger);
+
+    // Register SSE routes on shared Fastify instance
+    this.registerSseRoutes();
+
+    // Log security configuration
+    logSecurityConfig(this.logger, this.preventDnsRebindingAttack, this.allowedOrigins);
+
+    this.logger.info('MCP SSE service started');
   }
 
-  private async setupStreamableHttpTransport(portString: string) {
-    this.logger.info('Setting up Streamable HTTP transport');
+  protected async shutdown() {
+    this.logger.info('Stopping MCP SSE service');
+    await cleanupAllSessions(this.sessions, this.healthService, this.logger);
 
-    this.fastifyInstance = fastify({
-      logger: false,
-      // Allow empty JSON bodies for DELETE requests (MCP Inspector sends Content-Type: application/json with empty body)
-      bodyLimit: 1048576,
-    });
-
-    // Override JSON parser to allow empty bodies
-    this.fastifyInstance.addContentTypeParser('application/json', { parseAs: 'string' }, (req, body, done) => {
-      try {
-        const json = body === '' ? {} : JSON.parse(body as string);
-        done(null, json);
-      } catch (err: unknown) {
-        done(err instanceof Error ? err : new Error(String(err)), undefined);
-      }
-    });
-
-    await this.fastifyInstance.register(cors, {
-      origin: true, // Reflects the request origin back, allowing any origin with credentials
-      credentials: true, // Allow credentials (cookies, authorization headers, etc.)
-      methods: ['GET', 'POST', 'OPTIONS', 'PUT', 'DELETE'], // Explicitly allow methods including GET for SSE
-      exposedHeaders: ['mcp-session-id'],
-      allowedHeaders: ['Content-Type', 'mcp-session-id', 'mcp-protocol-version', 'master_key', 'toolset_key', 'toolset_name', 'x-custom-auth-headers'],
-    });
-
-    // Register route handlers
-    this.registerSseRoute();
-    this.registerMessagesRoute();
-
-    const port = parseInt(portString);
-
-    try {
-      await this.fastifyInstance.listen({ port: 3002, host: '0.0.0.0' });
-      this.logger.info(`Streamable HTTP and SSE MCP server listening on port ${port}`);
-    } catch (error) {
-      this.logger.error(`Failed to start Fastify server: ${error}`);
-      throw error;
+    // Close MCP Server
+    if (this.server) {
+      await this.server.close();
+      this.server = undefined;
     }
 
-    // Setup server handlers
-    await this.setServerHandlers();
+    this.logger.info('MCP SSE service stopped');
   }
 
   /**
-   * Register the /sse route handler for SSE transport
+   * Register SSE-specific routes on the shared Fastify instance
    */
-  private registerSseRoute() {
-    this.fastifyInstance!.get('/sse', async (request: FastifyRequest, reply: FastifyReply) => {
+  private registerSseRoutes() {
+    const fastify = this.fastifyManager.getInstance();
+
+    // GET /sse - Establishes SSE connection
+    fastify.get('/sse', async (request: FastifyRequest, reply: FastifyReply) => {
       this.logger.debug('Received GET request to /sse');
 
       try {
-        const session = await this.createNewSession(request, reply, 'sse');
-        if (!session) {
-          return; // Error response already sent
-        }
-      } catch (error) {
-        this.logger.error(`Error handling SSE connection: ${error}`);
-        return reply.status(500).send('Internal error');
-      }
-    });
-  }
-
-  /**
-   * Register the /messages route handler for SSE transport
-   */
-  private registerMessagesRoute() {
-    this.fastifyInstance!.post('/messages', async (request: FastifyRequest, reply: FastifyReply) => {
-      this.logger.debug('Received POST request to /messages');
-
-      try {
-        const sessionId = extractSessionIdFromQuery(request.query);
-
-        if (!isValidSessionId(sessionId)) {
-          return reply.status(400).send('Missing sessionId');
-        }
-
-        const session = this.sessions.get(sessionId);
-        if (session && session.transport instanceof SSEServerTransport) {
-          // Inject CORS headers for SSE messages
-          // handlePostMessage uses reply.raw which bypasses Fastify's CORS plugin
-          injectCorsHeaders(request, reply);
-
-          await session.transport.handlePostMessage(request.raw, reply.raw, request.body as unknown);
+        // Validate security headers (returns false and sends error response if validation fails)
+        if (!this.validateSecurityHeaders(request, reply)) {
           return;
         }
 
-        return reply.status(400).send('No transport found for sessionId');
+        // Authenticate the request
+        const identity = await authenticateSession(request, this.loggerService, this.natsService);
+        this.logger.info(`Authenticated SSE connection for toolset: ${identity.toolsetName}`);
+
+        // Create the toolset service
+        const toolsetService = await createToolsetService(
+          identity,
+          this.loggerService,
+          this.natsService,
+          this.healthService,
+        );
+
+        // Inject CORS headers for SSE
+        // SSEServerTransport.start() calls writeHead() with hardcoded headers,
+        // replacing any headers set via reply.header() or setHeader().
+        injectCorsHeaders(request, reply);
+
+        // Create SSE transport
+        const transport = new SSEServerTransport('/messages', reply.raw);
+        const sessionId = transport.sessionId;
+
+        // Create partial session and store it
+        const partialSession: Partial<SessionContext> = {};
+        this.sessions.set(sessionId, partialSession as SessionContext);
+
+        // Handle connection close
+        reply.raw.on('close', () => {
+          this.logger.debug(`SSE session closed: ${sessionId}`);
+          cleanupSession(sessionId, this.sessions, this.healthService, this.logger);
+        });
+
+        // Connect transport to server
+        await this.server!.connect(transport);
+
+        // Complete the session context
+        completeSessionContext(transport, toolsetService, partialSession);
+
+        this.logger.info(`Created SSE session ${sessionId} for toolset: ${identity.toolsetName}`);
+      } catch (error) {
+        this.logger.error(`Error handling SSE connection: ${error}`);
+
+        // Send appropriate error response
+        if (error instanceof Error && error.message.includes('Authentication failed')) {
+          sendJsonRpcError(reply, JsonRpcErrorCode.SERVER_ERROR, error.message, 401);
+        } else if (error instanceof Error && error.message.includes('Invalid')) {
+          sendJsonRpcError(reply, JsonRpcErrorCode.INVALID_REQUEST, error.message, 400);
+        } else {
+          sendJsonRpcError(reply, JsonRpcErrorCode.SERVER_ERROR, 'Internal error', 500);
+        }
+      }
+    });
+
+    // POST /messages - Handles SSE messages
+    fastify.post('/messages', async (request: FastifyRequest, reply: FastifyReply) => {
+      this.logger.debug('Received POST request to /messages');
+
+      try {
+        // Validate security headers (returns false and sends error response if validation fails)
+        if (!this.validateSecurityHeaders(request, reply)) {
+          return;
+        }
+
+        // Extract session ID from query
+        const sessionId = extractSessionIdFromQuery(request.query);
+
+        if (!isValidSessionId(sessionId)) {
+          return reply.status(400).send('Missing or invalid sessionId');
+        }
+
+        // Get session
+        const session = this.sessions.get(sessionId);
+
+        if (!session) {
+          return reply.status(404).send('Session not found');
+        }
+
+        if (!(session.transport instanceof SSEServerTransport)) {
+          return reply.status(400).send('Invalid transport type for session');
+        }
+
+        // Inject CORS headers for SSE messages
+        // handlePostMessage uses reply.raw which bypasses Fastify's CORS plugin
+        injectCorsHeaders(request, reply);
+
+        // Handle the message via the transport
+        await session.transport.handlePostMessage(request.raw, reply.raw, request.body as unknown);
       } catch (error) {
         this.logger.error(`Error handling SSE message: ${error}`);
-        return reply.status(500).send('Internal error');
+
+        // Return appropriate error response
+        if (error instanceof Error && error.message.includes('Session not found')) {
+          return reply.status(404).send('Session not found');
+        } else if (error instanceof Error && error.message.includes('Invalid')) {
+          return reply.status(400).send(error.message);
+        } else {
+          return reply.status(500).send('Internal error');
+        }
       }
     });
+
+    this.logger.info('SSE routes registered on shared Fastify instance');
   }
 
   /**
-   * Creates a new session for an authenticated request
+   * Validate security headers (Origin, Protocol)
+   * Returns true if all validations pass, false otherwise
    */
-  private async createNewSession(
-    request: FastifyRequest,
-    reply: FastifyReply,
-    transportType: 'stream' | 'sse',
-  ): Promise<SessionContext | null> {
-    try {
-      // Authenticate the request
-      const identity = await this.authenticateSession(request);
-      this.logger.info(`Authenticated new ${transportType} connection for toolset: ${identity.toolsetName}`);
-
-      // Create the toolset service first
-      const toolsetService = await this.createToolsetService(identity);
-
-      // Create the transport (which may trigger protocol initialization)
-      const { transport, sessionId, partialSession } = await this.createTransport(transportType, request, reply);
-
-      // Complete the session context by mutating the partial session
-      this.completeSessionContext(transport, toolsetService, sessionId, partialSession);
-
-      this.logger.info(`Created session ${sessionId} for toolset: ${identity.toolsetName}`);
-
-      return partialSession as SessionContext;
-    } catch (authError) {
-      this.logger.error(`Authentication failed: ${authError}`);
-      const errorMessage = `Authentication failed: ${authError instanceof Error ? authError.message : String(authError)}`;
-
-      if (transportType === 'stream') {
-        sendJsonRpcError(reply, JsonRpcErrorCode.SERVER_ERROR, errorMessage);
-      } else {
-        sendJsonRpcError(reply, JsonRpcErrorCode.SERVER_ERROR, errorMessage, 401);
-      }
-
-      return null;
-    }
-  }
-
-  /**
-   * Authenticates a session by extracting and validating auth headers
-   */
-  private async authenticateSession(request: FastifyRequest): Promise<ToolsetIdentity> {
-    const authHeaders = this.extractAuthHeaders(request);
-    const sessionAuthService = new SessionAuthService(
-      this.loggerService,
-      this.natsService,
-    );
-
-    sessionAuthService.validateAuthHeaders(authHeaders);
-    return await sessionAuthService.authenticateViaHandshake(authHeaders);
-  }
-
-  /**
-   * Creates a transport based on the transport type
-   */
-  private async createTransport(
-    transportType: 'stream' | 'sse',
-    request: FastifyRequest,
-    reply: FastifyReply,
-  ): Promise<{
-    transport: StreamableHTTPServerTransport | SSEServerTransport;
-    sessionId: string;
-    partialSession: Partial<SessionContext>;
-  }> {
-    let transport: StreamableHTTPServerTransport | SSEServerTransport;
-    let sessionId: string;
-    const partialSession: Partial<SessionContext> = {};
-
-    if (transportType === 'stream') {
-      sessionId = randomUUID();
-      transport = new StreamableHTTPServerTransport({
-        sessionIdGenerator: () => sessionId,
-        onsessioninitialized: (sid) => {
-          sessionId = sid;
-          this.sessions.set(sid, partialSession as SessionContext);
-          this.logger.debug(`Session initialized: ${sid}`);
-        },
-        onsessionclosed: (sid) => {
-          this.logger.debug(`Session closed: ${sid}`);
-          this.cleanupSession(sid!);
-        },
-      });
-
-      await this.server!.connect(transport);
-    } else {
-      // Inject CORS headers for SSE
-      // SSEServerTransport.start() calls writeHead() with hardcoded headers,
-      // replacing any headers set via reply.header() or setHeader().
-      injectCorsHeaders(request, reply);
-
-      transport = new SSEServerTransport('/messages', reply.raw);
-      sessionId = transport.sessionId;
-      this.sessions.set(sessionId, partialSession as SessionContext);
-
-      reply.raw.on('close', () => {
-        this.logger.debug(`SSE session closed: ${sessionId}`);
-        this.cleanupSession(sessionId);
-      });
-
-      await this.server!.connect(transport);
+  private validateSecurityHeaders(request: FastifyRequest, reply: FastifyReply): boolean {
+    // Validate origin header (DNS rebinding protection)
+    if (!validateOriginHeaderForRequest(request, reply, this.logger, this.preventDnsRebindingAttack, this.allowedOrigins)) {
+      return false;
     }
 
-    return { transport, sessionId, partialSession };
-  }
-
-  /**
-   * Creates and starts a toolset service for a session
-   */
-  private async createToolsetService(identity: ToolsetIdentity): Promise<ToolsetService> {
-    const toolsetService = new ToolsetService(this.loggerService, this.natsService, identity);
-    await this.startService(toolsetService);
-    return toolsetService;
-  }
-
-  /**
-   * Completes a partial session context by adding all required components.
-   * This mutates the partial session object to ensure any stored references remain valid.
-   */
-  private completeSessionContext(
-    transport: StreamableHTTPServerTransport | SSEServerTransport,
-    toolsetService: ToolsetService,
-    sessionId: string,
-    partialSession: Partial<SessionContext>,
-  ): void {
-    // Listen for tool changes and notify clients
-    const subscription = toolsetService.observeTools().pipe(tap(() => {
-      transport.send({
-        jsonrpc: '2.0',
-        method: 'notifications/tools/list_changed',
-      });
-    })).subscribe();
-
-    // Mutate the partial session to complete it
-    // This is important because the partial session may already be stored in this.sessions
-    // and accessed by other code paths (e.g., from onsessioninitialized callback)
-    partialSession.transport = transport;
-    partialSession.toolsetService = toolsetService;
-    partialSession.drain = () => subscription?.unsubscribe();
-  }
-
-  private async cleanupSession(sessionId: string) {
-    const session = this.sessions.get(sessionId);
-    if (session) {
-      this.logger.info(`Cleaning up session ${sessionId}`);
-      session.drain();
-      await this.stopService(session.toolsetService);
-      this.sessions.delete(sessionId);
-    }
-  }
-
-  /**
-   * Retrieves a session for a request handler, throwing if not found
-   */
-  private getSessionForRequest(sessionId: string): SessionContext {
-    const session = this.sessions.get(sessionId);
-    if (!session) {
-      throw new Error('Session not found');
-    }
-    return session;
-  }
-
-  private async setServerHandlers() {
-    if (!this.server) {
-      throw new Error('Server not initialized');
+    // Validate protocol version
+    if (!validateProtocolVersionHeaderForRequest(request, reply, this.logger)) {
+      return false;
     }
 
-    this.server.setRequestHandler(InitializeRequestSchema, async (request, extra) => {
-      return this.handleInitialize(request, extra);
-    });
+    // Note: Accept header validation is primarily for STREAM transport
+    // SSE transport doesn't require specific Accept headers
 
-    this.server.setRequestHandler(ListToolsRequestSchema, async (request, extra) => {
-      return this.handleListTools(request, extra);
-    });
-
-    this.server.setRequestHandler(CallToolRequestSchema, async (request, extra) => {
-      return this.handleCallTool(request, extra);
-    });
-  }
-
-  /**
-   * Handle initialize request
-   */
-  private async handleInitialize(request: unknown, extra: { sessionId?: string }) {
-    this.logger.info('Initialize handler');
-    const initRequest = request as { params: { clientInfo: unknown; protocolVersion: string } };
-    this.logger.debug(
-      `Initializing client: ${JSON.stringify(initRequest.params.clientInfo)}, protocol version: ${initRequest.params.protocolVersion}`,
-    );
-
-    const session = this.getSessionForRequest(extra.sessionId!);
-    const identity = session.toolsetService.getIdentity();
-
-    const response = {
-      serverInfo: {
-        name: identity.toolsetName,
-        version: '1.0.0',
-      },
-      protocolVersion: '2024-11-05',
-      capabilities: {
-        experimental: {},
-        tools: {
-          listChanged: true,
-        },
-      },
-    };
-
-    // Wait for tools to be available before responding
-    await session.toolsetService.waitForTools();
-
-    return response;
-  }
-
-  /**
-   * Handle list tools request
-   */
-  private async handleListTools(request: unknown, extra: { sessionId?: string }) {
-    this.logger.debug('Listing tools');
-
-    const session = this.getSessionForRequest(extra.sessionId!);
-
-    try {
-      const tools = await session.toolsetService.getToolsForMCP();
-      this.logger.debug(`List tools, responding with ${tools.length} tools`);
-      return { tools };
-    } catch (error) {
-      this.logger.error(`Error listing tools: ${error instanceof Error ? error.message : String(error)}`);
-      throw new Error(`Error listing tools: ${error instanceof Error ? error.message : String(error)}`);
-    }
-  }
-
-  /**
-   * Handle call tool request
-   */
-  private async handleCallTool(request: unknown, extra: { sessionId?: string }) {
-    const callRequest = request as { params: { name: string; arguments?: unknown } };
-
-    if (!callRequest.params.arguments) {
-      throw new Error('Arguments are required');
-    }
-
-    const session = this.getSessionForRequest(extra.sessionId!);
-
-    try {
-      const result = await session.toolsetService.callTool(
-        callRequest.params.name,
-        callRequest.params.arguments as Record<string, unknown>
-      );
-      return result;
-    } catch (error) {
-      this.logger.error(`Error calling tool: ${error instanceof Error ? error.message : String(error)}`);
-      throw new Error(`Error calling tool: ${error instanceof Error ? error.message : String(error)}`);
-    }
-  }
-
-  private extractAuthHeaders(request: FastifyRequest): AuthHeaders {
-    const headers = request.headers;
-    return {
-      masterKey: typeof headers['master_key'] === 'string' ? headers['master_key'] : undefined,
-      toolsetKey: typeof headers['toolset_key'] === 'string' ? headers['toolset_key'] : undefined,
-      toolsetName: typeof headers['toolset_name'] === 'string' ? headers['toolset_name'] : undefined,
-    };
-  }
-
-  private async stopServer() {
-    // Clean up all sessions
-    for (const [sessionId, session] of this.sessions) {
-      this.logger.debug(`Closing session: ${sessionId}`);
-      await session.transport.close();
-      await this.stopService(session.toolsetService);
-    }
-    this.sessions.clear();
-
-    await this.server?.close();
-    this.server = undefined;
-
-    // Close the Fastify instance
-    if (this.fastifyInstance) {
-      await this.fastifyInstance.close();
-    }
+    return true;
   }
 }
