@@ -149,6 +149,7 @@ services:
       - ROOTS=TEMP:/tmp
       - JWT_PRIVATE_KEY_PATH=/keys/private.pem
       - JWT_PUBLIC_KEY_PATH=/keys/public.pem
+      - REMOTE_PORT=3001
     env_file:
       # MASTER_KEY will be injected by the .env.generated file
       - ../.docker-keys/.env.generated
