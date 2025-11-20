@@ -1,6 +1,7 @@
 import { injectable, inject } from 'inversify';
 import { DGraphService } from '../services/dgraph.service';
 import { dgraphResolversTypes, NatsService, LoggerService, ToolSetCallToolRequest, RuntimeCallToolResponse, ErrorResponse, apolloResolversTypes } from '@2ly/common';
+import { ConnectionMetadata } from '../types';
 import {
   QUERY_MCPSERVER_WITH_TOOL,
   SET_ROOTS,
@@ -248,17 +249,15 @@ export class RuntimeRepository {
 
   async setActive(
     id: string,
-    processId: string,
-    hostIP: string,
-    hostname: string,
+    metadata: ConnectionMetadata,
   ): Promise<dgraphResolversTypes.Runtime> {
     const res = await this.dgraphService.mutation<{
       updateRuntime: { runtime: dgraphResolversTypes.Runtime[] };
     }>(SET_RUNTIME_ACTIVE, {
       id,
-      processId,
-      hostIP,
-      hostname,
+      processId: metadata.pid,
+      hostIP: metadata.hostIP,
+      hostname: metadata.hostname,
     });
     return res.updateRuntime.runtime[0];
   }

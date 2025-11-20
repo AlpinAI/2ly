@@ -9,6 +9,7 @@ import {
     type dgraphResolversTypes,
     NatsMessage,
 } from '@2ly/common';
+import { RuntimeHandshakeIdentity } from '../types';
 
 // Minimal fake repositories and runtime instance
 interface FakeMCPServerRepository {
@@ -32,7 +33,7 @@ interface FakeRuntimeRepository {
 interface FakeIdentityService {
     start: () => Promise<void>;
     stop: () => Promise<void>;
-    onHandshake: (nature: 'runtime' | 'toolset', callback: (identity: unknown) => void) => string;
+    onHandshake: (nature: 'runtime' | 'toolset', callback: (identity: RuntimeHandshakeIdentity) => void) => string;
 }
 
 class FakeRuntimeInstance {
@@ -70,7 +71,7 @@ function createService(deps?: Partial<{
 
     const logger = { getLogger: () => ({ info: vi.fn(), error: vi.fn(), debug: vi.fn() }) } as unknown as import('@2ly/common').LoggerService;
 
-    let runtimeHandshakeCallback: ((identity: unknown) => void) | null = null;
+    let runtimeHandshakeCallback: ((identity: RuntimeHandshakeIdentity) => void) | null = null;
     const identityService: FakeIdentityService = {
         start: vi.fn(async () => { }),
         stop: vi.fn(async () => { }),
@@ -100,7 +101,7 @@ function createService(deps?: Partial<{
         mcpRepo,
         factory,
         identityService,
-        invokeRuntimeHandshake: (identity: unknown) => {
+        invokeRuntimeHandshake: (identity: RuntimeHandshakeIdentity) => {
             if (runtimeHandshakeCallback) {
                 runtimeHandshakeCallback(identity);
             }

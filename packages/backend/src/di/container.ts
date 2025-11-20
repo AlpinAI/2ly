@@ -18,7 +18,8 @@ import { RuntimeService } from '../services/runtime.service';
 import { ToolSetService } from '../services/toolset.service';
 import { FastifyService } from '../services/fastify.service';
 import { MainService, DROP_ALL_DATA } from '../services/backend.main.service';
-import { RuntimeInstance, RuntimeInstanceFactory, RuntimeInstanceMetadata } from '../services/runtime.instance';
+import { RuntimeInstance, RuntimeInstanceFactory } from '../services/runtime.instance';
+import type { ConnectionMetadata } from '../types';
 import {
   RuntimeRepository,
   WorkspaceRepository,
@@ -137,7 +138,7 @@ const start = () => {
   container.bind<RuntimeInstanceFactory>(RuntimeInstance).toFactory((context) => {
     return (
       instance: dgraphResolversTypes.Runtime,
-      metadata: RuntimeInstanceMetadata,
+      metadata: ConnectionMetadata,
       onReady: () => void,
       onDisconnect: () => void) => {
       const logger = context.get(LoggerService).getLogger(`runtime.instance`);

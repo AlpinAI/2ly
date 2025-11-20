@@ -5,7 +5,6 @@ import {
   Service,
   RuntimeDiscoveredToolsPublish,
   RuntimeReconnectPublish,
-  dgraphResolversTypes,
 } from '@2ly/common';
 import { DGraphService } from './dgraph.service';
 import pino from 'pino';
@@ -16,6 +15,7 @@ import {
   RuntimeRepository,
 } from '../repositories';
 import { gql } from 'urql';
+import { RuntimeHandshakeIdentity } from '../types';
 
 @injectable()
 export class RuntimeService extends Service {
@@ -44,8 +44,8 @@ export class RuntimeService extends Service {
     await this.startService(this.natsService);
     await this.rehydrateRuntimes();
     // listen for runtime handshakes and create runtime instances on the fly when connecting
-    this.identityService.onHandshake('runtime', (identity) => {
-      const instance = identity.instance as dgraphResolversTypes.Runtime;
+    this.identityService.onHandshake('runtime', (identity: RuntimeHandshakeIdentity) => {
+      const instance = identity.instance;
       const metadata = {pid: identity.pid, hostIP: identity.hostIP, hostname: identity.hostname};
       const runtimeInstance = this.runtimeInstanceFactory(
         instance,

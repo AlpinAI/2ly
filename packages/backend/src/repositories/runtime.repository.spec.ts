@@ -261,7 +261,11 @@ describe('RuntimeRepository', () => {
         const runtime = { id: 'r1', status: 'ACTIVE' } as unknown as dgraphResolversTypes.Runtime;
         dgraphService.mutation.mockResolvedValue({ updateRuntime: { runtime: [runtime] } });
 
-        const result = await runtimeRepository.setActive('r1', 'pid123', '192.168.1.1', 'hostname');
+        const result = await runtimeRepository.setActive('r1', {
+            pid: 'pid123',
+            hostIP: '192.168.1.1',
+            hostname: 'hostname',
+        });
 
         expect(dgraphService.mutation).toHaveBeenCalledWith(
             expect.any(Object),

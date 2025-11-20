@@ -9,14 +9,9 @@ import {
 } from '@2ly/common';
 import { RuntimeRepository } from '../repositories';
 import { BehaviorSubject, combineLatest, debounceTime, of, Subscription, switchMap, tap } from 'rxjs';
+import type { ConnectionMetadata } from '../types';
 
 export const CHECK_HEARTBEAT_INTERVAL = 'check.heartbeat.interval';
-
-export type RuntimeInstanceMetadata = {
-  pid: string;
-  hostIP: string;
-  hostname: string;
-};
 
 @injectable()
 export class RuntimeInstance extends Service {
@@ -30,7 +25,7 @@ export class RuntimeInstance extends Service {
     private natsService: NatsService,
     private runtimeRepository: RuntimeRepository,
     private instance: dgraphResolversTypes.Runtime,
-    private metadata: RuntimeInstanceMetadata,
+    private metadata: ConnectionMetadata,
     private onReady: () => void,
     private onDisconnect: () => void,
   ) {
@@ -42,14 +37,12 @@ export class RuntimeInstance extends Service {
     try {
       await this.runtimeRepository.setActive(
         this.instance.id,
-        this.metadata.pid,
-        this.metadata.hostIP,
-        this.metadata.hostname,
+        this.metadata,
       );
       this.observeHeartbeat();
       this.handleRuntimeMessages();
       this.observeMCPServers();
-      this.onReady();  
+      this.onReady();
     } catch (error) {
       this.logger.error(`Error setting runtime active: ${error}`);
       await this.disconnect();
@@ -165,7 +158,7 @@ export class RuntimeInstance extends Service {
 
 export type RuntimeInstanceFactory = (
   instance: dgraphResolversTypes.Runtime,
-  metadata: RuntimeInstanceMetadata,
+  metadata: ConnectionMetadata,
   onReady: () => void,
   onDisconnect: () => void,
 ) => RuntimeInstance;

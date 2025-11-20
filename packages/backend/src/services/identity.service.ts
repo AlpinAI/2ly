@@ -7,9 +7,7 @@ import { WorkspaceRepository } from '../repositories/workspace.repository';
 import { RuntimeRepository } from '../repositories/runtime.repository';
 import { ToolSetRepository } from '../repositories/toolset.repository';
 import { v4 as uuidv4 } from 'uuid';
-
-type HandshakeRuntimeCallback = (identity: {instance: dgraphResolversTypes.Runtime; pid: string; hostIP: string; hostname: string;}) => void;
-type HandshakeToolsetCallback = (identity: {instance: dgraphResolversTypes.ToolSet; pid: string; hostIP: string; hostname: string;}) => void;
+import { HandshakeRuntimeCallback, HandshakeToolsetCallback } from '../types';
 
 /**
  * TokenService handles validation of Master Keys, Toolset Keys, and Runtime Keys.

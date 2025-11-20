@@ -16,6 +16,7 @@ import {
   WorkspaceRepository,
 } from '../repositories';
 import { IdentityService } from './identity.service';
+import { ToolsetHandshakeIdentity } from '../types';
 
 export const DROP_ALL_DATA = 'dropAllData';
 
@@ -43,7 +44,7 @@ export class ToolSetService extends Service {
     await this.startService(this.dgraphService);
     await this.startService(this.natsService);
     await this.subscribeToToolSet();
-    this.identityService.onHandshake('toolset', (identity) => {
+    this.identityService.onHandshake('toolset', (identity: ToolsetHandshakeIdentity) => {
       this.handleToolSetHandshake(identity);
     });
   }
@@ -73,7 +74,7 @@ export class ToolSetService extends Service {
     await this.stopService(this.natsService);
   }
 
-  private async handleToolSetHandshake(identity: { instance: dgraphResolversTypes.ToolSet; pid: string; hostIP: string; hostname: string; }) {
+  private async handleToolSetHandshake(identity: ToolsetHandshakeIdentity) {
     this.logger.debug(`Toolset ${identity.instance.id} connected`);
     try {
       this.publishToolSetTools(identity.instance);
