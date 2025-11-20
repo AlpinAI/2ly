@@ -1,7 +1,7 @@
 import { injectable, inject } from 'inversify';
 import { randomBytes } from 'crypto';
 import { DGraphService } from '../services/dgraph.service';
-import { dgraphResolversTypes } from '@2ly/common';
+import { dgraphResolversTypes, LoggerService } from '@2ly/common';
 import {
   CREATE_IDENTITY_KEY,
   REVOKE_IDENTITY_KEY,
@@ -10,6 +10,7 @@ import {
   FIND_KEYS_BY_RELATED_ID,
   FIND_KEY_BY_ID,
 } from './identity.operations';
+import pino from 'pino';
 
 export interface CreateIdentityKeyData {
   key: string;
@@ -27,7 +28,11 @@ const KEY_NATURE_PREFIX = {
 
 @injectable()
 export class IdentityRepository {
-  constructor(@inject(DGraphService) private readonly dgraphService: DGraphService) {}
+  private logger: pino.Logger;
+
+  constructor(@inject(DGraphService) private readonly dgraphService: DGraphService, @inject(LoggerService) private readonly loggerService: LoggerService) {
+    this.logger = this.loggerService.getLogger('identity-repository');
+  }
 
   /**
    * Create a new identity key
@@ -36,7 +41,10 @@ export class IdentityRepository {
     try {
       const now = new Date().toISOString();
       const expiresAtDate = new Date(now);
-      expiresAtDate.setFullYear(expiresAtDate.getFullYear() + 20);
+      // Make the key expire in 20 years
+      // TODO: Make this configurable
+      const addedYears = 20;
+      expiresAtDate.setFullYear(expiresAtDate.getFullYear() + addedYears);
       const expiresAt = expiresAtDate.toISOString();
       
       const key = options?.key ? options.key : KEY_NATURE_PREFIX[nature] + randomBytes(22).toString('base64').replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '').substring(0, 29);
@@ -54,7 +62,7 @@ export class IdentityRepository {
 
       return res.addIdentityKey.identityKey[0];
     } catch (error) {
-      console.error('Failed to create identity key:', error);
+      this.logger.error(`Failed to create identity key: ${error}`);
       throw new Error('Failed to create identity key');
     }
   }
@@ -101,7 +109,7 @@ export class IdentityRepository {
 
       return res.updateIdentityKey.identityKey[0];
     } catch (error) {
-      console.error('Failed to revoke identity key:', error);
+      this.logger.error(`Failed to revoke identity key: ${error}`);
       throw new Error('Failed to revoke identity key');
     }
   }
@@ -117,7 +125,7 @@ export class IdentityRepository {
 
       return res.deleteIdentityKey.identityKey[0];
     } catch (error) {
-      console.error('Failed to delete identity key:', error);
+      this.logger.error(`Failed to delete identity key: ${error}`);
       throw new Error('Failed to delete identity key');
     }
   }
@@ -133,7 +141,7 @@ export class IdentityRepository {
 
       return res.queryIdentityKey || [];
     } catch (error) {
-      console.error('Failed to find keys by relatedId:', error);
+      this.logger.error(`Failed to find keys by relatedId: ${error}`);
       throw new Error('Failed to find keys by relatedId');
     }
   }
@@ -149,7 +157,7 @@ export class IdentityRepository {
 
       return res.getIdentityKey || null;
     } catch (error) {
-      console.error('Failed to find key by ID:', error);
+      this.logger.error(`Failed to find key by ID: ${error}`);
       throw new Error('Failed to find key by ID');
     }
   }
