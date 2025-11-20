@@ -51,7 +51,7 @@ RUN addgroup -g 1001 -S runtime && \
 
 USER runtime
 
-EXPOSE 3000
+EXPOSE 3001
 
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
   CMD node -e "console.log('Health check - runtime running')" || exit 1
