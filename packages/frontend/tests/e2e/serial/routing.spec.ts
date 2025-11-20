@@ -9,22 +9,17 @@ import { test, expect, seedPresets } from '@2ly/common/test/fixtures/playwright'
  * - 404 page handling
  * - Root path navigation
  *
- * Strategy: Parallel
- * - Each test is independent
- * - Database is reset before each test
  */
 
 test.describe('Routing and Navigation', () => {
-  test.describe.configure({ mode: 'serial' });
-  test.describe('Authentication Guards', () => {
-    test('should redirect unauthenticated user to login when accessing protected route', async ({
-      page,
-      resetDatabase,
-      seedDatabase,
-    }) => {
-      await resetDatabase();
-      await seedDatabase(seedPresets.withUsers);
+  
+  test.beforeAll(async ({ resetDatabase, seedDatabase }) => {
+    await resetDatabase();
+    await seedDatabase(seedPresets.withUsers);
+  });
 
+  test.describe('Authentication Guards', () => {
+    test('should redirect unauthenticated user to login when accessing protected route', async ({ page }) => {
       // Try to access root without being logged in (root is protected and redirects to workspace)
       await page.goto('/');
 
@@ -33,10 +28,7 @@ test.describe('Routing and Navigation', () => {
       expect(page.url()).toContain('/login');
     });
 
-    test('should allow authenticated user to access workspace', async ({ page, resetDatabase, seedDatabase }) => {
-      await resetDatabase();
-      await seedDatabase(seedPresets.withUsers);
-
+    test('should allow authenticated user to access workspace', async ({ page }) => {
       // Login first
       await page.goto('/login');
       await page.fill('input[type="email"]', 'user1@example.com');
@@ -50,14 +42,7 @@ test.describe('Routing and Navigation', () => {
       expect(page.url()).toMatch(/\/w\/.+\/overview/);
     });
 
-    test('should redirect root path to workspace for authenticated users', async ({
-      page,
-      resetDatabase,
-      seedDatabase,
-    }) => {
-      await resetDatabase();
-      await seedDatabase(seedPresets.withUsers);
-
+    test('should redirect root path to workspace for authenticated users', async ({ page }) => {
       // Login first
       await page.goto('/login');
       await page.fill('input[type="email"]', 'user1@example.com');
@@ -73,14 +58,7 @@ test.describe('Routing and Navigation', () => {
       expect(page.url()).toMatch(/\/w\/.+\/overview/);
     });
 
-    test('should redirect root path to login for unauthenticated users', async ({
-      page,
-      resetDatabase,
-      seedDatabase,
-    }) => {
-      await resetDatabase();
-      await seedDatabase(seedPresets.withUsers);
-
+    test('should redirect root path to login for unauthenticated users', async ({ page }) => {
       // Navigate to root without being logged in
       await page.goto('/');
 
@@ -91,10 +69,7 @@ test.describe('Routing and Navigation', () => {
   });
 
   test.describe('Redirect Intent Preservation', () => {
-    test('should preserve intended destination after login', async ({ page, resetDatabase, seedDatabase }) => {
-      await resetDatabase();
-      await seedDatabase(seedPresets.withUsers);
-
+    test('should preserve intended destination after login', async ({ page }) => {
       // Try to access root without being logged in
       await page.goto('/');
 
@@ -111,14 +86,7 @@ test.describe('Routing and Navigation', () => {
       expect(page.url()).toMatch(/\/w\/.+\/overview/);
     });
 
-    test('should redirect to workspace when logging in directly (no intent)', async ({
-      page,
-      resetDatabase,
-      seedDatabase,
-    }) => {
-      await resetDatabase();
-      await seedDatabase(seedPresets.withUsers);
-
+    test('should redirect to workspace when logging in directly (no intent)', async ({ page }) => {
       // Go directly to login page
       await page.goto('/login');
 
@@ -132,10 +100,7 @@ test.describe('Routing and Navigation', () => {
       expect(page.url()).toMatch(/\/w\/.+\/overview/);
     });
 
-    test('should clear redirect intent on logout', async ({ page, resetDatabase, seedDatabase }) => {
-      await resetDatabase();
-      await seedDatabase(seedPresets.withUsers);
-
+    test('should clear redirect intent on logout', async ({ page }) => {
       // Try to access root, get redirected to login
       await page.goto('/');
       await page.waitForURL('/login', { timeout: 5000 });
@@ -172,10 +137,7 @@ test.describe('Routing and Navigation', () => {
   });
 
   test.describe('404 Page', () => {
-    test('should show 404 page for non-existent routes', async ({ page, resetDatabase, seedDatabase }) => {
-      await resetDatabase();
-      await seedDatabase(seedPresets.withUsers);
-
+    test('should show 404 page for non-existent routes', async ({ page }) => {
       // Navigate to a non-existent route
       await page.goto('/this-page-does-not-exist');
 
@@ -184,10 +146,7 @@ test.describe('Routing and Navigation', () => {
       await expect(page.locator('h2')).toContainText('Page Not Found');
     });
 
-    test('should have link to home on 404 page', async ({ page, resetDatabase, seedDatabase }) => {
-      await resetDatabase();
-      await seedDatabase(seedPresets.withUsers);
-
+    test('should have link to home on 404 page', async ({ page }) => {
       // Navigate to a non-existent route
       await page.goto('/non-existent-route');
 
@@ -197,10 +156,7 @@ test.describe('Routing and Navigation', () => {
       await expect(homeLink).toContainText(/Home/i);
     });
 
-    test('should allow navigation from 404 page to workspace', async ({ page, resetDatabase, seedDatabase }) => {
-      await resetDatabase();
-      await seedDatabase(seedPresets.withUsers);
-
+    test('should allow navigation from 404 page to workspace', async ({ page }) => {
       // Login first
       await page.goto('/login');
       await page.fill('input[type="email"]', 'user1@example.com');
@@ -219,10 +175,7 @@ test.describe('Routing and Navigation', () => {
       expect(page.url()).toMatch(/\/w\/.+\/overview/);
     });
 
-    test('should have back button on 404 page', async ({ page, resetDatabase, seedDatabase }) => {
-      await resetDatabase();
-      await seedDatabase(seedPresets.withUsers);
-
+    test('should have back button on 404 page', async ({ page }) => {
       // Navigate to a non-existent route
       await page.goto('/bad-route');
 
@@ -233,10 +186,7 @@ test.describe('Routing and Navigation', () => {
   });
 
   test.describe('Public Routes', () => {
-    test('should allow access to login page without authentication', async ({ page, resetDatabase, seedDatabase }) => {
-      await resetDatabase();
-      await seedDatabase(seedPresets.withUsers);
-
+    test('should allow access to login page without authentication', async ({ page }) => {
       await page.goto('/login');
 
       // Should be on login page
@@ -244,14 +194,7 @@ test.describe('Routing and Navigation', () => {
       expect(page.url()).toContain('/login');
     });
 
-    test('should allow access to register page without authentication', async ({
-      page,
-      resetDatabase,
-      seedDatabase,
-    }) => {
-      await resetDatabase();
-      await seedDatabase(seedPresets.withUsers);
-
+    test('should allow access to register page without authentication', async ({ page }) => {
       await page.goto('/register');
 
       // Should be on register page
@@ -259,14 +202,7 @@ test.describe('Routing and Navigation', () => {
       expect(page.url()).toContain('/register');
     });
 
-    test('should not allow access to init page without authentication', async ({
-      page,
-      resetDatabase,
-      seedDatabase,
-    }) => {
-      await resetDatabase();
-      await seedDatabase(seedPresets.withUsers);
-
+    test('should not allow access to init page without authentication', async ({ page }) => {
       await page.goto('/init');
 
       // Should be on init page
@@ -276,10 +212,7 @@ test.describe('Routing and Navigation', () => {
   });
 
   test.describe('Loading States', () => {
-    test('should show loading state while checking authentication', async ({ page, resetDatabase, seedDatabase }) => {
-      await resetDatabase();
-      await seedDatabase(seedPresets.withUsers);
-
+    test('should show loading state while checking authentication', async ({ page }) => {
       // Set up interceptor BEFORE any navigation to delay refresh token mutation
       await page.route('**/graphql', async (route) => {
         const request = route.request();

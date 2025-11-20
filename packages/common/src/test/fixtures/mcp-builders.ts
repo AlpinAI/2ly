@@ -332,59 +332,18 @@ export const configureFileSystemMCPServer = async (
       }
     `;
 
-    await graphql<{ createMCPServer: { id: string; name: string; description: string; repositoryUrl: string; transport: string; config: string; runOn: string } }>(mutation, {
-      name: 'Test MCP Server',
-      description: 'Test MCP Server Description',
-      repositoryUrl: 'https://github.com/test/test',
-      transport: 'STDIO',
-      config: JSON.stringify(buildFilesystemServerConfig('/tmp')),
-      runOn,
-      workspaceId,
-      registryServerId,
-    });
-};
-
-/**
- * Helper function to create a runtime dynamically via GraphQL
- * This is used in tests that need to create runtimes on the fly
- *
- * Note: The page parameter is Playwright-specific and should be passed from the test
- */
-export const createRuntime = async (
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  graphql: <T = any>(query: string, variables?: Record<string, any>) => Promise<T>,
-  pageOrWaitFn: { waitForTimeout: (ms: number) => Promise<void> } | ((ms: number) => Promise<void>),
-  workspaceId: string,
-  name: string,
-  description: string,
-  type: 'EDGE' | 'MCP',
-) => {
-  const mutation = `
-    mutation CreateRuntime($name: String!, $description: String!, $type: RuntimeType!, $workspaceId: ID!) {
-      createRuntime(name: $name, description: $description, type: $type, workspaceId: $workspaceId) {
-        id
-        name
-        description
-        type
-      }
-    }
-  `;
-  const result = await graphql<{ createRuntime: { id: string; name: string; description: string; type: 'EDGE' | 'MCP' } }>(mutation, {
-    name,
-    description,
-    type,
+  const createMCPServerResult = await graphql<{ createMCPServer: { id: string; name: string; description: string; repositoryUrl: string; transport: string; config: string; runOn: string } }>(mutation, {
+    name: 'Test MCP Server',
+    description: 'Test MCP Server Description',
+    repositoryUrl: 'https://github.com/test/test',
+    transport: 'STDIO',
+    config: JSON.stringify(buildFilesystemServerConfig('/tmp')),
+    runOn,
     workspaceId,
+    registryServerId,
   });
-
-  // Wait 10s, letting the time to the runtime to spawn the server and discover the tools
-  if (typeof pageOrWaitFn === 'function') {
-    await pageOrWaitFn(10000);
-  } else {
-    await pageOrWaitFn.waitForTimeout(10000);
-  }
-
   return {
-    runtimeId: result.createRuntime.id,
+    mcpServerId: createMCPServerResult.createMCPServer.id,
   };
 };
 

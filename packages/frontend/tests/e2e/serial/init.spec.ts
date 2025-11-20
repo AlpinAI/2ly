@@ -14,11 +14,11 @@ import { test, expect } from '@2ly/common/test/fixtures/playwright';
  */
 
 test.describe('System Initialization', () => {
-  test.describe.configure({ mode: 'serial' });
-
-  test('should display init form when system is not initialized', async ({ page, resetDatabase }) => {
+  test.beforeAll(async ({ resetDatabase }) => {
     await resetDatabase();
+  });
 
+  test('should display init form when system is not initialized', async ({ page }) => {
     // Navigate to init page
     await page.goto('/init');
 
@@ -36,34 +36,7 @@ test.describe('System Initialization', () => {
     await expect(page.locator('button[type="submit"]')).toContainText('Initialize System');
   });
 
-  test('should initialize system and auto-login user', async ({ page, resetDatabase }) => {
-    await resetDatabase();
-
-    // Navigate to init page
-    await page.goto('/init');
-
-    // Fill in the form
-    await page.fill('input[type="email"]', 'admin@example.com');
-    await page.fill('input#password', 'admin123');
-    await page.fill('input#confirmPassword', 'admin123');
-
-    // Submit the form
-    await page.click('button[type="submit"]');
-
-    // Should auto-login and redirect to workspace
-    // Note: Success alert may not be visible due to fast redirect
-    await page.waitForURL(/\/w\/.+\/overview/, { timeout: 10000 });
-    expect(page.url()).toMatch(/\/w\/.+\/overview/);
-
-    // User should be logged in (workspace should be accessible)
-    // Not redirected back to login
-    await page.waitForTimeout(1000);
-    expect(page.url()).toMatch(/\/w\/.+\/overview/);
-  });
-
-  test('should show password validation feedback', async ({ page, resetDatabase }) => {
-    await resetDatabase();
-
+  test('should show password validation feedback', async ({ page }) => {
     await page.goto('/init');
 
     // Password validation should not be visible initially
@@ -88,9 +61,7 @@ test.describe('System Initialization', () => {
     await expect(page.locator('[data-testid="validation-has-number"]')).toHaveAttribute('data-valid', 'true');
   });
 
-  test('should show password match indicator', async ({ page, resetDatabase }) => {
-    await resetDatabase();
-
+  test('should show password match indicator', async ({ page }) => {
     await page.goto('/init');
 
     // Fill password
@@ -112,9 +83,7 @@ test.describe('System Initialization', () => {
     await expect(matchIndicator).not.toContainText(/do not match/i);
   });
 
-  test('should disable submit button when validation fails', async ({ page, resetDatabase }) => {
-    await resetDatabase();
-
+  test('should disable submit button when validation fails', async ({ page }) => {
     await page.goto('/init');
 
     const submitButton = page.locator('button[type="submit"]');
@@ -137,17 +106,30 @@ test.describe('System Initialization', () => {
     await expect(submitButton).toBeEnabled();
   });
 
-  test('should redirect to root if system already initialized', async ({ page, resetDatabase, seedDatabase }) => {
-    // Initialize system by seeding with users
-    await resetDatabase();
-    await seedDatabase({
-      users: [
-        {
-          email: 'admin@example.com',
-          password: 'admin123',
-        },
-      ],
-    });
+  test('should initialize system and auto-login user', async ({ page }) => {
+    // Navigate to init page
+    await page.goto('/init');
+
+    // Fill in the form
+    await page.fill('input[type="email"]', 'admin@example.com');
+    await page.fill('input#password', 'admin123');
+    await page.fill('input#confirmPassword', 'admin123');
+
+    // Submit the form
+    await page.click('button[type="submit"]');
+
+    // Should auto-login and redirect to workspace
+    // Note: Success alert may not be visible due to fast redirect
+    await page.waitForURL(/\/w\/.+\/overview/, { timeout: 10000 });
+    expect(page.url()).toMatch(/\/w\/.+\/overview/);
+
+    // User should be logged in (workspace should be accessible)
+    // Not redirected back to login
+    await page.waitForTimeout(1000);
+    expect(page.url()).toMatch(/\/w\/.+\/overview/);
+  });
+
+  test('should redirect to root if system already initialized', async ({ page }) => {
 
     // Try to navigate to init page
     await page.goto('/init');
@@ -158,21 +140,7 @@ test.describe('System Initialization', () => {
   });
 
   test('should redirect to login when accessing init page without auth after system initialized', async ({
-    page,
-    resetDatabase,
-    seedDatabase,
-  }) => {
-    // Initialize system
-    await resetDatabase();
-    await seedDatabase({
-      users: [
-        {
-          email: 'admin@example.com',
-          password: 'admin123',
-        },
-      ],
-    });
-
+    page }) => {
     // Try to access init page (will redirect to root)
     await page.goto('/init');
 
