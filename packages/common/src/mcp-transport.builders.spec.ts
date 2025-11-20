@@ -13,7 +13,6 @@ import {
   buildStreamTransport,
 } from './mcp-transport.builders';
 import type { mcpRegistry } from './types';
-import { KeyValueInput } from 'packages/frontend/src/lib/mcpSchemas';
 
 type Package = mcpRegistry.components['schemas']['Package'];
 type Transport = mcpRegistry.components['schemas']['Transport'];
@@ -207,7 +206,8 @@ describe('buildEnvironmentVariables', () => {
       { value: 'no-name' },
     ];
 
-    const env = buildEnvironmentVariables(envVars as KeyValueInput[]);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const env = buildEnvironmentVariables(envVars as any);
     expect(env).toEqual({
       VALID: 'value',
     });
@@ -250,7 +250,8 @@ describe('buildHeadersMap', () => {
       { value: 'no-name' },
     ];
 
-    const headerMap = buildHeadersMap(headers as KeyValueInput[]);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const headerMap = buildHeadersMap(headers as any);
     expect(headerMap).toEqual({
       Valid: 'value',
     });
