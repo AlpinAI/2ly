@@ -1,5 +1,6 @@
 import { injectable, inject } from 'inversify';
 import { IdentityRepository } from '../repositories/identity.repository';
+import { KeyRateLimiterService } from './key-rate-limiter.service';
 import { LoggerService, NatsService, Service, HandshakeRequest, HandshakeResponse, ErrorResponse, dgraphResolversTypes } from '@2ly/common';
 import pino from 'pino';
 import { WorkspaceRepository } from '../repositories/workspace.repository';
@@ -31,6 +32,7 @@ export class IdentityService extends Service {
     @inject(LoggerService) private loggerService: LoggerService,
     @inject(NatsService) private readonly natsService: NatsService,
     @inject(IdentityRepository) private readonly identityRepository: IdentityRepository,
+    @inject(KeyRateLimiterService) private readonly keyRateLimiter: KeyRateLimiterService,
     @inject(WorkspaceRepository) private readonly workspaceRepository: WorkspaceRepository,
     @inject(RuntimeRepository) private readonly runtimeRepository: RuntimeRepository,
     @inject(ToolSetRepository) private readonly toolsetRepository: ToolSetRepository,
@@ -76,11 +78,23 @@ export class IdentityService extends Service {
 
   private async handleHandshake(msg: HandshakeRequest) {
     const key = msg.data.key;
+    const keyPrefix = key.substring(0, 8); // First 8 chars for rate limiting
+    const ipAddress = msg.data.hostIP || 'unknown';
+
     this.logger.debug(`Handling handshake message: ${key.slice(0, 5)}...${key.slice(-3)}, ${msg.data.nature} ${msg.data.name}]`);
-    
+
     try {
-      // 1. Find the identity key
+      // 1. Check rate limiting before validation
+      if (!this.keyRateLimiter.checkKeyAttempt(keyPrefix, ipAddress)) {
+        this.logger.warn(`Rate limit exceeded for key validation attempt from IP: ${ipAddress}`);
+        throw new Error('AUTHENTICATION_FAILED');
+      }
+
+      // 2. Find the identity key
       const { nature, relatedId } = await this.identityRepository.findKey(key);
+
+      // 3. Record successful validation
+      this.keyRateLimiter.recordSuccessfulAttempt(keyPrefix);
       let workspaceId: string | null = null;
       let finalNature: 'runtime' | 'toolset' | null = null;
       let finalRelatedId: string | null = null;
@@ -168,8 +182,23 @@ export class IdentityService extends Service {
       this.logger.debug(`Sending handshake response: ${JSON.stringify(handshakeResponse.data)}`);
       msg.respond(handshakeResponse);
     } catch (error) {
-      this.logger.error(`Handshake failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
-      msg.respond(new ErrorResponse({ error: `Handshake failed: ${error instanceof Error ? error.message : 'Unknown error'}` }));
+      // Record failed attempt for rate limiting (unless it was a rate limit error)
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      if (errorMessage !== 'AUTHENTICATION_FAILED') {
+        this.keyRateLimiter.recordFailedAttempt(keyPrefix, ipAddress);
+      }
+
+      // Log detailed error for debugging (preserves original error information)
+      this.logger.error(`Handshake failed: ${errorMessage}`);
+
+      // Always return generic error to prevent enumeration attacks
+      // This prevents attackers from distinguishing between:
+      // - NOT_FOUND (key doesn't exist)
+      // - EXPIRED (key exists but expired)
+      // - REVOKED (key exists but revoked)
+      // - INVALID_KEY_FORMAT (invalid format)
+      // - INVALID_KEY_PREFIX (wrong prefix)
+      msg.respond(new ErrorResponse({ error: 'AUTHENTICATION_FAILED' }));
     }
   }
 

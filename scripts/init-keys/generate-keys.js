@@ -70,18 +70,18 @@ function generateJwtKeyPair() {
 }
 
 /**
- * Generate initial workspace master key in WSK format
+ * Generate initial workspace master key in WSK format (46 characters)
+ * Uses 32 random bytes (256-bit entropy) encoded as base64url
  * Matches the format used by IdentityRepository
  * @returns {string} Workspace key starting with WSK
  */
 function generateMasterKey() {
   const prefix = 'WSK';
-  const randomData = randomBytes(22)
+  const randomData = randomBytes(32)
     .toString('base64')
     .replace(/\+/g, '-')
     .replace(/\//g, '_')
-    .replace(/=+$/g, '')
-    .substring(0, 29);
+    .replace(/=+$/g, '');
 
   return prefix + randomData;
 }
@@ -167,7 +167,7 @@ async function main() {
   console.log('NATS_OPERATOR_SEED (56 chars):');
   console.log(`  ${natsOperatorSeed}\n`);
 
-  console.log('MASTER_KEY (32 chars):');
+  console.log('MASTER_KEY (46 chars):');
   console.log(`  ${masterKey}\n`);
 
   console.log('JWT Keys:');

@@ -35,6 +35,7 @@ import { JwtService, AuthenticationService, AccountSecurityService, PasswordPoli
 import { SecurityMiddleware, RateLimitMiddleware, GraphQLAuthMiddleware } from '../middleware';
 import { MCPServerAutoConfigService, AZURE_ENDPOINT, AZURE_API_KEY, BRAVE_SEARCH_API_KEY } from '../services/mcp-auto-config.service';
 import { IdentityService } from '../services/identity.service';
+import { KeyRateLimiterService } from '../services/key-rate-limiter.service';
 import pino from 'pino';
 import { MonitoringService } from '../services/monitoring.service';
 
@@ -96,6 +97,9 @@ const start = () => {
 
   // Init identity service
   container.bind(IdentityService).toSelf().inSingletonScope();
+
+  // Init key rate limiter service
+  container.bind(KeyRateLimiterService).toSelf().inSingletonScope();
 
   // Init security services
   container.bind(AccountSecurityService).toSelf().inSingletonScope();

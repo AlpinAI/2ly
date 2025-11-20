@@ -221,7 +221,7 @@ type IdentityKey @withSubscription {
   # Workspace Key       WSK_____
   # Runtime Key         RTK_____
   # Toolset Key         TSK_____
-  key: String! @search(by: [hash])
+  key: String! @search(by: [hash]) @id
   relatedId: String! @search(by: [hash])
   createdAt: DateTime!
   expiresAt: DateTime @search
