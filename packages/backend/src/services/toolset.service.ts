@@ -26,6 +26,7 @@ export class ToolSetService extends Service {
   private logger: pino.Logger;
   private rxjsSubscriptions: Subscription[] = [];
   private natsSubscriptions: { unsubscribe: () => void; drain: () => Promise<void>; isClosed?: () => boolean }[] = [];
+  private toolsetHandshakeCallbackId?: string;
 
   constructor(
     @inject(LoggerService) private loggerService: LoggerService,
@@ -44,13 +45,19 @@ export class ToolSetService extends Service {
     await this.startService(this.dgraphService);
     await this.startService(this.natsService);
     await this.subscribeToToolSet();
-    this.identityService.onHandshake('toolset', (identity: ToolsetHandshakeIdentity) => {
+    this.toolsetHandshakeCallbackId = this.identityService.onHandshake('toolset', (identity: ToolsetHandshakeIdentity) => {
       this.handleToolSetHandshake(identity);
     });
   }
 
   protected async shutdown() {
     this.logger.info('Stopping');
+
+    // Unregister handshake callback
+    if (this.toolsetHandshakeCallbackId) {
+      this.identityService.offHandshake('toolset', this.toolsetHandshakeCallbackId);
+      this.toolsetHandshakeCallbackId = undefined;
+    }
 
     await this.stopService(this.dgraphService);
 

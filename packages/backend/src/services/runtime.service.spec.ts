@@ -34,6 +34,7 @@ interface FakeIdentityService {
     start: () => Promise<void>;
     stop: () => Promise<void>;
     onHandshake: (nature: 'runtime' | 'toolset', callback: (identity: RuntimeHandshakeIdentity) => void) => string;
+    offHandshake: (nature: 'runtime' | 'toolset', callbackId: string) => void;
 }
 
 class FakeRuntimeInstance {
@@ -80,6 +81,11 @@ function createService(deps?: Partial<{
                 runtimeHandshakeCallback = callback;
             }
             return 'callback-id';
+        }),
+        offHandshake: vi.fn((nature, _callbackId) => {
+            if (nature === 'runtime') {
+                runtimeHandshakeCallback = null;
+            }
         }),
     };
 
@@ -162,5 +168,13 @@ describe('RuntimeService', () => {
         iterator.push({ type: 'unknown', data: {}, shouldRespond: () => false } as unknown as NatsMessage);
         await new Promise((r) => setTimeout(r, 10));
         await service.stop('test');
+    });
+
+    it('unregisters handshake callback during shutdown', async () => {
+        const { service, identityService } = createService();
+        await service.start('test');
+        expect(identityService.onHandshake).toHaveBeenCalledWith('runtime', expect.any(Function));
+        await service.stop('test');
+        expect(identityService.offHandshake).toHaveBeenCalledWith('runtime', 'callback-id');
     });
 });

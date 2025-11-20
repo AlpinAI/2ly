@@ -57,6 +57,9 @@ export class IdentityService extends Service {
       }
     }
     this.subscriptions = [];
+    // Clear callback maps as defensive cleanup
+    this.onRuntimeHandshakeCallbacks.clear();
+    this.onToolsetHandshakeCallbacks.clear();
     await this.stopService(this.natsService);
     this.logger.info('Stopped');
   }

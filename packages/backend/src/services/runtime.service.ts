@@ -24,6 +24,7 @@ export class RuntimeService extends Service {
 
   private subscriptions: { unsubscribe: () => void; drain: () => Promise<void>; isClosed: () => boolean }[] = [];
   private runtimeInstances: Map<string, RuntimeInstance> = new Map();
+  private runtimeHandshakeCallbackId?: string;
 
   constructor(
     @inject(LoggerService) private loggerService: LoggerService,
@@ -44,7 +45,7 @@ export class RuntimeService extends Service {
     await this.startService(this.natsService);
     await this.rehydrateRuntimes();
     // listen for runtime handshakes and create runtime instances on the fly when connecting
-    this.identityService.onHandshake('runtime', (identity: RuntimeHandshakeIdentity) => {
+    this.runtimeHandshakeCallbackId = this.identityService.onHandshake('runtime', (identity: RuntimeHandshakeIdentity) => {
       const instance = identity.instance;
       const metadata = {pid: identity.pid, hostIP: identity.hostIP, hostname: identity.hostname};
       const runtimeInstance = this.runtimeInstanceFactory(
@@ -62,6 +63,11 @@ export class RuntimeService extends Service {
 
   protected async shutdown() {
     this.logger.info('Stopping');
+    // Unregister handshake callback
+    if (this.runtimeHandshakeCallbackId) {
+      this.identityService.offHandshake('runtime', this.runtimeHandshakeCallbackId);
+      this.runtimeHandshakeCallbackId = undefined;
+    }
     for (const subscription of this.subscriptions) {
       try {
         if (!subscription.isClosed()) {
