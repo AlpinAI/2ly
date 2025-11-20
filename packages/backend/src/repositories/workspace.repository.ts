@@ -12,7 +12,6 @@ import {
   UNSET_GLOBAL_RUNTIME,
   CREATE_ONBOARDING_STEP,
   LINK_ONBOARDING_STEP_TO_WORKSPACE,
-  QUERY_ONBOARDING_STEP_BY_STEP_ID,
   UPDATE_ONBOARDING_STEP_STATUS,
   ADD_REGISTRY_SERVER,
   UPDATE_REGISTRY_SERVER,
@@ -28,15 +27,19 @@ import { createSubscriptionFromQuery } from '../helpers';
 import { INITIAL_ONBOARDING_STEPS } from './onboarding-step-definitions';
 import { INITIAL_FEATURED_SERVERS } from './initial-servers';
 import { QUERY_TOOLSETS_BY_WORKSPACE } from './toolset.operations';
+import { IdentityRepository } from './identity.repository';
 
 @injectable()
 export class WorkspaceRepository {
   constructor(
     @inject(DGraphService) private readonly dgraphService: DGraphService,
+    @inject(IdentityRepository) private readonly identityRepository: IdentityRepository,
   ) { }
 
-  async create(name: string, adminId: string): Promise<apolloResolversTypes.Workspace> {
+  async create(name: string, adminId: string, options: { masterKey?: string } = {}): Promise<apolloResolversTypes.Workspace> {
     const now = new Date().toISOString();
+
+    // 1. Get system
     const system = await this.dgraphService.query<{
       querySystem: dgraphResolversTypes.System[];
     }>(QUERY_SYSTEM, {});
@@ -44,7 +47,8 @@ export class WorkspaceRepository {
       throw new Error('System not found');
     }
     const systemId = system.querySystem[0].id;
-    // Create workspace
+
+    // 2. Create workspace
     const res = await this.dgraphService.mutation<{
       addWorkspace: { workspace: apolloResolversTypes.Workspace[] };
     }>(ADD_WORKSPACE, {
@@ -55,7 +59,11 @@ export class WorkspaceRepository {
     });
     const workspace = res.addWorkspace.workspace[0];
 
-    // Create featured servers directly on workspace from INITIAL_FEATURED_SERVERS
+    // 3. Create master key
+    const identityOptions = { key: options?.masterKey };
+    await this.identityRepository.createKey('workspace', workspace.id, 'Default Workspace Master key', '', identityOptions);
+
+    // 4. Create featured servers directly on workspace from INITIAL_FEATURED_SERVERS
     const failedServers: string[] = [];
     for (const server of INITIAL_FEATURED_SERVERS) {
       try {
@@ -82,7 +90,7 @@ export class WorkspaceRepository {
       console.warn(`Workspace ${workspace.id} (${workspace.name}) created with ${failedServers.length} failed servers: ${failedServers.join(', ')}`);
     }
 
-    // Initialize onboarding steps for new workspace
+    // 5. Initialize onboarding steps for new workspace
     await this.initializeOnboardingSteps(workspace.id);
 
     return workspace;
@@ -101,6 +109,13 @@ export class WorkspaceRepository {
       getWorkspace: dgraphResolversTypes.Workspace;
     }>(QUERY_WORKSPACE, { workspaceId });
     return res.getWorkspace;
+  }
+
+  async getRuntimes(workspaceId: string): Promise<apolloResolversTypes.Runtime[]> {
+    const res = await this.dgraphService.query<{
+      getWorkspace: apolloResolversTypes.Workspace;
+    }>(QUERY_WORKSPACE_WITH_RUNTIMES, { workspaceId });
+    return res.getWorkspace.runtimes || [];
   }
 
   async update(id: string, name: string): Promise<apolloResolversTypes.Workspace> {
@@ -172,15 +187,19 @@ export class WorkspaceRepository {
       .observe<apolloResolversTypes.Workspace>(query, { workspaceId }, 'getWorkspace', true);
   }
 
+  async getWorkspaceOnboardingSteps(workspaceId: string): Promise<apolloResolversTypes.OnboardingStep[]> {
+    const res = await this.dgraphService.query<{
+      getWorkspace: { onboardingSteps: apolloResolversTypes.OnboardingStep[] };
+    }>(QUERY_WORKSPACE, { workspaceId });
+    return res.getWorkspace.onboardingSteps || [];
+  }
+
   async initializeOnboardingSteps(workspaceId: string): Promise<void> {
     const now = new Date().toISOString();
     
     // Get existing onboarding steps to avoid duplicates
-    const workspace = await this.dgraphService.query<{
-      getWorkspace: { onboardingSteps: { stepId: string }[] };
-    }>(QUERY_WORKSPACE, { workspaceId });
-    
-    const existingStepIds = new Set(workspace.getWorkspace.onboardingSteps?.map(s => s.stepId) || []);
+    const existingSteps = await this.getWorkspaceOnboardingSteps(workspaceId);
+    const existingStepIds = new Set(existingSteps.map(s => s.stepId));
     
     // Create only missing steps
     for (const stepDef of INITIAL_ONBOARDING_STEPS) {
@@ -207,47 +226,48 @@ export class WorkspaceRepository {
     }
   }
 
-  async completeOnboardingStep(workspaceId: string, stepId: string): Promise<void> {
+  async completeOnboardingStep(workspaceId: string, stepId: string, metadata?: Record<string, unknown>): Promise<void> {
     const now = new Date().toISOString();
-    
-    // First, query for the onboarding step by stepId to get the dgraph ID
-    const stepQuery = await this.dgraphService.query<{
-      queryOnboardingStep: { id: string; stepId: string; status: string }[];
-    }>(QUERY_ONBOARDING_STEP_BY_STEP_ID, { stepId });
-    
-    const step = stepQuery.queryOnboardingStep?.[0];
-    if (!step) {
+
+    const existingSteps = await this.getWorkspaceOnboardingSteps(workspaceId);
+    const existingStep = existingSteps.find(s => s.stepId === stepId);
+    if (!existingStep) {
       throw new Error(`Onboarding step with stepId '${stepId}' not found`);
     }
-    
+
+    if (existingStep.status === 'COMPLETED') {
+      return;
+    }
+
     // Update the onboarding step status to COMPLETED
     await this.dgraphService.mutation<{
       updateOnboardingStep: { onboardingStep: { id: string }[] };
     }>(UPDATE_ONBOARDING_STEP_STATUS, {
-      id: step.id,
+      id: existingStep.id,
       status: 'COMPLETED',
       now,
+      metadata: metadata ? JSON.stringify(metadata) : undefined,
     });
   }
 
   async dismissOnboardingStep(workspaceId: string, stepId: string): Promise<void> {
     const now = new Date().toISOString();
-    
-    // First, query for the onboarding step by stepId to get the dgraph ID
-    const stepQuery = await this.dgraphService.query<{
-      queryOnboardingStep: { id: string; stepId: string; status: string }[];
-    }>(QUERY_ONBOARDING_STEP_BY_STEP_ID, { stepId });
-    
-    const step = stepQuery.queryOnboardingStep?.[0];
-    if (!step) {
+
+    const existingSteps = await this.getWorkspaceOnboardingSteps(workspaceId);
+    const existingStep = existingSteps.find(s => s.stepId === stepId);
+    if (!existingStep) {
       throw new Error(`Onboarding step with stepId '${stepId}' not found`);
+    }
+
+    if (existingStep.status === 'DISMISSED') {
+      return;
     }
     
     // Update the onboarding step status to DISMISSED
     await this.dgraphService.mutation<{
       updateOnboardingStep: { onboardingStep: { id: string }[] };
     }>(UPDATE_ONBOARDING_STEP_STATUS, {
-      id: step.id,
+      id: existingStep.id,
       status: 'DISMISSED',
       now,
     });
@@ -286,9 +306,6 @@ export class WorkspaceRepository {
         
         shouldComplete = (toolSets.getWorkspace?.toolSets.some(ts => ts.mcpTools && ts.mcpTools.length > 0) ?? false);
         break; }
-      case 'connect-tool-set-to-agent':
-        shouldComplete = false
-        break;
       default:
         return; // Unknown step
     }

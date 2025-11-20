@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc && vite build",
+    "build": "tsc -p tsconfig.build.json && vite build",
     "preview": "vite preview",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0 --format unix --quiet",
     "lint:full": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
@@ -14,16 +14,15 @@
     "codegen": "graphql-codegen --config codegen.ts",
     "codegen:watch": "graphql-codegen --watch --config codegen.ts",
     "test": "vitest --run",
-    "test:e2e": "playwright test --project=clean-chromium --project=seeded-chromium --project=parallel-chromium --reporter=line",
+    "test:e2e": "playwright test --project=serial-chromium --project=parallel-chromium --reporter=line",
     "test:e2e:full": "playwright test",
     "test:e2e:ui": "playwright test --ui",
     "test:e2e:headed": "playwright test --headed",
     "test:e2e:debug": "playwright test --debug",
     "test:e2e:report": "playwright show-report playwright-report",
-    "test:e2e:chromium": "playwright test --project=clean-chromium --project=seeded-chromium --project=parallel-chromium",
-    "test:e2e:firefox": "playwright test --project=clean-firefox --project=seeded-firefox --project=parallel-firefox",
-    "test:e2e:webkit": "playwright test --project=clean-webkit --project=seeded-webkit --project=parallel-webkit",
-    "test:e2e:no-build": "E2E_USE_IMAGE=true playwright test --project=clean-chromium --project=seeded-chromium --project=parallel-chromium --reporter=line"
+    "test:e2e:chromium": "playwright test --project=serial-chromium --project=parallel-chromium",
+    "test:e2e:firefox": "playwright test --project=serial-firefox --project=parallel-firefox",
+    "test:e2e:webkit": "playwright test --project=serial-webkit --project=parallel-webkit"
   },
   "dependencies": {
     "@apollo/client": "^4.0.7",
@@ -82,6 +81,7 @@
     "eslint-plugin-react-refresh": "^0.4.9",
     "postcss": "^8.4.47",
     "tailwindcss": "^3.4.11",
-    "typescript": "^5.5.3"
+    "typescript": "^5.5.3",
+    "@vitejs/plugin-react-swc": "^4.1.0"
   }
 }

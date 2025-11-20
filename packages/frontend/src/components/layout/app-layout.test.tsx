@@ -21,6 +21,10 @@ vi.mock('@/contexts/AuthContext', () => ({
 // Mock the workspace store
 vi.mock('@/stores/workspaceStore', () => ({
   useWorkspaceId: () => 'workspace-123',
+  useWorkspaceStore: () => ({
+    workspaceId: 'workspace-123',
+    syncFromUrl: vi.fn(),
+  }),
 }));
 
 // Mock CommandPalette to avoid Apollo client dependency
@@ -33,16 +37,20 @@ vi.mock('@/components/sources/add-source-workflow', () => ({
   AddSourceWorkflow: () => null,
 }));
 
-vi.mock('@/components/toolsets/tool-management-panel', () => ({
-  ToolManagementPanel: () => null,
+vi.mock('@/components/registry/add-server-workflow', () => ({
+  AddServerWorkflow: () => null,
 }));
 
-vi.mock('@/components/tool-sets/create-tool-set-dialog', () => ({
-  CreateToolSetDialog: () => null,
+vi.mock('@/components/toolsets/toolset-management-panel', () => ({
+  ToolsetManagementPanel: () => null,
 }));
 
-vi.mock('@/components/agents/connect-agent-dialog', () => ({
-  ConnectAgentDialog: () => null,
+vi.mock('@/components/toolsets/create-toolset-dialog', () => ({
+  CreateToolsetDialog: () => null,
+}));
+
+vi.mock('@/components/toolsets/connect-toolset-dialog', () => ({
+  ConnectToolsetDialog: () => null,
 }));
 
 const renderWithProviders = (component: React.ReactElement) => {

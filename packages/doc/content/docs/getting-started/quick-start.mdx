@@ -15,35 +15,49 @@ Create a workspace, connect an agent, and configure your first tool.
 1. Open http://localhost:8888
 2. Create a new workspace
 
-## 2. Connect Agent
+[add screenshot]
 
-1. Select **Sandbox** to generate a sample agent
-2. Click **Create Agent** and name it 2LY_bot
+## 2. Install an MCP Server
 
-## 3. Add Tool
+2LY comes with a selection of pre-installed server. Use one of these to quickly grasp how 2LY works. You'll have the chance to [add any MCP Servers](links-to-add-mcp-server-doc) later.
 
-1. Select **MCP** as a tool category
-2. Select featured MCP **Hackernews** MCP server
-3. Validate configuration`
-4. Click **Test Server**
-5. Click **Save**
+[add the doc to explain how to add any mcp server]
 
-## 4. Link Tool to Agent
+1. Click **Browse MCP Servers**
+2. Select the **CHOOSE AN INTERESTING SERVER**
+3. Click **Test Server**
+4. Click **Save**
 
-1. Select which tools the agent can access
-2. Click **Save**
+[add screenshot, complete the steps]
+
+## 3. Create a Toolset
+
+Toolsets allow you to shortlist and combines which tools will be advertised to which agents.
+
+1. Click **Create Tool Set**
+2. Give it a meaningul name such as **News summarizer**
+3. Select the tools to include (add at least one)
+
+## 4. Connect 2LY to your agent
+
+Your toolset is now ready to be consumed by your agents.
+
+1. Click **Connect**
+2. Select the type of agent you would like to connect. If unsure use the JSON configuration
+3. Launch your agent with 2LY connected
 
 Et voilà !
 
 ## 5. Test in Playground (Optional)
 
-1. Choose a tool 
+1. Choose a tool
 2. Add instruction and click **Test**
-3. Verify the execution of the interaction 
+3. Verify the execution of the interaction
 
 ## Verification
 
 You should have:
+
 - ✅ Workspace created
 - ✅ Sandbox agent running
 - ✅ Configured tool connected
@@ -57,11 +71,13 @@ You should have:
 ## Troubleshooting
 
 **Can't access localhost:8888?**
+
 ```bash
 npm run start
 docker-compose ps
 ```
 
 **MCP test fails?**
+
 - Check directory permissions
 - Try `/tmp` instead of Desktop

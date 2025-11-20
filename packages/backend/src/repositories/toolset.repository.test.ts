@@ -4,6 +4,7 @@ import { ToolSetRepository } from './toolset.repository';
 import { DGraphService } from '../services/dgraph.service';
 import { LoggerService } from '@2ly/common';
 import type { WorkspaceRepository } from './workspace.repository';
+import type { IdentityRepository } from './identity.repository';
 
 describe('ToolSetRepository', () => {
   let toolSetRepository: ToolSetRepository;
@@ -34,7 +35,12 @@ describe('ToolSetRepository', () => {
       checkAndCompleteStep: vi.fn().mockResolvedValue(undefined),
     } as unknown as WorkspaceRepository;
 
-    toolSetRepository = new ToolSetRepository(mockDGraphService, mockLoggerService, mockWorkspaceRepository);
+    // Mock IdentityRepository
+    const mockIdentityRepository = {
+      createKey: vi.fn().mockResolvedValue({ id: '0x1', key: 'TSK_test123' }),
+    } as unknown as IdentityRepository;
+
+    toolSetRepository = new ToolSetRepository(mockDGraphService, mockLoggerService, mockWorkspaceRepository, mockIdentityRepository);
   });
 
   describe('create', () => {

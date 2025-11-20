@@ -102,12 +102,10 @@ describe('ToolDetail', () => {
       ],
       loading: false,
       error: undefined,
-      stats: { total: 1, filtered: 1, active: 1, inactive: 0 },
+      stats: { total: 1, filtered: 1 },
       filters: {
         search: '',
         setSearch: vi.fn(),
-        statuses: [],
-        setStatuses: vi.fn(),
         reset: vi.fn(),
       },
     });

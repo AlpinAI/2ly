@@ -29,10 +29,10 @@ describe('ToolCallDetail', () => {
         name: 'Test Server',
       },
     },
+    isTest: false,
     calledBy: {
       id: 'runtime-1',
       name: 'Test Agent',
-      hostname: 'agent-host-1',
     },
     executedBy: {
       id: 'runtime-2',
@@ -114,7 +114,6 @@ describe('ToolCallDetail', () => {
 
     expect(screen.getByText('Called By')).toBeInTheDocument();
     expect(screen.getByText('Test Agent')).toBeInTheDocument();
-    expect(screen.getByText('agent-host-1')).toBeInTheDocument();
   });
 
   it('renders executed by information', () => {

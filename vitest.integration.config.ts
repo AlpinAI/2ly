@@ -16,7 +16,7 @@ export default defineConfig({
         dir: './',
         include: [
             'packages/**/src/**/*.integration.spec.ts',
-            'packages/backend/tests/**/*.spec.ts'
+            'packages/backend/tests/**/*.spec.ts',
         ],
         exclude: [
             '**/node_modules/**',
@@ -59,8 +59,9 @@ export default defineConfig({
     },
     resolve: {
         alias: {
-            '@2ly/common/test/testcontainers': path.resolve(__dirname, 'packages/common/src/test/testcontainers.ts'),
+            '@2ly/common/test/test.containers': path.resolve(__dirname, 'packages/common/src/test/test.containers.ts'),
             '@2ly/common/test/vitest': path.resolve(__dirname, 'packages/common/src/test/vitest.ts'),
+            '@2ly/common/test/fixtures': path.resolve(__dirname, 'packages/common/src/test/fixtures/index.ts'),
             '@2ly/common': path.resolve(__dirname, 'packages/common/src/index.ts'),
             '@2ly/common/*': path.resolve(__dirname, 'packages/common/src/*')
 

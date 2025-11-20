@@ -88,14 +88,14 @@ describe('NatsService Integration', () => {
 
     afterEach(async () => {
         const svc = container.get(NatsService);
-        if (svc.isConnected()) await svc.stop();
+        if (svc.isConnected()) await svc.stop('nats');
 
     });
 
     it('connects and reports isConnected', async () => {
         const svc = container.get(NatsService);
         await new Promise(resolve => setTimeout(resolve, 1000));
-        await svc.start();
+        await svc.start('nats');
         // Verify that the NATS connection was established
         const natsConnection = getNatsConnection(svc);
         expect(natsConnection).toBeDefined();
@@ -105,18 +105,18 @@ describe('NatsService Integration', () => {
 
     it('tear down when stopping', async () => {
         const svc = container.get(NatsService);
-        await svc.start();
+        await svc.start('nats');
         // Access the private nats property using helper function
         const natsConnection = getNatsConnection(svc);
         expect(svc.isConnected()).toBe(true);
-        await svc.stop();
+        await svc.stop('nats');
         expect(svc.isConnected()).toBe(false);
         expect(natsConnection?.isClosed()).toBe(true);
     });
 
     it('publish correctly NatsPublish objects', async () => {
         const svc = container.get(NatsService);
-        await svc.start();
+        await svc.start('nats');
 
         const message = TestPublishMessage.create({ content: 'test message' }) as TestPublishMessage;
         const subscription = svc.subscribe('test.publish.subject');
@@ -139,7 +139,7 @@ describe('NatsService Integration', () => {
 
     it('throw when using publish with invalid input', async () => {
         const svc = container.get(NatsService);
-        await svc.start();
+        await svc.start('nats');
 
         // Create a message without using the create method to avoid setting subject
         const invalidMessage = new TestPublishMessage({ content: 'test' });
@@ -151,7 +151,7 @@ describe('NatsService Integration', () => {
 
     it('converts NatsPublish objects into core NATS messages', async () => {
         const svc = container.get(NatsService);
-        await svc.start();
+        await svc.start('nats');
         const message = TestPublishMessage.create({ content: 'test message' }) as TestPublishMessage;
         const natsConnection = getNatsConnection(svc);
         const publishSpy = vi.spyOn(natsConnection!, 'publish');
@@ -161,7 +161,7 @@ describe('NatsService Integration', () => {
 
     it('request correctly NatsRequest objects', async () => {
         const svc = container.get(NatsService);
-        await svc.start();
+        await svc.start('nats');
 
         // Set up a responder
         const subscription = svc.subscribe('test.request.subject');
@@ -185,7 +185,7 @@ describe('NatsService Integration', () => {
     });
     it('throw when using request with invalid input', async () => {
         const svc = container.get(NatsService);
-        await svc.start();
+        await svc.start('nats');
 
         // Create a message without using the create method to avoid setting subject
         const invalidMessage = new TestRequestMessage({ query: 'test' });
@@ -196,7 +196,7 @@ describe('NatsService Integration', () => {
     });
     it('converts NatsRequest objects into core NATS messages', async () => {
         const svc = container.get(NatsService);
-        await svc.start();
+        await svc.start('nats');
         const message = TestRequestMessage.create({ query: 'test query' }) as TestRequestMessage;
         const natsConnection = getNatsConnection(svc);
         const requestSpy = vi.spyOn(natsConnection!, 'request');
@@ -210,7 +210,7 @@ describe('NatsService Integration', () => {
     });
     it('await request and gets a NatsResponse in return', async () => {
         const svc = container.get(NatsService);
-        await svc.start();
+        await svc.start('nats');
 
         // Set up a responder that returns a proper NatsResponse
         const subscription = svc.subscribe('test.request.subject');
@@ -234,7 +234,7 @@ describe('NatsService Integration', () => {
     });
     it('throw when request reply is not a NatsResponse', async () => {
         const svc = container.get(NatsService);
-        await svc.start();
+        await svc.start('nats');
 
         // Set up a responder that returns a non-NatsResponse message
         const subscription = svc.subscribe('test.request.subject');
@@ -257,7 +257,7 @@ describe('NatsService Integration', () => {
     });
     it('subscribe to subjects and yields NatsMessage objects accordingly', async () => {
         const svc = container.get(NatsService);
-        await svc.start();
+        await svc.start('nats');
 
         const subscription = svc.subscribe('test.publish.subject');
         const messages: NatsMessage[] = [];
@@ -287,7 +287,7 @@ describe('NatsService Integration', () => {
 
     it('heartbeat puts value, lists keys, and deletes with kill', async () => {
         const svc = container.get(NatsService);
-        await svc.start();
+        await svc.start('nats');
 
         const id = 'hb-1';
         svc.heartbeat(id, { node: 'n1' });
@@ -302,7 +302,7 @@ describe('NatsService Integration', () => {
 
     it('observeHeartbeat yields updates and then terminates on timeout', async () => {
         const svc = container.get(NatsService);
-        await svc.start();
+        await svc.start('nats');
 
         const id = 'hb-obs-1';
         const iterator = await svc.observeHeartbeat(id);
@@ -325,7 +325,7 @@ describe('NatsService Integration', () => {
 
     it('observeHeartbeat terminates when heartbeat is missed', async () => {
         const svc = container.get(NatsService);
-        await svc.start();
+        await svc.start('nats');
         const id = 'hb-obs-2';
         const stream = await svc.observeHeartbeat(id);
         let closed = false;
@@ -343,7 +343,7 @@ describe('NatsService Integration', () => {
 
     it('ephemeral publish is observed via observeEphemeral', async () => {
         const svc = container.get(NatsService);
-        await svc.start();
+        await svc.start('nats');
 
         const subject = 'ephemeral.subject.test';
         const watcher = await svc.observeEphemeral(subject);

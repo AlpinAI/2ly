@@ -91,6 +91,7 @@ describe('OnboardingCard', () => {
       runtimes: [],
       toolSets: [],
     },
+    toolResponses: [],
   };
 
   const mockToolSet = {
@@ -139,6 +140,7 @@ describe('OnboardingCard', () => {
     status: OnboardingStepStatus.Pending,
     type: OnboardingStepType.Onboarding,
     priority: 3,
+    metadata: null,
     createdAt: new Date(),
     updatedAt: null,
   };
@@ -147,8 +149,8 @@ describe('OnboardingCard', () => {
   const mockOpenCreateToolSetDialog = vi.fn();
   const mockSetManageToolsDialogOpen = vi.fn();
   const mockSetSelectedToolSetForManagement = vi.fn();
-  const mockSetConnectAgentDialogOpen = vi.fn();
-  const mockSetSelectedAgentId = vi.fn();
+  const mockSetConnectToolsetDialogOpen = vi.fn();
+  const mockSetSelectedToolsetName = vi.fn();
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -164,7 +166,7 @@ describe('OnboardingCard', () => {
       }
     );
 
-    vi.mocked(uiStore.useCreateToolSetDialog).mockReturnValue({
+    vi.mocked(uiStore.useCreateToolsetDialog).mockReturnValue({
       open: false,
       callback: null,
       openDialog: mockOpenCreateToolSetDialog,
@@ -174,15 +176,17 @@ describe('OnboardingCard', () => {
     vi.mocked(uiStore.useManageToolsDialog).mockReturnValue({
       open: false,
       setOpen: mockSetManageToolsDialogOpen,
-      selectedToolSetId: null,
-      setSelectedToolSetId: mockSetSelectedToolSetForManagement,
+      selectedToolsetId: null,
+      setSelectedToolsetId: mockSetSelectedToolSetForManagement,
     });
 
-    vi.mocked(uiStore.useConnectAgentDialog).mockReturnValue({
+    vi.mocked(uiStore.useConnectToolsetDialog).mockReturnValue({
       open: false,
-      setOpen: mockSetConnectAgentDialogOpen,
-      selectedAgentId: null,
-      setSelectedAgentId: mockSetSelectedAgentId,
+      setOpen: mockSetConnectToolsetDialogOpen,
+      selectedToolsetName: null,
+      setSelectedToolsetName: mockSetSelectedToolsetName,
+      selectedToolsetId: null,
+      setSelectedToolsetId: vi.fn(),
     });
 
     vi.mocked(runtimeStore.useRuntimeData).mockReturnValue({
@@ -202,14 +206,12 @@ describe('OnboardingCard', () => {
     vi.mocked(useToolSets).mockReturnValue({
       toolSets: [mockToolSet],
       filteredToolSets: [mockToolSet],
-      stats: { total: 1, filtered: 1, active: 1, inactive: 0 },
+      stats: { total: 1, filtered: 1 },
       loading: false,
       error: undefined,
       filters: {
         search: '',
         setSearch: vi.fn(),
-        statuses: [],
-        setStatuses: vi.fn(),
         reset: vi.fn(),
       },
     });
@@ -230,28 +232,26 @@ describe('OnboardingCard', () => {
       expect(button).toBeInTheDocument();
     });
 
-    it('opens Connect Agent dialog when Connect button is clicked', () => {
+    it('opens Connect Toolset dialog when Connect button is clicked', () => {
       render(<OnboardingCard step={mockStep} isCurrentStep={true} />);
 
       const button = screen.getByRole('button', { name: /Connect/i });
       fireEvent.click(button);
 
-      expect(mockSetSelectedAgentId).toHaveBeenCalledWith('Test Agent');
-      expect(mockSetConnectAgentDialogOpen).toHaveBeenCalledWith(true);
+      expect(mockSetSelectedToolsetName).toHaveBeenCalledWith('Test Agent');
+      expect(mockSetConnectToolsetDialogOpen).toHaveBeenCalledWith(true);
     });
 
     it('shows message when no tool set with tools exists', () => {
       vi.mocked(useToolSets).mockReturnValue({
         toolSets: [],
         filteredToolSets: [],
-        stats: { total: 0, filtered: 0, active: 0, inactive: 0 },
+        stats: { total: 0, filtered: 0 },
         loading: false,
         error: undefined,
         filters: {
           search: '',
           setSearch: vi.fn(),
-          statuses: [],
-          setStatuses: vi.fn(),
           reset: vi.fn(),
         },
       });
@@ -270,32 +270,7 @@ describe('OnboardingCard', () => {
       render(<OnboardingCard step={completedStep} />);
 
       expect(screen.getByText('Completed')).toBeInTheDocument();
-      expect(screen.getByText(/Test Agent connected/)).toBeInTheDocument();
-    });
-
-    it('shows truncated runtime name when too long', () => {
-      const longNameRuntime = {
-        ...mockRuntime,
-        name: 'This is a very long runtime name that should be truncated',
-      };
-
-      vi.mocked(runtimeStore.useRuntimeData).mockReturnValue({
-        runtimes: [longNameRuntime],
-        loading: false,
-        error: null,
-        stats: { total: 1, active: 1, inactive: 0 },
-      });
-
-      const completedStep = {
-        ...mockStep,
-        status: OnboardingStepStatus.Completed,
-      };
-
-      render(<OnboardingCard step={completedStep} />);
-
-      const nameElement = screen.getByText(/This is a very long runtime name that should be truncated connected/);
-      expect(nameElement).toBeInTheDocument();
-      expect(nameElement.className).toContain('truncate');
+      expect(screen.getByText(/Tool Set connected/)).toBeInTheDocument();
     });
 
     it('applies correct styling for current step', () => {
@@ -470,14 +445,12 @@ describe('OnboardingCard', () => {
       vi.mocked(useToolSets).mockReturnValue({
         toolSets: [multiToolToolSet],
         filteredToolSets: [multiToolToolSet],
-        stats: { total: 1, filtered: 1, active: 1, inactive: 0 },
+        stats: { total: 1, filtered: 1 },
         loading: false,
         error: undefined,
         filters: {
           search: '',
           setSearch: vi.fn(),
-          statuses: [],
-          setStatuses: vi.fn(),
           reset: vi.fn(),
         },
       });

@@ -15,7 +15,7 @@
  */
 
 import { describe, it, expect, beforeEach } from 'vitest';
-import { resetDatabase } from '../fixtures/database';
+import { resetDatabase } from '@2ly/common/test/fixtures';
 
 describe('Reset Runtime Reconnection', () => {
   beforeEach(async () => {

@@ -12,6 +12,7 @@ import {
   UserRepository,
   MonitoringRepository,
   ToolSetRepository,
+  IdentityRepository,
 } from '../repositories';
 import { createAuthResolvers } from '../resolvers/auth.resolver';
 import { AuthenticationService, JwtService, PasswordPolicyService } from '../services/auth';
@@ -34,6 +35,7 @@ export const resolvers = (container: Container = defaultContainer): apolloResolv
   const runtimeRepository = container.get(RuntimeRepository);
   const workspaceRepository = container.get(WorkspaceRepository);
   const toolSetRepository = container.get(ToolSetRepository);
+  const identityRepository = container.get(IdentityRepository);
   const mcpAutoConfigService = container.get(MCPServerAutoConfigService);
   const authenticationService = container.get(AuthenticationService);
   const jwtService = container.get(JwtService);
@@ -92,6 +94,21 @@ export const resolvers = (container: Container = defaultContainer): apolloResolv
           filters: args.filters ?? undefined,
           orderDirection: args.orderDirection ?? undefined,
         });
+      },
+      // Key management queries
+      workspaceKeys: async (_parent: unknown, { workspaceId }: { workspaceId: string }) => {
+        return identityRepository.findKeysByRelatedId(workspaceId);
+      },
+      toolsetKey: async (_parent: unknown, { toolsetId }: { toolsetId: string }) => {
+        const keys = await identityRepository.findKeysByRelatedId(toolsetId);
+        return keys.length > 0 ? keys[0] : null;
+      },
+      keyValue: async (_parent: unknown, { keyId }: { keyId: string }) => {
+        const key = await identityRepository.findKeyById(keyId);
+        if (!key) {
+          throw new Error('Key not found');
+        }
+        return key.key;
       },
       // Authentication queries
       ...authResolvers.Query,
@@ -298,6 +315,22 @@ export const resolvers = (container: Container = defaultContainer): apolloResolv
       ) => {
         await workspaceRepository.dismissOnboardingStep(workspaceId, stepId);
         return true;
+      },
+
+      // Key management mutations
+      createWorkspaceKey: async (
+        _parent: unknown,
+        { workspaceId, description }: { workspaceId: string; description: string },
+      ) => {
+        return identityRepository.createKey('workspace', workspaceId, description);
+      },
+
+      revokeKey: async (_parent: unknown, { keyId }: { keyId: string }) => {
+        const key = await identityRepository.findKeyById(keyId);
+        if (!key) {
+          throw new Error('Key not found');
+        }
+        return identityRepository.revokeKey(key.key);
       },
 
       // ToolSet mutations

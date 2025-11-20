@@ -26,7 +26,6 @@ RUN apk add --no-cache curl
 
 # Copy only the built artifacts from builder
 COPY --from=builder /app/packages/backend/dist ./packages/backend/dist
-COPY --from=builder /app/packages/backend/keys ./packages/backend/keys
 
 # Create logs directory
 RUN mkdir -p logs

@@ -19,7 +19,6 @@ export class AccountSecurityService {
   /**
    * Gets basic account security status.
    */
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   async getAccountSecurityStatus(_user: { id: string; email: string }) {
     // For POC: always return safe status
     return {
@@ -67,7 +66,6 @@ export class AccountSecurityService {
   /**
    * Manual account unlock (no-op for POC).
    */
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   async unlockAccount(_userId: string, _adminUserId: string) {
     // TODO: Implement account unlocking when lockout is added
     return {

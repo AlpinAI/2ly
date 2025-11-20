@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "langchain_2ly"
-version = "0.0.1"
+version = "0.1.0"
 description = "2ly python module providing helpers to quickly connect 2ly to your agents in Python."
 authors = [
   { name="Eiger AI", email="eiger@alpinai.ch" }

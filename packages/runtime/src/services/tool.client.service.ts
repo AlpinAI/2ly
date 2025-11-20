@@ -5,18 +5,19 @@ import {
   NatsService,
   Service,
   dgraphResolversTypes,
-  UpdateMcpToolsMessage,
-  AgentCallMCPToolMessage,
-  AgentCallResponseMessage,
-  UpdateConfiguredMCPServerMessage,
+  RuntimeDiscoveredToolsPublish,
+  ToolSetCallToolRequest,
+  RuntimeCallToolResponse,
+  RuntimeMCPServersPublish,
   MCP_SERVER_RUN_ON,
 } from '@2ly/common';
-import { IdentityService } from './identity.service';
+import { AuthService } from './auth.service';
 import { HealthService } from './runtime.health.service';
 import { ToolServerService, type ToolServerServiceFactory } from './tool.server.service';
 import { CallToolResult } from '@modelcontextprotocol/sdk/types.js';
-import { McpServerService } from './mcp.server.service';
+import { McpStdioService } from './mcp.stdio.service';
 import { Subscription } from 'rxjs';
+import { optional } from 'inversify';
 
 @injectable()
 export class ToolClientService extends Service {
@@ -31,10 +32,10 @@ export class ToolClientService extends Service {
   constructor(
     @inject(LoggerService) private loggerService: LoggerService,
     @inject(NatsService) private natsService: NatsService,
-    @inject(IdentityService) private identityService: IdentityService,
+    @inject(AuthService) private authService: AuthService,
     @inject(HealthService) private healthService: HealthService,
     @inject(ToolServerService) private toolServerServiceFactory: ToolServerServiceFactory,
-    @inject(McpServerService) private mcpServerService: McpServerService,
+    @inject(McpStdioService) @optional() private mcpStdioService: McpStdioService | undefined,
   ) {
     super();
     this.logger = this.loggerService.getLogger(this.name);
@@ -42,24 +43,28 @@ export class ToolClientService extends Service {
 
   protected async initialize() {
     this.logger.info('Starting');
-    await this.identityService.waitForStarted();
+    await this.authService.waitForStarted();
     await this.natsService.waitForStarted();
     await this.healthService.waitForStarted();
     this.startObserveMCPServers();
-    this.rxSubscriptions.push(
-      this.mcpServerService?.observeClientRoots().subscribe(async (value) => {
-        this.logger.debug(`Agent server client roots changed: ${JSON.stringify(value)}`);
-        const roots = this.getRoots();
-        for (const mcpServer of this.mcpServers.values()) {
-          this.logger.debug(`Updating ${mcpServer.getName()} roots: ${JSON.stringify(roots)}`);
-          mcpServer.updateRoots(roots);
-        }
-      }),
-    );
+
+    // Only subscribe to client roots if mcpStdioService is available
+    if (this.mcpStdioService) {
+      this.rxSubscriptions.push(
+        this.mcpStdioService.observeClientRoots().subscribe(async (value) => {
+          this.logger.debug(`Agent server client roots changed: ${JSON.stringify(value)}`);
+          const roots = this.getRoots();
+          for (const mcpServer of this.mcpServers.values()) {
+            this.logger.debug(`Updating ${mcpServer.getName()} roots: ${JSON.stringify(roots)}`);
+            mcpServer.updateRoots(roots);
+          }
+        }),
+      );
+    }
   }
 
   private getRoots() {
-    return this.mcpServerService?.getClientRoots().length ? this.mcpServerService.getClientRoots() : this.roots;
+    return this.mcpStdioService?.getClientRoots().length ? this.mcpStdioService.getClientRoots() : this.roots;
   }
 
   protected async shutdown() {
@@ -70,16 +75,16 @@ export class ToolClientService extends Service {
   }
 
   private async startObserveMCPServers() {
-    const identity = this.identityService.getIdentity();
-    if (!identity?.RID) {
-      throw new Error('Cannot observe configured MCPServers for tool runtime: RID not found');
+    const identity = this.authService.getIdentity();
+    if (!identity?.workspaceId || !identity?.id) {
+      throw new Error('Cannot observe configured MCPServers for tool runtime: workspaceId or id not found');
     }
-    this.logger.debug(`Observing configured MCPServers for tool runtime ${identity.RID}`);
-    const subject = UpdateConfiguredMCPServerMessage.subscribeToRID(identity.RID);
+    this.logger.debug(`Observing configured MCPServers for tool runtime ${identity.workspaceId} - ${identity.id}`);
+    const subject = RuntimeMCPServersPublish.subscribeToRuntime(identity.workspaceId, identity.id);
     const subscription = await this.natsService.observeEphemeral(subject);
     this.natsSubscriptions.push(subscription);
     for await (const msg of subscription) {
-      if (msg instanceof UpdateConfiguredMCPServerMessage) {
+      if (msg instanceof RuntimeMCPServersPublish) {
         this.logger.debug(
           `Received update-configured-mcp-server. roots: ${JSON.stringify(msg.data.roots)}, mcpServers: ${msg.data.mcpServers.map((mcpServer) => mcpServer.name).join(', ')}`,
         );
@@ -112,8 +117,13 @@ export class ToolClientService extends Service {
   }
 
   private async stopObserveMCPServers() {
-    const identity = this.identityService.getIdentity();
-    this.logger.debug(`Stopping to observe configured MCPServers for tool runtime ${identity?.RID ?? 'unknown RID'}`);
+    const identity = this.authService.getIdentity();
+    if (!identity?.workspaceId || !identity?.id) {
+      this.logger.warn(`Cannot stop observing configured MCPServers for tool runtime: workspaceId or id not found`);
+      return;
+    }
+    this.logger.debug(`Stopping to observe configured MCPServers for tool runtime ${identity.workspaceId} - ${identity.id}`);
+    
     // Drain NATS subscriptions before stopping services
     const drainPromises = this.natsSubscriptions.map(async (subscription) => {
       try {
@@ -168,8 +178,11 @@ export class ToolClientService extends Service {
     // This getTools subscription will be completed when the MCP Server is stopped by the MCP Server Service
     mcpServerService.observeTools().subscribe((tools) => {
       this.logger.debug(`Updating tools for MCP Server ${mcpServer.id} with ${tools.length} tools`);
-      const message = UpdateMcpToolsMessage.create({ mcpServerId: mcpServer.id, tools }) as UpdateMcpToolsMessage;
-
+      const message = RuntimeDiscoveredToolsPublish.create({ 
+        workspaceId: this.authService.getIdentity()!.workspaceId!,
+        mcpServerId: mcpServer.id, 
+        tools 
+      }) as RuntimeDiscoveredToolsPublish;
       // TODO: Publish with jetstream in a way that activate a retry in case the backend did not pick up the message
       // target to the backend, doesn't need to be linked to a specific runtime instance
       this.natsService.publish(message);
@@ -195,25 +208,26 @@ export class ToolClientService extends Service {
 
   // Subscribe to a capability and return the subscription
   private subscribeToTool(toolId: string, runOn: MCP_SERVER_RUN_ON) {
-    const runtimeId = this.identityService.getId();
-    if (!runtimeId) {
-      throw new Error('Cannot subscribe to tool without runtimeId');
+    const runtimeId = this.authService.getIdentity()!.id;
+    const workspaceId = this.authService.getIdentity()!.workspaceId;
+    if (!runtimeId || !workspaceId) {
+      throw new Error('Cannot subscribe to tool without runtimeId or workspaceId');
     }
     const subject =
       runOn === 'AGENT'
-        ? AgentCallMCPToolMessage.subscribeToOneRuntime(toolId, runtimeId)
-        : AgentCallMCPToolMessage.subscribeToAll(toolId);
+        ? ToolSetCallToolRequest.subscribeToToolOnOneRuntime(toolId, workspaceId, runtimeId)
+        : ToolSetCallToolRequest.subscribeToTool(toolId);
     const subscription = this.natsService.subscribe(subject);
-    this.handleAgentCallCapabilityMessages(subscription);
+    this.handleToolCall(subscription);
     return subscription;
   }
 
   // Handle Agent Call Capability Messages
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  private async handleAgentCallCapabilityMessages(subscription: any) {
+  private async handleToolCall(subscription: any) {
     for await (const msg of subscription) {
-      if (msg instanceof AgentCallMCPToolMessage) {
-        this.logger.info(`Received agent-call-capability: ${JSON.stringify(msg.data)}`);
+      if (msg instanceof ToolSetCallToolRequest) {
+        this.logger.info(`Tool call request: ${JSON.stringify(msg.data)}`);
         // find the capability
         for (const [mcpServerId, tools] of this.mcpTools.entries()) {
           const tool = tools.find((tool) => tool.id === msg.data.toolId);
@@ -233,12 +247,12 @@ export class ToolClientService extends Service {
           };
           // call the capability
           this.logger.debug(`Calling tool ${tool.name} with arguments ${JSON.stringify(toolCall)}`);
-          const result = await mcpServer.callCapability(toolCall);
+          const result = await mcpServer.callTool(toolCall);
           this.logger.debug(`Result: ${JSON.stringify(result)}`);
           msg.respond(
-            new AgentCallResponseMessage({
+            new RuntimeCallToolResponse({
               result: result as CallToolResult,
-              executedById: this.identityService.getId()!,
+              executedById: this.authService.getIdentity()!.id!,
             }),
           );
         }
