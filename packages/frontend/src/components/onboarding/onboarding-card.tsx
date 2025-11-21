@@ -26,7 +26,7 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { useUIStore, useCreateToolsetDialog, useManageToolsDialog, useConnectToolsetDialog, useConnectToolsetDialogNew } from '@/stores/uiStore';
+import { useUIStore, useCreateToolsetDialog, useManageToolsDialog, useConnectToolsetDialog } from '@/stores/uiStore';
 import { STEP_METADATA, ONBOARDING_STEPS } from '@/constants/onboarding-steps';
 import { useMCPServers } from '@/hooks/useMCPServers';
 import { useToolSets } from '@/hooks/useToolSets';
@@ -45,7 +45,7 @@ export function OnboardingCard({ step, isCurrentStep = false }: OnboardingCardPr
   const { openDialog: openCreateToolsetDialog } = useCreateToolsetDialog();
   const manageToolsDialog = useManageToolsDialog();
   const { setOpen: setConnectToolsetDialogOpen, setSelectedToolsetName } = useConnectToolsetDialog();
-  const { setOpen: setConnectToolsetDialogNewOpen, setSelectedToolsetName: setSelectedToolsetNameNew } = useConnectToolsetDialogNew();
+
 
   const metadata = STEP_METADATA[step.stepId];
   const isCompleted = step.status === 'COMPLETED';
@@ -212,17 +212,7 @@ export function OnboardingCard({ step, isCurrentStep = false }: OnboardingCardPr
               <Link className="mr-2 h-4 w-4" />
               Connect
             </Button>
-            <Button
-              onClick={() => {
-                setSelectedToolsetNameNew(firstToolSetWithTools.name);
-                setConnectToolsetDialogNewOpen(true);
-              }}
-              className="flex-1"
-              variant="outline"
-            >
-              <Link className="mr-2 h-4 w-4" />
-              Connect New
-            </Button>
+
           </div>
         );
       }

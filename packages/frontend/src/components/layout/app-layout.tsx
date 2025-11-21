@@ -37,7 +37,6 @@ import { AddServerWorkflow } from '@/components/registry/add-server-workflow';
 import { ToolsetManagementPanel } from '@/components/toolsets/toolset-management-panel';
 import { CreateToolsetDialog } from '@/components/toolsets/create-toolset-dialog';
 import { ConnectToolsetDialog } from '@/components/toolsets/connect-toolset-dialog';
-import { ConnectToolsetDialogNew } from '@/components/toolsets/connect-toolset-dialog-new';
 
 export function AppLayout() {
 
@@ -62,7 +61,6 @@ export function AppLayout() {
       {/* Global dialogs - accessible from any page */}
       <CreateToolsetDialog />
       <ConnectToolsetDialog />
-      <ConnectToolsetDialogNew />
     </div>
   );
 }
