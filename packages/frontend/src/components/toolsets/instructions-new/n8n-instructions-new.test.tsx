@@ -7,25 +7,31 @@ import { render, screen } from '@testing-library/react';
 import { N8NInstructionsNew } from './n8n-instructions-new';
 
 describe('N8NInstructionsNew', () => {
+  const defaultProps = {
+    streamUrl: 'http://localhost:3000/stream'
+  };
+
   it('renders the title', () => {
-    render(<N8NInstructionsNew />);
+    render(<N8NInstructionsNew {...defaultProps} />);
     expect(screen.getByText('Connect N8N to 2LY')).toBeInTheDocument();
   });
 
-  it('renders image placeholder', () => {
-    render(<N8NInstructionsNew />);
-    expect(screen.getByText('N8N Setup Screenshot')).toBeInTheDocument();
+  it('renders the image', () => {
+    render(<N8NInstructionsNew {...defaultProps} />);
+    const image = screen.getByAltText('N8N MCP Client configuration');
+    expect(image).toBeInTheDocument();
+    expect(image).toHaveAttribute('src', '/connect-instructions/n8n.png');
   });
 
   it('renders instruction steps', () => {
-    render(<N8NInstructionsNew />);
-    expect(screen.getByText(/MCP Client Tool/)).toBeInTheDocument();
-    expect(screen.getByText(/Streamable HTTP/)).toBeInTheDocument();
+    render(<N8NInstructionsNew {...defaultProps} />);
+    expect(screen.getByText(/MCP Client/)).toBeInTheDocument();
+    expect(screen.getByText(/HTTP Streamable/)).toBeInTheDocument();
     expect(screen.getByText(/STREAM URL/)).toBeInTheDocument();
   });
 
-  it('renders helper text about STREAM connection', () => {
-    render(<N8NInstructionsNew />);
-    expect(screen.getByText(/real-time bidirectional communication/)).toBeInTheDocument();
+  it('renders the STREAM URL', () => {
+    render(<N8NInstructionsNew {...defaultProps} />);
+    expect(screen.getByText('http://localhost:3000/stream')).toBeInTheDocument();
   });
 });

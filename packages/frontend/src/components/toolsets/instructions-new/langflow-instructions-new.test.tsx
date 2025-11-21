@@ -7,25 +7,33 @@ import { render, screen } from '@testing-library/react';
 import { LangflowInstructionsNew } from './langflow-instructions-new';
 
 describe('LangflowInstructionsNew', () => {
+  const defaultProps = {
+    sseUrl: 'http://localhost:3000/sse',
+    toolsetName: 'test-toolset'
+  };
+
   it('renders the title', () => {
-    render(<LangflowInstructionsNew />);
+    render(<LangflowInstructionsNew {...defaultProps} />);
     expect(screen.getByText('Connect Langflow to 2LY')).toBeInTheDocument();
   });
 
-  it('renders image placeholder', () => {
-    render(<LangflowInstructionsNew />);
-    expect(screen.getByText('Langflow Setup Screenshot')).toBeInTheDocument();
+  it('renders the image', () => {
+    render(<LangflowInstructionsNew {...defaultProps} />);
+    const image = screen.getByAltText('Langflow MCP Client configuration');
+    expect(image).toBeInTheDocument();
+    expect(image).toHaveAttribute('src', '/connect-instructions/langflow.png');
   });
 
   it('renders instruction steps', () => {
-    render(<LangflowInstructionsNew />);
-    expect(screen.getAllByText(/MCP Server/).length).toBeGreaterThan(0);
-    expect(screen.getAllByText(/SSE/).length).toBeGreaterThan(0);
+    render(<LangflowInstructionsNew {...defaultProps} />);
+    expect(screen.getByText(/MCP Tools/)).toBeInTheDocument();
+    expect(screen.getByText(/Add MCP Server/)).toBeInTheDocument();
     expect(screen.getByText(/SSE URL/)).toBeInTheDocument();
   });
 
-  it('renders helper text about SSE connection', () => {
-    render(<LangflowInstructionsNew />);
-    expect(screen.getByText(/Server-Sent Events/)).toBeInTheDocument();
+  it('renders the SSE URL and toolset name', () => {
+    render(<LangflowInstructionsNew {...defaultProps} />);
+    expect(screen.getByText('http://localhost:3000/sse')).toBeInTheDocument();
+    expect(screen.getByText('test-toolset')).toBeInTheDocument();
   });
 });

@@ -191,7 +191,7 @@ describe('OnboardingCard', () => {
       setSelectedToolsetId: vi.fn(),
     });
 
-    vi.mocked(uiStore.useConnectToolsetDialogNew).mockReturnValue({
+    vi.mocked(uiStore.useConnectToolsetDialog).mockReturnValue({
       open: false,
       setOpen: mockSetConnectToolsetDialogNewOpen,
       selectedToolsetName: null,
