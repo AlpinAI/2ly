@@ -60,7 +60,7 @@ export const CONNECTION_OPTIONS: ConnectionOption[] = [
   },
   {
     id: 'json',
-    title: 'JSON Configuration',
+    title: 'Generic Settings',
     Icon: FileJson,
   },
 ];

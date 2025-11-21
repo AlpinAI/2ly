@@ -4,7 +4,13 @@
  * WHY: Platform-specific instructions for connecting Langflow to 2LY via SSE.
  */
 
-export function LangflowInstructionsNew() {
+import { CodeBlock } from '@/components/ui/code-block';
+
+interface LangflowInstructionsNewProps {
+  sseUrl: string;
+}
+
+export function LangflowInstructionsNew({ sseUrl }: LangflowInstructionsNewProps) {
   return (
     <div className="space-y-4">
       {/* Image Placeholder */}
@@ -19,7 +25,12 @@ export function LangflowInstructionsNew() {
       <ol className="list-decimal list-inside space-y-3 text-sm text-gray-700 dark:text-gray-300">
         <li>Open your Langflow project and add an <strong>MCP Server</strong> node</li>
         <li>Select <strong>SSE</strong> as the transport type</li>
-        <li>Copy the <strong>SSE URL</strong> from the settings above and paste it into the Server URL field</li>
+        <li>
+          Copy the <strong>SSE URL</strong> below and paste it into the Server URL field:
+          <div className="mt-2">
+            <CodeBlock code={sseUrl} language="bash" size="small" />
+          </div>
+        </li>
         <li>Connect the MCP Server node to your agent or chain</li>
         <li>Run your flow to test the connection</li>
       </ol>

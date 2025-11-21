@@ -24,17 +24,7 @@ import { CONNECTION_OPTIONS, type PlatformOption } from './connection-options';
 import { N8NInstructionsNew } from './instructions-new/n8n-instructions-new';
 import { LangflowInstructionsNew } from './instructions-new/langflow-instructions-new';
 import { LangchainInstructionsNew } from './instructions-new/langchain-instructions-new';
-import { JSONInstructionsNew } from './instructions-new/json-instructions-new';
-
 export type ConnectionTab = 'stream' | 'sse' | 'stdio';
-
-// Platform to tab mapping
-const PLATFORM_TAB_MAP: Record<PlatformOption, ConnectionTab> = {
-  n8n: 'stream',
-  langflow: 'sse',
-  langchain: 'stdio',
-  json: 'stdio',
-};
 
 export function ConnectToolsetDialogNew() {
   const { open, setOpen, selectedToolsetName, selectedToolsetId } = useConnectToolsetDialogNew();
@@ -92,10 +82,9 @@ export function ConnectToolsetDialogNew() {
     2
   );
 
-  // Handle platform card click - auto-select tab
+  // Handle platform card click
   const handlePlatformClick = useCallback((platform: PlatformOption) => {
     setSelectedPlatform(platform);
-    setSelectedTab(PLATFORM_TAB_MAP[platform]);
   }, []);
 
   // Handle dialog close
@@ -139,29 +128,7 @@ export function ConnectToolsetDialogNew() {
 
           {/* Scrollable Content Area */}
           <div className="overflow-y-auto flex-1 min-h-0">
-            {/* Settings Section with Tabs */}
-            <div className="p-6 border-b border-gray-200 dark:border-gray-700">
-              <h3 className="text-sm font-medium text-gray-900 dark:text-white mb-3">Generic settings</h3>
-              <Tabs value={selectedTab} onValueChange={(v) => setSelectedTab(v as ConnectionTab)}>
-                <TabsList className="mb-4">
-                  <TabsTrigger value="stream">STREAM</TabsTrigger>
-                  <TabsTrigger value="sse">SSE</TabsTrigger>
-                  <TabsTrigger value="stdio">STDIO</TabsTrigger>
-                </TabsList>
-                <TabsContent value="stream">
-                  <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">Unique URL to connect to this toolset using streamable-http transport</p>
-                  <CodeBlock code={streamUrl} language="bash" size="small" />
-                </TabsContent>
-                <TabsContent value="sse">
-                  <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">Unique URL to connect to this toolset using SSE transport</p>
-                  <CodeBlock code={sseUrl} language="bash" size="small" />
-                </TabsContent>
-                <TabsContent value="stdio">
-                  <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">Unique STDIO configuration to connect to this toolset</p>
-                  <CodeBlock code={stdioConfig} language="json" size="small" />
-                </TabsContent>
-              </Tabs>
-            </div>
+
 
             {/* Platform Cards */}
             <div className="p-6 border-b border-gray-200 dark:border-gray-700">
@@ -194,10 +161,39 @@ export function ConnectToolsetDialogNew() {
             <div className="p-6">
               {selectedPlatform ? (
                 <>
-                  {selectedPlatform === 'n8n' && <N8NInstructionsNew />}
-                  {selectedPlatform === 'langflow' && <LangflowInstructionsNew />}
+                  {selectedPlatform === 'n8n' && <N8NInstructionsNew streamUrl={streamUrl} />}
+                  {selectedPlatform === 'langflow' && <LangflowInstructionsNew sseUrl={sseUrl} />}
                   {selectedPlatform === 'langchain' && <LangchainInstructionsNew toolsetKey={toolsetKey} />}
-                  {selectedPlatform === 'json' && <JSONInstructionsNew />}
+                  {selectedPlatform === 'json' && (
+                    <div className="space-y-4">
+                      <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Manual Connection to an MCP Client</h3>
+                      <Tabs value={selectedTab} onValueChange={(v) => setSelectedTab(v as ConnectionTab)}>
+                        <TabsList className="mb-4">
+                          <TabsTrigger value="stream">STREAM</TabsTrigger>
+                          <TabsTrigger value="sse">SSE</TabsTrigger>
+                          <TabsTrigger value="stdio">STDIO</TabsTrigger>
+                        </TabsList>
+                        <TabsContent value="stream">
+                          <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">
+                            Unique URL to connect to this toolset using streamable-http transport
+                          </p>
+                          <CodeBlock code={streamUrl} language="bash" size="small" />
+                        </TabsContent>
+                        <TabsContent value="sse">
+                          <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">
+                            Unique URL to connect to this toolset using SSE transport
+                          </p>
+                          <CodeBlock code={sseUrl} language="bash" size="small" />
+                        </TabsContent>
+                        <TabsContent value="stdio">
+                          <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">
+                            Unique STDIO configuration to connect to this toolset
+                          </p>
+                          <CodeBlock code={stdioConfig} language="json" size="small" />
+                        </TabsContent>
+                      </Tabs>
+                    </div>
+                  )}
                 </>
               ) : (
                 <div className="text-center text-gray-500 dark:text-gray-400 py-8">

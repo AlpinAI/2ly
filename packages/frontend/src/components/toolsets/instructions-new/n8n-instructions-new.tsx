@@ -4,14 +4,20 @@
  * WHY: Platform-specific instructions for connecting N8N to 2LY via STREAM.
  */
 
-export function N8NInstructionsNew() {
+import { CodeBlock } from '@/components/ui/code-block';
+
+interface N8NInstructionsNewProps {
+  streamUrl: string;
+}
+
+export function N8NInstructionsNew({ streamUrl }: N8NInstructionsNewProps) {
   return (
     <div className="space-y-4">
       {/* Screenshot */}
       <img
         src="/connect-instructions/n8n.png"
         alt="N8N MCP Client configuration"
-        className="max-h-[300px] w-auto rounded-lg border border-gray-200 dark:border-gray-700"
+        className="w-auto rounded-lg border border-gray-200 dark:border-gray-700"
       />
 
       <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
@@ -21,7 +27,12 @@ export function N8NInstructionsNew() {
       <ol className="list-decimal list-inside space-y-3 text-sm text-gray-700 dark:text-gray-300">
         <li>Open your N8N workflow and add an <strong>MCP Client</strong> node</li>
         <li>Select <strong>HTTP Streamable</strong> as the connection type</li>
-        <li>Copy the <strong>STREAM URL</strong> from the settings above and paste it into the URL field</li>
+        <li>
+          Copy the <strong>STREAM URL</strong> below and paste it into the URL field:
+          <div className="mt-2">
+            <CodeBlock code={streamUrl} language="bash" size="small" />
+          </div>
+        </li>
       </ol>
 
       <p className="text-sm text-gray-500 dark:text-gray-400 mt-4">
@@ -35,8 +46,6 @@ export function N8NInstructionsNew() {
         <li>Learn how to connect with a header key instead of query string parameter</li>
         <li>Learn how to connect with the master key and a toolset name instead of the toolset key</li>
       </ul>
-
-      
     </div>
   );
 }
