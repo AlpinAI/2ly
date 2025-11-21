@@ -40,13 +40,15 @@ export function N8NInstructionsNew({ streamUrl }: N8NInstructionsNewProps) {
         </li>
       </ol>
 
-      <Alert variant="destructive" className="bg-amber-50 border-amber-200 text-amber-800 dark:bg-amber-950/30 dark:border-amber-800 dark:text-amber-300 [&>svg]:text-amber-800 dark:[&>svg]:text-amber-300">
-        <AlertTriangle className="h-4 w-4" />
-        <AlertTitle>Docker Users</AlertTitle>
-        <AlertDescription>
-          If you are running n8n in Docker, you must use <code>host.docker.internal</code> instead of <code>localhost</code> to reach 2LY.
-        </AlertDescription>
-      </Alert>
+      {(streamUrl.includes('localhost') || streamUrl.includes('127.0.0.1')) && (
+        <Alert variant="destructive" className="bg-amber-50 border-amber-200 text-amber-800 dark:bg-amber-950/30 dark:border-amber-800 dark:text-amber-300 [&>svg]:text-amber-800 dark:[&>svg]:text-amber-300">
+          <AlertTriangle className="h-4 w-4" />
+          <AlertTitle>Docker Users</AlertTitle>
+          <AlertDescription>
+            If you are running n8n in Docker, you must use <code>host.docker.internal</code> instead of <code>localhost</code> to reach 2LY.
+          </AlertDescription>
+        </Alert>
+      )}
 
       <div className="rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
         <button
