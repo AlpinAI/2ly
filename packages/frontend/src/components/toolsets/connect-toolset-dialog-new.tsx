@@ -137,71 +137,74 @@ export function ConnectToolsetDialogNew() {
             </div>
           </div>
 
-          {/* Settings Section with Tabs */}
-          <div className="p-6 border-b border-gray-200 dark:border-gray-700 flex-shrink-0">
-            <h3 className="text-sm font-medium text-gray-900 dark:text-white mb-3">Generic settings</h3>
-            <Tabs value={selectedTab} onValueChange={(v) => setSelectedTab(v as ConnectionTab)}>
-              <TabsList className="mb-4">
-                <TabsTrigger value="stream">STREAM</TabsTrigger>
-                <TabsTrigger value="sse">SSE</TabsTrigger>
-                <TabsTrigger value="stdio">STDIO</TabsTrigger>
-              </TabsList>
-              <TabsContent value="stream">
-                <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">Unique URL to connect to this toolset using streamable-http transport</p>
-                <CodeBlock code={streamUrl} language="bash" size="small" />
-              </TabsContent>
-              <TabsContent value="sse">
-                <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">Unique URL to connect to this toolset using SSE transport</p>
-                <CodeBlock code={sseUrl} language="bash" size="small" />
-              </TabsContent>
-              <TabsContent value="stdio">
-                <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">Unique STDIO configuration to connect to this toolset</p>
-                <CodeBlock code={stdioConfig} language="json" size="small" />
-              </TabsContent>
-            </Tabs>
-          </div>
-
-          {/* Platform Cards */}
-          <div className="p-6 border-b border-gray-200 dark:border-gray-700 flex-shrink-0">
-            <h3 className="text-sm font-medium text-gray-900 dark:text-white mb-3">Select Platform</h3>
-            <div className="grid grid-cols-4 gap-3">
-              {CONNECTION_OPTIONS.map((option) => {
-                const Icon = option.Icon;
-                const isSelected = selectedPlatform === option.id;
-                return (
-                  <button
-                    key={option.id}
-                    onClick={() => handlePlatformClick(option.id)}
-                    className={`flex flex-col items-center justify-center p-4 rounded-lg border-2 transition-all ${
-                      isSelected
-                        ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
-                        : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
-                    }`}
-                  >
-                    <Icon className={`h-8 w-8 mb-2 ${isSelected ? 'text-blue-500' : 'text-gray-500'}`} />
-                    <span className={`text-sm font-medium ${isSelected ? 'text-blue-700 dark:text-blue-300' : 'text-gray-700 dark:text-gray-300'}`}>
-                      {option.title.split('/')[0]}
-                    </span>
-                  </button>
-                );
-              })}
+          {/* Scrollable Content Area */}
+          <div className="overflow-y-auto flex-1 min-h-0">
+            {/* Settings Section with Tabs */}
+            <div className="p-6 border-b border-gray-200 dark:border-gray-700">
+              <h3 className="text-sm font-medium text-gray-900 dark:text-white mb-3">Generic settings</h3>
+              <Tabs value={selectedTab} onValueChange={(v) => setSelectedTab(v as ConnectionTab)}>
+                <TabsList className="mb-4">
+                  <TabsTrigger value="stream">STREAM</TabsTrigger>
+                  <TabsTrigger value="sse">SSE</TabsTrigger>
+                  <TabsTrigger value="stdio">STDIO</TabsTrigger>
+                </TabsList>
+                <TabsContent value="stream">
+                  <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">Unique URL to connect to this toolset using streamable-http transport</p>
+                  <CodeBlock code={streamUrl} language="bash" size="small" />
+                </TabsContent>
+                <TabsContent value="sse">
+                  <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">Unique URL to connect to this toolset using SSE transport</p>
+                  <CodeBlock code={sseUrl} language="bash" size="small" />
+                </TabsContent>
+                <TabsContent value="stdio">
+                  <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">Unique STDIO configuration to connect to this toolset</p>
+                  <CodeBlock code={stdioConfig} language="json" size="small" />
+                </TabsContent>
+              </Tabs>
             </div>
-          </div>
 
-          {/* Instructions Area */}
-          <div className="p-6 overflow-y-auto flex-1 min-h-0">
-            {selectedPlatform ? (
-              <>
-                {selectedPlatform === 'n8n' && <N8NInstructionsNew />}
-                {selectedPlatform === 'langflow' && <LangflowInstructionsNew />}
-                {selectedPlatform === 'langchain' && <LangchainInstructionsNew toolsetKey={toolsetKey} />}
-                {selectedPlatform === 'json' && <JSONInstructionsNew />}
-              </>
-            ) : (
-              <div className="text-center text-gray-500 dark:text-gray-400 py-8">
-                Select a platform above to see detailed instructions
+            {/* Platform Cards */}
+            <div className="p-6 border-b border-gray-200 dark:border-gray-700">
+              <h3 className="text-sm font-medium text-gray-900 dark:text-white mb-3">Select Platform</h3>
+              <div className="grid grid-cols-4 gap-3">
+                {CONNECTION_OPTIONS.map((option) => {
+                  const Icon = option.Icon;
+                  const isSelected = selectedPlatform === option.id;
+                  return (
+                    <button
+                      key={option.id}
+                      onClick={() => handlePlatformClick(option.id)}
+                      className={`flex flex-col items-center justify-center p-4 rounded-lg border-2 transition-all ${
+                        isSelected
+                          ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
+                          : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
+                      }`}
+                    >
+                      <Icon className={`h-8 w-8 mb-2 ${isSelected ? 'text-blue-500' : 'text-gray-500'}`} />
+                      <span className={`text-sm font-medium ${isSelected ? 'text-blue-700 dark:text-blue-300' : 'text-gray-700 dark:text-gray-300'}`}>
+                        {option.title.split('/')[0]}
+                      </span>
+                    </button>
+                  );
+                })}
               </div>
-            )}
+            </div>
+
+            {/* Instructions Area */}
+            <div className="p-6">
+              {selectedPlatform ? (
+                <>
+                  {selectedPlatform === 'n8n' && <N8NInstructionsNew />}
+                  {selectedPlatform === 'langflow' && <LangflowInstructionsNew />}
+                  {selectedPlatform === 'langchain' && <LangchainInstructionsNew toolsetKey={toolsetKey} />}
+                  {selectedPlatform === 'json' && <JSONInstructionsNew />}
+                </>
+              ) : (
+                <div className="text-center text-gray-500 dark:text-gray-400 py-8">
+                  Select a platform above to see detailed instructions
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Footer */}
