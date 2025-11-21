@@ -14,7 +14,7 @@ import { useState } from 'react';
 import { Bot, Wrench, Clock, Settings, Trash2, Cable, Eye, EyeOff, Copy } from 'lucide-react';
 import { Link, useParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { useManageToolsDialog, useConnectToolsetDialog } from '@/stores/uiStore';
+import { useManageToolsDialog, useConnectToolsetDialog, useConnectToolsetDialogNew } from '@/stores/uiStore';
 import { useMutation, useLazyQuery } from '@apollo/client/react';
 import { useNotification } from '@/contexts/NotificationContext';
 import { DeleteToolSetDocument, GetToolsetKeyDocument, GetKeyValueDocument } from '@/graphql/generated/graphql';
@@ -30,6 +30,7 @@ export function ToolsetDetail({ toolSet }: ToolsetDetailProps) {
   const { workspaceId } = useParams<{ workspaceId: string }>();
   const { setOpen, setSelectedToolsetId } = useManageToolsDialog();
   const { setOpen: setConnectDialogOpen, setSelectedToolsetName, setSelectedToolsetId: setConnectToolsetId } = useConnectToolsetDialog();
+  const { setOpen: setConnectDialogNewOpen, setSelectedToolsetName: setConnectToolsetNameNew, setSelectedToolsetId: setConnectToolsetIdNew } = useConnectToolsetDialogNew();
   const { confirm, toast } = useNotification();
   const [deleteToolSet] = useMutation(DeleteToolSetDocument);
 
@@ -55,6 +56,12 @@ export function ToolsetDetail({ toolSet }: ToolsetDetailProps) {
     setSelectedToolsetName(toolSet.name);
     setConnectToolsetId(toolSet.id);
     setConnectDialogOpen(true);
+  };
+
+  const handleConnectNew = () => {
+    setConnectToolsetNameNew(toolSet.name);
+    setConnectToolsetIdNew(toolSet.id);
+    setConnectDialogNewOpen(true);
   };
 
   const handleDelete = async () => {
@@ -147,6 +154,15 @@ export function ToolsetDetail({ toolSet }: ToolsetDetailProps) {
         >
           <Cable className="h-4 w-4 mr-2" />
           Connect
+        </Button>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={handleConnectNew}
+          className="h-8 px-3 text-sm"
+        >
+          <Cable className="h-4 w-4 mr-2" />
+          Connect New
         </Button>
         <Button
           variant="default"
