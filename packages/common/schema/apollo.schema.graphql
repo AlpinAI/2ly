@@ -24,6 +24,7 @@ enum RuntimeType {
 
 type Infra {
   nats: String
+  remoteMCP: String
 }
 
 type System {

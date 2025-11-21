@@ -8,21 +8,31 @@
 import { gql } from '@apollo/client';
 import { useQuery } from '@apollo/client/react';
 
-// GraphQL query to check system initialization
+// GraphQL query to check system initialization and fetch infra config
 const SYSTEM_QUERY = gql`
   query System {
     system {
       id
       initialized
     }
+    infra {
+      nats
+      remoteMCP
+    }
   }
 `;
+
+interface Infra {
+  nats: string | null;
+  remoteMCP: string | null;
+}
 
 interface SystemQueryResult {
   system: {
     id: string;
     initialized: boolean;
   } | null;
+  infra: Infra | null;
 }
 
 interface UseSystemInitResult {
@@ -30,6 +40,7 @@ interface UseSystemInitResult {
   isLoading: boolean;
   error: Error | null;
   isBackendError: boolean;
+  infra: Infra | null;
 }
 
 /**
@@ -80,5 +91,6 @@ export function useSystemInit(): UseSystemInitResult {
     isLoading: loading,
     error: error || null,
     isBackendError,
+    infra: data?.infra ?? null,
   };
 }

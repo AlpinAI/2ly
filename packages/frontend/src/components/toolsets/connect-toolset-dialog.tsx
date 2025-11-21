@@ -25,6 +25,7 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { X, CheckCircle2, Loader2 } from 'lucide-react';
 import * as Dialog from '@radix-ui/react-dialog';
+import { useQuery } from '@apollo/client/react';
 import {
   Select,
   SelectContent,
@@ -35,6 +36,8 @@ import {
 import { Button } from '@/components/ui/button';
 import { useConnectToolsetDialog } from '@/stores/uiStore';
 import { useRuntimeData } from '@/stores/runtimeStore';
+import { useSystemInit } from '@/hooks/useSystemInit';
+import { GetToolsetKeyDocument, GetKeyValueDocument } from '@/graphql/generated/graphql';
 import { CONNECTION_OPTIONS, type PlatformOption } from './connection-options';
 import { LangchainInstructions } from './instructions/langchain-instructions';
 import { LangflowInstructions } from './instructions/langflow-instructions';
@@ -42,11 +45,29 @@ import { N8NInstructions } from './instructions/n8n-instructions';
 import { JSONInstructions } from './instructions/json-instructions';
 
 export function ConnectToolsetDialog() {
-  const { open, setOpen, selectedToolsetName } = useConnectToolsetDialog();
+  const { open, setOpen, selectedToolsetName, selectedToolsetId } = useConnectToolsetDialog();
   const { runtimes } = useRuntimeData();
+  const { infra } = useSystemInit();
+
+  console.log('infra', infra);
 
   const [selectedPlatform, setSelectedPlatform] = useState<PlatformOption>('langchain');
   const [isConnected, setIsConnected] = useState(false);
+
+  // Fetch toolset key metadata
+  const { data: keyData } = useQuery(GetToolsetKeyDocument, {
+    variables: { toolsetId: selectedToolsetId ?? '' },
+    skip: !selectedToolsetId || !open,
+  });
+
+  // Fetch actual key value once we have the ID
+  const keyId = keyData?.toolsetKey?.id;
+  const { data: valueData } = useQuery(GetKeyValueDocument, {
+    variables: { keyId: keyId ?? '' },
+    skip: !keyId,
+  });
+
+  const toolsetKey = valueData?.keyValue || '';
 
   // Get selected toolset from runtime store, or create a mock one for new toolsets
   const selectedToolset = useMemo(() => {
@@ -66,11 +87,15 @@ export function ConnectToolsetDialog() {
     return null;
   }, [runtimes, selectedToolsetName]);
 
-  // Get NATS server URL
-  // WHY: Use window.location.hostname as default since NATS typically runs on same host
+  // Get NATS server URL from infra config, fallback to hostname-based default
   const natsServer = useMemo(() => {
-    return `${window.location.hostname}:4222`;
-  }, []);
+    return infra?.nats ?? `${window.location.hostname}:4222`;
+  }, [infra]);
+
+  const remoteMCPServer = useMemo(() => {
+    return infra?.remoteMCP ?? '${window.location.hostname}:3001'
+  }, [infra]);
+  console.log('remoteMCPServer', remoteMCPServer);
 
   // Real-time connection detection
   // WHY: Watch for new runtimes with matching name and show feedback
@@ -189,7 +214,7 @@ export function ConnectToolsetDialog() {
             <div>
               {selectedPlatform === 'langchain' && (
                 <LangchainInstructions
-                  agentName={selectedToolset.name}
+                  toolsetKey={toolsetKey || 'Loading key...'}
                   natsServer={natsServer}
                 />
               )}
@@ -204,6 +229,7 @@ export function ConnectToolsetDialog() {
               )}
               {selectedPlatform === 'json' && (
                 <JSONInstructions
+                  toolsetKey={toolsetKey || 'Loading key...'}
                   agentName={selectedToolset.name}
                   natsServer={natsServer}
                 />

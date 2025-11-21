@@ -10,11 +10,12 @@ import { sanitizeIdentifier } from '@/lib/utils';
 
 export interface JSONInstructionsProps {
   agentName: string;
+  toolsetKey: string;
   natsServer: string;
   sanitizeAgentName?: boolean;
 }
 
-export function JSONInstructions({ agentName, natsServer, sanitizeAgentName = false }: JSONInstructionsProps) {
+export function JSONInstructions({ agentName, toolsetKey, natsServer, sanitizeAgentName = false }: JSONInstructionsProps) {
   const sanitizedAgentName = sanitizeAgentName ? sanitizeIdentifier(agentName) : agentName;
 
   const jsonConfigExample = `{
@@ -26,7 +27,7 @@ export function JSONInstructions({ agentName, natsServer, sanitizeAgentName = fa
         "@2ly/runtime"
       ],
       "env": {
-        "RUNTIME_NAME": "${agentName}",
+        "TOOLSET_KEY": "${toolsetKey}",
         "NATS_SERVERS": "nats://${natsServer || 'your-nats-server:4222'}"
       }
     }
@@ -63,9 +64,9 @@ export function JSONInstructions({ agentName, natsServer, sanitizeAgentName = fa
       <ul className="list-disc list-inside text-sm text-gray-700 dark:text-gray-300 space-y-1 mb-3">
         <li>
           <code className="px-1.5 py-0.5 bg-gray-100 dark:bg-gray-800 rounded text-xs font-mono">
-            RUNTIME_NAME
+          TOOLSET_KEY
           </code>
-          : A unique name for your agent
+          : The identity key representing your toolset
         </li>
         <li>
           <code className="px-1.5 py-0.5 bg-gray-100 dark:bg-gray-800 rounded text-xs font-mono">

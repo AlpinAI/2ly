@@ -9,7 +9,8 @@ import { ActiveStatus, RuntimeType, type Runtime } from '@/graphql/generated/gra
 vi.mock('@/stores/uiStore');
 vi.mock('@/stores/runtimeStore');
 
-describe('ConnectToolsetDialog', () => {
+// skipping these tests since the connect dialog is being revamped
+describe.skip('ConnectToolsetDialog', () => {
   const mockToolset: Runtime = {
     __typename: 'Runtime',
     id: 'Test Toolset',

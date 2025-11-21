@@ -299,7 +299,7 @@ export function extractConfigurableFields(option: ConfigOption): ConfigField[] {
           .forEach((variable) => {
             fields.push(variableToConfigField(variable));
           });
-      } else if (arg.value && !(arg as any).isConfigurable) {
+      } else if (arg.value && !(arg as Augmented<typeof arg>).isConfigurable) {
         // Already has a value set AND NOT marked as configurable → skip
       } else {
         // Pattern 1: The field itself is configurable
@@ -318,7 +318,7 @@ export function extractConfigurableFields(option: ConfigOption): ConfigField[] {
           .forEach((variable) => {
             fields.push(variableToConfigField(variable));
           });
-      } else if (arg.value && !(arg as any).isConfigurable) {
+      } else if (arg.value && !(arg as Augmented<typeof arg>).isConfigurable) {
         // Already has a value set AND NOT marked as configurable → skip
       } else {
         // Pattern 1: The field itself is configurable
@@ -417,7 +417,7 @@ export function enrichConfigWithValues(
         const field = fields.find((f) => f.context === 'arg' && f.name === argName && !f.isVariable);
         if (field) {
           arg.value = field.value || field.default || '';
-          (arg as any).isConfigurable = true;
+          (arg as Augmented<typeof arg>).isConfigurable = true;
         }
       }
     });
@@ -430,7 +430,7 @@ export function enrichConfigWithValues(
         const field = fields.find((f) => f.context === 'arg' && f.name === argName && !f.isVariable);
         if (field) {
           arg.value = field.value || field.default || '';
-          (arg as any).isConfigurable = true;
+          (arg as Augmented<typeof arg>).isConfigurable = true;
         }
       }
     });

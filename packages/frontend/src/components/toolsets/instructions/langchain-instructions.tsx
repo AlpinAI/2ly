@@ -8,28 +8,23 @@
 import { CodeBlock } from '@/components/ui/code-block';
 
 export interface LangchainInstructionsProps {
-  agentName: string;
+  toolsetKey: string;
   natsServer: string;
 }
 
-export function LangchainInstructions({ agentName, natsServer }: LangchainInstructionsProps) {
+export function LangchainInstructions({ toolsetKey, natsServer }: LangchainInstructionsProps) {
   const installCommand = 'pip install langchain_2ly';
 
-  const quickStartCode = `# Import MCPAdapter
-from langchain_2ly import MCPAdapter${
-    natsServer
-      ? `
+  const quickStartCode = `# Import MCPToolset
+from langchain_2ly import MCPToolset
+# Configure connection
+options={${natsServer ? `
+  "nats_servers": "nats://${natsServer},"`: ''}
+  "toolset_key": "${toolsetKey}"
+}
 
-# Set the NATS url
-nats="nats://${natsServer}"
-options={
-    "nats_servers": nats
-}`
-      : ''
-  }
-
-# Instantiate MCPAdapter
-async with MCPAdapter("${agentName}"${natsServer ? `, options` : ''}) as mcp:
+# Instantiate MCPToolset
+async with MCPToolset.with_toolset_key(options) as mcp:
 
     # Retrieve tools
     tools = await mcp.get_langchain_tools()
