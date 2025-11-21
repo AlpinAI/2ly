@@ -44,7 +44,7 @@ export function OnboardingCard({ step, isCurrentStep = false }: OnboardingCardPr
 
   const { openDialog: openCreateToolsetDialog } = useCreateToolsetDialog();
   const manageToolsDialog = useManageToolsDialog();
-  const { setOpen: setConnectToolsetDialogOpen, setSelectedToolsetName } = useConnectToolsetDialog();
+  const { setOpen: setConnectToolsetDialogOpen, setSelectedToolsetName, setSelectedToolsetId } = useConnectToolsetDialog();
 
 
   const metadata = STEP_METADATA[step.stepId];
@@ -204,6 +204,7 @@ export function OnboardingCard({ step, isCurrentStep = false }: OnboardingCardPr
               onClick={() => {
                 // Use the first toolSet name for connection instructions
                 setSelectedToolsetName(firstToolSetWithTools.name);
+                setSelectedToolsetId(firstToolSetWithTools.id);
                 setConnectToolsetDialogOpen(true);
               }}
               className="flex-1"
