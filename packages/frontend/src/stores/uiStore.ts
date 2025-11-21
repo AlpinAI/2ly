@@ -69,6 +69,14 @@ interface UIState {
   selectedToolsetIdForConnection: string | null;
   setSelectedToolsetIdForConnection: (toolsetId: string | null) => void;
 
+  // Connect Toolset Dialog (New)
+  connectToolsetDialogNewOpen: boolean;
+  setConnectToolsetDialogNewOpen: (open: boolean) => void;
+  selectedToolsetNameForConnectionNew: string | null;
+  setSelectedToolsetNameForConnectionNew: (toolsetName: string | null) => void;
+  selectedToolsetIdForConnectionNew: string | null;
+  setSelectedToolsetIdForConnectionNew: (toolsetId: string | null) => void;
+
   // Tool Catalog Filters
   toolCategoryFilter: string;
   setToolCategoryFilter: (category: string) => void;
@@ -166,6 +174,14 @@ export const useUIStore = create<UIState>()(
         setSelectedToolsetNameForConnection: (toolsetName) => set({ selectedToolsetNameForConnection: toolsetName }),
         selectedToolsetIdForConnection: null,
         setSelectedToolsetIdForConnection: (toolsetId) => set({ selectedToolsetIdForConnection: toolsetId }),
+
+        // Initial State - Connect Toolset Dialog (New)
+        connectToolsetDialogNewOpen: false,
+        setConnectToolsetDialogNewOpen: (open) => set({ connectToolsetDialogNewOpen: open }),
+        selectedToolsetNameForConnectionNew: null,
+        setSelectedToolsetNameForConnectionNew: (toolsetName) => set({ selectedToolsetNameForConnectionNew: toolsetName }),
+        selectedToolsetIdForConnectionNew: null,
+        setSelectedToolsetIdForConnectionNew: (toolsetId) => set({ selectedToolsetIdForConnectionNew: toolsetId }),
 
         // Actions
         resetFilters: () =>
@@ -299,5 +315,23 @@ export const useAddServerWorkflow = () => {
     setOpen,
     initialStep,
     setInitialStep,
+  };
+};
+
+export const useConnectToolsetDialogNew = () => {
+  const open = useUIStore((state) => state.connectToolsetDialogNewOpen);
+  const setOpen = useUIStore((state) => state.setConnectToolsetDialogNewOpen);
+  const selectedToolsetName = useUIStore((state) => state.selectedToolsetNameForConnectionNew);
+  const setSelectedToolsetName = useUIStore((state) => state.setSelectedToolsetNameForConnectionNew);
+  const selectedToolsetId = useUIStore((state) => state.selectedToolsetIdForConnectionNew);
+  const setSelectedToolsetId = useUIStore((state) => state.setSelectedToolsetIdForConnectionNew);
+
+  return {
+    open,
+    setOpen,
+    selectedToolsetName,
+    setSelectedToolsetName,
+    selectedToolsetId,
+    setSelectedToolsetId,
   };
 };
