@@ -19,10 +19,10 @@ import { useRuntimeData } from '@/stores/runtimeStore';
 import { useSystemInit } from '@/hooks/useSystemInit';
 import { GetToolsetKeyDocument, GetKeyValueDocument } from '@/graphql/generated/graphql';
 import { CONNECTION_OPTIONS, type PlatformOption } from './connection-options';
-import { N8NInstructionsNew } from './instructions-new/n8n-instructions-new';
-import { LangflowInstructionsNew } from './instructions-new/langflow-instructions-new';
-import { LangchainInstructionsNew } from './instructions-new/langchain-instructions-new';
-import { ManualConnectionInstructions } from './instructions-new/manual-connection-instructions';
+import { N8NInstructions } from './instructions/n8n-instructions';
+import { LangflowInstructions } from './instructions/langflow-instructions';
+import { LangchainInstructions } from './instructions/langchain-instructions';
+import { ManualConnectionInstructions } from './instructions/manual-connection-instructions';
 
 export function ConnectToolsetDialog() {
   const { open, setOpen, selectedToolsetName, selectedToolsetId } = useConnectToolsetDialog();
@@ -148,9 +148,9 @@ export function ConnectToolsetDialog() {
             <div className="p-6">
               {selectedPlatform ? (
                 <>
-                  {selectedPlatform === 'n8n' && <N8NInstructionsNew streamUrl={streamUrl} />}
-                  {selectedPlatform === 'langflow' && <LangflowInstructionsNew sseUrl={sseUrl} toolsetName={selectedToolset.name} />}
-                  {selectedPlatform === 'langchain' && <LangchainInstructionsNew toolsetKey={toolsetKey} />}
+                  {selectedPlatform === 'n8n' && <N8NInstructions streamUrl={streamUrl} />}
+                  {selectedPlatform === 'langflow' && <LangflowInstructions sseUrl={sseUrl} toolsetName={selectedToolset.name} />}
+                  {selectedPlatform === 'langchain' && <LangchainInstructions toolsetKey={toolsetKey} />}
                   {selectedPlatform === 'json' && (
                     <ManualConnectionInstructions
                       streamUrl={streamUrl}

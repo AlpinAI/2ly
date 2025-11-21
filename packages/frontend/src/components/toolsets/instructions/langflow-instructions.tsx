@@ -6,12 +6,12 @@
 
 import { CodeBlock } from '@/components/ui/code-block';
 
-interface LangflowInstructionsNewProps {
+interface LangflowInstructionsProps {
   sseUrl: string;
   toolsetName: string;
 }
 
-export function LangflowInstructionsNew({ sseUrl, toolsetName }: LangflowInstructionsNewProps) {
+export function LangflowInstructions({ sseUrl, toolsetName }: LangflowInstructionsProps) {
   return (
     <div className="space-y-4">
       {/* Screenshot */}

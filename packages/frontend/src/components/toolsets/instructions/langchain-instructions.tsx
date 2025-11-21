@@ -6,11 +6,11 @@
 
 import { CodeBlock } from '@/components/ui/code-block';
 
-export interface LangchainInstructionsNewProps {
+export interface LangchainInstructionsProps {
   toolsetKey: string;
 }
 
-export function LangchainInstructionsNew({ toolsetKey }: LangchainInstructionsNewProps) {
+export function LangchainInstructions({ toolsetKey }: LangchainInstructionsProps) {
   const installCommand = 'pip install langchain_2ly';
 
   const quickStartCode = `from langchain_2ly import MCPToolset

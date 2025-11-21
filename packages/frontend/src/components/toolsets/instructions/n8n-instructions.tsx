@@ -9,11 +9,11 @@ import { ChevronDown, ChevronRight, AlertTriangle } from 'lucide-react';
 import { CodeBlock } from '@/components/ui/code-block';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
-interface N8NInstructionsNewProps {
+interface N8NInstructionsProps {
   streamUrl: string;
 }
 
-export function N8NInstructionsNew({ streamUrl }: N8NInstructionsNewProps) {
+export function N8NInstructions({ streamUrl }: N8NInstructionsProps) {
   const [isAdvancedOpen, setIsAdvancedOpen] = useState(false);
 
   return (
