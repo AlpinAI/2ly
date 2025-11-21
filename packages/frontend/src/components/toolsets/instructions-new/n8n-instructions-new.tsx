@@ -65,10 +65,16 @@ export function N8NInstructionsNew({ streamUrl }: N8NInstructionsNewProps) {
         
         {isAdvancedOpen && (
           <div className="bg-white p-4 dark:bg-gray-900">
-            <ul className="list-disc list-inside space-y-3 text-sm text-gray-700 dark:text-gray-300">
-              <li>Learn how to connect with a header key instead of query string parameter</li>
-              <li>Learn how to connect with the master key and a toolset name instead of the toolset key</li>
-            </ul>
+
+            <h4 className="text-sm font-bold text-gray-900 dark:text-white mb-1">Send the toolset key as a header instead of query string</h4>
+            <p className="text-xs text-gray-600 dark:text-gray-400">
+              To improve security, pass the key as a header instead of a query parameter:
+              <ol className="list-decimal list-inside mt-1 space-y-1 ml-1">
+                <li>Remove <code>?key=...</code> from the URL</li>
+                <li>Add a header named <code className="font-bold text-gray-800 dark:text-gray-200">TOOLSET_KEY</code> with your key value</li>
+              </ol>
+            </p>
+
           </div>
         )}
       </div>
