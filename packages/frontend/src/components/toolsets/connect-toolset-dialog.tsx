@@ -166,7 +166,7 @@ export function ConnectToolsetDialog() {
                   {selectedPlatform === 'langchain' && <LangchainInstructionsNew toolsetKey={toolsetKey} />}
                   {selectedPlatform === 'json' && (
                     <div className="space-y-4">
-                      <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Manual Connection to an MCP Client</h3>
+                      <h3 className="text-xl font-semibold text-gray-900 dark:text-white">Manual Connection to an MCP Client</h3>
                       <Tabs value={selectedTab} onValueChange={(v) => setSelectedTab(v as ConnectionTab)}>
                         <TabsList className="mb-4">
                           <TabsTrigger value="stream">STREAM</TabsTrigger>
@@ -174,19 +174,19 @@ export function ConnectToolsetDialog() {
                           <TabsTrigger value="stdio">STDIO</TabsTrigger>
                         </TabsList>
                         <TabsContent value="stream">
-                          <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">
+                          <p className="text-base text-gray-500 dark:text-gray-400 mb-2 font-sans">
                             Unique URL to connect to this toolset using streamable-http transport
                           </p>
                           <CodeBlock code={streamUrl} language="bash" size="small" />
                         </TabsContent>
                         <TabsContent value="sse">
-                          <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">
+                          <p className="text-base text-gray-500 dark:text-gray-400 mb-2 font-sans">
                             Unique URL to connect to this toolset using SSE transport
                           </p>
                           <CodeBlock code={sseUrl} language="bash" size="small" />
                         </TabsContent>
                         <TabsContent value="stdio">
-                          <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">
+                          <p className="text-base text-gray-500 dark:text-gray-400 mb-2 font-sans">
                             Unique STDIO configuration to connect to this toolset
                           </p>
                           <CodeBlock code={stdioConfig} language="json" size="small" />

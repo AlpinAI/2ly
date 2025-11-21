@@ -31,11 +31,11 @@ async with MCPToolset.with_toolset_key(options) as mcp:
         <span className="text-gray-400 dark:text-gray-500 text-sm">Langchain Setup Screenshot</span>
       </div>
 
-      <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+      <h3 className="text-xl font-semibold text-gray-900 dark:text-white">
         Connect Langchain/Langgraph to 2LY
       </h3>
 
-      <ol className="list-decimal list-inside space-y-3 text-sm text-gray-700 dark:text-gray-300">
+      <ol className="list-decimal list-inside space-y-4 text-base leading-relaxed text-gray-700 dark:text-gray-300 font-sans">
         <li>
           Install the langchain_2ly package:
           <div className="mt-2">
@@ -51,7 +51,7 @@ async with MCPToolset.with_toolset_key(options) as mcp:
         <li>The STDIO configuration from settings above can be used for alternative runtime setup</li>
       </ol>
 
-      <p className="text-sm text-gray-500 dark:text-gray-400 mt-4">
+      <p className="text-base text-gray-500 dark:text-gray-400 mt-4 font-sans">
         STDIO provides local process-based communication, ideal for Python environments.
       </p>
     </div>

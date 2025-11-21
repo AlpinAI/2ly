@@ -18,11 +18,11 @@ export function LangflowInstructionsNew({ sseUrl }: LangflowInstructionsNewProps
         <span className="text-gray-400 dark:text-gray-500 text-sm">Langflow Setup Screenshot</span>
       </div>
 
-      <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+      <h3 className="text-xl font-semibold text-gray-900 dark:text-white">
         Connect Langflow to 2LY
       </h3>
 
-      <ol className="list-decimal list-inside space-y-3 text-sm text-gray-700 dark:text-gray-300">
+      <ol className="list-decimal list-inside space-y-4 text-base leading-relaxed text-gray-700 dark:text-gray-300 font-sans">
         <li>Open your Langflow project and add an <strong>MCP Server</strong> node</li>
         <li>Select <strong>SSE</strong> as the transport type</li>
         <li>
@@ -35,7 +35,7 @@ export function LangflowInstructionsNew({ sseUrl }: LangflowInstructionsNewProps
         <li>Run your flow to test the connection</li>
       </ol>
 
-      <p className="text-sm text-gray-500 dark:text-gray-400 mt-4">
+      <p className="text-base text-gray-500 dark:text-gray-400 mt-4 font-sans">
         SSE (Server-Sent Events) provides efficient one-way streaming from the server to Langflow.
       </p>
     </div>

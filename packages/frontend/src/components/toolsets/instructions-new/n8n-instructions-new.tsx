@@ -25,11 +25,11 @@ export function N8NInstructionsNew({ streamUrl }: N8NInstructionsNewProps) {
         className="w-auto rounded-lg border border-gray-200 dark:border-gray-700"
       />
 
-      <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+      <h3 className="text-xl font-semibold text-gray-900 dark:text-white">
         Connect N8N to 2LY
       </h3>
 
-      <ol className="list-decimal list-inside space-y-3 text-sm text-gray-700 dark:text-gray-300">
+      <ol className="font-sans list-decimal list-inside space-y-1 text-base leading-relaxed text-gray-700 dark:text-gray-300">
         <li>Open your N8N workflow and add an <strong>MCP Client</strong> node</li>
         <li>Select <strong>HTTP Streamable</strong> as the connection type</li>
         <li>
@@ -44,7 +44,7 @@ export function N8NInstructionsNew({ streamUrl }: N8NInstructionsNewProps) {
         <Alert variant="destructive" className="bg-amber-50 border-amber-200 text-amber-800 dark:bg-amber-950/30 dark:border-amber-800 dark:text-amber-300 [&>svg]:text-amber-800 dark:[&>svg]:text-amber-300">
           <AlertTriangle className="h-4 w-4" />
           <AlertTitle>Docker Users</AlertTitle>
-          <AlertDescription>
+          <AlertDescription className="font-sans">
             If you are running n8n in Docker, you must use <code>host.docker.internal</code> instead of <code>localhost</code> to reach 2LY.
           </AlertDescription>
         </Alert>
@@ -53,7 +53,7 @@ export function N8NInstructionsNew({ streamUrl }: N8NInstructionsNewProps) {
       <div className="rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
         <button
           onClick={() => setIsAdvancedOpen(!isAdvancedOpen)}
-          className="flex w-full items-center justify-between bg-gray-50 px-4 py-3 text-left text-sm font-medium text-gray-900 hover:bg-gray-100 dark:bg-gray-800 dark:text-white dark:hover:bg-gray-700"
+          className="flex w-full items-center justify-between bg-gray-50 px-4 py-3 text-left text-base font-medium text-gray-900 hover:bg-gray-100 dark:bg-gray-800 dark:text-white dark:hover:bg-gray-700"
         >
           <span>Advanced configuration</span>
           {isAdvancedOpen ? (
@@ -66,14 +66,14 @@ export function N8NInstructionsNew({ streamUrl }: N8NInstructionsNewProps) {
         {isAdvancedOpen && (
           <div className="bg-white p-4 dark:bg-gray-900">
 
-            <h4 className="text-sm font-bold text-gray-900 dark:text-white mb-1">Send the toolset key as a header instead of query string</h4>
-            <p className="text-xs text-gray-600 dark:text-gray-400">
+            <h4 className="text-base font-bold text-gray-900 dark:text-white mb-2">Send the toolset key as a header instead of query string</h4>
+            <div className="text-sm text-gray-600 dark:text-gray-400 font-sans">
               To improve security, pass the key as a header instead of a query parameter:
               <ol className="list-decimal list-inside mt-1 space-y-1 ml-1">
                 <li>Remove <code>?key=...</code> from the URL</li>
                 <li>Add a header named <code className="font-bold text-gray-800 dark:text-gray-200">TOOLSET_KEY</code> with your key value</li>
               </ol>
-            </p>
+            </div>
 
           </div>
         )}
