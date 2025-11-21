@@ -111,6 +111,7 @@ services:
       - DGRAPH_URL=dgraph-alpha:8080
       - NATS_SERVERS=nats:4222
       - EXPOSED_NATS_SERVERS=localhost:4222
+      - EXPOSED_REMOTE_MCP=http://localhost:3001
       - JWT_PRIVATE_KEY_PATH=/keys/private.pem
       - JWT_PUBLIC_KEY_PATH=/keys/public.pem
     env_file:
@@ -149,6 +150,7 @@ services:
       - ROOTS=TEMP:/tmp
       - JWT_PRIVATE_KEY_PATH=/keys/private.pem
       - JWT_PUBLIC_KEY_PATH=/keys/public.pem
+      - REMOTE_PORT=3001
     env_file:
       # MASTER_KEY will be injected by the .env.generated file
       - ../.docker-keys/.env.generated

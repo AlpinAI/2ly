@@ -58,6 +58,7 @@ export type IdentityKey = {
 export type Infra = {
   __typename: 'Infra';
   nats: Maybe<Scalars['String']['output']>;
+  remoteMCP: Maybe<Scalars['String']['output']>;
 };
 
 export type LoginInput = {

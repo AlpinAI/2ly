@@ -66,11 +66,16 @@ export const resolvers = (container: Container = defaultContainer): apolloResolv
       },
       infra: async () => {
         let exposedNatsServers = 'localhost:4222';
+        let exposedRemoteMCP = 'localhost:3001';
         if (process.env.EXPOSED_NATS_SERVERS) {
           exposedNatsServers = process.env.EXPOSED_NATS_SERVERS;
         }
+        if (process.env.EXPOSED_REMOTE_MCP) {
+          exposedRemoteMCP = process.env.EXPOSED_REMOTE_MCP;
+        }
         return {
           nats: exposedNatsServers,
+          remoteMCP: exposedRemoteMCP,
         };
       },
       workspaceMCPTools: async (_parent: unknown, { workspaceId }: { workspaceId: string }) => {

@@ -54,6 +54,7 @@ export type IdentityKey = {
 
 export type Infra = {
   nats?: Maybe<Scalars['String']['output']>;
+  remoteMCP?: Maybe<Scalars['String']['output']>;
 };
 
 export type LoginInput = {
@@ -850,6 +851,7 @@ export type IdentityKeyResolvers<ContextType = object, ParentType extends Resolv
 
 export type InfraResolvers<ContextType = object, ParentType extends ResolversParentTypes['Infra'] = ResolversParentTypes['Infra']> = {
   nats?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  remoteMCP?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 };
 
