@@ -31,6 +31,7 @@ export interface ConnectionOption {
   id: PlatformOption;
   title: string;
   Icon: LucideIcon;
+  disabled?: boolean;
 }
 
 /**
@@ -57,10 +58,11 @@ export const CONNECTION_OPTIONS: ConnectionOption[] = [
     id: 'langchain',
     title: 'Langchain/Langgraph',
     Icon: Code2,
+    disabled: true,
   },
   {
     id: 'json',
-    title: 'Generic Settings',
+    title: 'Manual Configuration',
     Icon: FileJson,
   },
 ];

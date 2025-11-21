@@ -120,8 +120,8 @@ export function ConnectToolsetDialog() {
             {/* Platform Cards */}
             <div className="p-6 border-b border-gray-200 dark:border-gray-700">
               <h3 className="text-sm font-medium text-gray-900 dark:text-white mb-3">Select Platform</h3>
-              <div className="grid grid-cols-4 gap-3">
-                {CONNECTION_OPTIONS.map((option) => {
+              <div className="grid grid-cols-3 gap-3">
+                {CONNECTION_OPTIONS.filter((option) => !option.disabled).map((option) => {
                   const Icon = option.Icon;
                   const isSelected = selectedPlatform === option.id;
                   return (
@@ -161,7 +161,7 @@ export function ConnectToolsetDialog() {
                 </>
               ) : (
                 <div className="text-center text-gray-500 dark:text-gray-400 py-8">
-                  Select a platform above to see detailed instructions
+                  How do you want to connect to your toolset?
                 </div>
               )}
             </div>
