@@ -65,8 +65,8 @@ export const resolvers = (container: Container = defaultContainer): apolloResolv
         return systemRepository.getSystem();
       },
       infra: async () => {
-        let exposedNatsServers = 'localhost:4222';
-        let exposedRemoteMCP = 'localhost:3001';
+        let exposedNatsServers = '';
+        let exposedRemoteMCP = '';
         if (process.env.EXPOSED_NATS_SERVERS) {
           exposedNatsServers = process.env.EXPOSED_NATS_SERVERS;
         }

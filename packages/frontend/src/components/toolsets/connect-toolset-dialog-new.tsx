@@ -76,7 +76,7 @@ export function ConnectToolsetDialogNew() {
   }, [runtimes, selectedToolsetName]);
 
   const remoteMCPServer = useMemo(() => {
-    return infra?.remoteMCP ?? `${window.location.hostname}:3001`;
+    return infra?.remoteMCP || `${window.location.protocol}//${window.location.hostname}:3001`;
   }, [infra]);
 
   // Connection URLs
@@ -139,7 +139,7 @@ export function ConnectToolsetDialogNew() {
 
           {/* Settings Section with Tabs */}
           <div className="p-6 border-b border-gray-200 dark:border-gray-700 flex-shrink-0">
-            <h3 className="text-sm font-medium text-gray-900 dark:text-white mb-3">Connection Settings</h3>
+            <h3 className="text-sm font-medium text-gray-900 dark:text-white mb-3">Generic settings</h3>
             <Tabs value={selectedTab} onValueChange={(v) => setSelectedTab(v as ConnectionTab)}>
               <TabsList className="mb-4">
                 <TabsTrigger value="stream">STREAM</TabsTrigger>
@@ -147,12 +147,15 @@ export function ConnectToolsetDialogNew() {
                 <TabsTrigger value="stdio">STDIO</TabsTrigger>
               </TabsList>
               <TabsContent value="stream">
+                <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">Unique URL to connect to this toolset using streamable-http transport</p>
                 <CodeBlock code={streamUrl} language="bash" size="small" />
               </TabsContent>
               <TabsContent value="sse">
+                <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">Unique URL to connect to this toolset using SSE transport</p>
                 <CodeBlock code={sseUrl} language="bash" size="small" />
               </TabsContent>
               <TabsContent value="stdio">
+                <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">Unique STDIO configuration to connect to this toolset</p>
                 <CodeBlock code={stdioConfig} language="json" size="small" />
               </TabsContent>
             </Tabs>
