@@ -8,36 +8,38 @@ import { CodeBlock } from '@/components/ui/code-block';
 
 interface LangflowInstructionsNewProps {
   sseUrl: string;
+  toolsetName: string;
 }
 
-export function LangflowInstructionsNew({ sseUrl }: LangflowInstructionsNewProps) {
+export function LangflowInstructionsNew({ sseUrl, toolsetName }: LangflowInstructionsNewProps) {
   return (
     <div className="space-y-4">
-      {/* Image Placeholder */}
-      <div className="w-full h-40 bg-gray-100 dark:bg-gray-700 rounded-lg flex items-center justify-center">
-        <span className="text-gray-400 dark:text-gray-500 text-sm">Langflow Setup Screenshot</span>
-      </div>
+      {/* Screenshot */}
+      <img
+        src="/connect-instructions/langflow.png"
+        alt="Langflow MCP Client configuration"
+        className="w-auto rounded-lg border border-gray-200 dark:border-gray-700"
+      />
 
       <h3 className="text-xl font-semibold text-gray-900 dark:text-white">
         Connect Langflow to 2LY
       </h3>
 
       <ol className="list-decimal list-inside space-y-4 text-base leading-relaxed text-gray-700 dark:text-gray-300 font-sans">
-        <li>Open your Langflow project and add an <strong>MCP Server</strong> node</li>
+        <li>Open your Langflow project and add an <strong>MCP Tools</strong> component</li>
+        <li>Click <strong>Add MCP Server</strong> or use the dropdown to select or add a new server</li>
         <li>Select <strong>SSE</strong> as the transport type</li>
+        <li>Give it a name: <strong>{toolsetName}</strong></li>
         <li>
           Copy the <strong>SSE URL</strong> below and paste it into the Server URL field:
           <div className="mt-2">
             <CodeBlock code={sseUrl} language="bash" size="small" />
           </div>
         </li>
-        <li>Connect the MCP Server node to your agent or chain</li>
-        <li>Run your flow to test the connection</li>
+        <li>Click <strong>Add Server</strong></li>
+        <li>At the top of the component, toggle the <strong>Tool Mode</strong> switch</li>
+        <li>Now you can plug the Toolset output into your agent Tools input</li>
       </ol>
-
-      <p className="text-base text-gray-500 dark:text-gray-400 mt-4 font-sans">
-        SSE (Server-Sent Events) provides efficient one-way streaming from the server to Langflow.
-      </p>
     </div>
   );
 }

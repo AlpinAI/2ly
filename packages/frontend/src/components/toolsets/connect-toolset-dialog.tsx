@@ -149,7 +149,7 @@ export function ConnectToolsetDialog() {
               {selectedPlatform ? (
                 <>
                   {selectedPlatform === 'n8n' && <N8NInstructionsNew streamUrl={streamUrl} />}
-                  {selectedPlatform === 'langflow' && <LangflowInstructionsNew sseUrl={sseUrl} />}
+                  {selectedPlatform === 'langflow' && <LangflowInstructionsNew sseUrl={sseUrl} toolsetName={selectedToolset.name} />}
                   {selectedPlatform === 'langchain' && <LangchainInstructionsNew toolsetKey={toolsetKey} />}
                   {selectedPlatform === 'json' && (
                     <ManualConnectionInstructions
