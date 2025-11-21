@@ -13,9 +13,7 @@ import { useState, useMemo, useCallback } from 'react';
 import { X, ExternalLink } from 'lucide-react';
 import * as Dialog from '@radix-ui/react-dialog';
 import { useQuery } from '@apollo/client/react';
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { CodeBlock } from '@/components/ui/code-block';
 import { useConnectToolsetDialog } from '@/stores/uiStore';
 import { useRuntimeData } from '@/stores/runtimeStore';
 import { useSystemInit } from '@/hooks/useSystemInit';
@@ -24,14 +22,13 @@ import { CONNECTION_OPTIONS, type PlatformOption } from './connection-options';
 import { N8NInstructionsNew } from './instructions-new/n8n-instructions-new';
 import { LangflowInstructionsNew } from './instructions-new/langflow-instructions-new';
 import { LangchainInstructionsNew } from './instructions-new/langchain-instructions-new';
-export type ConnectionTab = 'stream' | 'sse' | 'stdio';
+import { ManualConnectionInstructions } from './instructions-new/manual-connection-instructions';
 
 export function ConnectToolsetDialog() {
   const { open, setOpen, selectedToolsetName, selectedToolsetId } = useConnectToolsetDialog();
   const { runtimes } = useRuntimeData();
   const { infra } = useSystemInit();
 
-  const [selectedTab, setSelectedTab] = useState<ConnectionTab>('stream');
   const [selectedPlatform, setSelectedPlatform] = useState<PlatformOption | null>(null);
 
   // Fetch toolset key metadata
@@ -72,15 +69,6 @@ export function ConnectToolsetDialog() {
   // Connection URLs
   const streamUrl = `${remoteMCPServer}/mcp?key=${toolsetKey || '<toolset_key>'}`;
   const sseUrl = `${remoteMCPServer}/sse?key=${toolsetKey || '<toolset_key>'}`;
-  const stdioConfig = JSON.stringify(
-    {
-      command: 'npx',
-      args: ['-y', '@2ly/runtime'],
-      env: { TOOLSET_KEY: toolsetKey || '<toolset_key>' },
-    },
-    null,
-    2
-  );
 
   // Handle platform card click
   const handlePlatformClick = useCallback((platform: PlatformOption) => {
@@ -91,7 +79,6 @@ export function ConnectToolsetDialog() {
   const handleClose = useCallback(() => {
     setOpen(false);
     setTimeout(() => {
-      setSelectedTab('stream');
       setSelectedPlatform(null);
     }, 300);
   }, [setOpen]);
@@ -165,34 +152,11 @@ export function ConnectToolsetDialog() {
                   {selectedPlatform === 'langflow' && <LangflowInstructionsNew sseUrl={sseUrl} />}
                   {selectedPlatform === 'langchain' && <LangchainInstructionsNew toolsetKey={toolsetKey} />}
                   {selectedPlatform === 'json' && (
-                    <div className="space-y-4">
-                      <h3 className="text-xl font-semibold text-gray-900 dark:text-white">Manual Connection to an MCP Client</h3>
-                      <Tabs value={selectedTab} onValueChange={(v) => setSelectedTab(v as ConnectionTab)}>
-                        <TabsList className="mb-4">
-                          <TabsTrigger value="stream">STREAM</TabsTrigger>
-                          <TabsTrigger value="sse">SSE</TabsTrigger>
-                          <TabsTrigger value="stdio">STDIO</TabsTrigger>
-                        </TabsList>
-                        <TabsContent value="stream">
-                          <p className="text-base text-gray-500 dark:text-gray-400 mb-2 font-sans">
-                            Unique URL to connect to this toolset using streamable-http transport
-                          </p>
-                          <CodeBlock code={streamUrl} language="bash" size="small" />
-                        </TabsContent>
-                        <TabsContent value="sse">
-                          <p className="text-base text-gray-500 dark:text-gray-400 mb-2 font-sans">
-                            Unique URL to connect to this toolset using SSE transport
-                          </p>
-                          <CodeBlock code={sseUrl} language="bash" size="small" />
-                        </TabsContent>
-                        <TabsContent value="stdio">
-                          <p className="text-base text-gray-500 dark:text-gray-400 mb-2 font-sans">
-                            Unique STDIO configuration to connect to this toolset
-                          </p>
-                          <CodeBlock code={stdioConfig} language="json" size="small" />
-                        </TabsContent>
-                      </Tabs>
-                    </div>
+                    <ManualConnectionInstructions
+                      streamUrl={streamUrl}
+                      sseUrl={sseUrl}
+                      toolsetKey={toolsetKey}
+                    />
                   )}
                 </>
               ) : (
