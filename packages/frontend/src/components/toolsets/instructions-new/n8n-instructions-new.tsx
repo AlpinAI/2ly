@@ -7,26 +7,36 @@
 export function N8NInstructionsNew() {
   return (
     <div className="space-y-4">
-      {/* Image Placeholder */}
-      <div className="w-full h-40 bg-gray-100 dark:bg-gray-700 rounded-lg flex items-center justify-center">
-        <span className="text-gray-400 dark:text-gray-500 text-sm">N8N Setup Screenshot</span>
-      </div>
+      {/* Screenshot */}
+      <img
+        src="/connect-instructions/n8n.png"
+        alt="N8N MCP Client configuration"
+        className="max-h-[300px] w-auto rounded-lg border border-gray-200 dark:border-gray-700"
+      />
 
       <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
         Connect N8N to 2LY
       </h3>
 
       <ol className="list-decimal list-inside space-y-3 text-sm text-gray-700 dark:text-gray-300">
-        <li>Open your N8N workflow and add an <strong>MCP Client Tool</strong> node</li>
-        <li>Select <strong>Streamable HTTP</strong> as the connection type</li>
+        <li>Open your N8N workflow and add an <strong>MCP Client</strong> node</li>
+        <li>Select <strong>HTTP Streamable</strong> as the connection type</li>
         <li>Copy the <strong>STREAM URL</strong> from the settings above and paste it into the URL field</li>
-        <li>Configure any additional authentication if required</li>
-        <li>Test the connection to verify it works</li>
       </ol>
 
       <p className="text-sm text-gray-500 dark:text-gray-400 mt-4">
         The STREAM connection provides real-time bidirectional communication between N8N and your toolset.
       </p>
+
+      <hr className="border-t border-gray-200 dark:border-gray-700 my-6" />
+
+      <h4 className="text-base font-semibold text-gray-900 dark:text-white">Advanced configuration</h4>
+      <ul className="list-disc list-inside space-y-3 text-sm text-gray-700 dark:text-gray-300">
+        <li>Learn how to connect with a header key instead of query string parameter</li>
+        <li>Learn how to connect with the master key and a toolset name instead of the toolset key</li>
+      </ul>
+
+      
     </div>
   );
 }
