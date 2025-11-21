@@ -151,8 +151,6 @@ describe('OnboardingCard', () => {
   const mockSetSelectedToolSetForManagement = vi.fn();
   const mockSetConnectToolsetDialogOpen = vi.fn();
   const mockSetSelectedToolsetName = vi.fn();
-  const mockSetConnectToolsetDialogNewOpen = vi.fn();
-  const mockSetSelectedToolsetNameNew = vi.fn();
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -187,15 +185,6 @@ describe('OnboardingCard', () => {
       setOpen: mockSetConnectToolsetDialogOpen,
       selectedToolsetName: null,
       setSelectedToolsetName: mockSetSelectedToolsetName,
-      selectedToolsetId: null,
-      setSelectedToolsetId: vi.fn(),
-    });
-
-    vi.mocked(uiStore.useConnectToolsetDialog).mockReturnValue({
-      open: false,
-      setOpen: mockSetConnectToolsetDialogNewOpen,
-      selectedToolsetName: null,
-      setSelectedToolsetName: mockSetSelectedToolsetNameNew,
       selectedToolsetId: null,
       setSelectedToolsetId: vi.fn(),
     });
