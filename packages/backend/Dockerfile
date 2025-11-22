@@ -30,6 +30,10 @@ COPY --from=builder /app/packages/backend/dist ./packages/backend/dist
 # Create logs directory
 RUN mkdir -p logs
 
+# Copy entrypoint script
+COPY scripts/entrypoint.sh /usr/local/bin/entrypoint.sh
+RUN chmod +x /usr/local/bin/entrypoint.sh
+
 # Create non-root user
 RUN addgroup -g 1001 -S orchestrator && \
   adduser -S orchestrator -u 1001 && \
@@ -42,4 +46,5 @@ EXPOSE 3000
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
   CMD node -e "console.log('Health check - orchestrator running')" || exit 1
 
+ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
 CMD ["node", "packages/backend/dist/index.js"]

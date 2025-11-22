@@ -112,20 +112,6 @@ services:
       - EXPOSED_REMOTE_MCP=http://localhost:3001
       - JWT_PRIVATE_KEY_PATH=/keys/private.pem
       - JWT_PUBLIC_KEY_PATH=/keys/public.pem
-    entrypoint:
-      - /bin/sh
-      - -c
-      - |
-        echo "Waiting for keys..."
-        while [ ! -f /keys/.env.generated ]; do sleep 1; done
-        echo "Keys found. Waiting 1s for sync..."
-        sleep 1
-        echo "Sourcing keys..."
-        set -a
-        . /keys/.env.generated
-        set +a
-        echo "Starting Backend..."
-        exec node packages/backend/dist/index.js
     ports:
       - 3000:3000
     volumes:
@@ -161,20 +147,6 @@ services:
       - JWT_PRIVATE_KEY_PATH=/keys/private.pem
       - JWT_PUBLIC_KEY_PATH=/keys/public.pem
       - REMOTE_PORT=3001
-    entrypoint:
-      - /bin/sh
-      - -c
-      - |
-        echo "Waiting for keys..."
-        while [ ! -f /keys/.env.generated ]; do sleep 1; done
-        echo "Keys found. Waiting 1s for sync..."
-        sleep 1
-        echo "Sourcing keys..."
-        set -a
-        . /keys/.env.generated
-        set +a
-        echo "Starting Runtime..."
-        exec node packages/runtime/dist/index.js
     ports:
       - 3001:3001
     volumes:
