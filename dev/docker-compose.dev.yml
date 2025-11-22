@@ -104,6 +104,7 @@ services:
       context: ../
       dockerfile: packages/backend/Dockerfile
     container_name: 2ly-backend
+    entrypoint: ['/entrypoint.sh']
     environment:
       - NODE_ENV=development
       - DGRAPH_URL=dgraph-alpha:8080
@@ -112,11 +113,13 @@ services:
       - EXPOSED_REMOTE_MCP=http://localhost:3001
       - JWT_PRIVATE_KEY_PATH=/keys/private.pem
       - JWT_PUBLIC_KEY_PATH=/keys/public.pem
+    command: ['node', 'packages/backend/dist/index.js']
     ports:
       - 3000:3000
     volumes:
       - 2ly-data:/data:ro
       - ../.docker-keys:/keys:ro # Bind mount keys to /keys (simpler mount path)
+      - ../scripts/entrypoint.sh:/entrypoint.sh:ro
     depends_on:
       nats:
         condition: service_started
@@ -140,6 +143,7 @@ services:
       context: ../
       dockerfile: packages/runtime/Dockerfile
     container_name: 2ly-main-runtime
+    entrypoint: ['/entrypoint.sh']
     environment:
       - NATS_SERVERS=nats:4222
       - RUNTIME_NAME=Main Runtime
@@ -147,11 +151,13 @@ services:
       - JWT_PRIVATE_KEY_PATH=/keys/private.pem
       - JWT_PUBLIC_KEY_PATH=/keys/public.pem
       - REMOTE_PORT=3001
+    command: ['node', 'packages/runtime/dist/index.js']
     ports:
       - 3001:3001
     volumes:
       - 2ly-data:/data:ro
       - ../.docker-keys:/keys:ro # Bind mount keys to /keys (simpler mount path)
+      - ../scripts/entrypoint.sh:/entrypoint.sh:ro
     depends_on:
       nats:
         condition: service_started
