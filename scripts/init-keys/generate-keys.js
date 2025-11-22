@@ -128,7 +128,7 @@ async function main() {
   writeSecureFile(PUBLIC_KEY_FILE, publicKey, 0o644);
   console.log(`✅ JWT RSA key pair generated`);
 
-  // Write environment variables file
+  // Write environment variables file (shared)
   const envContent = [
     '# Auto-generated cryptographic keys for 2ly',
     '# DO NOT COMMIT THIS FILE TO VERSION CONTROL',
@@ -140,10 +140,6 @@ async function main() {
     '# NATS operator seed (system-wide, used for JWT signing)',
     `NATS_OPERATOR_SEED=${natsOperatorSeed}`,
     '',
-    '# JWT key paths for user session tokens',
-    'JWT_PRIVATE_KEY_PATH=.docker-keys/private.pem',
-    'JWT_PUBLIC_KEY_PATH=.docker-keys/public.pem',
-    '',
     '# Initial workspace master key (used by runtime on first boot)',
     `MASTER_KEY=${masterKey}`,
     ''
@@ -151,6 +147,22 @@ async function main() {
 
   writeSecureFile(ENV_FILE, envContent, 0o600);
   console.log(`✅ Environment file written to ${ENV_FILE}`);
+
+  // Write local environment variables file (for local dev only)
+  const LOCAL_ENV_FILE = join(KEYS_DIR, '.env.local');
+  const localEnvContent = [
+    '# Auto-generated local development keys for 2ly',
+    '# DO NOT COMMIT THIS FILE TO VERSION CONTROL',
+    '# Generated at: ' + new Date().toISOString(),
+    '',
+    '# JWT key paths for user session tokens (relative to project root)',
+    'JWT_PRIVATE_KEY_PATH=.docker-keys/private.pem',
+    'JWT_PUBLIC_KEY_PATH=.docker-keys/public.pem',
+    ''
+  ].join('\n');
+
+  writeSecureFile(LOCAL_ENV_FILE, localEnvContent, 0o600);
+  console.log(`✅ Local environment file written to ${LOCAL_ENV_FILE}`);
 
   // Write initialized marker
   writeSecureFile(INITIALIZED_MARKER, new Date().toISOString(), 0o600);

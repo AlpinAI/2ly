@@ -7,10 +7,8 @@ services:
       dockerfile: Dockerfile
     container_name: 2ly-init-keys
     volumes:
-      - ../.docker-keys:/data/keys:rw  # Bind mount keys directory to host
-    restart: "no"
-    profiles:
-      - init
+      - ../.docker-keys:/data/keys:rw # Bind mount keys directory to host
+    restart: 'no'
 
   # NATS with JetStream for persistence
   nats:
@@ -19,15 +17,15 @@ services:
     ports:
       - '4222:4222' # Client connections
       - '8222:8222' # HTTP monitoring
-    command: [ '--jetstream', '--store_dir=/data/nats', '--http_port=8222', '--server_name=2ly-nats-01' ]
+    command: ['--jetstream', '--store_dir=/data/nats', '--http_port=8222', '--server_name=2ly-nats-01']
     volumes:
       - 2ly-data:/data:rw
-      - ../.docker-keys:/keys:ro  # Bind mount for operator.jwt access (future JWT auth)
+      - ../.docker-keys:/keys:ro # Bind mount for operator.jwt access (future JWT auth)
     networks:
       - 2ly-network
     restart: unless-stopped
     healthcheck:
-      test: [ 'CMD', 'curl', '-f', 'http://localhost:8222/healthz' ]
+      test: ['CMD', 'curl', '-f', 'http://localhost:8222/healthz']
       interval: 10s
       timeout: 5s
       retries: 5
@@ -61,7 +59,7 @@ services:
       - 2ly-network
     restart: unless-stopped
     healthcheck:
-      test: [ 'CMD', 'curl', '-f', 'http://localhost:6080/health' ]
+      test: ['CMD', 'curl', '-f', 'http://localhost:6080/health']
       interval: 10s
       timeout: 5s
       retries: 5
@@ -85,7 +83,7 @@ services:
       - 2ly-network
     restart: unless-stopped
     healthcheck:
-      test: [ 'CMD', 'curl', '-f', 'http://localhost:8080/health' ]
+      test: ['CMD', 'curl', '-f', 'http://localhost:8080/health']
       interval: 10s
       timeout: 5s
       retries: 5
@@ -114,13 +112,25 @@ services:
       - EXPOSED_REMOTE_MCP=http://localhost:3001
       - JWT_PRIVATE_KEY_PATH=/keys/private.pem
       - JWT_PUBLIC_KEY_PATH=/keys/public.pem
-    env_file:
-      - ../.docker-keys/.env.generated
+    entrypoint:
+      - /bin/sh
+      - -c
+      - |
+        echo "Waiting for keys..."
+        while [ ! -f /keys/.env.generated ]; do sleep 1; done
+        echo "Keys found. Waiting 1s for sync..."
+        sleep 1
+        echo "Sourcing keys..."
+        set -a
+        . /keys/.env.generated
+        set +a
+        echo "Starting Backend..."
+        exec node packages/backend/dist/index.js
     ports:
       - 3000:3000
     volumes:
       - 2ly-data:/data:ro
-      - ../.docker-keys:/keys:ro  # Bind mount keys to /keys (simpler mount path)
+      - ../.docker-keys:/keys:ro # Bind mount keys to /keys (simpler mount path)
     depends_on:
       nats:
         condition: service_started
@@ -130,7 +140,7 @@ services:
       - 2ly-network
     restart: unless-stopped
     healthcheck:
-      test: [ 'CMD', 'curl', '-f', 'http://localhost:3000/health' ]
+      test: ['CMD', 'curl', '-f', 'http://localhost:3000/health']
       interval: 5s
       timeout: 3s
       retries: 10
@@ -151,14 +161,25 @@ services:
       - JWT_PRIVATE_KEY_PATH=/keys/private.pem
       - JWT_PUBLIC_KEY_PATH=/keys/public.pem
       - REMOTE_PORT=3001
-    env_file:
-      # MASTER_KEY will be injected by the .env.generated file
-      - ../.docker-keys/.env.generated
+    entrypoint:
+      - /bin/sh
+      - -c
+      - |
+        echo "Waiting for keys..."
+        while [ ! -f /keys/.env.generated ]; do sleep 1; done
+        echo "Keys found. Waiting 1s for sync..."
+        sleep 1
+        echo "Sourcing keys..."
+        set -a
+        . /keys/.env.generated
+        set +a
+        echo "Starting Runtime..."
+        exec node packages/runtime/dist/index.js
     ports:
       - 3001:3001
     volumes:
       - 2ly-data:/data:ro
-      - ../.docker-keys:/keys:ro  # Bind mount keys to /keys (simpler mount path)
+      - ../.docker-keys:/keys:ro # Bind mount keys to /keys (simpler mount path)
     depends_on:
       nats:
         condition: service_started
