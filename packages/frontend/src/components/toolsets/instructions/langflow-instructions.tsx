@@ -1,47 +1,45 @@
 /**
- * Langflow Connection Instructions
+ * Langflow Instructions (New Design)
  *
- * WHY: Provides step-by-step instructions for connecting a Langflow workflow
- * to 2LY using the MCP Server node.
+ * WHY: Platform-specific instructions for connecting Langflow to 2LY via SSE.
  */
 
 import { CodeBlock } from '@/components/ui/code-block';
 
-export interface LangflowInstructionsProps {
-  agentName: string;
-  natsServer: string;
+interface LangflowInstructionsProps {
+  sseUrl: string;
+  toolsetName: string;
 }
 
-export function LangflowInstructions({ agentName, natsServer }: LangflowInstructionsProps) {
-  const langflowConfig = {
-    mcpServers: {
-      '2ly': {
-        command: 'npx',
-        args: ['@2ly/runtime'],
-        env: {
-          NATS_SERVERS: natsServer ? `nats://${natsServer}` : 'nats://localhost:4222',
-          RUNTIME_NAME: agentName,
-        },
-      },
-    },
-  };
-
+export function LangflowInstructions({ sseUrl, toolsetName }: LangflowInstructionsProps) {
   return (
     <div className="space-y-4">
-      <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-        Configure MCP Server node
-      </h3>
-      <p className="text-sm text-gray-700 dark:text-gray-300">
-        Add an MCP Server node with the following configuration:
-      </p>
-      <CodeBlock code={JSON.stringify(langflowConfig, null, 2)} language="json" size="small" />
+      {/* Screenshot */}
+      <img
+        src="/connect-instructions/langflow.png"
+        alt="Langflow MCP Client configuration"
+        className="w-auto rounded-lg border border-gray-200 dark:border-gray-700"
+      />
 
-      <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4 mt-4">
-        <p className="text-sm text-blue-900 dark:text-blue-200">
-          This configuration will connect your Langflow workflow to the 2LY runtime, giving you
-          access to all configured tools.
-        </p>
-      </div>
+      <h3 className="text-xl font-semibold text-gray-900 dark:text-white">
+        Connect Langflow to 2LY
+      </h3>
+
+      <ol className="list-decimal list-inside space-y-4 text-base leading-relaxed text-gray-700 dark:text-gray-300 font-sans">
+        <li>Open your Langflow project and add an <strong>MCP Tools</strong> component</li>
+        <li>Click <strong>Add MCP Server</strong> or use the dropdown to select or add a new server</li>
+        <li>Select <strong>SSE</strong> as the transport type</li>
+        <li>Give it a name: <strong>{toolsetName}</strong></li>
+        <li>
+          Copy the <strong>SSE URL</strong> below and paste it into the Server URL field:
+          <div className="mt-2">
+            <CodeBlock code={sseUrl} language="bash" size="small" />
+          </div>
+        </li>
+        <li>Click <strong>Add Server</strong></li>
+        <li>At the top of the component, toggle the <strong>Tool Mode</strong> switch</li>
+        <li>Now you can plug the Toolset output into your agent Tools input</li>
+      </ol>
     </div>
   );
 }

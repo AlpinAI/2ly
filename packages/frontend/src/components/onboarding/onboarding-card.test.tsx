@@ -228,15 +228,15 @@ describe('OnboardingCard', () => {
     it('shows Connect button when agent with tools exists and step is pending', () => {
       render(<OnboardingCard step={mockStep} isCurrentStep={true} />);
 
-      const button = screen.getByRole('button', { name: /Connect/i });
-      expect(button).toBeInTheDocument();
+      const buttons = screen.getAllByRole('button', { name: /Connect/i });
+      expect(buttons.length).toBeGreaterThan(0);
     });
 
     it('opens Connect Toolset dialog when Connect button is clicked', () => {
       render(<OnboardingCard step={mockStep} isCurrentStep={true} />);
 
-      const button = screen.getByRole('button', { name: /Connect/i });
-      fireEvent.click(button);
+      const buttons = screen.getAllByRole('button', { name: /Connect/i });
+      fireEvent.click(buttons[0]);
 
       expect(mockSetSelectedToolsetName).toHaveBeenCalledWith('Test Agent');
       expect(mockSetConnectToolsetDialogOpen).toHaveBeenCalledWith(true);
@@ -276,27 +276,27 @@ describe('OnboardingCard', () => {
     it('applies correct styling for current step', () => {
       render(<OnboardingCard step={mockStep} isCurrentStep={true} />);
 
-      const button = screen.getByRole('button', { name: /Connect/i });
-      // Check that button has default variant (not outline)
-      expect(button.className).not.toContain('variant-outline');
+      const buttons = screen.getAllByRole('button', { name: /Connect/i });
+      // Check that first button has default variant (not outline)
+      expect(buttons[0].className).not.toContain('variant-outline');
     });
 
     it('applies correct styling for non-current step', () => {
       render(<OnboardingCard step={mockStep} isCurrentStep={false} />);
 
-      const button = screen.getByRole('button', { name: /Connect/i });
-      // Check that button has outline variant
-      expect(button.className).toContain('outline');
+      const buttons = screen.getAllByRole('button', { name: /Connect/i });
+      // Check that first button has outline variant
+      expect(buttons[0].className).toContain('outline');
     });
 
     it('displays Link icon in Connect button', () => {
       render(<OnboardingCard step={mockStep} isCurrentStep={true} />);
 
-      const button = screen.getByRole('button', { name: /Connect/i });
-      expect(button).toBeInTheDocument();
+      const buttons = screen.getAllByRole('button', { name: /Connect/i });
+      expect(buttons[0]).toBeInTheDocument();
 
       // Check that the Link icon is present (it's rendered as an svg)
-      const svg = button.querySelector('svg');
+      const svg = buttons[0].querySelector('svg');
       expect(svg).toBeInTheDocument();
     });
   });

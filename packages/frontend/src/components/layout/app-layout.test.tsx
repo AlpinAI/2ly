@@ -53,6 +53,10 @@ vi.mock('@/components/toolsets/connect-toolset-dialog', () => ({
   ConnectToolsetDialog: () => null,
 }));
 
+vi.mock('@/components/toolsets/connect-toolset-dialog-new', () => ({
+  ConnectToolsetDialogNew: () => null,
+}));
+
 const renderWithProviders = (component: React.ReactElement) => {
   return render(
     <BrowserRouter>

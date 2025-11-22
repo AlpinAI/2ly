@@ -53,11 +53,8 @@ export class AuthService extends Service {
       const errorMessage = error instanceof Error ? error.message : String(error);
 
       // Detect permanent authentication failures that should not retry
-      const isPermanentAuthFailure =
-        errorMessage.includes('NOT_FOUND') ||
-        errorMessage.includes('EXPIRED') ||
-        errorMessage.includes('REVOKED');
-
+      const isPermanentAuthFailure = errorMessage.includes('AUTHENTICATION_FAILED');
+      
       if (isPermanentAuthFailure) {
         throw new PermanentAuthenticationError(errorMessage);
       }

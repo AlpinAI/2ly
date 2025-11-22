@@ -18,10 +18,20 @@ export interface SessionContext {
 }
 
 /**
- * Extract authentication headers from a Fastify request
+ * Extract authentication headers from a Fastify request.
+ * Supports query string auth via ?key=<toolset_key> as a simplified alternative.
  */
 export function extractAuthHeaders(request: FastifyRequest): AuthHeaders {
   const headers = request.headers;
+  const query = request.query as Record<string, string>;
+
+  // Check query string first for simplified auth
+  const queryKey = query?.key;
+  if (queryKey) {
+    return { toolsetKey: queryKey };
+  }
+
+  // Fall back to header-based auth
   return {
     masterKey: typeof headers['master_key'] === 'string' ? headers['master_key'] : undefined,
     toolsetKey: typeof headers['toolset_key'] === 'string' ? headers['toolset_key'] : undefined,

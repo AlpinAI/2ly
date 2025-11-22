@@ -1,56 +1,58 @@
 /**
- * Langchain/Langgraph Connection Instructions
+ * Langchain Instructions (New Design)
  *
- * WHY: Provides step-by-step instructions for connecting a Langchain or Langgraph
- * agent to 2LY using the langchain_2ly Python package.
+ * WHY: Platform-specific instructions for connecting Langchain/Langgraph to 2LY via STDIO.
  */
 
 import { CodeBlock } from '@/components/ui/code-block';
 
 export interface LangchainInstructionsProps {
   toolsetKey: string;
-  natsServer: string;
 }
 
-export function LangchainInstructions({ toolsetKey, natsServer }: LangchainInstructionsProps) {
+export function LangchainInstructions({ toolsetKey }: LangchainInstructionsProps) {
   const installCommand = 'pip install langchain_2ly';
 
-  const quickStartCode = `# Import MCPToolset
-from langchain_2ly import MCPToolset
-# Configure connection
-options={${natsServer ? `
-  "nats_servers": "nats://${natsServer},"`: ''}
-  "toolset_key": "${toolsetKey}"
+  const quickStartCode = `from langchain_2ly import MCPToolset
+
+options = {
+    "toolset_key": "${toolsetKey || '<toolset_key>'}"
 }
 
-# Instantiate MCPToolset
 async with MCPToolset.with_toolset_key(options) as mcp:
-
-    # Retrieve tools
     tools = await mcp.get_langchain_tools()
-
-    # Create your agent as usual
     agent = create_react_agent(llm, tools)
-    agent_response = await agent.ainvoke(...)
-`;
+    response = await agent.ainvoke(...)`;
 
   return (
     <div className="space-y-4">
-      <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-        1. Install connector
-      </h3>
-      <CodeBlock code={installCommand} language="bash" size="small" />
-      <p className="text-sm text-gray-700 dark:text-gray-300">
-        Contains our MCP Adapter to connect to 2LY Runtime.
-      </p>
+      {/* Image Placeholder */}
+      <div className="w-full h-40 bg-gray-100 dark:bg-gray-700 rounded-lg flex items-center justify-center">
+        <span className="text-gray-400 dark:text-gray-500 text-sm">Langchain Setup Screenshot</span>
+      </div>
 
-      <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2 mt-6">
-        2. Use tools in Langchain/Langgraph
+      <h3 className="text-xl font-semibold text-gray-900 dark:text-white">
+        Connect Langchain/Langgraph to 2LY
       </h3>
-      <CodeBlock code={quickStartCode} language="python" size="small" />
-      <p className="text-sm text-gray-700 dark:text-gray-300">
-        When instantiating the MCPAdapter, give it the name of your agent. Agents are
-        automatically created in 2ly if they don't yet exist.
+
+      <ol className="list-decimal list-inside space-y-4 text-base leading-relaxed text-gray-700 dark:text-gray-300 font-sans">
+        <li>
+          Install the langchain_2ly package:
+          <div className="mt-2">
+            <CodeBlock code={installCommand} language="bash" size="small" />
+          </div>
+        </li>
+        <li>
+          Use the MCPToolset in your code:
+          <div className="mt-2">
+            <CodeBlock code={quickStartCode} language="python" size="small" />
+          </div>
+        </li>
+        <li>The STDIO configuration from settings above can be used for alternative runtime setup</li>
+      </ol>
+
+      <p className="text-base text-gray-500 dark:text-gray-400 mt-4 font-sans">
+        STDIO provides local process-based communication, ideal for Python environments.
       </p>
     </div>
   );

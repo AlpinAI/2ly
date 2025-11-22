@@ -9,6 +9,7 @@ coverage
 *.egg-info
 private.pem
 public.pem
+*.af~lock~
 
 # Docker-generated keys (shared between Docker and local dev)
 .docker-keys/

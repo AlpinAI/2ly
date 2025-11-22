@@ -30,6 +30,7 @@ export function ToolsetDetail({ toolSet }: ToolsetDetailProps) {
   const { workspaceId } = useParams<{ workspaceId: string }>();
   const { setOpen, setSelectedToolsetId } = useManageToolsDialog();
   const { setOpen: setConnectDialogOpen, setSelectedToolsetName, setSelectedToolsetId: setConnectToolsetId } = useConnectToolsetDialog();
+
   const { confirm, toast } = useNotification();
   const [deleteToolSet] = useMutation(DeleteToolSetDocument);
 
@@ -56,6 +57,8 @@ export function ToolsetDetail({ toolSet }: ToolsetDetailProps) {
     setConnectToolsetId(toolSet.id);
     setConnectDialogOpen(true);
   };
+
+
 
   const handleDelete = async () => {
     const confirmed = await confirm({
@@ -148,6 +151,7 @@ export function ToolsetDetail({ toolSet }: ToolsetDetailProps) {
           <Cable className="h-4 w-4 mr-2" />
           Connect
         </Button>
+
         <Button
           variant="default"
           size="sm"

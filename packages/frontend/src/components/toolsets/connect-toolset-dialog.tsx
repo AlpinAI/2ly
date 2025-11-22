@@ -1,58 +1,35 @@
 /**
- * Connect Toolset Dialog Component
+ * Connect Toolset Dialog (New Design)
  *
- * WHY: Provides platform-specific instructions for connecting toolsets to 2LY.
- * Users can select their platform (Langchain, Langflow, N8N, JSON) and see
- * tailored connection instructions with code examples.
- *
- * FEATURES:
- * - Platform selection via Radix Select
- * - Dynamic instructions based on selected platform
- * - Real-time connection detection (shows when toolset connects)
- * - Code snippets with copy functionality
- * - Toolset name pre-filled in all examples
- *
- * USAGE:
- * ```tsx
- * const { setOpen, setSelectedToolsetName } = useConnectToolsetDialog();
- *
- * // Open dialog for specific toolset
- * setSelectedToolsetName(toolset.name);
- * setOpen(true);
- * ```
+ * WHY: Redesigned connect dialog with improved UX featuring:
+ * - Header with toolset name + close button (no status labels)
+ * - Settings tabs for STREAM, SSE, STDIO connection types
+ * - Platform cards (N8N, Langflow, Langchain, JSON) with auto-tab selection
+ * - Instruction area with image placeholder and detailed steps
+ * - Footer with docs link
  */
 
-import { useState, useEffect, useMemo, useCallback } from 'react';
-import { X, CheckCircle2, Loader2 } from 'lucide-react';
+import { useState, useMemo, useCallback } from 'react';
+import { X, ExternalLink } from 'lucide-react';
 import * as Dialog from '@radix-ui/react-dialog';
 import { useQuery } from '@apollo/client/react';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { useConnectToolsetDialog } from '@/stores/uiStore';
 import { useRuntimeData } from '@/stores/runtimeStore';
 import { useSystemInit } from '@/hooks/useSystemInit';
 import { GetToolsetKeyDocument, GetKeyValueDocument } from '@/graphql/generated/graphql';
 import { CONNECTION_OPTIONS, type PlatformOption } from './connection-options';
-import { LangchainInstructions } from './instructions/langchain-instructions';
-import { LangflowInstructions } from './instructions/langflow-instructions';
 import { N8NInstructions } from './instructions/n8n-instructions';
-import { JSONInstructions } from './instructions/json-instructions';
+import { LangflowInstructions } from './instructions/langflow-instructions';
+import { LangchainInstructions } from './instructions/langchain-instructions';
+import { ManualConnectionInstructions } from './instructions/manual-connection-instructions';
 
 export function ConnectToolsetDialog() {
   const { open, setOpen, selectedToolsetName, selectedToolsetId } = useConnectToolsetDialog();
   const { runtimes } = useRuntimeData();
   const { infra } = useSystemInit();
 
-  console.log('infra', infra);
-
-  const [selectedPlatform, setSelectedPlatform] = useState<PlatformOption>('langchain');
-  const [isConnected, setIsConnected] = useState(false);
+  const [selectedPlatform, setSelectedPlatform] = useState<PlatformOption | null>(null);
 
   // Fetch toolset key metadata
   const { data: keyData } = useQuery(GetToolsetKeyDocument, {
@@ -71,11 +48,9 @@ export function ConnectToolsetDialog() {
 
   // Get selected toolset from runtime store, or create a mock one for new toolsets
   const selectedToolset = useMemo(() => {
-    // Try to find existing runtime first
     const existingRuntime = runtimes.find((runtime) => runtime.name === selectedToolsetName);
     if (existingRuntime) return existingRuntime;
 
-    // If selectedToolsetName is provided but no runtime found, treat it as a name for a new toolset
     if (selectedToolsetName) {
       return {
         id: `new-${selectedToolsetName}`,
@@ -87,48 +62,27 @@ export function ConnectToolsetDialog() {
     return null;
   }, [runtimes, selectedToolsetName]);
 
-  // Get NATS server URL from infra config, fallback to hostname-based default
-  const natsServer = useMemo(() => {
-    return infra?.nats ?? `${window.location.hostname}:4222`;
-  }, [infra]);
-
   const remoteMCPServer = useMemo(() => {
-    return infra?.remoteMCP ?? '${window.location.hostname}:3001'
+    return infra?.remoteMCP || `${window.location.protocol}//${window.location.hostname}:3001`;
   }, [infra]);
-  console.log('remoteMCPServer', remoteMCPServer);
 
-  // Real-time connection detection
-  // WHY: Watch for new runtimes with matching name and show feedback
-  useEffect(() => {
-    if (!open || !selectedToolset) return;
+  // Connection URLs
+  const streamUrl = `${remoteMCPServer}/mcp?key=${toolsetKey || '<toolset_key>'}`;
+  const sseUrl = `${remoteMCPServer}/sse?key=${toolsetKey || '<toolset_key>'}`;
 
-    const checkForConnection = () => {
-      const matchingRuntime = runtimes.find(
-        (runtime) =>
-          runtime.name === selectedToolset.name &&
-          runtime.status === 'ACTIVE'
-      );
-
-      if (matchingRuntime && !isConnected) {
-        setIsConnected(true);
-      }
-    };
-
-    // Check immediately and on runtime changes
-    checkForConnection();
-  }, [runtimes, selectedToolset, open, isConnected]);
+  // Handle platform card click
+  const handlePlatformClick = useCallback((platform: PlatformOption) => {
+    setSelectedPlatform(platform);
+  }, []);
 
   // Handle dialog close
   const handleClose = useCallback(() => {
     setOpen(false);
-    // Reset state after animation completes
     setTimeout(() => {
-      setSelectedPlatform('langchain');
-      setIsConnected(false);
+      setSelectedPlatform(null);
     }, 300);
   }, [setOpen]);
 
-  // Handle open change from Radix
   const handleOpenChange = useCallback(
     (newOpen: boolean) => {
       if (!newOpen) {
@@ -138,103 +92,92 @@ export function ConnectToolsetDialog() {
     [handleClose]
   );
 
-  // Don't render if no toolset selected
   if (!selectedToolset) return null;
 
   return (
     <Dialog.Root open={open} onOpenChange={handleOpenChange}>
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 bg-black/50 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 z-50" />
-        <Dialog.Content className="fixed left-[50%] top-[50%] max-h-[85vh] w-[90vw] max-w-2xl translate-x-[-50%] translate-y-[-50%] rounded-lg border border-gray-200 bg-white shadow-lg data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%] dark:border-gray-700 dark:bg-gray-800 z-50 flex flex-col overflow-hidden">
+        <Dialog.Content className="fixed left-[50%] top-[50%] max-h-[85vh] w-[90vw] max-w-3xl translate-x-[-50%] translate-y-[-50%] rounded-lg border border-gray-200 bg-white shadow-lg data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%] dark:border-gray-700 dark:bg-gray-800 z-50 flex flex-col overflow-hidden">
           {/* Header */}
           <div className="p-6 border-b border-gray-200 dark:border-gray-700 flex-shrink-0">
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex-1">
-                <Dialog.Title className="text-lg font-semibold text-gray-900 dark:text-white">
-                  Connect Toolset to 2LY
-                </Dialog.Title>
-                <Dialog.Description className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                  Toolset: <span className="font-mono font-medium">{selectedToolset.name}</span>
-                </Dialog.Description>
-              </div>
-
-              {/* Connection Status Badge */}
-              {isConnected && (
-                <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300 animate-in fade-in zoom-in mr-3">
-                  <CheckCircle2 className="h-4 w-4" />
-                  <span className="text-sm font-medium">Connected!</span>
-                </div>
-              )}
-
-              {!isConnected && open && (
-                <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300 mr-3">
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  <span className="text-sm font-medium">Waiting...</span>
-                </div>
-              )}
-
+            <div className="flex items-center justify-between">
+              <Dialog.Title className="text-lg font-semibold text-gray-900 dark:text-white">
+                Connect: <span className="font-mono">{selectedToolset.name}</span>
+              </Dialog.Title>
               <Dialog.Close asChild>
-                <Button variant="ghost" size="icon" className="rounded-full">
+                <Button variant="ghost" size="icon" className="rounded-full" aria-label="Close">
                   <X className="h-5 w-5" />
                 </Button>
               </Dialog.Close>
             </div>
+          </div>
 
-            {/* Platform Selector */}
-            <div>
-              <label className="text-sm font-medium text-gray-900 dark:text-white mb-2 block">
-                Select Platform
-              </label>
-              <Select value={selectedPlatform} onValueChange={(value) => setSelectedPlatform(value as PlatformOption)}>
-                <SelectTrigger className="w-full">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {CONNECTION_OPTIONS.map((option) => {
-                    const Icon = option.Icon;
-                    return (
-                      <SelectItem key={option.id} value={option.id}>
-                        <div className="flex items-center gap-2">
-                          <Icon className="h-4 w-4 text-gray-500" />
-                          <div>
-                            <div className="font-medium">{option.title}</div>
-                          </div>
-                        </div>
-                      </SelectItem>
-                    );
-                  })}
-                </SelectContent>
-              </Select>
+          {/* Scrollable Content Area */}
+          <div className="overflow-y-auto flex-1 min-h-0">
+
+
+            {/* Platform Cards */}
+            <div className="p-6 border-b border-gray-200 dark:border-gray-700">
+              <h3 className="text-sm font-medium text-gray-900 dark:text-white mb-3">Select Platform</h3>
+              <div className="grid grid-cols-3 gap-3">
+                {CONNECTION_OPTIONS.filter((option) => !option.disabled).map((option) => {
+                  const Icon = option.Icon;
+                  const isSelected = selectedPlatform === option.id;
+                  return (
+                    <button
+                      key={option.id}
+                      onClick={() => handlePlatformClick(option.id)}
+                      className={`flex flex-col items-center justify-center p-4 rounded-lg border-2 transition-all ${
+                        isSelected
+                          ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
+                          : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
+                      }`}
+                    >
+                      <Icon className={`h-8 w-8 mb-2 ${isSelected ? 'text-blue-500' : 'text-gray-500'}`} />
+                      <span className={`text-sm font-medium ${isSelected ? 'text-blue-700 dark:text-blue-300' : 'text-gray-700 dark:text-gray-300'}`}>
+                        {option.title.split('/')[0]}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Instructions Area */}
+            <div className="p-6">
+              {selectedPlatform ? (
+                <>
+                  {selectedPlatform === 'n8n' && <N8NInstructions streamUrl={streamUrl} />}
+                  {selectedPlatform === 'langflow' && <LangflowInstructions sseUrl={sseUrl} toolsetName={selectedToolset.name} />}
+                  {selectedPlatform === 'langchain' && <LangchainInstructions toolsetKey={toolsetKey} />}
+                  {selectedPlatform === 'json' && (
+                    <ManualConnectionInstructions
+                      streamUrl={streamUrl}
+                      sseUrl={sseUrl}
+                      toolsetKey={toolsetKey}
+                    />
+                  )}
+                </>
+              ) : (
+                <div className="text-center text-gray-500 dark:text-gray-400 py-8">
+                  How do you want to connect to your toolset?
+                </div>
+              )}
             </div>
           </div>
 
-          {/* Content */}
-          <div className="p-6 overflow-y-auto flex-1 min-h-0">
-            {/* Instructions based on selected platform */}
-            <div>
-              {selectedPlatform === 'langchain' && (
-                <LangchainInstructions
-                  toolsetKey={toolsetKey || 'Loading key...'}
-                  natsServer={natsServer}
-                />
-              )}
-              {selectedPlatform === 'langflow' && (
-                <LangflowInstructions
-                  agentName={selectedToolset.name}
-                  natsServer={natsServer}
-                />
-              )}
-              {selectedPlatform === 'n8n' && (
-                <N8NInstructions agentName={selectedToolset.name} />
-              )}
-              {selectedPlatform === 'json' && (
-                <JSONInstructions
-                  toolsetKey={toolsetKey || 'Loading key...'}
-                  agentName={selectedToolset.name}
-                  natsServer={natsServer}
-                />
-              )}
-            </div>
+          {/* Footer */}
+          <div className="p-4 border-t border-gray-200 dark:border-gray-700 flex-shrink-0">
+            <a
+              href="https://docs.2ly.ai/integrations"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center justify-center gap-2 text-sm text-blue-600 dark:text-blue-400 hover:underline"
+            >
+              <ExternalLink className="h-4 w-4" />
+              View full documentation
+            </a>
           </div>
         </Dialog.Content>
       </Dialog.Portal>

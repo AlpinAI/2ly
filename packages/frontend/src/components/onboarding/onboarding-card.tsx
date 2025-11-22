@@ -44,7 +44,8 @@ export function OnboardingCard({ step, isCurrentStep = false }: OnboardingCardPr
 
   const { openDialog: openCreateToolsetDialog } = useCreateToolsetDialog();
   const manageToolsDialog = useManageToolsDialog();
-  const { setOpen: setConnectToolsetDialogOpen, setSelectedToolsetName } = useConnectToolsetDialog();
+  const { setOpen: setConnectToolsetDialogOpen, setSelectedToolsetName, setSelectedToolsetId } = useConnectToolsetDialog();
+
 
   const metadata = STEP_METADATA[step.stepId];
   const isCompleted = step.status === 'COMPLETED';
@@ -198,18 +199,22 @@ export function OnboardingCard({ step, isCurrentStep = false }: OnboardingCardPr
         }
 
         return (
-          <Button
-            onClick={() => {
-              // Use the first toolSet name for connection instructions
-              setSelectedToolsetName(firstToolSetWithTools.name);
-              setConnectToolsetDialogOpen(true);
-            }}
-            className="w-full"
-            variant={isCurrentStep ? "default" : "outline"}
-          >
-            <Link className="mr-2 h-4 w-4" />
-            Connect
-          </Button>
+          <div className="flex gap-2">
+            <Button
+              onClick={() => {
+                // Use the first toolSet name for connection instructions
+                setSelectedToolsetName(firstToolSetWithTools.name);
+                setSelectedToolsetId(firstToolSetWithTools.id);
+                setConnectToolsetDialogOpen(true);
+              }}
+              className="flex-1"
+              variant={isCurrentStep ? "default" : "outline"}
+            >
+              <Link className="mr-2 h-4 w-4" />
+              Connect
+            </Button>
+
+          </div>
         );
       }
 

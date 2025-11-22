@@ -31,6 +31,7 @@ export interface ConnectionOption {
   id: PlatformOption;
   title: string;
   Icon: LucideIcon;
+  disabled?: boolean;
 }
 
 /**
@@ -44,9 +45,9 @@ export interface ConnectionOption {
  */
 export const CONNECTION_OPTIONS: ConnectionOption[] = [
   {
-    id: 'langchain',
-    title: 'Langchain/Langgraph',
-    Icon: Code2,
+    id: 'n8n',
+    title: 'N8N',
+    Icon: Network,
   },
   {
     id: 'langflow',
@@ -54,13 +55,14 @@ export const CONNECTION_OPTIONS: ConnectionOption[] = [
     Icon: Workflow,
   },
   {
-    id: 'n8n',
-    title: 'N8N',
-    Icon: Network,
+    id: 'langchain',
+    title: 'Langchain/Langgraph',
+    Icon: Code2,
+    disabled: true,
   },
   {
     id: 'json',
-    title: 'JSON Configuration',
+    title: 'Manual Configuration',
     Icon: FileJson,
   },
 ];
