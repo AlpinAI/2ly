@@ -1,4 +1,5 @@
 import { GraphQLDateTime } from 'graphql-scalars';
+import { GraphQLError } from 'graphql';
 import { container as defaultContainer } from '../di/container';
 import { apolloResolversTypes, MCP_SERVER_RUN_ON } from '@2ly/common';
 import { Observable } from 'rxjs';
@@ -50,9 +51,14 @@ export const resolvers = (container: Container = defaultContainer): apolloResolv
     Query: {
 
       workspaces: async (_parent: unknown, _args: unknown, context: { user?: { userId: string; email: string } }) => {
+        // Require authentication
+        if (!context.user?.userId) {
+          throw new GraphQLError('Authentication required', {
+            extensions: { code: 'UNAUTHENTICATED' },
+          });
+        }
         // Filter workspaces by user's admin relationship
-        const userId = context.user?.userId;
-        return workspaceRepository.findAll(userId);
+        return workspaceRepository.findAll(context.user.userId);
       },
       workspace: async (_parent: unknown, { workspaceId }: { workspaceId: string }) => {
         return workspaceRepository.findByIdWithRuntimes(workspaceId);
@@ -429,9 +435,14 @@ export const resolvers = (container: Container = defaultContainer): apolloResolv
       },
       workspaces: {
         subscribe: (_parent: unknown, _args: unknown, context: { user?: { userId: string; email: string } }) => {
+          // Require authentication
+          if (!context.user?.userId) {
+            throw new GraphQLError('Authentication required', {
+              extensions: { code: 'UNAUTHENTICATED' },
+            });
+          }
           // Filter workspaces by user's admin relationship
-          const userId = context.user?.userId;
-          const observable = workspaceRepository.observeWorkspaces(userId);
+          const observable = workspaceRepository.observeWorkspaces(context.user.userId);
           return observableToAsyncGenerator(observable, 'workspaces');
         },
       },

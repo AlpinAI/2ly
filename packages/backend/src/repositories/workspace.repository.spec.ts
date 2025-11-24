@@ -17,16 +17,7 @@ describe('WorkspaceRepository', () => {
         expect(dgraph.mutation).not.toHaveBeenCalled();
     });
 
-    it('findAll returns workspaces from query without userId', async () => {
-        const dgraph = new DgraphServiceMock();
-        dgraph.query.mockResolvedValue({ queryWorkspace: [{ id: 'w1' }, { id: 'w2' }] });
-        const identityRepo = {} as unknown as IdentityRepository;
-        const repo = new WorkspaceRepository(dgraph as unknown as DGraphService, identityRepo);
-        const result = await repo.findAll();
-        expect(result.map((w) => w.id)).toEqual(['w1', 'w2']);
-    });
-
-    it('findAll returns user admin workspaces when userId provided', async () => {
+    it('findAll returns user admin workspaces', async () => {
         const dgraph = new DgraphServiceMock();
         dgraph.query.mockResolvedValue({
             getUser: {
@@ -130,20 +121,7 @@ describe('WorkspaceRepository', () => {
         sub.unsubscribe();
     });
 
-    it('observeWorkspaces emits list of workspaces', async () => {
-        const dgraph = new DgraphServiceMock();
-        const subj = new Subject<apolloResolversTypes.Workspace[]>();
-        dgraph.observe.mockReturnValue(subj.asObservable());
-        const identityRepo = {} as unknown as IdentityRepository;
-        const repo = new WorkspaceRepository(dgraph as unknown as DGraphService, identityRepo);
-        const results: apolloResolversTypes.Workspace[][] = [];
-        const sub = repo.observeWorkspaces().subscribe((r) => results.push(r));
-        subj.next([{ id: 'w1' } as unknown as apolloResolversTypes.Workspace]);
-        expect(results[0][0].id).toBe('w1');
-        sub.unsubscribe();
-    });
-
-    it('observeWorkspaces emits user admin workspaces when userId provided', async () => {
+    it('observeWorkspaces emits user admin workspaces', async () => {
         const dgraph = new DgraphServiceMock();
         const subj = new Subject<{ adminOfWorkspaces: apolloResolversTypes.Workspace[] }>();
         dgraph.observe.mockReturnValue(subj.asObservable());
