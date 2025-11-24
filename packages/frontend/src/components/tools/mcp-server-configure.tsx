@@ -12,7 +12,7 @@
  * - Real-time tool discovery via subscription
  */
 
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { useMutation, useSubscription } from '@apollo/client/react';
 import { ExternalLink, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -36,6 +36,8 @@ import {
   TestMcpServerDocument,
   SubscribeMcpServerTestProgressDocument,
   McpLifecycleStage,
+  CreateMcpServerDocument,
+  type McpTransportType,
 } from '@/graphql/generated/graphql';
 import type { GetRegistryServersQuery } from '@/graphql/generated/graphql';
 
@@ -78,14 +80,24 @@ export function MCPServerConfigure({ selectedServer, onBack, onSuccess }: MCPSer
   const [lifecycleStage, setLifecycleStage] = useState<LifecycleStage>(null);
   const [lifecycleMessage, setLifecycleMessage] = useState<string>('');
 
-  // GraphQL mutation for testing
+  // Store pending server config for creation after successful test
+  const pendingServerConfigRef = useRef<{
+    name: string;
+    description: string;
+    repositoryUrl: string;
+    transport: McpTransportType;
+    config: string;
+  } | null>(null);
+
+  // GraphQL mutations
   const [testServer] = useMutation(TestMcpServerDocument);
+  const [createServer] = useMutation(CreateMcpServerDocument);
 
   // Subscribe to lifecycle events during testing
   useSubscription(SubscribeMcpServerTestProgressDocument, {
     variables: { testSessionId },
     skip: !testSessionId,
-    onData: ({ data }) => {
+    onData: async ({ data }) => {
       const event = data?.data?.mcpServerTestProgress;
       if (event) {
         setLifecycleStage(toLifecycleStage(event.stage));
@@ -93,12 +105,39 @@ export function MCPServerConfigure({ selectedServer, onBack, onSuccess }: MCPSer
 
         if (event.stage === McpLifecycleStage.Completed) {
           setDiscoveredTools(event.tools?.map((t) => ({ id: t.id, name: t.name })) || []);
-          setTestStatus('success');
           setTestSessionId(''); // Clear to stop subscription
+
+          // Persist the server to database on successful test
+          const pendingConfig = pendingServerConfigRef.current;
+          if (pendingConfig && workspaceId) {
+            try {
+              await createServer({
+                variables: {
+                  workspaceId,
+                  name: pendingConfig.name,
+                  description: pendingConfig.description,
+                  repositoryUrl: pendingConfig.repositoryUrl,
+                  transport: pendingConfig.transport,
+                  config: pendingConfig.config,
+                  registryServerId: selectedServer.id,
+                },
+                refetchQueries: ['GetRegistryServers', 'SubscribeMCPServers'],
+              });
+              pendingServerConfigRef.current = null;
+              setTestStatus('success');
+            } catch (err) {
+              console.error('Failed to create server:', err);
+              setTestError(err instanceof Error ? err.message : 'Failed to save server');
+              setTestStatus('error');
+            }
+          } else {
+            setTestStatus('success');
+          }
         } else if (event.stage === McpLifecycleStage.Failed) {
           setTestError(event.error?.message || event.message);
           setTestStatus('error');
           setTestSessionId(''); // Clear to stop subscription
+          pendingServerConfigRef.current = null;
         }
       }
     },
@@ -107,6 +146,7 @@ export function MCPServerConfigure({ selectedServer, onBack, onSuccess }: MCPSer
       setTestError(err.message);
       setTestStatus('error');
       setTestSessionId('');
+      pendingServerConfigRef.current = null;
     },
   });
 
@@ -178,6 +218,15 @@ export function MCPServerConfigure({ selectedServer, onBack, onSuccess }: MCPSer
       // Enrich config with user-provided values
       const input = enrichConfigWithValues(selectedServer, selectedOption, fields, customName);
 
+      // Store config for creating server after successful test
+      pendingServerConfigRef.current = {
+        name: input.name,
+        description: input.description,
+        repositoryUrl: input.repositoryUrl,
+        transport: input.transport,
+        config: input.config,
+      };
+
       // Call test mutation - returns testSessionId immediately
       const { data } = await testServer({
         variables: {
@@ -191,16 +240,18 @@ export function MCPServerConfigure({ selectedServer, onBack, onSuccess }: MCPSer
 
       const sessionId = data?.testMCPServer?.testSessionId;
       if (!sessionId) {
+        pendingServerConfigRef.current = null;
         throw new Error(data?.testMCPServer?.error || 'Failed to start test');
       }
 
       // Set testSessionId to activate subscription
       setTestSessionId(sessionId);
-      // Subscription will handle all lifecycle updates from here
+      // Subscription will handle all lifecycle updates and server creation
     } catch (err) {
       console.error('Test failed:', err);
       setTestError(err instanceof Error ? err.message : 'Unknown error');
       setTestStatus('error');
+      pendingServerConfigRef.current = null;
     }
   }, [workspaceId, selectedOption, selectedServer, fields, customName, testServer]);
 
@@ -212,6 +263,7 @@ export function MCPServerConfigure({ selectedServer, onBack, onSuccess }: MCPSer
     setTestError('');
     setLifecycleStage(null);
     setLifecycleMessage('');
+    pendingServerConfigRef.current = null;
   }, []);
 
   const serverDisplayName = getServerDisplayName(selectedServer);
