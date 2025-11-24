@@ -52,10 +52,10 @@
     "test:e2e:prebuild": "docker build -f packages/backend/Dockerfile -t 2ly-backend-test:latest . && docker build -f packages/runtime/Dockerfile -t 2ly-runtime-test:latest .",
     "test:e2e:rebuild": "FORCE_REBUILD=true npm run test:e2e",
     "test:e2e:rm": "docker rm --force $(docker ps --filter label=org.testcontainers=true --quiet) && docker rmi --force $(docker images --filter label=org.testcontainers=true --quiet)",
-    "bump-version": "node scripts/bump-version.js",
-    "bump-version:patch": "node scripts/bump-version.js patch",
-    "bump-version:minor": "node scripts/bump-version.js minor",
-    "bump-version:major": "node scripts/bump-version.js major"
+    "bump-version": "node scripts/bump-version.cjs",
+    "bump-version:patch": "node scripts/bump-version.cjs patch",
+    "bump-version:minor": "node scripts/bump-version.cjs minor",
+    "bump-version:major": "node scripts/bump-version.cjs major"
   },
   "devDependencies": {
     "@graphql-codegen/cli": "^5.0.7",
