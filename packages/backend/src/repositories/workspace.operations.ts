@@ -58,10 +58,28 @@ export const QUERY_WORKSPACES = gql`
   }
 `;
 
+export const QUERY_WORKSPACES_BY_USER = gql`
+  query queryWorkspacesByUser($userId: ID!) {
+    getUser(id: $userId) {
+      id
+      adminOfWorkspaces {
+        id
+        name
+        createdAt
+        globalRuntime {
+          id
+          name
+        }
+      }
+    }
+  }
+`;
+
 export const QUERY_WORKSPACE_WITH_RUNTIMES = gql`
   query getWorkspace($workspaceId: ID!) {
     getWorkspace(id: $workspaceId) {
       id
+      name
       runtimes {
         id
         name

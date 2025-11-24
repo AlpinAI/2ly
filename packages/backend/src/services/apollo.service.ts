@@ -72,7 +72,44 @@ export class ApolloService extends Service {
       path: '/graphql-ws',
     });
 
-    this.wsCleanup = useServer({ schema: this.schema }, this.wsServer);
+    this.wsCleanup = useServer({
+      schema: this.schema,
+      context: async (ctx) => {
+        // Extract token from connection params
+        const connectionParams = ctx.connectionParams as { authorization?: string } | undefined;
+        const authHeader = connectionParams?.authorization;
+
+        if (!authHeader || !authHeader.startsWith('Bearer ')) {
+          return { isAuthenticated: false };
+        }
+
+        try {
+          const token = authHeader.substring(7); // Remove 'Bearer ' prefix
+          // Use authService from container to verify token
+          const { AuthenticationService } = await import('./auth/auth.service');
+          const { container } = await import('../di/container');
+          const authService = container.get(AuthenticationService);
+          const payload = await authService.verifyAccessToken(token);
+
+          if (!payload) {
+            return { isAuthenticated: false };
+          }
+
+          return {
+            user: {
+              userId: payload.userId,
+              email: payload.email,
+              workspaceId: payload.workspaceId,
+              role: payload.role || 'member',
+            },
+            isAuthenticated: true,
+          };
+        } catch (error) {
+          this.logger.error({ error }, 'WebSocket authentication error');
+          return { isAuthenticated: false };
+        }
+      },
+    }, this.wsServer);
   }
 
   isRunning(): boolean {

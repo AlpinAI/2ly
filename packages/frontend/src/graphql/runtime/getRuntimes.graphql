@@ -1,7 +1,7 @@
-# Get all workspaces with their runtimes
-# WHY: Dashboard needs to show runtime status and stats
-query GetRuntimes {
-  workspace {
+# Get workspace runtimes
+# WHY: Dashboard needs to show runtime status and stats for the current workspace
+query GetRuntimes($workspaceId: ID!) {
+  workspace(workspaceId: $workspaceId) {
     id
     name
     runtimes {

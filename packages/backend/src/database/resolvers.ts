@@ -1,4 +1,5 @@
 import { GraphQLDateTime } from 'graphql-scalars';
+import { GraphQLError } from 'graphql';
 import { container as defaultContainer } from '../di/container';
 import { apolloResolversTypes, MCP_SERVER_RUN_ON } from '@2ly/common';
 import { Observable } from 'rxjs';
@@ -49,8 +50,18 @@ export const resolvers = (container: Container = defaultContainer): apolloResolv
     Date: GraphQLDateTime,
     Query: {
 
-      workspace: async () => {
-        return workspaceRepository.findAll();
+      workspaces: async (_parent: unknown, _args: unknown, context: { user?: { userId: string; email: string } }) => {
+        // Require authentication
+        if (!context.user?.userId) {
+          throw new GraphQLError('Authentication required', {
+            extensions: { code: 'UNAUTHENTICATED' },
+          });
+        }
+        // Filter workspaces by user's admin relationship
+        return workspaceRepository.findAll(context.user.userId);
+      },
+      workspace: async (_parent: unknown, { workspaceId }: { workspaceId: string }) => {
+        return workspaceRepository.findByIdWithRuntimes(workspaceId);
       },
       mcpServers: async () => {
         return mcpServerRepository.findAll();
@@ -121,6 +132,28 @@ export const resolvers = (container: Container = defaultContainer): apolloResolv
     Mutation: {
       // Authentication mutations
       ...authResolvers.Mutation,
+
+      // Override registerUser to create personal workspace
+      registerUser: async (
+        _: unknown,
+        { input }: { input: apolloResolversTypes.RegisterUserInput }
+      ) => {
+        // Register the user first using the original resolver
+        const result = await authResolvers.Mutation.registerUser(_, { input });
+
+        // If registration was successful, create a personal workspace
+        if (result.success && result.user) {
+          try {
+            const workspaceName = `Personal Workspace (${input.email})`;
+            await workspaceRepository.create(workspaceName, result.user.id);
+          } catch (error) {
+            console.error('Failed to create personal workspace for new user:', error);
+            // Don't fail the registration if workspace creation fails
+          }
+        }
+
+        return result;
+      },
 
       updateMCPServerRunOn: async (
         _parent: unknown,
@@ -401,8 +434,15 @@ export const resolvers = (container: Container = defaultContainer): apolloResolv
         },
       },
       workspaces: {
-        subscribe: () => {
-          const observable = workspaceRepository.observeWorkspaces();
+        subscribe: (_parent: unknown, _args: unknown, context: { user?: { userId: string; email: string } }) => {
+          // Require authentication
+          if (!context.user?.userId) {
+            throw new GraphQLError('Authentication required', {
+              extensions: { code: 'UNAUTHENTICATED' },
+            });
+          }
+          // Filter workspaces by user's admin relationship
+          const observable = workspaceRepository.observeWorkspaces(context.user.userId);
           return observableToAsyncGenerator(observable, 'workspaces');
         },
       },

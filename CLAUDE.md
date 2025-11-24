@@ -66,11 +66,20 @@ npm run build -w @2ly/runtime && npm run dev:main-runtime  # Run runtime locally
 
 **Note:** The `setup-local` command only needs to be run once to generate keys. Keys persist in `dev/.docker-keys/` across sessions.
 
-**Key features:**
-- For local development: Run `npm run setup-local` to generate keys
-- Docker backend container auto-generates keys if missing (`AUTOGEN_KEYS=true`)
+**Key Management Architecture:**
+- **Backend generates keys** → **Runtime consumes keys**
+- Backend has auto-generation capability (`AUTOGEN_KEYS=true` in Docker)
+- Runtime always requires pre-existing keys (no auto-generation)
 - Keys stored at `dev/.docker-keys/` shared between Docker and local processes
-- To provide custom keys: set `MASTER_KEY` and `ENCRYPTION_KEY` ENV vars
+- Each service has its own entrypoint script co-located with its Dockerfile:
+  - `packages/backend/entrypoint.sh` - Auto-generates keys if needed
+  - `packages/runtime/runtime-entrypoint.sh` - Loads existing keys only
+
+**Key Generation Flow:**
+1. **Local development**: Run `npm run setup-local` to generate keys once
+2. **Docker development**: Backend auto-generates keys on first start
+3. **Runtime**: Always consumes keys from `dev/.docker-keys/` or ENV vars
+4. **Custom keys**: Set `MASTER_KEY` and `ENCRYPTION_KEY` ENV vars
 
 **Key locations:**
 - Docker (dev): `dev/.docker-keys/` via bind mount

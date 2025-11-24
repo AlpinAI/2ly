@@ -4,14 +4,19 @@ FROM node:22-alpine AS builder
 
 WORKDIR /app
 
-# Copy package files
+# Copy package files for dependency installation (creates cacheable layer)
 COPY package*.json ./
+COPY packages/runtime/package.json ./packages/runtime/
+COPY packages/common/package.json ./packages/common/
+
+# Install all dependencies (including dev for TypeScript compilation)
+# This layer is cached until package.json files change
+RUN npm ci --quiet
+
+# Copy source code and tsconfig (after npm ci to maximize cache hits)
 COPY tsconfig.json ./
 COPY packages/runtime/ ./packages/runtime/
 COPY packages/common/ ./packages/common/
-
-# Install all dependencies (including dev for TypeScript compilation)
-RUN npm ci --quiet
 
 # Build the runtime
 RUN npm run build -w @2ly/runtime
@@ -41,8 +46,8 @@ WORKDIR /app
 # Copy only the built artifacts from builder
 COPY --from=builder /app/packages/runtime/dist ./packages/runtime/dist
 
-# Copy entrypoint script (runtime doesn't generate keys, just loads them)
-COPY ./scripts/entrypoint.sh /app/entrypoint.sh
+# Copy entrypoint script
+COPY ./packages/runtime/entrypoint.sh /app/entrypoint.sh
 RUN chmod +x /app/entrypoint.sh
 
 # Create logs directory

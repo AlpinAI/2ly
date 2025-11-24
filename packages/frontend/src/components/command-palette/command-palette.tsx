@@ -100,7 +100,7 @@ export function CommandPalette() {
     setOpen(false);
   };
 
-  const workspaces = data?.workspace || [];
+  const workspaces = data?.workspaces || [];
 
   const getPlaceholder = () => {
     switch (mode) {
@@ -240,7 +240,7 @@ export function CommandPalette() {
               {/* Workspace Mode */}
               {mode === 'workspace' && (
                 <CommandGroup heading="Workspaces" className="mb-2">
-                  {workspaces.map((workspace: NonNullable<GetWorkspacesQuery['workspace']>[number]) => (
+                  {workspaces.map((workspace: NonNullable<GetWorkspacesQuery['workspaces']>[number]) => (
                     <CommandItem
                       key={workspace.id}
                       value={workspace.name}
@@ -252,11 +252,6 @@ export function CommandPalette() {
                         <span className="font-medium">{workspace.name}</span>
                         {workspace.id === currentWorkspaceId && (
                           <span className="rounded-full bg-blue-500 px-2 py-0.5 text-xs text-white">Current</span>
-                        )}
-                        {workspace.id === data?.system?.defaultWorkspace?.id && (
-                          <span className="rounded-full bg-gray-200 px-2 py-0.5 text-xs text-gray-700 dark:bg-gray-700 dark:text-gray-300">
-                            Default
-                          </span>
                         )}
                       </div>
                     </CommandItem>

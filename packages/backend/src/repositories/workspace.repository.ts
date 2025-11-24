@@ -4,7 +4,7 @@ import { apolloResolversTypes, dgraphResolversTypes } from '@2ly/common';
 import {
   ADD_WORKSPACE,
   QUERY_WORKSPACE,
-  QUERY_WORKSPACES,
+  QUERY_WORKSPACES_BY_USER,
   QUERY_WORKSPACE_WITH_RUNTIMES,
   QUERY_WORKSPACE_WITH_MCP_SERVERS,
   QUERY_WORKSPACE_WITH_MCP_TOOLS,
@@ -96,18 +96,26 @@ export class WorkspaceRepository {
     return workspace;
   }
 
-  async findAll(): Promise<dgraphResolversTypes.Workspace[]> {
-    const res = await this.dgraphService.query<{ queryWorkspace: dgraphResolversTypes.Workspace[] }>(
-      QUERY_WORKSPACES,
-      {},
-    );
-    return res.queryWorkspace;
+  async findAll(userId: string): Promise<dgraphResolversTypes.Workspace[]> {
+    // Filter workspaces by admin relationship
+    const res = await this.dgraphService.query<{
+      getUser: { adminOfWorkspaces: dgraphResolversTypes.Workspace[] }
+    }>(QUERY_WORKSPACES_BY_USER, { userId });
+
+    return res.getUser?.adminOfWorkspaces || [];
   }
 
   async findById(workspaceId: string): Promise<dgraphResolversTypes.Workspace> {
     const res = await this.dgraphService.query<{
       getWorkspace: dgraphResolversTypes.Workspace;
     }>(QUERY_WORKSPACE, { workspaceId });
+    return res.getWorkspace;
+  }
+
+  async findByIdWithRuntimes(workspaceId: string): Promise<apolloResolversTypes.Workspace> {
+    const res = await this.dgraphService.query<{
+      getWorkspace: apolloResolversTypes.Workspace;
+    }>(QUERY_WORKSPACE_WITH_RUNTIMES, { workspaceId });
     return res.getWorkspace;
   }
 
@@ -174,10 +182,12 @@ export class WorkspaceRepository {
       .pipe(map((workspace) => workspace.mcpTools || []));
   }
 
-  observeWorkspaces(): Observable<apolloResolversTypes.Workspace[]> {
-    const query = createSubscriptionFromQuery(QUERY_WORKSPACES);
+  observeWorkspaces(userId: string): Observable<apolloResolversTypes.Workspace[]> {
+    // Observe workspaces by admin relationship
+    const query = createSubscriptionFromQuery(QUERY_WORKSPACES_BY_USER);
     return this.dgraphService
-      .observe<apolloResolversTypes.Workspace[]>(query, {}, 'queryWorkspace', true);
+      .observe<{ adminOfWorkspaces: apolloResolversTypes.Workspace[] }>(query, { userId }, 'getUser', true)
+      .pipe(map((user) => user?.adminOfWorkspaces || []));
   }
 
 

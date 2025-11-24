@@ -111,6 +111,9 @@ export function ConnectToolsetDialog() {
                 </Button>
               </Dialog.Close>
             </div>
+            <Dialog.Description className="sr-only">
+              Select a platform and follow the instructions to connect your toolset to 2LY
+            </Dialog.Description>
           </div>
 
           {/* Scrollable Content Area */}

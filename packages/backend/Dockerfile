@@ -4,14 +4,19 @@ FROM node:22-alpine AS builder
 
 WORKDIR /app
 
-# Copy package files
+# Copy package files for dependency installation (creates cacheable layer)
 COPY package*.json ./
+COPY packages/backend/package.json ./packages/backend/
+COPY packages/common/package.json ./packages/common/
+
+# Install all dependencies (including dev for TypeScript compilation)
+# This layer is cached until package.json files change
+RUN npm ci --quiet
+
+# Copy source code and tsconfig (after npm ci to maximize cache hits)
 COPY tsconfig.json ./
 COPY packages/backend/ ./packages/backend/
 COPY packages/common/ ./packages/common/
-
-# Install all dependencies (including dev for TypeScript compilation)
-RUN npm ci --quiet
 
 # Build the backend
 RUN npm run build -w @2ly/backend
@@ -33,7 +38,7 @@ COPY --from=builder /app/node_modules ./node_modules
 # Copy key generation scripts
 COPY ./generate-keys.sh /app/generate-keys.sh
 COPY ./scripts/generate-keys.js /app/scripts/generate-keys.js
-COPY ./scripts/entrypoint.sh /app/entrypoint.sh
+COPY ./packages/backend/entrypoint.sh /app/entrypoint.sh
 
 # Make scripts executable
 RUN chmod +x /app/generate-keys.sh /app/entrypoint.sh

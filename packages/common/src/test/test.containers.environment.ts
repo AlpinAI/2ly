@@ -21,6 +21,7 @@ import { generateKeyPairSync } from 'crypto';
 import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
+import { execSync } from 'child_process';
 import { TEST_ENCRYPTION_KEY, TEST_MASTER_KEY, TEST_RUNTIME_ROUTE, TEST_RUNTIME_STOP_ROUTE } from './test.containers.constants';
 import { findProjectRoot, waitForHealth } from './test.containers.helpers';
 import { startControllerServer, registerRoute, callRoute } from './test.containers.web-server';
@@ -128,6 +129,45 @@ export class TestEnvironment {
   }
 
   /**
+   * Check if a Docker image exists locally
+   * Returns the image creation timestamp if it exists, null otherwise
+   */
+  private checkImageExists(imageName: string): Date | null {
+    try {
+      const output = execSync(`docker image inspect ${imageName} --format='{{.Created}}'`, {
+        encoding: 'utf-8',
+        stdio: ['pipe', 'pipe', 'pipe']
+      }).trim();
+
+      return new Date(output);
+    } catch {
+      // Image doesn't exist
+      return null;
+    }
+  }
+
+  /**
+   * Check if a Docker image needs rebuilding
+   * Returns true if image doesn't exist, Dockerfile is newer, or FORCE_REBUILD is set
+   */
+  private shouldRebuildImage(imageName: string): boolean {
+    // Check for force rebuild flag
+    if (process.env.FORCE_REBUILD === 'true') {
+      testLog(`FORCE_REBUILD=true, rebuilding ${imageName}`);
+      return true;
+    }
+
+    // Check if image exists
+    const imageCreated = this.checkImageExists(imageName);
+    if (!imageCreated) {
+      testLog(`Image ${imageName} does not exist, will build`);
+      return true;
+    }
+
+    return false;
+  }
+
+  /**
    * Start all test environment services
    */
   async start(): Promise<TestEnvironmentServices> {
@@ -165,12 +205,23 @@ export class TestEnvironment {
     testLog('Test environment started successfully');
 
     registerRoute(TEST_RUNTIME_ROUTE, async (_request, reply) => {
-      const port = await this.startRuntime();
-      reply.send({ status: 'ok', port });
+      try {
+        const port = await this.startRuntime();
+        reply.send({ status: 'ok', port });
+      } catch (error) {
+        testError(`Error starting runtime: ${error instanceof Error ? error.message : String(error)}`);
+        reply.send({ status: 'error', message: `Error starting runtime: ${error instanceof Error ? error.message : String(error)}` });
+      }
     });
 
     registerRoute(TEST_RUNTIME_STOP_ROUTE, async (_request, reply) => {
-      await this.stopRuntime();
+      try {
+        await this.stopRuntime();
+        reply.send({ status: 'ok' });
+      } catch (error) {
+        testError(`Error stopping runtime: ${error instanceof Error ? error.message : String(error)}`);
+        reply.send({ status: 'error', message: `Error stopping runtime: ${error instanceof Error ? error.message : String(error)}` });
+      }
       reply.send({ status: 'ok' });
     });
 
@@ -279,6 +330,14 @@ export class TestEnvironment {
    * Build backend Docker image
    */
   private async buildBackendImage(): Promise<void> {
+    const imageName = '2ly-backend-test:latest';
+    const dockerfilePath = 'packages/backend/Dockerfile';
+
+    // Check if rebuild is needed
+    if (!this.shouldRebuildImage(imageName)) {
+      return;
+    }
+
     testLog('Building backend Docker image...');
 
     let progressInterval: NodeJS.Timeout | undefined = undefined;
@@ -291,8 +350,8 @@ export class TestEnvironment {
 
       const buildPromise = GenericContainer.fromDockerfile(
         this.config.projectRoot,
-        'packages/backend/Dockerfile'
-      ).build('2ly-backend-test');
+        dockerfilePath
+      ).build('2ly-backend-test', { deleteOnExit: false });
 
       const timeoutPromise = new Promise((_, reject) => {
         promiseTimeout = setTimeout(
@@ -316,6 +375,14 @@ export class TestEnvironment {
    * Build runtime Docker image
    */
   private async buildRuntimeImage(): Promise<void> {
+    const imageName = '2ly-runtime-test:latest';
+    const dockerfilePath = 'packages/runtime/Dockerfile';
+
+    // Check if rebuild is needed
+    if (!this.shouldRebuildImage(imageName)) {
+      return;
+    }
+
     testLog('Building runtime Docker image...');
 
     let progressInterval: NodeJS.Timeout | undefined = undefined;
@@ -328,8 +395,8 @@ export class TestEnvironment {
 
       const buildPromise = GenericContainer.fromDockerfile(
         this.config.projectRoot,
-        'packages/runtime/Dockerfile'
-      ).build('2ly-runtime-test');
+        dockerfilePath
+      ).build('2ly-runtime-test', { deleteOnExit: false });
 
       const timeoutPromise = new Promise((_, reject) => {
         promiseTimeout = setTimeout(
@@ -376,10 +443,12 @@ export class TestEnvironment {
         .withNetworkAliases('backend')
         .withEnvironment({
           NODE_ENV: 'test',
+          AUTOGEN_KEYS: 'false',
           LOG_LEVEL: 'error', // Only log errors in test environment
           DGRAPH_URL: 'dgraph-alpha:8080',
           NATS_SERVERS: 'nats:4222',
           EXPOSED_NATS_SERVERS: this.services.nats.clientUrl,
+          EXPOSED_REMOTE_MCP: 'http://localhost:3001',
           CORS_ORIGINS: 'http://localhost:8888,http://localhost:9999',
           ENCRYPTION_KEY: TEST_ENCRYPTION_KEY,
           MASTER_KEY: TEST_MASTER_KEY,
@@ -442,6 +511,7 @@ export class TestEnvironment {
         .withNetwork(this.network!)
         .withEnvironment({
           NODE_ENV: 'test',
+          AUTOGEN_KEYS: 'false',
           LOG_LEVEL: 'silent',
           NATS_SERVERS: 'nats:4222',
           RUNTIME_NAME: runtimeName,

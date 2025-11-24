@@ -475,7 +475,7 @@ export async function getDatabaseState(): Promise<{
   // First get workspaces and system (no auth required)
   const query1 = `
     query GetDatabaseState {
-      workspace {
+      workspaces {
         id
         name
       }
@@ -488,12 +488,12 @@ export async function getDatabaseState(): Promise<{
 
   const result1 = await graphql<{
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    workspace: any[];
+    workspaces: any[];
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     system: any;
   }>(query1);
 
-  const workspaces = result1.workspace || [];
+  const workspaces = result1.workspaces || [];
   const workspaceId = workspaces[0]?.id;
 
   // If we have a workspace, get MCP servers for it

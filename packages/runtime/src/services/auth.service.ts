@@ -72,7 +72,9 @@ export class AuthService extends Service {
     // The DI already validates the mutually exclusive keys
     const key = process.env.MASTER_KEY || process.env.TOOLSET_KEY || process.env.RUNTIME_KEY;
     if (!key) {
-      throw new Error('No key found in environment variables');
+      throw new Error(
+        'No key found in environment variables. Runtime requires MASTER_KEY, TOOLSET_KEY, or RUNTIME_KEY to operate.'
+      );
     }
     const nature = process.env.RUNTIME_NAME ? 'runtime' : process.env.TOOLSET_NAME ? 'toolset' : undefined;
     const roots = this.prepareRoots();
