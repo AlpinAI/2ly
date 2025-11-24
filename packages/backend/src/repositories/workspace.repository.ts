@@ -5,6 +5,7 @@ import {
   ADD_WORKSPACE,
   QUERY_WORKSPACE,
   QUERY_WORKSPACES,
+  QUERY_WORKSPACES_BY_USER,
   QUERY_WORKSPACE_WITH_RUNTIMES,
   QUERY_WORKSPACE_WITH_MCP_SERVERS,
   QUERY_WORKSPACE_WITH_MCP_TOOLS,
@@ -96,7 +97,17 @@ export class WorkspaceRepository {
     return workspace;
   }
 
-  async findAll(): Promise<dgraphResolversTypes.Workspace[]> {
+  async findAll(userId?: string): Promise<dgraphResolversTypes.Workspace[]> {
+    // If userId is provided, filter workspaces by admin relationship
+    if (userId) {
+      const res = await this.dgraphService.query<{
+        getUser: { adminOfWorkspaces: dgraphResolversTypes.Workspace[] }
+      }>(QUERY_WORKSPACES_BY_USER, { userId });
+
+      return res.getUser?.adminOfWorkspaces || [];
+    }
+
+    // Otherwise return all workspaces (for backward compatibility)
     const res = await this.dgraphService.query<{ queryWorkspace: dgraphResolversTypes.Workspace[] }>(
       QUERY_WORKSPACES,
       {},
@@ -181,7 +192,16 @@ export class WorkspaceRepository {
       .pipe(map((workspace) => workspace.mcpTools || []));
   }
 
-  observeWorkspaces(): Observable<apolloResolversTypes.Workspace[]> {
+  observeWorkspaces(userId?: string): Observable<apolloResolversTypes.Workspace[]> {
+    // If userId is provided, observe workspaces by admin relationship
+    if (userId) {
+      const query = createSubscriptionFromQuery(QUERY_WORKSPACES_BY_USER);
+      return this.dgraphService
+        .observe<{ adminOfWorkspaces: apolloResolversTypes.Workspace[] }>(query, { userId }, 'getUser', true)
+        .pipe(map((user) => user?.adminOfWorkspaces || []));
+    }
+
+    // Otherwise observe all workspaces (for backward compatibility)
     const query = createSubscriptionFromQuery(QUERY_WORKSPACES);
     return this.dgraphService
       .observe<apolloResolversTypes.Workspace[]>(query, {}, 'queryWorkspace', true);

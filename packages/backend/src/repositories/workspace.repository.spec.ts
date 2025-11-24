@@ -17,13 +17,26 @@ describe('WorkspaceRepository', () => {
         expect(dgraph.mutation).not.toHaveBeenCalled();
     });
 
-    it('findAll returns workspaces from query', async () => {
+    it('findAll returns workspaces from query without userId', async () => {
         const dgraph = new DgraphServiceMock();
         dgraph.query.mockResolvedValue({ queryWorkspace: [{ id: 'w1' }, { id: 'w2' }] });
         const identityRepo = {} as unknown as IdentityRepository;
         const repo = new WorkspaceRepository(dgraph as unknown as DGraphService, identityRepo);
         const result = await repo.findAll();
         expect(result.map((w) => w.id)).toEqual(['w1', 'w2']);
+    });
+
+    it('findAll returns user admin workspaces when userId provided', async () => {
+        const dgraph = new DgraphServiceMock();
+        dgraph.query.mockResolvedValue({
+            getUser: {
+                adminOfWorkspaces: [{ id: 'w1' }, { id: 'w3' }]
+            }
+        });
+        const identityRepo = {} as unknown as IdentityRepository;
+        const repo = new WorkspaceRepository(dgraph as unknown as DGraphService, identityRepo);
+        const result = await repo.findAll('user123');
+        expect(result.map((w) => w.id)).toEqual(['w1', 'w3']);
     });
 
     it('findById returns workspace by id', async () => {
@@ -127,6 +140,24 @@ describe('WorkspaceRepository', () => {
         const sub = repo.observeWorkspaces().subscribe((r) => results.push(r));
         subj.next([{ id: 'w1' } as unknown as apolloResolversTypes.Workspace]);
         expect(results[0][0].id).toBe('w1');
+        sub.unsubscribe();
+    });
+
+    it('observeWorkspaces emits user admin workspaces when userId provided', async () => {
+        const dgraph = new DgraphServiceMock();
+        const subj = new Subject<{ adminOfWorkspaces: apolloResolversTypes.Workspace[] }>();
+        dgraph.observe.mockReturnValue(subj.asObservable());
+        const identityRepo = {} as unknown as IdentityRepository;
+        const repo = new WorkspaceRepository(dgraph as unknown as DGraphService, identityRepo);
+        const results: apolloResolversTypes.Workspace[][] = [];
+        const sub = repo.observeWorkspaces('user123').subscribe((r) => results.push(r));
+        subj.next({
+            adminOfWorkspaces: [
+                { id: 'w1' } as unknown as apolloResolversTypes.Workspace,
+                { id: 'w3' } as unknown as apolloResolversTypes.Workspace
+            ]
+        });
+        expect(results[0].map((w) => w.id)).toEqual(['w1', 'w3']);
         sub.unsubscribe();
     });
 });

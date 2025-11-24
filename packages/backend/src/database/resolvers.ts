@@ -49,8 +49,10 @@ export const resolvers = (container: Container = defaultContainer): apolloResolv
     Date: GraphQLDateTime,
     Query: {
 
-      workspaces: async () => {
-        return workspaceRepository.findAll();
+      workspaces: async (_parent: unknown, _args: unknown, context: { user?: { userId: string; email: string } }) => {
+        // Filter workspaces by user's admin relationship
+        const userId = context.user?.userId;
+        return workspaceRepository.findAll(userId);
       },
       workspace: async (_parent: unknown, { workspaceId }: { workspaceId: string }) => {
         return workspaceRepository.findByIdWithRuntimes(workspaceId);
@@ -124,6 +126,28 @@ export const resolvers = (container: Container = defaultContainer): apolloResolv
     Mutation: {
       // Authentication mutations
       ...authResolvers.Mutation,
+
+      // Override registerUser to create personal workspace
+      registerUser: async (
+        _: unknown,
+        { input }: { input: apolloResolversTypes.RegisterUserInput }
+      ) => {
+        // Register the user first using the original resolver
+        const result = await authResolvers.Mutation.registerUser(_, { input });
+
+        // If registration was successful, create a personal workspace
+        if (result.success && result.user) {
+          try {
+            const workspaceName = `Personal Workspace (${input.email})`;
+            await workspaceRepository.create(workspaceName, result.user.id);
+          } catch (error) {
+            console.error('Failed to create personal workspace for new user:', error);
+            // Don't fail the registration if workspace creation fails
+          }
+        }
+
+        return result;
+      },
 
       updateMCPServerRunOn: async (
         _parent: unknown,
@@ -404,8 +428,10 @@ export const resolvers = (container: Container = defaultContainer): apolloResolv
         },
       },
       workspaces: {
-        subscribe: () => {
-          const observable = workspaceRepository.observeWorkspaces();
+        subscribe: (_parent: unknown, _args: unknown, context: { user?: { userId: string; email: string } }) => {
+          // Filter workspaces by user's admin relationship
+          const userId = context.user?.userId;
+          const observable = workspaceRepository.observeWorkspaces(userId);
           return observableToAsyncGenerator(observable, 'workspaces');
         },
       },

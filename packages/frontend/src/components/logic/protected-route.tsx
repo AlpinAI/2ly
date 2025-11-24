@@ -9,7 +9,7 @@
  * 2. Preserve intended destination for post-login redirect
  */
 
-import { ReactNode, useEffect } from 'react';
+import { ReactNode, useEffect, useRef } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -24,14 +24,30 @@ export function ProtectedRoute({
 }: ProtectedRouteProps) {
   const { isAuthenticated, isLoading } = useAuth();
   const location = useLocation();
+  const prevIsAuthenticatedRef = useRef(isAuthenticated);
 
   // Save intended destination (including workspace) before redirecting to login
+  // Uses previous auth state tracking to distinguish logout from bookmark scenarios
   useEffect(() => {
-    if (!isAuthenticated && !isLoading && location.pathname !== '/login') {
-      // Store full path including workspace ID for post-login redirect
-      const intendedPath = location.pathname + location.search;
-      sessionStorage.setItem(INTENT_STORAGE_KEY, intendedPath);
+    const wasAuthenticated = prevIsAuthenticatedRef.current;
+    const isNowAuthenticated = isAuthenticated;
+
+    // Save intent: only if we're unauthenticated AND were already unauthenticated
+    // This prevents saving during logout (authenticated -> unauthenticated transition)
+    if (!isNowAuthenticated && !isLoading && location.pathname !== '/login') {
+      if (!wasAuthenticated) {
+        // We were already logged out, so this is a genuine intent to save (bookmark/shared link)
+        const intendedPath = location.pathname + location.search;
+        sessionStorage.setItem(INTENT_STORAGE_KEY, intendedPath);
+      }
+    } else if (isNowAuthenticated && !wasAuthenticated) {
+      // Just logged in (unauthenticated -> authenticated transition)
+      // Clear any stale intent from previous session
+      clearRedirectIntent();
     }
+
+    // Update ref for next render
+    prevIsAuthenticatedRef.current = isAuthenticated;
   }, [isAuthenticated, isLoading, location]);
 
   // Show loading state while checking auth

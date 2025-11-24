@@ -1,16 +1,10 @@
-# Get all workspaces
+# Get all workspaces for the authenticated user
 # WHY: Used in workspace selector to show available workspaces
+# Workspaces are automatically filtered by user's admin relationship on the backend
 query GetWorkspaces {
   workspaces {
     id
     name
     createdAt
-  }
-  system {
-    id
-    defaultWorkspace {
-      id
-      name
-    }
   }
 }
