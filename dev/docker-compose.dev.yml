@@ -1,15 +1,5 @@
 name: 2ly
 services:
-  # Initialize cryptographic keys on first run
-  init-keys:
-    build:
-      context: ../scripts/init-keys
-      dockerfile: Dockerfile
-    container_name: 2ly-init-keys
-    volumes:
-      - ../.docker-keys:/data/keys:rw # Bind mount keys directory to host
-    restart: 'no'
-
   # NATS with JetStream for persistence
   nats:
     image: nats:2.10-alpine
@@ -19,8 +9,8 @@ services:
       - '8222:8222' # HTTP monitoring
     command: ['--jetstream', '--store_dir=/data/nats', '--http_port=8222', '--server_name=2ly-nats-01']
     volumes:
-      - 2ly-data:/data:rw
-      - ../.docker-keys:/keys:ro # Bind mount for operator.jwt access (future JWT auth)
+      - 2ly-data-dev:/data:rw
+      - ./.docker-keys:/keys:ro # Bind mount for operator.jwt access (future JWT auth)
     networks:
       - 2ly-network
     restart: unless-stopped
@@ -54,7 +44,7 @@ services:
       - '6080:6080' # HTTP
     command: dgraph zero --my=dgraph-zero:5080 --wal=/data/dgraph/zero-wal
     volumes:
-      - 2ly-data:/data:rw
+      - 2ly-data-dev:/data:rw
     networks:
       - 2ly-network
     restart: unless-stopped
@@ -75,7 +65,7 @@ services:
       - '9080:9080' # external gRPC private
     command: dgraph alpha --my=dgraph-alpha:7080 --zero=dgraph-zero:5080 --security whitelist=0.0.0.0/0 --postings=/data/dgraph/postings --wal=/data/dgraph/wal
     volumes:
-      - 2ly-data:/data:rw
+      - 2ly-data-dev:/data:rw
     depends_on:
       dgraph-zero:
         condition: service_healthy
@@ -104,22 +94,20 @@ services:
       context: ../
       dockerfile: packages/backend/Dockerfile
     container_name: 2ly-backend
-    entrypoint: ['/entrypoint.sh']
     environment:
       - NODE_ENV=development
+      - AUTOGEN_KEYS=true
       - DGRAPH_URL=dgraph-alpha:8080
       - NATS_SERVERS=nats:4222
       - EXPOSED_NATS_SERVERS=localhost:4222
       - EXPOSED_REMOTE_MCP=http://localhost:3001
       - JWT_PRIVATE_KEY_PATH=/keys/private.pem
       - JWT_PUBLIC_KEY_PATH=/keys/public.pem
-    command: ['node', 'packages/backend/dist/index.js']
     ports:
       - 3000:3000
     volumes:
-      - 2ly-data:/data:ro
-      - ../.docker-keys:/keys:ro # Bind mount keys to /keys (simpler mount path)
-      - ../scripts/entrypoint.sh:/entrypoint.sh:ro
+      - 2ly-data-dev:/data:ro
+      - ./.docker-keys:/keys:rw # Bind mount keys to /keys (read-write for generation)
     depends_on:
       nats:
         condition: service_started
@@ -143,22 +131,22 @@ services:
       context: ../
       dockerfile: packages/runtime/Dockerfile
     container_name: 2ly-main-runtime
-    entrypoint: ['/entrypoint.sh']
     environment:
+      - AUTOGEN_KEYS=true
       - NATS_SERVERS=nats:4222
       - RUNTIME_NAME=Main Runtime
       - ROOTS=TEMP:/tmp
       - JWT_PRIVATE_KEY_PATH=/keys/private.pem
       - JWT_PUBLIC_KEY_PATH=/keys/public.pem
       - REMOTE_PORT=3001
-    command: ['node', 'packages/runtime/dist/index.js']
     ports:
       - 3001:3001
     volumes:
-      - 2ly-data:/data:ro
-      - ../.docker-keys:/keys:ro # Bind mount keys to /keys (simpler mount path)
-      - ../scripts/entrypoint.sh:/entrypoint.sh:ro
+      - 2ly-data-dev:/data:ro
+      - ./.docker-keys:/keys:ro # Bind mount keys to /keys (read-only)
     depends_on:
+      backend:
+        condition: service_healthy
       nats:
         condition: service_started
       dgraph-alpha:
@@ -202,7 +190,7 @@ services:
     restart: unless-stopped
 
 volumes:
-  2ly-data:
+  2ly-data-dev:
     driver: local
 
 networks:

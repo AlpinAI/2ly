@@ -24,8 +24,11 @@ This project is a monorepo with the following packages:
 
 ## Prerequisites
 
-- Node.js (latest LTS version)
-- Docker and Docker Compose
+> **Note for production users**: If you just want to run 2LY (not develop it), see the [main README](../README.md) - you only need Docker.
+
+**For development and contributions:**
+- Node.js v22+ (required for local development)
+- Docker
 - Git
 
 ## Quick Start

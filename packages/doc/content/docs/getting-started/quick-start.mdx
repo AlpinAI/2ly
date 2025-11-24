@@ -1,83 +1,167 @@
 ---
 title: Quick Start
-description: Create your first toolset in a minute
+description: Get your first tool running in 2 minutes
 draft: false
 ---
 
-Create a workspace, connect an agent, and configure your first tool.
+This guide walks you through the 3-step onboarding process to get your first tool running. Complete this guide in **2 minutes**.
 
 ## Prerequisites
 
 [Install 2LY](/getting-started/installation) and ensure it's running at http://localhost:8888
 
-## 1. Create Workspace
+## Step 1: Create Your Workspace
 
-1. Open http://localhost:8888
-2. Create a new workspace
+When you first access http://localhost:8888, you'll be guided through workspace creation:
 
-[add screenshot]
+1. **Enter** your admin account details
+2. **Create** your workspace
 
-## 2. Install an MCP Server
+Your workspace is where all your tools, agents, and runtimes are managed. Think of it as your AI tool control center.
 
-2LY comes with a selection of pre-installed server. Use one of these to quickly grasp how 2LY works. You'll have the chance to [add any MCP Servers](links-to-add-mcp-server-doc) later.
+## Step 2: Follow the Onboarding
 
-[add the doc to explain how to add any mcp server]
+2LY provides a 3-step guided onboarding that walks you through the core concepts:
 
-1. Click **Browse MCP Servers**
-2. Select the **CHOOSE AN INTERESTING SERVER**
-3. Click **Test Server**
-4. Click **Save**
+1. **Understanding Runtimes** - See how distributed execution environments work
+2. **Connecting MCP Servers** - Learn how to add tool sources
+3. **Creating Toolsets** - Discover how to curate tools for your agents
 
-[add screenshot, complete the steps]
+The onboarding is interactive and takes about 2 minutes. Don't skip it—it covers everything you need to know.
 
-## 3. Create a Toolset
+## Step 3: Connect an MCP Server
 
-Toolsets allow you to shortlist and combines which tools will be advertised to which agents.
+2LY comes with a selection of popular MCP servers ready to install:
 
-1. Click **Create Tool Set**
-2. Give it a meaningul name such as **News summarizer**
-3. Select the tools to include (add at least one)
+**Recommended for first-time users:**
 
-## 4. Connect 2LY to your agent
+- **Filesystem** - Let agents read/write files
+- **GitHub** - Connect to repositories
+- **Weather** - Get weather data
 
-Your toolset is now ready to be consumed by your agents.
+**To connect a server:**
 
-1. Click **Connect**
-2. Select the type of agent you would like to connect. If unsure use the JSON configuration
-3. Launch your agent with 2LY connected
+1. Click **Browse MCP Servers** in the Sources page
+2. Select a server from the list (start with Filesystem for simplicity)
+3. Configure any required parameters (e.g., allowed directories)
+4. Click **Test Server** to verify it works
+5. Click **Save** to activate it
 
-Et voilà !
+You can add more MCP servers later from the [MCP Server Registry](https://github.com/modelcontextprotocol/servers).
 
-## 5. Test in Playground (Optional)
+## Step 4: Test Your Tools
 
-1. Choose a tool
-2. Add instruction and click **Test**
-3. Verify the execution of the interaction
+Before connecting your agent, verify your tools work:
+
+1. Navigate to the **Tool Tester** page
+2. Select a tool from your connected MCP server
+3. Provide test inputs
+4. Click **Test** and verify the output
+
+This ensures everything is configured correctly before integrating with your agent.
+
+## Step 5: Connect Your Agent
+
+Now your toolset is ready to be consumed by agents:
+
+1. Navigate to the **Toolsets** page
+2. Click **Connect** on your toolset
+3. Choose your agent framework:
+   - **LangChain** - Copy the Python code snippet
+   - **JSON** - Use the raw MCP configuration
+   - **Other frameworks** - Use the MCP endpoint URL
+4. Follow the framework-specific integration instructions
+
+### Example: LangChain Integration
+
+```python
+from twoly import MCPAdapter
+
+# Connect to 2LY
+adapter = MCPAdapter(
+    endpoint="http://localhost:3000/mcp",
+    workspace_id="your-workspace-id",
+    toolset_id="your-toolset-id"
+)
+
+# Use with LangChain
+from langchain.agents import create_openai_tools_agent
+
+agent = create_openai_tools_agent(
+    llm=llm,
+    tools=adapter.get_tools()
+)
+```
+
+See the [LangChain Integration Guide](/agents-integrations/langchain) for complete instructions.
 
 ## Verification
 
-You should have:
+You should now have:
 
-- ✅ Workspace created
-- ✅ Sandbox agent running
-- ✅ Configured tool connected
+- ✅ Workspace created with admin account
+- ✅ At least one MCP server connected
+- ✅ Tools tested and verified
+- ✅ Agent integration code ready
 
-## Next Steps
+## What Happens Next?
 
-- [Connect Real Agent](/your-first-toolflow/connect-agent) - LangChain/LangGraph
-- [More Tools](/tools/mcp-servers) - Explore MCP servers
-- [Architecture](/getting-started/architecture) - How 2LY works
+Now that you've completed the quick start, here's what to explore:
+
+### Learn More About Tools
+
+- [MCP Servers](/tools/mcp-servers) - Explore available MCP servers
+- [Tool Capabilities](/tools/capabilities) - Understand what tools can do
+- [API & REST](/tools/api-rest) - Connect to REST APIs
+- [Coded Functions](/tools/coded-function) - Write custom tool code
+
+### Agent Integrations
+
+- [LangChain](/agents-integrations/langchain) - Complete LangChain setup guide
+- [LangFlow](/agents-integrations/langflow) - Visual workflow builder
+- [N8N](/agents-integrations/n8n) - Automation platform integration
+
+### Deep Dives
+
+- [Architecture](/core-concepts/architecture) - How 2LY works under the hood
+- [Runtime Deployment](/deployment/runtime) - Deploy runtimes anywhere
+- [Security](/deployment/security) - Secure your 2LY installation
+
+### Production Deployment
+
+Ready to deploy 2LY for production use?
+
+- Scale runtimes across multiple environments
+- Configure monitoring and observability
+- Set up proper authentication and access controls
+- Deploy to cloud platforms (AWS, GCP, Azure)
+
+See the [Deployment Guide](/deployment/platform) for production setup instructions.
 
 ## Troubleshooting
 
 **Can't access localhost:8888?**
 
 ```bash
-npm run start
-docker-compose ps
+# Check if services are running
+docker compose ps
+
+# View logs
+docker compose logs -f frontend
+
+# Restart services if needed
+docker compose restart
 ```
 
 **MCP test fails?**
 
-- Check directory permissions
-- Try `/tmp` instead of Desktop
+- Check directory permissions for filesystem-based servers
+- Try `/tmp` instead of Desktop for testing
+- Verify the MCP server configuration in the UI
+- Check runtime logs: `docker compose logs tool-runtime`
+
+**Tools not appearing in agent?**
+
+- Ensure your agent is properly configured with the MCP endpoint
+- Check that the toolset includes at least one tool
+- Verify the runtime is connected in the dashboard

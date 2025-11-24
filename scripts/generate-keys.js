@@ -3,10 +3,11 @@
 import { createOperator } from '@nats-io/nkeys';
 import { encodeOperator } from '@nats-io/jwt';
 import { randomBytes, generateKeyPairSync } from 'crypto';
-import { writeFileSync, existsSync, chmodSync } from 'fs';
+import { writeFileSync, existsSync, chmodSync, mkdirSync } from 'fs';
 import { join } from 'path';
 
-const KEYS_DIR = '/data/keys';  // Bind mounted to host .docker-keys/
+// Configurable keys directory (from environment or default to /keys)
+const KEYS_DIR = process.env.KEYS_DIR || '/keys';
 const INITIALIZED_MARKER = join(KEYS_DIR, '.initialized');
 const ENV_FILE = join(KEYS_DIR, '.env.generated');
 const PRIVATE_KEY_FILE = join(KEYS_DIR, 'private.pem');
@@ -105,13 +106,16 @@ async function main() {
   console.log('🔐 2ly Key Initialization');
   console.log('========================\n');
 
+  // Ensure keys directory exists
+  mkdirSync(KEYS_DIR, { recursive: true, mode: 0o700 });
+
   // Check if already initialized
   if (existsSync(INITIALIZED_MARKER)) {
     console.log('✅ Keys already initialized. Skipping generation.\n');
     console.log('To regenerate keys:');
-    console.log('  1. Stop all services: docker-compose down');
-    console.log('  2. Remove the marker: docker run --rm -v 2ly_2ly-data:/data alpine rm /data/keys/.initialized');
-    console.log('  3. Restart: docker-compose up\n');
+    console.log('  1. Stop all services');
+    console.log(`  2. Remove the marker: rm ${INITIALIZED_MARKER}`);
+    console.log('  3. Restart services\n');
     process.exit(0);
   }
 
@@ -156,8 +160,8 @@ async function main() {
     '# Generated at: ' + new Date().toISOString(),
     '',
     '# JWT key paths for user session tokens (relative to project root)',
-    'JWT_PRIVATE_KEY_PATH=.docker-keys/private.pem',
-    'JWT_PUBLIC_KEY_PATH=.docker-keys/public.pem',
+    `JWT_PRIVATE_KEY_PATH=dev/.docker-keys/private.pem`,
+    `JWT_PUBLIC_KEY_PATH=dev/.docker-keys/public.pem`,
     ''
   ].join('\n');
 
@@ -183,19 +187,18 @@ async function main() {
   console.log(`  ${masterKey}\n`);
 
   console.log('JWT Keys:');
-  console.log(`  Private: /data/keys/private.pem (2048-bit RSA)`);
-  console.log(`  Public:  /data/keys/public.pem (2048-bit RSA)\n`);
+  console.log(`  Private: ${PRIVATE_KEY_FILE} (2048-bit RSA)`);
+  console.log(`  Public:  ${PUBLIC_KEY_FILE} (2048-bit RSA)\n`);
 
   console.log('NATS Operator JWT:');
-  console.log(`  /data/keys/operator.jwt (for NATS container)\n`);
+  console.log(`  ${OPERATOR_JWT_FILE} (for NATS container)\n`);
 
   console.log('═══════════════════════════════════════════════════════════════');
   console.log('⚠️  IMPORTANT SECURITY NOTES');
   console.log('═══════════════════════════════════════════════════════════════\n');
 
-  console.log('1. KEYS AVAILABLE ON HOST - For local development');
-  console.log('   Location: .docker-keys/ directory in project root');
-  console.log('   Keys are bind mounted and work for both Docker and local development\n');
+  console.log('1. KEYS LOCATION:');
+  console.log(`   ${KEYS_DIR}\n`);
 
   console.log('2. LOCAL DEVELOPMENT - Ready to use!');
   console.log('   Run: npm run dev:backend');
@@ -203,14 +206,12 @@ async function main() {
   console.log('   Keys are automatically accessible\n');
 
   console.log('3. BACKUP RECOMMENDED:');
-  console.log('   Keys are in .docker-keys/ on host (backed by bind mount)');
-  console.log('   Simply backup the .docker-keys/ directory\n');
+  console.log(`   Simply backup the ${KEYS_DIR} directory\n`);
 
   console.log('4. PRODUCTION DEPLOYMENT:');
   console.log('   - Use Docker secrets or secure key management service');
   console.log('   - Rotate JWT keys periodically');
-  console.log('   - Never commit keys to version control');
-  console.log('   - See docs/KEY_MANAGEMENT.md for details\n');
+  console.log('   - Never commit keys to version control\n');
 
   console.log('═══════════════════════════════════════════════════════════════\n');
   console.log('✅ Key initialization complete!\n');
