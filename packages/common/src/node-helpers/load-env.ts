@@ -7,8 +7,8 @@ import { existsSync } from 'fs';
  * - shared keys are only loaded in node development mode
  */
 export function loadEnv(projectRoot: string, packagePath: string, quiet: boolean = false): void {
-    const sharedEnvPath = resolve(projectRoot, '.docker-keys/.env.generated');
-    const localEnvPath = resolve(projectRoot, '.docker-keys/.env.local');
+    const sharedEnvPath = resolve(projectRoot, 'dev/.docker-keys/.env.generated');
+    const localEnvPath = resolve(projectRoot, 'dev/.docker-keys/.env.local');
     const packageEnvPath = resolve(packagePath, '.env');
   
     if (process.env.NODE_ENV !== 'production') {

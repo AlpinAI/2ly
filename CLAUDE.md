@@ -51,9 +51,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 The project supports running backend/runtime locally (outside Docker) while sharing cryptographic keys with Docker services.
 
 **Setup (first time):**
-1. `npm run start:dev` - Starts Docker services and generates keys
-
-That's it! Keys are automatically available at `.docker-keys/` on your host via bind mount.
+```bash
+npm run setup-local       # Generate cryptographic keys to dev/.docker-keys/
+npm run start:dev         # Start infrastructure (NATS, Dgraph) in Docker
+```
 
 **Daily workflow:**
 ```bash
@@ -63,16 +64,19 @@ npm run dev:frontend      # Run frontend locally with hot reload
 npm run build -w @2ly/runtime && npm run dev:main-runtime  # Run runtime locally without hot reload
 ```
 
+**Note:** The `setup-local` command only needs to be run once to generate keys. Keys persist in `dev/.docker-keys/` across sessions.
+
 **Key features:**
-- Automatic key sharing via bind mount
-- Keys available immediately at `.docker-keys/` on host
-- Backend/runtime load keys automatically from defaults
+- For local development: Run `npm run setup-local` to generate keys
+- Docker backend container auto-generates keys if missing (`AUTOGEN_KEYS=true`)
+- Keys stored at `dev/.docker-keys/` shared between Docker and local processes
+- To provide custom keys: set `MASTER_KEY` and `ENCRYPTION_KEY` ENV vars
 
 **Key locations:**
-- Docker volume: `2ly-data:/data/keys/`
-- Host (bind mount): `.docker-keys/` (automatically created)
-- Local backend: Uses `.docker-keys/private.pem` and `.docker-keys/public.pem` by default
-- Local runtime: Loads `MASTER_KEY` from `.docker-keys/.env.generated` by default
+- Docker (dev): `dev/.docker-keys/` via bind mount
+- Docker (prod): `2ly-internal` volume (isolated, no host access)
+- Local dev: Loads `dev/.docker-keys/.env.generated` automatically
+- Generation script: `npm run setup-local` or `sh ./generate-keys.sh`
 
 ## Monorepo Architecture
 
