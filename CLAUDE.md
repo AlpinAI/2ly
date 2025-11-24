@@ -52,14 +52,8 @@ The project supports running backend/runtime locally (outside Docker) while shar
 
 **Setup (first time):**
 ```bash
-npm run start:dev         # Auto-generates keys in dev/.docker-keys/
-```
-
-That's it! The backend container automatically generates keys on first run if they don't exist.
-
-**Manual key generation:**
-```bash
-sh ./generate-keys.sh     # Generates to dev/.docker-keys/ by default
+npm run setup-local       # Generate cryptographic keys to dev/.docker-keys/
+npm run start:dev         # Start infrastructure (NATS, Dgraph) in Docker
 ```
 
 **Daily workflow:**
@@ -70,18 +64,19 @@ npm run dev:frontend      # Run frontend locally with hot reload
 npm run build -w @2ly/runtime && npm run dev:main-runtime  # Run runtime locally without hot reload
 ```
 
+**Note:** The `setup-local` command only needs to be run once to generate keys. Keys persist in `dev/.docker-keys/` across sessions.
+
 **Key features:**
-- Backend auto-generates keys if missing (`AUTOGEN_KEYS=true` by default)
-- Keys available at `dev/.docker-keys/` via bind mount
-- Local dev processes load from same directory
+- For local development: Run `npm run setup-local` to generate keys
+- Docker backend container auto-generates keys if missing (`AUTOGEN_KEYS=true`)
+- Keys stored at `dev/.docker-keys/` shared between Docker and local processes
 - To provide custom keys: set `MASTER_KEY` and `ENCRYPTION_KEY` ENV vars
-- To disable auto-gen: set `AUTOGEN_KEYS=false`
 
 **Key locations:**
 - Docker (dev): `dev/.docker-keys/` via bind mount
 - Docker (prod): `2ly-internal` volume (isolated, no host access)
 - Local dev: Loads `dev/.docker-keys/.env.generated` automatically
-- Manual script: `sh ./generate-keys.sh` (customizable via `KEYS_DIR` env var)
+- Generation script: `npm run setup-local` or `sh ./generate-keys.sh`
 
 ## Monorepo Architecture
 

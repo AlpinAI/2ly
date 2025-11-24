@@ -42,7 +42,19 @@ cd 2ly
 npm install
 ```
 
-### 3. Start Development Environment
+### 3. Generate Cryptographic Keys (First Time Only)
+
+```bash
+npm run setup-local
+```
+
+This generates cryptographic keys to `dev/.docker-keys/` that are shared between Docker services and local development processes. You only need to run this once - keys persist across sessions.
+
+<Callout type="info">
+  **What does this do?** Generates encryption keys, JWT signing keys, and NATS authentication tokens required for the backend and runtime to operate securely.
+</Callout>
+
+### 4. Start Development Environment
 
 **Start infrastructure services (Docker):**
 

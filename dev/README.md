@@ -47,9 +47,14 @@ cd 2ly
 # Install dependencies
 npm install
 
+# Generate cryptographic keys (first time only)
+npm run setup-local
+
 # Start all services (database, NATS, etc.)
 npm run start:dev
 ```
+
+**Note:** The `setup-local` command generates cryptographic keys to `dev/.docker-keys/` and only needs to be run once. Keys persist across sessions.
 
 **Dependencies for the doc packags**
 

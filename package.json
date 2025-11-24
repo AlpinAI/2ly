@@ -15,7 +15,7 @@
     "start:dev": "docker compose -f dev/docker-compose.dev.yml up -d --build",
     "start:dev:full": "docker compose -f dev/docker-compose.dev.yml --profile all up -d --build",
     "clean:volumes": "docker compose down -v && docker compose -f docker-compose.yml down -v",
-    "setup-local": "bash scripts/setup-local-dev.sh",
+    "setup-local": "sh ./generate-keys.sh",
     "lint": "npm run lint --workspaces --if-present",
     "lint:full": "npm run lint:full --workspaces --if-present",
     "typecheck": "npm run typecheck --workspaces --if-present",
