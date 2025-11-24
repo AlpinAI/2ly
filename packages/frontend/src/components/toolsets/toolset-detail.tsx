@@ -15,7 +15,7 @@ import { Bot, Wrench, Clock, Settings, Trash2, Cable, Eye, EyeOff, Copy } from '
 import { Link, useParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
+import { AutoGrowTextarea } from '@/components/ui/autogrow-textarea';
 import { useManageToolsDialog, useConnectToolsetDialog } from '@/stores/uiStore';
 import { useMutation, useLazyQuery } from '@apollo/client/react';
 import { useNotification } from '@/contexts/NotificationContext';
@@ -212,13 +212,14 @@ export function ToolsetDetail({ toolSet }: ToolsetDetailProps) {
               onBlur={handleNameSave}
               className="text-lg font-semibold h-auto p-0 border-none bg-transparent focus:ring-0 focus:border-none"
             />
-            <Textarea
+            <AutoGrowTextarea
               value={toolsetDescription}
               onChange={(e) => setToolsetDescription(e.target.value)}
               onBlur={handleDescriptionSave}
               placeholder="Click to add description..."
-              className="text-sm text-gray-500 dark:text-gray-400 mt-1 min-h-0 h-auto p-0 border-none bg-transparent focus:ring-0 focus:border-none resize-none"
-              rows={1}
+              className="text-sm text-gray-500 dark:text-gray-400 mt-1 min-h-0 h-auto p-0 border-none bg-transparent focus:ring-0 focus:border-none"
+              minRows={1}
+              maxRows={5}
             />
           </div>
         </div>

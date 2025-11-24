@@ -27,7 +27,7 @@ import { useMutation } from '@apollo/client/react';
 import { ExternalLink, Server, Save, X, Trash2 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
+import { AutoGrowTextarea } from '@/components/ui/autogrow-textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue, SelectGroup, SelectLabel, SelectSeparator } from '@/components/ui/select';
 import { useNotification } from '@/contexts/NotificationContext';
 import { ConfigEditor } from './config-editor';
@@ -317,13 +317,14 @@ export function MCPServerDetail({ server }: MCPServerDetailProps) {
               onBlur={handleNameSave}
               className="text-lg font-semibold h-auto p-0 border-none bg-transparent focus:ring-0 focus:border-none"
             />
-            <Textarea
+            <AutoGrowTextarea
               value={serverDescription}
               onChange={(e) => setServerDescription(e.target.value)}
               onBlur={handleDescriptionSave}
               placeholder="Click to add description..."
-              className="text-sm text-gray-500 dark:text-gray-400 mt-1 min-h-0 h-auto p-0 border-none bg-transparent focus:ring-0 focus:border-none resize-none"
-              rows={1}
+              className="text-sm text-gray-500 dark:text-gray-400 mt-1 min-h-0 h-auto p-0 border-none bg-transparent focus:ring-0 focus:border-none"
+              minRows={1}
+              maxRows={5}
             />
           </div>
         </div>
