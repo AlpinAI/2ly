@@ -27,6 +27,7 @@ import { useMutation } from '@apollo/client/react';
 import { ExternalLink, Server, Save, X, Trash2 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue, SelectGroup, SelectLabel, SelectSeparator } from '@/components/ui/select';
 import { useNotification } from '@/contexts/NotificationContext';
 import { ConfigEditor } from './config-editor';
@@ -45,10 +46,11 @@ export interface MCPServerDetailProps {
 export function MCPServerDetail({ server }: MCPServerDetailProps) {
   const { workspaceId } = useParams<{ workspaceId: string }>();
   const { runtimes } = useRuntimeData();
-  const { confirm } = useNotification();
+  const { confirm, toast } = useNotification();
 
   // Inline edit state
   const [serverName, setServerName] = useState(server.name);
+  const [serverDescription, setServerDescription] = useState(server.description || '');
   const [runOn, setRunOn] = useState<McpServerRunOn | null>(server.runOn);
   const [runtimeId, setRuntimeId] = useState<string | null>(server.runtime?.id || null);
 
@@ -97,6 +99,7 @@ export function MCPServerDetail({ server }: MCPServerDetailProps) {
   // Reset values when server changes
   useEffect(() => {
     setServerName(server.name);
+    setServerDescription(server.description || '');
     setRunOn(server.runOn);
     setRuntimeId(server.runtime?.id || null);
   }, [server]);
@@ -119,12 +122,23 @@ export function MCPServerDetail({ server }: MCPServerDetailProps) {
   // Handle name save on blur
   const handleNameSave = async () => {
     if (serverName === server.name) return;
-    
+
+    // Validate: 3-100 characters
+    const trimmedName = serverName.trim();
+    if (trimmedName.length < 3 || trimmedName.length > 100) {
+      toast({
+        description: 'Name must be between 3 and 100 characters',
+        variant: 'error',
+      });
+      setServerName(server.name); // Revert to original
+      return;
+    }
+
     try {
       await updateServer({
         variables: {
           id: server.id,
-          name: serverName,
+          name: trimmedName,
           description: server.description,
           repositoryUrl: server.repositoryUrl,
           transport: server.transport,
@@ -133,7 +147,46 @@ export function MCPServerDetail({ server }: MCPServerDetailProps) {
       });
     } catch (error) {
       console.error('Failed to save name:', error);
+      toast({
+        description: 'Failed to save name',
+        variant: 'error',
+      });
       setServerName(server.name); // Revert on error
+    }
+  };
+
+  // Handle description save on blur
+  const handleDescriptionSave = async () => {
+    if (serverDescription === (server.description || '')) return;
+
+    // Validate: max 1000 characters (can be empty)
+    if (serverDescription.length > 1000) {
+      toast({
+        description: 'Description must not exceed 1000 characters',
+        variant: 'error',
+      });
+      setServerDescription(server.description || ''); // Revert to original
+      return;
+    }
+
+    try {
+      await updateServer({
+        variables: {
+          id: server.id,
+          name: server.name,
+          description: serverDescription,
+          repositoryUrl: server.repositoryUrl,
+          transport: server.transport,
+          config: server.config,
+        },
+      });
+    } catch (error) {
+      console.error('Failed to save description:', error);
+      toast({
+        description: 'Failed to save description',
+        variant: 'error',
+      });
+      setServerDescription(server.description || ''); // Revert on error
     }
   };
 
@@ -264,7 +317,14 @@ export function MCPServerDetail({ server }: MCPServerDetailProps) {
               onBlur={handleNameSave}
               className="text-lg font-semibold h-auto p-0 border-none bg-transparent focus:ring-0 focus:border-none"
             />
-            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{server.description}</p>
+            <Textarea
+              value={serverDescription}
+              onChange={(e) => setServerDescription(e.target.value)}
+              onBlur={handleDescriptionSave}
+              placeholder="Click to add description..."
+              className="text-sm text-gray-500 dark:text-gray-400 mt-1 min-h-0 h-auto p-0 border-none bg-transparent focus:ring-0 focus:border-none resize-none"
+              rows={1}
+            />
           </div>
         </div>
       </div>
