@@ -4,7 +4,6 @@ import { apolloResolversTypes, dgraphResolversTypes } from '@2ly/common';
 import {
   ADD_WORKSPACE,
   QUERY_WORKSPACE,
-  QUERY_WORKSPACES,
   QUERY_WORKSPACES_BY_USER,
   QUERY_WORKSPACE_WITH_RUNTIMES,
   QUERY_WORKSPACE_WITH_MCP_SERVERS,

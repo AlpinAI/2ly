@@ -67,10 +67,13 @@ describe('Backend API Tests', () => {
 
     it('should return default workspace after reset', async () => {
       const query = `
-        query GetWorkspaces {
-          workspaces {
+        query GetSystem {
+          system {
             id
-            name
+            defaultWorkspace {
+              id
+              name
+            }
           }
         }
       `;
@@ -78,9 +81,10 @@ describe('Backend API Tests', () => {
       const result = await graphql(query);
 
       // After reset, backend creates a default workspace during initialization
-      expect(result.workspaces).toHaveLength(1);
-      expect(result.workspaces[0].name).toBe('Default');
-      expect(result.workspaces[0].id).toBeDefined();
+      expect(result.system).toBeDefined();
+      expect(result.system.defaultWorkspace).toBeDefined();
+      expect(result.system.defaultWorkspace.name).toBe('Default');
+      expect(result.system.defaultWorkspace.id).toBeDefined();
     });
   });
 
