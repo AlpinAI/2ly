@@ -289,7 +289,6 @@ export function extractConfigurableFields(option: ConfigOption): ConfigField[] {
 
     // Package arguments
     pkg.packageArguments?.forEach((arg, index) => {
-      console.log('arg', arg);
       if (hasConfigurableVariables(arg)) {
         // Pattern 2: Extract variables from "variables" property
         const variables = getAllVariablesFromConfig(option.config);

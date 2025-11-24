@@ -10,14 +10,16 @@
  * - Created/Updated timestamps
  */
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Bot, Wrench, Clock, Settings, Trash2, Cable, Eye, EyeOff, Copy } from 'lucide-react';
 import { Link, useParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { AutoGrowTextarea } from '@/components/ui/autogrow-textarea';
 import { useManageToolsDialog, useConnectToolsetDialog } from '@/stores/uiStore';
 import { useMutation, useLazyQuery } from '@apollo/client/react';
 import { useNotification } from '@/contexts/NotificationContext';
-import { DeleteToolSetDocument, GetToolsetKeyDocument, GetKeyValueDocument } from '@/graphql/generated/graphql';
+import { DeleteToolSetDocument, GetToolsetKeyDocument, GetKeyValueDocument, UpdateToolSetDocument } from '@/graphql/generated/graphql';
 import type { SubscribeToolSetsSubscription } from '@/graphql/generated/graphql';
 
 type ToolSet = NonNullable<SubscribeToolSetsSubscription['toolSets']>[number];
@@ -33,12 +35,23 @@ export function ToolsetDetail({ toolSet }: ToolsetDetailProps) {
 
   const { confirm, toast } = useNotification();
   const [deleteToolSet] = useMutation(DeleteToolSetDocument);
+  const [updateToolSet] = useMutation(UpdateToolSetDocument);
+
+  // Inline edit state
+  const [toolsetName, setToolsetName] = useState(toolSet.name);
+  const [toolsetDescription, setToolsetDescription] = useState(toolSet.description || '');
 
   // Key visibility state
   const [keyVisible, setKeyVisible] = useState(false);
   const [keyValue, setKeyValue] = useState<string | null>(null);
   const [getToolsetKey, { loading: loadingKey }] = useLazyQuery(GetToolsetKeyDocument);
   const [getKeyValue, { loading: loadingKeyValue }] = useLazyQuery(GetKeyValueDocument);
+
+  // Reset values when toolSet changes
+  useEffect(() => {
+    setToolsetName(toolSet.name);
+    setToolsetDescription(toolSet.description || '');
+  }, [toolSet]);
 
   const formatDate = (dateString: string | Date) => {
     const date = typeof dateString === 'string' ? new Date(dateString) : dateString;
@@ -58,7 +71,70 @@ export function ToolsetDetail({ toolSet }: ToolsetDetailProps) {
     setConnectDialogOpen(true);
   };
 
+  // Handle name save on blur
+  const handleNameSave = async () => {
+    if (toolsetName === toolSet.name) return;
 
+    // Validate: 3-100 characters
+    const trimmedName = toolsetName.trim();
+    if (trimmedName.length < 3 || trimmedName.length > 100) {
+      toast({
+        description: 'Name must be between 3 and 100 characters',
+        variant: 'error',
+      });
+      setToolsetName(toolSet.name); // Revert to original
+      return;
+    }
+
+    try {
+      await updateToolSet({
+        variables: {
+          id: toolSet.id,
+          name: trimmedName,
+          description: toolSet.description || '',
+        },
+      });
+    } catch (error) {
+      console.error('Failed to save name:', error);
+      toast({
+        description: 'Failed to save name',
+        variant: 'error',
+      });
+      setToolsetName(toolSet.name); // Revert on error
+    }
+  };
+
+  // Handle description save on blur
+  const handleDescriptionSave = async () => {
+    if (toolsetDescription === (toolSet.description || '')) return;
+
+    // Validate: max 1000 characters (can be empty)
+    if (toolsetDescription.length > 1000) {
+      toast({
+        description: 'Description must not exceed 1000 characters',
+        variant: 'error',
+      });
+      setToolsetDescription(toolSet.description || ''); // Revert to original
+      return;
+    }
+
+    try {
+      await updateToolSet({
+        variables: {
+          id: toolSet.id,
+          name: toolSet.name,
+          description: toolsetDescription,
+        },
+      });
+    } catch (error) {
+      console.error('Failed to save description:', error);
+      toast({
+        description: 'Failed to save description',
+        variant: 'error',
+      });
+      setToolsetDescription(toolSet.description || ''); // Revert on error
+    }
+  };
 
   const handleDelete = async () => {
     const confirmed = await confirm({
@@ -130,12 +206,21 @@ export function ToolsetDetail({ toolSet }: ToolsetDetailProps) {
             <Bot className="h-5 w-5 text-cyan-600 dark:text-cyan-400" />
           </div>
           <div className="flex-1 min-w-0">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white truncate">
-              {toolSet.name}
-            </h3>
-            {toolSet.description && (
-              <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{toolSet.description}</p>
-            )}
+            <Input
+              value={toolsetName}
+              onChange={(e) => setToolsetName(e.target.value)}
+              onBlur={handleNameSave}
+              className="text-lg font-semibold h-auto p-0 border-none bg-transparent focus:ring-0 focus:border-none"
+            />
+            <AutoGrowTextarea
+              value={toolsetDescription}
+              onChange={(e) => setToolsetDescription(e.target.value)}
+              onBlur={handleDescriptionSave}
+              placeholder="Click to add description..."
+              className="text-sm text-gray-500 dark:text-gray-400 mt-1 min-h-0 h-auto p-0 border-none bg-transparent focus:ring-0 focus:border-none"
+              minRows={1}
+              maxRows={5}
+            />
           </div>
         </div>
       </div>
