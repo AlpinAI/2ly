@@ -56,16 +56,20 @@ interface UIState {
   setAddServerWorkflowInitialStep: (step: 'selection' | 'upstream' | 'easy-manual' | 'advanced-manual' | null) => void;
   manageToolsDialogOpen: boolean;
   setManageToolsDialogOpen: (open: boolean) => void;
-  selectedToolSetForManagement: string | null;
-  setSelectedToolSetForManagement: (id: string | null) => void;
-  createToolSetDialogOpen: boolean;
-  createToolSetDialogCallback: ((toolSetId: string) => void) | null;
-  openCreateToolSetDialog: (onSuccess?: (toolSetId: string) => void) => void;
-  closeCreateToolSetDialog: () => void;
-  connectAgentDialogOpen: boolean;
-  setConnectAgentDialogOpen: (open: boolean) => void;
-  selectedAgentForConnection: string | null;
-  setSelectedAgentForConnection: (agentId: string | null) => void;
+  selectedToolsetForManagement: string | null;
+  setSelectedToolsetForManagement: (id: string | null) => void;
+  createToolsetDialogOpen: boolean;
+  createToolsetDialogCallback: ((toolSetId: string) => void) | null;
+  openCreateToolsetDialog: (onSuccess?: (toolSetId: string) => void) => void;
+  closeCreateToolsetDialog: () => void;
+  connectToolsetDialogOpen: boolean;
+  setConnectToolsetDialogOpen: (open: boolean) => void;
+  selectedToolsetNameForConnection: string | null;
+  setSelectedToolsetNameForConnection: (toolsetName: string | null) => void;
+  selectedToolsetIdForConnection: string | null;
+  setSelectedToolsetIdForConnection: (toolsetId: string | null) => void;
+
+
 
   // Tool Catalog Filters
   toolCategoryFilter: string;
@@ -120,8 +124,8 @@ export const useUIStore = create<UIState>()(
         setAddServerWorkflowInitialStep: (step) => set({ addServerWorkflowInitialStep: step }),
         manageToolsDialogOpen: false,
         setManageToolsDialogOpen: (open) => set({ manageToolsDialogOpen: open }),
-        selectedToolSetForManagement: null,
-        setSelectedToolSetForManagement: (id) => set({ selectedToolSetForManagement: id }),
+        selectedToolsetForManagement: null,
+        setSelectedToolsetForManagement: (id) => set({ selectedToolsetForManagement: id }),
 
         // Initial State - Tool Catalog Filters
         toolCategoryFilter: 'all',
@@ -143,25 +147,29 @@ export const useUIStore = create<UIState>()(
         playgroundConsoleExpanded: false,
         setPlaygroundConsoleExpanded: (expanded) => set({ playgroundConsoleExpanded: expanded }),
 
-        // Initial State - Create Tool Set Dialog
-        createToolSetDialogOpen: false,
-        createToolSetDialogCallback: null,
-        openCreateToolSetDialog: (onSuccess) =>
+        // Initial State - Create Toolset Dialog
+        createToolsetDialogOpen: false,
+        createToolsetDialogCallback: null,
+        openCreateToolsetDialog: (onSuccess) =>
           set({
-            createToolSetDialogOpen: true,
-            createToolSetDialogCallback: onSuccess || null,
+            createToolsetDialogOpen: true,
+            createToolsetDialogCallback: onSuccess || null,
           }),
-        closeCreateToolSetDialog: () =>
+        closeCreateToolsetDialog: () =>
           set({
-            createToolSetDialogOpen: false,
-            createToolSetDialogCallback: null,
+            createToolsetDialogOpen: false,
+            createToolsetDialogCallback: null,
           }),
 
-        // Initial State - Connect Agent Dialog
-        connectAgentDialogOpen: false,
-        setConnectAgentDialogOpen: (open) => set({ connectAgentDialogOpen: open }),
-        selectedAgentForConnection: null,
-        setSelectedAgentForConnection: (agentId) => set({ selectedAgentForConnection: agentId }),
+        // Initial State - Connect Toolset Dialog
+        connectToolsetDialogOpen: false,
+        setConnectToolsetDialogOpen: (open) => set({ connectToolsetDialogOpen: open }),
+        selectedToolsetNameForConnection: null,
+        setSelectedToolsetNameForConnection: (toolsetName) => set({ selectedToolsetNameForConnection: toolsetName }),
+        selectedToolsetIdForConnection: null,
+        setSelectedToolsetIdForConnection: (toolsetId) => set({ selectedToolsetIdForConnection: toolsetId }),
+
+
 
         // Actions
         resetFilters: () =>
@@ -241,22 +249,22 @@ export const useAddSourceWorkflow = () =>
 export const useManageToolsDialog = () => {
   const open = useUIStore((state) => state.manageToolsDialogOpen);
   const setOpen = useUIStore((state) => state.setManageToolsDialogOpen);
-  const selectedToolSetId = useUIStore((state) => state.selectedToolSetForManagement);
-  const setSelectedToolSetId = useUIStore((state) => state.setSelectedToolSetForManagement);
+  const selectedToolsetId = useUIStore((state) => state.selectedToolsetForManagement);
+  const setSelectedToolsetId = useUIStore((state) => state.setSelectedToolsetForManagement);
 
   return {
     open,
     setOpen,
-    selectedToolSetId,
-    setSelectedToolSetId,
+    selectedToolsetId,
+    setSelectedToolsetId,
   };
 };
 
-export const useCreateToolSetDialog = () => {
-  const open = useUIStore((state) => state.createToolSetDialogOpen);
-  const callback = useUIStore((state) => state.createToolSetDialogCallback);
-  const openDialog = useUIStore((state) => state.openCreateToolSetDialog);
-  const close = useUIStore((state) => state.closeCreateToolSetDialog);
+export const useCreateToolsetDialog = () => {
+  const open = useUIStore((state) => state.createToolsetDialogOpen);
+  const callback = useUIStore((state) => state.createToolsetDialogCallback);
+  const openDialog = useUIStore((state) => state.openCreateToolsetDialog);
+  const close = useUIStore((state) => state.closeCreateToolsetDialog);
 
   return {
     open,
@@ -266,17 +274,21 @@ export const useCreateToolSetDialog = () => {
   };
 };
 
-export const useConnectAgentDialog = () => {
-  const open = useUIStore((state) => state.connectAgentDialogOpen);
-  const setOpen = useUIStore((state) => state.setConnectAgentDialogOpen);
-  const selectedAgentId = useUIStore((state) => state.selectedAgentForConnection);
-  const setSelectedAgentId = useUIStore((state) => state.setSelectedAgentForConnection);
+export const useConnectToolsetDialog = () => {
+  const open = useUIStore((state) => state.connectToolsetDialogOpen);
+  const setOpen = useUIStore((state) => state.setConnectToolsetDialogOpen);
+  const selectedToolsetName = useUIStore((state) => state.selectedToolsetNameForConnection);
+  const setSelectedToolsetName = useUIStore((state) => state.setSelectedToolsetNameForConnection);
+  const selectedToolsetId = useUIStore((state) => state.selectedToolsetIdForConnection);
+  const setSelectedToolsetId = useUIStore((state) => state.setSelectedToolsetIdForConnection);
 
   return {
     open,
     setOpen,
-    selectedAgentId,
-    setSelectedAgentId,
+    selectedToolsetName,
+    setSelectedToolsetName,
+    selectedToolsetId,
+    setSelectedToolsetId,
   };
 };
 
@@ -293,3 +305,5 @@ export const useAddServerWorkflow = () => {
     setInitialStep,
   };
 };
+
+

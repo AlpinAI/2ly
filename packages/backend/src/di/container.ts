@@ -14,10 +14,12 @@ import {
 } from '@2ly/common';
 import { DGraphService, DGRAPH_URL } from '../services/dgraph.service';
 import { ApolloService } from '../services/apollo.service';
-import { RuntimeService, DROP_ALL_DATA } from '../services/runtime.service';
+import { RuntimeService } from '../services/runtime.service';
+import { ToolSetService } from '../services/toolset.service';
 import { FastifyService } from '../services/fastify.service';
-import { MainService } from '../services/backend.main.service';
-import { RuntimeInstance, RuntimeInstanceFactory, RuntimeInstanceMetadata } from '../services/runtime.instance';
+import { MainService, DROP_ALL_DATA } from '../services/backend.main.service';
+import { RuntimeInstance, RuntimeInstanceFactory } from '../services/runtime.instance';
+import type { ConnectionMetadata } from '../types';
 import {
   RuntimeRepository,
   WorkspaceRepository,
@@ -27,10 +29,14 @@ import {
   MCPToolRepository,
   SystemRepository,
   MonitoringRepository,
+  ToolSetRepository,
+  IdentityRepository,
 } from '../repositories';
 import { JwtService, AuthenticationService, AccountSecurityService, PasswordPolicyService } from '../services/auth';
 import { SecurityMiddleware, RateLimitMiddleware, GraphQLAuthMiddleware } from '../middleware';
 import { MCPServerAutoConfigService, AZURE_ENDPOINT, AZURE_API_KEY, BRAVE_SEARCH_API_KEY } from '../services/mcp-auto-config.service';
+import { IdentityService } from '../services/identity.service';
+import { KeyRateLimiterService } from '../services/key-rate-limiter.service';
 import pino from 'pino';
 import { MonitoringService } from '../services/monitoring.service';
 
@@ -62,6 +68,9 @@ const start = () => {
   // Init runtime service
   container.bind(RuntimeService).toSelf().inSingletonScope();
 
+  // Init tool set service
+  container.bind(ToolSetService).toSelf().inSingletonScope();
+
   // Init fastify service
   container.bind(FastifyService).toSelf().inSingletonScope();
 
@@ -80,10 +89,18 @@ const start = () => {
   container.bind(MCPToolRepository).toSelf().inSingletonScope();
   container.bind(SystemRepository).toSelf().inSingletonScope();
   container.bind(MonitoringRepository).toSelf().inSingletonScope();
+  container.bind(ToolSetRepository).toSelf().inSingletonScope();
+  container.bind(IdentityRepository).toSelf().inSingletonScope();
 
   // Init authentication services
   container.bind(JwtService).toSelf().inSingletonScope();
   container.bind(AuthenticationService).toSelf().inSingletonScope();
+
+  // Init identity service
+  container.bind(IdentityService).toSelf().inSingletonScope();
+
+  // Init key rate limiter service
+  container.bind(KeyRateLimiterService).toSelf().inSingletonScope();
 
   // Init security services
   container.bind(AccountSecurityService).toSelf().inSingletonScope();
@@ -114,12 +131,14 @@ const start = () => {
   loggerService.setLogLevel('apollo', (process.env.APOLLO_LOG_LEVEL || 'info') as pino.Level);
   loggerService.setLogLevel('runtime', (process.env.RUNTIME_LOG_LEVEL || 'info') as pino.Level);
   loggerService.setLogLevel('mcp-auto-config', (process.env.MCP_AUTO_CONFIG_LOG_LEVEL || 'info') as pino.Level);
-
+  loggerService.setLogLevel('identity', (process.env.IDENTITY_LOG_LEVEL || 'info') as pino.Level);
+  loggerService.setLogLevel('toolset', (process.env.TOOLSET_LOG_LEVEL || 'info') as pino.Level);
+  
   // Init Runtime Instance Factory
   container.bind<RuntimeInstanceFactory>(RuntimeInstance).toFactory((context) => {
     return (
       instance: dgraphResolversTypes.Runtime,
-      metadata: RuntimeInstanceMetadata,
+      metadata: ConnectionMetadata,
       onReady: () => void,
       onDisconnect: () => void) => {
       const logger = context.get(LoggerService).getLogger(`runtime.instance`);
@@ -127,7 +146,6 @@ const start = () => {
       const runtimeInstance = new RuntimeInstance(
         logger,
         context.get(NatsService),
-        context.get(WorkspaceRepository),
         context.get(RuntimeRepository),
         instance,
         metadata,

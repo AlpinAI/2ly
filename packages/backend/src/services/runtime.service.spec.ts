@@ -4,12 +4,12 @@ import { RuntimeService } from './runtime.service';
 import { ControllableAsyncIterator } from '../../../common/src/test/utils';
 import { NatsServiceMock } from '@2ly/common/test/vitest';
 import {
-    UpdateMcpToolsMessage,
-    RuntimeConnectMessage,
-    NatsErrorMessage,
+    RuntimeDiscoveredToolsPublish,
+    ErrorResponse,
     type dgraphResolversTypes,
     NatsMessage,
 } from '@2ly/common';
+import { RuntimeHandshakeIdentity } from '../types';
 
 // Minimal fake repositories and runtime instance
 interface FakeMCPServerRepository {
@@ -17,13 +17,12 @@ interface FakeMCPServerRepository {
 }
 interface FakeRuntimeRepository {
     findActive: () => Promise<{ id: string }[]>;
-    create: (name: string, _desc: string, status: string, workspaceId: string, capabilities: string[]) => Promise<{ id: string }>
+    create: (name: string, _desc: string, status: string, workspaceId: string, type: dgraphResolversTypes.RuntimeType) => Promise<{ id: string }>
     setActive: (id: string, processId: string, hostIP: string, hostname: string) => Promise<{ id: string }>;
     setInactive: (id: string) => Promise<{ id: string }>;
     upserTool: (mcpServerId: string, name: string, description: string, inputSchema: string, annotations: string) => Promise<void>;
     findByName: (workspaceId: string, name: string) => Promise<dgraphResolversTypes.Runtime | null>;
     setRoots: (runtimeId: string, roots: { name: string; uri: string }[]) => Promise<void>;
-    setCapabilities: (runtimeId: string, capabilities: string[]) => Promise<void>;
     getRuntime?: (id: string) => Promise<dgraphResolversTypes.Runtime>;
     observeRoots?: (id: string) => unknown;
     observeMCPServersOnEdge?: (id: string) => unknown;
@@ -31,13 +30,11 @@ interface FakeRuntimeRepository {
     observeMCPServersOnGlobal?: (workspaceId: string) => unknown;
     observeCapabilities?: (id: string) => unknown;
 }
-interface FakeWorkspaceRepository {
-    findById: (id: string) => Promise<{ id: string } | null>;
-    setGlobalRuntime: (id: string) => Promise<void>;
-    setDefaultTestingRuntime: (id: string) => Promise<void>;
-}
-interface FakeSystemRepository {
-    getDefaultWorkspace: () => Promise<{ id: string } | null>;
+interface FakeIdentityService {
+    start: () => Promise<void>;
+    stop: () => Promise<void>;
+    onHandshake: (nature: 'runtime' | 'toolset', callback: (identity: RuntimeHandshakeIdentity) => void) => string;
+    offHandshake: (nature: 'runtime' | 'toolset', callbackId: string) => void;
 }
 
 class FakeRuntimeInstance {
@@ -50,8 +47,6 @@ class FakeRuntimeInstance {
 function createService(deps?: Partial<{
     mcp: Partial<FakeMCPServerRepository>;
     runtime: Partial<FakeRuntimeRepository>;
-    workspace: Partial<FakeWorkspaceRepository>;
-    system: Partial<FakeSystemRepository>;
 }>) {
     const iterator = new ControllableAsyncIterator<unknown>();
     const nats = new NatsServiceMock(iterator);
@@ -65,40 +60,59 @@ function createService(deps?: Partial<{
         upserTool: vi.fn(async () => { }),
         findByName: vi.fn(async () => null),
         setRoots: vi.fn(async () => { }),
-        setCapabilities: vi.fn(async () => { }),
     };
     const mcpRepo: FakeMCPServerRepository = {
         getTools: vi.fn(async () => ({ tools: [] })),
     };
-    const workspaceRepo: FakeWorkspaceRepository = {
-        findById: vi.fn(async () => ({ id: 'ws1' })),
-        setGlobalRuntime: vi.fn(async () => { }),
-        setDefaultTestingRuntime: vi.fn(async () => { }),
-    };
-    const systemRepo: FakeSystemRepository = {
-        getDefaultWorkspace: vi.fn(async () => ({ id: 'ws-default' })),
-    };
 
     Object.assign(runtimeRepo, deps?.runtime);
     Object.assign(mcpRepo, deps?.mcp);
-    Object.assign(workspaceRepo, deps?.workspace);
-    Object.assign(systemRepo, deps?.system);
 
     const factory = vi.fn((inst: dgraphResolversTypes.Runtime) => new FakeRuntimeInstance(inst) as unknown as import('./runtime.instance').RuntimeInstance);
 
     const logger = { getLogger: () => ({ info: vi.fn(), error: vi.fn(), debug: vi.fn() }) } as unknown as import('@2ly/common').LoggerService;
 
+    let runtimeHandshakeCallback: ((identity: RuntimeHandshakeIdentity) => void) | null = null;
+    const identityService: FakeIdentityService = {
+        start: vi.fn(async () => { }),
+        stop: vi.fn(async () => { }),
+        onHandshake: vi.fn((nature, callback) => {
+            if (nature === 'runtime') {
+                runtimeHandshakeCallback = callback;
+            }
+            return 'callback-id';
+        }),
+        offHandshake: vi.fn((nature, _callbackId) => {
+            if (nature === 'runtime') {
+                runtimeHandshakeCallback = null;
+            }
+        }),
+    };
+
     const service = new RuntimeService(
         logger,
         dgraph,
         nats as unknown as import('@2ly/common').NatsService,
+        identityService as unknown as import('./identity.service').IdentityService,
         factory as unknown as import('./runtime.instance').RuntimeInstanceFactory,
         mcpRepo as unknown as import('../repositories').MCPServerRepository,
         runtimeRepo as unknown as import('../repositories').RuntimeRepository,
-        workspaceRepo as unknown as import('../repositories').WorkspaceRepository,
-        systemRepo as unknown as import('../repositories').SystemRepository,
     );
-    return { service, iterator, nats, dgraph, runtimeRepo, mcpRepo, workspaceRepo, systemRepo, factory };
+    return {
+        service,
+        iterator,
+        nats,
+        dgraph,
+        runtimeRepo,
+        mcpRepo,
+        factory,
+        identityService,
+        invokeRuntimeHandshake: (identity: RuntimeHandshakeIdentity) => {
+            if (runtimeHandshakeCallback) {
+                runtimeHandshakeCallback(identity);
+            }
+        }
+    };
 }
 
 // RuntimeService message handling coverage
@@ -106,44 +120,27 @@ function createService(deps?: Partial<{
 describe('RuntimeService', () => {
     it('initialize starts services and subscribes', async () => {
         const { service, dgraph, nats } = createService();
-        (service as unknown as { dropAllData: boolean }).dropAllData = true;
         await service.start('test');
         expect(dgraph.start).toHaveBeenCalled();
-        expect(dgraph.initSchema).toHaveBeenCalledWith(true);
         expect(nats.start).toHaveBeenCalled();
         await service.stop('test');
     });
 
     it('handles RuntimeConnect for existing runtime by creating instance', async () => {
-        const { service, iterator, factory } = createService({
+        const runtime = { id: 'r1', name: 'node', status: 'ACTIVE' } as unknown as dgraphResolversTypes.Runtime;
+        const { service, invokeRuntimeHandshake, factory } = createService({
             runtime: {
-                findByName: vi.fn(async () => ({ id: 'r1', name: 'node', status: 'ACTIVE' } as unknown as dgraphResolversTypes.Runtime)),
+                findByName: vi.fn(async () => runtime),
             },
-            system: { getDefaultWorkspace: vi.fn(async () => ({ id: 'ws1' })) },
         });
         await service.start('test');
-        const msg = new RuntimeConnectMessage({ name: 'node', pid: 'p', hostIP: 'ip', hostname: 'host', workspaceId: 'DEFAULT' });
-        iterator.push(msg);
-        // allow message loop
+        // Simulate identity service invoking the handshake callback
+        invokeRuntimeHandshake({ instance: runtime, pid: 'p', hostIP: 'ip', hostname: 'host' });
+        // allow callback to process
         await new Promise((r) => setTimeout(r, 10));
         expect(factory).toHaveBeenCalledTimes(1);
         await service.stop('test');
     });
-
-    it('handles RuntimeConnect for new runtime by creating record and instance', async () => {
-        const { service, iterator, runtimeRepo } = createService({
-            runtime: { findByName: vi.fn(async () => null) },
-            workspace: { findById: vi.fn(async () => ({ id: 'wsX' })) },
-        });
-        await service.start('test');
-        const msg = new RuntimeConnectMessage({ name: 'new-node', pid: 'p', hostIP: 'ip', hostname: 'host', workspaceId: 'wsX' });
-        iterator.push(msg);
-        await new Promise((r) => setTimeout(r, 10));
-        expect(runtimeRepo.create).toHaveBeenCalled();
-        await service.stop('test');
-    });
-
-    it('no longer handles RuntimeHealthyMessage or disconnect messages');
 
     it('handles UpdateMcpToolsMessage by disconnecting removed and upserting new', async () => {
         const { service, iterator } = createService({
@@ -153,7 +150,7 @@ describe('RuntimeService', () => {
         const disconnectToolSpy = vi.spyOn(service, 'disconnectTool');
         const upsertToolSpy = vi.spyOn(service, 'upsertTool');
         await service.start('test');
-        const msg = new UpdateMcpToolsMessage({ mcpServerId: 'm1', tools: [{ name: 'new', description: '', inputSchema: { type: 'object' as const }, annotations: {} }] });
+        const msg = new RuntimeDiscoveredToolsPublish({ workspaceId: 'w1', mcpServerId: 'm1', tools: [{ name: 'new', description: '', inputSchema: { type: 'object' as const }, annotations: {} }] });
         iterator.push(msg);
         await new Promise((r) => setTimeout(r, 10));
         expect(disconnectToolSpy).toHaveBeenCalledWith('t1');
@@ -166,10 +163,18 @@ describe('RuntimeService', () => {
     it('logs error messages and ignores unknown', async () => {
         const { service, iterator } = createService();
         await service.start('test');
-        iterator.push(new NatsErrorMessage({ error: 'boom' }));
+        iterator.push(new ErrorResponse({ error: 'boom' }));
         // Unknown message: push a NatsMessage-like object with shouldRespond()
         iterator.push({ type: 'unknown', data: {}, shouldRespond: () => false } as unknown as NatsMessage);
         await new Promise((r) => setTimeout(r, 10));
         await service.stop('test');
+    });
+
+    it('unregisters handshake callback during shutdown', async () => {
+        const { service, identityService } = createService();
+        await service.start('test');
+        expect(identityService.onHandshake).toHaveBeenCalledWith('runtime', expect.any(Function));
+        await service.stop('test');
+        expect(identityService.offHandshake).toHaveBeenCalledWith('runtime', 'callback-id');
     });
 });

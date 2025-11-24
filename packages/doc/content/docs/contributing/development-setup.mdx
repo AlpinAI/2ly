@@ -1,16 +1,30 @@
 ---
-title: "Development Setup"
-description: "Set up your development environment"
+title: 'Development Setup'
+description: 'Set up your development environment for contributing to 2LY'
 draft: false
 ---
 
-Set up a local environment for contributing to 2LY.
+# For Developers & Contributors
+
+This guide is for **developing 2LY itself**—modifying the codebase, adding features, or fixing bugs.
+
+<Callout type="warn">
+  **Just want to use 2LY?** You're in the wrong place. See [Installation](/getting-started/installation) for production
+  setup (Docker-only, much simpler).
+</Callout>
+
+Set up a local environment for contributing to 2LY. This allows you to run the backend, frontend, and runtime locally with hot reload for rapid development.
+
+<Callout type="info">
+  **Quick Reference:** For complete development workflows and commands, see the
+  [dev/README.md](https://github.com/AlpinAI/2ly/blob/main/dev/README.md) in the repository.
+</Callout>
 
 ## Prerequisites
 
+**Required for development:**
+
 - Node.js 22+
-- npm
-- Git
 - Docker
 
 ## Setup
@@ -22,34 +36,116 @@ git clone https://github.com/YOUR_USERNAME/2ly.git
 cd 2ly
 ```
 
-### 2. Install and Start
+### 2. Install Dependencies
 
 ```bash
 npm install
-npm run start
 ```
 
-Application runs at http://localhost:8888
+### 3. Generate Cryptographic Keys (First Time Only)
 
-## Workflow
+```bash
+npm run setup-local
+```
 
-### Create Branch
+This generates cryptographic keys to `dev/.docker-keys/` that are shared between Docker services and local development processes. You only need to run this once - keys persist across sessions.
+
+<Callout type="info">
+  **What does this do?** Generates encryption keys, JWT signing keys, and NATS authentication tokens required for the backend and runtime to operate securely.
+</Callout>
+
+### 4. Start Development Environment
+
+**Start infrastructure services (Docker):**
+
+```bash
+npm run start:dev
+```
+
+This starts Dgraph, NATS, and other infrastructure services in Docker.
+
+**Run services locally (for development):**
+
+```bash
+# In separate terminals:
+npm run dev:backend    # Backend at http://localhost:3000
+npm run dev:frontend   # Frontend at http://localhost:8888
+npm run dev:main-runtime  # Runtime process
+```
+
+Running services locally provides hot reload and better debugging experience.
+
+<Callout type="info">
+  **Development Mode:** The infrastructure (Dgraph, NATS) runs in Docker while your code (backend, frontend, runtime)
+  runs locally with hot reload. This gives you the best of both worlds.
+</Callout>
+
+## Development Workflow
+
+### Create a Feature Branch
 
 ```bash
 git checkout -b feature/your-feature-name
 ```
 
+### Make Changes with Hot Reload
+
+When running services locally (`npm run dev:*`), changes to code will automatically reload:
+
+- **Backend**: Changes trigger restart with Nodemon
+- **Frontend**: Vite hot module replacement (HMR)
+- **Runtime**: Requires manual restart with `npm run dev:main-runtime`
+
 ### Run Tests
 
 ```bash
+# Run all tests
 npm run test
-npm run lint
+
+# Run tests in watch mode
+npm run test:watch
+
+# Run with coverage
+npm run test:cov
+
+# Run integration tests
+npm run test:integration
+
+# Run E2E tests
+npm run test:e2e
 ```
 
-### Build
+### Lint and Format
 
 ```bash
+# Lint all packages
+npm run lint
+
+# Format code
+npm run format
+
+# Type check
+npm run typecheck
+```
+
+### Build for Production
+
+```bash
+# Build all packages
 npm run build
+
+# Build specific package
+npm run build -w @2ly/backend
+npm run build -w @2ly/frontend
+npm run build -w @2ly/runtime
+```
+
+### Generate GraphQL Types
+
+After modifying GraphQL schemas:
+
+```bash
+npm run codegen
 ```
 
 ## Project Structure
@@ -63,10 +159,86 @@ packages/
   twoly/        # Python SDK
 ```
 
+## Development Services & Ports
+
+When running locally, these services are available:
+
+| Service         | Port | Description                      |
+| --------------- | ---- | -------------------------------- |
+| Frontend        | 8888 | React development server         |
+| Backend GraphQL | 3000 | Apollo Server (HTTP & WebSocket) |
+| Dgraph Ratel    | 8000 | Graph database UI                |
+| NATS Dashboard  | 8001 | Message broker monitoring        |
+| Dgraph Alpha    | 9080 | GraphQL endpoint                 |
+| NATS            | 4222 | Message broker                   |
+
 ## Troubleshooting
 
-- **Port conflicts**: Ports 8888, 4000, 4222 must be available
-- **Docker**: Ensure Docker is running
-- **Node version**: Use Node.js 22+
+**Port conflicts:**
 
-See [Contributing Guidelines](./issues-prs) for more.
+```bash
+# Check which ports are in use
+lsof -i :8888,3000,4222,8000,8001,9080
+
+# Kill processes on specific port
+kill -9 $(lsof -t -i:3000)
+```
+
+**Docker not running:**
+
+```bash
+# Check Docker status
+docker --version
+docker compose version
+
+# Start Docker Desktop (macOS)
+open -a Docker
+```
+
+**Node version issues:**
+
+```bash
+# Check Node version (must be 22+)
+node --version
+
+# Use nvm to switch versions
+nvm install 22
+nvm use 22
+```
+
+**Database issues:**
+
+```bash
+# Reset Dgraph database
+docker compose -f dev/docker-compose.dev.yml down -v
+docker compose -f dev/docker-compose.dev.yml up -d dgraph
+```
+
+**NATS connection issues:**
+
+```bash
+# Check NATS logs
+docker compose -f dev/docker-compose.dev.yml logs nats
+
+# Restart NATS
+docker compose -f dev/docker-compose.dev.yml restart nats
+```
+
+**Module not found errors:**
+
+```bash
+# Clean install
+rm -rf node_modules package-lock.json
+npm install
+```
+
+## Next Steps
+
+- [Development Guide](./development-guide) - Comprehensive development documentation
+- [Issues & PRs](./issues-prs) - How to contribute code
+- [dev/README.md](https://github.com/AlpinAI/2ly/blob/main/dev/README.md) - Complete command reference
+
+<Callout type="info">
+  **Need Help?** Join our [Discord community](https://discord.gg/2ly-ai) or [open an
+  issue](https://github.com/AlpinAI/2ly/issues) on GitHub.
+</Callout>

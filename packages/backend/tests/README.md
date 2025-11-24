@@ -9,8 +9,6 @@ tests/
 ├── integration/           # Integration test specs
 │   ├── api.spec.ts       # Backend API tests
 │   └── workspace-management.spec.ts  # Workspace management tests (skipped)
-├── fixtures/             # Test fixtures and utilities
-│   └── database.ts      # Database fixtures (graphql, reset, seed)
 ├── setup.ts             # Global setup for testcontainers
 └── README.md            # This file
 ```
@@ -52,7 +50,7 @@ This is a known issue with Dgraph's ACL configuration in Docker networks. The Dg
 
 ## Test Fixtures
 
-The `fixtures/database.ts` file provides utilities for tests:
+Test fixtures are now shared across the monorepo from `@2ly/common/test/fixtures`:
 
 - `graphql(query, variables)` - Execute GraphQL queries
 - `resetDatabase()` - Drop all data and reset to empty state
@@ -65,7 +63,7 @@ The `fixtures/database.ts` file provides utilities for tests:
 
 ```typescript
 import { describe, it, expect, beforeEach } from 'vitest';
-import { graphql, resetDatabase, seedDatabase, seedPresets } from '../fixtures/database';
+import { graphql, resetDatabase, seedDatabase, seedPresets } from '@2ly/common/test/fixtures';
 
 describe('My Feature Tests', () => {
   beforeEach(async () => {

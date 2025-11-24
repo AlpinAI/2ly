@@ -1,0 +1,20 @@
+# Get ToolSets Query
+# WHY: Fetch all tool sets for a workspace
+query GetToolSets($workspaceId: ID!) {
+  toolSets(workspaceId: $workspaceId) {
+    id
+    name
+    description
+    createdAt
+    updatedAt
+    mcpTools {
+      id
+      name
+      description
+      mcpServer {
+        id
+        name
+      }
+    }
+  }
+}

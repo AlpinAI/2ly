@@ -1,7 +1,7 @@
 import { inject, injectable } from 'inversify';
 import pino from 'pino';
 import { LoggerService, NatsService, Service } from '@2ly/common';
-import { IdentityService } from './identity.service';
+import { AuthService } from './auth.service';
 
 export const HEARTBEAT_INTERVAL = 'heartbeat.interval';
 
@@ -17,30 +17,30 @@ export class HealthService extends Service {
   constructor(
     @inject(LoggerService) private loggerService: LoggerService,
     @inject(NatsService) private natsService: NatsService,
-    @inject(IdentityService) private identityService: IdentityService,
+    @inject(AuthService) private authService: AuthService,
   ) {
     super();
     this.logger = this.loggerService.getLogger(this.name);
   }
 
   protected async initialize() {
-    const identity = this.identityService.getIdentity();
-    if (!identity.RID) {
-      throw new Error('RID not set');
+    const identity = this.authService.getIdentity();
+    if (!identity) {
+      throw new Error('Identity not set');
     }
     if (!this.natsService.isConnected()) {
       throw new Error('NATS not connected');
     }
     this.logger.info('Starting');
-    this.natsService.heartbeat(identity.RID, {});
+    this.natsService.heartbeat(identity.id!, {});
     this.heartbeatIntervalRef = setInterval(async () => {
-      const RID = this.identityService.getIdentity()?.RID;
-      if (!RID) {
+      if (!this.authService.getIdentity()) {
         // ignore
         return;
       }
-      this.natsService.heartbeat(RID, {});
+      this.natsService.heartbeat(identity.id!, {});
     }, this.heartbeatInterval);
+    this.logger.info(`Heartbeat started for ${identity.nature} ${identity.id}`);
   }
 
   protected async shutdown() {
@@ -48,9 +48,11 @@ export class HealthService extends Service {
     if (this.heartbeatIntervalRef) {
       clearInterval(this.heartbeatIntervalRef);
     }
-    const RID = this.identityService.getIdentity()?.RID;
-    if (RID) {
-      this.natsService.kill(RID);
+    const identity = this.authService.getIdentity();
+    this.logger.info(`Heartbeat stopped for ${identity?.nature ?? 'unknown nature'} ${identity?.id ?? 'unknown id'}`);
+    if (!identity) {
+      return;
     }
+    await this.natsService.kill(identity.id!);
   }
 }

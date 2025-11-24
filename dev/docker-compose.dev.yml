@@ -7,14 +7,15 @@ services:
     ports:
       - '4222:4222' # Client connections
       - '8222:8222' # HTTP monitoring
-    command: [ '--jetstream', '--store_dir=/data', '--http_port=8222', '--server_name=2ly-nats-01' ]
+    command: ['--jetstream', '--store_dir=/data/nats', '--http_port=8222', '--server_name=2ly-nats-01']
     volumes:
-      - nats_data:/data
+      - 2ly-data-dev:/data:rw
+      - ./.docker-keys:/keys:ro # Bind mount for operator.jwt access (future JWT auth)
     networks:
       - 2ly-network
     restart: unless-stopped
     healthcheck:
-      test: [ 'CMD', 'curl', '-f', 'http://localhost:8222/healthz' ]
+      test: ['CMD', 'curl', '-f', 'http://localhost:8222/healthz']
       interval: 10s
       timeout: 5s
       retries: 5
@@ -41,14 +42,14 @@ services:
     ports:
       - '5080:5080' # internal gRPC
       - '6080:6080' # HTTP
-    command: dgraph zero --my=dgraph-zero:5080
+    command: dgraph zero --my=dgraph-zero:5080 --wal=/data/dgraph/zero-wal
     volumes:
-      - dgraph_zero:/dgraph
+      - 2ly-data-dev:/data:rw
     networks:
       - 2ly-network
     restart: unless-stopped
     healthcheck:
-      test: [ 'CMD', 'curl', '-f', 'http://localhost:6080/health' ]
+      test: ['CMD', 'curl', '-f', 'http://localhost:6080/health']
       interval: 10s
       timeout: 5s
       retries: 5
@@ -62,9 +63,9 @@ services:
       - '7080:7080' # internal gRPC
       - '8080:8080' # HTTP/GraphQL
       - '9080:9080' # external gRPC private
-    command: dgraph alpha --my=dgraph-alpha:7080 --zero=dgraph-zero:5080 --security whitelist=0.0.0.0/0
+    command: dgraph alpha --my=dgraph-alpha:7080 --zero=dgraph-zero:5080 --security whitelist=0.0.0.0/0 --postings=/data/dgraph/postings --wal=/data/dgraph/wal
     volumes:
-      - dgraph_data:/dgraph
+      - 2ly-data-dev:/data:rw
     depends_on:
       dgraph-zero:
         condition: service_healthy
@@ -72,7 +73,7 @@ services:
       - 2ly-network
     restart: unless-stopped
     healthcheck:
-      test: [ 'CMD', 'curl', '-f', 'http://localhost:8080/health' ]
+      test: ['CMD', 'curl', '-f', 'http://localhost:8080/health']
       interval: 10s
       timeout: 5s
       retries: 5
@@ -95,14 +96,18 @@ services:
     container_name: 2ly-backend
     environment:
       - NODE_ENV=development
+      - AUTOGEN_KEYS=true
       - DGRAPH_URL=dgraph-alpha:8080
       - NATS_SERVERS=nats:4222
       - EXPOSED_NATS_SERVERS=localhost:4222
-      - ENCRYPTION_KEY=zR6xG6E9#h@dNquSM&DYwM#trbmn%nzR
+      - EXPOSED_REMOTE_MCP=http://localhost:3001
+      - JWT_PRIVATE_KEY_PATH=/keys/private.pem
+      - JWT_PUBLIC_KEY_PATH=/keys/public.pem
     ports:
       - 3000:3000
     volumes:
-      - backend_logs:/app/logs
+      - 2ly-data-dev:/data:ro
+      - ./.docker-keys:/keys:rw # Bind mount keys to /keys (read-write for generation)
     depends_on:
       nats:
         condition: service_started
@@ -112,7 +117,7 @@ services:
       - 2ly-network
     restart: unless-stopped
     healthcheck:
-      test: [ 'CMD', 'curl', '-f', 'http://localhost:3000/health' ]
+      test: ['CMD', 'curl', '-f', 'http://localhost:3000/health']
       interval: 5s
       timeout: 3s
       retries: 10
@@ -127,16 +132,25 @@ services:
       dockerfile: packages/runtime/Dockerfile
     container_name: 2ly-main-runtime
     environment:
+      - AUTOGEN_KEYS=true
       - NATS_SERVERS=nats:4222
       - RUNTIME_NAME=Main Runtime
-      - GLOBAL_RUNTIME=true
       - ROOTS=TEMP:/tmp
-      - AGENT_SERVER_TRANSPORT=stream
-      - AGENT_SERVER_TRANSPORT_PORT=3001
+      - JWT_PRIVATE_KEY_PATH=/keys/private.pem
+      - JWT_PUBLIC_KEY_PATH=/keys/public.pem
+      - REMOTE_PORT=3001
     ports:
       - 3001:3001
     volumes:
-      - main-runtime_logs:/app/logs
+      - 2ly-data-dev:/data:ro
+      - ./.docker-keys:/keys:ro # Bind mount keys to /keys (read-only)
+    depends_on:
+      backend:
+        condition: service_healthy
+      nats:
+        condition: service_started
+      dgraph-alpha:
+        condition: service_healthy
     networks:
       - 2ly-network
     restart: unless-stopped
@@ -176,15 +190,7 @@ services:
     restart: unless-stopped
 
 volumes:
-  nats_data:
-    driver: local
-  dgraph_data:
-    driver: local
-  dgraph_zero:
-    driver: local
-  backend_logs:
-    driver: local
-  main-runtime_logs:
+  2ly-data-dev:
     driver: local
 
 networks:

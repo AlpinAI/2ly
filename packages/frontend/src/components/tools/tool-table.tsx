@@ -7,12 +7,12 @@
  * COLUMNS:
  * - Name & Description
  * - Server
- * - # Agents
+ * - # Tool Sets
  * - Status
  *
  * FEATURES:
  * - Search by name/description
- * - Filter by server(s), agent(s)
+ * - Filter by server(s), tool set(s)
  * - Click row to select
  * - Highlight selected row
  */
@@ -35,10 +35,10 @@ export interface ToolTableProps {
   onSearchChange: (search: string) => void;
   serverFilter: string[];
   onServerFilterChange: (serverIds: string[]) => void;
-  agentFilter: string[];
-  onAgentFilterChange: (agentIds: string[]) => void;
+  toolSetFilter: string[];
+  onToolSetFilterChange: (toolSetIds: string[]) => void;
   availableServers: Array<{ id: string; name: string }>;
-  availableAgents: Array<{ id: string; name: string }>;
+  availableToolSets: Array<{ id: string; name: string }>;
   loading?: boolean;
 }
 
@@ -50,16 +50,16 @@ export function ToolTable({
   onSearchChange,
   serverFilter,
   onServerFilterChange,
-  agentFilter,
-  onAgentFilterChange,
+  toolSetFilter,
+  onToolSetFilterChange,
   availableServers,
-  availableAgents,
+  availableToolSets,
   loading,
 }: ToolTableProps) {
   const scrollToEntity = useScrollToEntity();
   const rowRefs = useRef<Map<string, HTMLTableRowElement>>(new Map());
 
-  const hasActiveFilters = search.length > 0 || serverFilter.length > 0 || agentFilter.length > 0;
+  const hasActiveFilters = search.length > 0 || serverFilter.length > 0 || toolSetFilter.length > 0;
 
   // Scroll to selected entity when ID changes and element is ready
   useEffect(() => {
@@ -76,7 +76,7 @@ export function ToolTable({
   const handleClearFilters = () => {
     onSearchChange('');
     onServerFilterChange([]);
-    onAgentFilterChange([]);
+    onToolSetFilterChange([]);
   };
 
   return (
@@ -97,9 +97,9 @@ export function ToolTable({
           <CheckboxDropdown
             label="Tool Set"
             placeholder="All tool sets"
-            items={availableAgents.map((a) => ({ id: a.id, label: a.name }))}
-            selectedIds={agentFilter}
-            onChange={onAgentFilterChange}
+            items={availableToolSets.map((ts) => ({ id: ts.id, label: ts.name }))}
+            selectedIds={toolSetFilter}
+            onChange={onToolSetFilterChange}
           />
 
           {hasActiveFilters && (
@@ -138,7 +138,7 @@ export function ToolTable({
                       Server
                     </th>
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                      Agents
+                      Tool Sets
                     </th>
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                       Status
@@ -168,7 +168,7 @@ export function ToolTable({
                         <div className="text-xs text-gray-500 dark:text-gray-400 line-clamp-1 max-w-md">{tool.description}</div>
                       </td>
                       <td className="px-4 py-3 text-sm text-gray-700 dark:text-gray-300">{tool.mcpServer.name}</td>
-                      <td className="px-4 py-3 text-sm text-gray-700 dark:text-gray-300">{tool.runtimes?.length || 0}</td>
+                      <td className="px-4 py-3 text-sm text-gray-700 dark:text-gray-300">{tool.toolSets?.length || 0}</td>
                       <td className="px-4 py-3 text-sm">
                         <span
                           className={`inline-flex items-center px-2 py-1 rounded text-xs font-medium ${

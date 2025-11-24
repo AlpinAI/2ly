@@ -1,4 +1,3 @@
-import { Subject } from 'rxjs';
 import { vi } from 'vitest';
 
 export class ControllableAsyncIterator<T> implements AsyncIterableIterator<T> {
@@ -46,9 +45,4 @@ export class FakeNatsSubscription<T> implements AsyncIterable<T> {
     unsubscribe = vi.fn();
     drain = vi.fn(async () => { });
     isClosed = vi.fn(() => false);
-}
-
-export function createSubjectObservable<T>() {
-    const subject = new Subject<T>();
-    return { subject, observable: subject.asObservable() };
 }

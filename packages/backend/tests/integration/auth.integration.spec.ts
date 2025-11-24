@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { describe, it, expect, beforeEach } from 'vitest';
-import { graphql, resetDatabase } from '../fixtures/database';
+import { graphql, resetDatabase } from '@2ly/common/test/fixtures';
 
 /**
  * Authentication Integration Tests

@@ -11,10 +11,11 @@
   ],
   "scripts": {
     "build": "npm run build --workspaces --if-present",
-    "start": "docker compose -f docker-compose.yml up -d --pull=always",
-    "start:dev": "npm run build && docker compose -f dev/docker-compose.dev.yml up -d --build",
-    "start:dev:full": "npm run build && docker compose -f dev/docker-compose.dev.yml --profile all up -d --build",
-    "clean:volumes": "docker compose down -v",
+    "start": "docker compose up -d --pull=always",
+    "start:dev": "docker compose -f dev/docker-compose.dev.yml up -d --build",
+    "start:dev:full": "docker compose -f dev/docker-compose.dev.yml --profile all up -d --build",
+    "clean:volumes": "docker compose down -v && docker compose -f docker-compose.yml down -v",
+    "setup-local": "sh ./generate-keys.sh",
     "lint": "npm run lint --workspaces --if-present",
     "lint:full": "npm run lint:full --workspaces --if-present",
     "typecheck": "npm run typecheck --workspaces --if-present",
@@ -24,13 +25,12 @@
     "codegen:mcp-registry": "npm run codegen:mcp-registry -w @2ly/common",
     "dev:backend": "npm run dev -w @2ly/backend",
     "dev:frontend": "npm run dev -w @2ly/frontend",
-    "dev:main-runtime": "ROOTS=TEMP:/tmp RUNTIME_NAME=\"Main Runtime\" GLOBAL_RUNTIME=true node packages/runtime/dist/index.js",
-    "dev:tool-edge": "ROOTS=TEMP:/tmp RUNTIME_NAME=\"Local Edge\" node packages/runtime/dist/index.js",
+    "dev:main-runtime": "ROOTS=TEMP:/tmp RUNTIME_NAME=\"Main Runtime\" REMOTE_PORT=3001 node packages/runtime/dist/index.js",
+    "dev:toolset": "TOOLSET_NAME=\"Test Toolset\" node packages/runtime/dist/index.js",
     "dev:doc": "cd packages/doc && npm run dev",
-    "agent:inspect": "npx -y @modelcontextprotocol/inspector --config packages/runtime/mcp.config.json --server 2ly-stdio",
-    "agent:inspect:sse": "npx -y @modelcontextprotocol/inspector --config packages/runtime/mcp.config.json --server 2ly-sse",
-    "agent:inspect:stream": "npx -y @modelcontextprotocol/inspector --config packages/runtime/mcp.config.json --server 2ly-stream",
-    "agent:inspect:saas": "npx -y @modelcontextprotocol/inspector --config packages/runtime/mcp.config.json --server 2ly-saas",
+    "agent:inspect": "dotenv -e .docker-keys/.env.generated -- npx -y @modelcontextprotocol/inspector --config packages/runtime/mcp.config.json --server 2ly-stdio",
+    "agent:inspect:sse": "dotenv -e .docker-keys/.env.generated -- npx -y @modelcontextprotocol/inspector --config packages/runtime/mcp.config.json --server 2ly-sse",
+    "agent:inspect:stream": "dotenv -e .docker-keys/.env.generated -- npx -y @modelcontextprotocol/inspector --config packages/runtime/mcp.config.json --server 2ly-stream",
     "agent:stream": "RUNTIME_NAME=agent.007 AGENT_SERVER_TRANSPORT=stream AGENT_SERVER_TRANSPORT_PORT=3001 node packages/runtime/dist/index.js",
     "publish:runtime:check": "npm run lint -w @2ly/runtime && npm run format:check -w @2ly/runtime && npm run build -w @2ly/runtime && npm run test",
     "publish:runtime:patch": "npm run publish:runtime:check && npm version patch -w @2ly/runtime && npm publish -w @2ly/runtime",
@@ -49,6 +49,7 @@
     "test:e2e:full": "npm run test:e2e:full -w @2ly/frontend",
     "test:e2e:chromium": "npm run test:e2e:chromium -w @2ly/frontend",
     "test:e2e:no-build": "npm run test:e2e:no-build -w @2ly/frontend",
+    "test:e2e:rm": "docker rm --force $(docker ps --filter label=org.testcontainers=true --quiet) && docker rmi --force $(docker images --filter label=org.testcontainers=true --quiet)",
     "bump-version": "node scripts/bump-version.js",
     "bump-version:patch": "node scripts/bump-version.js patch",
     "bump-version:minor": "node scripts/bump-version.js minor",
@@ -61,7 +62,9 @@
     "@rollup/plugin-commonjs": "^28.0.2",
     "@types/ws": "^8.18.1",
     "@typescript-eslint/eslint-plugin": "^8.24.1",
+    "@vitejs/plugin-react-swc": "^4.1.0",
     "@vitest/coverage-v8": "^3.2.4",
+    "dotenv-cli": "^11.0.0",
     "esbuild": "^0.25.0",
     "esbuild-plugin-copy": "^2.1.1",
     "esbuild-plugin-tsc": "^0.5.0",
@@ -69,6 +72,7 @@
     "eslint-config-prettier": "^10.0.1",
     "eslint-formatter-unix": "^8.40.0",
     "inversify": "^7.0.0-alpha.5",
+    "jsdom": "^27.0.0",
     "openapi-typescript": "^7.9.1",
     "pino-pretty": "^13.0.0",
     "prettier": "^3.5.1",
@@ -78,9 +82,7 @@
     "typescript": "^5.8.3",
     "vite": "^7.1.11",
     "vite-tsconfig-paths": "^5.1.4",
-    "vitest": "^3.2.4",
-    "@vitejs/plugin-react-swc": "^4.1.0",
-    "jsdom": "^27.0.0"
+    "vitest": "^3.2.4"
   },
   "dependencies": {
     "@graphql-tools/schema": "^10.0.23",
@@ -104,6 +106,7 @@
   },
   "overrides": {
     "react": "^19.2.0",
-    "react-dom": "^19.2.0"
+    "react-dom": "^19.2.0",
+    "zod-to-json-schema": "3.24.6"
   }
 }

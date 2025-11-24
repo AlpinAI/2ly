@@ -12,8 +12,8 @@ export const getHostIP = () => {
       }
     }
     return '127.0.0.1';
-  } catch (error) {
-    console.error('Failed to get host IP:', error);
+  } catch {
+    // Silently fallback to localhost if network interfaces can't be enumerated
     return '127.0.0.1';
   }
 };

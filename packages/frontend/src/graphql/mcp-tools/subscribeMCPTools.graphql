@@ -1,0 +1,25 @@
+# Subscribe to MCP Tools
+# WHY: Real-time monitoring of MCP tools with full details including toolSet relationships
+subscription SubscribeMCPTools($workspaceId: ID!) {
+  mcpTools(workspaceId: $workspaceId) {
+    id
+    name
+    description
+    inputSchema
+    annotations
+    status
+    createdAt
+    lastSeenAt
+    mcpServer {
+      id
+      name
+      description
+      repositoryUrl
+    }
+    toolSets {
+      id
+      name
+      description
+    }
+  }
+}

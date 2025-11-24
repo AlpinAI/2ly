@@ -1,0 +1,268 @@
+---
+title: The Stack
+description: Technical architecture and components of the 2LY platform
+draft: false
+---
+
+2LY is built on a distributed, message-based architecture that enables flexible deployment and scalable tool orchestration.
+
+## Architecture Overview
+
+Unlike traditional gateways that proxy HTTP requests to fixed endpoints, 2LY uses **message-based pub-sub** where runtimes register dynamically from anywhere. Agents publish requests to topics; the broker routes to available runtimes regardless of location (cloud, edge, behind NAT).
+
+This architecture enables:
+- **Message persistence** - No request loss during deployments
+- **Async communication** - Fan-out queries to multiple runtimes
+- **Automatic failover** - Route to healthy runtimes automatically
+- **Zero-downtime deployments** - Update services without interruption
+- **No orchestration code needed** - Infrastructure handles routing
+
+## Core Components
+
+### 1. Runtimes
+
+**Purpose:** Lightweight execution environments that run MCP servers and execute tools.
+
+**Key Features:**
+- Run anywhere: cloud, edge, on-premise, behind NAT
+- Auto-register capabilities with backend
+- Multiple transports: STDIO, SSE, WebSocket
+- Isolated execution for security
+- Published as npm package: `@2ly/runtime`
+
+**Deployment Options:**
+- Docker containers
+- Kubernetes pods
+- Bare metal servers
+- Edge devices
+- Developer workstations
+
+**Port:** None required (connects outbound to NATS)
+
+### 2. Message Broker (NATS)
+
+**Purpose:** Handles all agent-to-runtime communication through pub-sub messaging.
+
+**Key Features:**
+- Complete decoupling of agent and runtime locations
+- Message persistence with JetStream
+- At-least-once delivery guarantees
+- Subject-based routing
+- Built-in monitoring dashboard
+
+**Technology:** NATS with JetStream enabled
+
+**Port:** 4222 (TCP), 8001 (HTTP monitoring dashboard)
+
+**Topics:**
+- `tool.call.request` - Agent publishes tool execution requests
+- `tool.call.response` - Runtime publishes execution results
+- `runtime.register` - Runtime announces capabilities
+- `runtime.heartbeat` - Runtime health checks
+
+### 3. Registry & Discovery (Dgraph)
+
+**Purpose:** Graph database storing runtime capabilities, tool schemas, and deployment topology.
+
+**Key Features:**
+- Fast relationship queries (which runtime has which tools)
+- Real-time capability updates
+- Version tracking for tools and runtimes
+- Workspace isolation
+- GraphQL API for queries
+
+**Technology:** Dgraph (distributed graph database)
+
+**Ports:**
+- 9080 (GraphQL endpoint)
+- 8000 (Ratel UI for database management)
+
+**Key Schemas:**
+- Workspaces (multi-tenancy)
+- MCP Servers (tool sources)
+- Toolsets (curated tool collections)
+- Runtimes (execution environments)
+- Tool Calls (observability)
+
+### 4. Backend (Orchestrator)
+
+**Purpose:** Orchestrates runtime lifecycle, enforces routing policies, provides authentication, rate limiting, and observability.
+
+**Key Features:**
+- GraphQL API (queries, mutations, subscriptions)
+- WebSocket for real-time updates
+- Authentication & authorization
+- Tool call routing logic
+- Runtime health monitoring
+- Analytics and observability
+
+**Technology:** Node.js with Fastify + Apollo Server
+
+**Port:** 3000 (HTTP & WebSocket)
+
+**Endpoints:**
+- `/graphql` - GraphQL API
+- `/mcp` - MCP protocol endpoint for agents
+- `/health` - Health check
+
+### 5. User Interface
+
+**Purpose:** Workspace for configuration, management, and monitoring of tools and runtimes.
+
+**Key Features:**
+- Workspace management
+- MCP server browser and configuration
+- Toolset creation and curation
+- Tool tester (test tools before agent integration)
+- Real-time observability dashboard
+- Runtime monitoring
+
+**Technology:** React + Vite + Tailwind CSS
+
+**Port:** 8888 (HTTP)
+
+## Docker Images
+
+2LY provides pre-built Docker images for all components:
+
+| Component | Image | Port | Purpose |
+|-----------|-------|------|---------|
+| Backend | `2ly/backend` | 3000 | Orchestration & API |
+| Frontend | `2ly/frontend` | 8888 | User interface |
+| Runtime | `2ly/runtime` | - | Tool execution |
+| NATS | `nats:latest` | 4222 | Message broker |
+| Dgraph | `dgraph/standalone` | 9080 | Database |
+
+## Deployment Configurations
+
+### Production Setup
+
+The repository includes `docker-compose.yml` for production deployment:
+
+```bash
+docker compose up -d
+```
+
+**Included services:**
+- Backend
+- Frontend
+- Runtime (single instance)
+- NATS with JetStream
+- Dgraph
+
+**Volumes:**
+- `2ly-internal` - Encrypted keys (isolated from host)
+- `dgraph-data` - Database persistence
+- `nats-data` - Message persistence
+
+**Networks:**
+- `2ly-network` - Internal service communication
+
+### Development Setup
+
+For development, use `dev/docker-compose.dev.yml`:
+
+```bash
+npm run start:dev
+```
+
+**Differences from production:**
+- Shared key directory (`dev/.docker-keys/`) via bind mount
+- Additional monitoring tools
+- Development-optimized configurations
+- Local code bind mounts for hot reload
+
+See [Development Setup](/contributing/development-setup) for details.
+
+## Distributed Deployment
+
+2LY's architecture supports various distributed deployment patterns:
+
+### Geographic Distribution
+
+Deploy runtimes in multiple regions:
+- US runtime: Handles North American agents
+- EU runtime: Handles European agents (data residency)
+- APAC runtime: Low latency for Asian markets
+
+All runtimes connect to central NATS broker and register capabilities.
+
+### Workload Isolation
+
+Separate runtimes by environment or team:
+- Production runtime: High availability, monitoring
+- Staging runtime: Testing new tools
+- Development runtime: Rapid iteration
+
+### Hybrid Cloud
+
+Mix deployment locations:
+- Backend + NATS + Dgraph: Cloud (AWS/GCP/Azure)
+- Runtimes: On-premise (behind firewall, access internal APIs)
+- Frontend: CDN for global access
+
+Runtimes connect outbound to NATS (no inbound firewall rules needed).
+
+## Security Considerations
+
+### Encryption
+
+- **Keys at rest:** Encrypted in volume (production) or bind mount (dev)
+- **Transit:** TLS for all network communication (configure in production)
+- **API keys:** Stored encrypted in database
+
+### Network Isolation
+
+- Services communicate on private Docker network
+- Only frontend and backend exposed to host
+- Runtimes don't need public IPs (connect outbound)
+
+### Multi-Tenancy
+
+- Workspace isolation in database
+- Toolset-level access control
+- Runtime registration per workspace
+
+## Monitoring & Observability
+
+### Built-in Tools
+
+- **NATS Dashboard** (port 8001): Message flow, queue depths
+- **Dgraph Ratel** (port 8000): Database queries, schema
+- **Backend Logs:** Structured JSON with Pino
+- **Frontend Analytics:** Tool usage, success rates
+
+### External Integrations
+
+Backend exposes metrics for:
+- Prometheus (metrics endpoint)
+- OpenTelemetry (distributed tracing)
+- Log aggregation (JSON structured logs)
+
+## Scaling Strategies
+
+### Horizontal Scaling
+
+- **Runtimes:** Add more instances (auto-balance via NATS)
+- **Backend:** Multiple replicas behind load balancer
+- **Frontend:** Static assets on CDN
+
+### Vertical Scaling
+
+- **Dgraph:** Increase memory for larger graphs
+- **NATS:** Tune JetStream settings for message throughput
+- **Backend:** Increase Node.js heap size
+
+### Database Optimization
+
+- Query optimization with GraphQL field selection
+- Database indexes on frequent queries
+- Connection pooling in backend
+
+## Further Reading
+
+- [NATS Messaging](/deep-dive/nats-messaging) - Message broker architecture
+- [Database Schema](/deep-dive/database-schema) - Dgraph schema details
+- [Runtime Implementation](/deep-dive/runtime-implementation) - How runtimes work
+- [Deployment Guide](/deployment/platform) - Production deployment
+- [Security Guide](/runtime-deployment/security-guide) - Security best practices

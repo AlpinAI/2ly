@@ -25,7 +25,9 @@ describe('RuntimeRepository', () => {
         loggerService = {
             getLogger: vi.fn().mockReturnValue({
                 debug: vi.fn(),
+                info: vi.fn(),
                 warn: vi.fn(),
+                error: vi.fn(),
             }),
         } as unknown as LoggerService;
         natsService = {
@@ -34,6 +36,8 @@ describe('RuntimeRepository', () => {
         } as unknown as NatsService;
         workspaceRepository = {
             checkAndCompleteStep: vi.fn().mockResolvedValue(undefined),
+            getRuntimes: vi.fn().mockResolvedValue([{ id: 'r1', name: 'Test Runtime' }]),
+            setGlobalRuntime: vi.fn().mockResolvedValue(undefined),
         } as unknown as WorkspaceRepository;
         runtimeRepository = new RuntimeRepository(
             dgraphService as unknown as DGraphService,
@@ -49,7 +53,7 @@ describe('RuntimeRepository', () => {
 
         dgraphService.mutation.mockResolvedValue({ addRuntime: { runtime: [runtime] } });
 
-        const result = await runtimeRepository.create('Test Runtime', 'Description', 'ACTIVE', 'w1', ['tool']);
+        const result = await runtimeRepository.create('Test Runtime', 'Description', 'ACTIVE', 'w1', 'MCP');
 
         expect(dgraphService.mutation).toHaveBeenCalledWith(
             expect.any(Object),
@@ -57,8 +61,8 @@ describe('RuntimeRepository', () => {
                 name: 'Test Runtime',
                 description: 'Description',
                 status: 'ACTIVE',
+                type: 'MCP',
                 workspaceId: 'w1',
-                capabilities: ['tool'],
             })
         );
         expect(result.id).toBe('r1');
@@ -194,7 +198,7 @@ describe('RuntimeRepository', () => {
         const mcpServer = { id: 's1', runOn: 'AGENT' } as unknown as dgraphResolversTypes.McpServer;
         const runtime = {
             id: 'r1',
-            mcpToolCapabilities: [{ mcpServer }]
+            mcpServers: [mcpServer]
         } as unknown as dgraphResolversTypes.Runtime;
         const subject = new Subject<dgraphResolversTypes.Runtime>();
         dgraphService.observe.mockReturnValue(subject.asObservable());
@@ -257,7 +261,11 @@ describe('RuntimeRepository', () => {
         const runtime = { id: 'r1', status: 'ACTIVE' } as unknown as dgraphResolversTypes.Runtime;
         dgraphService.mutation.mockResolvedValue({ updateRuntime: { runtime: [runtime] } });
 
-        const result = await runtimeRepository.setActive('r1', 'pid123', '192.168.1.1', 'hostname');
+        const result = await runtimeRepository.setActive('r1', {
+            pid: 'pid123',
+            hostIP: '192.168.1.1',
+            hostname: 'hostname',
+        });
 
         expect(dgraphService.mutation).toHaveBeenCalledWith(
             expect.any(Object),
@@ -277,7 +285,10 @@ describe('RuntimeRepository', () => {
 
         const result = await runtimeRepository.updateLastSeen('r1');
 
-        expect(dgraphService.mutation).toHaveBeenCalledWith(expect.any(Object), { id: 'r1' });
+        expect(dgraphService.mutation).toHaveBeenCalledWith(
+            expect.any(Object),
+            expect.objectContaining({ id: 'r1', now: expect.any(String) })
+        );
         expect(result.id).toBe('r1');
     });
 
@@ -302,80 +313,6 @@ describe('RuntimeRepository', () => {
             .rejects.toThrow('Invalid root');
     });
 
-    it('setCapabilities validates and sets runtime capabilities', async () => {
-        const runtime = {
-            id: 'r1',
-            capabilities: ['tool', 'agent'],
-            workspace: null,
-            mcpToolCapabilities: []
-        } as unknown as dgraphResolversTypes.Runtime;
-        const capabilities = ['tool', 'agent'];
-        dgraphService.mutation.mockResolvedValue({ updateRuntime: { runtime: [runtime] } });
-        dgraphService.query.mockResolvedValue({ getRuntime: runtime });
-
-        const result = await runtimeRepository.setCapabilities('r1', capabilities);
-
-        expect(dgraphService.mutation).toHaveBeenCalledWith(
-            expect.any(Object),
-            { id: 'r1', capabilities }
-        );
-        expect(result.id).toBe('r1');
-    });
-
-    it('setCapabilities does not trigger onboarding when agent has no tools', async () => {
-        const runtime = {
-            id: 'r1',
-            capabilities: ['agent'],
-            workspace: { id: 'w1' },
-            mcpToolCapabilities: []
-        } as unknown as dgraphResolversTypes.Runtime;
-        dgraphService.mutation.mockResolvedValue({ updateRuntime: { runtime: [runtime] } });
-        dgraphService.query.mockResolvedValue({ getRuntime: runtime });
-
-        const result = await runtimeRepository.setCapabilities('r1', ['agent']);
-
-        expect(result.id).toBe('r1');
-        expect((workspaceRepository.checkAndCompleteStep as unknown as ReturnType<typeof vi.fn>)).not.toHaveBeenCalled();
-    });
-
-    it('setCapabilities completes onboarding steps when agent has tools', async () => {
-        const runtime = {
-            id: 'r1',
-            capabilities: ['agent'],
-            workspace: { id: 'w1' },
-            mcpToolCapabilities: [{ id: 'tc1' }]
-        } as unknown as dgraphResolversTypes.Runtime;
-        dgraphService.mutation.mockResolvedValue({ updateRuntime: { runtime: [runtime] } });
-        dgraphService.query.mockResolvedValue({ getRuntime: runtime });
-
-        const result = await runtimeRepository.setCapabilities('r1', ['agent']);
-
-        expect(result.id).toBe('r1');
-        expect((workspaceRepository.checkAndCompleteStep as unknown as ReturnType<typeof vi.fn>)).toHaveBeenCalledWith('w1', 'create-tool-set');
-        expect((workspaceRepository.checkAndCompleteStep as unknown as ReturnType<typeof vi.fn>)).toHaveBeenCalledWith('w1', 'connect-tool-set-to-agent');
-    });
-
-    it('setCapabilities does not trigger onboarding when not agent capability', async () => {
-        const runtime = {
-            id: 'r1',
-            capabilities: ['tool'],
-            workspace: { id: 'w1' },
-            mcpToolCapabilities: [{ id: 'tc1' }]
-        } as unknown as dgraphResolversTypes.Runtime;
-        dgraphService.mutation.mockResolvedValue({ updateRuntime: { runtime: [runtime] } });
-
-        const result = await runtimeRepository.setCapabilities('r1', ['tool']);
-
-        expect(result.id).toBe('r1');
-        expect((workspaceRepository.checkAndCompleteStep as unknown as ReturnType<typeof vi.fn>)).not.toHaveBeenCalled();
-    });
-
-    it('setCapabilities throws error for invalid capability', async () => {
-        const invalidCapabilities = ['invalid'];
-
-        await expect(runtimeRepository.setCapabilities('r1', invalidCapabilities))
-            .rejects.toThrow('Invalid capability: invalid');
-    });
 
     it('findByName returns runtime by name in workspace', async () => {
         const runtime = { id: 'r1', name: 'test-runtime' } as unknown as dgraphResolversTypes.Runtime;
@@ -400,65 +337,8 @@ describe('RuntimeRepository', () => {
         expect(result).toBeUndefined();
     });
 
-    it('linkMCPToolToRuntime links tool to runtime', async () => {
-        const runtime = { id: 'r1', capabilities: ['tool'], workspace: null } as unknown as dgraphResolversTypes.Runtime;
-        dgraphService.mutation.mockResolvedValue({ updateRuntime: { runtime: [runtime] } });
-        dgraphService.query.mockResolvedValue({ getRuntime: runtime });
-
-        const result = await runtimeRepository.linkMCPToolToRuntime('t1', 'r1');
-
-        expect(dgraphService.mutation).toHaveBeenCalledWith(
-            expect.any(Object),
-            { mcpToolId: 't1', runtimeId: 'r1' }
-        );
-        expect(result.id).toBe('r1');
-    });
-
-    it('linkMCPToolToRuntime completes onboarding steps when agent runtime', async () => {
-        const runtime = {
-            id: 'r1',
-            capabilities: ['agent'],
-            workspace: { id: 'w1' }
-        } as unknown as dgraphResolversTypes.Runtime;
-        dgraphService.mutation.mockResolvedValue({ updateRuntime: { runtime: [runtime] } });
-        dgraphService.query.mockResolvedValue({ getRuntime: runtime });
-
-        const result = await runtimeRepository.linkMCPToolToRuntime('t1', 'r1');
-
-        expect(result.id).toBe('r1');
-        expect((workspaceRepository.checkAndCompleteStep as unknown as ReturnType<typeof vi.fn>)).toHaveBeenCalledWith('w1', 'create-tool-set');
-        expect((workspaceRepository.checkAndCompleteStep as unknown as ReturnType<typeof vi.fn>)).toHaveBeenCalledWith('w1', 'connect-tool-set-to-agent');
-    });
-
-    it('linkMCPToolToRuntime does not complete step when not agent runtime', async () => {
-        const runtime = {
-            id: 'r1',
-            capabilities: ['tool'],
-            workspace: { id: 'w1' }
-        } as unknown as dgraphResolversTypes.Runtime;
-        dgraphService.mutation.mockResolvedValue({ updateRuntime: { runtime: [runtime] } });
-        dgraphService.query.mockResolvedValue({ getRuntime: runtime });
-
-        await runtimeRepository.linkMCPToolToRuntime('t1', 'r1');
-
-        expect((workspaceRepository.checkAndCompleteStep as unknown as ReturnType<typeof vi.fn>)).not.toHaveBeenCalled();
-    });
-
-    it('unlinkMCPToolFromRuntime unlinks tool from runtime', async () => {
-        const runtime = { id: 'r1' } as unknown as dgraphResolversTypes.Runtime;
-        dgraphService.mutation.mockResolvedValue({ updateRuntime: { runtime: [runtime] } });
-
-        const result = await runtimeRepository.unlinkMCPToolFromRuntime('t1', 'r1');
-
-        expect(dgraphService.mutation).toHaveBeenCalledWith(
-            expect.any(Object),
-            { mcpToolId: 't1', runtimeId: 'r1' }
-        );
-        expect(result.id).toBe('r1');
-    });
-
-    it('observeCapabilities returns runtime capabilities', async () => {
-        const runtime = { id: 'r1', capabilities: ['tool'] } as unknown as dgraphResolversTypes.Runtime;
+    it('observeCapabilities returns runtime with tools', async () => {
+        const runtime = { id: 'r1', type: 'MCP' } as unknown as dgraphResolversTypes.Runtime;
         const subject = new Subject<dgraphResolversTypes.Runtime>();
         dgraphService.observe.mockReturnValue(subject.asObservable());
 

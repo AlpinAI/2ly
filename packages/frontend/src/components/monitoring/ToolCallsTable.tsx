@@ -29,6 +29,7 @@ import { useScrollToEntity } from '@/hooks/useScrollToEntity';
 interface ToolCall {
   id: string;
   status: ToolCallStatus;
+  isTest: boolean;
   calledAt: Date;
   completedAt: Date | null;
   mcpTool: {
@@ -37,9 +38,9 @@ interface ToolCall {
       name: string;
     };
   };
-  calledBy: {
+  calledBy?: {
     name: string;
-  };
+  } | null;
 }
 
 interface ToolCallsTableProps {
@@ -301,7 +302,7 @@ export function ToolCallsTable({
                     <div className="text-sm font-medium text-gray-900 dark:text-white">{call.mcpTool.name}</div>
                     <div className="text-xs text-gray-500 dark:text-gray-400">{call.mcpTool.mcpServer.name}</div>
                   </td>
-                  <td className="px-4 py-3 text-sm text-gray-700 dark:text-gray-300">{call.calledBy.name}</td>
+                  <td className="px-4 py-3 text-sm text-gray-700 dark:text-gray-300">{call.isTest ? 'Test' : ''} {call.calledBy?.name}</td>
                   <td className="px-4 py-3 text-xs text-gray-500 dark:text-gray-400">
                     {formatDate(call.calledAt)}
                   </td>

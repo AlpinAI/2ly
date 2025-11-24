@@ -5,20 +5,20 @@ export const ADD_RUNTIME = gql`
     $name: String!
     $description: String!
     $status: ActiveStatus!
+    $type: RuntimeType!
     $createdAt: DateTime!
     $lastSeenAt: DateTime!
     $workspaceId: ID!
-    $capabilities: [String!]!
   ) {
     addRuntime(
       input: {
         name: $name
         description: $description
         status: $status
+        type: $type
         createdAt: $createdAt
         lastSeenAt: $lastSeenAt
         workspace: { id: $workspaceId }
-        capabilities: $capabilities
       }
     ) {
       runtime {
@@ -26,9 +26,9 @@ export const ADD_RUNTIME = gql`
         name
         description
         status
+        type
         createdAt
         lastSeenAt
-        capabilities
         workspace {
           id
           name
@@ -46,9 +46,9 @@ export const UPDATE_RUNTIME = gql`
         name
         description
         status
+        type
         createdAt
         lastSeenAt
-        capabilities
         workspace {
           id
           name
@@ -100,13 +100,13 @@ export const GET_RUNTIME = gql`
       name
       description
       status
+      type
       createdAt
       lastSeenAt
       processId
       hostIP
       hostname
       mcpClientName
-      capabilities
       roots
       workspace {
         id
@@ -141,26 +141,48 @@ export const GET_RUNTIME_EDGE_MCP_SERVERS = gql`
   }
 `;
 
-export const GET_RUNTIME_AGENT_MCP_SERVERS = gql`
+export const GET_RUNTIME_AGENT_MCP_SERVERS_BY_LINK = gql`
   query getRuntime($id: ID!) {
     getRuntime(id: $id) {
       id
-      mcpToolCapabilities {
+      mcpServers(filter: { runOn: { eq: AGENT } }) {
         id
-        mcpServer {
+        name
+        description
+        transport
+        config
+        runOn
+        tools {
           id
           name
           description
-          transport
-          config
-          runOn
-          tools {
-            id
-            name
-            description
-            inputSchema
-            annotations
-          }
+          inputSchema
+          annotations
+        }
+      }
+    }
+  }
+`;
+
+export const GET_RUNTIME_ALL_TOOLS = gql`
+  query getRuntime($id: ID!) {
+    getRuntime(id: $id) {
+      id
+      workspace {
+        id
+        globalRuntime {
+          id
+        }
+      }
+      mcpServers {
+        id
+        tools(filter: { status: { eq: ACTIVE } }) {
+          id
+          name
+          description
+          inputSchema
+          annotations
+          status
         }
       }
     }
@@ -304,8 +326,8 @@ export const SET_RUNTIME_ACTIVE = gql`
 `;
 
 export const UPDATE_RUNTIME_LAST_SEEN = gql`
-  mutation updateRuntimeLastSeen($id: ID!) {
-    updateRuntime(input: { filter: { id: [$id] }, set: { lastSeenAt: "${new Date().toISOString()}" } }) {
+  mutation updateRuntimeLastSeen($id: ID!, $now: DateTime!) {
+    updateRuntime(input: { filter: { id: [$id] }, set: { lastSeenAt: $now } }) {
       runtime {
         id
         lastSeenAt
@@ -399,73 +421,3 @@ export const SET_ROOTS = gql`
   }
 `;
 
-export const SET_MCP_CLIENT_NAME = gql`
-  mutation setMcpClientName($id: ID!, $mcpClientName: String!) {
-    updateRuntime(input: { filter: { id: [$id] }, set: { mcpClientName: $mcpClientName } }) {
-      runtime {
-        id
-        mcpClientName
-      }
-    }
-  }
-`;
-
-export const LINK_MCP_TOOL = gql`
-  mutation linkMCPTool($mcpToolId: ID!, $runtimeId: ID!) {
-    updateRuntime(input: { filter: { id: [$runtimeId] }, set: { mcpToolCapabilities: { id: $mcpToolId } } }) {
-      runtime {
-        id
-        name
-        description
-        mcpToolCapabilities {
-          id
-          name
-        }
-      }
-    }
-  }
-`;
-
-export const UNLINK_MCP_TOOL = gql`
-  mutation unlinkMCPTool($mcpToolId: ID!, $runtimeId: ID!) {
-    updateRuntime(input: { filter: { id: [$runtimeId] }, remove: { mcpToolCapabilities: { id: $mcpToolId } } }) {
-      runtime {
-        id
-        name
-        mcpToolCapabilities {
-          id
-          name
-        }
-      }
-    }
-  }
-`;
-
-export const QUERY_RUNTIME_MCP_TOOLS = gql`
-  query getRuntime($id: ID!) {
-    getRuntime(id: $id) {
-      id
-      name
-      status
-      mcpToolCapabilities(filter: { status: { eq: ACTIVE } }) {
-        id
-        name
-        description
-        inputSchema
-        annotations
-        status
-      }
-    }
-  }
-`;
-
-export const SET_RUNTIME_CAPABILITIES = gql`
-  mutation setRuntimeCapabilities($id: ID!, $capabilities: [String!]!) {
-    updateRuntime(input: { filter: { id: [$id] }, set: { capabilities: $capabilities } }) {
-      runtime {
-        id
-        capabilities
-      }
-    }
-  }
-`;

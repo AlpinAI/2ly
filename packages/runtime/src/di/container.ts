@@ -14,49 +14,127 @@ import {
 } from '@2ly/common';
 import { MainService } from '../services/runtime.main.service';
 import {
-  IdentityService,
-  IDENTITY_NAME,
-  WORKSPACE_ID,
-  AGENT_CAPABILITY,
-  TOOL_CAPABILITY,
-} from '../services/identity.service';
+  AuthService,
+} from '../services/auth.service';
 import { HealthService, HEARTBEAT_INTERVAL } from '../services/runtime.health.service';
 import { ToolClientService } from '../services/tool.client.service';
 import { ToolServerService, type ToolServerServiceFactory } from '../services/tool.server.service';
-import { ROOTS, ToolService, GLOBAL_RUNTIME } from '../services/tool.service';
-import { AgentService } from '../services/agent.service';
-import {
-  AgentServerService,
-  AGENT_SERVER_TRANSPORT,
-  AGENT_SERVER_TRANSPORT_PORT,
-} from '../services/agent.server.service';
+import { ToolService } from '../services/tool.service';
+import { McpStdioService } from '../services/mcp.stdio.service';
+import { McpSseService } from '../services/mcp.sse.service';
+import { McpStreamableService } from '../services/mcp.streamable.service';
+import { FastifyManagerService } from '../services/fastify.manager.service';
+import { type RuntimeMode, RUNTIME_MODE } from './symbols';
 import pino from 'pino';
+import { v4 as uuidv4 } from 'uuid';
 
 const container = new Container();
-const start = () => {
-  container.bind(WORKSPACE_ID).toConstantValue(process.env.WORKSPACE_ID || 'DEFAULT');
 
-  // Init identity service
-  const runtimeName = process.env.RUNTIME_NAME;
-  if (!runtimeName) {
-    throw new Error('RUNTIME_NAME is not set');
+/**
+ * Validates environment variables and determines the runtime operational mode
+ */
+function validateAndDetectMode(): RuntimeMode {
+  if (process.env.MASTER_KEY && process.env.TOOLSET_KEY) {
+    delete process.env.MASTER_KEY;
   }
-  container.bind(IDENTITY_NAME).toConstantValue(runtimeName);
-  // by default, all runtimes have the tool capability
-  container.bind(TOOL_CAPABILITY).toConstantValue(process.env.TOOL_CAPABILITY === 'false' ? false : true);
-  // by default, runtimes don't have the agent capability but get it as soon as an agent is detected
-  // - detection is currently done when an MCP client launches the agent runtime and try to initialize the agent server
-  container.bind(AGENT_CAPABILITY).toConstantValue(process.env.AGENT_CAPABILITY === 'true' ? true : 'auto');
 
-  container.bind(IdentityService).toSelf().inSingletonScope();
+  const remotePort = process.env.REMOTE_PORT;
+  const masterKey = process.env.MASTER_KEY;
+  const toolsetName = process.env.TOOLSET_NAME;
+  const runtimeName = process.env.RUNTIME_NAME;
+  const toolsetKey = process.env.TOOLSET_KEY;
+  const runtimeKey = process.env.RUNTIME_KEY;
 
-  container.bind(AgentService).toSelf().inSingletonScope();
+  // Keys are mutually exclusive
+  const keyVariables = [masterKey, toolsetKey, runtimeKey];
+  const keyVariablesSet = keyVariables.filter((key) => !!key);
+  if (keyVariablesSet.length > 1) {
+    throw new Error(`Invalid configuration: Only one of MASTER_KEY, TOOLSET_KEY, or RUNTIME_KEY can be set but found values for ${keyVariablesSet.join(', ')}`);
+  }
 
-  container.bind(ToolService).toSelf().inSingletonScope();
+  // Validate name with master key
+  if (masterKey) {
+    if (!toolsetName && !runtimeName) {
+      throw new Error('Invalid configuration: MASTER_KEY requires TOOLSET_NAME or RUNTIME_NAME');
+    }
+    if (toolsetName && toolsetKey) {
+      throw new Error('Invalid configuration: TOOLSET_NAME and TOOLSET_KEY are mutually exclusive');
+    }
+  }
+
+  // Validate no name with toolset/runtime keys
+  if ((toolsetName && toolsetKey) || (runtimeName && runtimeKey)) {
+    throw new Error('Invalid configuration: TOOLSET_NAME and RUNTIME_NAME are mutually exclusive with TOOLSET_KEY and RUNTIME_KEY');
+  }
+
+  // Validate mutually exclusive environment variables
+  if (remotePort && (toolsetName || toolsetKey)) {
+    throw new Error(
+      'Invalid configuration: REMOTE_PORT is mutually exclusive with TOOLSET_NAME and TOOLSET_KEY. ' +
+        'Please use only REMOTE_PORT for edge runtimes',
+    );
+  }
+
+  // Determine mode and runtime type based on environment variables
+  if (toolsetName || toolsetKey) {
+    return 'MCP_STDIO';
+  } else if (runtimeName || runtimeKey) {
+    if (remotePort) {
+      return 'EDGE_MCP_STREAM';
+    }
+    return 'EDGE';
+  } else if (remotePort) {
+    return 'STANDALONE_MCP_STREAM';
+  } else {
+    throw new Error(
+      'Invalid configuration: At least one of TOOLSET_NAME, TOOLSET_KEY, RUNTIME_NAME, RUNTIME_KEY, or REMOTE_PORT must be set. ' +
+        'See documentation for valid operational modes.',
+    );
+  }
+}
+
+const start = () => {
+  // Validate environment variables and detect operational mode
+  const mode = validateAndDetectMode();
+
+  // Bind mode and type for other services to use
+  container.bind(RUNTIME_MODE).toConstantValue(mode);
+
+  // Init auth service
+  container.bind(AuthService).toSelf().inSingletonScope();
+
+  // Conditionally bind MCP services based on mode
+  if (mode === 'MCP_STDIO') {
+    // Stdio mode: bind McpStdioService
+    container.bind(McpStdioService).toSelf().inSingletonScope();
+    container.bind<FastifyManagerService | undefined>(FastifyManagerService).toConstantValue(undefined);
+    container.bind<McpSseService | undefined>(McpSseService).toConstantValue(undefined);
+    container.bind<McpStreamableService | undefined>(McpStreamableService).toConstantValue(undefined);
+  } else if (mode === 'EDGE_MCP_STREAM' || mode === 'STANDALONE_MCP_STREAM') {
+    // Remote mode: bind FastifyManager and both transport services
+    container.bind(FastifyManagerService).toSelf().inSingletonScope();
+    container.bind(McpSseService).toSelf().inSingletonScope();
+    container.bind(McpStreamableService).toSelf().inSingletonScope();
+    container.bind<McpStdioService | undefined>(McpStdioService).toConstantValue(undefined);
+  } else {
+    // EDGE mode: no MCP services
+    container.bind<McpStdioService | undefined>(McpStdioService).toConstantValue(undefined);
+    container.bind<FastifyManagerService | undefined>(FastifyManagerService).toConstantValue(undefined);
+    container.bind<McpSseService | undefined>(McpSseService).toConstantValue(undefined);
+    container.bind<McpStreamableService | undefined>(McpStreamableService).toConstantValue(undefined);
+  }
+
+  // Conditionally bind Tool service (Mode 1, 2, 3)
+  if (mode !== 'STANDALONE_MCP_STREAM') {
+    container.bind(ToolService).toSelf().inSingletonScope();
+  } else {
+    container.bind<ToolService | undefined>(ToolService).toConstantValue(undefined);
+  }
 
   // Init nats service
+  const runtimeId = 'runtime:' + uuidv4();
   const natsServers = process.env.NATS_SERVERS || 'localhost:4222';
-  const natsName = process.env.NATS_NAME || 'runtime:' + runtimeName;
+  const natsName = process.env.NATS_NAME || runtimeId;
   container.bind(NATS_CONNECTION_OPTIONS).toConstantValue({
     servers: natsServers,
     name: natsName,
@@ -69,14 +147,7 @@ const start = () => {
   container.bind(NatsService).toSelf().inSingletonScope();
 
   // Init tool client service
-  container.bind(ROOTS).toConstantValue(process.env.ROOTS || undefined);
-  container.bind(GLOBAL_RUNTIME).toConstantValue(process.env.GLOBAL_RUNTIME === 'true');
   container.bind(ToolClientService).toSelf().inSingletonScope();
-
-  // Init agent server service
-  container.bind(AGENT_SERVER_TRANSPORT).toConstantValue(process.env.AGENT_SERVER_TRANSPORT || 'stdio');
-  container.bind(AGENT_SERVER_TRANSPORT_PORT).toConstantValue(process.env.AGENT_SERVER_TRANSPORT_PORT || '3000');
-  container.bind(AgentServerService).toSelf().inSingletonScope();
 
   // Init health service
   container.bind(HEARTBEAT_INTERVAL).toConstantValue(process.env.HEARTBEAT_INTERVAL || '5000');
@@ -87,7 +158,7 @@ const start = () => {
 
   // Init logger service
   const defaultLevel = 'info';
-  container.bind(MAIN_LOGGER_NAME).toConstantValue(`${runtimeName}`);
+  container.bind(MAIN_LOGGER_NAME).toConstantValue(runtimeId);
   container.bind(FORWARD_STDERR).toConstantValue(process.env.FORWARD_STDERR === 'false' ? false : true);
   container.bind(LOG_LEVEL).toConstantValue(process.env.LOG_LEVEL || defaultLevel);
   container.bind(LoggerService).toSelf().inSingletonScope();
@@ -95,12 +166,17 @@ const start = () => {
   // Set child log levels
   const loggerService = container.get(LoggerService);
   loggerService.setLogLevel('main', (process.env.LOG_LEVEL_MAIN || 'info') as pino.Level);
+  loggerService.setLogLevel('auth', (process.env.LOG_LEVEL_AUTH || 'info') as pino.Level);
+  loggerService.setLogLevel('health', (process.env.LOG_LEVEL_HEALTH || 'info') as pino.Level);
   loggerService.setLogLevel('nats', (process.env.NATS_LOG_LEVEL || 'info') as pino.Level);
-  loggerService.setLogLevel('agent', (process.env.LOG_LEVEL_AGENT || 'info') as pino.Level);
-  loggerService.setLogLevel('agent.server', (process.env.LOG_LEVEL_AGENT_SERVER || 'info') as pino.Level);
+  loggerService.setLogLevel('mcp-server', (process.env.LOG_LEVEL_MCP_SERVER || 'info') as pino.Level);
+  loggerService.setLogLevel('mcp-stdio', (process.env.LOG_LEVEL_MCP_STDIO || 'info') as pino.Level);
+  loggerService.setLogLevel('fastify-manager', (process.env.LOG_LEVEL_FASTIFY_MANAGER || 'info') as pino.Level);
+  loggerService.setLogLevel('mcp-sse', (process.env.LOG_LEVEL_MCP_SSE || 'info') as pino.Level);
+  loggerService.setLogLevel('mcp-streamable', (process.env.LOG_LEVEL_MCP_STREAMABLE || 'info') as pino.Level);
   loggerService.setLogLevel('tool', (process.env.LOG_LEVEL_TOOL || 'info') as pino.Level);
   loggerService.setLogLevel('tool.client', (process.env.LOG_LEVEL_TOOL_CLIENT || 'info') as pino.Level);
-  loggerService.setLogLevel('health', (process.env.LOG_LEVEL_HEALTH || 'info') as pino.Level);
+  loggerService.setLogLevel('toolset', (process.env.LOG_LEVEL_TOOLSET || 'info') as pino.Level);
 
   // Init MCP server service factory
   container.bind<ToolServerServiceFactory>(ToolServerService).toFactory((context) => {

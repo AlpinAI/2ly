@@ -121,10 +121,18 @@ export class ApolloService extends Service {
 
   protected async shutdown() {
     this.logger.info('Stopping');
-    await this.stopService(this.fastifyService);
-    await this.apollo.stop();
+    // closing services that need to be closed for the fastify connection to properly close
     this.wsCleanup?.dispose();
-    await this.stopService(this.dgraphService);
+    this.stopService(this.dgraphService);
+    this.logger.info('wsCleanup done');
+    const timeoutPromise = new Promise((resolve) => setTimeout(resolve, 1000));
+    const stopPromise = this.apollo.stop();
+    const apolloStopPromise = Promise.race([timeoutPromise, stopPromise]);
+    await Promise.all([
+      this.stopService(this.fastifyService),
+      apolloStopPromise,
+    ]);
+    this.logger.info('Stopped');
   }
 
   /**

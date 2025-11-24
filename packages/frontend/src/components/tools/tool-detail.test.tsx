@@ -8,13 +8,13 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { ToolDetail } from './tool-detail';
-import * as runtimeStore from '@/stores/runtimeStore';
+import * as useToolSetsHook from '@/hooks/useToolSets';
 import * as notificationContext from '@/contexts/NotificationContext';
 import { ActiveStatus } from '@/graphql/generated/graphql';
 import type { GetMcpToolsQuery } from '@/graphql/generated/graphql';
 
-// Mock stores and contexts
-vi.mock('@/stores/runtimeStore');
+// Mock hooks and contexts
+vi.mock('@/hooks/useToolSets');
 vi.mock('@/contexts/NotificationContext');
 
 // Mock Apollo Client
@@ -40,9 +40,9 @@ vi.mock('./tool-tester', () => ({
   ),
 }));
 
-// Mock LinkToolDialog component
-vi.mock('./link-tool-dialog', () => ({
-  LinkToolDialog: () => <div data-testid="link-tool-dialog">Link Tool Dialog</div>,
+// Mock LinkToolSetDialog component
+vi.mock('./link-toolset-dialog', () => ({
+  LinkToolSetDialog: () => <div data-testid="link-toolset-dialog">Link ToolSet Dialog</div>,
 }));
 
 describe('ToolDetail', () => {
@@ -63,13 +63,12 @@ describe('ToolDetail', () => {
       description: 'Test server description',
       repositoryUrl: 'https://github.com/test/server',
     },
-    runtimes: [
+    toolSets: [
       {
-        __typename: 'Runtime',
-        id: 'runtime-1',
-        name: 'Test Agent',
-        status: ActiveStatus.Active,
-        capabilities: ['agent'],
+        __typename: 'ToolSet',
+        id: 'toolset-1',
+        name: 'Test Tool Set',
+        description: 'Test tool set description',
       },
     ],
   };
@@ -77,42 +76,38 @@ describe('ToolDetail', () => {
   beforeEach(() => {
     vi.clearAllMocks();
 
-    // Mock runtime store
-    vi.mocked(runtimeStore.useRuntimeData).mockReturnValue({
-      runtimes: [
+    // Mock useToolSets hook
+    vi.mocked(useToolSetsHook.useToolSets).mockReturnValue({
+      toolSets: [
         {
-          __typename: 'Runtime',
-          id: 'runtime-1',
-          name: 'Test Agent',
-          description: null,
-          status: ActiveStatus.Active,
-          capabilities: ['agent'],
+          __typename: 'ToolSet',
+          id: 'toolset-1',
+          name: 'Test Tool Set',
+          description: 'Test tool set description',
           createdAt: new Date('2025-01-01'),
-          lastSeenAt: null,
-          hostIP: null,
-          hostname: null,
-          mcpClientName: null,
-          roots: null,
-          workspace: {
-            __typename: 'Workspace',
-            id: 'workspace-1',
-            name: 'Test Workspace',
-            createdAt: new Date('2025-01-01'),
-            globalRuntime: null,
-            mcpServers: null,
-            mcpTools: null,
-            onboardingSteps: null,
-            registryServers: null,
-            runtimes: null,
-            toolSets: null,
-          },
-          mcpServers: null,
-          mcpToolCapabilities: null,
+          updatedAt: null,
+          mcpTools: null,
+        },
+      ],
+      filteredToolSets: [
+        {
+          __typename: 'ToolSet',
+          id: 'toolset-1',
+          name: 'Test Tool Set',
+          description: 'Test tool set description',
+          createdAt: new Date('2025-01-01'),
+          updatedAt: null,
+          mcpTools: null,
         },
       ],
       loading: false,
-      error: null,
-      stats: { total: 1, active: 1, inactive: 0 },
+      error: undefined,
+      stats: { total: 1, filtered: 1 },
+      filters: {
+        search: '',
+        setSearch: vi.fn(),
+        reset: vi.fn(),
+      },
     });
 
     // Mock notification context
@@ -162,9 +157,8 @@ describe('ToolDetail', () => {
     renderComponent(mockTool);
 
     expect(screen.getByText('Status')).toBeInTheDocument();
-    // There may be multiple ACTIVE badges (tool status + agent status)
-    const activeElements = screen.getAllByText('ACTIVE');
-    expect(activeElements.length).toBeGreaterThan(0);
+    // Check for ACTIVE status badge
+    expect(screen.getByText('ACTIVE')).toBeInTheDocument();
   });
 
   it('renders MCP server information', () => {
@@ -175,11 +169,11 @@ describe('ToolDetail', () => {
     expect(screen.getByText('Test server description')).toBeInTheDocument();
   });
 
-  it('renders linked agents', () => {
+  it('renders linked toolsets', () => {
     renderComponent(mockTool);
 
-    expect(screen.getByText(/Available on Agents \(1\)/)).toBeInTheDocument();
-    expect(screen.getByText('Test Agent')).toBeInTheDocument();
+    expect(screen.getByText(/Available in Tool Sets \(1\)/)).toBeInTheDocument();
+    expect(screen.getByText('Test Tool Set')).toBeInTheDocument();
   });
 
   it('renders ToolTester component', () => {
@@ -190,28 +184,28 @@ describe('ToolDetail', () => {
     expect(toolTester).toHaveTextContent('Tool Tester for test-tool (tool-1)');
   });
 
-  it('shows message when tool has no linked agents', () => {
-    const toolWithNoRuntimes = { ...mockTool, runtimes: [] };
+  it('shows message when tool has no linked toolsets', () => {
+    const toolWithNoToolSets = { ...mockTool, toolSets: [] };
 
-    renderComponent(toolWithNoRuntimes);
+    renderComponent(toolWithNoToolSets);
 
-    expect(screen.getByText('Not available on any agents yet')).toBeInTheDocument();
+    expect(screen.getByText('Not available in any tool sets yet')).toBeInTheDocument();
   });
 
-  it('shows add button when unlinked agents exist', () => {
-    const toolWithNoRuntimes = { ...mockTool, runtimes: [] };
+  it('shows add button when unlinked toolsets exist', () => {
+    const toolWithNoToolSets = { ...mockTool, toolSets: [] };
 
-    renderComponent(toolWithNoRuntimes);
+    renderComponent(toolWithNoToolSets);
 
-    // Should show the add button since we have an agent in the store but it's not linked
+    // Should show the add button since we have a toolset in the store but it's not linked
     const buttons = screen.getAllByRole('button');
     expect(buttons.length).toBeGreaterThan(0);
   });
 
-  it('does not show add button when all agents are linked', () => {
+  it('does not show add button when all toolsets are linked', () => {
     renderComponent(mockTool);
 
-    // All agents from the store are already linked to the tool
+    // All toolsets from the store are already linked to the tool
     const addButtons = screen.queryByRole('button', { name: /add/i });
     // The add button should not be present
     expect(addButtons).not.toBeInTheDocument();
@@ -238,12 +232,11 @@ describe('ToolDetail', () => {
     expect(statusElement.className).toContain('bg-gray-100');
   });
 
-  it('renders agent status badges', () => {
+  it('renders toolset description when available', () => {
     renderComponent(mockTool);
 
-    // Check for status badge in agent list
-    const statusBadges = screen.getAllByText('ACTIVE');
-    expect(statusBadges.length).toBeGreaterThan(0);
+    // Check for toolset description
+    expect(screen.getByText('Test tool set description')).toBeInTheDocument();
   });
 
   it('container supports smooth scrolling for ToolTester', () => {
@@ -262,7 +255,7 @@ describe('ToolDetail', () => {
   it('ToolTester is placed after other content for scroll behavior', () => {
     renderComponent(mockTool);
 
-    // ToolTester should be in the last section (after agents section)
+    // ToolTester should be in the last section (after toolsets section)
     const toolTester = screen.getByTestId('tool-tester');
     expect(toolTester).toBeInTheDocument();
 
@@ -271,7 +264,7 @@ describe('ToolDetail', () => {
     expect(toolTesterSection).toBeInTheDocument();
   });
 
-  it('renders unlink button for linked agents', () => {
+  it('renders unlink button for linked toolsets', () => {
     renderComponent(mockTool);
 
     // Check for unlink button (X icon button)

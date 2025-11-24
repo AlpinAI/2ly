@@ -7,15 +7,6 @@ query GetDefaultWorkspace {
     defaultWorkspace {
       id
       name
-      onboardingSteps {
-        id
-        stepId
-        type
-        status
-        priority
-        createdAt
-        updatedAt
-      }
     }
   }
 }

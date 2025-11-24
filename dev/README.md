@@ -24,8 +24,11 @@ This project is a monorepo with the following packages:
 
 ## Prerequisites
 
-- Node.js (latest LTS version)
-- Docker and Docker Compose
+> **Note for production users**: If you just want to run 2LY (not develop it), see the [main README](../README.md) - you only need Docker.
+
+**For development and contributions:**
+- Node.js v22+ (required for local development)
+- Docker
 - Git
 
 ## Quick Start
@@ -44,9 +47,14 @@ cd 2ly
 # Install dependencies
 npm install
 
+# Generate cryptographic keys (first time only)
+npm run setup-local
+
 # Start all services (database, NATS, etc.)
 npm run start:dev
 ```
+
+**Note:** The `setup-local` command generates cryptographic keys to `dev/.docker-keys/` and only needs to be run once. Keys persist across sessions.
 
 **Dependencies for the doc packags**
 

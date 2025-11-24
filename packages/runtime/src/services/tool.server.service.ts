@@ -96,7 +96,7 @@ export class ToolServerService extends Service {
 
       // Use common transport builder
       const defaultEnv = getDefaultEnvironment();
-      const stdioConfig = buildStdioTransport(parsedConfig as ServerPackage, defaultEnv);
+      const stdioConfig = buildStdioTransport(parsedConfig as ServerPackage, {...defaultEnv, LOG_LEVEL: 'silent'});
       this.logger.info(`STDIO config: ${stdioConfig}`);
 
       this.transport = new StdioClientTransport({
@@ -209,7 +209,7 @@ export class ToolServerService extends Service {
     this.onShutdownCallback = callback;
   }
 
-  callCapability(toolCall: { name: string; arguments: Record<string, unknown> }): Promise<unknown> {
+  callTool(toolCall: { name: string; arguments: Record<string, unknown> }): Promise<unknown> {
     return this.client.callTool({
       name: toolCall.name,
       arguments: toolCall.arguments,

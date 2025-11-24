@@ -4,33 +4,14 @@ import {
   dgraphResolversTypes,
   NatsService,
   Service,
-  UpdateConfiguredMCPServerMessage,
-  AgentCapabilitiesMessage,
+  RuntimeMCPServersPublish,
   RUNTIME_SUBJECT,
-  HeartbeatMessage,
-  SetRuntimeCapabilitiesMessage,
-  AckMessage,
-  SetRootsMessage,
-  SetGlobalRuntimeMessage,
-  SetMcpClientNameMessage,
 } from '@2ly/common';
-import { RuntimeRepository, WorkspaceRepository } from '../repositories';
+import { RuntimeRepository } from '../repositories';
 import { BehaviorSubject, combineLatest, debounceTime, of, Subscription, switchMap, tap } from 'rxjs';
-
-// TODO: the "connect"/"disconnect" status is not always meaningful since we can potentially have multiple
-// instances of the same runtime running with different process ids
-// we should monitor by pid
-// alive runtimes could also be derived by the active buckets on the bus
+import type { ConnectionMetadata } from '../types';
 
 export const CHECK_HEARTBEAT_INTERVAL = 'check.heartbeat.interval';
-
-export type RuntimeInstanceMetadata = {
-  RID: string;
-  pid: string;
-  hostIP: string;
-  hostname: string;
-  mcpClientName: string;
-};
 
 @injectable()
 export class RuntimeInstance extends Service {
@@ -42,10 +23,9 @@ export class RuntimeInstance extends Service {
   constructor(
     private logger: pino.Logger,
     private natsService: NatsService,
-    private workspaceRepository: WorkspaceRepository,
     private runtimeRepository: RuntimeRepository,
     private instance: dgraphResolversTypes.Runtime,
-    private metadata: RuntimeInstanceMetadata,
+    private metadata: ConnectionMetadata,
     private onReady: () => void,
     private onDisconnect: () => void,
   ) {
@@ -53,19 +33,16 @@ export class RuntimeInstance extends Service {
   }
 
   protected async initialize() {
-    this.logger.info(`Initializing runtime instance: ${this.instance.id}:${this.metadata.pid}`);
+    this.logger.info(`Initializing runtime instance: ${this.instance.id}`);
     try {
       await this.runtimeRepository.setActive(
         this.instance.id,
-        this.metadata.pid,
-        this.metadata.hostIP,
-        this.metadata.hostname,
+        this.metadata,
       );
       this.observeHeartbeat();
       this.handleRuntimeMessages();
       this.observeMCPServers();
-      this.observeCapabilities();
-      this.onReady();  
+      this.onReady();
     } catch (error) {
       this.logger.error(`Error setting runtime active: ${error}`);
       await this.disconnect();
@@ -78,12 +55,12 @@ export class RuntimeInstance extends Service {
       throw new Error('Instance not initialized');
     }
     this.logger.info(`Observed heartbeat for runtime ${this.instance.id}`);
-    const heartbeatSubscription = await this.natsService.observeHeartbeat(this.metadata.RID);
+    const heartbeatSubscription = await this.natsService.observeHeartbeat(this.instance.id);
     this.natsSubscriptions.push(heartbeatSubscription);
     for await (const heartbeat of heartbeatSubscription) {
-      if (heartbeat instanceof HeartbeatMessage) {
-        this.logger.debug(`Heartbeat for runtime ${this.instance.id}: ${JSON.stringify(heartbeat, null, 2)}`);
-        await this.runtimeRepository.updateLastSeen(this.instance.id);
+      if (heartbeat?.i && heartbeat?.t) {
+        this.logger.debug(`Heartbeat for runtime ${heartbeat.i}`);
+        await this.runtimeRepository.updateLastSeen(heartbeat.i);
       }
     }
     // when the heartbeatSubscription terminates it can mean two things
@@ -98,26 +75,11 @@ export class RuntimeInstance extends Service {
     if (!this.instance) {
       throw new Error('Instance not initialized');
     }
-    this.logger.debug(`Listening for ${RUNTIME_SUBJECT}.${this.metadata.RID}.* messages`);
-    const msgSubscription = this.natsService.subscribe(`${RUNTIME_SUBJECT}.${this.metadata.RID}.*`);
+    this.logger.debug(`Listening for ${RUNTIME_SUBJECT}.${this.instance.id}.* messages`);
+    const msgSubscription = this.natsService.subscribe(`${RUNTIME_SUBJECT}.${this.instance.id}.*`);
     this.natsSubscriptions.push(msgSubscription);
-    for await (const message of msgSubscription) {
-      if (message instanceof SetRuntimeCapabilitiesMessage) {
-        const instance = await this.runtimeRepository.setCapabilities(this.instance.id, message.data.capabilities);
-        message.respond(new AckMessage({ metadata: { id: instance.id, capabilities: instance.capabilities ?? [] } }));
-      } else if (message instanceof SetRootsMessage) {
-        const instance = await this.runtimeRepository.setRoots(this.instance.id, message.data.roots);
-        message.respond(new AckMessage({ metadata: { id: instance.id, roots: instance.roots ?? [] } }));
-      } else if (message instanceof SetGlobalRuntimeMessage) {
-        this.logger.debug(`Setting ${this.instance.id} as global runtime`);
-        await this.workspaceRepository.setGlobalRuntime(this.instance.id);
-        this.isGlobalRuntime.next(true);
-        message.respond(new AckMessage({}));
-      } else if (message instanceof SetMcpClientNameMessage) {
-        this.logger.debug(`Setting ${this.instance.id} as MCP client name`);
-        await this.runtimeRepository.setMcpClientName(this.instance.id, message.data.mcpClientName);
-        message.respond(new AckMessage({}));
-      }
+    for await (const _message of msgSubscription) {
+      // TODO: handle runtime messages ?
     }
   }
 
@@ -125,7 +87,7 @@ export class RuntimeInstance extends Service {
     if (!this.instance) {
       throw new Error('Instance not initialized');
     }
-    this.logger.info(`Disconnecting runtime 1 ${this.metadata.RID}`);
+    this.logger.info(`Disconnecting runtime ${this.instance.id}`);
     await this.runtimeRepository.setInactive(this.instance.id);
     this.onDisconnect();
   }
@@ -178,11 +140,12 @@ export class RuntimeInstance extends Service {
             return acc;
           }, new Map<string, dgraphResolversTypes.McpServer>());
           this.logger.debug(`Update with ${mcpServers.size} MCP Servers for runtime ${this.instance.id}`);
-          const mcpServersMessage = UpdateConfiguredMCPServerMessage.create({
-            RID: this.metadata.RID,
+          const mcpServersMessage = RuntimeMCPServersPublish.create({
+            workspaceId: runtime.workspace.id,
+            runtimeId: this.instance.id,
             roots,
             mcpServers: Array.from(mcpServers.values()),
-          }) as UpdateConfiguredMCPServerMessage;
+          }) as RuntimeMCPServersPublish;
 
           this.natsService.publishEphemeral(mcpServersMessage);
         }),
@@ -191,47 +154,11 @@ export class RuntimeInstance extends Service {
 
     this.rxjsSubscriptions.push(subscription);
   }
-
-  /**
-   * Observe the list of Capabilities that an agent have access to
-   * - MCP Tools related with the mcpToolCapabilities edge
-   * - (future) API Tools related with the apiToolCapabilities edge
-   * - (future) Other types of tools
-   *
-   * Publish an AgentCapabilitiesMessage in the nats KV ephemeral store
-   * - the message will stay in the KV ephemeral long enough to be observed by the runtime
-   */
-  private observeCapabilities() {
-    if (!this.instance) {
-      throw new Error('Instance not initialized');
-    }
-    this.logger.info(`Observing capabilities for runtime ${this.instance.id}`);
-    const subscription = this.runtimeRepository
-      .observeCapabilities(this.instance.id)
-      .pipe(
-        tap((runtime) => {
-          if (!this.instance) {
-            // ignore
-            return;
-          }
-          this.logger.debug(
-            `Capabilities for runtime ${this.instance.id}: ${JSON.stringify(runtime?.mcpToolCapabilities, null, 2)}`,
-          );
-          const message = AgentCapabilitiesMessage.create({
-            RID: this.metadata.RID,
-            capabilities: runtime?.mcpToolCapabilities ?? [],
-          }) as AgentCapabilitiesMessage;
-          this.natsService.publishEphemeral(message);
-        }),
-      )
-      .subscribe();
-    this.rxjsSubscriptions.push(subscription);
-  }
 }
 
 export type RuntimeInstanceFactory = (
   instance: dgraphResolversTypes.Runtime,
-  metadata: RuntimeInstanceMetadata,
+  metadata: ConnectionMetadata,
   onReady: () => void,
   onDisconnect: () => void,
 ) => RuntimeInstance;

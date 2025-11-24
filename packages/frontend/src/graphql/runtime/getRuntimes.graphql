@@ -9,9 +9,9 @@ query GetRuntimes {
       name
       description
       status
+      type
       createdAt
       lastSeenAt
-      capabilities
       hostIP
       hostname
       mcpClientName
