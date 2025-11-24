@@ -49,10 +49,15 @@ export default defineConfig({
                     ],
                     setupFiles: ['./packages/frontend/src/test/setup.ts']
                 },
-                plugins: [react()],
+                plugins: [
+                    react({
+                        tsDecorators: true,
+                    }),
+                ],
                 resolve: {
                     alias: {
-                        '@': path.resolve(__dirname, 'packages/frontend/src')
+                        '@': path.resolve(__dirname, 'packages/frontend/src'),
+                        '@2ly/common': path.resolve(__dirname, 'packages/common/src/index.browser.ts'),
                     }
                 }
             },
