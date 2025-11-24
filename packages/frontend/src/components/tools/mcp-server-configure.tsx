@@ -12,19 +12,17 @@
  * - Real-time tool discovery via subscription
  */
 
-import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useMutation, useSubscription } from '@apollo/client/react';
 import { ExternalLink, Loader2 } from 'lucide-react';
-import { SplitButton } from '@/components/ui/split-button';
+import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { DropdownMenuRadioGroup, DropdownMenuRadioItem } from '@/components/ui/dropdown-menu';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
 import { useWorkspaceId } from '@/stores/workspaceStore';
-import { useRuntimeData } from '@/stores/runtimeStore';
-import { TestPanel, type TestStatus } from './test-panel';
+import { TestPanel, type TestStatus, type LifecycleStage } from './test-panel';
 import { ConfigEditor } from '@/components/sources/config-editor';
 import {
   extractConfigOptions,
@@ -35,11 +33,9 @@ import {
   type ConfigField,
 } from '@/lib/mcpConfigHelpers';
 import {
-  CreateMcpServerDocument,
-  UpdateMcpServerRunOnDocument,
-  DeleteMcpServerDocument,
-  SubscribeMcpServersDocument,
-  McpServerRunOn,
+  TestMcpServerDocument,
+  SubscribeMcpServerTestProgressDocument,
+  McpLifecycleStage,
 } from '@/graphql/generated/graphql';
 import type { GetRegistryServersQuery } from '@/graphql/generated/graphql';
 
@@ -52,37 +48,66 @@ interface MCPServerConfigureProps {
   onSuccess?: () => void;
 }
 
-const TEST_TIMEOUT_MS = 20000; // 20 seconds
+// Convert GraphQL enum to component type
+function toLifecycleStage(stage: McpLifecycleStage): LifecycleStage {
+  switch (stage) {
+    case McpLifecycleStage.Installing:
+      return 'INSTALLING';
+    case McpLifecycleStage.Starting:
+      return 'STARTING';
+    case McpLifecycleStage.ListingTools:
+      return 'LISTING_TOOLS';
+    default:
+      return null;
+  }
+}
 
 export function MCPServerConfigure({ selectedServer, onBack, onSuccess }: MCPServerConfigureProps) {
   const workspaceId = useWorkspaceId();
-  const { runtimes } = useRuntimeData();
 
   // Config state
   const [selectedOptionId, setSelectedOptionId] = useState<string>('');
   const [fields, setFields] = useState<ConfigField[]>([]);
   const [customName, setCustomName] = useState<string>('');
 
-  // Runtime state
-  const [selectedRuntimeId, setSelectedRuntimeId] = useState<string>('');
-
   // Test state
   const [testStatus, setTestStatus] = useState<TestStatus>('idle');
-  const [testServerId, setTestServerId] = useState<string>('');
+  const [testSessionId, setTestSessionId] = useState<string>('');
   const [discoveredTools, setDiscoveredTools] = useState<Array<{ id: string; name: string }>>([]);
   const [testError, setTestError] = useState<string>('');
+  const [lifecycleStage, setLifecycleStage] = useState<LifecycleStage>(null);
+  const [lifecycleMessage, setLifecycleMessage] = useState<string>('');
 
-  const testTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  // GraphQL mutation for testing
+  const [testServer] = useMutation(TestMcpServerDocument);
 
-  // GraphQL mutations
-  const [createServer] = useMutation(CreateMcpServerDocument);
-  const [updateServerRunOn] = useMutation(UpdateMcpServerRunOnDocument);
-  const [deleteServer] = useMutation(DeleteMcpServerDocument);
-  
-  // Subscribe to MCP servers for tool discovery
-  const { data: serversData } = useSubscription(SubscribeMcpServersDocument, {
-    variables: { workspaceId: workspaceId || '' },
-    skip: !workspaceId || !testServerId,
+  // Subscribe to lifecycle events during testing
+  useSubscription(SubscribeMcpServerTestProgressDocument, {
+    variables: { testSessionId },
+    skip: !testSessionId,
+    onData: ({ data }) => {
+      const event = data?.data?.mcpServerTestProgress;
+      if (event) {
+        setLifecycleStage(toLifecycleStage(event.stage));
+        setLifecycleMessage(event.message);
+
+        if (event.stage === McpLifecycleStage.Completed) {
+          setDiscoveredTools(event.tools?.map((t) => ({ id: t.id, name: t.name })) || []);
+          setTestStatus('success');
+          setTestSessionId(''); // Clear to stop subscription
+        } else if (event.stage === McpLifecycleStage.Failed) {
+          setTestError(event.error?.message || event.message);
+          setTestStatus('error');
+          setTestSessionId(''); // Clear to stop subscription
+        }
+      }
+    },
+    onError: (err) => {
+      console.error('Subscription error:', err);
+      setTestError(err.message);
+      setTestStatus('error');
+      setTestSessionId('');
+    },
   });
 
   // Extract config options from server
@@ -94,20 +119,6 @@ export function MCPServerConfigure({ selectedServer, onBack, onSuccess }: MCPSer
   const selectedOption = useMemo(() => {
     return configOptions.find((opt) => opt.id === selectedOptionId);
   }, [configOptions, selectedOptionId]);
-
-  // Get default runtime
-  const defaultRuntimeId = useMemo(() => {
-    // Find first active runtime
-    const activeRuntime = runtimes.find((r) => r.status === 'ACTIVE');
-    return activeRuntime?.id || runtimes[0]?.id || '';
-  }, [runtimes]);
-
-  // Initialize selected runtime
-  useEffect(() => {
-    if (!selectedRuntimeId && defaultRuntimeId) {
-      setSelectedRuntimeId(defaultRuntimeId);
-    }
-  }, [defaultRuntimeId, selectedRuntimeId]);
 
   // Initialize selected option (first supported)
   useEffect(() => {
@@ -134,38 +145,12 @@ export function MCPServerConfigure({ selectedServer, onBack, onSuccess }: MCPSer
     if (!customName) {
       const displayName = getServerDisplayName(selectedServer);
       // Strip namespace (anything before the /)
-      const nameWithoutNamespace = displayName.includes('/') 
+      const nameWithoutNamespace = displayName.includes('/')
         ? displayName.split('/').pop() || displayName
         : displayName;
       setCustomName(nameWithoutNamespace);
     }
   }, [selectedServer, customName]);
-
-  // Watch for tools on test server
-  useEffect(() => {
-    if (!testServerId || testStatus !== 'running') return;
-
-    const server = serversData?.mcpServers?.find((s) => s.id === testServerId);
-    if (server?.tools && server.tools.length > 0) {
-      // Tools discovered!
-      if (testTimeoutRef.current) {
-        clearTimeout(testTimeoutRef.current);
-        testTimeoutRef.current = null;
-      }
-      setDiscoveredTools(server.tools.map((t) => ({ id: t.id, name: t.name })));
-      setTestStatus('success');
-
-      // Set server to GLOBAL mode (makes it available workspace-wide)
-      updateServerRunOn({
-        variables: {
-          mcpServerId: testServerId,
-          runOn: McpServerRunOn.Global,
-        },
-      }).catch((err) => {
-        console.error('Failed to set server to GLOBAL:', err);
-      });
-    }
-  }, [serversData, testServerId, testStatus, updateServerRunOn]);
 
   // Handle field value change
   const handleFieldChange = useCallback((fieldName: string, value: string) => {
@@ -175,98 +160,58 @@ export function MCPServerConfigure({ selectedServer, onBack, onSuccess }: MCPSer
   // Check if form is valid
   const isFormValid = useMemo(() => {
     if (!selectedOption) return false;
-    if (!selectedRuntimeId) return false;
     if (!customName || customName.trim() === '') return false;
     return validateFields(fields);
-  }, [selectedOption, selectedRuntimeId, customName, fields]);
+  }, [selectedOption, customName, fields]);
 
   // Handle test server
   const handleTestServer = useCallback(async () => {
-    if (!workspaceId || !selectedOption || !selectedRuntimeId) return;
+    if (!workspaceId || !selectedOption) return;
 
     setTestStatus('running');
     setTestError('');
     setDiscoveredTools([]);
+    setLifecycleStage(null);
+    setLifecycleMessage('');
 
     try {
       // Enrich config with user-provided values
       const input = enrichConfigWithValues(selectedServer, selectedOption, fields, customName);
 
-      // Create server
-      const { data } = await createServer({
+      // Call test mutation - returns testSessionId immediately
+      const { data } = await testServer({
         variables: {
           workspaceId,
           name: input.name,
-          description: input.description,
           repositoryUrl: input.repositoryUrl,
           transport: input.transport,
           config: input.config,
-          registryServerId: selectedServer.id,
         },
-        refetchQueries: ['GetRegistryServers'],
       });
 
-      const serverId = data?.createMCPServer?.id;
-      if (!serverId) {
-        throw new Error('Failed to create server');
+      const sessionId = data?.testMCPServer?.testSessionId;
+      if (!sessionId) {
+        throw new Error(data?.testMCPServer?.error || 'Failed to start test');
       }
 
-      setTestServerId(serverId);
-
-      // Set server to run on EDGE with selected runtime for testing
-      await updateServerRunOn({
-        variables: {
-          mcpServerId: serverId,
-          runOn: McpServerRunOn.Edge,
-          runtimeId: selectedRuntimeId,
-        },
-      });
-
-      // Set timeout for tool discovery
-      testTimeoutRef.current = setTimeout(() => {
-        setTestStatus('timeout');
-        // Clean up server on timeout
-        deleteServer({ variables: { id: serverId } }).catch((err) => {
-          console.error('Failed to delete server on timeout:', err);
-        });
-        testTimeoutRef.current = null;
-      }, TEST_TIMEOUT_MS);
+      // Set testSessionId to activate subscription
+      setTestSessionId(sessionId);
+      // Subscription will handle all lifecycle updates from here
     } catch (err) {
       console.error('Test failed:', err);
       setTestError(err instanceof Error ? err.message : 'Unknown error');
       setTestStatus('error');
     }
-  }, [
-    workspaceId,
-    selectedOption,
-    selectedRuntimeId,
-    selectedServer,
-    fields,
-    customName,
-    createServer,
-    updateServerRunOn,
-    deleteServer,
-  ]);
+  }, [workspaceId, selectedOption, selectedServer, fields, customName, testServer]);
 
   // Handle retry
   const handleRetry = useCallback(() => {
     setTestStatus('idle');
-    setTestServerId('');
+    setTestSessionId('');
     setDiscoveredTools([]);
     setTestError('');
-    if (testTimeoutRef.current) {
-      clearTimeout(testTimeoutRef.current);
-      testTimeoutRef.current = null;
-    }
-  }, []);
-
-  // Cleanup on unmount
-  useEffect(() => {
-    return () => {
-      if (testTimeoutRef.current) {
-        clearTimeout(testTimeoutRef.current);
-      }
-    };
+    setLifecycleStage(null);
+    setLifecycleMessage('');
   }, []);
 
   const serverDisplayName = getServerDisplayName(selectedServer);
@@ -345,42 +290,21 @@ export function MCPServerConfigure({ selectedServer, onBack, onSuccess }: MCPSer
 
           {/* Fixed Footer */}
           <div className="p-4 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shrink-0 space-y-3">
-            {/* Test Server Split Button */}
-            <SplitButton
-              primaryLabel={
-                testStatus === 'running' ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Testing...
-                  </>
-                ) : (
-                  'Test Server'
-                )
-              }
-              onPrimaryAction={handleTestServer}
-              primaryDisabled={!isFormValid || testStatus === 'running'}
-              dropdownContent={
-                runtimes.length === 1
-                  ? undefined
-                  : (
-                      <DropdownMenuRadioGroup value={selectedRuntimeId} onValueChange={setSelectedRuntimeId}>
-                        {runtimes.length === 0 ? (
-                          <div className="px-2 py-1.5 text-sm text-gray-500">No runtimes available</div>
-                        ) : (
-                          runtimes.map((runtime) => (
-                            <DropdownMenuRadioItem key={runtime.id} value={runtime.id} disabled={runtime.status !== 'ACTIVE'}>
-                              {runtime.name}
-                              {runtime.id === defaultRuntimeId && ' (Default)'}
-                              {runtime.status !== 'ACTIVE' && ' (Offline)'}
-                            </DropdownMenuRadioItem>
-                          ))
-                        )}
-                      </DropdownMenuRadioGroup>
-                    )
-              }
-              dropdownAriaLabel="Select runtime"
+            {/* Test Server Button */}
+            <Button
+              onClick={handleTestServer}
+              disabled={!isFormValid || testStatus === 'running'}
               className="w-full"
-            />
+            >
+              {testStatus === 'running' ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Testing...
+                </>
+              ) : (
+                'Test Server'
+              )}
+            </Button>
 
             {/* Validation Alert */}
             {!isFormValid && selectedOption && (
@@ -398,6 +322,8 @@ export function MCPServerConfigure({ selectedServer, onBack, onSuccess }: MCPSer
             serverName={customName || serverDisplayName}
             tools={discoveredTools}
             error={testError}
+            lifecycleStage={lifecycleStage}
+            lifecycleMessage={lifecycleMessage}
             onRetry={handleRetry}
             onConfigureAnother={testStatus === 'success' ? onBack : undefined}
             onFinish={testStatus === 'success' && onSuccess ? onSuccess : undefined}

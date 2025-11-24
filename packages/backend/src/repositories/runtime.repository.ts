@@ -1,7 +1,9 @@
 import { injectable, inject } from 'inversify';
 import { DGraphService } from '../services/dgraph.service';
-import { dgraphResolversTypes, NatsService, LoggerService, ToolSetCallToolRequest, RuntimeCallToolResponse, ErrorResponse, apolloResolversTypes } from '@2ly/common';
+import { dgraphResolversTypes, NatsService, LoggerService, ToolSetCallToolRequest, RuntimeCallToolResponse, ErrorResponse, apolloResolversTypes, RuntimeTestMCPServerRequest, RuntimeMCPLifecyclePublish } from '@2ly/common';
 import { ConnectionMetadata } from '../types';
+import { v4 as uuidv4 } from 'uuid';
+import { Observable, Subject, map } from 'rxjs';
 import {
   QUERY_MCPSERVER_WITH_TOOL,
   SET_ROOTS,
@@ -22,7 +24,6 @@ import {
   GET_RUNTIME_ALL_TOOLS,
   UPDATE_RUNTIME_LAST_SEEN,
 } from './runtime.operations';
-import { map, Observable } from 'rxjs';
 import { createSubscriptionFromQuery, escapeValue } from '../helpers';
 import { MCPToolRepository } from './mcp-tool.repository';
 import pino from 'pino';
@@ -32,6 +33,8 @@ import { WorkspaceRepository } from './workspace.repository';
 @injectable()
 export class RuntimeRepository {
   private logger: pino.Logger;
+  private testProgressSubjects: Map<string, Subject<apolloResolversTypes.McpServerLifecycleEvent>> = new Map();
+
   constructor(
     @inject(DGraphService) private readonly dgraphService: DGraphService,
     @inject(MCPToolRepository) private readonly mcpToolRepository: MCPToolRepository,
@@ -371,5 +374,128 @@ export class RuntimeRepository {
     } else {
       throw new Error(`Invalid response: ${JSON.stringify(response)}`);
     }
+  }
+
+  /**
+   * Test an MCP server by sending a request to the runtime and returning a testSessionId immediately
+   */
+  async testMCPServer(
+    name: string,
+    repositoryUrl: string,
+    transport: 'STREAM' | 'STDIO' | 'SSE',
+    config: string,
+    workspaceId: string,
+  ): Promise<apolloResolversTypes.TestMcpServerResult> {
+    // Generate testSessionId immediately
+    const testSessionId = uuidv4();
+
+    this.logger.info(`Starting test for MCP server ${name} with testSessionId ${testSessionId}`);
+
+    // Create a subject for this test session
+    const subject = new Subject<apolloResolversTypes.McpServerLifecycleEvent>();
+    this.testProgressSubjects.set(testSessionId, subject);
+
+    // Subscribe to NATS lifecycle events for this test session
+    const natsSubject = RuntimeMCPLifecyclePublish.subscribeToTestSession(testSessionId);
+    const subscription = this.natsService.subscribe(natsSubject);
+
+    // Handle lifecycle events in the background
+    (async () => {
+      try {
+        for await (const msg of subscription) {
+          if (msg instanceof RuntimeMCPLifecyclePublish) {
+            this.logger.debug(`Received lifecycle event for test ${testSessionId}: ${msg.data.stage}`);
+
+            const event: apolloResolversTypes.McpServerLifecycleEvent = {
+              stage: msg.data.stage as apolloResolversTypes.McpLifecycleStage,
+              message: msg.data.message,
+              timestamp: new Date(msg.data.timestamp),
+              error: msg.data.error
+                ? {
+                    code: msg.data.error.code,
+                    message: msg.data.error.message,
+                    details: msg.data.error.details ?? null,
+                  }
+                : null,
+              tools: msg.data.tools
+                ? msg.data.tools.map(
+                    (tool): apolloResolversTypes.McpTool => ({
+                      id: '',
+                      name: tool.name,
+                      description: tool.description ?? '',
+                      inputSchema: JSON.stringify(tool.inputSchema),
+                      annotations: JSON.stringify(tool.annotations ?? {}),
+                      status: apolloResolversTypes.ActiveStatus.Active,
+                      createdAt: new Date(),
+                      lastSeenAt: new Date(),
+                      mcpServer: {} as apolloResolversTypes.McpServer,
+                      workspace: {} as apolloResolversTypes.Workspace,
+                    }),
+                  )
+                : null,
+            };
+
+            // Emit the event to subscribers
+            const eventSubject = this.testProgressSubjects.get(testSessionId);
+            if (eventSubject) {
+              eventSubject.next(event);
+            }
+
+            // Clean up on COMPLETED or FAILED
+            if (msg.data.stage === 'COMPLETED' || msg.data.stage === 'FAILED') {
+              if (eventSubject) {
+                eventSubject.complete();
+              }
+              this.testProgressSubjects.delete(testSessionId);
+              await subscription.drain();
+              break;
+            }
+          }
+        }
+      } catch (error) {
+        this.logger.error(`Error handling lifecycle events for test ${testSessionId}: ${error}`);
+        const eventSubject = this.testProgressSubjects.get(testSessionId);
+        if (eventSubject) {
+          eventSubject.error(error);
+        }
+        this.testProgressSubjects.delete(testSessionId);
+      }
+    })();
+
+    // Send test request to runtime (non-blocking)
+    const testRequest = new RuntimeTestMCPServerRequest({
+      testSessionId,
+      name,
+      repositoryUrl,
+      transport,
+      config,
+      workspaceId,
+    });
+
+    // Publish request asynchronously - don't wait for response
+    this.natsService.publish(testRequest);
+
+    // Return immediately with testSessionId
+    return {
+      success: false, // Will be updated via subscription
+      tools: null,
+      error: null,
+      testSessionId,
+    };
+  }
+
+  /**
+   * Subscribe to lifecycle events for a specific test session
+   */
+  observeMCPServerTestProgress(testSessionId: string): Observable<apolloResolversTypes.McpServerLifecycleEvent> {
+    // Get or create subject for this test session
+    let subject = this.testProgressSubjects.get(testSessionId);
+    if (!subject) {
+      // If subject doesn't exist, it might have already completed or hasn't started yet
+      // Create a new subject that will receive events when they arrive
+      subject = new Subject<apolloResolversTypes.McpServerLifecycleEvent>();
+      this.testProgressSubjects.set(testSessionId, subject);
+    }
+    return subject.asObservable();
   }
 }

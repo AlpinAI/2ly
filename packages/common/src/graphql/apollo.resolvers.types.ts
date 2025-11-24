@@ -82,6 +82,20 @@ export type LogoutUserInput = {
   refreshToken: Scalars['String']['input'];
 };
 
+export type McpLifecycleError = {
+  code: Scalars['String']['output'];
+  details?: Maybe<Scalars['String']['output']>;
+  message: Scalars['String']['output'];
+};
+
+export enum McpLifecycleStage {
+  Completed = 'COMPLETED',
+  Failed = 'FAILED',
+  Installing = 'INSTALLING',
+  ListingTools = 'LISTING_TOOLS',
+  Starting = 'STARTING'
+}
+
 export type McpRegistryServer = {
   _meta?: Maybe<Scalars['String']['output']>;
   configurations?: Maybe<Array<McpServer>>;
@@ -110,6 +124,14 @@ export type McpServer = {
   tools?: Maybe<Array<McpTool>>;
   transport: McpTransportType;
   workspace: Workspace;
+};
+
+export type McpServerLifecycleEvent = {
+  error?: Maybe<McpLifecycleError>;
+  message: Scalars['String']['output'];
+  stage: McpLifecycleStage;
+  timestamp: Scalars['Date']['output'];
+  tools?: Maybe<Array<McpTool>>;
 };
 
 export enum McpServerRunOn {
@@ -164,6 +186,7 @@ export type Mutation = {
   removeServerFromRegistry: McpRegistryServer;
   revokeKey: IdentityKey;
   setGlobalRuntime: Workspace;
+  testMCPServer: TestMcpServerResult;
   unlinkMCPServerFromRuntime: McpServer;
   unsetGlobalRuntime: Workspace;
   updateMCPServer: McpServer;
@@ -325,6 +348,15 @@ export type MutationRevokeKeyArgs = {
 export type MutationSetGlobalRuntimeArgs = {
   id: Scalars['ID']['input'];
   runtimeId: Scalars['ID']['input'];
+};
+
+
+export type MutationTestMcpServerArgs = {
+  config: Scalars['String']['input'];
+  name: Scalars['String']['input'];
+  repositoryUrl: Scalars['String']['input'];
+  transport: McpTransportType;
+  workspaceId: Scalars['ID']['input'];
 };
 
 
@@ -534,6 +566,7 @@ export enum RuntimeType {
 }
 
 export type Subscription = {
+  mcpServerTestProgress: McpServerLifecycleEvent;
   mcpServers?: Maybe<Array<McpServer>>;
   mcpTools?: Maybe<Array<McpTool>>;
   runtimes?: Maybe<Array<Runtime>>;
@@ -541,6 +574,11 @@ export type Subscription = {
   toolSets?: Maybe<Array<ToolSet>>;
   workspace?: Maybe<Workspace>;
   workspaces?: Maybe<Array<Workspace>>;
+};
+
+
+export type SubscriptionMcpServerTestProgressArgs = {
+  testSessionId: Scalars['ID']['input'];
 };
 
 
@@ -579,6 +617,13 @@ export type System = {
   id: Scalars['ID']['output'];
   initialized: Scalars['Boolean']['output'];
   updatedAt: Scalars['Date']['output'];
+};
+
+export type TestMcpServerResult = {
+  error?: Maybe<Scalars['String']['output']>;
+  success: Scalars['Boolean']['output'];
+  testSessionId: Scalars['ID']['output'];
+  tools?: Maybe<Array<McpTool>>;
 };
 
 export type ToolCall = {
@@ -747,8 +792,11 @@ export type ResolversTypes = {
   LogoutInput: LogoutInput;
   LogoutPayload: ResolverTypeWrapper<LogoutPayload>;
   LogoutUserInput: LogoutUserInput;
+  MCPLifecycleError: ResolverTypeWrapper<McpLifecycleError>;
+  MCPLifecycleStage: McpLifecycleStage;
   MCPRegistryServer: ResolverTypeWrapper<McpRegistryServer>;
   MCPServer: ResolverTypeWrapper<McpServer>;
+  MCPServerLifecycleEvent: ResolverTypeWrapper<McpServerLifecycleEvent>;
   MCPServerRunOn: McpServerRunOn;
   MCPTool: ResolverTypeWrapper<McpTool>;
   MCPTransportType: McpTransportType;
@@ -767,6 +815,7 @@ export type ResolversTypes = {
   String: ResolverTypeWrapper<Scalars['String']['output']>;
   Subscription: ResolverTypeWrapper<{}>;
   System: ResolverTypeWrapper<System>;
+  TestMCPServerResult: ResolverTypeWrapper<TestMcpServerResult>;
   ToolCall: ResolverTypeWrapper<ToolCall>;
   ToolCallFilters: ToolCallFilters;
   ToolCallStats: ResolverTypeWrapper<ToolCallStats>;
@@ -794,8 +843,10 @@ export type ResolversParentTypes = {
   LogoutInput: LogoutInput;
   LogoutPayload: LogoutPayload;
   LogoutUserInput: LogoutUserInput;
+  MCPLifecycleError: McpLifecycleError;
   MCPRegistryServer: McpRegistryServer;
   MCPServer: McpServer;
+  MCPServerLifecycleEvent: McpServerLifecycleEvent;
   MCPTool: McpTool;
   Mutation: {};
   OnboardingStep: OnboardingStep;
@@ -808,6 +859,7 @@ export type ResolversParentTypes = {
   String: Scalars['String']['output'];
   Subscription: {};
   System: System;
+  TestMCPServerResult: TestMcpServerResult;
   ToolCall: ToolCall;
   ToolCallFilters: ToolCallFilters;
   ToolCallStats: ToolCallStats;
@@ -867,6 +919,13 @@ export type LogoutPayloadResolvers<ContextType = object, ParentType extends Reso
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 };
 
+export type McpLifecycleErrorResolvers<ContextType = object, ParentType extends ResolversParentTypes['MCPLifecycleError'] = ResolversParentTypes['MCPLifecycleError']> = {
+  code?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  details?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  message?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+};
+
 export type McpRegistryServerResolvers<ContextType = object, ParentType extends ResolversParentTypes['MCPRegistryServer'] = ResolversParentTypes['MCPRegistryServer']> = {
   _meta?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   configurations?: Resolver<Maybe<Array<ResolversTypes['MCPServer']>>, ParentType, ContextType>;
@@ -896,6 +955,15 @@ export type McpServerResolvers<ContextType = object, ParentType extends Resolver
   tools?: Resolver<Maybe<Array<ResolversTypes['MCPTool']>>, ParentType, ContextType>;
   transport?: Resolver<ResolversTypes['MCPTransportType'], ParentType, ContextType>;
   workspace?: Resolver<ResolversTypes['Workspace'], ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+};
+
+export type McpServerLifecycleEventResolvers<ContextType = object, ParentType extends ResolversParentTypes['MCPServerLifecycleEvent'] = ResolversParentTypes['MCPServerLifecycleEvent']> = {
+  error?: Resolver<Maybe<ResolversTypes['MCPLifecycleError']>, ParentType, ContextType>;
+  message?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  stage?: Resolver<ResolversTypes['MCPLifecycleStage'], ParentType, ContextType>;
+  timestamp?: Resolver<ResolversTypes['Date'], ParentType, ContextType>;
+  tools?: Resolver<Maybe<Array<ResolversTypes['MCPTool']>>, ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 };
 
@@ -940,6 +1008,7 @@ export type MutationResolvers<ContextType = object, ParentType extends Resolvers
   removeServerFromRegistry?: Resolver<ResolversTypes['MCPRegistryServer'], ParentType, ContextType, RequireFields<MutationRemoveServerFromRegistryArgs, 'serverId'>>;
   revokeKey?: Resolver<ResolversTypes['IdentityKey'], ParentType, ContextType, RequireFields<MutationRevokeKeyArgs, 'keyId'>>;
   setGlobalRuntime?: Resolver<ResolversTypes['Workspace'], ParentType, ContextType, RequireFields<MutationSetGlobalRuntimeArgs, 'id' | 'runtimeId'>>;
+  testMCPServer?: Resolver<ResolversTypes['TestMCPServerResult'], ParentType, ContextType, RequireFields<MutationTestMcpServerArgs, 'config' | 'name' | 'repositoryUrl' | 'transport' | 'workspaceId'>>;
   unlinkMCPServerFromRuntime?: Resolver<ResolversTypes['MCPServer'], ParentType, ContextType, RequireFields<MutationUnlinkMcpServerFromRuntimeArgs, 'mcpServerId'>>;
   unsetGlobalRuntime?: Resolver<ResolversTypes['Workspace'], ParentType, ContextType, RequireFields<MutationUnsetGlobalRuntimeArgs, 'id'>>;
   updateMCPServer?: Resolver<ResolversTypes['MCPServer'], ParentType, ContextType, RequireFields<MutationUpdateMcpServerArgs, 'config' | 'description' | 'id' | 'name' | 'repositoryUrl' | 'transport'>>;
@@ -1015,6 +1084,7 @@ export type RuntimeResolvers<ContextType = object, ParentType extends ResolversP
 };
 
 export type SubscriptionResolvers<ContextType = object, ParentType extends ResolversParentTypes['Subscription'] = ResolversParentTypes['Subscription']> = {
+  mcpServerTestProgress?: SubscriptionResolver<ResolversTypes['MCPServerLifecycleEvent'], "mcpServerTestProgress", ParentType, ContextType, RequireFields<SubscriptionMcpServerTestProgressArgs, 'testSessionId'>>;
   mcpServers?: SubscriptionResolver<Maybe<Array<ResolversTypes['MCPServer']>>, "mcpServers", ParentType, ContextType, RequireFields<SubscriptionMcpServersArgs, 'workspaceId'>>;
   mcpTools?: SubscriptionResolver<Maybe<Array<ResolversTypes['MCPTool']>>, "mcpTools", ParentType, ContextType, RequireFields<SubscriptionMcpToolsArgs, 'workspaceId'>>;
   runtimes?: SubscriptionResolver<Maybe<Array<ResolversTypes['Runtime']>>, "runtimes", ParentType, ContextType, RequireFields<SubscriptionRuntimesArgs, 'workspaceId'>>;
@@ -1030,6 +1100,14 @@ export type SystemResolvers<ContextType = object, ParentType extends ResolversPa
   id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
   initialized?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
   updatedAt?: Resolver<ResolversTypes['Date'], ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+};
+
+export type TestMcpServerResultResolvers<ContextType = object, ParentType extends ResolversParentTypes['TestMCPServerResult'] = ResolversParentTypes['TestMCPServerResult']> = {
+  error?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  success?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
+  testSessionId?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
+  tools?: Resolver<Maybe<Array<ResolversTypes['MCPTool']>>, ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 };
 
@@ -1110,8 +1188,10 @@ export type Resolvers<ContextType = object> = {
   IdentityKey?: IdentityKeyResolvers<ContextType>;
   Infra?: InfraResolvers<ContextType>;
   LogoutPayload?: LogoutPayloadResolvers<ContextType>;
+  MCPLifecycleError?: McpLifecycleErrorResolvers<ContextType>;
   MCPRegistryServer?: McpRegistryServerResolvers<ContextType>;
   MCPServer?: McpServerResolvers<ContextType>;
+  MCPServerLifecycleEvent?: McpServerLifecycleEventResolvers<ContextType>;
   MCPTool?: McpToolResolvers<ContextType>;
   Mutation?: MutationResolvers<ContextType>;
   OnboardingStep?: OnboardingStepResolvers<ContextType>;
@@ -1121,6 +1201,7 @@ export type Resolvers<ContextType = object> = {
   Runtime?: RuntimeResolvers<ContextType>;
   Subscription?: SubscriptionResolvers<ContextType>;
   System?: SystemResolvers<ContextType>;
+  TestMCPServerResult?: TestMcpServerResultResolvers<ContextType>;
   ToolCall?: ToolCallResolvers<ContextType>;
   ToolCallStats?: ToolCallStatsResolvers<ContextType>;
   ToolCallsResult?: ToolCallsResultResolvers<ContextType>;

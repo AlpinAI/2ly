@@ -272,6 +272,35 @@ type CallToolResult {
   result: String!
 }
 
+type TestMCPServerResult {
+  success: Boolean!
+  tools: [MCPTool!]
+  error: String
+  testSessionId: ID!
+}
+
+type MCPServerLifecycleEvent {
+  stage: MCPLifecycleStage!
+  message: String!
+  timestamp: Date!
+  error: MCPLifecycleError
+  tools: [MCPTool!]
+}
+
+enum MCPLifecycleStage {
+  INSTALLING
+  STARTING
+  LISTING_TOOLS
+  COMPLETED
+  FAILED
+}
+
+type MCPLifecycleError {
+  code: String!
+  message: String!
+  details: String
+}
+
 type Mutation {
   createMCPServer(
     name: String!
@@ -336,6 +365,13 @@ type Mutation {
 
   # Playground mutations
   callMCPTool(toolId: ID!, input: String!): CallToolResult!
+  testMCPServer(
+    name: String!
+    repositoryUrl: String!
+    transport: MCPTransportType!
+    config: String!
+    workspaceId: ID!
+  ): TestMCPServerResult!
 
   # Onboarding mutations
   completeOnboardingStep(workspaceId: ID!, stepId: String!): Boolean!
@@ -430,4 +466,5 @@ type Subscription {
   mcpTools(workspaceId: ID!): [MCPTool!]
   toolSets(workspaceId: ID!): [ToolSet!]
   toolCalls(workspaceId: ID!): [ToolCall!]
+  mcpServerTestProgress(testSessionId: ID!): MCPServerLifecycleEvent!
 }
