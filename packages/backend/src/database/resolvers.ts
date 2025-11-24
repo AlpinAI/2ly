@@ -49,8 +49,11 @@ export const resolvers = (container: Container = defaultContainer): apolloResolv
     Date: GraphQLDateTime,
     Query: {
 
-      workspace: async () => {
+      workspaces: async () => {
         return workspaceRepository.findAll();
+      },
+      workspace: async (_parent: unknown, { workspaceId }: { workspaceId: string }) => {
+        return workspaceRepository.findByIdWithRuntimes(workspaceId);
       },
       mcpServers: async () => {
         return mcpServerRepository.findAll();

@@ -62,6 +62,7 @@ export const QUERY_WORKSPACE_WITH_RUNTIMES = gql`
   query getWorkspace($workspaceId: ID!) {
     getWorkspace(id: $workspaceId) {
       id
+      name
       runtimes {
         id
         name

@@ -111,6 +111,13 @@ export class WorkspaceRepository {
     return res.getWorkspace;
   }
 
+  async findByIdWithRuntimes(workspaceId: string): Promise<apolloResolversTypes.Workspace> {
+    const res = await this.dgraphService.query<{
+      getWorkspace: apolloResolversTypes.Workspace;
+    }>(QUERY_WORKSPACE_WITH_RUNTIMES, { workspaceId });
+    return res.getWorkspace;
+  }
+
   async getRuntimes(workspaceId: string): Promise<apolloResolversTypes.Runtime[]> {
     const res = await this.dgraphService.query<{
       getWorkspace: apolloResolversTypes.Workspace;

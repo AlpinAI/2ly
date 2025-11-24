@@ -1,7 +1,7 @@
 # Get all workspaces
 # WHY: Used in workspace selector to show available workspaces
 query GetWorkspaces {
-  workspace {
+  workspaces {
     id
     name
     createdAt

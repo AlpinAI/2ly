@@ -241,7 +241,8 @@ type ToolCallStats {
 }
 
 type Query {
-  workspace: [Workspace!]
+  workspaces: [Workspace!]!
+  workspace(workspaceId: ID!): Workspace
   mcpServers(workspaceId: ID!): [MCPServer!]
   mcpTools(workspaceId: ID!): [MCPTool!]
   toolSets(workspaceId: ID!): [ToolSet!]

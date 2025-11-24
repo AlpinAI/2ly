@@ -106,11 +106,12 @@ export function ToolCallsTable({
 
   // Fetch available runtimes for filter
   const { data: runtimesData } = useQuery(GetRuntimesDocument, {
+    variables: { workspaceId: workspaceId || '' },
     skip: !workspaceId,
   });
 
   const tools = toolsData?.mcpTools || [];
-  const runtimes = runtimesData?.workspace?.[0]?.runtimes || [];
+  const runtimes = runtimesData?.workspace?.runtimes || [];
 
   const toolOptions = tools.map((tool: { id: string; name: string; mcpServer: { name: string } }) => ({
     id: tool.id,

@@ -165,12 +165,23 @@ export class TestEnvironment {
     testLog('Test environment started successfully');
 
     registerRoute(TEST_RUNTIME_ROUTE, async (_request, reply) => {
-      const port = await this.startRuntime();
-      reply.send({ status: 'ok', port });
+      try {
+        const port = await this.startRuntime();
+        reply.send({ status: 'ok', port });
+      } catch (error) {
+        testError(`Error starting runtime: ${error instanceof Error ? error.message : String(error)}`);
+        reply.send({ status: 'error', message: `Error starting runtime: ${error instanceof Error ? error.message : String(error)}` });
+      }
     });
 
     registerRoute(TEST_RUNTIME_STOP_ROUTE, async (_request, reply) => {
-      await this.stopRuntime();
+      try {
+        await this.stopRuntime();
+        reply.send({ status: 'ok' });
+      } catch (error) {
+        testError(`Error stopping runtime: ${error instanceof Error ? error.message : String(error)}`);
+        reply.send({ status: 'error', message: `Error stopping runtime: ${error instanceof Error ? error.message : String(error)}` });
+      }
       reply.send({ status: 'ok' });
     });
 
@@ -376,10 +387,12 @@ export class TestEnvironment {
         .withNetworkAliases('backend')
         .withEnvironment({
           NODE_ENV: 'test',
+          AUTOGEN_KEYS: 'false',
           LOG_LEVEL: 'error', // Only log errors in test environment
           DGRAPH_URL: 'dgraph-alpha:8080',
           NATS_SERVERS: 'nats:4222',
           EXPOSED_NATS_SERVERS: this.services.nats.clientUrl,
+          EXPOSED_REMOTE_MCP: 'http://localhost:3001',
           CORS_ORIGINS: 'http://localhost:8888,http://localhost:9999',
           ENCRYPTION_KEY: TEST_ENCRYPTION_KEY,
           MASTER_KEY: TEST_MASTER_KEY,
@@ -442,6 +455,7 @@ export class TestEnvironment {
         .withNetwork(this.network!)
         .withEnvironment({
           NODE_ENV: 'test',
+          AUTOGEN_KEYS: 'false',
           LOG_LEVEL: 'silent',
           NATS_SERVERS: 'nats:4222',
           RUNTIME_NAME: runtimeName,

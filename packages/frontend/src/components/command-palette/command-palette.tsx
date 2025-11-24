@@ -100,7 +100,7 @@ export function CommandPalette() {
     setOpen(false);
   };
 
-  const workspaces = data?.workspace || [];
+  const workspaces = data?.workspaces || [];
 
   const getPlaceholder = () => {
     switch (mode) {
@@ -240,7 +240,7 @@ export function CommandPalette() {
               {/* Workspace Mode */}
               {mode === 'workspace' && (
                 <CommandGroup heading="Workspaces" className="mb-2">
-                  {workspaces.map((workspace: NonNullable<GetWorkspacesQuery['workspace']>[number]) => (
+                  {workspaces.map((workspace: NonNullable<GetWorkspacesQuery['workspaces']>[number]) => (
                     <CommandItem
                       key={workspace.id}
                       value={workspace.name}

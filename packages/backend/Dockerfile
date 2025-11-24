@@ -33,7 +33,7 @@ COPY --from=builder /app/node_modules ./node_modules
 # Copy key generation scripts
 COPY ./generate-keys.sh /app/generate-keys.sh
 COPY ./scripts/generate-keys.js /app/scripts/generate-keys.js
-COPY ./scripts/entrypoint.sh /app/entrypoint.sh
+COPY ./packages/backend/entrypoint.sh /app/entrypoint.sh
 
 # Make scripts executable
 RUN chmod +x /app/generate-keys.sh /app/entrypoint.sh

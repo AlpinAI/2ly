@@ -73,8 +73,8 @@ describe('My Feature Tests', () => {
   });
 
   it('should test something', async () => {
-    const result = await graphql(`query { workspace { id name } }`);
-    expect(result.workspace).toHaveLength(3);
+    const result = await graphql(`query { workspaces { id name } }`);
+    expect(result.workspaces).toHaveLength(3);
   });
 });
 ```

@@ -427,9 +427,10 @@ export type Query = {
   toolCalls: ToolCallsResult;
   toolSets?: Maybe<Array<ToolSet>>;
   toolsetKey?: Maybe<IdentityKey>;
-  workspace?: Maybe<Array<Workspace>>;
+  workspace?: Maybe<Workspace>;
   workspaceKeys: Array<IdentityKey>;
   workspaceMCPTools?: Maybe<Workspace>;
+  workspaces: Array<Workspace>;
 };
 
 
@@ -469,6 +470,11 @@ export type QueryToolSetsArgs = {
 
 export type QueryToolsetKeyArgs = {
   toolsetId: Scalars['ID']['input'];
+};
+
+
+export type QueryWorkspaceArgs = {
+  workspaceId: Scalars['ID']['input'];
 };
 
 
@@ -968,9 +974,10 @@ export type QueryResolvers<ContextType = object, ParentType extends ResolversPar
   toolCalls?: Resolver<ResolversTypes['ToolCallsResult'], ParentType, ContextType, RequireFields<QueryToolCallsArgs, 'workspaceId'>>;
   toolSets?: Resolver<Maybe<Array<ResolversTypes['ToolSet']>>, ParentType, ContextType, RequireFields<QueryToolSetsArgs, 'workspaceId'>>;
   toolsetKey?: Resolver<Maybe<ResolversTypes['IdentityKey']>, ParentType, ContextType, RequireFields<QueryToolsetKeyArgs, 'toolsetId'>>;
-  workspace?: Resolver<Maybe<Array<ResolversTypes['Workspace']>>, ParentType, ContextType>;
+  workspace?: Resolver<Maybe<ResolversTypes['Workspace']>, ParentType, ContextType, RequireFields<QueryWorkspaceArgs, 'workspaceId'>>;
   workspaceKeys?: Resolver<Array<ResolversTypes['IdentityKey']>, ParentType, ContextType, RequireFields<QueryWorkspaceKeysArgs, 'workspaceId'>>;
   workspaceMCPTools?: Resolver<Maybe<ResolversTypes['Workspace']>, ParentType, ContextType, RequireFields<QueryWorkspaceMcpToolsArgs, 'workspaceId'>>;
+  workspaces?: Resolver<Array<ResolversTypes['Workspace']>, ParentType, ContextType>;
 };
 
 export type RefreshTokenPayloadResolvers<ContextType = object, ParentType extends ResolversParentTypes['RefreshTokenPayload'] = ResolversParentTypes['RefreshTokenPayload']> = {

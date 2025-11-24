@@ -41,8 +41,8 @@ WORKDIR /app
 # Copy only the built artifacts from builder
 COPY --from=builder /app/packages/runtime/dist ./packages/runtime/dist
 
-# Copy entrypoint script (runtime doesn't generate keys, just loads them)
-COPY ./scripts/entrypoint.sh /app/entrypoint.sh
+# Copy entrypoint script
+COPY ./packages/runtime/entrypoint.sh /app/entrypoint.sh
 RUN chmod +x /app/entrypoint.sh
 
 # Create logs directory
