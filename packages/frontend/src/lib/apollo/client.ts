@@ -118,25 +118,6 @@ export const cache = new InMemoryCache({
   },
 
   /**
-   * Canonize Results - Prevent Unnecessary Re-renders
-   *
-   * WHY: Preserves object references when field values haven't changed.
-   * Without this, subscriptions create new object references even when
-   * data is identical, causing components to re-render unnecessarily.
-   *
-   * HOW IT WORKS:
-   * - Apollo normalizes results into a canonical form
-   * - Same data values = same object reference
-   * - React's === comparison prevents unnecessary re-renders
-   *
-   * IMPACT:
-   * - Prevents inline edit interruptions from subscription updates
-   * - Reduces re-renders by 5-15%
-   * - Zero breaking changes
-   */
-  canonizeResults: true,
-
-  /**
    * WHY: Allow cache to be serialized to localStorage
    * Enables cache persistence across page reloads
    * TODO: Implement cache persistence if needed
