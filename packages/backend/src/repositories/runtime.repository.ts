@@ -1,6 +1,6 @@
 import { injectable, inject } from 'inversify';
 import { DGraphService } from '../services/dgraph.service';
-import { dgraphResolversTypes, NatsService, LoggerService, ToolSetCallToolRequest, RuntimeCallToolResponse, ErrorResponse, apolloResolversTypes, RuntimeTestMCPServerRequest, RuntimeMCPLifecyclePublish } from '@2ly/common';
+import { dgraphResolversTypes, NatsService, LoggerService, ToolSetCallToolRequest, RuntimeCallToolResponse, ErrorResponse, apolloResolversTypes, RuntimeTestMCPServerRequest, RuntimeMCPLifecyclePublish, MCP_TEST_SESSION_TIMEOUT } from '@2ly/common';
 import { ConnectionMetadata } from '../types';
 import { v4 as uuidv4 } from 'uuid';
 import { Observable, Subject, map } from 'rxjs';
@@ -34,6 +34,8 @@ import { WorkspaceRepository } from './workspace.repository';
 export class RuntimeRepository {
   private logger: pino.Logger;
   private testProgressSubjects: Map<string, Subject<apolloResolversTypes.McpServerLifecycleEvent>> = new Map();
+  private testSessionTimeouts: Map<string, NodeJS.Timeout> = new Map();
+  private testSessionSubscriptions: Map<string, { drain: () => Promise<void>; isClosed: () => boolean }> = new Map();
 
   constructor(
     @inject(DGraphService) private readonly dgraphService: DGraphService,
@@ -377,6 +379,36 @@ export class RuntimeRepository {
   }
 
   /**
+   * Clean up resources for a test session (subject, timeout, and NATS subscription)
+   */
+  private async cleanupTestSession(testSessionId: string): Promise<void> {
+    // Clear timeout
+    const timeoutId = this.testSessionTimeouts.get(testSessionId);
+    if (timeoutId) {
+      clearTimeout(timeoutId);
+      this.testSessionTimeouts.delete(testSessionId);
+    }
+
+    // Complete subject (silent - no error event)
+    const subject = this.testProgressSubjects.get(testSessionId);
+    if (subject) {
+      subject.complete();
+      this.testProgressSubjects.delete(testSessionId);
+    }
+
+    // Drain NATS subscription
+    const subscription = this.testSessionSubscriptions.get(testSessionId);
+    if (subscription && !subscription.isClosed()) {
+      try {
+        await subscription.drain();
+      } catch (error) {
+        this.logger.warn(`Failed to drain subscription for test ${testSessionId}: ${error}`);
+      }
+    }
+    this.testSessionSubscriptions.delete(testSessionId);
+  }
+
+  /**
    * Test an MCP server by sending a request to the runtime and returning a testSessionId immediately
    */
   async testMCPServer(
@@ -398,6 +430,16 @@ export class RuntimeRepository {
     // Subscribe to NATS lifecycle events for this test session
     const natsSubject = RuntimeMCPLifecyclePublish.subscribeToTestSession(testSessionId);
     const subscription = this.natsService.subscribe(natsSubject);
+
+    // Track subscription for cleanup
+    this.testSessionSubscriptions.set(testSessionId, subscription);
+
+    // Set timeout for cleanup (5 minutes)
+    const timeoutId = setTimeout(() => {
+      this.logger.warn(`Test session ${testSessionId} timed out after 5 minutes`);
+      this.cleanupTestSession(testSessionId);
+    }, MCP_TEST_SESSION_TIMEOUT);
+    this.testSessionTimeouts.set(testSessionId, timeoutId);
 
     // Handle lifecycle events in the background
     (async () => {
@@ -443,11 +485,7 @@ export class RuntimeRepository {
 
             // Clean up on COMPLETED or FAILED
             if (msg.data.stage === 'COMPLETED' || msg.data.stage === 'FAILED') {
-              if (eventSubject) {
-                eventSubject.complete();
-              }
-              this.testProgressSubjects.delete(testSessionId);
-              await subscription.drain();
+              await this.cleanupTestSession(testSessionId);
               break;
             }
           }
@@ -458,7 +496,7 @@ export class RuntimeRepository {
         if (eventSubject) {
           eventSubject.error(error);
         }
-        this.testProgressSubjects.delete(testSessionId);
+        await this.cleanupTestSession(testSessionId);
       }
     })();
 
