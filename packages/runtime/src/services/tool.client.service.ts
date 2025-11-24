@@ -18,7 +18,7 @@ import { HealthService } from './runtime.health.service';
 import { ToolServerService, type ToolServerServiceFactory } from './tool.server.service';
 import { CallToolResult } from '@modelcontextprotocol/sdk/types.js';
 import { McpStdioService } from './mcp.stdio.service';
-import { Subscription } from 'rxjs';
+import { Subscription, firstValueFrom } from 'rxjs';
 import { optional } from 'inversify';
 
 @injectable()
@@ -360,20 +360,14 @@ export class ToolClientService extends Service {
       // LISTING_TOOLS stage
       publishEvent('LISTING_TOOLS', `Listing tools from ${name}`);
 
-      // Wait for tools to be discovered
-      const tools = await new Promise<import('@2ly/common').MCPTool[]>((resolve) => {
-        const subscription = mcpServerService.observeTools().subscribe((discoveredTools) => {
-          // Keep MCPTool format for RuntimeMCPLifecyclePublish
-          const convertedTools: import('@2ly/common').MCPTool[] = discoveredTools.map((tool) => ({
-            name: tool.name,
-            description: tool.description,
-            inputSchema: tool.inputSchema,
-            annotations: tool.annotations,
-          }));
-          subscription.unsubscribe();
-          resolve(convertedTools);
-        });
-      });
+      // Wait for tools to be discovered (use firstValueFrom to avoid temporal dead zone with BehaviorSubject)
+      const discoveredTools = await firstValueFrom(mcpServerService.observeTools());
+      const tools: import('@2ly/common').MCPTool[] = discoveredTools.map((tool) => ({
+        name: tool.name,
+        description: tool.description,
+        inputSchema: tool.inputSchema,
+        annotations: tool.annotations,
+      }));
 
       // Stop the test server
       await this.stopService(mcpServerService);
