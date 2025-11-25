@@ -60,7 +60,7 @@ describe('ToolServerService', () => {
   });
 
   describe('getConfigSignature', () => {
-    it('should include transport, config, tools length, and roots length in signature', () => {
+    it('should include transport, config, and roots length in signature', () => {
       const config: dgraphResolversTypes.McpServer = {
         id: 'test-id',
         name: 'test-server',
@@ -81,11 +81,11 @@ describe('ToolServerService', () => {
       const service = new ToolServerService(logger, config, roots);
       const signature = service.getConfigSignature();
 
-      // Should include transport, config JSON, 2 tools, and 2 roots
-      expect(signature).toBe(`STDIO-${config.config}-2-2`);
+      // Should include transport, config JSON, and 2 roots (tools are discovered dynamically)
+      expect(signature).toBe(`STDIO-${config.config}-2`);
     });
 
-    it('should handle undefined tools array (use 0 for tools length)', () => {
+    it('should handle undefined tools array', () => {
       const config: dgraphResolversTypes.McpServer = {
         id: 'test-id',
         name: 'test-server',
@@ -101,8 +101,8 @@ describe('ToolServerService', () => {
       const service = new ToolServerService(logger, config, []);
       const signature = service.getConfigSignature();
 
-      // Should use 0 for undefined tools
-      expect(signature).toBe(`SSE-${config.config}-0-0`);
+      // Tools are not part of signature (discovered dynamically)
+      expect(signature).toBe(`SSE-${config.config}-0`);
     });
 
     it('should handle empty tools array', () => {
@@ -123,11 +123,11 @@ describe('ToolServerService', () => {
       const service = new ToolServerService(logger, config, roots);
       const signature = service.getConfigSignature();
 
-      // Should use 0 for empty tools array
-      expect(signature).toBe(`STREAM-${config.config}-0-1`);
+      // Tools are not part of signature (discovered dynamically)
+      expect(signature).toBe(`STREAM-${config.config}-1`);
     });
 
-    it('should change signature when tools length changes', () => {
+    it('should NOT change signature when tools length changes', () => {
       const config: dgraphResolversTypes.McpServer = {
         id: 'test-id',
         name: 'test-server',
@@ -148,10 +148,10 @@ describe('ToolServerService', () => {
 
       const signatureWithThreeTools = service.getConfigSignature();
 
-      // Signatures should be different
-      expect(signatureWithOneTool).toBe(`STDIO-${config.config}-1-0`);
-      expect(signatureWithThreeTools).toBe(`STDIO-${config.config}-3-0`);
-      expect(signatureWithOneTool).not.toBe(signatureWithThreeTools);
+      // Signatures should be the same (tools are discovered dynamically and don't affect config)
+      expect(signatureWithOneTool).toBe(`STDIO-${config.config}-0`);
+      expect(signatureWithThreeTools).toBe(`STDIO-${config.config}-0`);
+      expect(signatureWithOneTool).toBe(signatureWithThreeTools);
     });
 
     it('should change signature when roots length changes', () => {
@@ -181,12 +181,12 @@ describe('ToolServerService', () => {
       const signatureThree = serviceWithThreeRoots.getConfigSignature();
 
       // Signatures should be different
-      expect(signatureOne).toBe(`STDIO-${config.config}-0-1`);
-      expect(signatureThree).toBe(`STDIO-${config.config}-0-3`);
+      expect(signatureOne).toBe(`STDIO-${config.config}-1`);
+      expect(signatureThree).toBe(`STDIO-${config.config}-3`);
       expect(signatureOne).not.toBe(signatureThree);
     });
 
-    it('should include all components in correct order: transport-config-toolsLength-rootsLength', () => {
+    it('should include all components in correct order: transport-config-rootsLength', () => {
       const config: dgraphResolversTypes.McpServer = {
         id: 'test-id',
         name: 'test-server',
@@ -217,9 +217,8 @@ describe('ToolServerService', () => {
       // Verify the exact format
       const parts = signature.split('-');
       expect(parts[0]).toBe('STDIO'); // transport
-      expect(parts.slice(1, -2).join('-')).toBe(config.config); // config (may contain dashes in JSON)
-      expect(parts[parts.length - 2]).toBe('5'); // tools length
-      expect(parts[parts.length - 1]).toBe('3'); // roots length
+      expect(parts.slice(1, -1).join('-')).toBe(config.config); // config (may contain dashes in JSON)
+      expect(parts[parts.length - 1]).toBe('3'); // roots length (tools not included)
     });
 
     it('should handle different transport types in signature', () => {
@@ -305,7 +304,7 @@ describe('ToolServerService', () => {
 
       // Signature should change when roots are updated
       expect(initialSignature).not.toBe(updatedSignature);
-      expect(updatedSignature).toContain('-2'); // Should end with -0-2 (0 tools, 2 roots)
+      expect(updatedSignature).toContain('-2'); // Should end with -2 (2 roots)
     });
   });
 });

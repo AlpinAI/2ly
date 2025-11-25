@@ -221,7 +221,8 @@ export class ToolServerService extends Service {
   }
 
   getConfigSignature(): string {
-    return `${this.config.transport}-${this.config.config}-${this.config.tools?.length ?? 0}-${this.roots.length}`;
+    // Don't include tools length - tools are discovered dynamically and shouldn't trigger respawn
+    return `${this.config.transport}-${this.config.config}-${this.roots.length}`;
   }
 
   updateRoots(roots: { name: string; uri: string }[]) {
