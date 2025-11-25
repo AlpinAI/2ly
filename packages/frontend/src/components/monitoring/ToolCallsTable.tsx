@@ -17,6 +17,12 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
+import {
   ToolCallStatus,
   OrderDirection,
   GetMcpToolsDocument,
@@ -25,6 +31,7 @@ import {
 import { useWorkspaceId } from '@/stores/workspaceStore';
 import { cn } from '@/lib/utils';
 import { useScrollToEntity } from '@/hooks/useScrollToEntity';
+import { estimateTokens, formatTokenCount, formatTokenCountExact } from '@/utils/tokenEstimation';
 
 interface ToolCall {
   id: string;
@@ -32,6 +39,8 @@ interface ToolCall {
   isTest: boolean;
   calledAt: Date;
   completedAt: Date | null;
+  toolInput: string;
+  toolOutput: string | null;
   mcpTool: {
     name: string;
     mcpServer: {
@@ -176,6 +185,13 @@ export function ToolCallsTable({
     return Math.round(new Date(completedAt).getTime() - new Date(calledAt).getTime());
   };
 
+  // Calculate token count helper
+  const calculateTokens = (toolInput: string, toolOutput: string | null) => {
+    const inputTokens = estimateTokens(toolInput);
+    const outputTokens = estimateTokens(toolOutput);
+    return inputTokens + outputTokens;
+  };
+
   return (
     <div className="flex flex-col h-full">
       {/* Single-line Filter Bar */}
@@ -279,6 +295,9 @@ export function ToolCallsTable({
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
                   Duration
                 </th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
+                  Tokens
+                </th>
               </tr>
             </thead>
             <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
@@ -311,6 +330,20 @@ export function ToolCallsTable({
                     {calculateDuration(call.calledAt, call.completedAt)
                       ? `${calculateDuration(call.calledAt, call.completedAt)}ms`
                       : '-'}
+                  </td>
+                  <td className="px-4 py-3 text-sm text-gray-700 dark:text-gray-300">
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <span className="cursor-help">
+                            {formatTokenCount(calculateTokens(call.toolInput, call.toolOutput))}
+                          </span>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          {formatTokenCountExact(calculateTokens(call.toolInput, call.toolOutput))}
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
                   </td>
                 </tr>
               ))}

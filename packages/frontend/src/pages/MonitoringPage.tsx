@@ -18,13 +18,20 @@
  */
 
 import { useState, useMemo, useEffect } from 'react';
-import { Activity, AlertCircle, CheckCircle, Clock } from 'lucide-react';
+import { Activity, AlertCircle, CheckCircle, Clock, Hash, Info } from 'lucide-react';
 import { MasterDetailLayout } from '@/components/layout/master-detail-layout';
 import { ToolCallsTable } from '@/components/monitoring/ToolCallsTable';
 import { ToolCallDetail } from '@/components/monitoring/ToolCallDetail';
 import { RefreshIntervalControl } from '@/components/monitoring/RefreshIntervalControl';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 import { useToolCalls } from '@/hooks/useToolCalls';
 import { useUrlSync } from '@/hooks/useUrlSync';
+import { estimateTokens } from '@/utils/tokenEstimation';
 
 export default function MonitoringPage() {
   const { selectedId, setSelectedId } = useUrlSync();
@@ -33,6 +40,15 @@ export default function MonitoringPage() {
   const { toolCalls, stats, loading, error, filters, sorting, pagination } = useToolCalls({
     pollInterval,
   });
+
+  // Calculate total tokens from all tool calls
+  const totalTokens = useMemo(() => {
+    return toolCalls.reduce((acc, call) => {
+      const inputTokens = estimateTokens(call.toolInput);
+      const outputTokens = estimateTokens(call.toolOutput);
+      return acc + inputTokens + outputTokens;
+    }, 0);
+  }, [toolCalls]);
 
   // Get selected tool call from URL
   const selectedToolCall = useMemo(
@@ -72,7 +88,7 @@ export default function MonitoringPage() {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+      <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
         <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4 shadow-sm">
           <div className="flex items-center gap-3">
             <Activity className="h-8 w-8 text-blue-600 dark:text-blue-400" />
@@ -109,6 +125,26 @@ export default function MonitoringPage() {
             <div>
               <p className="text-sm text-gray-600 dark:text-gray-400">Pending</p>
               <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats.pending}</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4 shadow-sm relative">
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Info className="h-4 w-4 text-gray-400 dark:text-gray-500 absolute top-3 right-3 cursor-help" />
+              </TooltipTrigger>
+              <TooltipContent>
+                Proxy calculation based on characters / 4
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+          <div className="flex items-center gap-3">
+            <Hash className="h-8 w-8 text-purple-600 dark:text-purple-400" />
+            <div>
+              <p className="text-sm text-gray-600 dark:text-gray-400">Total Tokens</p>
+              <p className="text-2xl font-bold text-gray-900 dark:text-white">{totalTokens.toLocaleString()}</p>
             </div>
           </div>
         </div>

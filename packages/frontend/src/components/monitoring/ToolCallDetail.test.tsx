@@ -316,4 +316,58 @@ describe('ToolCallDetail', () => {
     expect(screen.getByText('Server:')).toBeInTheDocument();
     expect(screen.getByText('Test Server')).toBeInTheDocument();
   });
+
+  it('renders token usage section with input, output, and total tokens', () => {
+    renderWithRouter(<ToolCallDetail toolCall={mockToolCall} />);
+
+    expect(screen.getByText('Input Tokens')).toBeInTheDocument();
+    expect(screen.getByText('Output Tokens')).toBeInTheDocument();
+    expect(screen.getByText('Total Tokens')).toBeInTheDocument();
+  });
+
+  it('calculates and displays token counts correctly', () => {
+    // toolInput: '{"query": "test query"}' = 24 chars / 4 = 6 tokens
+    // toolOutput: 'test output' = 11 chars / 4 = 2.75 -> 3 tokens
+    // Total: 6 + 3 = 9 tokens
+    renderWithRouter(<ToolCallDetail toolCall={mockToolCall} />);
+
+    // Should display formatted token counts
+    expect(screen.getByText('6 tokens')).toBeInTheDocument(); // Input
+    expect(screen.getByText('3 tokens')).toBeInTheDocument(); // Output
+    expect(screen.getByText('9 tokens')).toBeInTheDocument(); // Total
+  });
+
+  it('handles null toolOutput for token calculation', () => {
+    const toolCallWithNullOutput = {
+      ...mockToolCall,
+      toolOutput: null,
+    };
+
+    renderWithRouter(<ToolCallDetail toolCall={toolCallWithNullOutput} />);
+
+    // Input tokens should still be calculated
+    expect(screen.getByText('Input Tokens')).toBeInTheDocument();
+    expect(screen.getByText('Output Tokens')).toBeInTheDocument();
+    expect(screen.getByText('0 tokens')).toBeInTheDocument(); // Output should be 0
+  });
+
+  it('displays token usage before input/output sections', () => {
+    const { container } = renderWithRouter(<ToolCallDetail toolCall={mockToolCall} />);
+
+    const sections = container.querySelectorAll('.space-y-6 > div');
+    const tokenSection = Array.from(sections).find((section) =>
+      section.textContent?.includes('Input Tokens')
+    );
+    const inputSection = Array.from(sections).find((section) =>
+      section.querySelector('p')?.textContent === 'Input'
+    );
+
+    expect(tokenSection).toBeInTheDocument();
+    expect(inputSection).toBeInTheDocument();
+
+    // Token section should come before input section
+    const tokenIndex = Array.from(sections).indexOf(tokenSection!);
+    const inputIndex = Array.from(sections).indexOf(inputSection!);
+    expect(tokenIndex).toBeLessThan(inputIndex);
+  });
 });

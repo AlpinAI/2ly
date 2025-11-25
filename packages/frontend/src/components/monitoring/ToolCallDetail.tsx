@@ -8,6 +8,7 @@ import { AlertCircle, CheckCircle, Clock } from 'lucide-react';
 import { Link, useParams } from 'react-router-dom';
 import { ToolCallStatus } from '@/graphql/generated/graphql';
 import { cn } from '@/lib/utils';
+import { estimateTokens, formatTokenCountExact } from '@/utils/tokenEstimation';
 
 interface ToolCall {
   id: string;
@@ -143,6 +144,28 @@ export function ToolCallDetail({ toolCall }: ToolCallDetailProps) {
             </p>
           </div>
         )}
+      </div>
+
+      {/* Token Usage */}
+      <div className="grid grid-cols-3 gap-4">
+        <div>
+          <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Input Tokens</p>
+          <p className="text-sm font-medium text-gray-900 dark:text-white">
+            {formatTokenCountExact(estimateTokens(toolCall.toolInput))}
+          </p>
+        </div>
+        <div>
+          <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Output Tokens</p>
+          <p className="text-sm font-medium text-gray-900 dark:text-white">
+            {formatTokenCountExact(estimateTokens(toolCall.toolOutput))}
+          </p>
+        </div>
+        <div>
+          <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Total Tokens</p>
+          <p className="text-sm font-medium text-blue-600 dark:text-blue-400">
+            {formatTokenCountExact(estimateTokens(toolCall.toolInput) + estimateTokens(toolCall.toolOutput))}
+          </p>
+        </div>
       </div>
 
       {/* Input */}
