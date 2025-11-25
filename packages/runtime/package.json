@@ -1,6 +1,6 @@
 {
   "name": "@2ly/runtime",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "description": "2ly Runtime - NodeJS processes for edge execution connected to backend orchestrator via NATS",
   "author": "Eiger AI",
   "license": "See license in LICENSE",
