@@ -25,7 +25,6 @@ env:
   IMAGE_NAME_RUNTIME: ${{ github.repository_owner }}/runtime
   IMAGE_NAME_FRONTEND: ${{ github.repository_owner }}/frontend
   IMAGE_NAME_DOC: ${{ github.repository_owner }}/doc
-  IMAGE_NAME_INIT_KEYS: ${{ github.repository_owner }}/init-keys
   PR_NUMBER: ${{ github.event.number }}
 
 jobs:
@@ -103,18 +102,6 @@ jobs:
             type=semver,pattern={{major}}.{{minor}}
             type=raw,value=latest,enable={{is_default_branch}}
 
-      - name: Extract metadata for Init Keys
-        id: meta-init-keys
-        uses: docker/metadata-action@v5
-        with:
-          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_INIT_KEYS }}
-          tags: |
-            type=ref,event=branch
-            type=sha,prefix=sha-,event=branch
-            type=semver,pattern={{version}}
-            type=semver,pattern={{major}}.{{minor}}
-            type=raw,value=latest,enable={{is_default_branch}}
-
       - name: Build and push Backend image
         uses: docker/build-push-action@v5
         with:
@@ -147,18 +134,6 @@ jobs:
           push: true
           tags: ${{ steps.meta-frontend.outputs.tags }}
           labels: ${{ steps.meta-frontend.outputs.labels }}
-          build-args: |
-            BUILDKIT_INLINE_CACHE=1
-          platforms: linux/amd64,linux/arm64
-
-      - name: Build and push Init Keys image
-        uses: docker/build-push-action@v5
-        with:
-          context: ./scripts/init-keys
-          file: ./scripts/init-keys/Dockerfile
-          push: true
-          tags: ${{ steps.meta-init-keys.outputs.tags }}
-          labels: ${{ steps.meta-init-keys.outputs.labels }}
           build-args: |
             BUILDKIT_INLINE_CACHE=1
           platforms: linux/amd64,linux/arm64
