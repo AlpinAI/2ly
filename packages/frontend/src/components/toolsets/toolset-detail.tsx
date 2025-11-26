@@ -44,6 +44,7 @@ export function ToolsetDetail({ toolSet }: ToolsetDetailProps) {
   // Key visibility state
   const [keyVisible, setKeyVisible] = useState(false);
   const [keyValue, setKeyValue] = useState<string | null>(null);
+  const [loadingCopy, setLoadingCopy] = useState(false);
   const [getToolsetKey, { loading: loadingKey }] = useLazyQuery(GetToolsetKeyDocument);
   const [getKeyValue, { loading: loadingKeyValue }] = useLazyQuery(GetKeyValueDocument);
 
@@ -187,13 +188,42 @@ export function ToolsetDetail({ toolSet }: ToolsetDetailProps) {
     }
   };
 
-  const handleCopyKey = () => {
-    if (keyValue) {
-      navigator.clipboard.writeText(keyValue);
+  const handleCopyKey = async () => {
+    try {
+      let valueToUse = keyValue;
+
+      // If key is not loaded, fetch it
+      if (!valueToUse) {
+        setLoadingCopy(true);
+        // First get the key metadata
+        const keyResult = await getToolsetKey({ variables: { toolsetId: toolSet.id } });
+        if (!keyResult.data?.toolsetKey) {
+          throw new Error('Toolset key not found');
+        }
+        // Then get the actual key value
+        const valueResult = await getKeyValue({ variables: { keyId: keyResult.data.toolsetKey.id } });
+        if (!valueResult.data?.keyValue) {
+          throw new Error('Key value not found');
+        }
+        valueToUse = valueResult.data.keyValue;
+        // Keep the key in memory for future use
+        setKeyValue(valueToUse);
+      }
+
+      // Copy to clipboard
+      await navigator.clipboard.writeText(valueToUse);
       toast({
         description: 'Key copied to clipboard',
         variant: 'success',
       });
+    } catch (error) {
+      console.error('Failed to copy key:', error);
+      toast({
+        description: 'Failed to copy key',
+        variant: 'error',
+      });
+    } finally {
+      setLoadingCopy(false);
     }
   };
 
@@ -260,17 +290,20 @@ export function ToolsetDetail({ toolSet }: ToolsetDetailProps) {
               <code className="flex-1 text-sm font-mono text-gray-900 dark:text-white truncate">
                 {keyVisible && keyValue ? keyValue : '••••••••••••••••••••••••••••••••'}
               </code>
-              {keyVisible && keyValue && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={handleCopyKey}
-                  className="h-7 w-7 p-0 hover:bg-cyan-100 dark:hover:bg-cyan-900/30"
-                  title="Copy to clipboard"
-                >
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleCopyKey}
+                disabled={loadingCopy || loadingKey || loadingKeyValue}
+                className="h-7 w-7 p-0 hover:bg-cyan-100 dark:hover:bg-cyan-900/30"
+                title="Copy to clipboard"
+              >
+                {loadingCopy ? (
+                  <div className="h-3 w-3 border-2 border-cyan-600 dark:border-cyan-400 border-t-transparent rounded-full animate-spin" />
+                ) : (
                   <Copy className="h-3 w-3 text-cyan-600 dark:text-cyan-400" />
-                </Button>
-              )}
+                )}
+              </Button>
               <Button
                 variant="ghost"
                 size="sm"
