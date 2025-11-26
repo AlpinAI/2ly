@@ -30,6 +30,8 @@ import { useUrlSync } from '@/hooks/useUrlSync';
 export default function SourcesPage() {
   const { selectedId, setSelectedId } = useUrlSync();
   const [typeFilter, setTypeFilter] = useState<string[]>([]);
+  const [transportFilter, setTransportFilter] = useState<string[]>([]);
+  const [runOnFilter, setRunOnFilter] = useState<string[]>([]);
 
   // Fetch servers
   const { servers, loading, error } = useMCPServers();
@@ -46,11 +48,38 @@ export default function SourcesPage() {
     }));
   }, [servers]);
 
-  // Apply type filtering
+  // Apply filters (type, transport, runOn)
   const filteredSources = useMemo(() => {
-    if (typeFilter.length === 0) return sourcesWithType;
-    return sourcesWithType.filter(source => typeFilter.includes(source.type));
-  }, [sourcesWithType, typeFilter]);
+    return sourcesWithType.filter(source => {
+      // Type filter
+      if (typeFilter.length > 0 && !typeFilter.includes(source.type)) {
+        return false;
+      }
+
+      // Transport filter (only applies to MCP Servers)
+      if (transportFilter.length > 0) {
+        if (source.type === SourceType.MCP_SERVER && 'transport' in source) {
+          if (!transportFilter.includes(source.transport)) {
+            return false;
+          }
+        }
+        // Note: REST APIs don't have transport, so they pass this filter
+      }
+
+      // RunOn filter (only applies to MCP Servers)
+      if (runOnFilter.length > 0) {
+        if (source.type === SourceType.MCP_SERVER && 'runOn' in source) {
+          // source.runOn is nullable (Maybe<McpServerRunOn>)
+          if (!source.runOn || !runOnFilter.includes(source.runOn)) {
+            return false;
+          }
+        }
+        // Note: REST APIs don't have runOn, so they pass this filter
+      }
+
+      return true;
+    });
+  }, [sourcesWithType, typeFilter, transportFilter, runOnFilter]);
 
   // Get selected source from URL
   const selectedSource = useMemo(() => {
@@ -112,10 +141,10 @@ export default function SourcesPage() {
             onSearchChange={() => {}}
             typeFilter={typeFilter}
             onTypeFilterChange={setTypeFilter}
-            transportFilter={[]}
-            onTransportFilterChange={() => {}}
-            runOnFilter={[]}
-            onRunOnFilterChange={() => {}}
+            transportFilter={transportFilter}
+            onTransportFilterChange={setTransportFilter}
+            runOnFilter={runOnFilter}
+            onRunOnFilterChange={setRunOnFilter}
             agentFilter={[]}
             onAgentFilterChange={() => {}}
             availableAgents={[]}
