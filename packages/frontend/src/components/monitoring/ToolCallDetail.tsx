@@ -4,10 +4,13 @@
  * Displays detailed information about a selected tool call
  */
 
-import { AlertCircle, CheckCircle, Clock } from 'lucide-react';
+import { useState } from 'react';
+import { AlertCircle, CheckCircle, Clock, Maximize2 } from 'lucide-react';
 import { Link, useParams } from 'react-router-dom';
 import { ToolCallStatus } from '@/graphql/generated/graphql';
 import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
+import { CodeViewerDialog } from '@/components/ui/code-viewer-dialog';
 
 interface ToolCall {
   id: string;
@@ -44,9 +47,18 @@ interface ToolCallDetailProps {
 
 export function ToolCallDetail({ toolCall }: ToolCallDetailProps) {
   const { workspaceId } = useParams<{ workspaceId: string }>();
+  const [viewerOpen, setViewerOpen] = useState(false);
+  const [viewerContent, setViewerContent] = useState<{ title: string; content: string; language: 'json' | 'text' }>({ title: '', content: '', language: 'json' });
+
   // Format date helper
   const formatDate = (date: Date) => {
     return new Date(date).toLocaleString();
+  };
+
+  // Open viewer with content
+  const openViewer = (title: string, content: string, language: 'json' | 'text' = 'json') => {
+    setViewerContent({ title, content, language });
+    setViewerOpen(true);
   };
 
   // Calculate duration helper
@@ -147,7 +159,17 @@ export function ToolCallDetail({ toolCall }: ToolCallDetailProps) {
 
       {/* Input */}
       <div>
-        <p className="text-sm font-medium text-gray-900 dark:text-white mb-2">Input</p>
+        <div className="flex items-center justify-between mb-2">
+          <p className="text-sm font-medium text-gray-900 dark:text-white">Input</p>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => openViewer('Tool Input', toolCall.toolInput, 'json')}
+            className="h-7 w-7 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+          >
+            <Maximize2 className="h-4 w-4" />
+          </Button>
+        </div>
         <pre className="text-xs bg-gray-50 dark:bg-gray-900 p-3 rounded border border-gray-200 dark:border-gray-700 overflow-x-auto max-h-40">
           <code>{(() => {
             try {
@@ -162,19 +184,48 @@ export function ToolCallDetail({ toolCall }: ToolCallDetailProps) {
       {/* Output or Error */}
       {toolCall.status === ToolCallStatus.Failed && toolCall.error ? (
         <div>
-          <p className="text-sm font-medium text-red-800 dark:text-red-300 mb-2">Error</p>
+          <div className="flex items-center justify-between mb-2">
+            <p className="text-sm font-medium text-red-800 dark:text-red-300">Error</p>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => openViewer('Error', toolCall.error || '', 'text')}
+              className="h-7 w-7 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+            >
+              <Maximize2 className="h-4 w-4" />
+            </Button>
+          </div>
           <pre className="text-xs bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300 p-3 rounded border border-red-200 dark:border-red-800 overflow-x-auto max-h-40">
             <code>{toolCall.error}</code>
           </pre>
         </div>
       ) : toolCall.toolOutput ? (
         <div>
-          <p className="text-sm font-medium text-gray-900 dark:text-white mb-2">Output</p>
+          <div className="flex items-center justify-between mb-2">
+            <p className="text-sm font-medium text-gray-900 dark:text-white">Output</p>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => openViewer('Tool Output', toolCall.toolOutput || '', 'json')}
+              className="h-7 w-7 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+            >
+              <Maximize2 className="h-4 w-4" />
+            </Button>
+          </div>
           <pre className="text-xs bg-green-50 dark:bg-green-900/20 p-3 rounded border border-green-200 dark:border-green-800 overflow-x-auto max-h-40">
             <code>{toolCall.toolOutput}</code>
           </pre>
         </div>
       ) : null}
+
+      {/* Code Viewer Dialog */}
+      <CodeViewerDialog
+        open={viewerOpen}
+        onOpenChange={setViewerOpen}
+        title={viewerContent.title}
+        content={viewerContent.content}
+        language={viewerContent.language}
+      />
     </div>
   );
 }
