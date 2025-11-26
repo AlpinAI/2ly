@@ -41,7 +41,7 @@ export default function MonitoringPage() {
     pollInterval,
   });
 
-  // Calculate total tokens from all tool calls
+  // Calculate total tokens from current page's tool calls
   const totalTokens = useMemo(() => {
     return toolCalls.reduce((acc, call) => {
       const inputTokens = estimateTokens(call.toolInput);
@@ -136,14 +136,14 @@ export default function MonitoringPage() {
                 <Info className="h-4 w-4 text-gray-400 dark:text-gray-500 absolute top-3 right-3 cursor-help" />
               </TooltipTrigger>
               <TooltipContent>
-                Proxy calculation based on characters / 4
+                Estimated tokens for current page (input + output). Proxy calculation based on characters / 4.
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>
           <div className="flex items-center gap-3">
             <Hash className="h-8 w-8 text-purple-600 dark:text-purple-400" />
             <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Total Tokens</p>
+              <p className="text-sm text-gray-600 dark:text-gray-400">Page Tokens</p>
               <p className="text-2xl font-bold text-gray-900 dark:text-white">{totalTokens.toLocaleString()}</p>
             </div>
           </div>

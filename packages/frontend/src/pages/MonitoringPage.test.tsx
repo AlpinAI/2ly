@@ -152,7 +152,7 @@ describe('MonitoringPage', () => {
     expect(screen.getByText('Completed')).toBeInTheDocument();
     expect(screen.getByText('Failed')).toBeInTheDocument();
     expect(screen.getByText('Pending')).toBeInTheDocument();
-    expect(screen.getByText('Total Tokens')).toBeInTheDocument();
+    expect(screen.getByText('Page Tokens')).toBeInTheDocument();
   });
 
   it('displays correct stat values', () => {
@@ -181,10 +181,10 @@ describe('MonitoringPage', () => {
     expect(elements.length).toBe(2);
   });
 
-  it('displays Total Tokens stat card with info icon', () => {
+  it('displays Page Tokens stat card with info icon', () => {
     const { container } = renderWithRouter(<MonitoringPage />);
 
-    // Check for info icon (should be in the Total Tokens card)
+    // Check for info icon (should be in the Page Tokens card)
     const infoIcons = container.querySelectorAll('svg.lucide-info');
     expect(infoIcons.length).toBeGreaterThan(0);
   });
@@ -197,7 +197,7 @@ describe('MonitoringPage', () => {
     expect(statsGrid).toBeInTheDocument();
   });
 
-  it('displays Hash icon for Total Tokens card', () => {
+  it('displays Hash icon for Page Tokens card', () => {
     const { container } = renderWithRouter(<MonitoringPage />);
 
     const hashIcons = container.querySelectorAll('svg.lucide-hash');
@@ -249,7 +249,7 @@ describe('MonitoringPage', () => {
     renderWithRouter(<MonitoringPage />);
 
     // Should display 0 for all stats including tokens
-    expect(screen.getByText('Total Tokens')).toBeInTheDocument();
+    expect(screen.getByText('Page Tokens')).toBeInTheDocument();
   });
 
   it('formats large token counts with commas', () => {
