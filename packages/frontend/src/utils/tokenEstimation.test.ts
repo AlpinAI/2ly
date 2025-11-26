@@ -69,24 +69,25 @@ describe('formatTokenCount', () => {
 });
 
 describe('formatTokenCountExact', () => {
-  it('should format small numbers with tokens suffix', () => {
-    expect(formatTokenCountExact(10)).toBe('10 tokens');
-    expect(formatTokenCountExact(100)).toBe('100 tokens');
+  it('should format small numbers with ~ prefix and tokens suffix', () => {
+    expect(formatTokenCountExact(10)).toBe('~10 tokens');
+    expect(formatTokenCountExact(100)).toBe('~100 tokens');
   });
 
-  it('should format with comma separators', () => {
-    expect(formatTokenCountExact(1000)).toBe('1,000 tokens');
-    expect(formatTokenCountExact(1234)).toBe('1,234 tokens');
-    expect(formatTokenCountExact(123456)).toBe('123,456 tokens');
-    expect(formatTokenCountExact(1234567)).toBe('1,234,567 tokens');
+  it('should format with thousands separators', () => {
+    // Use regex to handle locale-specific separators (comma, space, narrow no-break space)
+    expect(formatTokenCountExact(1000)).toMatch(/^~1[,\s\u202f]000 tokens$/);
+    expect(formatTokenCountExact(1234)).toMatch(/^~1[,\s\u202f]234 tokens$/);
+    expect(formatTokenCountExact(123456)).toMatch(/^~123[,\s\u202f]456 tokens$/);
+    expect(formatTokenCountExact(1234567)).toMatch(/^~1[,\s\u202f]234[,\s\u202f]567 tokens$/);
   });
 
   it('should handle zero', () => {
-    expect(formatTokenCountExact(0)).toBe('0 tokens');
+    expect(formatTokenCountExact(0)).toBe('~0 tokens');
   });
 
   it('should handle single digit', () => {
-    expect(formatTokenCountExact(5)).toBe('5 tokens');
+    expect(formatTokenCountExact(5)).toBe('~5 tokens');
   });
 });
 
@@ -96,7 +97,7 @@ describe('token estimation integration', () => {
     const tokens = estimateTokens(jsonInput);
     expect(tokens).toBeGreaterThan(0);
     expect(formatTokenCount(tokens)).toMatch(/^~\d+/);
-    expect(formatTokenCountExact(tokens)).toMatch(/\d+ tokens$/);
+    expect(formatTokenCountExact(tokens)).toMatch(/^~[\d,]+ tokens$/);
   });
 
   it('should work with null output', () => {
@@ -104,6 +105,6 @@ describe('token estimation integration', () => {
     const outputTokens = estimateTokens(null);
     const total = inputTokens + outputTokens;
     expect(total).toBe(inputTokens);
-    expect(formatTokenCountExact(total)).toMatch(/\d+ tokens$/);
+    expect(formatTokenCountExact(total)).toMatch(/^~[\d,]+ tokens$/);
   });
 });

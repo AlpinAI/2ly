@@ -136,7 +136,7 @@ export default function MonitoringPage() {
                 <Info className="h-4 w-4 text-gray-400 dark:text-gray-500 absolute top-3 right-3 cursor-help" />
               </TooltipTrigger>
               <TooltipContent>
-                Estimated tokens for current page (input + output). Proxy calculation based on characters / 4.
+                Estimated tokens for current page (input + output). Approximate calculation based on characters / 4.
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>

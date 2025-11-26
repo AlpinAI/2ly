@@ -10,6 +10,12 @@ import { ToolCallsTable } from './ToolCallsTable';
 import { ToolCallStatus, OrderDirection } from '@/graphql/generated/graphql';
 import * as apolloClient from '@apollo/client/react';
 import * as workspaceStore from '@/stores/workspaceStore';
+import {
+  createMockToolCall,
+  createMockMcpToolRef,
+  createMockMcpServerRef,
+  createMockToolSetRef,
+} from '@/test/factories';
 
 // Mock Apollo Client
 vi.mock('@apollo/client/react', () => ({
@@ -52,59 +58,32 @@ describe('ToolCallsTable', () => {
     } as any);
   });
 
+  // tc-1: toolInput (16 chars / 4 = 4 tokens) + toolOutput (6 chars / 4 = 2 tokens) = 6 tokens
+  // tc-2: toolInput (16 chars / 4 = 4 tokens) + toolOutput (null = 0 tokens) = 4 tokens
   const mockToolCalls = [
-    {
-      __typename: 'ToolCall' as const,
+    createMockToolCall({
       id: 'tc-1',
-      status: ToolCallStatus.Completed,
-      isTest: false,
-      calledAt: new Date('2025-01-15T10:30:00Z'),
-      completedAt: new Date('2025-01-15T10:30:05Z'),
-      toolInput: '{"query":"test"}', // 16 chars / 4 = 4 tokens
-      toolOutput: 'result', // 6 chars / 4 = 1.5 -> 2 tokens (total: 6 tokens)
-      error: null,
-      mcpTool: {
-        __typename: 'MCPTool' as const,
-        id: 'tool-1',
-        name: 'test-tool',
-        description: 'Test tool description',
-        mcpServer: {
-          __typename: 'MCPServer' as const,
-          id: 'server-1',
-          name: 'Test Server',
-        },
-      },
-      calledBy: {
-        __typename: 'ToolSet' as const,
-        id: 'toolset-1',
-        name: 'Test Agent',
-      },
-      executedBy: null,
-    },
-    {
-      __typename: 'ToolCall' as const,
+      toolInput: '{"query":"test"}',
+      toolOutput: 'result',
+      calledBy: createMockToolSetRef(),
+    }),
+    createMockToolCall({
       id: 'tc-2',
       status: ToolCallStatus.Failed,
       isTest: true,
       calledAt: new Date('2025-01-15T10:31:00Z'),
       completedAt: null,
-      toolInput: '{"test":"input"}', // 16 chars / 4 = 4 tokens
-      toolOutput: null, // 0 tokens (total: 4 tokens)
+      toolInput: '{"test":"input"}',
+      toolOutput: null,
       error: 'Test error',
-      mcpTool: {
-        __typename: 'MCPTool' as const,
+      mcpTool: createMockMcpToolRef({
         id: 'tool-2',
         name: 'another-tool',
         description: 'Another tool description',
-        mcpServer: {
-          __typename: 'MCPServer' as const,
-          id: 'server-2',
-          name: 'Another Server',
-        },
-      },
+        mcpServer: createMockMcpServerRef({ id: 'server-2', name: 'Another Server' }),
+      }),
       calledBy: null,
-      executedBy: null,
-    },
+    }),
   ];
 
   const defaultProps = {
@@ -162,9 +141,6 @@ describe('ToolCallsTable', () => {
     const rows = container.querySelectorAll('tbody tr');
     expect(rows.length).toBe(2);
 
-    // Debug: Log the HTML to see what's actually rendered
-    // console.log(container.innerHTML);
-
     // tc-1: 4 + 2 = 6 tokens
     expect(screen.getByText('~6')).toBeInTheDocument();
 
@@ -173,31 +149,19 @@ describe('ToolCallsTable', () => {
   });
 
   it('calculates tokens from both input and output', () => {
+    // 4000 / 4 = 1000 tokens input + 1000 tokens output = 2000 tokens total
     const toolCallWithLargeTokens = [
-      {
-        __typename: 'ToolCall' as const,
+      createMockToolCall({
         id: 'tc-large',
-        status: ToolCallStatus.Completed,
-        isTest: false,
-        calledAt: new Date('2025-01-15T10:30:00Z'),
-        completedAt: new Date('2025-01-15T10:30:05Z'),
-        toolInput: 'a'.repeat(4000), // 4000 / 4 = 1000 tokens
-        toolOutput: 'b'.repeat(4000), // 4000 / 4 = 1000 tokens (total: 2000 tokens)
-        error: null,
-        mcpTool: {
-          __typename: 'MCPTool' as const,
+        toolInput: 'a'.repeat(4000),
+        toolOutput: 'b'.repeat(4000),
+        mcpTool: createMockMcpToolRef({
           id: 'tool-large',
           name: 'large-tool',
           description: 'Large tool description',
-          mcpServer: {
-            __typename: 'MCPServer' as const,
-            id: 'server-large',
-            name: 'Large Server',
-          },
-        },
-        calledBy: null,
-        executedBy: null,
-      },
+          mcpServer: createMockMcpServerRef({ id: 'server-large', name: 'Large Server' }),
+        }),
+      }),
     ];
 
     render(<ToolCallsTable {...defaultProps} toolCalls={toolCallWithLargeTokens} />);
@@ -207,31 +171,21 @@ describe('ToolCallsTable', () => {
   });
 
   it('handles null toolOutput gracefully', () => {
+    // 15 chars / 4 = 3.75 -> 4 tokens input, 0 tokens output
     const toolCallWithNullOutput = [
-      {
-        __typename: 'ToolCall' as const,
+      createMockToolCall({
         id: 'tc-null',
         status: ToolCallStatus.Pending,
-        isTest: false,
-        calledAt: new Date('2025-01-15T10:30:00Z'),
         completedAt: null,
-        toolInput: '{"test":"data"}', // 15 chars / 4 = 3.75 -> 4 tokens
-        toolOutput: null, // 0 tokens
-        error: null,
-        mcpTool: {
-          __typename: 'MCPTool' as const,
+        toolInput: '{"test":"data"}',
+        toolOutput: null,
+        mcpTool: createMockMcpToolRef({
           id: 'tool-null',
           name: 'null-tool',
           description: 'Null tool description',
-          mcpServer: {
-            __typename: 'MCPServer' as const,
-            id: 'server-null',
-            name: 'Null Server',
-          },
-        },
-        calledBy: null,
-        executedBy: null,
-      },
+          mcpServer: createMockMcpServerRef({ id: 'server-null', name: 'Null Server' }),
+        }),
+      }),
     ];
 
     render(<ToolCallsTable {...defaultProps} toolCalls={toolCallWithNullOutput} />);

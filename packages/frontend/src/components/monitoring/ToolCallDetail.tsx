@@ -136,7 +136,7 @@ export function ToolCallDetail({ toolCall }: ToolCallDetailProps) {
         </div>
         <div>
           <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Total Tokens</p>
-          <p className="text-sm font-medium text-blue-600 dark:text-blue-400">
+          <p className="text-sm font-medium text-gray-900 dark:text-white">
             {formatTokenCountExact(estimateTokens(toolCall.toolInput) + estimateTokens(toolCall.toolOutput))}
           </p>
         </div>

@@ -2,7 +2,7 @@
  * Token Estimation Utilities
  *
  * Provides simple character-based token estimation without external dependencies.
- * Uses a 4:1 character-to-token ratio as a proxy calculation.
+ * Uses a 4:1 character-to-token ratio as an approximate calculation.
  *
  * NOTE: This is an approximation and not exact token counting.
  */
@@ -32,8 +32,8 @@ export function formatTokenCount(count: number): string {
 /**
  * Formats token count with exact value and comma separators
  * @param count - The token count to format
- * @returns Formatted string with "tokens" suffix (e.g., "1,234 tokens")
+ * @returns Formatted string with ~ prefix and "tokens" suffix (e.g., "~1,234 tokens")
  */
 export function formatTokenCountExact(count: number): string {
-  return `${count.toLocaleString()} tokens`;
+  return `~${count.toLocaleString()} tokens`;
 }

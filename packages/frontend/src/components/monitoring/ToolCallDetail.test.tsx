@@ -10,41 +10,23 @@ import { render, screen } from '@testing-library/react';
 import { createMemoryRouter, RouterProvider } from 'react-router-dom';
 import { ToolCallDetail } from './ToolCallDetail';
 import { ToolCallStatus } from '@/graphql/generated/graphql';
+import {
+  createMockToolCall,
+  createMockMcpToolRef,
+  createMockToolSetRef,
+  createMockRuntimeRef,
+} from '@/test/factories';
 
 describe('ToolCallDetail', () => {
-  const mockToolCall = {
-    __typename: 'ToolCall' as const,
-    id: 'tc-1',
-    status: ToolCallStatus.Completed,
-    calledAt: new Date('2025-01-15T10:30:00Z'),
-    completedAt: new Date('2025-01-15T10:30:05Z'),
+  const mockToolCall = createMockToolCall({
     toolInput: JSON.stringify({ query: 'test query' }),
     toolOutput: 'test output',
-    error: null,
-    mcpTool: {
-      __typename: 'MCPTool' as const,
-      id: 'tool-1',
-      name: 'test-tool',
+    mcpTool: createMockMcpToolRef({
       description: 'This is a test tool description that should not be displayed',
-      mcpServer: {
-        __typename: 'MCPServer' as const,
-        id: 'server-1',
-        name: 'Test Server',
-      },
-    },
-    isTest: false,
-    calledBy: {
-      __typename: 'ToolSet' as const,
-      id: 'runtime-1',
-      name: 'Test Agent',
-    },
-    executedBy: {
-      __typename: 'Runtime' as const,
-      id: 'runtime-2',
-      name: 'Test Runtime',
-      hostname: 'runtime-host-1',
-    },
-  };
+    }),
+    calledBy: createMockToolSetRef({ id: 'runtime-1' }),
+    executedBy: createMockRuntimeRef({ id: 'runtime-2', hostname: 'runtime-host-1' }),
+  });
 
   // Helper to render with router
   const renderWithRouter = (component: React.ReactElement) => {
@@ -214,17 +196,8 @@ describe('ToolCallDetail', () => {
   it('renders without hostname when not provided', () => {
     const toolCallWithoutHostnames = {
       ...mockToolCall,
-      calledBy: {
-        __typename: 'ToolSet' as const,
-        id: 'runtime-1',
-        name: 'Test Agent',
-      },
-      executedBy: {
-        __typename: 'Runtime' as const,
-        id: 'runtime-2',
-        name: 'Test Runtime',
-        hostname: null,
-      },
+      calledBy: createMockToolSetRef({ id: 'runtime-1' }),
+      executedBy: createMockRuntimeRef({ id: 'runtime-2', hostname: null }),
     };
 
     renderWithRouter(<ToolCallDetail toolCall={toolCallWithoutHostnames} />);
@@ -304,17 +277,7 @@ describe('ToolCallDetail', () => {
   it('works with optional description field', () => {
     const toolCallWithoutDescription = {
       ...mockToolCall,
-      mcpTool: {
-        __typename: 'MCPTool' as const,
-        id: 'tool-1',
-        name: 'test-tool',
-        description: '', // Empty description
-        mcpServer: {
-          __typename: 'MCPServer' as const,
-          id: 'server-1',
-          name: 'Test Server',
-        },
-      },
+      mcpTool: createMockMcpToolRef({ description: '' }),
     };
 
     // Should not throw an error
@@ -334,15 +297,15 @@ describe('ToolCallDetail', () => {
   });
 
   it('calculates and displays token counts correctly', () => {
-    // toolInput: '{"query": "test query"}' = 24 chars / 4 = 6 tokens
+    // toolInput: '{"query":"test query"}' = 22 chars / 4 = 5.5 -> 6 tokens
     // toolOutput: 'test output' = 11 chars / 4 = 2.75 -> 3 tokens
     // Total: 6 + 3 = 9 tokens
     renderWithRouter(<ToolCallDetail toolCall={mockToolCall} />);
 
-    // Should display formatted token counts
-    expect(screen.getByText('6 tokens')).toBeInTheDocument(); // Input
-    expect(screen.getByText('3 tokens')).toBeInTheDocument(); // Output
-    expect(screen.getByText('9 tokens')).toBeInTheDocument(); // Total
+    // Should display formatted token counts with ~ prefix
+    expect(screen.getByText('~6 tokens')).toBeInTheDocument(); // Input
+    expect(screen.getByText('~3 tokens')).toBeInTheDocument(); // Output
+    expect(screen.getByText('~9 tokens')).toBeInTheDocument(); // Total
   });
 
   it('handles null toolOutput for token calculation', () => {
@@ -356,7 +319,7 @@ describe('ToolCallDetail', () => {
     // Input tokens should still be calculated
     expect(screen.getByText('Input Tokens')).toBeInTheDocument();
     expect(screen.getByText('Output Tokens')).toBeInTheDocument();
-    expect(screen.getByText('0 tokens')).toBeInTheDocument(); // Output should be 0
+    expect(screen.getByText('~0 tokens')).toBeInTheDocument(); // Output should be 0 with ~ prefix
   });
 
   it('displays token usage before input/output sections', () => {
