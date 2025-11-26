@@ -13,6 +13,7 @@ import { ToolCallStatus } from '@/graphql/generated/graphql';
 
 describe('ToolCallDetail', () => {
   const mockToolCall = {
+    __typename: 'ToolCall' as const,
     id: 'tc-1',
     status: ToolCallStatus.Completed,
     calledAt: new Date('2025-01-15T10:30:00Z'),
@@ -21,20 +22,24 @@ describe('ToolCallDetail', () => {
     toolOutput: 'test output',
     error: null,
     mcpTool: {
+      __typename: 'MCPTool' as const,
       id: 'tool-1',
       name: 'test-tool',
       description: 'This is a test tool description that should not be displayed',
       mcpServer: {
+        __typename: 'MCPServer' as const,
         id: 'server-1',
         name: 'Test Server',
       },
     },
     isTest: false,
     calledBy: {
+      __typename: 'ToolSet' as const,
       id: 'runtime-1',
       name: 'Test Agent',
     },
     executedBy: {
+      __typename: 'Runtime' as const,
       id: 'runtime-2',
       name: 'Test Runtime',
       hostname: 'runtime-host-1',
@@ -210,11 +215,12 @@ describe('ToolCallDetail', () => {
     const toolCallWithoutHostnames = {
       ...mockToolCall,
       calledBy: {
+        __typename: 'ToolSet' as const,
         id: 'runtime-1',
         name: 'Test Agent',
-        hostname: null,
       },
       executedBy: {
+        __typename: 'Runtime' as const,
         id: 'runtime-2',
         name: 'Test Runtime',
         hostname: null,
@@ -299,10 +305,12 @@ describe('ToolCallDetail', () => {
     const toolCallWithoutDescription = {
       ...mockToolCall,
       mcpTool: {
+        __typename: 'MCPTool' as const,
         id: 'tool-1',
         name: 'test-tool',
         description: '', // Empty description
         mcpServer: {
+          __typename: 'MCPServer' as const,
           id: 'server-1',
           name: 'Test Server',
         },

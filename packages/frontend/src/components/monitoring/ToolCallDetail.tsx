@@ -6,38 +6,12 @@
 
 import { AlertCircle, CheckCircle, Clock } from 'lucide-react';
 import { Link, useParams } from 'react-router-dom';
-import { ToolCallStatus } from '@/graphql/generated/graphql';
+import { ToolCallStatus, GetToolCallsQuery } from '@/graphql/generated/graphql';
 import { cn } from '@/lib/utils';
 import { estimateTokens, formatTokenCountExact } from '@/utils/tokenEstimation';
 
-interface ToolCall {
-  id: string;
-  status: ToolCallStatus;
-  calledAt: Date;
-  completedAt: Date | null;
-  toolInput: string;
-  toolOutput: string | null;
-  error: string | null;
-  mcpTool: {
-    id: string;
-    name: string;
-    description?: string;
-    mcpServer: {
-      id: string;
-      name: string;
-    };
-  };
-  isTest: boolean;
-  calledBy?: {
-    id: string;
-    name: string;
-  } | null;
-  executedBy?: {
-    id: string;
-    name: string;
-    hostname: string | null;
-  } | null;
-}
+// Derive ToolCall type from the actual GraphQL query result
+type ToolCall = GetToolCallsQuery['toolCalls']['toolCalls'][number];
 
 interface ToolCallDetailProps {
   toolCall: ToolCall;

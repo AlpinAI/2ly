@@ -27,30 +27,15 @@ import {
   OrderDirection,
   GetMcpToolsDocument,
   GetRuntimesDocument,
+  GetToolCallsQuery,
 } from '@/graphql/generated/graphql';
 import { useWorkspaceId } from '@/stores/workspaceStore';
 import { cn } from '@/lib/utils';
 import { useScrollToEntity } from '@/hooks/useScrollToEntity';
 import { estimateTokens, formatTokenCount, formatTokenCountExact } from '@/utils/tokenEstimation';
 
-interface ToolCall {
-  id: string;
-  status: ToolCallStatus;
-  isTest: boolean;
-  calledAt: Date;
-  completedAt: Date | null;
-  toolInput: string;
-  toolOutput: string | null;
-  mcpTool: {
-    name: string;
-    mcpServer: {
-      name: string;
-    };
-  };
-  calledBy?: {
-    name: string;
-  } | null;
-}
+// Derive ToolCall type from the actual GraphQL query result
+type ToolCall = GetToolCallsQuery['toolCalls']['toolCalls'][number];
 
 interface ToolCallsTableProps {
   toolCalls: ToolCall[];
