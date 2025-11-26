@@ -16,9 +16,17 @@ import { createMockMcpServer } from '@/test/factories';
 
 // Mock the useMCPServers hook
 const mockServers: McpServer[] = [];
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const mockUseMCPServers = vi.fn((): any => ({
+
+interface UseMCPServersReturn {
+  servers: McpServer[];
+  stats: { total: number; withTools: number; withoutTools: number };
+  loading: boolean;
+  error: Error | undefined;
+}
+
+const mockUseMCPServers = vi.fn((): UseMCPServersReturn => ({
   servers: mockServers,
+  stats: { total: 0, withTools: 0, withoutTools: 0 },
   loading: false,
   error: undefined,
 }));
@@ -148,9 +156,20 @@ describe('SourcesPage', () => {
         expect(mockSourceTableProps).toHaveBeenCalled();
       });
 
-      // Get initial props
+      // Initially, all sources are shown
       const lastCall = mockSourceTableProps.mock.calls[mockSourceTableProps.mock.calls.length - 1][0];
       expect(lastCall.sources).toHaveLength(2);
+
+      // Simulate setting transport filter to STDIO
+      lastCall.onTransportFilterChange(['STDIO']);
+
+      // Wait for filter to be applied and re-render to occur
+      await waitFor(() => {
+        const filteredCall = mockSourceTableProps.mock.calls[mockSourceTableProps.mock.calls.length - 1][0];
+        expect(filteredCall.transportFilter).toEqual(['STDIO']);
+        expect(filteredCall.sources).toHaveLength(1);
+        expect(filteredCall.sources[0].transport).toBe(McpTransportType.Stdio);
+      });
     });
 
     it('shows all transports when filter is empty', async () => {
@@ -190,9 +209,23 @@ describe('SourcesPage', () => {
       renderWithProviders(<SourcesPage />);
 
       await waitFor(() => {
-        const lastCall = mockSourceTableProps.mock.calls[mockSourceTableProps.mock.calls.length - 1][0];
-        expect(lastCall.sources).toHaveLength(2);
-        expect(lastCall.runOnFilter).toEqual([]);
+        expect(mockSourceTableProps).toHaveBeenCalled();
+      });
+
+      // Initially, all sources are shown
+      const lastCall = mockSourceTableProps.mock.calls[mockSourceTableProps.mock.calls.length - 1][0];
+      expect(lastCall.sources).toHaveLength(2);
+      expect(lastCall.runOnFilter).toEqual([]);
+
+      // Simulate setting runOn filter to GLOBAL
+      lastCall.onRunOnFilterChange(['GLOBAL']);
+
+      // Wait for filter to be applied and re-render to occur
+      await waitFor(() => {
+        const filteredCall = mockSourceTableProps.mock.calls[mockSourceTableProps.mock.calls.length - 1][0];
+        expect(filteredCall.runOnFilter).toEqual(['GLOBAL']);
+        expect(filteredCall.sources).toHaveLength(1);
+        expect(filteredCall.sources[0].runOn).toBe(McpServerRunOn.Global);
       });
     });
 
@@ -216,8 +249,22 @@ describe('SourcesPage', () => {
       renderWithProviders(<SourcesPage />);
 
       await waitFor(() => {
-        const lastCall = mockSourceTableProps.mock.calls[mockSourceTableProps.mock.calls.length - 1][0];
-        expect(lastCall.sources).toHaveLength(2);
+        expect(mockSourceTableProps).toHaveBeenCalled();
+      });
+
+      // Initially, all sources are shown
+      const lastCall = mockSourceTableProps.mock.calls[mockSourceTableProps.mock.calls.length - 1][0];
+      expect(lastCall.sources).toHaveLength(2);
+
+      // Simulate setting runOn filter to AGENT
+      lastCall.onRunOnFilterChange(['AGENT']);
+
+      // Wait for filter to be applied and re-render to occur
+      await waitFor(() => {
+        const filteredCall = mockSourceTableProps.mock.calls[mockSourceTableProps.mock.calls.length - 1][0];
+        expect(filteredCall.runOnFilter).toEqual(['AGENT']);
+        expect(filteredCall.sources).toHaveLength(1);
+        expect(filteredCall.sources[0].runOn).toBe(McpServerRunOn.Agent);
       });
     });
 
@@ -241,13 +288,13 @@ describe('SourcesPage', () => {
 
   describe('Combined Filters', () => {
     it('combines transport and runOn filters with AND logic', async () => {
-      // Server that matches both filters
+      // Server that matches both filters (STREAM + GLOBAL)
       const matchingServer = createMockMcpServer({
         name: 'Matching Server',
         description: 'Matches both filters',
       });
 
-      // Server that matches transport but not runOn
+      // Server that matches transport but not runOn (STREAM + AGENT)
       const wrongRunOnServer = createMockMcpServer({
         id: 'server-2',
         name: 'Wrong RunOn Server',
@@ -255,7 +302,7 @@ describe('SourcesPage', () => {
         runOn: McpServerRunOn.Agent,
       });
 
-      // Server that matches runOn but not transport
+      // Server that matches runOn but not transport (STDIO + GLOBAL)
       const wrongTransportServer = createMockMcpServer({
         id: 'server-3',
         name: 'Wrong Transport Server',
@@ -268,8 +315,25 @@ describe('SourcesPage', () => {
       renderWithProviders(<SourcesPage />);
 
       await waitFor(() => {
-        const lastCall = mockSourceTableProps.mock.calls[mockSourceTableProps.mock.calls.length - 1][0];
-        expect(lastCall.sources).toHaveLength(3);
+        expect(mockSourceTableProps).toHaveBeenCalled();
+      });
+
+      // Initially, all sources are shown
+      const lastCall = mockSourceTableProps.mock.calls[mockSourceTableProps.mock.calls.length - 1][0];
+      expect(lastCall.sources).toHaveLength(3);
+
+      // Apply both filters: STREAM transport AND GLOBAL runOn
+      lastCall.onTransportFilterChange(['STREAM']);
+      lastCall.onRunOnFilterChange(['GLOBAL']);
+
+      // Wait for filters to be applied - only server matching BOTH should remain
+      await waitFor(() => {
+        const filteredCall = mockSourceTableProps.mock.calls[mockSourceTableProps.mock.calls.length - 1][0];
+        expect(filteredCall.transportFilter).toEqual(['STREAM']);
+        expect(filteredCall.runOnFilter).toEqual(['GLOBAL']);
+        expect(filteredCall.sources).toHaveLength(1);
+        expect(filteredCall.sources[0].transport).toBe(McpTransportType.Stream);
+        expect(filteredCall.sources[0].runOn).toBe(McpServerRunOn.Global);
       });
     });
 
@@ -363,6 +427,7 @@ describe('SourcesPage', () => {
     it('passes loading state to SourceTable', async () => {
       mockUseMCPServers.mockReturnValue({
         servers: [],
+        stats: { total: 0, withTools: 0, withoutTools: 0 },
         loading: true,
         error: undefined,
       });
@@ -378,6 +443,7 @@ describe('SourcesPage', () => {
     it('shows error message when loading fails', () => {
       mockUseMCPServers.mockReturnValue({
         servers: [],
+        stats: { total: 0, withTools: 0, withoutTools: 0 },
         loading: false,
         error: new Error('Failed to load sources'),
       });
