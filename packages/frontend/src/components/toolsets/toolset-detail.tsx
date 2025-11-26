@@ -197,33 +197,33 @@ export function ToolsetDetail({ toolSet }: ToolsetDetailProps) {
         setLoadingCopy(true);
         // First get the key metadata
         const keyResult = await getToolsetKey({ variables: { toolsetId: toolSet.id } });
-        if (keyResult.data?.toolsetKey) {
-          // Then get the actual key value
-          const valueResult = await getKeyValue({ variables: { keyId: keyResult.data.toolsetKey.id } });
-          if (valueResult.data?.keyValue) {
-            valueToUse = valueResult.data.keyValue;
-            // Keep the key in memory for future use
-            setKeyValue(valueToUse);
-          }
+        if (!keyResult.data?.toolsetKey) {
+          throw new Error('Toolset key not found');
         }
-        setLoadingCopy(false);
+        // Then get the actual key value
+        const valueResult = await getKeyValue({ variables: { keyId: keyResult.data.toolsetKey.id } });
+        if (!valueResult.data?.keyValue) {
+          throw new Error('Key value not found');
+        }
+        valueToUse = valueResult.data.keyValue;
+        // Keep the key in memory for future use
+        setKeyValue(valueToUse);
       }
 
       // Copy to clipboard
-      if (valueToUse) {
-        await navigator.clipboard.writeText(valueToUse);
-        toast({
-          description: 'Key copied to clipboard',
-          variant: 'success',
-        });
-      }
+      await navigator.clipboard.writeText(valueToUse);
+      toast({
+        description: 'Key copied to clipboard',
+        variant: 'success',
+      });
     } catch (error) {
-      setLoadingCopy(false);
       console.error('Failed to copy key:', error);
       toast({
         description: 'Failed to copy key',
         variant: 'error',
       });
+    } finally {
+      setLoadingCopy(false);
     }
   };
 

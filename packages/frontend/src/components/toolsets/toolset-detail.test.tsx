@@ -438,296 +438,326 @@ describe('ToolsetDetail - Inline Editing', () => {
       expect(screen.getByText('Test Tool')).toBeInTheDocument();
     });
   });
+});
 
-  describe('Identity Key - Copy Functionality', () => {
-    const mockGetKeyValue = vi.fn();
-    const mockClipboardWriteText = vi.fn();
+describe('ToolsetDetail - Identity Key Copy Functionality', () => {
+  const mockGetToolsetKey = vi.fn();
+  const mockGetKeyValue = vi.fn();
+  const mockClipboardWriteText = vi.fn();
+  const mockToast = vi.fn();
 
-    beforeEach(() => {
-      // Clear previous mocks
-      vi.mocked(useLazyQuery).mockClear();
+  beforeEach(() => {
+    vi.clearAllMocks();
 
-      // Mock clipboard API
-      Object.assign(navigator, {
-        clipboard: {
-          writeText: mockClipboardWriteText,
-        },
-      });
-
-      // Setup useLazyQuery to return both getToolsetKey and getKeyValue
-      vi.mocked(useLazyQuery)
-        .mockReturnValueOnce([
-          mockGetToolsetKey,
-          { loading: false },
-        ] as never)
-        .mockReturnValueOnce([
-          mockGetKeyValue,
-          { loading: false },
-        ] as never);
+    // Mock UI stores
+    vi.mocked(uiStore.useManageToolsDialog).mockReturnValue({
+      open: false,
+      setOpen: vi.fn(),
+      selectedToolsetId: null,
+      setSelectedToolsetId: vi.fn(),
     });
 
-    it('renders Copy button always visible (even when key is hidden)', () => {
-      render(
-        <BrowserRouter>
-          <ToolsetDetail toolSet={mockToolSet} />
-        </BrowserRouter>
-      );
-
-      // Find the Copy button by title
-      const copyButton = screen.getByTitle('Copy to clipboard');
-      expect(copyButton).toBeInTheDocument();
-      expect(copyButton).not.toBeDisabled();
+    vi.mocked(uiStore.useConnectToolsetDialog).mockReturnValue({
+      open: false,
+      setOpen: vi.fn(),
+      selectedToolsetName: null,
+      setSelectedToolsetName: vi.fn(),
+      selectedToolsetId: null,
+      setSelectedToolsetId: vi.fn(),
     });
 
-    it('copies key to clipboard when key is already loaded', async () => {
-      const testKey = 'test-key-value-123';
-      mockClipboardWriteText.mockResolvedValue(undefined);
-
-      // Mock getToolsetKey to return key metadata
-      mockGetToolsetKey.mockResolvedValue({
-        data: { toolsetKey: { id: 'key-1' } },
-      });
-
-      // Mock getKeyValue to return key value
-      mockGetKeyValue.mockResolvedValue({
-        data: { keyValue: testKey },
-      });
-
-      render(
-        <BrowserRouter>
-          <ToolsetDetail toolSet={mockToolSet} />
-        </BrowserRouter>
-      );
-
-      // First, show the key to load it
-      const showButton = screen.getByTitle('Show key');
-      fireEvent.click(showButton);
-
-      await waitFor(() => {
-        expect(mockGetToolsetKey).toHaveBeenCalledWith({ variables: { toolsetId: 'toolset-1' } });
-        expect(mockGetKeyValue).toHaveBeenCalledWith({ variables: { keyId: 'key-1' } });
-      });
-
-      // Now copy the key while it's visible (it's in memory)
-      const copyButton = screen.getByTitle('Copy to clipboard');
-      fireEvent.click(copyButton);
-
-      await waitFor(() => {
-        expect(mockClipboardWriteText).toHaveBeenCalledWith(testKey);
-        expect(mockToast).toHaveBeenCalledWith({
-          description: 'Key copied to clipboard',
-          variant: 'success',
-        });
-      });
+    // Mock notification context
+    vi.mocked(NotificationContext.useNotification).mockReturnValue({
+      confirm: vi.fn(),
+      toast: mockToast,
     });
 
-    it('fetches and copies key when key is not loaded', async () => {
-      const testKey = 'test-key-value-456';
-      mockClipboardWriteText.mockResolvedValue(undefined);
+    // Mock useMutation
+    vi.mocked(useMutation).mockReturnValue([
+      vi.fn(),
+      { loading: false, error: undefined, data: undefined },
+    ] as never);
 
-      // Mock getToolsetKey to return key metadata
-      mockGetToolsetKey.mockResolvedValue({
-        data: { toolsetKey: { id: 'key-1' } },
-      });
-
-      // Mock getKeyValue to return key value
-      mockGetKeyValue.mockResolvedValue({
-        data: { keyValue: testKey },
-      });
-
-      render(
-        <BrowserRouter>
-          <ToolsetDetail toolSet={mockToolSet} />
-        </BrowserRouter>
-      );
-
-      // Click Copy without showing the key first
-      const copyButton = screen.getByTitle('Copy to clipboard');
-      fireEvent.click(copyButton);
-
-      await waitFor(() => {
-        expect(mockGetToolsetKey).toHaveBeenCalledWith({ variables: { toolsetId: 'toolset-1' } });
-        expect(mockGetKeyValue).toHaveBeenCalledWith({ variables: { keyId: 'key-1' } });
-        expect(mockClipboardWriteText).toHaveBeenCalledWith(testKey);
-        expect(mockToast).toHaveBeenCalledWith({
-          description: 'Key copied to clipboard',
-          variant: 'success',
-        });
-      });
+    // Mock clipboard API
+    Object.assign(navigator, {
+      clipboard: {
+        writeText: mockClipboardWriteText,
+      },
     });
 
-    it('shows loading spinner while fetching key during copy', async () => {
-      const testKey = 'test-key-value-789';
-      mockClipboardWriteText.mockResolvedValue(undefined);
+    // Setup useLazyQuery to return both getToolsetKey and getKeyValue
+    vi.mocked(useLazyQuery)
+      .mockReturnValueOnce([
+        mockGetToolsetKey,
+        { loading: false },
+      ] as never)
+      .mockReturnValueOnce([
+        mockGetKeyValue,
+        { loading: false },
+      ] as never);
+  });
 
-      // Create a promise that we can control
-      let resolveGetToolsetKey: (value: { data: { toolsetKey: { id: string } } }) => void;
-      const getToolsetKeyPromise = new Promise<{ data: { toolsetKey: { id: string } } }>((resolve) => {
-        resolveGetToolsetKey = resolve;
-      });
+  it('renders Copy button always visible (even when key is hidden)', () => {
+    render(
+      <BrowserRouter>
+        <ToolsetDetail toolSet={mockToolSet} />
+      </BrowserRouter>
+    );
 
-      mockGetToolsetKey.mockReturnValue(getToolsetKeyPromise);
+    // Find the Copy button by title
+    const copyButton = screen.getByTitle('Copy to clipboard');
+    expect(copyButton).toBeInTheDocument();
+    expect(copyButton).not.toBeDisabled();
+  });
 
-      render(
-        <BrowserRouter>
-          <ToolsetDetail toolSet={mockToolSet} />
-        </BrowserRouter>
-      );
+  it('copies key to clipboard when key is already loaded', async () => {
+    const testKey = 'test-key-value-123';
+    mockClipboardWriteText.mockResolvedValue(undefined);
 
-      const copyButton = screen.getByTitle('Copy to clipboard');
-      fireEvent.click(copyButton);
-
-      // Button should be disabled and show spinner while loading
-      await waitFor(() => {
-        expect(copyButton).toBeDisabled();
-      });
-
-      // Resolve the promise
-      resolveGetToolsetKey!({
-        data: { toolsetKey: { id: 'key-1' } },
-      });
-
-      mockGetKeyValue.mockResolvedValue({
-        data: { keyValue: testKey },
-      });
-
-      await waitFor(() => {
-        expect(mockClipboardWriteText).toHaveBeenCalledWith(testKey);
-      });
+    // Mock getToolsetKey to return key metadata
+    mockGetToolsetKey.mockResolvedValue({
+      data: { toolsetKey: { id: 'key-1' } },
     });
 
-    it('keeps key hidden in UI after copying', async () => {
-      const testKey = 'test-key-value-secret';
-      mockClipboardWriteText.mockResolvedValue(undefined);
-
-      mockGetToolsetKey.mockResolvedValue({
-        data: { toolsetKey: { id: 'key-1' } },
-      });
-
-      mockGetKeyValue.mockResolvedValue({
-        data: { keyValue: testKey },
-      });
-
-      render(
-        <BrowserRouter>
-          <ToolsetDetail toolSet={mockToolSet} />
-        </BrowserRouter>
-      );
-
-      // Verify key is hidden initially
-      expect(screen.getByText('••••••••••••••••••••••••••••••••')).toBeInTheDocument();
-      expect(screen.queryByText(testKey)).not.toBeInTheDocument();
-
-      // Copy the key
-      const copyButton = screen.getByTitle('Copy to clipboard');
-      fireEvent.click(copyButton);
-
-      await waitFor(() => {
-        expect(mockClipboardWriteText).toHaveBeenCalledWith(testKey);
-      });
-
-      // Verify key is still hidden after copy
-      expect(screen.getByText('••••••••••••••••••••••••••••••••')).toBeInTheDocument();
-      expect(screen.queryByText(testKey)).not.toBeInTheDocument();
+    // Mock getKeyValue to return key value
+    mockGetKeyValue.mockResolvedValue({
+      data: { keyValue: testKey },
     });
 
-    it('stores key in memory after copying for future use', async () => {
-      const testKey = 'test-key-value-cached';
-      mockClipboardWriteText.mockResolvedValue(undefined);
+    render(
+      <BrowserRouter>
+        <ToolsetDetail toolSet={mockToolSet} />
+      </BrowserRouter>
+    );
 
-      mockGetToolsetKey.mockResolvedValue({
-        data: { toolsetKey: { id: 'key-1' } },
+    // First, show the key to load it
+    const showButton = screen.getByTitle('Show key');
+    fireEvent.click(showButton);
+
+    await waitFor(() => {
+      expect(mockGetToolsetKey).toHaveBeenCalledWith({ variables: { toolsetId: 'toolset-1' } });
+      expect(mockGetKeyValue).toHaveBeenCalledWith({ variables: { keyId: 'key-1' } });
+    });
+
+    // Now copy the key while it's visible (it's in memory)
+    const copyButton = screen.getByTitle('Copy to clipboard');
+    fireEvent.click(copyButton);
+
+    await waitFor(() => {
+      expect(mockClipboardWriteText).toHaveBeenCalledWith(testKey);
+      expect(mockToast).toHaveBeenCalledWith({
+        description: 'Key copied to clipboard',
+        variant: 'success',
       });
+    });
+  });
 
-      mockGetKeyValue.mockResolvedValue({
-        data: { keyValue: testKey },
+  it('fetches and copies key when key is not loaded', async () => {
+    const testKey = 'test-key-value-456';
+    mockClipboardWriteText.mockResolvedValue(undefined);
+
+    // Mock getToolsetKey to return key metadata
+    mockGetToolsetKey.mockResolvedValue({
+      data: { toolsetKey: { id: 'key-1' } },
+    });
+
+    // Mock getKeyValue to return key value
+    mockGetKeyValue.mockResolvedValue({
+      data: { keyValue: testKey },
+    });
+
+    render(
+      <BrowserRouter>
+        <ToolsetDetail toolSet={mockToolSet} />
+      </BrowserRouter>
+    );
+
+    // Click Copy without showing the key first
+    const copyButton = screen.getByTitle('Copy to clipboard');
+    fireEvent.click(copyButton);
+
+    await waitFor(() => {
+      expect(mockGetToolsetKey).toHaveBeenCalledWith({ variables: { toolsetId: 'toolset-1' } });
+      expect(mockGetKeyValue).toHaveBeenCalledWith({ variables: { keyId: 'key-1' } });
+      expect(mockClipboardWriteText).toHaveBeenCalledWith(testKey);
+      expect(mockToast).toHaveBeenCalledWith({
+        description: 'Key copied to clipboard',
+        variant: 'success',
       });
+    });
+  });
 
-      render(
-        <BrowserRouter>
-          <ToolsetDetail toolSet={mockToolSet} />
-        </BrowserRouter>
-      );
+  it('shows loading spinner while fetching key during copy', async () => {
+    const testKey = 'test-key-value-789';
+    mockClipboardWriteText.mockResolvedValue(undefined);
 
-      // First copy - should fetch the key
-      const copyButton = screen.getByTitle('Copy to clipboard');
-      fireEvent.click(copyButton);
+    // Create a promise that we can control
+    let resolveGetToolsetKey: (value: { data: { toolsetKey: { id: string } } }) => void;
+    const getToolsetKeyPromise = new Promise<{ data: { toolsetKey: { id: string } } }>((resolve) => {
+      resolveGetToolsetKey = resolve;
+    });
 
-      await waitFor(() => {
-        expect(mockGetToolsetKey).toHaveBeenCalledTimes(1);
-        expect(mockGetKeyValue).toHaveBeenCalledTimes(1);
-        expect(mockClipboardWriteText).toHaveBeenCalledWith(testKey);
-      });
+    mockGetToolsetKey.mockReturnValue(getToolsetKeyPromise);
 
-      // Second copy - should use cached value, not fetch again
-      fireEvent.click(copyButton);
+    render(
+      <BrowserRouter>
+        <ToolsetDetail toolSet={mockToolSet} />
+      </BrowserRouter>
+    );
 
-      await waitFor(() => {
-        expect(mockClipboardWriteText).toHaveBeenCalledTimes(2);
-      });
+    const copyButton = screen.getByTitle('Copy to clipboard');
+    fireEvent.click(copyButton);
 
-      // Verify queries were not called again
+    // Button should be disabled and show spinner while loading
+    await waitFor(() => {
+      expect(copyButton).toBeDisabled();
+    });
+
+    // Resolve the promise
+    resolveGetToolsetKey!({
+      data: { toolsetKey: { id: 'key-1' } },
+    });
+
+    mockGetKeyValue.mockResolvedValue({
+      data: { keyValue: testKey },
+    });
+
+    await waitFor(() => {
+      expect(mockClipboardWriteText).toHaveBeenCalledWith(testKey);
+    });
+  });
+
+  it('keeps key hidden in UI after copying', async () => {
+    const testKey = 'test-key-value-secret';
+    mockClipboardWriteText.mockResolvedValue(undefined);
+
+    mockGetToolsetKey.mockResolvedValue({
+      data: { toolsetKey: { id: 'key-1' } },
+    });
+
+    mockGetKeyValue.mockResolvedValue({
+      data: { keyValue: testKey },
+    });
+
+    render(
+      <BrowserRouter>
+        <ToolsetDetail toolSet={mockToolSet} />
+      </BrowserRouter>
+    );
+
+    // Verify key is hidden initially
+    expect(screen.getByText('••••••••••••••••••••••••••••••••')).toBeInTheDocument();
+    expect(screen.queryByText(testKey)).not.toBeInTheDocument();
+
+    // Copy the key
+    const copyButton = screen.getByTitle('Copy to clipboard');
+    fireEvent.click(copyButton);
+
+    await waitFor(() => {
+      expect(mockClipboardWriteText).toHaveBeenCalledWith(testKey);
+    });
+
+    // Verify key is still hidden after copy
+    expect(screen.getByText('••••••••••••••••••••••••••••••••')).toBeInTheDocument();
+    expect(screen.queryByText(testKey)).not.toBeInTheDocument();
+  });
+
+  it('stores key in memory after copying for future use', async () => {
+    const testKey = 'test-key-value-cached';
+    mockClipboardWriteText.mockResolvedValue(undefined);
+
+    mockGetToolsetKey.mockResolvedValue({
+      data: { toolsetKey: { id: 'key-1' } },
+    });
+
+    mockGetKeyValue.mockResolvedValue({
+      data: { keyValue: testKey },
+    });
+
+    render(
+      <BrowserRouter>
+        <ToolsetDetail toolSet={mockToolSet} />
+      </BrowserRouter>
+    );
+
+    // First copy - should fetch the key
+    const copyButton = screen.getByTitle('Copy to clipboard');
+    fireEvent.click(copyButton);
+
+    await waitFor(() => {
       expect(mockGetToolsetKey).toHaveBeenCalledTimes(1);
       expect(mockGetKeyValue).toHaveBeenCalledTimes(1);
+      expect(mockClipboardWriteText).toHaveBeenCalledWith(testKey);
     });
 
-    it('handles copy error gracefully', async () => {
-      const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-      mockClipboardWriteText.mockRejectedValue(new Error('Clipboard error'));
+    // Second copy - should use cached value, not fetch again
+    fireEvent.click(copyButton);
 
-      mockGetToolsetKey.mockResolvedValue({
-        data: { toolsetKey: { id: 'key-1' } },
-      });
-
-      mockGetKeyValue.mockResolvedValue({
-        data: { keyValue: 'test-key' },
-      });
-
-      render(
-        <BrowserRouter>
-          <ToolsetDetail toolSet={mockToolSet} />
-        </BrowserRouter>
-      );
-
-      const copyButton = screen.getByTitle('Copy to clipboard');
-      fireEvent.click(copyButton);
-
-      await waitFor(() => {
-        expect(mockToast).toHaveBeenCalledWith({
-          description: 'Failed to copy key',
-          variant: 'error',
-        });
-      });
-
-      consoleErrorSpy.mockRestore();
+    await waitFor(() => {
+      expect(mockClipboardWriteText).toHaveBeenCalledTimes(2);
     });
 
-    it('handles fetch error during copy gracefully', async () => {
-      const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-      mockGetToolsetKey.mockRejectedValue(new Error('Network error'));
-
-      render(
-        <BrowserRouter>
-          <ToolsetDetail toolSet={mockToolSet} />
-        </BrowserRouter>
-      );
-
-      const copyButton = screen.getByTitle('Copy to clipboard');
-      fireEvent.click(copyButton);
-
-      await waitFor(() => {
-        expect(mockToast).toHaveBeenCalledWith({
-          description: 'Failed to copy key',
-          variant: 'error',
-        });
-      });
-
-      consoleErrorSpy.mockRestore();
-    });
-
-    // Note: Tests for loading states and show/hide toggle are verified through implementation review
-    // Mocking useLazyQuery loading states is complex and these edge cases are covered by:
-    // 1. Implementation code review showing correct disabled={loadingCopy || loadingKey || loadingKeyValue}
-    // 2. Other tests verifying the copy/show/hide functionality works correctly
+    // Verify queries were not called again
+    expect(mockGetToolsetKey).toHaveBeenCalledTimes(1);
+    expect(mockGetKeyValue).toHaveBeenCalledTimes(1);
   });
+
+  it('handles copy error gracefully', async () => {
+    const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    mockClipboardWriteText.mockRejectedValue(new Error('Clipboard error'));
+
+    mockGetToolsetKey.mockResolvedValue({
+      data: { toolsetKey: { id: 'key-1' } },
+    });
+
+    mockGetKeyValue.mockResolvedValue({
+      data: { keyValue: 'test-key' },
+    });
+
+    render(
+      <BrowserRouter>
+        <ToolsetDetail toolSet={mockToolSet} />
+      </BrowserRouter>
+    );
+
+    const copyButton = screen.getByTitle('Copy to clipboard');
+    fireEvent.click(copyButton);
+
+    await waitFor(() => {
+      expect(mockToast).toHaveBeenCalledWith({
+        description: 'Failed to copy key',
+        variant: 'error',
+      });
+    });
+
+    consoleErrorSpy.mockRestore();
+  });
+
+  it('handles fetch error during copy gracefully', async () => {
+    const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    mockGetToolsetKey.mockRejectedValue(new Error('Network error'));
+
+    render(
+      <BrowserRouter>
+        <ToolsetDetail toolSet={mockToolSet} />
+      </BrowserRouter>
+    );
+
+    const copyButton = screen.getByTitle('Copy to clipboard');
+    fireEvent.click(copyButton);
+
+    await waitFor(() => {
+      expect(mockToast).toHaveBeenCalledWith({
+        description: 'Failed to copy key',
+        variant: 'error',
+      });
+    });
+
+    consoleErrorSpy.mockRestore();
+  });
+
+  // Note: Tests for loading states and show/hide toggle are verified through implementation review
+  // Mocking useLazyQuery loading states is complex and these edge cases are covered by:
+  // 1. Implementation code review showing correct disabled={loadingCopy || loadingKey || loadingKeyValue}
+  // 2. Other tests verifying the copy/show/hide functionality works correctly
 });
