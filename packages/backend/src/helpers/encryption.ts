@@ -2,24 +2,30 @@
  * Encryption Helper
  *
  * Provides encryption and decryption utilities for sensitive data like API keys.
- * Uses AES-256-GCM for authenticated encryption with versioned key rotation support.
+ * Uses AES-256-GCM for authenticated encryption with versioned key rotation and algorithm migration support.
  *
  * Security Model:
  * - API keys are encrypted at rest in the database
  * - ENCRYPTION_KEY must be 64 hex characters (32 bytes)
  * - Each encryption generates a unique IV (initialization vector)
- * - Format: v{version}:iv:authTag:encryptedData (all hex-encoded)
+ * - Format: v{keyVersion}.{algorithm}:iv:authTag:encryptedData (all hex-encoded)
  *
  * Key Versioning:
- * - Current version: v2 (with version prefix)
- * - Legacy support: v1 (without version prefix for backward compatibility)
+ * - Current version: v2.aes256gcm (key version 2 with AES-256-GCM)
+ * - Legacy support: v1 (without algorithm suffix for backward compatibility)
  * - Supports multiple encryption keys via ENCRYPTION_KEY_V1, ENCRYPTION_KEY_V2, etc.
  * - ENCRYPTION_KEY (no suffix) is used as the current/default key
  *
+ * Algorithm Versioning:
+ * - Current algorithm: aes256gcm (AES-256-GCM)
+ * - Format allows future algorithm migration (e.g., v3.chacha20)
+ * - Algorithm identifier is embedded in encrypted data for automatic detection
+ * - Each algorithm has specific IV and auth tag lengths
+ *
  * Usage:
- * - encrypt(plaintext): Returns encrypted string in format "v2:iv:authTag:ciphertext"
- * - decrypt(encrypted): Returns original plaintext (auto-detects version)
- * - reEncrypt(encrypted): Re-encrypts data with current key version
+ * - encrypt(plaintext): Returns encrypted string in format "v2.aes256gcm:iv:authTag:ciphertext"
+ * - decrypt(encrypted): Returns original plaintext (auto-detects version and algorithm)
+ * - reEncrypt(encrypted): Re-encrypts data with current key version and algorithm
  * - maskApiKey(apiKey): Returns masked version for display (e.g., "sk-...****xyz")
  *
  * Key Rotation Example:
@@ -27,14 +33,45 @@
  * 2. Keep ENCRYPTION_KEY_V1=<old_key> for decrypting legacy data
  * 3. Use reEncrypt() to migrate encrypted data to v2
  * 4. Once all data migrated, remove ENCRYPTION_KEY_V1
+ *
+ * Algorithm Migration Example:
+ * 1. Add new algorithm support (e.g., chacha20poly1305)
+ * 2. Update CURRENT_ALGORITHM and CURRENT_VERSION
+ * 3. Use reEncrypt() to migrate data to new algorithm
+ * 4. Old algorithm code remains for decrypting legacy data
  */
 
 import crypto from 'crypto';
 
-const ALGORITHM = 'aes-256-gcm';
-const IV_LENGTH = 12; // 96 bits for GCM
-const AUTH_TAG_LENGTH = 16; // 128 bits
-const CURRENT_VERSION = 2; // Current encryption version
+// Algorithm configuration
+type AlgorithmConfig = {
+  algorithm: string; // Node.js crypto algorithm name
+  ivLength: number; // IV length in bytes
+  authTagLength: number; // Auth tag length in bytes
+};
+
+const ALGORITHMS: Record<string, AlgorithmConfig> = {
+  aes256gcm: {
+    algorithm: 'aes-256-gcm',
+    ivLength: 12, // 96 bits for GCM
+    authTagLength: 16, // 128 bits
+  },
+  // Future algorithms can be added here:
+  // chacha20: {
+  //   algorithm: 'chacha20-poly1305',
+  //   ivLength: 12,
+  //   authTagLength: 16,
+  // },
+};
+
+// Current encryption configuration
+const CURRENT_ALGORITHM = 'aes256gcm';
+const CURRENT_VERSION = 2; // Current key version
+
+// Legacy constants for backward compatibility
+const LEGACY_ALGORITHM = 'aes-256-gcm';
+const LEGACY_IV_LENGTH = 12;
+const LEGACY_AUTH_TAG_LENGTH = 16;
 
 /**
  * Get encryption key for a specific version from environment variable.
@@ -73,6 +110,51 @@ function getEncryptionKey(version?: number): Buffer {
 }
 
 /**
+ * Parse encrypted data format to extract version, algorithm, and whether it's a legacy format.
+ *
+ * Formats supported:
+ * - v2.aes256gcm:... (versioned with algorithm - current format)
+ * - v2:... (versioned without algorithm - legacy v2)
+ * - v1:... (versioned v1 - legacy)
+ * - iv:tag:cipher (no version prefix - ancient legacy v1)
+ *
+ * @param encrypted - Encrypted string to parse
+ * @returns Object with version number, algorithm identifier, and isLegacyFormat flag
+ */
+function parseEncryptedFormat(encrypted: string): {
+  version: number;
+  algorithm: string;
+  isLegacyFormat: boolean;
+} {
+  // Try to match v{version}.{algorithm}:
+  const versionAlgoMatch = encrypted.match(/^v(\d+)\.([a-z0-9]+):/);
+  if (versionAlgoMatch) {
+    return {
+      version: parseInt(versionAlgoMatch[1], 10),
+      algorithm: versionAlgoMatch[2],
+      isLegacyFormat: false,
+    };
+  }
+
+  // Try to match v{version}: (legacy format without algorithm)
+  const versionMatch = encrypted.match(/^v(\d+):/);
+  if (versionMatch) {
+    return {
+      version: parseInt(versionMatch[1], 10),
+      algorithm: 'aes256gcm', // Default to current algorithm
+      isLegacyFormat: true,
+    };
+  }
+
+  // Ancient legacy format (no version prefix) is v1 with default algorithm
+  return {
+    version: 1,
+    algorithm: 'aes256gcm',
+    isLegacyFormat: true,
+  };
+}
+
+/**
  * Detect the version of encrypted data.
  * Returns the version number if prefixed (e.g., "v2:..."), or 1 for legacy format.
  *
@@ -80,62 +162,75 @@ function getEncryptionKey(version?: number): Buffer {
  * @returns Version number
  */
 function detectVersion(encrypted: string): number {
-  const versionMatch = encrypted.match(/^v(\d+):/);
-  if (versionMatch) {
-    return parseInt(versionMatch[1], 10);
-  }
-  // Legacy format (no version prefix) is considered v1
-  return 1;
+  return parseEncryptedFormat(encrypted).version;
 }
 
 /**
- * Encrypt a plaintext string using AES-256-GCM with version prefix.
+ * Encrypt a plaintext string with versioned algorithm support.
  *
  * @param plaintext - The string to encrypt
- * @param version - Optional version number (defaults to CURRENT_VERSION)
- * @returns Encrypted string in format "v{version}:iv:authTag:ciphertext" (hex-encoded)
+ * @param version - Optional key version number (defaults to CURRENT_VERSION)
+ * @param algorithmId - Optional algorithm identifier (defaults to CURRENT_ALGORITHM)
+ * @returns Encrypted string in format "v{version}.{algorithm}:iv:authTag:ciphertext" (hex-encoded)
  */
-export function encrypt(plaintext: string, version: number = CURRENT_VERSION): string {
+export function encrypt(
+  plaintext: string,
+  version: number = CURRENT_VERSION,
+  algorithmId: string = CURRENT_ALGORITHM
+): string {
   try {
     const key = getEncryptionKey(version);
-    const iv = crypto.randomBytes(IV_LENGTH);
+    const algoConfig = ALGORITHMS[algorithmId];
 
-    const cipher = crypto.createCipheriv(ALGORITHM, key, iv);
+    if (!algoConfig) {
+      throw new Error(`Unsupported algorithm: ${algorithmId}`);
+    }
+
+    const iv = crypto.randomBytes(algoConfig.ivLength);
+    const cipher = crypto.createCipheriv(algoConfig.algorithm, key, iv);
 
     let encrypted = cipher.update(plaintext, 'utf8', 'hex');
     encrypted += cipher.final('hex');
 
     const authTag = cipher.getAuthTag();
 
-    // Format: v{version}:iv:authTag:encryptedData
-    return `v${version}:${iv.toString('hex')}:${authTag.toString('hex')}:${encrypted}`;
+    // Format: v{version}.{algorithm}:iv:authTag:encryptedData
+    return `v${version}.${algorithmId}:${iv.toString('hex')}:${authTag.toString('hex')}:${encrypted}`;
   } catch (error) {
     throw new Error(`Encryption failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 }
 
 /**
- * Decrypt an encrypted string using AES-256-GCM.
- * Automatically detects version and uses appropriate key.
+ * Decrypt an encrypted string with automatic version and algorithm detection.
+ * Supports all legacy formats for backward compatibility.
  *
- * @param encrypted - Encrypted string in format "v{version}:iv:authTag:ciphertext" or legacy "iv:authTag:ciphertext"
+ * @param encrypted - Encrypted string in various formats (see parseEncryptedFormat)
  * @returns Decrypted plaintext string
  */
 export function decrypt(encrypted: string): string {
   try {
-    const version = detectVersion(encrypted);
+    const { version, algorithm: algorithmId } = parseEncryptedFormat(encrypted);
     const key = getEncryptionKey(version);
 
-    // Remove version prefix if present (v1:, v2:, etc.)
+    // Get algorithm configuration
+    const algoConfig = ALGORITHMS[algorithmId];
+    if (!algoConfig) {
+      throw new Error(`Unsupported algorithm: ${algorithmId}`);
+    }
+
+    // Remove version prefix if present (v2.aes256gcm:, v2:, v1:, etc.)
     let dataPart = encrypted;
-    const versionMatch = encrypted.match(/^v\d+:/);
-    if (versionMatch) {
-      dataPart = encrypted.substring(versionMatch[0].length);
+    const prefixMatch = encrypted.match(/^v\d+(\.[a-z0-9]+)?:/);
+    if (prefixMatch) {
+      dataPart = encrypted.substring(prefixMatch[0].length);
     }
 
     const parts = dataPart.split(':');
     if (parts.length !== 3) {
-      throw new Error('Invalid encrypted data format. Expected "v{version}:iv:authTag:ciphertext" or "iv:authTag:ciphertext"');
+      throw new Error(
+        'Invalid encrypted data format. Expected "v{version}.{algorithm}:iv:authTag:ciphertext" or legacy formats'
+      );
     }
 
     const [ivHex, authTagHex, ciphertext] = parts;
@@ -143,15 +238,16 @@ export function decrypt(encrypted: string): string {
     const iv = Buffer.from(ivHex, 'hex');
     const authTag = Buffer.from(authTagHex, 'hex');
 
-    if (iv.length !== IV_LENGTH) {
-      throw new Error(`Invalid IV length. Expected ${IV_LENGTH} bytes, got ${iv.length}`);
+    // Validate lengths based on algorithm config
+    if (iv.length !== algoConfig.ivLength) {
+      throw new Error(`Invalid IV length. Expected ${algoConfig.ivLength} bytes, got ${iv.length}`);
     }
 
-    if (authTag.length !== AUTH_TAG_LENGTH) {
-      throw new Error(`Invalid auth tag length. Expected ${AUTH_TAG_LENGTH} bytes, got ${authTag.length}`);
+    if (authTag.length !== algoConfig.authTagLength) {
+      throw new Error(`Invalid auth tag length. Expected ${algoConfig.authTagLength} bytes, got ${authTag.length}`);
     }
 
-    const decipher = crypto.createDecipheriv(ALGORITHM, key, iv);
+    const decipher = crypto.createDecipheriv(algoConfig.algorithm, key, iv);
     decipher.setAuthTag(authTag);
 
     let decrypted = decipher.update(ciphertext, 'hex', 'utf8');
@@ -192,13 +288,25 @@ export function getEncryptedDataVersion(encrypted: string): number {
 }
 
 /**
- * Check if encrypted data needs migration to current version.
+ * Get the algorithm of encrypted data without decrypting.
+ *
+ * @param encrypted - Encrypted string to inspect
+ * @returns Algorithm identifier
+ */
+export function getEncryptedDataAlgorithm(encrypted: string): string {
+  return parseEncryptedFormat(encrypted).algorithm;
+}
+
+/**
+ * Check if encrypted data needs migration to current version and algorithm.
+ * Legacy formats (without explicit algorithm) are always flagged for migration.
  *
  * @param encrypted - Encrypted string to check
- * @returns True if data should be re-encrypted with current version
+ * @returns True if data should be re-encrypted with current version/algorithm
  */
 export function needsMigration(encrypted: string): boolean {
-  return detectVersion(encrypted) !== CURRENT_VERSION;
+  const { version, algorithm, isLegacyFormat } = parseEncryptedFormat(encrypted);
+  return isLegacyFormat || version !== CURRENT_VERSION || algorithm !== CURRENT_ALGORITHM;
 }
 
 /**

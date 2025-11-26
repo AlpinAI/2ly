@@ -1,5 +1,13 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { encrypt, decrypt, maskApiKey, reEncrypt, getEncryptedDataVersion, needsMigration } from './encryption';
+import {
+  encrypt,
+  decrypt,
+  maskApiKey,
+  reEncrypt,
+  getEncryptedDataVersion,
+  getEncryptedDataAlgorithm,
+  needsMigration,
+} from './encryption';
 
 describe('Encryption Helper', () => {
   const originalEnv = {
@@ -23,27 +31,27 @@ describe('Encryption Helper', () => {
   });
 
   describe('encrypt', () => {
-    it('should encrypt a plaintext string with version prefix', () => {
+    it('should encrypt a plaintext string with version and algorithm prefix', () => {
       const plaintext = 'sk-1234567890abcdef';
       const encrypted = encrypt(plaintext);
 
-      // Check format: v2:iv:authTag:ciphertext
-      expect(encrypted).toMatch(/^v2:/);
+      // Check format: v2.aes256gcm:iv:authTag:ciphertext
+      expect(encrypted).toMatch(/^v2\.aes256gcm:/);
       const parts = encrypted.split(':');
-      expect(parts).toHaveLength(4); // v2, iv, authTag, ciphertext
-      expect(parts[0]).toBe('v2');
+      expect(parts).toHaveLength(4); // v2.aes256gcm, iv, authTag, ciphertext
+      expect(parts[0]).toBe('v2.aes256gcm');
       expect(parts[1]).toHaveLength(24); // 12 bytes IV in hex = 24 chars
       expect(parts[2]).toHaveLength(32); // 16 bytes auth tag in hex = 32 chars
       expect(parts[3].length).toBeGreaterThan(0); // Ciphertext
     });
 
-    it('should support encrypting with specific version', () => {
+    it('should support encrypting with specific version and algorithm', () => {
       const plaintext = 'sk-1234567890abcdef';
-      const encryptedV1 = encrypt(plaintext, 1);
-      const encryptedV2 = encrypt(plaintext, 2);
+      const encryptedV1 = encrypt(plaintext, 1, 'aes256gcm');
+      const encryptedV2 = encrypt(plaintext, 2, 'aes256gcm');
 
-      expect(encryptedV1).toMatch(/^v1:/);
-      expect(encryptedV2).toMatch(/^v2:/);
+      expect(encryptedV1).toMatch(/^v1\.aes256gcm:/);
+      expect(encryptedV2).toMatch(/^v2\.aes256gcm:/);
     });
 
     it('should produce different outputs for the same input (due to random IV)', () => {
@@ -160,31 +168,59 @@ describe('Encryption Helper', () => {
       const plaintext = 'sk-test-multi-version';
 
       // Encrypt with v1
-      const encryptedV1 = encrypt(plaintext, 1);
+      const encryptedV1 = encrypt(plaintext, 1, 'aes256gcm');
       expect(decrypt(encryptedV1)).toBe(plaintext);
 
       // Encrypt with v2
-      const encryptedV2 = encrypt(plaintext, 2);
+      const encryptedV2 = encrypt(plaintext, 2, 'aes256gcm');
       expect(decrypt(encryptedV2)).toBe(plaintext);
     });
 
-    it('should handle legacy format (v1 without version prefix)', () => {
-      // Simulate legacy encrypted data (before versioning was added)
+    it('should handle legacy v2 format (without algorithm suffix)', () => {
+      // Simulate v2 data before algorithm versioning was added
+      // Format: v2:iv:authTag:ciphertext (no algorithm)
+      const plaintext = 'sk-legacy-v2-key-12345';
+
+      // Manually create legacy v2 format by encrypting and removing algorithm
+      const encrypted = encrypt(plaintext, 2, 'aes256gcm');
+      const legacyV2Format = encrypted.replace('v2.aes256gcm:', 'v2:');
+
+      // Should still decrypt with default algorithm
+      const decrypted = decrypt(legacyV2Format);
+      expect(decrypted).toBe(plaintext);
+    });
+
+    it('should handle legacy v1 format (without algorithm suffix)', () => {
+      // Simulate v1 data before algorithm versioning was added
+      // Format: v1:iv:authTag:ciphertext (no algorithm)
+      const plaintext = 'sk-legacy-v1-key-12345';
+
+      // Manually create legacy v1 format
+      const encrypted = encrypt(plaintext, 1, 'aes256gcm');
+      const legacyV1Format = encrypted.replace('v1.aes256gcm:', 'v1:');
+
+      // Should still decrypt with default algorithm
+      const decrypted = decrypt(legacyV1Format);
+      expect(decrypted).toBe(plaintext);
+    });
+
+    it('should handle ancient legacy format (v1 without version prefix)', () => {
+      // Simulate ancient encrypted data (before any versioning was added)
       // This uses the old format: iv:authTag:ciphertext (no version prefix)
       process.env.ENCRYPTION_KEY = testKeyV1; // Use old key for encryption
 
-      const plaintext = 'sk-legacy-key-12345';
+      const plaintext = 'sk-ancient-legacy-key-12345';
 
-      // Manually create legacy format by encrypting with v1 and removing prefix
-      const encryptedV1 = encrypt(plaintext, 1);
-      const legacyFormat = encryptedV1.substring(3); // Remove "v1:" prefix to simulate old data
+      // Manually create ancient legacy format by encrypting with v1 and removing prefix
+      const encryptedV1 = encrypt(plaintext, 1, 'aes256gcm');
+      const ancientFormat = encryptedV1.substring(13); // Remove "v1.aes256gcm:" prefix
 
       // Restore current key setup
       process.env.ENCRYPTION_KEY = testKeyV2;
       process.env.ENCRYPTION_KEY_V1 = testKeyV1;
 
-      // Should still be able to decrypt legacy format using v1 key
-      const decrypted = decrypt(legacyFormat);
+      // Should still be able to decrypt ancient format using v1 key
+      const decrypted = decrypt(ancientFormat);
       expect(decrypted).toBe(plaintext);
     });
   });
@@ -265,7 +301,7 @@ describe('Encryption Helper', () => {
       });
 
       it('should detect v1 version from encrypted data', () => {
-        const encryptedV1 = encrypt('test-data', 1);
+        const encryptedV1 = encrypt('test-data', 1, 'aes256gcm');
         expect(getEncryptedDataVersion(encryptedV1)).toBe(1);
       });
 
@@ -276,59 +312,116 @@ describe('Encryption Helper', () => {
       });
     });
 
+    describe('getEncryptedDataAlgorithm', () => {
+      it('should detect algorithm from new format', () => {
+        const encrypted = encrypt('test-data');
+        expect(getEncryptedDataAlgorithm(encrypted)).toBe('aes256gcm');
+      });
+
+      it('should default to aes256gcm for legacy v2 format', () => {
+        const encrypted = encrypt('test-data', 2, 'aes256gcm');
+        const legacyV2Format = encrypted.replace('v2.aes256gcm:', 'v2:');
+        expect(getEncryptedDataAlgorithm(legacyV2Format)).toBe('aes256gcm');
+      });
+
+      it('should default to aes256gcm for legacy v1 format', () => {
+        const encrypted = encrypt('test-data', 1, 'aes256gcm');
+        const legacyV1Format = encrypted.replace('v1.aes256gcm:', 'v1:');
+        expect(getEncryptedDataAlgorithm(legacyV1Format)).toBe('aes256gcm');
+      });
+
+      it('should default to aes256gcm for ancient format', () => {
+        const legacyData = '0123456789abcdef01234567:0123456789abcdef0123456789abcdef:abcdef0123456789';
+        expect(getEncryptedDataAlgorithm(legacyData)).toBe('aes256gcm');
+      });
+    });
+
     describe('needsMigration', () => {
-      it('should return false for current version data', () => {
+      it('should return false for current version and algorithm data', () => {
         const encrypted = encrypt('test-data');
         expect(needsMigration(encrypted)).toBe(false);
       });
 
       it('should return true for v1 data', () => {
-        const encryptedV1 = encrypt('test-data', 1);
+        const encryptedV1 = encrypt('test-data', 1, 'aes256gcm');
         expect(needsMigration(encryptedV1)).toBe(true);
       });
 
-      it('should return true for legacy format data', () => {
-        // Create legacy format
+      it('should return true for legacy v2 format without algorithm', () => {
+        const encrypted = encrypt('test-data', 2, 'aes256gcm');
+        const legacyV2Format = encrypted.replace('v2.aes256gcm:', 'v2:');
+        expect(needsMigration(legacyV2Format)).toBe(true);
+      });
+
+      it('should return true for legacy v1 format without algorithm', () => {
+        const encrypted = encrypt('test-data', 1, 'aes256gcm');
+        const legacyV1Format = encrypted.replace('v1.aes256gcm:', 'v1:');
+        expect(needsMigration(legacyV1Format)).toBe(true);
+      });
+
+      it('should return true for ancient legacy format data', () => {
+        // Create ancient legacy format
         process.env.ENCRYPTION_KEY = testKeyV1;
-        const encryptedV1 = encrypt('test-data', 1);
-        const legacyFormat = encryptedV1.substring(3); // Remove "v1:" prefix
+        const encryptedV1 = encrypt('test-data', 1, 'aes256gcm');
+        const ancientFormat = encryptedV1.substring(13); // Remove "v1.aes256gcm:" prefix
 
         process.env.ENCRYPTION_KEY = testKeyV2;
-        expect(needsMigration(legacyFormat)).toBe(true);
+        expect(needsMigration(ancientFormat)).toBe(true);
       });
     });
 
     describe('reEncrypt', () => {
-      it('should re-encrypt v1 data to current version', () => {
+      it('should re-encrypt v1 data to current version and algorithm', () => {
         const plaintext = 'sk-migrate-me-12345';
 
         // Encrypt with v1
-        const encryptedV1 = encrypt(plaintext, 1);
+        const encryptedV1 = encrypt(plaintext, 1, 'aes256gcm');
         expect(getEncryptedDataVersion(encryptedV1)).toBe(1);
+        expect(getEncryptedDataAlgorithm(encryptedV1)).toBe('aes256gcm');
 
         // Re-encrypt to current version
         const reEncrypted = reEncrypt(encryptedV1);
         expect(getEncryptedDataVersion(reEncrypted)).toBe(2);
+        expect(getEncryptedDataAlgorithm(reEncrypted)).toBe('aes256gcm');
 
         // Verify data integrity
         expect(decrypt(reEncrypted)).toBe(plaintext);
       });
 
-      it('should handle legacy format migration', () => {
-        const plaintext = 'sk-legacy-migrate';
+      it('should migrate legacy v2 format to include algorithm', () => {
+        const plaintext = 'sk-legacy-v2-migrate';
 
-        // Create legacy format
+        // Create legacy v2 format (without algorithm)
+        const encrypted = encrypt(plaintext, 2, 'aes256gcm');
+        const legacyV2Format = encrypted.replace('v2.aes256gcm:', 'v2:');
+
+        expect(needsMigration(legacyV2Format)).toBe(true);
+
+        // Migrate
+        const migrated = reEncrypt(legacyV2Format);
+        expect(getEncryptedDataVersion(migrated)).toBe(2);
+        expect(getEncryptedDataAlgorithm(migrated)).toBe('aes256gcm');
+        expect(migrated).toMatch(/^v2\.aes256gcm:/);
+        expect(decrypt(migrated)).toBe(plaintext);
+      });
+
+      it('should handle ancient legacy format migration', () => {
+        const plaintext = 'sk-ancient-legacy-migrate';
+
+        // Create ancient legacy format
         process.env.ENCRYPTION_KEY = testKeyV1;
-        const encryptedV1 = encrypt(plaintext, 1);
-        const legacyFormat = encryptedV1.substring(3); // Remove "v1:" prefix
+        const encryptedV1 = encrypt(plaintext, 1, 'aes256gcm');
+        const ancientFormat = encryptedV1.substring(13); // Remove "v1.aes256gcm:" prefix
 
         // Restore v2 as current
         process.env.ENCRYPTION_KEY = testKeyV2;
         process.env.ENCRYPTION_KEY_V1 = testKeyV1;
 
         // Migrate
-        const migrated = reEncrypt(legacyFormat);
+        const migrated = reEncrypt(ancientFormat);
         expect(getEncryptedDataVersion(migrated)).toBe(2);
+        expect(getEncryptedDataAlgorithm(migrated)).toBe('aes256gcm');
+        expect(migrated).toMatch(/^v2\.aes256gcm:/);
         expect(decrypt(migrated)).toBe(plaintext);
       });
 
@@ -339,6 +432,7 @@ describe('Encryption Helper', () => {
         // Re-encrypting current version should work (generates new IV)
         const reEncrypted = reEncrypt(encrypted);
         expect(getEncryptedDataVersion(reEncrypted)).toBe(2);
+        expect(getEncryptedDataAlgorithm(reEncrypted)).toBe('aes256gcm');
         expect(decrypt(reEncrypted)).toBe(plaintext);
         expect(reEncrypted).not.toBe(encrypted); // Different due to new IV
       });
@@ -348,7 +442,7 @@ describe('Encryption Helper', () => {
 
         // Step 1: Data encrypted with old key (v1)
         process.env.ENCRYPTION_KEY = testKeyV1;
-        const oldEncrypted = encrypt(plaintext, 1);
+        const oldEncrypted = encrypt(plaintext, 1, 'aes256gcm');
 
         // Step 2: New key deployed (v2), old key kept for decryption
         process.env.ENCRYPTION_KEY = testKeyV2;
@@ -360,6 +454,8 @@ describe('Encryption Helper', () => {
 
         // Step 4: Verify migration
         expect(getEncryptedDataVersion(migrated)).toBe(2);
+        expect(getEncryptedDataAlgorithm(migrated)).toBe('aes256gcm');
+        expect(migrated).toMatch(/^v2\.aes256gcm:/);
         expect(decrypt(migrated)).toBe(plaintext);
 
         // Step 5: Old v1 data still readable (for rollback safety)
