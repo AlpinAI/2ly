@@ -32,6 +32,24 @@ export type IdentityKey = {
   revokedAt?: Maybe<Scalars['DateTime']['output']>;
 };
 
+export type LlmapiKey = {
+  createdAt: Scalars['DateTime']['output'];
+  encryptedKey: Scalars['String']['output'];
+  id: Scalars['ID']['output'];
+  isActive: Scalars['Boolean']['output'];
+  lastValidatedAt?: Maybe<Scalars['DateTime']['output']>;
+  maskedKey: Scalars['String']['output'];
+  provider: LlmProvider;
+  updatedAt?: Maybe<Scalars['DateTime']['output']>;
+  workspace: Workspace;
+};
+
+export enum LlmProvider {
+  Anthropic = 'ANTHROPIC',
+  Google = 'GOOGLE',
+  Openai = 'OPENAI'
+}
+
 export type McpRegistryServer = {
   _meta?: Maybe<Scalars['String']['output']>;
   configurations?: Maybe<Array<McpServer>>;
@@ -210,6 +228,7 @@ export type Workspace = {
   createdAt: Scalars['DateTime']['output'];
   globalRuntime?: Maybe<Runtime>;
   id: Scalars['ID']['output'];
+  llmApiKeys?: Maybe<Array<LlmapiKey>>;
   mcpServers?: Maybe<Array<McpServer>>;
   mcpTools?: Maybe<Array<McpTool>>;
   name: Scalars['String']['output'];
@@ -299,6 +318,8 @@ export type ResolversTypes = ResolversObject<{
   ID: ResolverTypeWrapper<Scalars['ID']['output']>;
   IdentityKey: ResolverTypeWrapper<IdentityKey>;
   Int: ResolverTypeWrapper<Scalars['Int']['output']>;
+  LLMAPIKey: ResolverTypeWrapper<LlmapiKey>;
+  LLMProvider: LlmProvider;
   MCPRegistryServer: ResolverTypeWrapper<McpRegistryServer>;
   MCPServer: ResolverTypeWrapper<McpServer>;
   MCPServerRunOn: McpServerRunOn;
@@ -326,6 +347,7 @@ export type ResolversParentTypes = ResolversObject<{
   ID: Scalars['ID']['output'];
   IdentityKey: IdentityKey;
   Int: Scalars['Int']['output'];
+  LLMAPIKey: LlmapiKey;
   MCPRegistryServer: McpRegistryServer;
   MCPServer: McpServer;
   MCPTool: McpTool;
@@ -353,6 +375,19 @@ export type IdentityKeyResolvers<ContextType = any, ParentType extends Resolvers
   permissions?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   relatedId?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   revokedAt?: Resolver<Maybe<ResolversTypes['DateTime']>, ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+}>;
+
+export type LlmapiKeyResolvers<ContextType = any, ParentType extends ResolversParentTypes['LLMAPIKey'] = ResolversParentTypes['LLMAPIKey']> = ResolversObject<{
+  createdAt?: Resolver<ResolversTypes['DateTime'], ParentType, ContextType>;
+  encryptedKey?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
+  isActive?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
+  lastValidatedAt?: Resolver<Maybe<ResolversTypes['DateTime']>, ParentType, ContextType>;
+  maskedKey?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  provider?: Resolver<ResolversTypes['LLMProvider'], ParentType, ContextType>;
+  updatedAt?: Resolver<Maybe<ResolversTypes['DateTime']>, ParentType, ContextType>;
+  workspace?: Resolver<ResolversTypes['Workspace'], ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
@@ -509,6 +544,7 @@ export type WorkspaceResolvers<ContextType = any, ParentType extends ResolversPa
   createdAt?: Resolver<ResolversTypes['DateTime'], ParentType, ContextType>;
   globalRuntime?: Resolver<Maybe<ResolversTypes['Runtime']>, ParentType, ContextType>;
   id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
+  llmApiKeys?: Resolver<Maybe<Array<ResolversTypes['LLMAPIKey']>>, ParentType, ContextType>;
   mcpServers?: Resolver<Maybe<Array<ResolversTypes['MCPServer']>>, ParentType, ContextType>;
   mcpTools?: Resolver<Maybe<Array<ResolversTypes['MCPTool']>>, ParentType, ContextType>;
   name?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
@@ -524,6 +560,7 @@ export type WorkspaceResolvers<ContextType = any, ParentType extends ResolversPa
 export type Resolvers<ContextType = any> = ResolversObject<{
   DateTime?: GraphQLScalarType;
   IdentityKey?: IdentityKeyResolvers<ContextType>;
+  LLMAPIKey?: LlmapiKeyResolvers<ContextType>;
   MCPRegistryServer?: McpRegistryServerResolvers<ContextType>;
   MCPServer?: McpServerResolvers<ContextType>;
   MCPTool?: McpToolResolvers<ContextType>;

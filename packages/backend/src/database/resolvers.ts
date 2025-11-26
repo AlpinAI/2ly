@@ -1,7 +1,7 @@
 import { GraphQLDateTime } from 'graphql-scalars';
 import { GraphQLError } from 'graphql';
 import { container as defaultContainer } from '../di/container';
-import { apolloResolversTypes, MCP_SERVER_RUN_ON } from '@2ly/common';
+import { apolloResolversTypes, dgraphResolversTypes, MCP_SERVER_RUN_ON } from '@2ly/common';
 import { Observable } from 'rxjs';
 import { latestValueFrom } from 'rxjs-for-await';
 import { MCPServerAutoConfigService } from '../services/mcp-auto-config.service';
@@ -15,6 +15,7 @@ import {
   ToolSetRepository,
   IdentityRepository,
 } from '../repositories';
+import { LLMAPIKeyService } from '../services/llm-api-key.service';
 import { createAuthResolvers } from '../resolvers/auth.resolver';
 import { AuthenticationService, JwtService, PasswordPolicyService } from '../services/auth';
 import { Container } from 'inversify';
@@ -37,6 +38,7 @@ export const resolvers = (container: Container = defaultContainer): apolloResolv
   const workspaceRepository = container.get(WorkspaceRepository);
   const toolSetRepository = container.get(ToolSetRepository);
   const identityRepository = container.get(IdentityRepository);
+  const llmApiKeyService = container.get(LLMAPIKeyService);
   const mcpAutoConfigService = container.get(MCPServerAutoConfigService);
   const authenticationService = container.get(AuthenticationService);
   const jwtService = container.get(JwtService);
@@ -125,6 +127,13 @@ export const resolvers = (container: Container = defaultContainer): apolloResolv
           throw new Error('Key not found');
         }
         return key.key;
+      },
+      // LLM API key queries
+      llmApiKeys: async (_parent: unknown, { workspaceId }: { workspaceId: string }) => {
+        return llmApiKeyService.getKeysByWorkspace(workspaceId);
+      },
+      llmApiKey: async (_parent: unknown, { id }: { id: string }) => {
+        return llmApiKeyService.getKeyById(id);
       },
       // Authentication queries
       ...authResolvers.Query,
@@ -369,6 +378,29 @@ export const resolvers = (container: Container = defaultContainer): apolloResolv
           throw new Error('Key not found');
         }
         return identityRepository.revokeKey(key.key);
+      },
+
+      // LLM API key mutations
+      createLLMAPIKey: async (
+        _parent: unknown,
+        { workspaceId, provider, apiKey }: { workspaceId: string; provider: apolloResolversTypes.LlmProvider; apiKey: string },
+      ) => {
+        return llmApiKeyService.createKey(workspaceId, provider as dgraphResolversTypes.LlmProvider, apiKey);
+      },
+
+      updateLLMAPIKey: async (
+        _parent: unknown,
+        { id, apiKey }: { id: string; apiKey: string },
+      ) => {
+        return llmApiKeyService.updateKey(id, apiKey);
+      },
+
+      deleteLLMAPIKey: async (_parent: unknown, { id }: { id: string }) => {
+        return llmApiKeyService.deleteKey(id);
+      },
+
+      setActiveLLMAPIKey: async (_parent: unknown, { id }: { id: string }) => {
+        return llmApiKeyService.setActiveKey(id);
       },
 
       // ToolSet mutations

@@ -61,6 +61,24 @@ export type Infra = {
   remoteMCP: Maybe<Scalars['String']['output']>;
 };
 
+export type LlmapiKey = {
+  __typename: 'LLMAPIKey';
+  createdAt: Scalars['Date']['output'];
+  id: Scalars['ID']['output'];
+  isActive: Scalars['Boolean']['output'];
+  lastValidatedAt: Maybe<Scalars['Date']['output']>;
+  maskedKey: Scalars['String']['output'];
+  provider: LlmProvider;
+  updatedAt: Maybe<Scalars['Date']['output']>;
+  workspace: Workspace;
+};
+
+export enum LlmProvider {
+  Anthropic = 'ANTHROPIC',
+  Google = 'GOOGLE',
+  Openai = 'OPENAI'
+}
+
 export type LoginInput = {
   deviceInfo?: InputMaybe<Scalars['String']['input']>;
   email: Scalars['String']['input'];
@@ -152,10 +170,12 @@ export type Mutation = {
   addServerToRegistry: McpRegistryServer;
   callMCPTool: CallToolResult;
   completeOnboardingStep: Scalars['Boolean']['output'];
+  createLLMAPIKey: LlmapiKey;
   createMCPServer: McpServer;
   createRuntime: Runtime;
   createToolSet: ToolSet;
   createWorkspaceKey: IdentityKey;
+  deleteLLMAPIKey: LlmapiKey;
   deleteMCPServer: McpServer;
   deleteMCPTool: McpTool;
   deleteRuntime: Runtime;
@@ -172,9 +192,11 @@ export type Mutation = {
   removeMCPToolFromToolSet: ToolSet;
   removeServerFromRegistry: McpRegistryServer;
   revokeKey: IdentityKey;
+  setActiveLLMAPIKey: LlmapiKey;
   setGlobalRuntime: Workspace;
   unlinkMCPServerFromRuntime: McpServer;
   unsetGlobalRuntime: Workspace;
+  updateLLMAPIKey: LlmapiKey;
   updateMCPServer: McpServer;
   updateMCPServerRunOn: McpServer;
   updateRuntime: Runtime;
@@ -214,6 +236,13 @@ export type MutationCompleteOnboardingStepArgs = {
 };
 
 
+export type MutationCreateLlmapiKeyArgs = {
+  apiKey: Scalars['String']['input'];
+  provider: LlmProvider;
+  workspaceId: Scalars['ID']['input'];
+};
+
+
 export type MutationCreateMcpServerArgs = {
   config: Scalars['String']['input'];
   description: Scalars['String']['input'];
@@ -244,6 +273,11 @@ export type MutationCreateToolSetArgs = {
 export type MutationCreateWorkspaceKeyArgs = {
   description: Scalars['String']['input'];
   workspaceId: Scalars['ID']['input'];
+};
+
+
+export type MutationDeleteLlmapiKeyArgs = {
+  id: Scalars['ID']['input'];
 };
 
 
@@ -331,6 +365,11 @@ export type MutationRevokeKeyArgs = {
 };
 
 
+export type MutationSetActiveLlmapiKeyArgs = {
+  id: Scalars['ID']['input'];
+};
+
+
 export type MutationSetGlobalRuntimeArgs = {
   id: Scalars['ID']['input'];
   runtimeId: Scalars['ID']['input'];
@@ -343,6 +382,12 @@ export type MutationUnlinkMcpServerFromRuntimeArgs = {
 
 
 export type MutationUnsetGlobalRuntimeArgs = {
+  id: Scalars['ID']['input'];
+};
+
+
+export type MutationUpdateLlmapiKeyArgs = {
+  apiKey: Scalars['String']['input'];
   id: Scalars['ID']['input'];
 };
 
@@ -431,6 +476,8 @@ export type Query = {
   infra: Infra;
   isMCPAutoConfigEnabled: Scalars['Boolean']['output'];
   keyValue: Scalars['String']['output'];
+  llmApiKey: Maybe<LlmapiKey>;
+  llmApiKeys: Array<LlmapiKey>;
   mcpServers: Maybe<Array<McpServer>>;
   mcpTools: Maybe<Array<McpTool>>;
   me: Maybe<User>;
@@ -452,6 +499,16 @@ export type QueryGetRegistryServersArgs = {
 
 export type QueryKeyValueArgs = {
   keyId: Scalars['ID']['input'];
+};
+
+
+export type QueryLlmApiKeyArgs = {
+  id: Scalars['ID']['input'];
+};
+
+
+export type QueryLlmApiKeysArgs = {
+  workspaceId: Scalars['ID']['input'];
 };
 
 
@@ -673,6 +730,7 @@ export type Workspace = {
   createdAt: Scalars['Date']['output'];
   globalRuntime: Maybe<Runtime>;
   id: Scalars['ID']['output'];
+  llmApiKeys: Maybe<Array<LlmapiKey>>;
   mcpServers: Maybe<Array<McpServer>>;
   mcpTools: Maybe<Array<McpTool>>;
   name: Scalars['String']['output'];

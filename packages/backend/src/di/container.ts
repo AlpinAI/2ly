@@ -32,6 +32,8 @@ import {
   ToolSetRepository,
   IdentityRepository,
 } from '../repositories';
+import { LLMAPIKeyRepository } from '../repositories/llm-api-key.repository';
+import { LLMAPIKeyService } from '../services/llm-api-key.service';
 import { JwtService, AuthenticationService, AccountSecurityService, PasswordPolicyService } from '../services/auth';
 import { SecurityMiddleware, RateLimitMiddleware, GraphQLAuthMiddleware } from '../middleware';
 import { MCPServerAutoConfigService, AZURE_ENDPOINT, AZURE_API_KEY, BRAVE_SEARCH_API_KEY } from '../services/mcp-auto-config.service';
@@ -91,6 +93,7 @@ const start = () => {
   container.bind(MonitoringRepository).toSelf().inSingletonScope();
   container.bind(ToolSetRepository).toSelf().inSingletonScope();
   container.bind(IdentityRepository).toSelf().inSingletonScope();
+  container.bind(LLMAPIKeyRepository).toSelf().inSingletonScope();
 
   // Init authentication services
   container.bind(JwtService).toSelf().inSingletonScope();
@@ -98,6 +101,9 @@ const start = () => {
 
   // Init identity service
   container.bind(IdentityService).toSelf().inSingletonScope();
+
+  // Init LLM API key service
+  container.bind(LLMAPIKeyService).toSelf().inSingletonScope();
 
   // Init key rate limiter service
   container.bind(KeyRateLimiterService).toSelf().inSingletonScope();

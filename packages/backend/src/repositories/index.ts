@@ -10,3 +10,4 @@ export * from './system.repository';
 export * from './monitoring.repository';
 export * from './toolset.repository';
 export * from './identity.repository';
+export * from './llm-api-key.repository';

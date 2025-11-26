@@ -12,7 +12,7 @@
  */
 
 import { useState } from 'react';
-import { Database, Users, Cpu, Key, Plus } from 'lucide-react';
+import { Database, Users, Cpu, Key, Plus, Brain } from 'lucide-react';
 import { useWorkspaceId } from '@/stores/workspaceStore';
 import { useMCPRegistries } from '@/hooks/useMCPRegistries';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
@@ -21,6 +21,7 @@ import { PrivateRegistrySection } from '@/components/settings/private-registry-s
 import { UsersRolesSection } from '@/components/settings/users-roles-section';
 import { RuntimesSection } from '@/components/settings/runtimes-section';
 import { ApiKeysSection } from '@/components/settings/api-keys-section';
+import { LLMAPIKeysSection } from '@/components/settings/llm-api-keys';
 import { useAddServerWorkflow } from '@/stores/uiStore';
 
 
@@ -51,6 +52,10 @@ export default function SettingsPage() {
               <Cpu className="h-4 w-4" />
               <span>Runtimes</span>
             </TabsTrigger>
+            <TabsTrigger value="llm-api-keys" className="flex items-center gap-2">
+              <Brain className="h-4 w-4" />
+              <span>LLM API Keys</span>
+            </TabsTrigger>
             <TabsTrigger value="api-keys" className="flex items-center gap-2">
               <Key className="h-4 w-4" />
               <span>API Keys</span>
@@ -80,6 +85,10 @@ export default function SettingsPage() {
 
         <TabsContent value="runtimes">
           <RuntimesSection />
+        </TabsContent>
+
+        <TabsContent value="llm-api-keys">
+          <LLMAPIKeysSection />
         </TabsContent>
 
         <TabsContent value="api-keys">

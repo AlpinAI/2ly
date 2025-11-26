@@ -57,6 +57,23 @@ export type Infra = {
   remoteMCP?: Maybe<Scalars['String']['output']>;
 };
 
+export type LlmapiKey = {
+  createdAt: Scalars['Date']['output'];
+  id: Scalars['ID']['output'];
+  isActive: Scalars['Boolean']['output'];
+  lastValidatedAt?: Maybe<Scalars['Date']['output']>;
+  maskedKey: Scalars['String']['output'];
+  provider: LlmProvider;
+  updatedAt?: Maybe<Scalars['Date']['output']>;
+  workspace: Workspace;
+};
+
+export enum LlmProvider {
+  Anthropic = 'ANTHROPIC',
+  Google = 'GOOGLE',
+  Openai = 'OPENAI'
+}
+
 export type LoginInput = {
   deviceInfo?: InputMaybe<Scalars['String']['input']>;
   email: Scalars['String']['input'];
@@ -143,10 +160,12 @@ export type Mutation = {
   addServerToRegistry: McpRegistryServer;
   callMCPTool: CallToolResult;
   completeOnboardingStep: Scalars['Boolean']['output'];
+  createLLMAPIKey: LlmapiKey;
   createMCPServer: McpServer;
   createRuntime: Runtime;
   createToolSet: ToolSet;
   createWorkspaceKey: IdentityKey;
+  deleteLLMAPIKey: LlmapiKey;
   deleteMCPServer: McpServer;
   deleteMCPTool: McpTool;
   deleteRuntime: Runtime;
@@ -163,9 +182,11 @@ export type Mutation = {
   removeMCPToolFromToolSet: ToolSet;
   removeServerFromRegistry: McpRegistryServer;
   revokeKey: IdentityKey;
+  setActiveLLMAPIKey: LlmapiKey;
   setGlobalRuntime: Workspace;
   unlinkMCPServerFromRuntime: McpServer;
   unsetGlobalRuntime: Workspace;
+  updateLLMAPIKey: LlmapiKey;
   updateMCPServer: McpServer;
   updateMCPServerRunOn: McpServer;
   updateRuntime: Runtime;
@@ -205,6 +226,13 @@ export type MutationCompleteOnboardingStepArgs = {
 };
 
 
+export type MutationCreateLlmapiKeyArgs = {
+  apiKey: Scalars['String']['input'];
+  provider: LlmProvider;
+  workspaceId: Scalars['ID']['input'];
+};
+
+
 export type MutationCreateMcpServerArgs = {
   config: Scalars['String']['input'];
   description: Scalars['String']['input'];
@@ -235,6 +263,11 @@ export type MutationCreateToolSetArgs = {
 export type MutationCreateWorkspaceKeyArgs = {
   description: Scalars['String']['input'];
   workspaceId: Scalars['ID']['input'];
+};
+
+
+export type MutationDeleteLlmapiKeyArgs = {
+  id: Scalars['ID']['input'];
 };
 
 
@@ -322,6 +355,11 @@ export type MutationRevokeKeyArgs = {
 };
 
 
+export type MutationSetActiveLlmapiKeyArgs = {
+  id: Scalars['ID']['input'];
+};
+
+
 export type MutationSetGlobalRuntimeArgs = {
   id: Scalars['ID']['input'];
   runtimeId: Scalars['ID']['input'];
@@ -334,6 +372,12 @@ export type MutationUnlinkMcpServerFromRuntimeArgs = {
 
 
 export type MutationUnsetGlobalRuntimeArgs = {
+  id: Scalars['ID']['input'];
+};
+
+
+export type MutationUpdateLlmapiKeyArgs = {
+  apiKey: Scalars['String']['input'];
   id: Scalars['ID']['input'];
 };
 
@@ -420,6 +464,8 @@ export type Query = {
   infra: Infra;
   isMCPAutoConfigEnabled: Scalars['Boolean']['output'];
   keyValue: Scalars['String']['output'];
+  llmApiKey?: Maybe<LlmapiKey>;
+  llmApiKeys: Array<LlmapiKey>;
   mcpServers?: Maybe<Array<McpServer>>;
   mcpTools?: Maybe<Array<McpTool>>;
   me?: Maybe<User>;
@@ -441,6 +487,16 @@ export type QueryGetRegistryServersArgs = {
 
 export type QueryKeyValueArgs = {
   keyId: Scalars['ID']['input'];
+};
+
+
+export type QueryLlmApiKeyArgs = {
+  id: Scalars['ID']['input'];
+};
+
+
+export type QueryLlmApiKeysArgs = {
+  workspaceId: Scalars['ID']['input'];
 };
 
 
@@ -651,6 +707,7 @@ export type Workspace = {
   createdAt: Scalars['Date']['output'];
   globalRuntime?: Maybe<Runtime>;
   id: Scalars['ID']['output'];
+  llmApiKeys?: Maybe<Array<LlmapiKey>>;
   mcpServers?: Maybe<Array<McpServer>>;
   mcpTools?: Maybe<Array<McpTool>>;
   name: Scalars['String']['output'];
@@ -742,6 +799,8 @@ export type ResolversTypes = {
   IdentityKey: ResolverTypeWrapper<IdentityKey>;
   Infra: ResolverTypeWrapper<Infra>;
   Int: ResolverTypeWrapper<Scalars['Int']['output']>;
+  LLMAPIKey: ResolverTypeWrapper<LlmapiKey>;
+  LLMProvider: LlmProvider;
   LoginInput: LoginInput;
   LoginUserInput: LoginUserInput;
   LogoutInput: LogoutInput;
@@ -789,6 +848,7 @@ export type ResolversParentTypes = {
   IdentityKey: IdentityKey;
   Infra: Infra;
   Int: Scalars['Int']['output'];
+  LLMAPIKey: LlmapiKey;
   LoginInput: LoginInput;
   LoginUserInput: LoginUserInput;
   LogoutInput: LogoutInput;
@@ -861,6 +921,18 @@ export type InfraResolvers<ContextType = object, ParentType extends ResolversPar
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 };
 
+export type LlmapiKeyResolvers<ContextType = object, ParentType extends ResolversParentTypes['LLMAPIKey'] = ResolversParentTypes['LLMAPIKey']> = {
+  createdAt?: Resolver<ResolversTypes['Date'], ParentType, ContextType>;
+  id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
+  isActive?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
+  lastValidatedAt?: Resolver<Maybe<ResolversTypes['Date']>, ParentType, ContextType>;
+  maskedKey?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  provider?: Resolver<ResolversTypes['LLMProvider'], ParentType, ContextType>;
+  updatedAt?: Resolver<Maybe<ResolversTypes['Date']>, ParentType, ContextType>;
+  workspace?: Resolver<ResolversTypes['Workspace'], ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+};
+
 export type LogoutPayloadResolvers<ContextType = object, ParentType extends ResolversParentTypes['LogoutPayload'] = ResolversParentTypes['LogoutPayload']> = {
   errors?: Resolver<Maybe<Array<ResolversTypes['String']>>, ParentType, ContextType>;
   success?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
@@ -919,10 +991,12 @@ export type MutationResolvers<ContextType = object, ParentType extends Resolvers
   addServerToRegistry?: Resolver<ResolversTypes['MCPRegistryServer'], ParentType, ContextType, RequireFields<MutationAddServerToRegistryArgs, 'description' | 'name' | 'repositoryUrl' | 'title' | 'version' | 'workspaceId'>>;
   callMCPTool?: Resolver<ResolversTypes['CallToolResult'], ParentType, ContextType, RequireFields<MutationCallMcpToolArgs, 'input' | 'toolId'>>;
   completeOnboardingStep?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType, RequireFields<MutationCompleteOnboardingStepArgs, 'stepId' | 'workspaceId'>>;
+  createLLMAPIKey?: Resolver<ResolversTypes['LLMAPIKey'], ParentType, ContextType, RequireFields<MutationCreateLlmapiKeyArgs, 'apiKey' | 'provider' | 'workspaceId'>>;
   createMCPServer?: Resolver<ResolversTypes['MCPServer'], ParentType, ContextType, RequireFields<MutationCreateMcpServerArgs, 'config' | 'description' | 'name' | 'registryServerId' | 'repositoryUrl' | 'transport' | 'workspaceId'>>;
   createRuntime?: Resolver<ResolversTypes['Runtime'], ParentType, ContextType, RequireFields<MutationCreateRuntimeArgs, 'description' | 'name' | 'type' | 'workspaceId'>>;
   createToolSet?: Resolver<ResolversTypes['ToolSet'], ParentType, ContextType, RequireFields<MutationCreateToolSetArgs, 'description' | 'name' | 'workspaceId'>>;
   createWorkspaceKey?: Resolver<ResolversTypes['IdentityKey'], ParentType, ContextType, RequireFields<MutationCreateWorkspaceKeyArgs, 'description' | 'workspaceId'>>;
+  deleteLLMAPIKey?: Resolver<ResolversTypes['LLMAPIKey'], ParentType, ContextType, RequireFields<MutationDeleteLlmapiKeyArgs, 'id'>>;
   deleteMCPServer?: Resolver<ResolversTypes['MCPServer'], ParentType, ContextType, RequireFields<MutationDeleteMcpServerArgs, 'id'>>;
   deleteMCPTool?: Resolver<ResolversTypes['MCPTool'], ParentType, ContextType, RequireFields<MutationDeleteMcpToolArgs, 'id'>>;
   deleteRuntime?: Resolver<ResolversTypes['Runtime'], ParentType, ContextType, RequireFields<MutationDeleteRuntimeArgs, 'id'>>;
@@ -939,9 +1013,11 @@ export type MutationResolvers<ContextType = object, ParentType extends Resolvers
   removeMCPToolFromToolSet?: Resolver<ResolversTypes['ToolSet'], ParentType, ContextType, RequireFields<MutationRemoveMcpToolFromToolSetArgs, 'mcpToolId' | 'toolSetId'>>;
   removeServerFromRegistry?: Resolver<ResolversTypes['MCPRegistryServer'], ParentType, ContextType, RequireFields<MutationRemoveServerFromRegistryArgs, 'serverId'>>;
   revokeKey?: Resolver<ResolversTypes['IdentityKey'], ParentType, ContextType, RequireFields<MutationRevokeKeyArgs, 'keyId'>>;
+  setActiveLLMAPIKey?: Resolver<ResolversTypes['LLMAPIKey'], ParentType, ContextType, RequireFields<MutationSetActiveLlmapiKeyArgs, 'id'>>;
   setGlobalRuntime?: Resolver<ResolversTypes['Workspace'], ParentType, ContextType, RequireFields<MutationSetGlobalRuntimeArgs, 'id' | 'runtimeId'>>;
   unlinkMCPServerFromRuntime?: Resolver<ResolversTypes['MCPServer'], ParentType, ContextType, RequireFields<MutationUnlinkMcpServerFromRuntimeArgs, 'mcpServerId'>>;
   unsetGlobalRuntime?: Resolver<ResolversTypes['Workspace'], ParentType, ContextType, RequireFields<MutationUnsetGlobalRuntimeArgs, 'id'>>;
+  updateLLMAPIKey?: Resolver<ResolversTypes['LLMAPIKey'], ParentType, ContextType, RequireFields<MutationUpdateLlmapiKeyArgs, 'apiKey' | 'id'>>;
   updateMCPServer?: Resolver<ResolversTypes['MCPServer'], ParentType, ContextType, RequireFields<MutationUpdateMcpServerArgs, 'config' | 'description' | 'id' | 'name' | 'repositoryUrl' | 'transport'>>;
   updateMCPServerRunOn?: Resolver<ResolversTypes['MCPServer'], ParentType, ContextType, RequireFields<MutationUpdateMcpServerRunOnArgs, 'mcpServerId' | 'runOn'>>;
   updateRuntime?: Resolver<ResolversTypes['Runtime'], ParentType, ContextType, RequireFields<MutationUpdateRuntimeArgs, 'description' | 'id' | 'name'>>;
@@ -967,6 +1043,8 @@ export type QueryResolvers<ContextType = object, ParentType extends ResolversPar
   infra?: Resolver<ResolversTypes['Infra'], ParentType, ContextType>;
   isMCPAutoConfigEnabled?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
   keyValue?: Resolver<ResolversTypes['String'], ParentType, ContextType, RequireFields<QueryKeyValueArgs, 'keyId'>>;
+  llmApiKey?: Resolver<Maybe<ResolversTypes['LLMAPIKey']>, ParentType, ContextType, RequireFields<QueryLlmApiKeyArgs, 'id'>>;
+  llmApiKeys?: Resolver<Array<ResolversTypes['LLMAPIKey']>, ParentType, ContextType, RequireFields<QueryLlmApiKeysArgs, 'workspaceId'>>;
   mcpServers?: Resolver<Maybe<Array<ResolversTypes['MCPServer']>>, ParentType, ContextType, RequireFields<QueryMcpServersArgs, 'workspaceId'>>;
   mcpTools?: Resolver<Maybe<Array<ResolversTypes['MCPTool']>>, ParentType, ContextType, RequireFields<QueryMcpToolsArgs, 'workspaceId'>>;
   me?: Resolver<Maybe<ResolversTypes['User']>, ParentType, ContextType>;
@@ -1092,6 +1170,7 @@ export type WorkspaceResolvers<ContextType = object, ParentType extends Resolver
   createdAt?: Resolver<ResolversTypes['Date'], ParentType, ContextType>;
   globalRuntime?: Resolver<Maybe<ResolversTypes['Runtime']>, ParentType, ContextType>;
   id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
+  llmApiKeys?: Resolver<Maybe<Array<ResolversTypes['LLMAPIKey']>>, ParentType, ContextType>;
   mcpServers?: Resolver<Maybe<Array<ResolversTypes['MCPServer']>>, ParentType, ContextType>;
   mcpTools?: Resolver<Maybe<Array<ResolversTypes['MCPTool']>>, ParentType, ContextType>;
   name?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
@@ -1109,6 +1188,7 @@ export type Resolvers<ContextType = object> = {
   Date?: GraphQLScalarType;
   IdentityKey?: IdentityKeyResolvers<ContextType>;
   Infra?: InfraResolvers<ContextType>;
+  LLMAPIKey?: LlmapiKeyResolvers<ContextType>;
   LogoutPayload?: LogoutPayloadResolvers<ContextType>;
   MCPRegistryServer?: McpRegistryServerResolvers<ContextType>;
   MCPServer?: McpServerResolvers<ContextType>;

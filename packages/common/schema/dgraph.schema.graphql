@@ -47,6 +47,7 @@ type Workspace @withSubscription {
   system: System! @hasInverse(field: workspaces)
   globalRuntime: Runtime
   onboardingSteps: [OnboardingStep!]
+  llmApiKeys: [LLMAPIKey!] @hasInverse(field: workspace)
 }
 
 type MCPRegistryServer @withSubscription {
@@ -228,4 +229,22 @@ type IdentityKey @withSubscription {
   revokedAt: DateTime @search
   description: String
   permissions: String
+}
+
+enum LLMProvider {
+  OPENAI
+  ANTHROPIC
+  GOOGLE
+}
+
+type LLMAPIKey @withSubscription {
+  id: ID!
+  provider: LLMProvider! @search
+  encryptedKey: String!
+  maskedKey: String!
+  isActive: Boolean! @search
+  createdAt: DateTime!
+  updatedAt: DateTime
+  lastValidatedAt: DateTime
+  workspace: Workspace! @hasInverse(field: llmApiKeys)
 }
