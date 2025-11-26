@@ -108,6 +108,16 @@ export class LLMAPIKeyRepository {
 
   /**
    * Set a key as active (and deactivate other keys for the same provider)
+   *
+   * This operation is atomic - both deactivation and activation happen in a single
+   * transaction. DGraph guarantees that either both operations succeed or both fail,
+   * preventing race conditions where multiple keys could be active simultaneously.
+   *
+   * @param id - The ID of the key to activate
+   * @param provider - The LLM provider (must match the key's provider)
+   * @param workspaceId - The workspace ID (must match the key's workspace)
+   * @returns The activated key
+   * @throws Error if the key doesn't exist, doesn't match the provider/workspace, or if the operation fails
    */
   async setActive(
     id: string,
@@ -118,7 +128,8 @@ export class LLMAPIKeyRepository {
       const now = new Date().toISOString();
 
       const res = await this.dgraphService.mutation<{
-        activateTarget: { lLMAPIKey: dgraphResolversTypes.LlmapiKey[] };
+        deactivateOthers: { numUids: number; lLMAPIKey: dgraphResolversTypes.LlmapiKey[] };
+        activateTarget: { numUids: number; lLMAPIKey: dgraphResolversTypes.LlmapiKey[] };
       }>(SET_ACTIVE_LLM_API_KEY, {
         id,
         provider,
@@ -126,10 +137,34 @@ export class LLMAPIKeyRepository {
         now,
       });
 
-      this.logger.info(`Set LLM API key ${id} as active for ${provider}`);
-      return res.activateTarget.lLMAPIKey[0];
+      // Validate that the target key was actually updated
+      if (!res.activateTarget.lLMAPIKey || res.activateTarget.lLMAPIKey.length === 0) {
+        this.logger.error(
+          `Failed to activate LLM API key ${id}: Key not found or doesn't match provider ${provider} and workspace ${workspaceId}`,
+        );
+        throw new Error('Key not found or does not match the specified provider and workspace');
+      }
+
+      // Verify exactly one key was activated
+      if (res.activateTarget.numUids !== 1) {
+        this.logger.error(
+          `Unexpected number of keys activated: ${res.activateTarget.numUids} (expected 1)`,
+        );
+        throw new Error('Unexpected number of keys activated');
+      }
+
+      const activatedKey = res.activateTarget.lLMAPIKey[0];
+
+      this.logger.info(
+        `Set LLM API key ${id} as active for ${provider} (deactivated ${res.deactivateOthers.numUids} other keys)`,
+      );
+
+      return activatedKey;
     } catch (error) {
       this.logger.error(`Failed to set active LLM API key: ${error}`);
+      if (error instanceof Error && error.message.includes('Key not found')) {
+        throw error; // Rethrow with specific message
+      }
       throw new Error('Failed to set active LLM API key');
     }
   }

@@ -229,6 +229,7 @@ export type MutationCompleteOnboardingStepArgs = {
 export type MutationCreateLlmapiKeyArgs = {
   apiKey: Scalars['String']['input'];
   provider: LlmProvider;
+  validate?: InputMaybe<Scalars['Boolean']['input']>;
   workspaceId: Scalars['ID']['input'];
 };
 
@@ -379,6 +380,7 @@ export type MutationUnsetGlobalRuntimeArgs = {
 export type MutationUpdateLlmapiKeyArgs = {
   apiKey: Scalars['String']['input'];
   id: Scalars['ID']['input'];
+  validate?: InputMaybe<Scalars['Boolean']['input']>;
 };
 
 

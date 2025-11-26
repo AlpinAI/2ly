@@ -86,7 +86,13 @@ export const DELETE_LLM_API_KEY = gql`
 
 export const SET_ACTIVE_LLM_API_KEY = gql`
   mutation setActiveLLMAPIKey($id: ID!, $provider: LLMProvider!, $workspaceId: ID!, $now: DateTime!) {
-    # First, deactivate all keys for this provider in the workspace
+    # This mutation is atomic - both operations execute in a single transaction.
+    # DGraph guarantees that either both operations succeed, or both fail.
+    # The operations execute sequentially within the transaction:
+    # 1. First, deactivate all other keys for this provider in the workspace
+    # 2. Then, activate the target key
+    # This prevents race conditions where multiple keys could be active simultaneously.
+
     deactivateOthers: updateLLMAPIKey(
       input: {
         filter: {
@@ -99,19 +105,26 @@ export const SET_ACTIVE_LLM_API_KEY = gql`
         set: { isActive: false, updatedAt: $now }
       }
     ) {
+      numUids
       lLMAPIKey {
         id
         isActive
       }
     }
 
-    # Then, activate the target key
     activateTarget: updateLLMAPIKey(
       input: {
-        filter: { id: [$id] }
+        filter: {
+          and: [
+            { id: [$id] }
+            { workspace: { id: { eq: $workspaceId } } }
+            { provider: { eq: $provider } }
+          ]
+        }
         set: { isActive: true, updatedAt: $now }
       }
     ) {
+      numUids
       lLMAPIKey {
         id
         provider

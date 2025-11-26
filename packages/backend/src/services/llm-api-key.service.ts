@@ -22,17 +22,20 @@ export class LLMAPIKeyService {
   }
 
   /**
-   * Create a new LLM API key with encryption and validation
+   * Create a new LLM API key with encryption and optional validation
    */
   async createKey(
     workspaceId: string,
     provider: dgraphResolversTypes.LlmProvider,
     apiKey: string,
+    validate = true,
   ): Promise<dgraphResolversTypes.LlmapiKey> {
-    // Validate the API key with the provider
-    const validation = await this.validateAPIKey(provider, apiKey);
-    if (!validation.valid) {
-      throw new Error(`API key validation failed: ${validation.error}`);
+    // Validate the API key with the provider if requested
+    if (validate) {
+      const validation = await this.validateAPIKey(provider, apiKey);
+      if (!validation.valid) {
+        throw new Error(`API key validation failed: ${validation.error}`);
+      }
     }
 
     // Encrypt the API key
@@ -55,30 +58,34 @@ export class LLMAPIKeyService {
       workspaceId,
     });
 
-    // Update lastValidatedAt
-    await this.llmApiKeyRepository.update({
-      id: key.id,
-      lastValidatedAt: new Date(),
-    });
+    // Update lastValidatedAt only if we validated
+    if (validate) {
+      await this.llmApiKeyRepository.update({
+        id: key.id,
+        lastValidatedAt: new Date(),
+      });
+    }
 
-    this.logger.info(`Created and validated ${provider} API key for workspace ${workspaceId}`);
+    this.logger.info(`Created ${validate ? 'and validated ' : ''}${provider} API key for workspace ${workspaceId}`);
     return key;
   }
 
   /**
-   * Update an existing LLM API key
+   * Update an existing LLM API key with optional validation
    */
-  async updateKey(id: string, apiKey: string): Promise<dgraphResolversTypes.LlmapiKey> {
+  async updateKey(id: string, apiKey: string, validate = true): Promise<dgraphResolversTypes.LlmapiKey> {
     // Find the existing key
     const existingKey = await this.llmApiKeyRepository.findById(id);
     if (!existingKey) {
       throw new Error('API key not found');
     }
 
-    // Validate the new API key with the provider
-    const validation = await this.validateAPIKey(existingKey.provider, apiKey);
-    if (!validation.valid) {
-      throw new Error(`API key validation failed: ${validation.error}`);
+    // Validate the new API key with the provider if requested
+    if (validate) {
+      const validation = await this.validateAPIKey(existingKey.provider, apiKey);
+      if (!validation.valid) {
+        throw new Error(`API key validation failed: ${validation.error}`);
+      }
     }
 
     // Encrypt the new API key
@@ -90,10 +97,10 @@ export class LLMAPIKeyService {
       id,
       encryptedKey,
       maskedKey,
-      lastValidatedAt: new Date(),
+      lastValidatedAt: validate ? new Date() : undefined,
     });
 
-    this.logger.info(`Updated and validated ${existingKey.provider} API key ${id}`);
+    this.logger.info(`Updated ${validate ? 'and validated ' : ''}${existingKey.provider} API key ${id}`);
     return updatedKey;
   }
 

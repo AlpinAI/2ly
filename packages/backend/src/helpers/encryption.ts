@@ -2,18 +2,31 @@
  * Encryption Helper
  *
  * Provides encryption and decryption utilities for sensitive data like API keys.
- * Uses AES-256-GCM for authenticated encryption with the ENCRYPTION_KEY from environment.
+ * Uses AES-256-GCM for authenticated encryption with versioned key rotation support.
  *
  * Security Model:
  * - API keys are encrypted at rest in the database
  * - ENCRYPTION_KEY must be 64 hex characters (32 bytes)
  * - Each encryption generates a unique IV (initialization vector)
- * - Format: iv:authTag:encryptedData (all hex-encoded)
+ * - Format: v{version}:iv:authTag:encryptedData (all hex-encoded)
+ *
+ * Key Versioning:
+ * - Current version: v2 (with version prefix)
+ * - Legacy support: v1 (without version prefix for backward compatibility)
+ * - Supports multiple encryption keys via ENCRYPTION_KEY_V1, ENCRYPTION_KEY_V2, etc.
+ * - ENCRYPTION_KEY (no suffix) is used as the current/default key
  *
  * Usage:
- * - encrypt(plaintext): Returns encrypted string in format "iv:authTag:ciphertext"
- * - decrypt(encrypted): Returns original plaintext
+ * - encrypt(plaintext): Returns encrypted string in format "v2:iv:authTag:ciphertext"
+ * - decrypt(encrypted): Returns original plaintext (auto-detects version)
+ * - reEncrypt(encrypted): Re-encrypts data with current key version
  * - maskApiKey(apiKey): Returns masked version for display (e.g., "sk-...****xyz")
+ *
+ * Key Rotation Example:
+ * 1. Set ENCRYPTION_KEY_V2=<new_key> and ENCRYPTION_KEY=<new_key>
+ * 2. Keep ENCRYPTION_KEY_V1=<old_key> for decrypting legacy data
+ * 3. Use reEncrypt() to migrate encrypted data to v2
+ * 4. Once all data migrated, remove ENCRYPTION_KEY_V1
  */
 
 import crypto from 'crypto';
@@ -21,35 +34,70 @@ import crypto from 'crypto';
 const ALGORITHM = 'aes-256-gcm';
 const IV_LENGTH = 12; // 96 bits for GCM
 const AUTH_TAG_LENGTH = 16; // 128 bits
+const CURRENT_VERSION = 2; // Current encryption version
 
 /**
- * Get encryption key from environment variable.
- * Throws if ENCRYPTION_KEY is not set or invalid.
+ * Get encryption key for a specific version from environment variable.
+ * Throws if the key is not set or invalid.
+ *
+ * @param version - Key version number (e.g., 1, 2, 3)
+ * @returns Buffer containing the encryption key
  */
-function getEncryptionKey(): Buffer {
-  const encryptionKey = process.env.ENCRYPTION_KEY;
+function getEncryptionKey(version?: number): Buffer {
+  // Determine which env var to use
+  let envVarName: string;
+  if (version === undefined) {
+    // Use current/default key
+    envVarName = 'ENCRYPTION_KEY';
+  } else {
+    // Use versioned key (e.g., ENCRYPTION_KEY_V1, ENCRYPTION_KEY_V2)
+    envVarName = `ENCRYPTION_KEY_V${version}`;
+  }
+
+  const encryptionKey = process.env[envVarName];
 
   if (!encryptionKey) {
-    throw new Error('ENCRYPTION_KEY environment variable is not set');
+    // Fallback: If versioned key not found, try ENCRYPTION_KEY
+    if (version !== undefined && process.env.ENCRYPTION_KEY) {
+      return getEncryptionKey(); // Use default key as fallback
+    }
+    throw new Error(`${envVarName} environment variable is not set`);
   }
 
   // Validate key format (should be 64 hex characters = 32 bytes)
   if (!/^[0-9a-fA-F]{64}$/.test(encryptionKey)) {
-    throw new Error('ENCRYPTION_KEY must be 64 hexadecimal characters (32 bytes)');
+    throw new Error(`${envVarName} must be 64 hexadecimal characters (32 bytes)`);
   }
 
   return Buffer.from(encryptionKey, 'hex');
 }
 
 /**
- * Encrypt a plaintext string using AES-256-GCM.
+ * Detect the version of encrypted data.
+ * Returns the version number if prefixed (e.g., "v2:..."), or 1 for legacy format.
+ *
+ * @param encrypted - Encrypted string to inspect
+ * @returns Version number
+ */
+function detectVersion(encrypted: string): number {
+  const versionMatch = encrypted.match(/^v(\d+):/);
+  if (versionMatch) {
+    return parseInt(versionMatch[1], 10);
+  }
+  // Legacy format (no version prefix) is considered v1
+  return 1;
+}
+
+/**
+ * Encrypt a plaintext string using AES-256-GCM with version prefix.
  *
  * @param plaintext - The string to encrypt
- * @returns Encrypted string in format "iv:authTag:ciphertext" (hex-encoded)
+ * @param version - Optional version number (defaults to CURRENT_VERSION)
+ * @returns Encrypted string in format "v{version}:iv:authTag:ciphertext" (hex-encoded)
  */
-export function encrypt(plaintext: string): string {
+export function encrypt(plaintext: string, version: number = CURRENT_VERSION): string {
   try {
-    const key = getEncryptionKey();
+    const key = getEncryptionKey(version);
     const iv = crypto.randomBytes(IV_LENGTH);
 
     const cipher = crypto.createCipheriv(ALGORITHM, key, iv);
@@ -59,8 +107,8 @@ export function encrypt(plaintext: string): string {
 
     const authTag = cipher.getAuthTag();
 
-    // Format: iv:authTag:encryptedData
-    return `${iv.toString('hex')}:${authTag.toString('hex')}:${encrypted}`;
+    // Format: v{version}:iv:authTag:encryptedData
+    return `v${version}:${iv.toString('hex')}:${authTag.toString('hex')}:${encrypted}`;
   } catch (error) {
     throw new Error(`Encryption failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
@@ -68,17 +116,26 @@ export function encrypt(plaintext: string): string {
 
 /**
  * Decrypt an encrypted string using AES-256-GCM.
+ * Automatically detects version and uses appropriate key.
  *
- * @param encrypted - Encrypted string in format "iv:authTag:ciphertext"
+ * @param encrypted - Encrypted string in format "v{version}:iv:authTag:ciphertext" or legacy "iv:authTag:ciphertext"
  * @returns Decrypted plaintext string
  */
 export function decrypt(encrypted: string): string {
   try {
-    const key = getEncryptionKey();
+    const version = detectVersion(encrypted);
+    const key = getEncryptionKey(version);
 
-    const parts = encrypted.split(':');
+    // Remove version prefix if present (v1:, v2:, etc.)
+    let dataPart = encrypted;
+    const versionMatch = encrypted.match(/^v\d+:/);
+    if (versionMatch) {
+      dataPart = encrypted.substring(versionMatch[0].length);
+    }
+
+    const parts = dataPart.split(':');
     if (parts.length !== 3) {
-      throw new Error('Invalid encrypted data format. Expected "iv:authTag:ciphertext"');
+      throw new Error('Invalid encrypted data format. Expected "v{version}:iv:authTag:ciphertext" or "iv:authTag:ciphertext"');
     }
 
     const [ivHex, authTagHex, ciphertext] = parts;
@@ -104,6 +161,44 @@ export function decrypt(encrypted: string): string {
   } catch (error) {
     throw new Error(`Decryption failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
+}
+
+/**
+ * Re-encrypt data with the current encryption key version.
+ * Useful for migrating encrypted data after key rotation.
+ *
+ * @param encrypted - Encrypted string in any supported format
+ * @returns Newly encrypted string with current version
+ */
+export function reEncrypt(encrypted: string): string {
+  try {
+    // Decrypt with old key (auto-detects version)
+    const plaintext = decrypt(encrypted);
+    // Re-encrypt with current version
+    return encrypt(plaintext);
+  } catch (error) {
+    throw new Error(`Re-encryption failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+  }
+}
+
+/**
+ * Get the version of encrypted data without decrypting.
+ *
+ * @param encrypted - Encrypted string to inspect
+ * @returns Version number
+ */
+export function getEncryptedDataVersion(encrypted: string): number {
+  return detectVersion(encrypted);
+}
+
+/**
+ * Check if encrypted data needs migration to current version.
+ *
+ * @param encrypted - Encrypted string to check
+ * @returns True if data should be re-encrypted with current version
+ */
+export function needsMigration(encrypted: string): boolean {
+  return detectVersion(encrypted) !== CURRENT_VERSION;
 }
 
 /**

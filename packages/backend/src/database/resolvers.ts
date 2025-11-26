@@ -383,16 +383,16 @@ export const resolvers = (container: Container = defaultContainer): apolloResolv
       // LLM API key mutations
       createLLMAPIKey: async (
         _parent: unknown,
-        { workspaceId, provider, apiKey }: { workspaceId: string; provider: apolloResolversTypes.LlmProvider; apiKey: string },
+        { workspaceId, provider, apiKey, validate }: { workspaceId: string; provider: apolloResolversTypes.LlmProvider; apiKey: string; validate?: boolean | null },
       ) => {
-        return llmApiKeyService.createKey(workspaceId, provider as dgraphResolversTypes.LlmProvider, apiKey);
+        return llmApiKeyService.createKey(workspaceId, provider as dgraphResolversTypes.LlmProvider, apiKey, validate ?? undefined);
       },
 
       updateLLMAPIKey: async (
         _parent: unknown,
-        { id, apiKey }: { id: string; apiKey: string },
+        { id, apiKey, validate }: { id: string; apiKey: string; validate?: boolean | null },
       ) => {
-        return llmApiKeyService.updateKey(id, apiKey);
+        return llmApiKeyService.updateKey(id, apiKey, validate ?? undefined);
       },
 
       deleteLLMAPIKey: async (_parent: unknown, { id }: { id: string }) => {

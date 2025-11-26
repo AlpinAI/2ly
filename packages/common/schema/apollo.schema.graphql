@@ -367,8 +367,8 @@ type Mutation {
   revokeKey(keyId: ID!): IdentityKey!
 
   # LLM API key mutations
-  createLLMAPIKey(workspaceId: ID!, provider: LLMProvider!, apiKey: String!): LLMAPIKey!
-  updateLLMAPIKey(id: ID!, apiKey: String!): LLMAPIKey!
+  createLLMAPIKey(workspaceId: ID!, provider: LLMProvider!, apiKey: String!, validate: Boolean): LLMAPIKey!
+  updateLLMAPIKey(id: ID!, apiKey: String!, validate: Boolean): LLMAPIKey!
   deleteLLMAPIKey(id: ID!): LLMAPIKey!
   setActiveLLMAPIKey(id: ID!): LLMAPIKey!
 

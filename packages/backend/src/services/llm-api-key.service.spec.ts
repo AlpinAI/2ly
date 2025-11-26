@@ -236,6 +236,60 @@ describe('LLMAPIKeyService', () => {
         }),
       );
     });
+
+    it('should skip validation when validate=false is passed', async () => {
+      const mockKey = {
+        id: 'key-1',
+        provider: dgraphResolversTypes.LlmProvider.Openai,
+        encryptedKey: 'encrypted_sk-test',
+        maskedKey: 'sk-...test',
+        isActive: true,
+        createdAt: new Date().toISOString(),
+        workspace: { id: 'workspace-1' },
+      } as dgraphResolversTypes.LlmapiKey;
+
+      (mockRepository.findByWorkspace as ReturnType<typeof vi.fn>).mockResolvedValue([]);
+      (mockRepository.create as ReturnType<typeof vi.fn>).mockResolvedValue(mockKey);
+
+      const result = await service.createKey('workspace-1', dgraphResolversTypes.LlmProvider.Openai, 'sk-test1234', false);
+
+      // Should NOT call fetch for validation
+      expect(global.fetch).not.toHaveBeenCalled();
+
+      // Should NOT update lastValidatedAt
+      expect(mockRepository.update).not.toHaveBeenCalled();
+
+      // Should still create the key
+      expect(mockRepository.create).toHaveBeenCalled();
+      expect(result).toEqual(mockKey);
+    });
+
+    it('should validate by default when validate parameter is not provided', async () => {
+      const mockKey = {
+        id: 'key-1',
+        provider: dgraphResolversTypes.LlmProvider.Openai,
+        encryptedKey: 'encrypted_sk-test',
+        maskedKey: 'sk-...test',
+        isActive: true,
+        createdAt: new Date().toISOString(),
+        workspace: { id: 'workspace-1' },
+      } as dgraphResolversTypes.LlmapiKey;
+
+      (mockRepository.findByWorkspace as ReturnType<typeof vi.fn>).mockResolvedValue([]);
+      (mockRepository.create as ReturnType<typeof vi.fn>).mockResolvedValue(mockKey);
+      (mockRepository.update as ReturnType<typeof vi.fn>).mockResolvedValue(mockKey);
+      (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce({ ok: true });
+
+      await service.createKey('workspace-1', dgraphResolversTypes.LlmProvider.Openai, 'sk-test1234');
+
+      // Should call fetch for validation (default behavior)
+      expect(global.fetch).toHaveBeenCalled();
+      expect(mockRepository.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          lastValidatedAt: expect.any(Date),
+        }),
+      );
+    });
   });
 
   describe('updateKey', () => {
@@ -288,6 +342,73 @@ describe('LLMAPIKeyService', () => {
       (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce({ ok: false, status: 401 });
 
       await expect(service.updateKey('key-1', 'sk-invalid')).rejects.toThrow('API key validation failed');
+    });
+
+    it('should skip validation when validate=false is passed', async () => {
+      const existingKey = {
+        id: 'key-1',
+        provider: dgraphResolversTypes.LlmProvider.Openai,
+        encryptedKey: 'encrypted_old',
+        maskedKey: 'sk-...old',
+        isActive: true,
+        workspace: { id: 'workspace-1' },
+      } as dgraphResolversTypes.LlmapiKey;
+
+      const updatedKey = {
+        ...existingKey,
+        encryptedKey: 'encrypted_sk-new',
+        maskedKey: 'sk-...new',
+      };
+
+      (mockRepository.findById as ReturnType<typeof vi.fn>).mockResolvedValue(existingKey);
+      (mockRepository.update as ReturnType<typeof vi.fn>).mockResolvedValue(updatedKey);
+
+      const result = await service.updateKey('key-1', 'sk-new123', false);
+
+      // Should NOT call fetch for validation
+      expect(global.fetch).not.toHaveBeenCalled();
+
+      // Should update without lastValidatedAt
+      expect(mockRepository.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          id: 'key-1',
+          encryptedKey: 'encrypted_sk-new123',
+          maskedKey: 'sk-...w123',
+          lastValidatedAt: undefined,
+        }),
+      );
+      expect(result).toEqual(updatedKey);
+    });
+
+    it('should validate by default when validate parameter is not provided', async () => {
+      const existingKey = {
+        id: 'key-1',
+        provider: dgraphResolversTypes.LlmProvider.Openai,
+        encryptedKey: 'encrypted_old',
+        maskedKey: 'sk-...old',
+        isActive: true,
+        workspace: { id: 'workspace-1' },
+      } as dgraphResolversTypes.LlmapiKey;
+
+      const updatedKey = {
+        ...existingKey,
+        encryptedKey: 'encrypted_sk-new',
+        maskedKey: 'sk-...new',
+      };
+
+      (mockRepository.findById as ReturnType<typeof vi.fn>).mockResolvedValue(existingKey);
+      (mockRepository.update as ReturnType<typeof vi.fn>).mockResolvedValue(updatedKey);
+      (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce({ ok: true });
+
+      await service.updateKey('key-1', 'sk-new123');
+
+      // Should call fetch for validation (default behavior)
+      expect(global.fetch).toHaveBeenCalled();
+      expect(mockRepository.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          lastValidatedAt: expect.any(Date),
+        }),
+      );
     });
   });
 

@@ -36,7 +36,7 @@ describe('LLMAPIKeyRepository Integration', () => {
 
     // Create repositories
     identityRepository = new IdentityRepository(dgraphService, loggerService);
-    repository = new LLMAPIKeyRepository(dgraphService, loggerService, identityRepository);
+    repository = new LLMAPIKeyRepository(dgraphService, loggerService);
     workspaceRepository = new WorkspaceRepository(dgraphService, loggerService, identityRepository);
     systemRepository = new SystemRepository(dgraphService, loggerService, identityRepository);
 
@@ -287,6 +287,101 @@ describe('LLMAPIKeyRepository Integration', () => {
 
       // Anthropic key should still be active
       expect(updatedAnthropicKey!.isActive).toBe(true);
+    });
+
+    it('should throw error when key does not exist', async () => {
+      await expect(
+        repository.setActive('non-existent-id', dgraphResolversTypes.LlmProvider.Openai, testWorkspaceId),
+      ).rejects.toThrow('Key not found');
+    });
+
+    it('should throw error when key provider does not match', async () => {
+      const key = await repository.create({
+        provider: dgraphResolversTypes.LlmProvider.Openai,
+        encryptedKey: 'encrypted_test',
+        maskedKey: 'sk-...test',
+        isActive: false,
+        workspaceId: testWorkspaceId,
+      });
+
+      // Try to set it active with wrong provider
+      await expect(
+        repository.setActive(key.id, dgraphResolversTypes.LlmProvider.Anthropic, testWorkspaceId),
+      ).rejects.toThrow('Key not found');
+    });
+
+    it('should throw error when workspace does not match', async () => {
+      const key = await repository.create({
+        provider: dgraphResolversTypes.LlmProvider.Openai,
+        encryptedKey: 'encrypted_test',
+        maskedKey: 'sk-...test',
+        isActive: false,
+        workspaceId: testWorkspaceId,
+      });
+
+      // Try to set it active with wrong workspace
+      await expect(
+        repository.setActive(key.id, dgraphResolversTypes.LlmProvider.Openai, 'wrong-workspace-id'),
+      ).rejects.toThrow('Key not found');
+    });
+
+    it('should atomically ensure only one key is active (race condition test)', async () => {
+      // Create multiple keys for the same provider
+      const keys = await Promise.all([
+        repository.create({
+          provider: dgraphResolversTypes.LlmProvider.Openai,
+          encryptedKey: 'encrypted_1',
+          maskedKey: 'sk-...1',
+          isActive: false,
+          workspaceId: testWorkspaceId,
+        }),
+        repository.create({
+          provider: dgraphResolversTypes.LlmProvider.Openai,
+          encryptedKey: 'encrypted_2',
+          maskedKey: 'sk-...2',
+          isActive: false,
+          workspaceId: testWorkspaceId,
+        }),
+        repository.create({
+          provider: dgraphResolversTypes.LlmProvider.Openai,
+          encryptedKey: 'encrypted_3',
+          maskedKey: 'sk-...3',
+          isActive: false,
+          workspaceId: testWorkspaceId,
+        }),
+      ]);
+
+      // Try to set multiple keys as active concurrently
+      const activationPromises = keys.map((key) =>
+        repository.setActive(key.id, dgraphResolversTypes.LlmProvider.Openai, testWorkspaceId),
+      );
+
+      // Wait for all to complete
+      await Promise.allSettled(activationPromises);
+
+      // Verify only one key is active
+      const allKeys = await repository.findByWorkspace(testWorkspaceId);
+      const activeKeys = allKeys.filter((k) => k.isActive && k.provider === dgraphResolversTypes.LlmProvider.Openai);
+
+      expect(activeKeys).toHaveLength(1);
+    });
+
+    it('should handle multiple activations of the same key', async () => {
+      const key = await repository.create({
+        provider: dgraphResolversTypes.LlmProvider.Openai,
+        encryptedKey: 'encrypted_test',
+        maskedKey: 'sk-...test',
+        isActive: false,
+        workspaceId: testWorkspaceId,
+      });
+
+      // Set active multiple times
+      await repository.setActive(key.id, dgraphResolversTypes.LlmProvider.Openai, testWorkspaceId);
+      await repository.setActive(key.id, dgraphResolversTypes.LlmProvider.Openai, testWorkspaceId);
+      await repository.setActive(key.id, dgraphResolversTypes.LlmProvider.Openai, testWorkspaceId);
+
+      const updatedKey = await repository.findById(key.id);
+      expect(updatedKey!.isActive).toBe(true);
     });
   });
 
