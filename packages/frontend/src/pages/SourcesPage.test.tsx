@@ -12,6 +12,7 @@ import SourcesPage from './SourcesPage';
 import { SourceType } from '@/types/sources';
 import type { McpServer } from '@/graphql/generated/graphql';
 import { McpTransportType, McpServerRunOn } from '@/graphql/generated/graphql';
+import { createMockMcpServer } from '@/test/factories';
 
 // Mock the useMCPServers hook
 const mockServers: McpServer[] = [];
@@ -88,67 +89,17 @@ describe('SourcesPage', () => {
 
   describe('Transport Filter', () => {
     it('filters sources by STREAM transport', async () => {
-      const streamServer: McpServer = {
-        __typename: 'MCPServer',
-        id: 'server-1',
+      const streamServer = createMockMcpServer({
         name: 'Stream Server',
         description: 'A stream server',
-        transport: McpTransportType.Stream,
-        runOn: McpServerRunOn.Global,
-        config: '{}',
-        repositoryUrl: '',
-        registryServer: {
-          __typename: 'MCPRegistryServer',
-          id: 'reg-1',
-          _meta: null,
-          configurations: null,
-          name: 'Registry Server',
-          title: 'Registry Server Title',
-          repositoryUrl: '',
-          description: '',
-          packages: null,
-          remotes: null,
-          version: '1.0.0',
-          createdAt: new Date(),
-          lastSeenAt: new Date(),
-          workspace: {
-            __typename: 'Workspace',
-            id: 'workspace-1',
-            name: 'Test Workspace',
-            createdAt: new Date(),
-            globalRuntime: null,
-            mcpServers: null,
-            mcpTools: null,
-            onboardingSteps: null,
-            registryServers: null,
-            runtimes: null,
-            toolSets: null,
-          },
-        },
-        runtime: null,
-        tools: null,
-        workspace: {
-          __typename: 'Workspace',
-          id: 'workspace-1',
-          name: 'Test Workspace',
-          createdAt: new Date(),
-          globalRuntime: null,
-          mcpServers: null,
-          mcpTools: null,
-          onboardingSteps: null,
-          registryServers: null,
-          runtimes: null,
-          toolSets: null,
-        },
-      };
+      });
 
-      const stdioServer: McpServer = {
-        ...streamServer,
+      const stdioServer = createMockMcpServer({
         id: 'server-2',
         name: 'STDIO Server',
         description: 'A stdio server',
         transport: McpTransportType.Stdio,
-      };
+      });
 
       mockServers.push(streamServer, stdioServer);
 
@@ -175,67 +126,19 @@ describe('SourcesPage', () => {
     });
 
     it('filters sources by STDIO transport', async () => {
-      const stdioServer: McpServer = {
-        __typename: 'MCPServer',
-        id: 'server-1',
+      const stdioServer = createMockMcpServer({
         name: 'STDIO Server',
         description: 'A stdio server',
         transport: McpTransportType.Stdio,
         runOn: McpServerRunOn.Agent,
-        config: '{}',
-        repositoryUrl: '',
-        registryServer: {
-          __typename: 'MCPRegistryServer',
-          id: 'reg-1',
-          _meta: null,
-          configurations: null,
-          name: 'Registry Server',
-          title: 'Registry Server Title',
-          repositoryUrl: '',
-          description: '',
-          packages: null,
-          remotes: null,
-          version: '1.0.0',
-          createdAt: new Date(),
-          lastSeenAt: new Date(),
-          workspace: {
-            __typename: 'Workspace',
-            id: 'workspace-1',
-            name: 'Test Workspace',
-            createdAt: new Date(),
-            globalRuntime: null,
-            mcpServers: null,
-            mcpTools: null,
-            onboardingSteps: null,
-            registryServers: null,
-            runtimes: null,
-            toolSets: null,
-          },
-        },
-        runtime: null,
-        tools: null,
-        workspace: {
-          __typename: 'Workspace',
-          id: 'workspace-1',
-          name: 'Test Workspace',
-          createdAt: new Date(),
-          globalRuntime: null,
-          mcpServers: null,
-          mcpTools: null,
-          onboardingSteps: null,
-          registryServers: null,
-          runtimes: null,
-          toolSets: null,
-        },
-      };
+      });
 
-      const sseServer: McpServer = {
-        ...stdioServer,
+      const sseServer = createMockMcpServer({
         id: 'server-2',
         name: 'SSE Server',
         description: 'An SSE server',
         transport: McpTransportType.Sse,
-      };
+      });
 
       mockServers.push(stdioServer, sseServer);
 
@@ -251,59 +154,10 @@ describe('SourcesPage', () => {
     });
 
     it('shows all transports when filter is empty', async () => {
-      const streamServer: McpServer = {
-        __typename: 'MCPServer',
-        id: 'server-1',
+      const streamServer = createMockMcpServer({
         name: 'Stream Server',
         description: 'A stream server',
-        transport: McpTransportType.Stream,
-        runOn: McpServerRunOn.Global,
-        config: '{}',
-        repositoryUrl: '',
-        registryServer: {
-          __typename: 'MCPRegistryServer',
-          id: 'reg-1',
-          _meta: null,
-          configurations: null,
-          name: 'Registry Server',
-          title: 'Registry Server Title',
-          repositoryUrl: '',
-          description: '',
-          packages: null,
-          remotes: null,
-          version: '1.0.0',
-          createdAt: new Date(),
-          lastSeenAt: new Date(),
-          workspace: {
-            __typename: 'Workspace',
-            id: 'workspace-1',
-            name: 'Test Workspace',
-            createdAt: new Date(),
-            globalRuntime: null,
-            mcpServers: null,
-            mcpTools: null,
-            onboardingSteps: null,
-            registryServers: null,
-            runtimes: null,
-            toolSets: null,
-          },
-        },
-        runtime: null,
-        tools: null,
-        workspace: {
-          __typename: 'Workspace',
-          id: 'workspace-1',
-          name: 'Test Workspace',
-          createdAt: new Date(),
-          globalRuntime: null,
-          mcpServers: null,
-          mcpTools: null,
-          onboardingSteps: null,
-          registryServers: null,
-          runtimes: null,
-          toolSets: null,
-        },
-      };
+      });
 
       mockServers.push(streamServer);
 
@@ -319,67 +173,17 @@ describe('SourcesPage', () => {
 
   describe('RunOn Filter', () => {
     it('filters sources by GLOBAL runOn', async () => {
-      const globalServer: McpServer = {
-        __typename: 'MCPServer',
-        id: 'server-1',
+      const globalServer = createMockMcpServer({
         name: 'Global Server',
         description: 'A global server',
-        transport: McpTransportType.Stream,
-        runOn: McpServerRunOn.Global,
-        config: '{}',
-        repositoryUrl: '',
-        registryServer: {
-          __typename: 'MCPRegistryServer',
-          id: 'reg-1',
-          _meta: null,
-          configurations: null,
-          name: 'Registry Server',
-          title: 'Registry Server Title',
-          repositoryUrl: '',
-          description: '',
-          packages: null,
-          remotes: null,
-          version: '1.0.0',
-          createdAt: new Date(),
-          lastSeenAt: new Date(),
-          workspace: {
-            __typename: 'Workspace',
-            id: 'workspace-1',
-            name: 'Test Workspace',
-            createdAt: new Date(),
-            globalRuntime: null,
-            mcpServers: null,
-            mcpTools: null,
-            onboardingSteps: null,
-            registryServers: null,
-            runtimes: null,
-            toolSets: null,
-          },
-        },
-        runtime: null,
-        tools: null,
-        workspace: {
-          __typename: 'Workspace',
-          id: 'workspace-1',
-          name: 'Test Workspace',
-          createdAt: new Date(),
-          globalRuntime: null,
-          mcpServers: null,
-          mcpTools: null,
-          onboardingSteps: null,
-          registryServers: null,
-          runtimes: null,
-          toolSets: null,
-        },
-      };
+      });
 
-      const agentServer: McpServer = {
-        ...globalServer,
+      const agentServer = createMockMcpServer({
         id: 'server-2',
         name: 'Agent Server',
         description: 'An agent server',
         runOn: McpServerRunOn.Agent,
-      };
+      });
 
       mockServers.push(globalServer, agentServer);
 
@@ -393,67 +197,19 @@ describe('SourcesPage', () => {
     });
 
     it('filters sources by AGENT runOn', async () => {
-      const agentServer: McpServer = {
-        __typename: 'MCPServer',
-        id: 'server-1',
+      const agentServer = createMockMcpServer({
         name: 'Agent Server',
         description: 'An agent server',
         transport: McpTransportType.Stdio,
         runOn: McpServerRunOn.Agent,
-        config: '{}',
-        repositoryUrl: '',
-        registryServer: {
-          __typename: 'MCPRegistryServer',
-          id: 'reg-1',
-          _meta: null,
-          configurations: null,
-          name: 'Registry Server',
-          title: 'Registry Server Title',
-          repositoryUrl: '',
-          description: '',
-          packages: null,
-          remotes: null,
-          version: '1.0.0',
-          createdAt: new Date(),
-          lastSeenAt: new Date(),
-          workspace: {
-            __typename: 'Workspace',
-            id: 'workspace-1',
-            name: 'Test Workspace',
-            createdAt: new Date(),
-            globalRuntime: null,
-            mcpServers: null,
-            mcpTools: null,
-            onboardingSteps: null,
-            registryServers: null,
-            runtimes: null,
-            toolSets: null,
-          },
-        },
-        runtime: null,
-        tools: null,
-        workspace: {
-          __typename: 'Workspace',
-          id: 'workspace-1',
-          name: 'Test Workspace',
-          createdAt: new Date(),
-          globalRuntime: null,
-          mcpServers: null,
-          mcpTools: null,
-          onboardingSteps: null,
-          registryServers: null,
-          runtimes: null,
-          toolSets: null,
-        },
-      };
+      });
 
-      const edgeServer: McpServer = {
-        ...agentServer,
+      const edgeServer = createMockMcpServer({
         id: 'server-2',
         name: 'Edge Server',
         description: 'An edge server',
         runOn: McpServerRunOn.Edge,
-      };
+      });
 
       mockServers.push(agentServer, edgeServer);
 
@@ -466,59 +222,10 @@ describe('SourcesPage', () => {
     });
 
     it('shows all runOn values when filter is empty', async () => {
-      const server: McpServer = {
-        __typename: 'MCPServer',
-        id: 'server-1',
+      const server = createMockMcpServer({
         name: 'Test Server',
         description: 'A test server',
-        transport: McpTransportType.Stream,
-        runOn: McpServerRunOn.Global,
-        config: '{}',
-        repositoryUrl: '',
-        registryServer: {
-          __typename: 'MCPRegistryServer',
-          id: 'reg-1',
-          _meta: null,
-          configurations: null,
-          name: 'Registry Server',
-          title: 'Registry Server Title',
-          repositoryUrl: '',
-          description: '',
-          packages: null,
-          remotes: null,
-          version: '1.0.0',
-          createdAt: new Date(),
-          lastSeenAt: new Date(),
-          workspace: {
-            __typename: 'Workspace',
-            id: 'workspace-1',
-            name: 'Test Workspace',
-            createdAt: new Date(),
-            globalRuntime: null,
-            mcpServers: null,
-            mcpTools: null,
-            onboardingSteps: null,
-            registryServers: null,
-            runtimes: null,
-            toolSets: null,
-          },
-        },
-        runtime: null,
-        tools: null,
-        workspace: {
-          __typename: 'Workspace',
-          id: 'workspace-1',
-          name: 'Test Workspace',
-          createdAt: new Date(),
-          globalRuntime: null,
-          mcpServers: null,
-          mcpTools: null,
-          onboardingSteps: null,
-          registryServers: null,
-          runtimes: null,
-          toolSets: null,
-        },
-      };
+      });
 
       mockServers.push(server);
 
@@ -535,77 +242,26 @@ describe('SourcesPage', () => {
   describe('Combined Filters', () => {
     it('combines transport and runOn filters with AND logic', async () => {
       // Server that matches both filters
-      const matchingServer: McpServer = {
-        __typename: 'MCPServer',
-        id: 'server-1',
+      const matchingServer = createMockMcpServer({
         name: 'Matching Server',
         description: 'Matches both filters',
-        transport: McpTransportType.Stream,
-        runOn: McpServerRunOn.Global,
-        config: '{}',
-        repositoryUrl: '',
-        registryServer: {
-          __typename: 'MCPRegistryServer',
-          id: 'reg-1',
-          _meta: null,
-          configurations: null,
-          name: 'Registry Server',
-          title: 'Registry Server Title',
-          repositoryUrl: '',
-          description: '',
-          packages: null,
-          remotes: null,
-          version: '1.0.0',
-          createdAt: new Date(),
-          lastSeenAt: new Date(),
-          workspace: {
-            __typename: 'Workspace',
-            id: 'workspace-1',
-            name: 'Test Workspace',
-            createdAt: new Date(),
-            globalRuntime: null,
-            mcpServers: null,
-            mcpTools: null,
-            onboardingSteps: null,
-            registryServers: null,
-            runtimes: null,
-            toolSets: null,
-          },
-        },
-        runtime: null,
-        tools: null,
-        workspace: {
-          __typename: 'Workspace',
-          id: 'workspace-1',
-          name: 'Test Workspace',
-          createdAt: new Date(),
-          globalRuntime: null,
-          mcpServers: null,
-          mcpTools: null,
-          onboardingSteps: null,
-          registryServers: null,
-          runtimes: null,
-          toolSets: null,
-        },
-      };
+      });
 
       // Server that matches transport but not runOn
-      const wrongRunOnServer: McpServer = {
-        ...matchingServer,
+      const wrongRunOnServer = createMockMcpServer({
         id: 'server-2',
         name: 'Wrong RunOn Server',
         description: 'Matches transport only',
         runOn: McpServerRunOn.Agent,
-      };
+      });
 
       // Server that matches runOn but not transport
-      const wrongTransportServer: McpServer = {
-        ...matchingServer,
+      const wrongTransportServer = createMockMcpServer({
         id: 'server-3',
         name: 'Wrong Transport Server',
         description: 'Matches runOn only',
         transport: McpTransportType.Stdio,
-      };
+      });
 
       mockServers.push(matchingServer, wrongRunOnServer, wrongTransportServer);
 
@@ -618,68 +274,18 @@ describe('SourcesPage', () => {
     });
 
     it('filters work independently', async () => {
-      const server1: McpServer = {
-        __typename: 'MCPServer',
-        id: 'server-1',
+      const server1 = createMockMcpServer({
         name: 'Server 1',
         description: 'Test server 1',
-        transport: McpTransportType.Stream,
-        runOn: McpServerRunOn.Global,
-        config: '{}',
-        repositoryUrl: '',
-        registryServer: {
-          __typename: 'MCPRegistryServer',
-          id: 'reg-1',
-          _meta: null,
-          configurations: null,
-          name: 'Registry Server',
-          title: 'Registry Server Title',
-          repositoryUrl: '',
-          description: '',
-          packages: null,
-          remotes: null,
-          version: '1.0.0',
-          createdAt: new Date(),
-          lastSeenAt: new Date(),
-          workspace: {
-            __typename: 'Workspace',
-            id: 'workspace-1',
-            name: 'Test Workspace',
-            createdAt: new Date(),
-            globalRuntime: null,
-            mcpServers: null,
-            mcpTools: null,
-            onboardingSteps: null,
-            registryServers: null,
-            runtimes: null,
-            toolSets: null,
-          },
-        },
-        runtime: null,
-        tools: null,
-        workspace: {
-          __typename: 'Workspace',
-          id: 'workspace-1',
-          name: 'Test Workspace',
-          createdAt: new Date(),
-          globalRuntime: null,
-          mcpServers: null,
-          mcpTools: null,
-          onboardingSteps: null,
-          registryServers: null,
-          runtimes: null,
-          toolSets: null,
-        },
-      };
+      });
 
-      const server2: McpServer = {
-        ...server1,
+      const server2 = createMockMcpServer({
         id: 'server-2',
         name: 'Server 2',
         description: 'Test server 2',
         transport: McpTransportType.Stdio,
         runOn: McpServerRunOn.Agent,
-      };
+      });
 
       mockServers.push(server1, server2);
 
@@ -719,59 +325,11 @@ describe('SourcesPage', () => {
 
   describe('MCP Server Specific Filtering', () => {
     it('handles null runOn values', async () => {
-      const serverWithNullRunOn: McpServer = {
-        __typename: 'MCPServer',
-        id: 'server-1',
+      const serverWithNullRunOn = createMockMcpServer({
         name: 'Server with null runOn',
         description: 'Has null runOn',
-        transport: McpTransportType.Stream,
         runOn: null,
-        config: '{}',
-        repositoryUrl: '',
-        registryServer: {
-          __typename: 'MCPRegistryServer',
-          id: 'reg-1',
-          _meta: null,
-          configurations: null,
-          name: 'Registry Server',
-          title: 'Registry Server Title',
-          repositoryUrl: '',
-          description: '',
-          packages: null,
-          remotes: null,
-          version: '1.0.0',
-          createdAt: new Date(),
-          lastSeenAt: new Date(),
-          workspace: {
-            __typename: 'Workspace',
-            id: 'workspace-1',
-            name: 'Test Workspace',
-            createdAt: new Date(),
-            globalRuntime: null,
-            mcpServers: null,
-            mcpTools: null,
-            onboardingSteps: null,
-            registryServers: null,
-            runtimes: null,
-            toolSets: null,
-          },
-        },
-        runtime: null,
-        tools: null,
-        workspace: {
-          __typename: 'Workspace',
-          id: 'workspace-1',
-          name: 'Test Workspace',
-          createdAt: new Date(),
-          globalRuntime: null,
-          mcpServers: null,
-          mcpTools: null,
-          onboardingSteps: null,
-          registryServers: null,
-          runtimes: null,
-          toolSets: null,
-        },
-      };
+      });
 
       mockServers.push(serverWithNullRunOn);
 
@@ -785,59 +343,10 @@ describe('SourcesPage', () => {
     });
 
     it('adds type field to all sources', async () => {
-      const server: McpServer = {
-        __typename: 'MCPServer',
-        id: 'server-1',
+      const server = createMockMcpServer({
         name: 'Test Server',
         description: 'Test',
-        transport: McpTransportType.Stream,
-        runOn: McpServerRunOn.Global,
-        config: '{}',
-        repositoryUrl: '',
-        registryServer: {
-          __typename: 'MCPRegistryServer',
-          id: 'reg-1',
-          _meta: null,
-          configurations: null,
-          name: 'Registry Server',
-          title: 'Registry Server Title',
-          repositoryUrl: '',
-          description: '',
-          packages: null,
-          remotes: null,
-          version: '1.0.0',
-          createdAt: new Date(),
-          lastSeenAt: new Date(),
-          workspace: {
-            __typename: 'Workspace',
-            id: 'workspace-1',
-            name: 'Test Workspace',
-            createdAt: new Date(),
-            globalRuntime: null,
-            mcpServers: null,
-            mcpTools: null,
-            onboardingSteps: null,
-            registryServers: null,
-            runtimes: null,
-            toolSets: null,
-          },
-        },
-        runtime: null,
-        tools: null,
-        workspace: {
-          __typename: 'Workspace',
-          id: 'workspace-1',
-          name: 'Test Workspace',
-          createdAt: new Date(),
-          globalRuntime: null,
-          mcpServers: null,
-          mcpTools: null,
-          onboardingSteps: null,
-          registryServers: null,
-          runtimes: null,
-          toolSets: null,
-        },
-      };
+      });
 
       mockServers.push(server);
 
