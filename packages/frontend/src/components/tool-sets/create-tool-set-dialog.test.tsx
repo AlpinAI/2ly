@@ -5,7 +5,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { CreateToolSetDialog } from './create-tool-set-dialog';
+import { CreateToolsetDialog } from '../toolsets/create-toolset-dialog';
 import * as uiStore from '@/stores/uiStore';
 import * as workspaceStore from '@/stores/workspaceStore';
 import * as NotificationContext from '@/contexts/NotificationContext';
@@ -40,7 +40,7 @@ vi.mock('@apollo/client/react', () => ({
   })),
 }));
 
-describe('CreateToolSetDialog', () => {
+describe('CreateToolsetDialog', () => {
   const mockClose = vi.fn();
   const mockToast = vi.fn();
   const mockSetOpen = vi.fn();
@@ -50,7 +50,7 @@ describe('CreateToolSetDialog', () => {
     vi.clearAllMocks();
 
     // Setup store mocks
-    vi.mocked(uiStore.useCreateToolSetDialog).mockReturnValue({
+    vi.mocked(uiStore.useCreateToolsetDialog).mockReturnValue({
       open: true,
       callback: null,
       close: mockClose,
@@ -73,7 +73,7 @@ describe('CreateToolSetDialog', () => {
   });
 
   it('renders goal input step initially', () => {
-    render(<CreateToolSetDialog />);
+    render(<CreateToolsetDialog />);
 
     expect(screen.getByText('Create Tool Set with AI')).toBeInTheDocument();
     expect(screen.getByText('Describe what you want to accomplish, and AI will suggest everything you need')).toBeInTheDocument();
@@ -82,7 +82,7 @@ describe('CreateToolSetDialog', () => {
   });
 
   it('disables submit button when goal is empty', () => {
-    render(<CreateToolSetDialog />);
+    render(<CreateToolsetDialog />);
 
     const submitButton = screen.getByRole('button', { name: /get ai suggestions/i });
     expect(submitButton).toBeDisabled();
@@ -90,7 +90,7 @@ describe('CreateToolSetDialog', () => {
 
   it('enables submit button when goal is entered', async () => {
     const user = userEvent.setup();
-    render(<CreateToolSetDialog />);
+    render(<CreateToolsetDialog />);
 
     const textarea = screen.getByLabelText('What do you want to accomplish?');
     await user.type(textarea, 'I want to manage GitHub repositories');
@@ -100,14 +100,14 @@ describe('CreateToolSetDialog', () => {
   });
 
   it('closes dialog when closed', () => {
-    vi.mocked(uiStore.useCreateToolSetDialog).mockReturnValue({
+    vi.mocked(uiStore.useCreateToolsetDialog).mockReturnValue({
       open: false,
       callback: null,
       close: mockClose,
       openDialog: vi.fn(),
     });
 
-    const { container } = render(<CreateToolSetDialog />);
+    const { container } = render(<CreateToolsetDialog />);
     expect(container.querySelector('[role="dialog"]')).not.toBeInTheDocument();
   });
 
@@ -130,7 +130,7 @@ describe('CreateToolSetDialog', () => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
     ] as any);
 
-    render(<CreateToolSetDialog />);
+    render(<CreateToolsetDialog />);
 
     // Wait for error to appear
     await waitFor(() => {
@@ -141,7 +141,7 @@ describe('CreateToolSetDialog', () => {
   });
 
   it('provides placeholder text as guidance', () => {
-    render(<CreateToolSetDialog />);
+    render(<CreateToolsetDialog />);
 
     const textarea = screen.getByLabelText('What do you want to accomplish?');
     expect(textarea).toHaveAttribute(

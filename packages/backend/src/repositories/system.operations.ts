@@ -99,6 +99,11 @@ export const QUERY_SYSTEM_WITH_DEFAULT_WORKSPACE = gql`
         id
         name
         createdAt
+        globalRuntime {
+          id
+          name
+          status
+        }
       }
       admins {
         id

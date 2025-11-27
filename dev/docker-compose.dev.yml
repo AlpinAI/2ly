@@ -95,14 +95,18 @@ services:
     container_name: 2ly-backend
     environment:
       - NODE_ENV=development
+      - AUTOGEN_KEYS=true
       - DGRAPH_URL=dgraph-alpha:8080
       - NATS_SERVERS=nats:4222
       - EXPOSED_NATS_SERVERS=localhost:4222
-      - ENCRYPTION_KEY=242763bfed61fbfcbf556a35a92a132d58cfbab8130f9e2e4f29b4ef626e190d
+      - EXPOSED_REMOTE_MCP=http://localhost:3001
+      - JWT_PRIVATE_KEY_PATH=/keys/private.pem
+      - JWT_PUBLIC_KEY_PATH=/keys/public.pem
     ports:
       - 3000:3000
     volumes:
       - backend_logs:/app/logs
+      - backend_keys:/keys:rw
     depends_on:
       nats:
         condition: service_started
@@ -133,10 +137,16 @@ services:
       - ROOTS=TEMP:/tmp
       - AGENT_SERVER_TRANSPORT=stream
       - AGENT_SERVER_TRANSPORT_PORT=3001
+      - JWT_PRIVATE_KEY_PATH=/keys/private.pem
+      - JWT_PUBLIC_KEY_PATH=/keys/public.pem
     ports:
       - 3001:3001
     volumes:
       - main-runtime_logs:/app/logs
+      - backend_keys:/keys:ro
+    depends_on:
+      backend:
+        condition: service_healthy
     networks:
       - 2ly-network
     restart: unless-stopped
@@ -183,6 +193,8 @@ volumes:
   dgraph_zero:
     driver: local
   backend_logs:
+    driver: local
+  backend_keys:
     driver: local
   main-runtime_logs:
     driver: local

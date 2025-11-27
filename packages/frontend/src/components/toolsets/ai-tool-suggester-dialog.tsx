@@ -25,7 +25,7 @@ import { useWorkspaceId } from '@/stores/workspaceStore';
 import { useAddServerWorkflow } from '@/stores/uiStore';
 import {
   SuggestToolsForToolSetDocument,
-  LinkMcpToolToRuntimeDocument,
+  AddMcpToolToToolSetDocument,
   type AiToolSuggestion,
 } from '@/graphql/generated/graphql';
 
@@ -52,7 +52,7 @@ export function AIToolSuggesterDialog({ open, onOpenChange, toolSetId, toolSetNa
   );
 
   // Mutation to add tools
-  const [linkTool, { loading: addLoading }] = useMutation(LinkMcpToolToRuntimeDocument);
+  const [linkTool, { loading: addLoading }] = useMutation(AddMcpToolToToolSetDocument);
 
   const handleGetSuggestions = async () => {
     if (!description.trim() || !workspaceId) return;
@@ -102,7 +102,7 @@ export function AIToolSuggesterDialog({ open, onOpenChange, toolSetId, toolSetNa
         await linkTool({
           variables: {
             mcpToolId: toolId,
-            runtimeId: toolSetId,
+            toolSetId: toolSetId,
           },
         });
       }

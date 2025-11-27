@@ -29,6 +29,8 @@ export function WorkspaceRedirect() {
   });
   const storedWorkspaceId = useWorkspaceId();
 
+  console.log('[WorkspaceRedirect] Rendering - loading:', loading, 'error:', error, 'workspaces:', data?.workspaces?.length);
+
   // Loading state
   if (loading) {
     return (
@@ -43,6 +45,7 @@ export function WorkspaceRedirect() {
 
   // Error state
   if (error) {
+    console.error('[WorkspaceRedirect] Error loading workspaces:', error);
     return (
       <div className="flex h-screen items-center justify-center">
         <div className="text-center">
@@ -55,6 +58,7 @@ export function WorkspaceRedirect() {
 
   // No workspaces available
   if (!data?.workspaces || data.workspaces.length === 0) {
+    console.warn('[WorkspaceRedirect] No workspaces available for user');
     return (
       <div className="flex h-screen items-center justify-center">
         <div className="text-center">
@@ -89,6 +93,7 @@ export function WorkspaceRedirect() {
     targetWorkspaceId = data.workspaces[0].id;
   }
 
+  console.log('[WorkspaceRedirect] Redirecting to workspace:', targetWorkspaceId);
   // Redirect to workspace
   return <Navigate to={`/w/${targetWorkspaceId}/overview`} replace />;
 }
