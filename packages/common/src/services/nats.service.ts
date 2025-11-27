@@ -1,4 +1,4 @@
-import { NatsConnection, Msg, ConnectionOptions, RequestOptions } from '@nats-io/nats-core';
+import { NatsConnection, Msg, ConnectionOptions, RequestOptions, TimeoutError } from '@nats-io/nats-core';
 import { connect } from '@nats-io/transport-node';
 import { JetStreamClient } from "@nats-io/jetstream";
 import { Kvm, KV } from "@nats-io/kv";
@@ -138,10 +138,11 @@ export class NatsService extends Service {
   }
 
   // Sends a core NATS request and awaits a reply (RPC style)
-  async request(message: NatsRequest, opts: RequestOptions = { timeout: DEFAULT_REQUEST_TIMEOUT }): Promise<NatsResponse> {
+  async request(message: NatsRequest, opts: RequestOptions & { retryOnTimeout?: boolean } = { timeout: DEFAULT_REQUEST_TIMEOUT, retryOnTimeout: false }): Promise<NatsResponse> {
     if (!this.nats) {
       throw new Error('Not connected to NATS');
     }
+
     const data = message.prepareData();
     let responseMessage: Msg | null = null;
     try {
@@ -150,7 +151,11 @@ export class NatsService extends Service {
       }
       responseMessage = await this.nats.request(data.subject!, JSON.stringify(data), opts);
     } catch (error) {
-      this.logger.error(`Error sending NATS request: ${error}`);
+      if (error instanceof TimeoutError && opts.retryOnTimeout) {
+        this.logger.warn(`Timeout error with NATS request (${data.subject!}), retrying...`);
+        return this.request(message, { ...opts, retryOnTimeout: false });
+      }
+      this.logger.error(`Error with NATS request (${data.subject!}): ${error}`);
       throw error as Error;
     }
     const response = NatsMessage.get(responseMessage);
@@ -299,13 +304,16 @@ export class NatsService extends Service {
       throw new Error('Ephemeral KV not initialized');
     }
     const data = msg.prepareData();
+    this.logger.info(`Publishing ephemeral message to ${data.subject!}: ${JSON.stringify(data).slice(0, 50)}`);
     await this.ephemeralKV.put(data.subject!, JSON.stringify(data));
   }
 
   async observeEphemeral(subject: string) {
     if (!this.ephemeralKV) {
+      this.logger.error('Ephemeral KV not initialized');
       throw new Error('Ephemeral KV not initialized');
     }
+    this.logger.info(`Observing ephemeral message from ${subject}`);
     const watcher = await this.ephemeralKV.watch({ key: subject });
     return {
       [Symbol.asyncIterator]: async function* () {

@@ -69,7 +69,6 @@ describe('OnboardingCard', () => {
       id: 'workspace-1',
       name: 'Test Workspace',
       createdAt: new Date(),
-      globalRuntime: null,
       registryServers: [],
       mcpServers: [],
       mcpTools: [],
@@ -77,6 +76,7 @@ describe('OnboardingCard', () => {
       runtimes: [],
       toolSets: [],
     },
+    system: null,
     toolResponses: [],
   };
 
@@ -109,7 +109,6 @@ describe('OnboardingCard', () => {
       id: 'workspace-1',
       name: 'Test Workspace',
       createdAt: new Date(),
-      globalRuntime: null,
       registryServers: [],
       mcpServers: [],
       mcpTools: [],
@@ -321,6 +320,26 @@ describe('OnboardingCard', () => {
         repositoryUrl: 'https://test.com',
         transport: McpTransportType.Stdio,
         runOn: McpServerRunOn.Agent,
+        config: '{}',
+        tools: null,
+        runtime: null,
+        registryServer: {
+          __typename: 'MCPRegistryServer',
+          id: 'registry-1',
+          name: 'Test Registry Server',
+          description: 'Test registry',
+          repositoryUrl: 'https://test.com',
+          title: 'Test Registry Server',
+          version: '1.0.0',
+          packages: null,
+          remotes: null,
+          _meta: null,
+          configurations: null,
+          createdAt: new Date(),
+          lastSeenAt: new Date(),
+          workspace: mockRuntime.workspace!,
+        },
+        workspace: mockRuntime.workspace!,
       });
 
       vi.mocked(useMCPServers).mockReturnValue({

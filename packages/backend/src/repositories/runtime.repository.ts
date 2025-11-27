@@ -7,18 +7,18 @@ import {
   SET_ROOTS,
   DELETE_RUNTIME,
   UPDATE_RUNTIME,
-  ADD_RUNTIME,
+  ADD_SYSTEM_RUNTIME,
+  ADD_WORKSPACE_RUNTIME,
   ADD_MCPSERVER_TO_RUNTIME,
   GET_RUNTIME,
   QUERY_ACTIVE_RUNTIMES,
-  QUERY_RUNTIME_BY_NAME,
+  QUERY_SYSTEM_RUNTIME_BY_NAME,
+  QUERY_WORKSPACE_RUNTIME_BY_NAME,
   SET_RUNTIME_INACTIVE,
   SET_RUNTIME_ACTIVE,
   UPDATE_MCP_TOOL,
   ADD_MCP_TOOL,
   GET_RUNTIME_EDGE_MCP_SERVERS,
-  GET_RUNTIME_AGENT_MCP_SERVERS_BY_LINK,
-  GET_RUNTIME_GLOBAL_MCP_SERVERS,
   GET_RUNTIME_ALL_TOOLS,
   UPDATE_RUNTIME_LAST_SEEN,
 } from './runtime.operations';
@@ -26,8 +26,7 @@ import { map, Observable } from 'rxjs';
 import { createSubscriptionFromQuery, escapeValue } from '../helpers';
 import { MCPToolRepository } from './mcp-tool.repository';
 import pino from 'pino';
-import { QUERY_WORKSPACE } from './workspace.operations';
-import { WorkspaceRepository } from './workspace.repository';
+import { IdentityRepository } from './identity.repository';
 
 @injectable()
 export class RuntimeRepository {
@@ -37,39 +36,60 @@ export class RuntimeRepository {
     @inject(MCPToolRepository) private readonly mcpToolRepository: MCPToolRepository,
     @inject(LoggerService) private readonly loggerService: LoggerService,
     @inject(NatsService) private readonly natsService: NatsService,
-    @inject(WorkspaceRepository) private readonly workspaceRepository: WorkspaceRepository,
+    @inject(IdentityRepository) private readonly identityRepository: IdentityRepository,
   ) {
     this.logger = this.loggerService.getLogger('runtime-repository');
   }
 
   async create(
+    connectedTo: 'workspace' | 'system',
+    relatedId: string,
     name: string,
     description: string,
     status: 'ACTIVE' | 'INACTIVE',
-    workspaceId: string,
     type: 'EDGE' | 'MCP',
   ): Promise<dgraphResolversTypes.Runtime> {
     const now = new Date().toISOString();
-    const res = await this.dgraphService.mutation<{
-      addRuntime: { runtime: dgraphResolversTypes.Runtime[] };
-    }>(ADD_RUNTIME, {
-      name,
-      description,
-      status,
-      type,
-      createdAt: now,
-      lastSeenAt: now,
-      workspaceId,
-    });
 
-    const runtime = res.addRuntime.runtime[0];
+    // 1. Create the runtime
+    let runtime: dgraphResolversTypes.Runtime | undefined;
+    if (connectedTo === 'system') {
+      const res = await this.dgraphService.mutation<{
+        addRuntime: { runtime: dgraphResolversTypes.Runtime[] };
+      }>(ADD_SYSTEM_RUNTIME, {
+        name,
+        description,
+        status,
+        type,
+        createdAt: now,
+        lastSeenAt: now,
+        systemId: relatedId,
+      });
+      runtime = res.addRuntime.runtime[0];
+    } else if (connectedTo === 'workspace') {
+      const res = await this.dgraphService.mutation<{
+        addRuntime: { runtime: dgraphResolversTypes.Runtime[] };
+      }>(ADD_WORKSPACE_RUNTIME, {
+        name,
+        description,
+        status,
+        type,
+        createdAt: now,
+        lastSeenAt: now,
+        workspaceId: relatedId,
+      });
 
-    // Automatically set as global runtime if this is the first runtime in the workspace
-    const runtimes = await this.workspaceRepository.getRuntimes(workspaceId);
-    if (runtimes.length === 1) {
-      this.logger.info(`Setting runtime ${runtime.id} as global runtime for workspace ${workspaceId} (first runtime)`);
-      await this.workspaceRepository.setGlobalRuntime(runtime.id);
+      runtime = res.addRuntime.runtime[0];
+    } else {
+      throw new Error(`Invalid connectedTo: ${connectedTo}`);
     }
+
+    if (!runtime) {
+      throw new Error(`Failed to create runtime for ${connectedTo} ${relatedId} ${name}`);
+    }
+
+    // 2. Create the toolset key
+    await this.identityRepository.createKey('runtime', runtime.id, `${name} Runtime Key`, '');
 
     return runtime;
   }
@@ -195,30 +215,6 @@ export class RuntimeRepository {
     );
   }
 
-  observeMCPServersOnAgent(id: string): Observable<dgraphResolversTypes.McpServer[]> {
-    const query = createSubscriptionFromQuery(GET_RUNTIME_AGENT_MCP_SERVERS_BY_LINK);
-    return this.dgraphService.observe<dgraphResolversTypes.Runtime>(
-      query,
-      { id },
-      'getRuntime',
-      true,
-    ).pipe(
-      map((runtime) => runtime?.mcpServers ?? []),
-    );
-  }
-
-  observeMCPServersOnGlobal(workspaceId: string): Observable<dgraphResolversTypes.McpServer[]> {
-    const query = createSubscriptionFromQuery(GET_RUNTIME_GLOBAL_MCP_SERVERS);
-    return this.dgraphService.observe<dgraphResolversTypes.Runtime>(
-      query,
-      { id: workspaceId },
-      'getWorkspace',
-      true,
-    ).pipe(
-      map((runtime) => runtime?.mcpServers ?? []),
-    );
-  }
-
   async setInactive(id: string) {
     const res = await this.dgraphService.mutation<{
       updateRuntime: { runtime: dgraphResolversTypes.Runtime[] };
@@ -296,12 +292,21 @@ export class RuntimeRepository {
     return response.getRuntime;
   }
 
-  async findByName(workspaceId: string, name: string): Promise<dgraphResolversTypes.Runtime | undefined> {
-    const res = await this.dgraphService.query<{ getWorkspace: { runtimes: dgraphResolversTypes.Runtime[] } }>(
-      QUERY_RUNTIME_BY_NAME,
-      { workspaceId, name },
-    );
-    return res.getWorkspace?.runtimes?.[0];
+  async findByName(connectedTo: 'workspace' | 'system', relatedId: string, name: string): Promise<dgraphResolversTypes.Runtime | undefined> {
+    if (connectedTo === 'workspace') {
+      const res = await this.dgraphService.query<{ getWorkspace: { runtimes: dgraphResolversTypes.Runtime[] } }>(
+        QUERY_WORKSPACE_RUNTIME_BY_NAME,
+        { workspaceId: relatedId, name },
+      );
+      return res.getWorkspace?.runtimes?.[0];
+    } else if (connectedTo === 'system') {
+      const res = await this.dgraphService.query<{ getSystem: { runtimes: dgraphResolversTypes.Runtime[] } }>(
+        QUERY_SYSTEM_RUNTIME_BY_NAME,
+        { systemId: relatedId, name },
+      );
+      return res.getSystem?.runtimes?.[0];
+    }
+    throw new Error(`Invalid connectedTo: ${connectedTo}`);
   }
 
   observeCapabilities(runtimeId: string): Observable<dgraphResolversTypes.Runtime> {
@@ -316,12 +321,10 @@ export class RuntimeRepository {
 
   /**
    * Method to simulate a tool call to a MCP Tool
-   * Uses the workspace's global runtime to execute the tool
-   * 
-   * TODO: Allow to specify the runtime on which the tool should be executed, particulary necessary for tool belonging to MCP server set to run on agent side
+   * Can only call tools that run on a specific runtime (EDGE mode);
    */
   async callMCPTool(toolId: string, input: string): Promise<apolloResolversTypes.CallToolResult> {
-    // Get the tool with its workspace to determine which runtime to use
+    // Get the tool with its workspace and MCP server to determine routing
     const tool = await this.mcpToolRepository.getToolWithWorkspace(toolId);
 
     if (!tool) {
@@ -332,15 +335,10 @@ export class RuntimeRepository {
       throw new Error(`Tool ${toolId} has no workspace`);
     }
 
-    // Get the global runtime from the workspace
-    const workspace = await this.dgraphService.query<{ getWorkspace: { globalRuntime: { id: string; name: string } | null } }>(QUERY_WORKSPACE, { workspaceId: tool.workspace.id });
-    const globalRuntime = workspace.getWorkspace.globalRuntime;
-
-    if (!globalRuntime) {
-      throw new Error(
-        `No global runtime configured for workspace ${tool.workspace.name}. ` +
-        `Please set a global runtime to test tools.`
-      );
+    // Validate runtime selection for AGENT tools
+    const runOn = tool.mcpServer?.runOn || 'AGENT';
+    if (runOn === 'AGENT') {
+      throw new Error(`Testing call tool is currently not supported for tools that run on AGENT mode.`);
     }
 
     this.logger.info(`Calling tool ${tool.name}`);

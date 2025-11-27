@@ -45,6 +45,33 @@ export const QUERY_SYSTEM = gql`
   }
 `;
 
+export const QUERY_SYSTEM_WITH_RUNTIMES = gql`
+  query querySystem {
+    querySystem {
+      id
+      runtimes {
+        id
+        name
+        description
+        status
+        createdAt
+        lastSeenAt
+        roots
+        type
+        hostname
+        mcpClientName
+        hostIP
+        mcpClientName
+        mcpServers {
+          id
+          name
+          description
+        }
+      }
+    }
+  }
+`;
+
 export const SET_DEFAULT_WORKSPACE = gql`
   mutation setDefaultWorkspace($systemId: ID!, $workspaceId: ID!) {
     updateSystem(input: { filter: { id: [$systemId] }, set: { defaultWorkspace: { id: $workspaceId } } }) {
@@ -98,6 +125,14 @@ export const QUERY_SYSTEM_WITH_DEFAULT_WORKSPACE = gql`
       defaultWorkspace {
         id
         name
+        createdAt
+      }
+      runtimes {
+        id
+        name
+        description
+        status
+        type
         createdAt
       }
       admins {

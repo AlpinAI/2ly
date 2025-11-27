@@ -1,11 +1,11 @@
 /**
  * CreateKeyDialog Component
  *
- * WHY: Dialog for generating a new workspace master key with a description
+ * WHY: Dialog for generating a new workspace key with a description
  *
  * WHAT IT DOES:
  * - Prompts user for key description
- * - Generates new master key via GraphQL mutation
+ * - Generates new workspace key via GraphQL mutation
  * - Shows the newly generated key value once (with copy button)
  */
 
@@ -83,7 +83,7 @@ export function CreateKeyDialog({ workspaceId, open, onOpenChange }: CreateKeyDi
             <div className="flex items-center justify-between mb-2">
               <Dialog.Title className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
                 <Key className="h-5 w-5" />
-                Generate New Master Key
+                Generate New Workspace Key
               </Dialog.Title>
               <Dialog.Close asChild>
                 <Button variant="ghost" size="icon" className="rounded-full h-8 w-8">
@@ -94,7 +94,7 @@ export function CreateKeyDialog({ workspaceId, open, onOpenChange }: CreateKeyDi
             <Dialog.Description className="text-sm text-gray-500 dark:text-gray-400">
               {newKeyValue
                 ? "Your new key has been generated. Copy it now - you won't be able to see it again."
-                : 'Create a new workspace master key with a descriptive name.'}
+                : 'Create a new workspace key with a descriptive name.'}
             </Dialog.Description>
           </div>
 

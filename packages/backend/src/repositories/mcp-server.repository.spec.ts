@@ -120,12 +120,12 @@ describe('MCPServerRepository', () => {
   });
 
   it('updateRunOn updates only runOn field', async () => {
-    const server = { id: 's1', runOn: 'GLOBAL' } as unknown as dgraphResolversTypes.McpServer;
+    const server = { id: 's1', runOn: 'EDGE' } as unknown as dgraphResolversTypes.McpServer;
     dgraphService.mutation.mockResolvedValue({ updateMCPServer: { mCPServer: [server] } });
 
-    const result = await mcpServerRepository.updateRunOn('s1', 'GLOBAL');
+    const result = await mcpServerRepository.updateRunOn('s1', 'EDGE');
 
-    expect(dgraphService.mutation).toHaveBeenCalledWith(expect.any(Object), { id: 's1', runOn: 'GLOBAL' });
+    expect(dgraphService.mutation).toHaveBeenCalledWith(expect.any(Object), { id: 's1', runOn: 'EDGE' });
     expect(result.id).toBe('s1');
   });
 

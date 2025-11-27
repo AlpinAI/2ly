@@ -9,6 +9,10 @@ export const GET_MCP_TOOL_WITH_WORKSPACE = gql`
         id
         name
       }
+      mcpServer {
+        id
+        runOn
+      }
     }
   }
 `;

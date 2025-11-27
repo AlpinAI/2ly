@@ -21,7 +21,7 @@ test.describe('Tool Set Management', () => {
 
   test('should open Manage Tools panel from tool set detail view', async ({ page, workspaceId }) => {
     // Step 1: Login
-    await performLogin(page, 'test@example.com', 'testpassword123');
+    await performLogin(page, 'user1@2ly.ai', 'testpassword123');
 
     // Step 2: Navigate to Tool Sets page
     await page.goto(`/w/${workspaceId}/toolsets`);
@@ -67,7 +67,7 @@ test.describe('Tool Set Management', () => {
   });
 
   test('should display correct tool set name in panel header', async ({ page, workspaceId }) => {
-    await performLogin(page, 'test@example.com', 'testpassword123');
+    await performLogin(page, 'user1@2ly.ai', 'testpassword123');
     await page.goto(`/w/${workspaceId}/toolsets`);
     await page.waitForLoadState('networkidle');
 
@@ -94,7 +94,7 @@ test.describe('Tool Set Management', () => {
   });
 
   test('should show Selection Summary section', async ({ page, workspaceId }) => {
-    await performLogin(page, 'test@example.com', 'testpassword123');
+    await performLogin(page, 'user1@2ly.ai', 'testpassword123');
     await page.goto(`/w/${workspaceId}/toolsets`);
     await page.waitForLoadState('networkidle');
 
@@ -119,7 +119,7 @@ test.describe('Tool Set Management', () => {
   });
 
   test('should filter tools by search term', async ({ page, workspaceId }) => {
-    await performLogin(page, 'test@example.com', 'testpassword123');
+    await performLogin(page, 'user1@2ly.ai', 'testpassword123');
     await page.goto(`/w/${workspaceId}/toolsets`);
     await page.waitForLoadState('networkidle');
 
@@ -153,7 +153,7 @@ test.describe('Tool Set Management', () => {
   });
 
   test('should close panel when clicking X button', async ({ page, workspaceId }) => {
-    await performLogin(page, 'test@example.com', 'testpassword123');
+    await performLogin(page, 'user1@2ly.ai', 'testpassword123');
     await page.goto(`/w/${workspaceId}/toolsets`);
     await page.waitForLoadState('networkidle');
 
@@ -180,7 +180,7 @@ test.describe('Tool Set Management', () => {
   });
 
   test('should show "Show selected only" toggle', async ({ page, workspaceId }) => {
-    await performLogin(page, 'test@example.com', 'testpassword123');
+    await performLogin(page, 'user1@2ly.ai', 'testpassword123');
     await page.goto(`/w/${workspaceId}/toolsets`);
     await page.waitForLoadState('networkidle');
 

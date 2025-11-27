@@ -9,13 +9,13 @@ class TestMCPToolsetInitialization:
 
     def test_init_with_workspace_key(self):
         """Test initialization with workspace key and name."""
-        mcp = MCPToolset(name="test-toolset", master_key="WSK_test123")
+        mcp = MCPToolset(name="test-toolset", workspace_key="WSK_test123")
 
         assert mcp.name == "test-toolset"
         assert isinstance(mcp.serverParams, StdioServerParameters)
         assert mcp.serverParams.command == "npx"
         assert mcp.serverParams.args == ["@2ly/runtime@latest"]
-        assert mcp.serverParams.env["MASTER_KEY"] == "WSK_test123"
+        assert mcp.serverParams.env["WORKSPACE_KEY"] == "WSK_test123"
         assert mcp.serverParams.env["TOOLSET_NAME"] == "test-toolset"
         assert mcp.serverParams.env["NATS_SERVERS"] == "nats://localhost:4222"
 
@@ -25,14 +25,14 @@ class TestMCPToolsetInitialization:
 
         assert mcp.name is None
         assert mcp.serverParams.env["TOOLSET_KEY"] == "TSK_test456"
-        assert "MASTER_KEY" not in mcp.serverParams.env
+        assert "WORKSPACE_KEY" not in mcp.serverParams.env
         assert "TOOLSET_NAME" not in mcp.serverParams.env
 
     def test_init_with_custom_options(self):
         """Test initialization with custom NATS and version."""
         mcp = MCPToolset(
             name="custom",
-            master_key="WSK_abc",
+            workspace_key="WSK_abc",
             nats_servers="nats://custom:4222",
             version="1.2.3"
         )
@@ -48,12 +48,12 @@ class TestMCPToolsetInitialization:
     def test_init_rejects_both_keys(self):
         """Test that both keys cannot be used together."""
         with pytest.raises(ValueError, match="Authentication conflict"):
-            MCPToolset(name="test", master_key="WSK_123", toolset_key="TSK_456")
+            MCPToolset(name="test", workspace_key="WSK_123", toolset_key="TSK_456")
 
-    def test_init_master_key_requires_name(self):
-        """Test that master_key requires a name."""
+    def test_init_workspace_key_requires_name(self):
+        """Test that workspace_key requires a name."""
         with pytest.raises(ValueError, match="must provide a 'name' parameter"):
-            MCPToolset(master_key="WSK_123")
+            MCPToolset(workspace_key="WSK_123")
 
     def test_init_toolset_key_rejects_name(self):
         """Test that toolset_key must not have a name."""
@@ -68,12 +68,12 @@ class TestMCPToolsetFactoryMethods:
         """Test with_workspace_key factory method."""
         mcp = MCPToolset.with_workspace_key(
             name="my-toolset",
-            master_key="WSK_factory",
+            workspace_key="WSK_factory",
             nats_servers="nats://factory:4222"
         )
 
         assert mcp.name == "my-toolset"
-        assert mcp.serverParams.env["MASTER_KEY"] == "WSK_factory"
+        assert mcp.serverParams.env["WORKSPACE_KEY"] == "WSK_factory"
         assert mcp.serverParams.env["TOOLSET_NAME"] == "my-toolset"
         assert mcp.serverParams.env["NATS_SERVERS"] == "nats://factory:4222"
 
@@ -86,7 +86,7 @@ class TestMCPToolsetFactoryMethods:
 
         assert mcp.serverParams.env["TOOLSET_KEY"] == "TSK_factory"
         assert mcp.serverParams.args == ["@2ly/runtime@2.0.0"]
-        assert "MASTER_KEY" not in mcp.serverParams.env
+        assert "WORKSPACE_KEY" not in mcp.serverParams.env
 
 
 class TestMCPToolsetTools:
@@ -109,7 +109,7 @@ class TestMCPToolsetTools:
             mock_client_session.return_value.__aenter__.return_value = mock_session
             mock_load_tools.return_value = mock_tools
 
-            mcp = MCPToolset.with_workspace_key(name="test", master_key="WSK_test")
+            mcp = MCPToolset.with_workspace_key(name="test", workspace_key="WSK_test")
             result = await mcp.get_langchain_tools()
 
             assert result == mock_tools
@@ -149,7 +149,7 @@ class TestMCPToolsetTools:
             mock_client_session.return_value.__aenter__.return_value = AsyncMock()
             mock_load_tools.return_value = mock_tools
 
-            mcp = MCPToolset.with_workspace_key(name="test", master_key="WSK_test")
+            mcp = MCPToolset.with_workspace_key(name="test", workspace_key="WSK_test")
             result = await mcp.tools()
 
             assert result == mock_tools
@@ -175,7 +175,7 @@ class TestMCPToolsetLifecycle:
             mock_client_session.return_value.__aexit__.return_value = None
             mock_load_tools.return_value = []
 
-            async with MCPToolset.with_workspace_key(name="test", master_key="WSK_test") as mcp:
+            async with MCPToolset.with_workspace_key(name="test", workspace_key="WSK_test") as mcp:
                 await mcp.get_langchain_tools()
                 assert mcp._session is not None
 
@@ -218,14 +218,14 @@ class TestMCPToolsetEnvironmentVariables:
 
     def test_default_nats_servers(self):
         """Test default NATS servers configuration."""
-        mcp = MCPToolset.with_workspace_key(name="test", master_key="WSK_test")
+        mcp = MCPToolset.with_workspace_key(name="test", workspace_key="WSK_test")
         assert mcp.serverParams.env["NATS_SERVERS"] == "nats://localhost:4222"
 
     def test_custom_nats_servers(self):
         """Test custom NATS servers configuration."""
         mcp = MCPToolset.with_workspace_key(
             name="test",
-            master_key="WSK_test",
+            workspace_key="WSK_test",
             nats_servers="nats://prod:4222"
         )
         assert mcp.serverParams.env["NATS_SERVERS"] == "nats://prod:4222"
@@ -239,14 +239,14 @@ class TestMCPToolsetEnvironmentVariables:
         """Test custom runtime version."""
         mcp = MCPToolset.with_workspace_key(
             name="test",
-            master_key="WSK_test",
+            workspace_key="WSK_test",
             version="1.5.0"
         )
         assert mcp.serverParams.args == ["@2ly/runtime@1.5.0"]
 
     def test_no_deprecated_runtime_name(self):
         """Test that RUNTIME_NAME is not set (deprecated)."""
-        mcp = MCPToolset.with_workspace_key(name="test", master_key="WSK_test")
+        mcp = MCPToolset.with_workspace_key(name="test", workspace_key="WSK_test")
         assert "RUNTIME_NAME" not in mcp.serverParams.env
 
     def test_no_deprecated_workspace_id(self):

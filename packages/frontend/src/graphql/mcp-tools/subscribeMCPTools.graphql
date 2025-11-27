@@ -15,6 +15,7 @@ subscription SubscribeMCPTools($workspaceId: ID!) {
       name
       description
       repositoryUrl
+      runOn
     }
     toolSets {
       id

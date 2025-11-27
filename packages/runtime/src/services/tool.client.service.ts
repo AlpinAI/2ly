@@ -10,6 +10,7 @@ import {
   RuntimeCallToolResponse,
   RuntimeMCPServersPublish,
   MCP_SERVER_RUN_ON,
+  ErrorResponse,
 } from '@2ly/common';
 import { AuthService } from './auth.service';
 import { HealthService } from './runtime.health.service';
@@ -26,6 +27,7 @@ export class ToolClientService extends Service {
   private natsSubscriptions: { unsubscribe: () => void; drain: () => Promise<void>; isClosed?: () => boolean }[] = [];
   private mcpServers: Map<string, ToolServerService> = new Map();
   private mcpTools: Map<string, dgraphResolversTypes.McpTool[]> = new Map();
+  private toolSubscriptions: Map<string, Map<string, { unsubscribe: () => void }>> = new Map();
   private roots: { name: string; uri: string }[] = [];
   private rxSubscriptions: Subscription[] = [];
 
@@ -76,11 +78,11 @@ export class ToolClientService extends Service {
 
   private async startObserveMCPServers() {
     const identity = this.authService.getIdentity();
-    if (!identity?.workspaceId || !identity?.id) {
+    if (!identity?.id) {
       throw new Error('Cannot observe configured MCPServers for tool runtime: workspaceId or id not found');
     }
-    this.logger.debug(`Observing configured MCPServers for tool runtime ${identity.workspaceId} - ${identity.id}`);
     const subject = RuntimeMCPServersPublish.subscribeToRuntime(identity.workspaceId, identity.id);
+    this.logger.debug(`Observing configured MCPServers for tool runtime: ${subject}`);
     const subscription = await this.natsService.observeEphemeral(subject);
     this.natsSubscriptions.push(subscription);
     for await (const msg of subscription) {
@@ -159,7 +161,12 @@ export class ToolClientService extends Service {
     if (this.mcpServers.has(mcpServer.id)) {
       const existingMcpServer = this.mcpServers.get(mcpServer.id)!;
       if (existingMcpServer.getConfigSignature() === mcpServerService.getConfigSignature()) {
-        this.logger.debug(`MCPServer ${mcpServer.name} already running -> skipping`);
+        this.logger.debug(`MCPServer ${mcpServer.name} already running -> skipping spawn`);
+
+        // Even though we skip spawning, ensure tools are subscribed
+        const tools = mcpServer.tools ?? [];
+        this.ensureToolsSubscribed(mcpServer.id, tools, mcpServer.runOn!);
+
         return;
       }
     }
@@ -189,17 +196,8 @@ export class ToolClientService extends Service {
     });
 
     const tools = mcpServer.tools ?? [];
-    this.mcpTools.set(
-      mcpServer.id,
-      tools.filter((tool) => !!tool),
-    );
-
-    for (const tool of tools) {
-      if (tool) {
-        this.logger.info(`Subscribing to tool ${tool.name} (${tool.id})`);
-        this.subscribeToTool(tool.id, mcpServer.runOn!);
-      }
-    }
+    // Ensure all tools are subscribed
+    this.ensureToolsSubscribed(mcpServer.id, tools, mcpServer.runOn!);
 
     // When the MCP Server is stopped, we need to unsubscribe from the capabilities and clear the subscriptions
     mcpServerService.onShutdown(async () => {});
@@ -210,13 +208,15 @@ export class ToolClientService extends Service {
   private subscribeToTool(toolId: string, runOn: MCP_SERVER_RUN_ON) {
     const runtimeId = this.authService.getIdentity()!.id;
     const workspaceId = this.authService.getIdentity()!.workspaceId;
-    if (!runtimeId || !workspaceId) {
-      throw new Error('Cannot subscribe to tool without runtimeId or workspaceId');
+    if (!runtimeId || (runOn === 'AGENT' && !workspaceId)) {
+      throw new Error('Cannot subscribe to tool: missing runtimeId or workspaceId');
     }
     const subject =
       runOn === 'AGENT'
-        ? ToolSetCallToolRequest.subscribeToToolOnOneRuntime(toolId, workspaceId, runtimeId)
+        ? ToolSetCallToolRequest.subscribeToToolOnOneRuntime(toolId, workspaceId!, runtimeId)
         : ToolSetCallToolRequest.subscribeToTool(toolId);
+
+    this.logger.debug(`Subscribing to tool ${toolId} on subject: ${subject}`);
     const subscription = this.natsService.subscribe(subject);
     this.handleToolCall(subscription);
     return subscription;
@@ -225,10 +225,13 @@ export class ToolClientService extends Service {
   // Handle Agent Call Capability Messages
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private async handleToolCall(subscription: any) {
+    const identity = this.authService.getIdentity();
+    const executedByIdOrAgent = identity?.nature === 'runtime' ? identity.id! : 'AGENT';
     for await (const msg of subscription) {
       if (msg instanceof ToolSetCallToolRequest) {
         this.logger.info(`Tool call request: ${JSON.stringify(msg.data)}`);
         // find the capability
+        let toolCalled = false;
         for (const [mcpServerId, tools] of this.mcpTools.entries()) {
           const tool = tools.find((tool) => tool.id === msg.data.toolId);
           if (!tool) {
@@ -249,10 +252,20 @@ export class ToolClientService extends Service {
           this.logger.debug(`Calling tool ${tool.name} with arguments ${JSON.stringify(toolCall)}`);
           const result = await mcpServer.callTool(toolCall);
           this.logger.debug(`Result: ${JSON.stringify(result)}`);
+
           msg.respond(
             new RuntimeCallToolResponse({
               result: result as CallToolResult,
-              executedById: this.authService.getIdentity()!.id!,
+              executedByIdOrAgent: executedByIdOrAgent,
+            }),
+          );
+          toolCalled = true;
+        }
+        if (!toolCalled) {
+          this.logger.warn(`Tool ${msg.data.toolId} not found in any MCP Server`);
+          msg.respond(
+            new ErrorResponse({
+              error: `Tool ${msg.data.toolId} not found in any MCP Server`,
             }),
           );
         }
@@ -266,6 +279,22 @@ export class ToolClientService extends Service {
       this.logger.debug(`MCPServer ${mcpServer.name} not running -> skipping`);
       return;
     }
+
+    // Unsubscribe from all tool subscriptions for this MCP server
+    const serverToolSubs = this.toolSubscriptions.get(mcpServer.id);
+    if (serverToolSubs) {
+      this.logger.debug(`Unsubscribing from ${serverToolSubs.size} tool subscriptions for MCP server ${mcpServer.name}`);
+      for (const [toolId, subscription] of serverToolSubs.entries()) {
+        try {
+          subscription.unsubscribe();
+          this.logger.debug(`Unsubscribed from tool ${toolId}`);
+        } catch (error) {
+          this.logger.warn(`Failed to unsubscribe from tool ${toolId}: ${error}`);
+        }
+      }
+      this.toolSubscriptions.delete(mcpServer.id);
+    }
+
     this.mcpTools.delete(mcpServer.id);
     const service = this.mcpServers.get(mcpServer.id);
     if (service) {
@@ -273,5 +302,34 @@ export class ToolClientService extends Service {
     }
     this.mcpServers.delete(mcpServer.id);
     this.logger.info(`MCPServer ${mcpServer.name} stopped`);
+  }
+
+  /**
+   * Ensure all tools for an MCP server are subscribed.
+   * This method is idempotent - it only subscribes to tools that don't have subscriptions yet.
+   */
+  private ensureToolsSubscribed(mcpServerId: string, tools: dgraphResolversTypes.McpTool[], runOn: MCP_SERVER_RUN_ON) {
+
+    this.mcpTools.set(
+      mcpServerId,
+      tools.filter((tool) => !!tool),
+    );
+    
+    // Get or create the subscriptions map for this MCP server
+    if (!this.toolSubscriptions.has(mcpServerId)) {
+      this.toolSubscriptions.set(mcpServerId, new Map());
+    }
+    const serverToolSubs = this.toolSubscriptions.get(mcpServerId)!;
+
+    // Subscribe to tools that don't have subscriptions yet
+    for (const tool of tools) {
+      if (tool && !serverToolSubs.has(tool.id)) {
+        this.logger.debug(`Subscribing to tool ${tool.name} (${tool.id})`);
+        const subscription = this.subscribeToTool(tool.id, runOn);
+        serverToolSubs.set(tool.id, subscription);
+      } else if (tool) {
+        this.logger.debug(`Tool ${tool.name} (${tool.id}) already subscribed -> skipping`);
+      }
+    }
   }
 }

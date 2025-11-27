@@ -17,10 +17,10 @@ if not token:
 
 # Get 2ly authentication - workspace key for auto-discovery
 # Get your workspace key from: Settings > API Keys in the 2ly UI
-master_key = os.environ.get("MASTER_KEY")
-if not master_key:
-    print("Error: Please set the MASTER_KEY environment variable with a workspace key from 2ly")
-    print("Get your key from the 2ly UI: Settings > API Keys > Generate New Master Key")
+workspace_key = os.environ.get("WORKSPACE_KEY")
+if not workspace_key:
+    print("Error: Please set the WORKSPACE_KEY environment variable with a workspace key from 2ly")
+    print("Get your key from the 2ly UI: Settings > API Keys > Generate New Workspace Key")
     exit(1)
 
 endpoint = "https://models.inference.ai.azure.com"
@@ -47,7 +47,7 @@ async def main():
         # Automatically creates or connects to a toolset named "Langgraph Agent"
         async with MCPToolset.with_workspace_key(
             name="Langgraph Agent",
-            master_key=master_key
+            workspace_key=workspace_key
         ) as mcp:
             tools = await mcp.get_langchain_tools()
             agent = create_react_agent(llm, tools)

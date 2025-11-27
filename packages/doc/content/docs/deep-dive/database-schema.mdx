@@ -41,7 +41,6 @@ type Workspace {
   runtimes: [Runtime!]
   admins: [User!]
   users: [User!]
-  globalRuntime: Runtime
   createdAt: DateTime!
 }
 ```
@@ -103,7 +102,7 @@ type MCPServer {
   ENV: String! # Newline-separated KEY=VALUE
   serverUrl: String # For STREAM transport
   headers: String # For STREAM transport
-  runOn: MCPServerRunOn # GLOBAL | AGENT | EDGE
+  runOn: MCPServerRunOn # AGENT | EDGE
   tools: [MCPTool!] # Discovered tools
   runtime: Runtime # For EDGE type
   workspace: Workspace!
@@ -112,7 +111,6 @@ type MCPServer {
 
 **RunOn Types:**
 
-- **GLOBAL**: Runs on workspace's global runtime (shared tools)
 - **AGENT**: Runs on agent's runtime (agent-specific)
 - **EDGE**: Runs on specific runtime (user-specific)
 
@@ -166,8 +164,6 @@ graph TB
     Workspace -->|1:N| Runtime
     Workspace -->|1:N| MCPServer
     Workspace -->|1:N| MCPTool
-    Workspace -->|1:1| GlobalRuntime[Global Runtime]
-    Workspace -->|1:1| TestingRuntime[Testing Runtime]
 
     MCPServer -->|1:N| MCPTool
     MCPServer -->|N:1| Runtime[Runtime<br/>EDGE only]
@@ -175,9 +171,6 @@ graph TB
     Runtime -->|N:N| MCPTool[MCPTool<br/>Capabilities]
 
     User -->|N:N| Workspace[Workspace<br/>Admin/Member]
-
-    style GlobalRuntime fill:#e1f5ff
-    style TestingRuntime fill:#fff4e1
 ```
 
 ## Key Patterns
@@ -207,9 +200,8 @@ This is used for:
 
 Three deployment patterns based on `runOn`:
 
-1. **GLOBAL**: `MCPServer` → `Workspace.globalRuntime`
-2. **AGENT**: `MCPServer` spawns on agent's runtime (no DB link)
-3. **EDGE**: `MCPServer` → specific `Runtime` (via `runtime` field)
+1. **AGENT**: `MCPServer` spawns on agent's runtime (no DB link)
+2. **EDGE**: `MCPServer` → specific `Runtime` (via `runtime` field)
 
 ## Data Lifecycle
 
@@ -281,7 +273,7 @@ mutation {
     name: "Filesystem"
     command: "npx"
     args: "@modelcontextprotocol/server-filesystem /tmp"
-    runOn: GLOBAL
+    runOn: EDGE
   ) {
     id
   }

@@ -43,7 +43,6 @@ graph TB
     end
 
     subgraph "Runtime Processes"
-        GlobalRuntime[Global Runtime]
         AgentRuntime[Agent Runtime]
         EdgeRuntime[Edge Runtime]
     end
@@ -62,11 +61,9 @@ graph TB
     RuntimeService --> NATS
     DGraphService --> DGraph[(DGraph Database)]
 
-    NATS --> GlobalRuntime
     NATS --> AgentRuntime
     NATS --> EdgeRuntime
 
-    GlobalRuntime --> FileSystem
     AgentRuntime --> Database
     EdgeRuntime --> CustomTools
 ```
@@ -86,7 +83,7 @@ Distributed runtime processes for tool execution:
 // Runtime architecture
 interface RuntimeInstance {
   runtimeId: string;
-  type: 'GLOBAL' | 'AGENT' | 'EDGE';
+  type: 'AGENT' | 'EDGE';
   capabilities: string[];
   mcpServers: MCPServerConfig[];
   status: 'connected' | 'disconnected' | 'healthy';
@@ -164,7 +161,7 @@ interface DataModel {
   MCPServer: {
     id: string;
     name: string;
-    runOn: 'GLOBAL' | 'AGENT' | 'EDGE';
+    runOn: 'AGENT' | 'EDGE';
     configuration: ServerConfig;
     tools: MCPTool[];
   };
@@ -325,7 +322,6 @@ services:
   runtime-global:
     image: 2ly/runtime:latest
     environment:
-      - RUNTIME_TYPE=GLOBAL
       - MCP_SERVER_AUTO_DISCOVERY=true
     volumes:
       - ./mcp-servers:/app/servers
@@ -461,7 +457,7 @@ _Performance Bottlenecks_:
 **Deployment**:
 
 - Deploy multiple runtime instances for high availability
-- Use appropriate runtime types (GLOBAL/AGENT/EDGE) for use cases
+- Use appropriate runtime types (AGENT/EDGE) for use cases
 - Implement proper monitoring and alerting for production systems
 
 **Development**:

@@ -33,7 +33,7 @@ export function extractAuthHeaders(request: FastifyRequest): AuthHeaders {
 
   // Fall back to header-based auth
   return {
-    masterKey: typeof headers['master_key'] === 'string' ? headers['master_key'] : undefined,
+    workspaceKey: typeof headers['workspace_key'] === 'string' ? headers['workspace_key'] : undefined,
     toolsetKey: typeof headers['toolset_key'] === 'string' ? headers['toolset_key'] : undefined,
     toolsetName: typeof headers['toolset_name'] === 'string' ? headers['toolset_name'] : undefined,
   };

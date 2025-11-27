@@ -12,7 +12,7 @@ echo "Auto-generation: $AUTOGEN_KEYS"
 echo ""
 
 # Priority 1: Use ENV variables if both critical keys are provided
-if [ -n "$MASTER_KEY" ] && [ -n "$ENCRYPTION_KEY" ]; then
+if [ -n "$SYSTEM_KEY" ] && [ -n "$ENCRYPTION_KEY" ]; then
   echo "✅ Using keys from environment variables"
   echo ""
 
@@ -32,7 +32,7 @@ else
   echo ""
   echo "Available options:"
   echo "  1. Set AUTOGEN_KEYS=true to enable auto-generation"
-  echo "  2. Provide MASTER_KEY and ENCRYPTION_KEY via environment variables"
+  echo "  2. Provide SYSTEM_KEY and ENCRYPTION_KEY via environment variables"
   echo "  3. Mount a volume with pre-generated keys to $KEYS_DIR"
   echo ""
   exit 1

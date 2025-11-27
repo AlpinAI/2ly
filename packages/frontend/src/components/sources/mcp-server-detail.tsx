@@ -116,7 +116,7 @@ export function MCPServerDetail({ server }: MCPServerDetailProps) {
     if (runOn === McpServerRunOn.Edge && runtimeId) {
       return `EDGE:${runtimeId}`;
     }
-    return runOn || 'GLOBAL';
+    return runOn || 'AGENT';
   }, [runOn, runtimeId]);
 
   // Handle name save on blur
@@ -350,7 +350,6 @@ export function MCPServerDetail({ server }: MCPServerDetailProps) {
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="GLOBAL">Main Runtime</SelectItem>
               <SelectItem value="AGENT">Agent Side</SelectItem>
               <SelectSeparator />
               <SelectGroup>

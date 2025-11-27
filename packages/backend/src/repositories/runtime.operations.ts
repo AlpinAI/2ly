@@ -1,6 +1,45 @@
 import { gql } from 'urql';
 
-export const ADD_RUNTIME = gql`
+
+export const ADD_SYSTEM_RUNTIME = gql`
+  mutation addSystemRuntime(
+    $name: String!
+    $description: String!
+    $status: ActiveStatus!
+    $type: RuntimeType!
+    $createdAt: DateTime!
+    $lastSeenAt: DateTime!
+    $systemId: ID!
+  ) {
+    addRuntime(
+      input: {
+        name: $name
+        description: $description
+        status: $status
+        type: $type
+        createdAt: $createdAt
+        lastSeenAt: $lastSeenAt
+        system: { id: $systemId }
+      }
+    ) {
+      runtime {
+        id
+        name
+        description
+        status
+        type
+        createdAt
+        lastSeenAt
+        workspace {
+          id
+          name
+        }
+      }
+    }
+  }
+`;
+
+export const ADD_WORKSPACE_RUNTIME = gql`
   mutation addRuntime(
     $name: String!
     $description: String!
@@ -110,9 +149,6 @@ export const GET_RUNTIME = gql`
       roots
       workspace {
         id
-        globalRuntime {
-          id
-        }
       }
     }
   }
@@ -141,38 +177,12 @@ export const GET_RUNTIME_EDGE_MCP_SERVERS = gql`
   }
 `;
 
-export const GET_RUNTIME_AGENT_MCP_SERVERS_BY_LINK = gql`
-  query getRuntime($id: ID!) {
-    getRuntime(id: $id) {
-      id
-      mcpServers(filter: { runOn: { eq: AGENT } }) {
-        id
-        name
-        description
-        transport
-        config
-        runOn
-        tools {
-          id
-          name
-          description
-          inputSchema
-          annotations
-        }
-      }
-    }
-  }
-`;
-
 export const GET_RUNTIME_ALL_TOOLS = gql`
   query getRuntime($id: ID!) {
     getRuntime(id: $id) {
       id
       workspace {
         id
-        globalRuntime {
-          id
-        }
       }
       mcpServers {
         id
@@ -183,29 +193,6 @@ export const GET_RUNTIME_ALL_TOOLS = gql`
           inputSchema
           annotations
           status
-        }
-      }
-    }
-  }
-`;
-
-export const GET_RUNTIME_GLOBAL_MCP_SERVERS = gql`
-  query getWorkspace($id: ID!) {
-    getWorkspace(id: $id) {
-      id
-      mcpServers(filter: { runOn: { eq: GLOBAL } }) {
-        id
-        name
-        description
-        transport
-        config
-        runOn
-        tools {
-          id
-          name
-          description
-          inputSchema
-          annotations
         }
       }
     }
@@ -234,7 +221,28 @@ export const QUERY_ACTIVE_RUNTIMES = gql`
   }
 `;
 
-export const QUERY_RUNTIME_BY_NAME = gql`
+export const QUERY_SYSTEM_RUNTIME_BY_NAME = gql`
+  query getSystemRuntimeByName($systemId: ID!, $name: String!) {
+    getSystem(id: $systemId) {
+      id
+      runtimes(filter: { name: { eq: $name } }) {
+        id
+        name
+        description
+        status
+        createdAt
+        lastSeenAt
+        processId
+        hostIP
+        hostname
+        mcpClientName
+        roots
+      }
+    }
+  }
+`;
+
+export const QUERY_WORKSPACE_RUNTIME_BY_NAME = gql`
   query getWorkspaceRuntimeByName($workspaceId: ID!, $name: String!) {
     getWorkspace(id: $workspaceId) {
       id

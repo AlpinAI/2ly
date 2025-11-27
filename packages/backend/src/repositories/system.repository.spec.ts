@@ -2,30 +2,34 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { SystemRepository } from './system.repository';
 import type { DGraphService } from '../services/dgraph.service';
 import { DgraphServiceMock } from '../services/dgraph.service.mock';
-import { dgraphResolversTypes } from '@2ly/common';
-import { WorkspaceRepository } from './workspace.repository';
+import { dgraphResolversTypes, LoggerService } from '@2ly/common';
+import { LoggerServiceMock } from '@2ly/common/test/vitest';
 import { UserRepository } from './user.repository';
 import { Subject } from 'rxjs';
+import { IdentityRepository } from './identity.repository';
 
 describe('SystemRepository', () => {
     let dgraphService: DgraphServiceMock;
-    let workspaceRepository: WorkspaceRepository;
+    let identityRepository: IdentityRepository;
     let userRepository: UserRepository;
     let systemRepository: SystemRepository;
+    let loggerService: LoggerServiceMock;
 
     beforeEach(() => {
         dgraphService = new DgraphServiceMock();
-        workspaceRepository = {
-            update: vi.fn(),
-        } as unknown as WorkspaceRepository;
+        loggerService = new LoggerServiceMock();
+        identityRepository = {
+            createKey: vi.fn(),
+        } as unknown as IdentityRepository;
         userRepository = {
             create: vi.fn(),
             updatePassword: vi.fn(),
         } as unknown as UserRepository;
         systemRepository = new SystemRepository(
+            loggerService as unknown as LoggerService,
             dgraphService as unknown as DGraphService,
-            workspaceRepository,
             userRepository,
+            identityRepository,
         );
     });
 
@@ -36,7 +40,7 @@ describe('SystemRepository', () => {
         userRepository.create = vi.fn().mockResolvedValue(adminUser);
         dgraphService.mutation.mockResolvedValue({ addSystem: { system: [system] } });
 
-        const result = await systemRepository.createSystem();
+        const result = await systemRepository.createSystem('system-key');
 
         expect(userRepository.create).toHaveBeenCalledWith('admin', '123456');
         expect(dgraphService.mutation).toHaveBeenCalledWith(
@@ -85,11 +89,11 @@ describe('SystemRepository', () => {
         dgraphService.query.mockResolvedValue({ querySystem: [system] });
         userRepository.updateEmail = vi.fn().mockResolvedValue(undefined);
         userRepository.updatePassword = vi.fn().mockResolvedValue(undefined);
-        workspaceRepository.update = vi.fn().mockResolvedValue(undefined);
+        identityRepository.createKey = vi.fn().mockResolvedValue({ id: 'k1', key: 'SK_test123' });
         dgraphService.mutation.mockResolvedValue({ updateSystem: { system: [updatedSystem] } });
 
-        const result = await systemRepository.initSystem('newpassword', 'admin@example.com');
-        expect(userRepository.updateEmail).toHaveBeenCalledWith('admin1', 'admin@example.com');
+        const result = await systemRepository.initSystem('newpassword', 'user1@2ly.ai');
+        expect(userRepository.updateEmail).toHaveBeenCalledWith('admin1', 'user1@2ly.ai');
         expect(userRepository.updatePassword).toHaveBeenCalledWith('admin1', 'newpassword');
         expect(dgraphService.mutation).toHaveBeenCalledWith(
             expect.any(Object),
@@ -108,7 +112,7 @@ describe('SystemRepository', () => {
 
         dgraphService.query.mockResolvedValue({ querySystem: [system] });
 
-        await expect(systemRepository.initSystem('newpassword', 'admin@example.com'))
+        await expect(systemRepository.initSystem('newpassword', 'user1@2ly.ai'))
             .rejects.toThrow('Cannot initialize system');
     });
 
@@ -122,7 +126,7 @@ describe('SystemRepository', () => {
 
         dgraphService.query.mockResolvedValue({ querySystem: [system] });
 
-        await expect(systemRepository.initSystem('newpassword', 'admin@example.com'))
+        await expect(systemRepository.initSystem('newpassword', 'user1@2ly.ai'))
             .rejects.toThrow('Cannot initialize system');
     });
 
@@ -136,7 +140,7 @@ describe('SystemRepository', () => {
 
         dgraphService.query.mockResolvedValue({ querySystem: [system] });
 
-        await expect(systemRepository.initSystem('newpassword', 'admin@example.com'))
+        await expect(systemRepository.initSystem('newpassword', 'user1@2ly.ai'))
             .rejects.toThrow('Cannot initialize system');
     });
 

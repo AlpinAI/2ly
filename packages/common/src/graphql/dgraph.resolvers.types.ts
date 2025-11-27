@@ -64,8 +64,7 @@ export type McpServer = {
 
 export enum McpServerRunOn {
   Agent = 'AGENT',
-  Edge = 'EDGE',
-  Global = 'GLOBAL'
+  Edge = 'EDGE'
 }
 
 export type McpTool = {
@@ -125,9 +124,10 @@ export type Runtime = {
   processId?: Maybe<Scalars['String']['output']>;
   roots?: Maybe<Scalars['String']['output']>;
   status: ActiveStatus;
+  system?: Maybe<System>;
   toolResponses?: Maybe<Array<ToolCall>>;
   type: RuntimeType;
-  workspace: Workspace;
+  workspace?: Maybe<Workspace>;
 };
 
 export enum RuntimeType {
@@ -156,6 +156,7 @@ export type System = {
   id: Scalars['ID']['output'];
   initialized: Scalars['Boolean']['output'];
   instanceId: Scalars['String']['output'];
+  runtimes?: Maybe<Array<Runtime>>;
   updatedAt: Scalars['DateTime']['output'];
   workspaces?: Maybe<Array<Workspace>>;
 };
@@ -166,6 +167,7 @@ export type ToolCall = {
   completedAt?: Maybe<Scalars['DateTime']['output']>;
   error?: Maybe<Scalars['String']['output']>;
   executedBy?: Maybe<Runtime>;
+  executedByAgent?: Maybe<Scalars['Boolean']['output']>;
   id: Scalars['ID']['output'];
   isTest: Scalars['Boolean']['output'];
   mcpTool: McpTool;
@@ -208,7 +210,6 @@ export type User = {
 export type Workspace = {
   admins?: Maybe<Array<User>>;
   createdAt: Scalars['DateTime']['output'];
-  globalRuntime?: Maybe<Runtime>;
   id: Scalars['ID']['output'];
   mcpServers?: Maybe<Array<McpServer>>;
   mcpTools?: Maybe<Array<McpTool>>;
@@ -429,9 +430,10 @@ export type RuntimeResolvers<ContextType = any, ParentType extends ResolversPare
   processId?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   roots?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   status?: Resolver<ResolversTypes['ActiveStatus'], ParentType, ContextType>;
+  system?: Resolver<Maybe<ResolversTypes['System']>, ParentType, ContextType>;
   toolResponses?: Resolver<Maybe<Array<ResolversTypes['ToolCall']>>, ParentType, ContextType>;
   type?: Resolver<ResolversTypes['RuntimeType'], ParentType, ContextType>;
-  workspace?: Resolver<ResolversTypes['Workspace'], ParentType, ContextType>;
+  workspace?: Resolver<Maybe<ResolversTypes['Workspace']>, ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
@@ -457,6 +459,7 @@ export type SystemResolvers<ContextType = any, ParentType extends ResolversParen
   id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
   initialized?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
   instanceId?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  runtimes?: Resolver<Maybe<Array<ResolversTypes['Runtime']>>, ParentType, ContextType>;
   updatedAt?: Resolver<ResolversTypes['DateTime'], ParentType, ContextType>;
   workspaces?: Resolver<Maybe<Array<ResolversTypes['Workspace']>>, ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
@@ -468,6 +471,7 @@ export type ToolCallResolvers<ContextType = any, ParentType extends ResolversPar
   completedAt?: Resolver<Maybe<ResolversTypes['DateTime']>, ParentType, ContextType>;
   error?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   executedBy?: Resolver<Maybe<ResolversTypes['Runtime']>, ParentType, ContextType>;
+  executedByAgent?: Resolver<Maybe<ResolversTypes['Boolean']>, ParentType, ContextType>;
   id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
   isTest?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
   mcpTool?: Resolver<ResolversTypes['MCPTool'], ParentType, ContextType>;
@@ -507,7 +511,6 @@ export type UserResolvers<ContextType = any, ParentType extends ResolversParentT
 export type WorkspaceResolvers<ContextType = any, ParentType extends ResolversParentTypes['Workspace'] = ResolversParentTypes['Workspace']> = ResolversObject<{
   admins?: Resolver<Maybe<Array<ResolversTypes['User']>>, ParentType, ContextType>;
   createdAt?: Resolver<ResolversTypes['DateTime'], ParentType, ContextType>;
-  globalRuntime?: Resolver<Maybe<ResolversTypes['Runtime']>, ParentType, ContextType>;
   id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
   mcpServers?: Resolver<Maybe<Array<ResolversTypes['MCPServer']>>, ParentType, ContextType>;
   mcpTools?: Resolver<Maybe<Array<ResolversTypes['MCPTool']>>, ParentType, ContextType>;

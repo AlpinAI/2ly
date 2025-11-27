@@ -13,18 +13,24 @@
  */
 
 import { test, expect, performLogin, seedPresets } from '@2ly/common/test/fixtures/playwright';
+import { updateMCPServerToEdgeRuntime } from '@2ly/common/test/fixtures/mcp-builders';
 
 test.describe('ToolSet API', () => {
   test.describe.configure({ mode: 'serial' });
 
-  test.beforeAll(async ({ resetDatabase, seedDatabase }) => {
+  test.beforeAll(async ({ resetDatabase, seedDatabase, graphql }) => {
     await resetDatabase(true);
-    await seedDatabase(seedPresets.withSingleMCPServer);
+    const entityIds = await seedDatabase(seedPresets.withSingleMCPServer);
+
+    // Update MCP server to use EDGE runtime (GLOBAL runOn has been removed)
+    const workspaceId = entityIds['default-workspace'];
+    const mcpServerId = entityIds['server-file-system'];
+    await updateMCPServerToEdgeRuntime(graphql, mcpServerId, workspaceId);
   });
 
   test('should create a toolset via new API', async ({ page, graphql }) => {
     // Login
-    await performLogin(page, 'user1@example.com', 'password123');
+    await performLogin(page, 'user1@2ly.ai', 'password123');
     const workspaceUrl = page.url();
     const workspaceId = workspaceUrl.match(/\/w\/([^/]+)/)?.[1];
     expect(workspaceId).toBeDefined();
@@ -64,7 +70,7 @@ test.describe('ToolSet API', () => {
 
   test('should query toolsets via new API', async ({ page, graphql }) => {
     // Login
-    await performLogin(page, 'user1@example.com', 'password123');
+    await performLogin(page, 'user1@2ly.ai', 'password123');
     const workspaceUrl = page.url();
     const workspaceId = workspaceUrl.match(/\/w\/([^/]+)/)?.[1];
     expect(workspaceId).toBeDefined();
@@ -116,7 +122,7 @@ test.describe('ToolSet API', () => {
 
   test('should add and remove tools from toolset directly', async ({ page, graphql }) => {
     // Login
-    await performLogin(page, 'user1@example.com', 'password123');
+    await performLogin(page, 'user1@2ly.ai', 'password123');
     const workspaceUrl = page.url();
     const workspaceId = workspaceUrl.match(/\/w\/([^/]+)/)?.[1];
     expect(workspaceId).toBeDefined();

@@ -21,6 +21,7 @@ export interface CreateIdentityKeyData {
 }
 
 const KEY_NATURE_PREFIX = {
+  system: 'SYK',
   workspace: 'WSK',
   runtime: 'RTK',
   toolset: 'TSK',
@@ -54,7 +55,7 @@ export class IdentityRepository {
    * - Total length: 46 characters
    * - Example: "WSK_a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6q7r8s9t0u1"
    */
-  async createKey(nature: 'workspace' | 'runtime' | 'toolset', relatedId: string, description?: string, permissions?: string, options?: {key?: string}): Promise<dgraphResolversTypes.IdentityKey> {
+  async createKey(nature: 'system' | 'workspace' | 'runtime' | 'toolset', relatedId: string, description?: string, permissions?: string, options?: {key?: string}): Promise<dgraphResolversTypes.IdentityKey> {
     try {
       const now = new Date().toISOString();
       const expiresAtDate = new Date(now);
@@ -183,7 +184,7 @@ export class IdentityRepository {
    * - EXPIRED: If the identity key is expired
    * - REVOKED: If the identity key is revoked
    */
-  async findKey(key: string): Promise<{ relatedId: string; nature: 'workspace' | 'runtime' | 'toolset' }> {
+  async findKey(key: string): Promise<{ relatedId: string; nature: 'system' | 'workspace' | 'runtime' | 'toolset' }> {
     // Validate key format before database lookup
     this.validateKeyFormat(key);
 
@@ -205,7 +206,7 @@ export class IdentityRepository {
     }
 
     // Extract nature from validated prefix
-    const prefix = identityKey.key.substring(0, 3) as 'WSK' | 'RTK' | 'TSK';
+    const prefix = identityKey.key.substring(0, 3) as 'SYK' | 'WSK' | 'RTK' | 'TSK';
     const nature = this.getNatureFromPrefix(prefix);
 
     return { relatedId: identityKey.relatedId, nature };
@@ -219,8 +220,10 @@ export class IdentityRepository {
    * @returns The key nature
    * @throws Error if prefix is not recognized
    */
-  private getNatureFromPrefix(prefix: string): 'workspace' | 'runtime' | 'toolset' {
+  private getNatureFromPrefix(prefix: string): 'system' | 'workspace' | 'runtime' | 'toolset' {
     switch (prefix) {
+      case 'SYK':
+        return 'system';
       case 'WSK':
         return 'workspace';
       case 'RTK':

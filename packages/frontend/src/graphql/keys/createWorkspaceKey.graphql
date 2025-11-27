@@ -1,5 +1,5 @@
 # Create Workspace Key Mutation
-# WHY: Generate a new master key for the workspace with a description
+# WHY: Generate a new workspace key for the workspace with a description
 mutation CreateWorkspaceKey($workspaceId: ID!, $description: String!) {
   createWorkspaceKey(workspaceId: $workspaceId, description: $description) {
     id

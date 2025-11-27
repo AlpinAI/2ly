@@ -37,7 +37,7 @@ export async function closeNatsConnection(): Promise<void> {
 export async function sendToolsetHandshake(params: {
   toolsetKey: string;
   toolsetName: string;
-}): Promise<{ workspaceId: string; nature: string; id: string; name: string }> {
+}): Promise<{ workspaceId: string | null; nature: string; id: string; name: string }> {
   const nc = await getNatsConnection();
 
   // Use production HandshakeRequest class for proper validation and message construction

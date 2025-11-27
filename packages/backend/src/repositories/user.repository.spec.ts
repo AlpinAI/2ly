@@ -1,11 +1,15 @@
-import { describe, it, expect, beforeAll, afterAll } from 'vitest';
+import { describe, it, expect, beforeAll, afterAll, beforeEach } from 'vitest';
 import { UserRepository } from './user.repository';
 import type { DGraphService } from '../services/dgraph.service';
 import { DgraphServiceMock } from '../services/dgraph.service.mock';
-import { dgraphResolversTypes } from '@2ly/common';
+import { dgraphResolversTypes, LoggerService } from '@2ly/common';
+import { LoggerServiceMock } from '@2ly/common/test/vitest';
 
 describe('UserRepository', () => {
     const originalEnv = process.env;
+    let dgraphService: DgraphServiceMock;
+    let loggerService: LoggerServiceMock;
+    let repo: UserRepository;
 
     beforeAll(() => {
         // Set required environment variables for password hashing
@@ -19,9 +23,14 @@ describe('UserRepository', () => {
         // Restore original environment
         process.env = originalEnv;
     });
+
+    beforeEach(() => {
+        dgraphService = new DgraphServiceMock();
+        loggerService = new LoggerServiceMock();
+        repo = new UserRepository(loggerService as unknown as LoggerService, dgraphService as unknown as DGraphService);
+    });
+
     it('create hashes password and returns first user', async () => {
-        const dgraphService = new DgraphServiceMock();
-        const repo = new UserRepository(dgraphService as unknown as DGraphService);
         // Act
         const user = { id: 'u1', email: 'john', createdAt: '2021-01-01' } as unknown as dgraphResolversTypes.User;
         dgraphService.mutation.mockResolvedValue({ addUser: { user: [user] } });
@@ -38,30 +47,24 @@ describe('UserRepository', () => {
     });
 
     it('addAdminToWorkspace returns updated user', async () => {
-        const dgraphService = new DgraphServiceMock();
         const user = { id: 'u1', email: 'john', workspaces: [{ id: 'w1', role: 'ADMIN' }] } as unknown as dgraphResolversTypes.User;
         dgraphService.mutation.mockResolvedValue({ updateUser: { user: [user] } });
-        const repo = new UserRepository(dgraphService as unknown as DGraphService);
         const result = await repo.addAdminToWorkspace('u1', 'w1');
         expect(result.id).toBe('u1');
         expect(dgraphService.mutation).toHaveBeenCalledWith(expect.any(Object), { userId: 'u1', workspaceId: 'w1' });
     });
 
     it('addMemberToWorkspace returns updated user', async () => {
-        const dgraphService = new DgraphServiceMock();
         const user = { id: 'u1', email: 'john', workspaces: [{ id: 'w1', role: 'MEMBER' }] } as unknown as dgraphResolversTypes.User;
         dgraphService.mutation.mockResolvedValue({ updateUser: { user: [user] } });
-        const repo = new UserRepository(dgraphService as unknown as DGraphService);
         const result = await repo.addMemberToWorkspace('u1', 'w1');
         expect(result.id).toBe('u1');
         expect(dgraphService.mutation).toHaveBeenCalledWith(expect.any(Object), { userId: 'u1', workspaceId: 'w1' });
     });
 
     it('updatePassword hashes password and returns updated user', async () => {
-        const dgraphService = new DgraphServiceMock();
         const user = { id: 'u1', email: 'john', updatedAt: '2021-01-01' } as unknown as dgraphResolversTypes.User;
         dgraphService.mutation.mockResolvedValue({ updateUser: { user: [user] } });
-        const repo = new UserRepository(dgraphService as unknown as DGraphService);
         const result = await repo.updatePassword('u1', 'newsecret');
         expect(result.id).toBe('u1');
         expect(dgraphService.mutation).toHaveBeenCalled();

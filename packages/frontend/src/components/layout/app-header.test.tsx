@@ -13,7 +13,7 @@ import { ThemeProvider } from '@/contexts/ThemeContext';
 // Mock the auth context
 vi.mock('@/contexts/AuthContext', () => ({
   useAuth: () => ({
-    user: { id: '1', email: 'test@example.com' },
+    user: { id: '1', email: 'user1@2ly.ai' },
     logout: vi.fn(),
   }),
 }));
@@ -106,8 +106,8 @@ describe('AppHeader', () => {
   it('renders user initials in avatar', () => {
     renderWithProviders(<AppHeader />);
 
-    // test@example.com should give "TE" initials
-    const initials = screen.getByText('TE');
+    // user1@2ly.ai should give "US" initials (first 2 chars of username before @)
+    const initials = screen.getByText('US');
     expect(initials).toBeDefined();
   });
 

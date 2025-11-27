@@ -2,6 +2,7 @@ import { inject, injectable } from 'inversify';
 import {
   LoggerService,
   NatsService,
+  RuntimeMCPServersPublish,
   Service,
   ToolsetListToolsPublish,
   dgraphResolversTypes,
@@ -44,7 +45,7 @@ export class ToolSetService extends Service {
     this.logger.info('Starting');
     await this.startService(this.dgraphService);
     await this.startService(this.natsService);
-    await this.subscribeToToolSet();
+    await this.subscribeToAllToolSets();
     this.toolsetHandshakeCallbackId = this.identityService.onHandshake('toolset', (identity: ToolsetHandshakeIdentity) => {
       this.handleToolSetHandshake(identity);
     });
@@ -82,9 +83,10 @@ export class ToolSetService extends Service {
   }
 
   private async handleToolSetHandshake(identity: ToolsetHandshakeIdentity) {
-    this.logger.debug(`Toolset ${identity.instance.id} connected`);
+    this.logger.info(`Toolset ${identity.instance.id} connected`);
     try {
       this.publishToolSetTools(identity.instance);
+      await this.publishAgentMCPServers(identity.instance);
       this.workspaceRepository.completeOnboardingStep(
         identity.instance.workspace.id,
         'connect-tool-set-to-agent',
@@ -101,9 +103,11 @@ export class ToolSetService extends Service {
   /**
    * Subscribe to all the tool sets of the database and keep the NATS KV up-to-date.
    * TODO: this pattern is not resilient for high volume but is designed to test the tool-set concept quickly.
+   * In a near future we'll need to implement a pattern which leverage the health check mechanism and keep alive
+   * only active toolsets
    */
-  private async subscribeToToolSet() {
-    this.logger.info('Subscribing to all toolsets');
+  private async subscribeToAllToolSets() {
+    this.logger.debug('Subscribing to all toolsets');
 
     const subscription = this.toolSetRepository
       .observeAllToolSets()
@@ -123,12 +127,25 @@ export class ToolSetService extends Service {
   }
 
   private publishToolSetTools(toolSet: dgraphResolversTypes.ToolSet) {
-    this.logger.debug(`Publishing ${toolSet.mcpTools?.length ?? 0} tools for toolset ${toolSet.id}`);
+    this.logger.debug(`Publishing ${toolSet.mcpTools?.length ?? 0} tools for toolset ${toolSet.id} in workspace ${toolSet.workspace.id}`);
     const message = ToolsetListToolsPublish.create({
       workspaceId: toolSet.workspace.id,
       toolsetId: toolSet.id,
       mcpTools: toolSet.mcpTools ?? [],
     }) as ToolsetListToolsPublish;
     this.natsService.publishEphemeral(message);
+  }
+
+  // TODO: leverage root from handshake ?
+  private async publishAgentMCPServers(toolSet: dgraphResolversTypes.ToolSet) {
+    const mcpServers  = await this.toolSetRepository.getMCPServersOnAgent(toolSet.id);
+    this.logger.debug(`Publishing ${mcpServers.length ?? 0} MCP Servers for toolset ${toolSet.id} in workspace ${toolSet.workspace.id}`);
+    const mcpServersMessage = RuntimeMCPServersPublish.create({
+      workspaceId: toolSet.workspace.id,
+      runtimeId: toolSet.id,
+      roots: [] as { name: string; uri: string }[],
+      mcpServers,
+    }) as RuntimeMCPServersPublish;
+    this.natsService.publishEphemeral(mcpServersMessage);
   }
 }

@@ -92,7 +92,7 @@ test.describe('System Initialization', () => {
     await expect(submitButton).toBeDisabled();
 
     // Fill email only
-    await page.fill('input[type="email"]', 'admin@example.com');
+    await page.fill('input[type="email"]', 'user1@2ly.ai');
     await expect(submitButton).toBeDisabled();
 
     // Add password
@@ -111,7 +111,7 @@ test.describe('System Initialization', () => {
     await page.goto('/init');
 
     // Fill in the form
-    await page.fill('input[type="email"]', 'admin@example.com');
+    await page.fill('input[type="email"]', 'user1@2ly.ai');
     await page.fill('input#password', 'admin123');
     await page.fill('input#confirmPassword', 'admin123');
 

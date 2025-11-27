@@ -1,5 +1,5 @@
 # Update MCP Server RunOn Mutation
-# WHY: Change where an MCP server runs (GLOBAL/EDGE) and optionally assign to a specific runtime
+# WHY: Change where an MCP server runs (AGENT/EDGE) and optionally assign to a specific runtime
 mutation UpdateMCPServerRunOn($mcpServerId: ID!, $runOn: MCPServerRunOn!, $runtimeId: ID) {
   updateMCPServerRunOn(mcpServerId: $mcpServerId, runOn: $runOn, runtimeId: $runtimeId) {
     id

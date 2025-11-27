@@ -52,6 +52,7 @@ interface FakeSystemRepository {
   getSystem: () => Promise<{ instanceId: string; defaultWorkspace?: { name: string } | null; admins?: { id: string }[] } | null>;
   createSystem: () => Promise<{ instanceId: string; admins?: { id: string }[] }>;
   setDefaultWorkspace: (id: string) => Promise<void>;
+  stopObservingRuntimes: () => void;
 }
 
 interface FakeWorkspaceRepository {
@@ -128,6 +129,7 @@ function createService(dropAllData: boolean = false) {
     getSystem: vi.fn(async () => null),
     createSystem: vi.fn(async () => ({ instanceId: 'sys-1', admins: [{ id: 'admin-1' }] })),
     setDefaultWorkspace: vi.fn(async () => {}),
+    stopObservingRuntimes: vi.fn(),
   };
 
   const workspaceRepository: FakeWorkspaceRepository = {
@@ -217,7 +219,7 @@ describe('MainService', () => {
       await service.start('test');
       expect(systemRepository.getSystem).toHaveBeenCalled();
       expect(systemRepository.createSystem).toHaveBeenCalled();
-      expect(workspaceRepository.create).toHaveBeenCalledWith('Default', 'admin-1', expect.objectContaining({ masterKey: undefined }));
+      expect(workspaceRepository.create).toHaveBeenCalledWith('Default', 'admin-1');
       expect(systemRepository.setDefaultWorkspace).toHaveBeenCalledWith('ws-1');
       await service.stop('test');
     });

@@ -42,7 +42,7 @@ import {
  * Security:
  * - Origin header validation for DNS rebinding protection (configurable)
  * - Protocol version validation
- * - Master key or toolset key authentication
+ * - Workspace key or toolset key authentication
  *
  * Spec: https://modelcontextprotocol.io/specification/2025-06-18/basic/transports#server-sent-events-sse
  */

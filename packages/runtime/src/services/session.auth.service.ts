@@ -11,7 +11,7 @@ import os from 'os';
 import { ToolsetIdentity } from './toolset.service';
 
 export interface AuthHeaders {
-  masterKey?: string;
+  workspaceKey?: string;
   toolsetKey?: string;
   toolsetName?: string;
 }
@@ -35,21 +35,21 @@ export class SessionAuthService {
    * Validate auth headers according to the rules
    */
   public validateAuthHeaders(headers: AuthHeaders): void {
-    const { masterKey, toolsetKey, toolsetName } = headers;
+    const { workspaceKey, toolsetKey, toolsetName } = headers;
 
-    // Rule 1: MASTER_KEY and TOOLSET_KEY are mutually exclusive
-    if (masterKey && toolsetKey) {
-      throw new Error('MASTER_KEY and TOOLSET_KEY are mutually exclusive');
+    // Rule 1: WORKSPACE_KEY and TOOLSET_KEY are mutually exclusive
+    if (workspaceKey && toolsetKey) {
+      throw new Error('WORKSPACE_KEY and TOOLSET_KEY are mutually exclusive');
     }
 
     // Rule 2: At least one key must be provided
-    if (!masterKey && !toolsetKey) {
-      throw new Error('Either MASTER_KEY or TOOLSET_KEY is required');
+    if (!workspaceKey && !toolsetKey) {
+      throw new Error('Either WORKSPACE_KEY or TOOLSET_KEY is required');
     }
 
-    // Rule 3: MASTER_KEY requires TOOLSET_NAME
-    if (masterKey && !toolsetName) {
-      throw new Error('MASTER_KEY requires TOOLSET_NAME');
+    // Rule 3: WORKSPACE_KEY requires TOOLSET_NAME
+    if (workspaceKey && !toolsetName) {
+      throw new Error('WORKSPACE_KEY requires TOOLSET_NAME');
     }
 
     // Rule 4: TOOLSET_KEY must not have TOOLSET_NAME
@@ -62,10 +62,10 @@ export class SessionAuthService {
    * Authenticate via handshake and return the session identity
    */
   public async authenticateViaHandshake(headers: AuthHeaders): Promise<ToolsetIdentity> {
-    const { masterKey, toolsetKey, toolsetName } = headers;
-    const key = masterKey || toolsetKey!;
+    const { workspaceKey, toolsetKey, toolsetName } = headers;
+    const key = workspaceKey || toolsetKey!;
 
-    this.logger.debug(`Authenticating via handshake with key type: ${masterKey ? 'MASTER_KEY' : 'TOOLSET_KEY'}`);
+    this.logger.debug(`Authenticating via handshake with key type: ${workspaceKey ? 'WORKSPACE_KEY' : 'TOOLSET_KEY'}`);
 
     // Create handshake request
     const handshakeRequest = HandshakeRequest.create({
@@ -92,6 +92,10 @@ export class SessionAuthService {
 
     if (response.data.nature !== 'toolset') {
       throw new Error(`Authentication failed: expected toolset nature, got ${response.data.nature}`);
+    }
+
+    if (response.data.workspaceId === null) {
+      throw new Error('Authentication failed: workspace ID cannot be null for toolsets');
     }
 
     this.logger.info(`Successfully authenticated toolset: ${response.data.name} (${response.data.id})`);

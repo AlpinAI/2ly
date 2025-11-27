@@ -231,7 +231,6 @@ CONTENT NEEDED:
   3. Looks up tool in capabilities
   4. Publishes AgentCallMCPToolMessage to NATS
   5. Backend routes based on MCPServer.runOn:
-     - GLOBAL: Routes to workspace.globalRuntime
      - AGENT: No routing (stays on agent runtime)
      - EDGE: Routes to MCPServer.runtime
   6. Target runtime executes via ToolServerService
@@ -244,7 +243,7 @@ CONTENT NEEDED:
 - Failure scenarios
 
 DIAGRAMS NEEDED:
-- Sequence diagram for each runOn type (GLOBAL, AGENT, EDGE)
+- Sequence diagram for each runOn type (AGENT, EDGE)
 - Error flow diagrams
 - Timeout handling flow
 
@@ -263,12 +262,6 @@ LOCATION: Enhance: core-concepts/tools.mdx
          Create new: technical-concepts/runon-types.mdx
 
 CONTENT NEEDED:
-GLOBAL:
-- Runs on workspace.globalRuntime
-- Shared by all agents in workspace
-- Use cases: Public APIs, shared databases
-- Configuration example
-- Lifecycle management
 
 AGENT:
 - Runs on agent's runtime
@@ -1012,7 +1005,7 @@ IMPROVEMENTS NEEDED:
 - Add component interaction diagrams
 - Add message flow sequence diagrams:
   * Runtime registration
-  * Tool execution (GLOBAL, AGENT, EDGE)
+  * Tool execution (AGENT, EDGE)
   * Config propagation
   * Heartbeat monitoring
 - Add deployment architecture diagrams

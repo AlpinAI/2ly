@@ -72,7 +72,7 @@ describe('Authentication Integration Tests', () => {
         }
       `;
 
-      const uniqueEmail = `newuser-${Date.now()}@example.com`;
+      const uniqueEmail = `newuser-${Date.now()}@2ly.ai`;
       const result = await graphql(mutation, {
         input: {
           email: uniqueEmail,
@@ -98,7 +98,7 @@ describe('Authentication Integration Tests', () => {
 
       const result = await graphql(mutation, {
         input: {
-          email: 'invalid@example.com',
+          email: 'invalid@2ly.ai',
           password: 'weak', // Less than 8 characters
         },
       });
@@ -123,7 +123,7 @@ describe('Authentication Integration Tests', () => {
         }
       `;
 
-      const uniqueEmail = `workspace-test-${Date.now()}@example.com`;
+      const uniqueEmail = `workspace-test-${Date.now()}@2ly.ai`;
       const registerResult = await graphql(registerMutation, {
         input: {
           email: uniqueEmail,
@@ -165,7 +165,7 @@ describe('Authentication Integration Tests', () => {
 
       await graphql(registerMutation, {
         input: {
-          email: 'test@example.com',
+          email: 'user1@2ly.ai',
           password: 'testpassword123',
         },
       });
@@ -191,13 +191,13 @@ describe('Authentication Integration Tests', () => {
 
       const result = await graphql(mutation, {
         input: {
-          email: 'test@example.com',
+          email: 'user1@2ly.ai',
           password: 'testpassword123',
         },
       });
 
       expect(result.login.success).toBe(true);
-      expect(result.login.user.email).toBe('test@example.com');
+      expect(result.login.user.email).toBe('user1@2ly.ai');
       expect(result.login.tokens.accessToken).toBeDefined();
       expect(result.login.tokens.refreshToken).toBeDefined();
     });
@@ -214,7 +214,7 @@ describe('Authentication Integration Tests', () => {
 
       const result = await graphql(mutation, {
         input: {
-          email: 'test@example.com',
+          email: 'user1@2ly.ai',
           password: 'wrongpassword',
         },
       });
@@ -242,7 +242,7 @@ describe('Authentication Integration Tests', () => {
 
       const result = await graphql(registerMutation, {
         input: {
-          email: 'test@example.com',
+          email: 'user1@2ly.ai',
           password: 'testpassword123',
         },
       });
@@ -261,7 +261,7 @@ describe('Authentication Integration Tests', () => {
       `;
 
       const result = await authenticatedGraphql(protectedQuery, accessToken);
-      expect(result.me.email).toBe('test@example.com');
+      expect(result.me.email).toBe('user1@2ly.ai');
     });
 
     it('should reject protected query without token', async () => {
@@ -301,7 +301,7 @@ describe('Authentication Integration Tests', () => {
 
       await graphql(registerMutation, {
         input: {
-          email: 'test@example.com',
+          email: 'user1@2ly.ai',
           password: 'testpassword123',
         },
       });
@@ -321,7 +321,7 @@ describe('Authentication Integration Tests', () => {
 
       const loginResult = await graphql(loginMutation, {
         input: {
-          email: 'test@example.com',
+          email: 'user1@2ly.ai',
           password: 'testpassword123',
         },
       });
@@ -361,7 +361,7 @@ describe('Authentication Integration Tests', () => {
 
       await graphql(registerMutation, {
         input: {
-          email: 'test@example.com',
+          email: 'user1@2ly.ai',
           password: 'testpassword123',
         },
       });
@@ -380,7 +380,7 @@ describe('Authentication Integration Tests', () => {
 
       const loginResult = await graphql(loginMutation, {
         input: {
-          email: 'test@example.com',
+          email: 'user1@2ly.ai',
           password: 'testpassword123',
         },
       });

@@ -27,7 +27,6 @@ interface FakeRuntimeRepository {
     observeRoots?: (id: string) => unknown;
     observeMCPServersOnEdge?: (id: string) => unknown;
     observeMCPServersOnAgent?: (id: string) => unknown;
-    observeMCPServersOnGlobal?: (workspaceId: string) => unknown;
     observeCapabilities?: (id: string) => unknown;
 }
 interface FakeIdentityService {
@@ -157,8 +156,6 @@ describe('RuntimeService', () => {
         expect(upsertToolSpy).toHaveBeenCalledTimes(1);
         await service.stop('test');
     });
-
-    it('does not handle SetRoots/SetGlobalRuntime/SetRuntimeCapabilities anymore');
 
     it('logs error messages and ignores unknown', async () => {
         const { service, iterator } = createService();

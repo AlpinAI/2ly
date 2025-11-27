@@ -1,6 +1,6 @@
 import { injectable, inject } from 'inversify';
 import { DGraphService } from '../services/dgraph.service';
-import { dgraphResolversTypes, hashPassword } from '@2ly/common';
+import { dgraphResolversTypes, hashPassword, LoggerService } from '@2ly/common';
 import {
   ADD_USER,
   ADD_ADMIN_TO_WORKSPACE,
@@ -12,10 +12,17 @@ import {
   INCREMENT_FAILED_LOGIN_ATTEMPTS,
   UNLOCK_USER_ACCOUNT,
 } from './user.operations';
+import pino from 'pino';
 
 @injectable()
 export class UserRepository {
-  constructor(@inject(DGraphService) private readonly dgraphService: DGraphService) { }
+  private logger: pino.Logger;
+  constructor(
+    @inject(LoggerService) private readonly loggerService: LoggerService,
+    @inject(DGraphService) private readonly dgraphService: DGraphService
+  ) {
+    this.logger = this.loggerService.getLogger('UserRepository');
+  }
 
   async create(email: string, password: string): Promise<dgraphResolversTypes.User> {
     const now = new Date().toISOString();
@@ -81,7 +88,7 @@ export class UserRepository {
 
       return res.queryUser[0];
     } catch (error) {
-      console.error('Failed to find user by email:', error);
+      this.logger.error(`Failed to find user by email: ${error instanceof Error ? error.message : String(error)}`);
       throw new Error('Failed to find user by email');
     }
   }
@@ -97,7 +104,7 @@ export class UserRepository {
       }>(UPDATE_USER_LAST_LOGIN, { id, now });
       return res.updateUser.user[0];
     } catch (error) {
-      console.error('Failed to update last login:', error);
+      this.logger.error(`Failed to update last login: ${error instanceof Error ? error.message : String(error)}`);
       throw new Error('Failed to update last login');
     }
   }
@@ -130,7 +137,7 @@ export class UserRepository {
 
       return res.updateUser.user[0];
     } catch (error) {
-      console.error('Failed to increment failed login attempts:', error);
+      this.logger.error(`Failed to increment failed login attempts: ${error instanceof Error ? error.message : String(error)}`);
       throw new Error('Failed to increment failed login attempts');
     }
   }
@@ -145,7 +152,7 @@ export class UserRepository {
       }>(UNLOCK_USER_ACCOUNT, { id });
       return res.updateUser.user[0];
     } catch (error) {
-      console.error('Failed to unlock user account:', error);
+      this.logger.error(`Failed to unlock user account: ${error instanceof Error ? error.message : String(error)}`);
       throw new Error('Failed to unlock user account');
     }
   }

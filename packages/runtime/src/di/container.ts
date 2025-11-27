@@ -35,36 +35,47 @@ const container = new Container();
  */
 function validateAndDetectMode(): RuntimeMode {
   if (process.env.MASTER_KEY && process.env.TOOLSET_KEY) {
+    console.warn('TOOLSET_KEY provided -> ignoring MASTER_KEY');
     delete process.env.MASTER_KEY;
+  } else if (process.env.SYSTEM_KEY && process.env.RUNTIME_KEY) {
+    console.warn('RUNTIME_KEY provided -> ignoring SYSTEM_KEY');
+    delete process.env.SYSTEM_KEY;
+  } else if (process.env.SYSTEM_KEY && process.env.WORKSPACE_KEY) {
+    console.warn('WORKSPACE_KEY provided -> ignoring SYSTEM_KEY');
+    delete process.env.SYSTEM_KEY;
   }
 
-  const remotePort = process.env.REMOTE_PORT;
-  const masterKey = process.env.MASTER_KEY;
-  const toolsetName = process.env.TOOLSET_NAME;
-  const runtimeName = process.env.RUNTIME_NAME;
+  // Get keys from environment variables
+  const systemKey = process.env.SYSTEM_KEY;
+  const workspaceKey = process.env.WORKSPACE_KEY;
   const toolsetKey = process.env.TOOLSET_KEY;
   const runtimeKey = process.env.RUNTIME_KEY;
 
+  // Get names from environment variables
+  const toolsetName = process.env.TOOLSET_NAME;
+  const runtimeName = process.env.RUNTIME_NAME;
+
+  // Get remote port from environment variables
+  const remotePort = process.env.REMOTE_PORT;
+  
   // Keys are mutually exclusive
-  const keyVariables = [masterKey, toolsetKey, runtimeKey];
+  const keyVariables = [systemKey, workspaceKey, toolsetKey, runtimeKey];
   const keyVariablesSet = keyVariables.filter((key) => !!key);
   if (keyVariablesSet.length > 1) {
-    throw new Error(`Invalid configuration: Only one of MASTER_KEY, TOOLSET_KEY, or RUNTIME_KEY can be set but found values for ${keyVariablesSet.join(', ')}`);
+    throw new Error(`Invalid configuration: Only one of SYSTEM_KEY, WORKSPACE_KEY, TOOLSET_KEY, or RUNTIME_KEY can be set but found values for ${keyVariablesSet.join(', ')}`);
   }
 
-  // Validate name with master key
-  if (masterKey) {
-    if (!toolsetName && !runtimeName) {
-      throw new Error('Invalid configuration: MASTER_KEY requires TOOLSET_NAME or RUNTIME_NAME');
-    }
-    if (toolsetName && toolsetKey) {
-      throw new Error('Invalid configuration: TOOLSET_NAME and TOOLSET_KEY are mutually exclusive');
+  // Validate name with their respective keys
+  if (systemKey) {
+    if (!runtimeName) {
+      throw new Error('Invalid configuration: SYSTEM_KEY requires RUNTIME_NAME');
     }
   }
 
-  // Validate no name with toolset/runtime keys
-  if ((toolsetName && toolsetKey) || (runtimeName && runtimeKey)) {
-    throw new Error('Invalid configuration: TOOLSET_NAME and RUNTIME_NAME are mutually exclusive with TOOLSET_KEY and RUNTIME_KEY');
+  if (workspaceKey) {
+    if (!toolsetName) {
+      throw new Error('Invalid configuration: WORKSPACE_KEY requires TOOLSET_NAME');
+    }
   }
 
   // Validate mutually exclusive environment variables
@@ -73,6 +84,11 @@ function validateAndDetectMode(): RuntimeMode {
       'Invalid configuration: REMOTE_PORT is mutually exclusive with TOOLSET_NAME and TOOLSET_KEY. ' +
         'Please use only REMOTE_PORT for edge runtimes',
     );
+  }
+
+  // Runtime and toolset cannot be set at the same time
+  if ((runtimeName || runtimeKey) && (toolsetName || toolsetKey)) {
+    throw new Error('Invalid configuration: trying to start both a runtime and a toolset, this is not supported');
   }
 
   // Determine mode and runtime type based on environment variables

@@ -73,7 +73,7 @@ describe('GraphQLAuthMiddleware', () => {
     it('should create authenticated context when token is valid', async () => {
       const jwtPayload: JwtPayload = {
         userId: '123',
-        email: 'test@example.com',
+        email: 'user1@2ly.ai',
         workspaceId: 'ws1',
         role: 'member',
       };
@@ -86,7 +86,7 @@ describe('GraphQLAuthMiddleware', () => {
       expect(context.isAuthenticated).toBe(true);
       expect(context.user).toEqual({
         userId: '123',
-        email: 'test@example.com',
+        email: 'user1@2ly.ai',
         workspaceId: 'ws1',
         role: 'member',
       });
@@ -131,7 +131,7 @@ describe('GraphQLAuthMiddleware', () => {
         isAuthenticated: true,
         user: {
           userId: '123',
-          email: 'test@example.com',
+          email: 'user1@2ly.ai',
           workspaceId: 'ws1',
           role: 'member',
         },
@@ -150,7 +150,7 @@ describe('GraphQLAuthMiddleware', () => {
         isAuthenticated: true,
         user: {
           userId: '123',
-          email: 'test@example.com',
+          email: 'user1@2ly.ai',
           workspaceId: 'ws1',
           role: 'member',
         },
@@ -167,7 +167,7 @@ describe('GraphQLAuthMiddleware', () => {
         isAuthenticated: true,
         user: {
           userId: '456',
-          email: 'admin@example.com',
+          email: 'user1@2ly.ai',
           workspaceId: 'ws1',
           role: 'admin',
         },
@@ -183,7 +183,7 @@ describe('GraphQLAuthMiddleware', () => {
         isAuthenticated: true,
         user: {
           userId: '123',
-          email: 'test@example.com',
+          email: 'user1@2ly.ai',
           workspaceId: 'ws1',
           role: 'member',
         },
@@ -201,7 +201,7 @@ describe('GraphQLAuthMiddleware', () => {
         isAuthenticated: true,
         user: {
           userId: '456',
-          email: 'admin@example.com',
+          email: 'user1@2ly.ai',
           workspaceId: 'ws1',
           role: 'admin',
         },
@@ -217,7 +217,7 @@ describe('GraphQLAuthMiddleware', () => {
         isAuthenticated: true,
         user: {
           userId: '456',
-          email: 'admin@example.com',
+          email: 'user1@2ly.ai',
           workspaceId: 'ws1',
           role: 'admin',
         },
@@ -234,7 +234,7 @@ describe('GraphQLAuthMiddleware', () => {
         isAuthenticated: true,
         user: {
           userId: '123',
-          email: 'test@example.com',
+          email: 'user1@2ly.ai',
           workspaceId: 'ws1',
           role: 'member',
         },
@@ -250,7 +250,7 @@ describe('GraphQLAuthMiddleware', () => {
         isAuthenticated: true,
         user: {
           userId: '123',
-          email: 'test@example.com',
+          email: 'user1@2ly.ai',
           workspaceId: 'ws1',
           role: 'member',
         },
@@ -295,7 +295,7 @@ describe('GraphQLAuthMiddleware', () => {
         isAuthenticated: true,
         user: {
           userId: '123',
-          email: 'test@example.com',
+          email: 'user1@2ly.ai',
           workspaceId: 'ws1',
           role: 'member',
         },
@@ -309,7 +309,7 @@ describe('GraphQLAuthMiddleware', () => {
           event: 'test_event',
           isAuthenticated: true,
           userId: '123',
-          email: 'test@example.com',
+          email: 'user1@2ly.ai',
           role: 'member',
           workspaceId: 'ws1',
           additional: 'data',
@@ -345,7 +345,7 @@ describe('GraphQLAuthMiddleware', () => {
         isAuthenticated: true,
         user: {
           userId: '123',
-          email: 'test@example.com',
+          email: 'user1@2ly.ai',
           workspaceId: 'ws1',
           role: 'member',
         },
@@ -379,7 +379,7 @@ describe('GraphQLAuthMiddleware', () => {
         isAuthenticated: true,
         user: {
           userId: '456',
-          email: 'admin@example.com',
+          email: 'user1@2ly.ai',
           workspaceId: 'ws1',
           role: 'admin',
         },
@@ -415,7 +415,7 @@ describe('GraphQLAuthMiddleware', () => {
         isAuthenticated: true,
         user: {
           userId: '123',
-          email: 'test@example.com',
+          email: 'user1@2ly.ai',
           workspaceId: 'ws1',
           role: 'member',
         },
@@ -452,7 +452,7 @@ describe('GraphQLAuthMiddleware', () => {
         isAuthenticated: true,
         user: {
           userId: '123',
-          email: 'test@example.com',
+          email: 'user1@2ly.ai',
           workspaceId: 'ws1',
           role: 'member',
         },

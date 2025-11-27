@@ -12,7 +12,6 @@ enum MCPTransportType {
 }
 
 enum MCPServerRunOn {
-  GLOBAL
   AGENT
   EDGE
 }
@@ -32,6 +31,7 @@ type System {
   initialized: Boolean!
   createdAt: Date!
   updatedAt: Date!
+  runtimes: [Runtime!]
   defaultWorkspace: Workspace
 }
 
@@ -44,7 +44,6 @@ type Workspace {
   runtimes: [Runtime!]
   toolSets: [ToolSet!]
   registryServers: [MCPRegistryServer!]
-  globalRuntime: Runtime
   onboardingSteps: [OnboardingStep!]
 }
 
@@ -107,7 +106,8 @@ type Runtime {
   lastSeenAt: Date
   roots: String
   mcpServers: [MCPServer!]
-  workspace: Workspace!
+  workspace: Workspace
+  system: System
   hostIP: String
   hostname: String
   mcpClientName: String
@@ -152,6 +152,7 @@ type ToolCall {
   toolOutput: String
   error: String
   isTest: Boolean!
+  executedByAgent: Boolean
   mcpTool: MCPTool!
   calledBy: ToolSet
   executedBy: Runtime

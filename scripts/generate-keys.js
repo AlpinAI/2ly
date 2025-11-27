@@ -71,13 +71,13 @@ function generateJwtKeyPair() {
 }
 
 /**
- * Generate initial workspace master key in WSK format (46 characters)
+ * Generate initial system key in SYK format (46 characters)
  * Uses 32 random bytes (256-bit entropy) encoded as base64url
  * Matches the format used by IdentityRepository
- * @returns {string} Workspace key starting with WSK
+ * @returns {string} System key starting with SYK
  */
-function generateMasterKey() {
-  const prefix = 'WSK';
+function generateSystemKey() {
+  const prefix = 'SYK';
   const randomData = randomBytes(32)
     .toString('base64')
     .replace(/\+/g, '-')
@@ -125,7 +125,7 @@ async function main() {
   const encryptionKey = generateEncryptionKey();
   const natsOperatorSeed = await generateNatsOperatorSeed();
   const { privateKey, publicKey } = generateJwtKeyPair();
-  const masterKey = generateMasterKey();
+  const systemKey = generateSystemKey();
 
   // Write JWT key files
   writeSecureFile(PRIVATE_KEY_FILE, privateKey, 0o600);
@@ -144,8 +144,8 @@ async function main() {
     '# NATS operator seed (system-wide, used for JWT signing)',
     `NATS_OPERATOR_SEED=${natsOperatorSeed}`,
     '',
-    '# Initial workspace master key (used by runtime on first boot)',
-    `MASTER_KEY=${masterKey}`,
+    '# Initial system key (used by runtime on first boot)',
+    `SYSTEM_KEY=${systemKey}`,
     ''
   ].join('\n');
 
@@ -183,8 +183,8 @@ async function main() {
   console.log('NATS_OPERATOR_SEED (56 chars):');
   console.log(`  ${natsOperatorSeed}\n`);
 
-  console.log('MASTER_KEY (46 chars):');
-  console.log(`  ${masterKey}\n`);
+  console.log('SYSTEM_KEY (46 chars):');
+  console.log(`  ${systemKey}\n`);
 
   console.log('JWT Keys:');
   console.log(`  Private: ${PRIVATE_KEY_FILE} (2048-bit RSA)`);

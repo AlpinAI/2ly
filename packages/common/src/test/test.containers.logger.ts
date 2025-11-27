@@ -14,8 +14,7 @@
  */
 export function testLog(message: string, data?: unknown): void {
   if (process.env.TEST_LOGGING_ENABLED === 'true') {
-    const timestamp = new Date().toISOString();
-    console.log(`[TestEnvironment ${timestamp}] ${message}`);
+    console.log(`[Test] ${message}`);
     if (data !== undefined) {
       console.log(JSON.stringify(data, null, 2));
     }
@@ -28,8 +27,7 @@ export function testLog(message: string, data?: unknown): void {
  * @param error Optional error object or data
  */
 export function testError(message: string, error?: unknown): void {
-  const timestamp = new Date().toISOString();
-  console.error(`[TestEnvironment ERROR ${timestamp}] ${message}`);
+  console.error(`[Test ERROR] ${message}`);
   if (error !== undefined) {
     if (error instanceof Error) {
       console.error(error.message);
@@ -48,8 +46,7 @@ export function testError(message: string, error?: unknown): void {
  * @param data Optional data to log
  */
 export function testWarn(message: string, data?: unknown): void {
-  const time = new Date().toISOString().slice(11, 23);
-  console.warn(`[TestEnvironment WARN ${time}] ${message}`);
+  console.warn(`[Test WARN] ${message}`);
   if (data !== undefined) {
     console.warn(JSON.stringify(data, null, 2));
   }

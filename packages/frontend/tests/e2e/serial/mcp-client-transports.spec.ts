@@ -15,9 +15,8 @@
  */
 
 import { test, expect, seedPresets } from '@2ly/common/test/fixtures/playwright';
-import { createToolset } from '@2ly/common/test/fixtures/mcp-builders';
+import { createToolset, updateMCPServerToEdgeRuntime } from '@2ly/common/test/fixtures/mcp-builders';
 import { createMCPClient } from '@2ly/common/test/fixtures/playwright';
-import { TEST_MASTER_KEY } from '@2ly/common/test/test.containers';
 import {
   assertToolListing,
   assertListAllowedDirectoriesCall,
@@ -25,9 +24,11 @@ import {
   assertDisconnect,
   assertConnectionStatus,
 } from '@2ly/common/test/fixtures/mcp-test-helpers';
+import { dgraphQL } from '@2ly/common/test/fixtures';
 
 test.describe('MCP Client Transports', () => {
   const natsUrl = process.env.TEST_NATS_CLIENT_URL || 'nats://localhost:4222';
+  let workspaceKey: string | undefined;
 
   // Configure tests to run serially (one at a time)
   test.describe.configure({ mode: 'serial' });
@@ -41,6 +42,16 @@ test.describe('MCP Client Transports', () => {
     // This is a proven working setup from mcp-integration.spec.ts
     const entityIds = await seedDatabase(seedPresets.withSingleMCPServer);
     const workspaceId = entityIds['default-workspace'];
+    const mcpServerId = entityIds['server-file-system'];
+
+    // Update MCP server to use EDGE runtime (GLOBAL runOn has been removed)
+    await updateMCPServerToEdgeRuntime(graphql, mcpServerId, workspaceId);
+
+    // Get the workspace key
+    const result = await dgraphQL<{
+      queryIdentityKey: Array<{ key: string }>;
+    }>(`query { queryIdentityKey(filter: { relatedId: { eq: "${workspaceId}" } }) { key } }`);
+    workspaceKey = result.queryIdentityKey[0]?.key;
 
     // Wait for runtime to fully initialize and discover tools
     // The runtime needs time to connect to the MCP server and load its tools
@@ -63,7 +74,7 @@ test.describe('MCP Client Transports', () => {
    *
    * Key differences:
    * - No HTTP server required (no REMOTE_PORT)
-   * - Authentication via environment variables (TOOLSET_NAME/KEY + MASTER_KEY)
+   * - Authentication via environment variables (TOOLSET_NAME/KEY + WORKSPACE_KEY)
    * - 1:1 relationship with a single toolset
    * - Process lifecycle managed by MCP SDK
    */
@@ -74,6 +85,7 @@ test.describe('MCP Client Transports', () => {
       try {
         // Step 1: Connect via STDIO by spawning runtime process
         // The runtime will run in STDIO mode when TOOLSET_NAME is set and REMOTE_PORT is not
+        // TODO: fetch, provide and use the workspace key instead of the test system key to auth toolsets
         await mcpClient.connectSTDIO(
           {
             command: 'node',
@@ -83,7 +95,7 @@ test.describe('MCP Client Transports', () => {
             },
           },
           {
-            masterKey: TEST_MASTER_KEY,
+            workspaceKey,
             toolsetName: 'My tool set',
           }
         );
@@ -124,7 +136,7 @@ test.describe('MCP Client Transports', () => {
       const mcpClient = createMCPClient();
 
       try {
-        // Try to connect with invalid master key
+        // Try to connect with invalid workspace key
         await expect(async () => {
           await mcpClient.connectSTDIO(
             {
@@ -135,7 +147,7 @@ test.describe('MCP Client Transports', () => {
               },
             },
             {
-              masterKey: 'WSK_INVALID_KEY_FOR_TESTING',
+              workspaceKey: 'WSK_INVALID_KEY_FOR_TESTING',
               toolsetName: 'My tool set',
             }
           );
@@ -160,7 +172,7 @@ test.describe('MCP Client Transports', () => {
             },
           },
           {
-            masterKey: TEST_MASTER_KEY,
+            workspaceKey,
             toolsetName: 'My tool set',
           }
         );
@@ -208,7 +220,7 @@ test.describe('MCP Client Transports', () => {
       try {
         // Step 1: Connect to runtime via SSE transport
         await mcpClient.connectSSE(baseUrl, {
-          masterKey: TEST_MASTER_KEY,
+          workspaceKey,
           toolsetName: 'My tool set',
         });
 
@@ -253,10 +265,10 @@ test.describe('MCP Client Transports', () => {
       const mcpClient = createMCPClient();
 
       try {
-        // Try to connect with invalid master key - should reject
+        // Try to connect with invalid workspace key - should reject
         await expect(async () => {
           await mcpClient.connectSSE(baseUrl, {
-            masterKey: 'WSK_INVALID_KEY_FOR_TESTING',
+            workspaceKey: 'WSK_INVALID_KEY_FOR_TESTING',
           });
         }).rejects.toThrow();
 
@@ -273,7 +285,7 @@ test.describe('MCP Client Transports', () => {
         // Try to connect to non-existent server - should reject
         await expect(async () => {
           await mcpClient.connectSSE('http://localhost:9999', {
-            masterKey: TEST_MASTER_KEY,
+            workspaceKey,
           });
         }).rejects.toThrow();
 
@@ -307,7 +319,7 @@ test.describe('MCP Client Transports', () => {
       try {
         // Step 1: Connect to runtime via STREAM transport
         await mcpClient.connectSTREAM(baseUrl, {
-          masterKey: TEST_MASTER_KEY,
+          workspaceKey,
           toolsetName: 'My tool set',
         });
 
@@ -354,10 +366,10 @@ test.describe('MCP Client Transports', () => {
       const mcpClient = createMCPClient();
 
       try {
-        // Try to connect with invalid master key - should reject
+        // Try to connect with invalid workspace key - should reject
         await expect(async () => {
           await mcpClient.connectSTREAM(baseUrl, {
-            masterKey: 'WSK_INVALID_KEY_FOR_TESTING',
+            workspaceKey: 'WSK_INVALID_KEY_FOR_TESTING',
           });
         }).rejects.toThrow();
 
@@ -374,7 +386,7 @@ test.describe('MCP Client Transports', () => {
         // Try to connect to non-existent server - should reject
         await expect(async () => {
           await mcpClient.connectSTREAM('http://localhost:9999', {
-            masterKey: TEST_MASTER_KEY,
+            workspaceKey,
           });
         }).rejects.toThrow();
 
@@ -415,14 +427,14 @@ test.describe('MCP Client Transports', () => {
       try {
         // First connection
         await mcpClient.connectSTREAM(baseUrl, {
-          masterKey: TEST_MASTER_KEY,
+          workspaceKey,
           toolsetName: 'My tool set',
         });
 
         // Try to connect again without disconnecting
         await expect(async () => {
           await mcpClient.connectSTREAM(baseUrl, {
-            masterKey: TEST_MASTER_KEY,
+            workspaceKey,
             toolsetName: 'My tool set',
           });
         }).rejects.toThrow('Client already connected');

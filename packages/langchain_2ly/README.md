@@ -19,7 +19,7 @@ Use a workspace-level key that can create and access any toolset in your workspa
 **Get your key:**
 1. Open the 2ly UI
 2. Go to Settings > API Keys
-3. Click "Generate New Master Key"
+3. Click "Generate New Workspace Key"
 4. Copy the key (starts with `WSK_`)
 
 ### Approach 2: Toolset-Specific Key (Recommended)
@@ -45,7 +45,7 @@ async def main():
     # Automatically creates or connects to a toolset named "My Agent"
     async with MCPToolset.with_workspace_key(
         name="My Agent",
-        master_key="WSK_your_workspace_key_here"
+        workspace_key="WSK_your_workspace_key_here"
     ) as mcp:
         tools = await mcp.get_langchain_tools()
         agent = create_react_agent(llm, tools)
@@ -81,14 +81,14 @@ if __name__ == "__main__":
 `MCPToolset` uses the [Langchain MCP adapters](https://github.com/langchain-ai/langchain-mcp-adapters) internally. This is the recommended class for most use cases.
 
 **Factory methods:**
-- `MCPToolset.with_workspace_key(name, master_key, ...)` - Auto-discovery mode
+- `MCPToolset.with_workspace_key(name, workspace_key, ...)` - Auto-discovery mode
 - `MCPToolset.with_toolset_key(toolset_key, ...)` - Toolset-specific mode (recommended)
 
 **Constructor:**
 ```python
 MCPToolset(
-    name=None,                      # Toolset name (required with master_key)
-    master_key=None,                # Workspace key WSK_...
+    name=None,                      # Toolset name (required with workspace_key)
+    workspace_key=None,                # Workspace key WSK_...
     toolset_key=None,               # Toolset key TSK_...
     nats_servers="nats://localhost:4222",
     version="latest",               # @2ly/runtime npm version
@@ -101,14 +101,14 @@ MCPToolset(
 `MCPClient` is based strictly on the [Official MCP Python SDK](https://github.com/modelcontextprotocol/python-sdk) without the Langchain adapter dependency. The API is identical to `MCPToolset`.
 
 **Factory methods:**
-- `MCPClient.with_workspace_key(name, master_key, ...)` - Auto-discovery mode
+- `MCPClient.with_workspace_key(name, workspace_key, ...)` - Auto-discovery mode
 - `MCPClient.with_toolset_key(toolset_key, ...)` - Toolset-specific mode (recommended)
 
 **Constructor:**
 ```python
 MCPClient(
-    name=None,                      # Toolset name (required with master_key)
-    master_key=None,                # Workspace key WSK_...
+    name=None,                      # Toolset name (required with workspace_key)
+    workspace_key=None,                # Workspace key WSK_...
     toolset_key=None,               # Toolset key TSK_...
     nats_servers="nats://localhost:4222",
     version="latest",               # @2ly/runtime npm version
@@ -122,7 +122,7 @@ MCPClient(
 Both classes start the MCP runtime process lazily when you first call `get_langchain_tools()`. Using the `async with` context manager automatically handles cleanup:
 
 ```python
-async with MCPToolset.with_workspace_key(name="Agent", master_key=key) as mcp:
+async with MCPToolset.with_workspace_key(name="Agent", workspace_key=key) as mcp:
     tools = await mcp.get_langchain_tools()
     # Use tools...
     # Automatic cleanup when exiting context
@@ -131,7 +131,7 @@ async with MCPToolset.with_workspace_key(name="Agent", master_key=key) as mcp:
 Alternatively, call `start()` and `stop()` manually:
 
 ```python
-mcp = MCPToolset.with_workspace_key(name="Agent", master_key=key)
+mcp = MCPToolset.with_workspace_key(name="Agent", workspace_key=key)
 await mcp.start()
 tools = await mcp.get_langchain_tools()
 # Use tools...
@@ -157,7 +157,7 @@ cp examples/env.example examples/.env
 2. Edit `examples/.env` and add your credentials:
 ```bash
 GITHUB_TOKEN=github_pat_your_token_here
-MASTER_KEY=WSK_your_workspace_key_here
+WORKSPACE_KEY=WSK_your_workspace_key_here
 ```
 
 3. Run an example:

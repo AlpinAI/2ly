@@ -148,7 +148,7 @@ export class FastifyManagerService extends Service {
         'Content-Type',
         'mcp-session-id',
         'mcp-protocol-version',
-        'master_key',
+        'workspace_key',
         'toolset_key',
         'toolset_name',
         'x-custom-auth-headers',

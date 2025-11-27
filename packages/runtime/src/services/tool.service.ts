@@ -6,7 +6,6 @@ import {
 } from '@2ly/common';
 import { ToolClientService } from './tool.client.service';
 import { HealthService } from './runtime.health.service';
-import { AuthService } from './auth.service';
 
 @injectable()
 export class ToolService extends Service {
@@ -16,7 +15,6 @@ export class ToolService extends Service {
   constructor(
     @inject(LoggerService) private loggerService: LoggerService,
     @inject(ToolClientService) private toolClientService: ToolClientService,
-    @inject(AuthService) private authService: AuthService,
     @inject(HealthService) private healthService: HealthService,
   ) {
     super();
@@ -25,7 +23,6 @@ export class ToolService extends Service {
 
   protected async initialize() {
     this.logger.info('Starting');
-    await this.startService(this.authService);
     await this.healthService.waitForStarted();
     await this.startService(this.toolClientService);
   }
@@ -33,6 +30,5 @@ export class ToolService extends Service {
   protected async shutdown() {
     this.logger.info('Stopping');
     await this.stopService(this.toolClientService);
-    await this.stopService(this.authService);
   }
 }

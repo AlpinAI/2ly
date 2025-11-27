@@ -1,6 +1,6 @@
 ---
-title: "RunOn Types"
-description: "Choose where tools execute: GLOBAL, AGENT, or EDGE"
+title: 'RunOn Types'
+description: 'Choose where tools execute: AGENT, or EDGE'
 draft: true
 ---
 
@@ -8,27 +8,22 @@ Choose where tools runtime execute based on your deployment needs.
 
 ## RunOn Types
 
-| Type | Runs On | Scope | Lifetime | Use Case |
-|------|---------|-------|----------|----------|
-| **GLOBAL** | Workspace runtime | All agents | Persistent | Shared APIs, databases |
-| **AGENT** | Agent's runtime | Single agent | Session | Agent-specific context |
-| **EDGE** | User-selected runtime | Custom | Persistent | Local resources, edge devices |
+| Type      | Runs On               | Scope        | Lifetime   | Use Case                      |
+| --------- | --------------------- | ------------ | ---------- | ----------------------------- |
+| **AGENT** | Agent's runtime       | Single agent | Session    | Agent-specific context        |
+| **EDGE**  | User-selected runtime | Custom       | Persistent | Local resources, edge devices |
 
 ## Decision Matrix
 
-**Use GLOBAL when:**
-- Tool accessed by multiple agents
-- Stateless operations (APIs, transformations)
-- Central resource (shared database)
-- No agent-specific context needed
-
 **Use AGENT when:**
+
 - Tool needs agent's session context
 - Temporary state during conversation
 - Agent-specific configuration
 - Lifecycle tied to agent execution
 
 **Use EDGE when:**
+
 - Local filesystem access required
 - Hardware-specific operations
 - Data residency requirements
@@ -36,20 +31,20 @@ Choose where tools runtime execute based on your deployment needs.
 
 ## Examples
 
-### GLOBAL: Weather API
+### EDGE: Weather API
 
 ```json
 {
   "name": "weather_api",
   "type": "api_rest",
-  "runOn": "GLOBAL",
+  "runOn": "EDGE",
   "config": {
     "endpoint": "https://api.weather.com"
   }
 }
 ```
 
-**Why GLOBAL:** Stateless API, all agents use same endpoint
+**Why EDGE:** Stateless API, all agents use same endpoint
 
 ### AGENT: Session State
 
@@ -92,14 +87,12 @@ In tool configuration:
 {
   "tool": {
     "name": "my_tool",
-    "runOn": "GLOBAL" | "AGENT" | "EDGE"
+    "runOn": "AGENT" | "EDGE"
   }
 }
 ```
 
 ### Runtime Assignment
-
-**GLOBAL:** Auto-assigned to workspace's global runtime
 
 **AGENT:** Auto-assigned to agent's runtime when agent connects
 
@@ -107,7 +100,7 @@ In tool configuration:
 
 ## Best Practices
 
-**Default to GLOBAL** for stateless tools
+**Default to EDGE** for stateless tools
 
 **Use AGENT** only when session context required
 

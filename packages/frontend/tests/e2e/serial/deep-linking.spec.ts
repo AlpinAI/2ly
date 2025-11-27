@@ -21,8 +21,8 @@ test.describe('Deep Linking with Comprehensive Data', () => {
   // Log in before each test to ensure authenticated session
   test.beforeEach(async ({ page }) => {
     // Log in with the seeded user credentials
-    // Credentials from comprehensive seed: test@example.com / testpassword123
-    await performLogin(page, 'test@example.com', 'testpassword123');
+    // Credentials from comprehensive seed: user1@2ly.ai / testpassword123
+    await performLogin(page, 'user1@2ly.ai', 'testpassword123');
   });
 
   // Configure tests to run serially

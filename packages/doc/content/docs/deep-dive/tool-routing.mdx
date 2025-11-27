@@ -1,6 +1,6 @@
 ---
-title: "Tool Routing"
-description: "How tool execution requests are routed in 2LY"
+title: 'Tool Routing'
+description: 'How tool execution requests are routed in 2LY'
 draft: true
 ---
 
@@ -23,9 +23,7 @@ sequenceDiagram
     NATS->>Backend: Forward message
     Backend->>Backend: Look up MCPServer.runOn
 
-    alt runOn = GLOBAL
-        Backend->>Tool Runtime: Route to workspace.globalRuntime
-    else runOn = AGENT
+    alt runOn = AGENT
         Backend->>Agent Runtime: No routing (stays local)
     else runOn = EDGE
         Backend->>Tool Runtime: Route to MCPServer.runtime
@@ -42,30 +40,34 @@ sequenceDiagram
 
 The routing decision is based on `MCPServer.runOn`:
 
-### GLOBAL Routing
+### EDGE Routing
 
 **Configuration:**
+
 ```graphql
 mutation {
   createMCPServer(
-    runOn: GLOBAL
+    runOn: EDGE
     ...
   )
 }
 ```
 
-**Routing Logic:**
+**Routing Logic (incorrect, fix):**
+
 1. Backend looks up `workspace.globalRuntime`
 2. Routes `AgentCallMCPToolMessage` to global runtime
 3. Global runtime executes tool
 4. Result returned to agent runtime
 
 **Use Cases:**
+
 - Shared tools (GitHub API, public databases)
 - Stateless operations
 - Tools that all agents should access
 
 **Example:**
+
 ```
 Agent A → Tool "github_search" → Global Runtime → GitHub MCP Server
 Agent B → Tool "github_search" → Global Runtime → GitHub MCP Server
@@ -75,6 +77,7 @@ Agent B → Tool "github_search" → Global Runtime → GitHub MCP Server
 ### AGENT Routing
 
 **Configuration:**
+
 ```graphql
 mutation {
   createMCPServer(
@@ -85,17 +88,20 @@ mutation {
 ```
 
 **Routing Logic:**
+
 1. Backend detects `runOn = AGENT`
 2. No routing performed - stays on agent runtime
 3. Agent runtime executes tool locally
 4. Result returned directly
 
 **Use Cases:**
+
 - Agent-specific context or state
 - Session-based tools
 - Tools that follow agent deployment
 
 **Example:**
+
 ```
 Agent A → Tool "session_context" → Agent A's Runtime → Context MCP Server A
 Agent B → Tool "session_context" → Agent B's Runtime → Context MCP Server B
@@ -105,6 +111,7 @@ Agent B → Tool "session_context" → Agent B's Runtime → Context MCP Server 
 ### EDGE Routing
 
 **Configuration:**
+
 ```graphql
 mutation {
   createMCPServer(
@@ -122,17 +129,20 @@ mutation {
 ```
 
 **Routing Logic:**
+
 1. Backend looks up `MCPServer.runtime`
 2. Routes `AgentCallMCPToolMessage` to that runtime
 3. Edge runtime executes tool
 4. Result returned to agent runtime
 
 **Use Cases:**
+
 - User-specific tools (local filesystem, Docker)
 - Machine-specific resources
 - Sensitive operations on specific hardware
 
 **Example:**
+
 ```
 Agent A → Tool "docker_list" → Alice's Edge Runtime → Docker MCP Server
 Agent B → Tool "docker_list" → Bob's Edge Runtime → Docker MCP Server
@@ -156,6 +166,7 @@ Sent from agent runtime to request tool execution:
 ```
 
 **NATS Subject:**
+
 ```
 agent-call-mcp-tool.{toolId}.{fromRuntimeId}
 ```
@@ -184,19 +195,12 @@ Before an agent can call a tool, the tool must be organized into a ToolSet:
 ```graphql
 mutation {
   # Create a ToolSet
-  createToolSet(
-    name: "My Tools"
-    description: "Tools for my agent"
-    workspaceId: "workspace-id"
-  ) {
+  createToolSet(name: "My Tools", description: "Tools for my agent", workspaceId: "workspace-id") {
     id
   }
 
   # Add tool to ToolSet
-  addMCPToolToToolSet(
-    mcpToolId: "tool-id"
-    toolSetId: "toolset-id"
-  )
+  addMCPToolToToolSet(mcpToolId: "tool-id", toolSetId: "toolset-id")
 }
 ```
 
@@ -226,6 +230,7 @@ Backend publishes capabilities to agent runtime:
 ```
 
 **NATS Subject:**
+
 ```
 agent-capabilities.{RID}
 ```
@@ -240,21 +245,23 @@ When agent calls tool:
 
 ## Routing Examples
 
-### Example 1: Filesystem Tool (GLOBAL)
+### Example 1: Filesystem Tool (EDGE)
 
 **Setup:**
+
 ```graphql
 mutation {
   createMCPServer(
     name: "Filesystem"
     command: "npx"
     args: "@modelcontextprotocol/server-filesystem /shared"
-    runOn: GLOBAL
+    runOn: EDGE
   )
 }
 ```
 
 **Flow:**
+
 ```
 1. Agent calls "read_file"
 2. Agent runtime → NATS
@@ -268,41 +275,32 @@ mutation {
 ### Example 2: Docker Tool (EDGE)
 
 **Setup:**
+
 ```graphql
 # Create server
 mutation {
-  createMCPServer(
-    name: "Docker"
-    command: "npx"
-    args: "@modelcontextprotocol/server-docker"
-    runOn: EDGE
-  ) { id }
+  createMCPServer(name: "Docker", command: "npx", args: "@modelcontextprotocol/server-docker", runOn: EDGE) {
+    id
+  }
 }
 
 # Link to Alice's edge runtime
 mutation {
-  linkMCPServerToRuntime(
-    mcpServerId: "docker-server-id"
-    runtimeId: "alice-edge-runtime-id"
-  )
+  linkMCPServerToRuntime(mcpServerId: "docker-server-id", runtimeId: "alice-edge-runtime-id")
 }
 
 # Create a ToolSet and add the tool
 mutation {
-  createToolSet(
-    name: "Alice's Tools"
-    description: "Tools for Alice's agent"
-    workspaceId: "workspace-id"
-  ) { id }
+  createToolSet(name: "Alice's Tools", description: "Tools for Alice's agent", workspaceId: "workspace-id") {
+    id
+  }
 
-  addMCPToolToToolSet(
-    mcpToolId: "docker-list-containers-id"
-    toolSetId: "alice-toolset-id"
-  )
+  addMCPToolToToolSet(mcpToolId: "docker-list-containers-id", toolSetId: "alice-toolset-id")
 }
 ```
 
 **Flow:**
+
 ```
 1. Alice's agent calls "list_containers"
 2. Agent runtime → NATS
@@ -317,18 +315,15 @@ mutation {
 ### Example 3: Session Tool (AGENT)
 
 **Setup:**
+
 ```graphql
 mutation {
-  createMCPServer(
-    name: "Session Context"
-    command: "npx"
-    args: "@example/session-context"
-    runOn: AGENT
-  )
+  createMCPServer(name: "Session Context", command: "npx", args: "@example/session-context", runOn: AGENT)
 }
 ```
 
 **Flow:**
+
 ```
 1. Agent calls "get_context"
 2. Agent runtime (no NATS routing)
@@ -341,25 +336,21 @@ mutation {
 
 ## Routing Decision Matrix
 
-| runOn Type | Where MCP Server Runs | When to Use | Example |
-|------------|----------------------|-------------|---------|
-| GLOBAL | workspace.globalRuntime | Shared, stateless tools | GitHub API, public databases |
-| AGENT | Agent's runtime | Agent-specific, stateful | Session context, conversation history |
-| EDGE | Specific runtime | User/machine-specific | Local filesystem, Docker, personal APIs |
+| runOn Type | Where MCP Server Runs | When to Use              | Example                                 |
+| ---------- | --------------------- | ------------------------ | --------------------------------------- |
+| AGENT      | Agent's runtime       | Agent-specific, stateful | Session context, conversation history   |
+| EDGE       | Specific runtime      | User/machine-specific    | Local filesystem, Docker, personal APIs |
 
 ## Performance Considerations
 
-**GLOBAL:**
-- Lowest latency for remote agents (no extra hop)
-- Single MCP server instance
-- Potential bottleneck for high load
-
 **AGENT:**
+
 - No routing overhead
 - Higher memory usage (instance per agent)
 - Best for low-latency requirements
 
 **EDGE:**
+
 - Network hop to edge runtime
 - Isolated execution per user
 - Good for resource-intensive tools
@@ -367,26 +358,34 @@ mutation {
 ## Error Scenarios
 
 ### Tool Not Found
+
 Agent calls tool not in capabilities:
+
 ```
 Error: Tool "unknown_tool" not in capabilities
 ```
 
 ### Runtime Offline
+
 Target runtime is INACTIVE:
+
 ```
 Error: Runtime "edge-runtime" is offline
 Timeout waiting for response
 ```
 
 ### MCP Server Crashed
+
 Tool runtime's MCP server not running:
+
 ```
 Error: MCP server "docker" not available
 ```
 
 ### Invalid Arguments
+
 Tool call with wrong arguments:
+
 ```
 Error: Invalid arguments for tool "read_file"
 Missing required field: "path"
@@ -395,16 +394,18 @@ Missing required field: "path"
 ## Best Practices
 
 **For Tool Configuration:**
-- Use GLOBAL for shared, stateless tools
+
 - Use AGENT for session-specific tools
 - Use EDGE for user/machine-specific tools
 
 **For Capability Assignment:**
+
 - Only assign necessary tools to agents
 - Use workspace-level filtering
 - Review capabilities regularly
 
 **For Monitoring:**
+
 - Track tool execution latency by runOn type
 - Monitor runtime health for EDGE runtimes
 - Alert on routing timeouts
@@ -412,17 +413,20 @@ Missing required field: "path"
 ## Troubleshooting
 
 **Tool calls timing out:**
+
 - Check target runtime status (ACTIVE?)
 - Verify NATS connectivity
 - Review runtime logs
 - Check MCP server subprocess is running
 
 **Wrong tool result:**
+
 - Verify runOn type is correct
 - Check which runtime executed (logs)
 - Ensure EDGE linkage is correct
 
 **Tool not available:**
+
 - Check tool status is ACTIVE
 - Verify capability assignment
 - Confirm MCP server is running

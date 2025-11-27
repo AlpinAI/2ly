@@ -106,6 +106,7 @@ export const GET_MCPSERVER = gql`
   query getMCPServer($id: ID!) {
     getMCPServer(id: $id) {
       id
+      runOn
       runtime {
         id
       }
@@ -120,6 +121,7 @@ export const LINK_RUNTIME = gql`
         id
         name
         description
+        runOn
         runtime {
           id
           name
@@ -139,6 +141,7 @@ export const UNLINK_RUNTIME = gql`
         id
         name
         description
+        runOn
         runtime {
           id
         }

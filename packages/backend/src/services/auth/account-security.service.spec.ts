@@ -12,7 +12,7 @@ describe('AccountSecurityService', () => {
     it('should return low risk status for any user (POC mode)', async () => {
       const mockUser = {
         id: 'user123',
-        email: 'test@example.com',
+        email: 'user1@2ly.ai',
       };
 
       const status = await service.getAccountSecurityStatus(mockUser);

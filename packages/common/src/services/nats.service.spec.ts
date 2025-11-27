@@ -206,7 +206,7 @@ describe('NatsService Integration', () => {
             // Expect to throw since no responder is set up
             expect(error).toBeDefined();
         }
-        expect(requestSpy).toHaveBeenCalledWith('test.request.subject', expect.any(String), { timeout: DEFAULT_REQUEST_TIMEOUT });
+        expect(requestSpy).toHaveBeenCalledWith('test.request.subject', expect.any(String), { retryOnTimeout: false, timeout: DEFAULT_REQUEST_TIMEOUT });
     });
     it('await request and gets a NatsResponse in return', async () => {
         const svc = container.get(NatsService);

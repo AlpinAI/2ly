@@ -45,6 +45,7 @@ export {
   buildDatabaseServer,
   configureFileSystemMCPServer,
   createToolset,
+  updateMCPServerToEdgeRuntime,
 } from './mcp-builders';
 
 // NATS helpers
