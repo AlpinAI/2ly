@@ -1,0 +1,19 @@
+# Subscribe to MCP Server Test Progress
+# WHY: Receives real-time lifecycle events during MCP server testing
+# Stages: INSTALLING -> STARTING -> LISTING_TOOLS -> COMPLETED/FAILED
+subscription SubscribeMCPServerTestProgress($testSessionId: ID!) {
+  mcpServerTestProgress(testSessionId: $testSessionId) {
+    stage
+    message
+    timestamp
+    error {
+      code
+      message
+      details
+    }
+    tools {
+      id
+      name
+    }
+  }
+}

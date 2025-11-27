@@ -295,6 +295,24 @@ export const resolvers = (container: Container = defaultContainer): apolloResolv
       initSystem: async (_parent: unknown, { adminPassword, email }: { adminPassword: string; email: string }) => {
         return systemRepository.initSystem(adminPassword, email);
       },
+      testMCPServer: async (
+        _parent: unknown,
+        args: {
+          name: string;
+          repositoryUrl: string;
+          transport: 'STREAM' | 'STDIO' | 'SSE';
+          config: string;
+          workspaceId: string;
+        },
+      ) => {
+        return runtimeRepository.testMCPServer(
+          args.name,
+          args.repositoryUrl,
+          args.transport,
+          args.config,
+          args.workspaceId,
+        );
+      },
       callMCPTool: async (_parent: unknown, { toolId, input }: { toolId: string; input: string }) => {
         try {
           return runtimeRepository.callMCPTool(toolId, input);
@@ -456,6 +474,12 @@ export const resolvers = (container: Container = defaultContainer): apolloResolv
         subscribe: (_parent: unknown, { workspaceId }: { workspaceId: string }) => {
           const observable = toolSetRepository.observeToolSets(workspaceId);
           return observableToAsyncGenerator(observable, 'toolSets');
+        },
+      },
+      mcpServerTestProgress: {
+        subscribe: (_parent: unknown, { testSessionId }: { testSessionId: string }) => {
+          const observable = runtimeRepository.observeMCPServerTestProgress(testSessionId);
+          return observableToAsyncGenerator(observable, 'mcpServerTestProgress');
         },
       },
     },

@@ -1,0 +1,22 @@
+# Test MCP Server Mutation
+# WHY: Initiates a test of an MCP server configuration and returns a testSessionId
+# for subscribing to lifecycle progress events. Returns immediately before test completes.
+mutation TestMCPServer(
+  $workspaceId: ID!
+  $name: String!
+  $repositoryUrl: String!
+  $transport: MCPTransportType!
+  $config: String!
+) {
+  testMCPServer(
+    workspaceId: $workspaceId
+    name: $name
+    repositoryUrl: $repositoryUrl
+    transport: $transport
+    config: $config
+  ) {
+    success
+    testSessionId
+    error
+  }
+}

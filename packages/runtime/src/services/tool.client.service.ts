@@ -9,6 +9,8 @@ import {
   ToolSetCallToolRequest,
   RuntimeCallToolResponse,
   RuntimeMCPServersPublish,
+  RuntimeTestMCPServerRequest,
+  RuntimeMCPLifecyclePublish,
   MCP_SERVER_RUN_ON,
 } from '@2ly/common';
 import { AuthService } from './auth.service';
@@ -16,7 +18,7 @@ import { HealthService } from './runtime.health.service';
 import { ToolServerService, type ToolServerServiceFactory } from './tool.server.service';
 import { CallToolResult } from '@modelcontextprotocol/sdk/types.js';
 import { McpStdioService } from './mcp.stdio.service';
-import { Subscription } from 'rxjs';
+import { Subscription, firstValueFrom } from 'rxjs';
 import { optional } from 'inversify';
 
 @injectable()
@@ -47,6 +49,7 @@ export class ToolClientService extends Service {
     await this.natsService.waitForStarted();
     await this.healthService.waitForStarted();
     this.startObserveMCPServers();
+    this.startListeningForTestRequests();
 
     // Only subscribe to client roots if mcpStdioService is available
     if (this.mcpStdioService) {
@@ -273,5 +276,113 @@ export class ToolClientService extends Service {
     }
     this.mcpServers.delete(mcpServer.id);
     this.logger.info(`MCPServer ${mcpServer.name} stopped`);
+  }
+
+  /**
+   * Listen for test MCP server requests and handle them
+   */
+  private startListeningForTestRequests() {
+    const identity = this.authService.getIdentity();
+    if (!identity?.workspaceId) {
+      this.logger.warn('Cannot listen for test requests: workspaceId not found');
+      return;
+    }
+
+    this.logger.debug(`Listening for test MCP server requests for workspace ${identity.workspaceId}`);
+    const subject = RuntimeTestMCPServerRequest.subscribeToWorkspace(identity.workspaceId);
+    const subscription = this.natsService.subscribe(subject);
+    this.natsSubscriptions.push(subscription);
+
+    (async () => {
+      for await (const msg of subscription) {
+        if (msg instanceof RuntimeTestMCPServerRequest) {
+          this.logger.info(`Received test MCP server request for ${msg.data.name}`);
+          await this.handleTestMCPServer(msg);
+        }
+      }
+    })();
+  }
+
+  /**
+   * Handle a test MCP server request by starting it temporarily and publishing lifecycle events
+   */
+  private async handleTestMCPServer(request: RuntimeTestMCPServerRequest) {
+    const { testSessionId, name, repositoryUrl, transport, config } = request.data;
+    const serverId = `test-${testSessionId}`;
+
+    const publishEvent = (
+      stage: 'INSTALLING' | 'STARTING' | 'LISTING_TOOLS' | 'COMPLETED' | 'FAILED',
+      message: string,
+      tools?: import('@2ly/common').MCPTool[],
+      error?: { code: string; message: string; details?: string },
+    ) => {
+      const event = new RuntimeMCPLifecyclePublish({
+        serverId,
+        testSessionId,
+        stage,
+        message,
+        timestamp: new Date().toISOString(),
+        tools,
+        error,
+      });
+      this.natsService.publish(event);
+    };
+
+    try {
+      // INSTALLING stage - for STDIO transport, npm packages need to be installed
+      if (transport === 'STDIO') {
+        publishEvent('INSTALLING', `Installing npm packages for ${name}`);
+      }
+
+      // STARTING stage
+      publishEvent('STARTING', `Starting MCP server ${name}`);
+
+      // Create a temporary MCP server config
+      const mcpServerConfig: dgraphResolversTypes.McpServer = {
+        id: serverId,
+        name,
+        description: 'Test MCP Server',
+        repositoryUrl,
+        transport: transport as dgraphResolversTypes.McpTransportType,
+        config,
+        runOn: 'GLOBAL' as dgraphResolversTypes.McpServerRunOn,
+        tools: [],
+        registryServer: {} as dgraphResolversTypes.McpRegistryServer,
+        workspace: {} as dgraphResolversTypes.Workspace,
+      };
+
+      const roots = this.getRoots();
+      const mcpServerService = this.toolServerServiceFactory(mcpServerConfig, roots);
+
+      // Start the service
+      await this.startService(mcpServerService);
+
+      // LISTING_TOOLS stage
+      publishEvent('LISTING_TOOLS', `Listing tools from ${name}`);
+
+      // Wait for tools to be discovered (use firstValueFrom to avoid temporal dead zone with BehaviorSubject)
+      const discoveredTools = await firstValueFrom(mcpServerService.observeTools());
+      const tools: import('@2ly/common').MCPTool[] = discoveredTools.map((tool) => ({
+        name: tool.name,
+        description: tool.description,
+        inputSchema: tool.inputSchema,
+        annotations: tool.annotations,
+      }));
+
+      // Stop the test server
+      await this.stopService(mcpServerService);
+
+      // COMPLETED stage
+      publishEvent('COMPLETED', `Successfully tested ${name} - found ${tools.length} tools`, tools);
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      const errorCode = transport === 'STDIO' && errorMessage.includes('npm') ? 'NPM_INSTALL_FAILED' : 'SERVER_START_FAILED';
+
+      publishEvent('FAILED', `Failed to test ${name}`, undefined, {
+        code: errorCode,
+        message: errorMessage,
+        details: error instanceof Error ? error.stack : undefined,
+      });
+    }
   }
 }

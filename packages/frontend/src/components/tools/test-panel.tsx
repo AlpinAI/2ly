@@ -13,18 +13,73 @@
  */
 
 import { Button } from '@/components/ui/button';
-import { AlertCircle, CheckCircle, Clock, FlaskConical } from 'lucide-react';
+import { AlertCircle, CheckCircle, Clock, FlaskConical, Package, Play, Search } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 export type TestStatus = 'idle' | 'running' | 'success' | 'timeout' | 'error';
+export type LifecycleStage = 'INSTALLING' | 'STARTING' | 'LISTING_TOOLS' | null;
 
 interface TestPanelProps {
   status: TestStatus;
   serverName: string;
   tools?: Array<{ id: string; name: string }>;
   error?: string;
+  lifecycleStage?: LifecycleStage;
+  lifecycleMessage?: string;
   onRetry?: () => void;
   onConfigureAnother?: () => void;
   onFinish?: () => void;
+}
+
+// Stage progress indicator component
+function StageIndicator({ stage }: { stage: LifecycleStage }) {
+  const stageIndex = stage === 'INSTALLING' ? 0 : stage === 'STARTING' ? 1 : stage === 'LISTING_TOOLS' ? 2 : -1;
+
+  return (
+    <div className="flex items-center justify-center gap-2 mt-4">
+      {[0, 1, 2].map((index) => (
+        <div
+          key={index}
+          className={cn(
+            'w-2.5 h-2.5 rounded-full transition-all duration-300',
+            index < stageIndex
+              ? 'bg-cyan-500 dark:bg-cyan-400' // Completed
+              : index === stageIndex
+                ? 'bg-cyan-500 dark:bg-cyan-400 animate-pulse' // Current
+                : 'bg-gray-300 dark:bg-gray-600' // Pending
+          )}
+        />
+      ))}
+    </div>
+  );
+}
+
+// Get stage-specific icon
+function getStageIcon(stage: LifecycleStage) {
+  switch (stage) {
+    case 'INSTALLING':
+      return <Package className="h-12 w-12 text-cyan-600 dark:text-cyan-400 mb-4 mx-auto" />;
+    case 'STARTING':
+      return <Play className="h-12 w-12 text-cyan-600 dark:text-cyan-400 mb-4 mx-auto" />;
+    case 'LISTING_TOOLS':
+      return <Search className="h-12 w-12 text-cyan-600 dark:text-cyan-400 mb-4 mx-auto" />;
+    default:
+      return <FlaskConical className="h-12 w-12 text-cyan-600 dark:text-cyan-400 mb-4 mx-auto" />;
+  }
+}
+
+// Get stage-specific title
+function getStageTitle(stage: LifecycleStage): string {
+  switch (stage) {
+    case 'INSTALLING':
+      return 'Installing dependencies...';
+    case 'STARTING':
+      return 'Starting server...';
+    case 'LISTING_TOOLS':
+      return 'Discovering tools...';
+    default:
+      return 'Preparing test...';
+  }
 }
 
 export function TestPanel({
@@ -32,6 +87,8 @@ export function TestPanel({
   serverName,
   tools = [],
   error,
+  lifecycleStage,
+  lifecycleMessage,
   onRetry,
   onConfigureAnother,
   onFinish,
@@ -82,9 +139,14 @@ export function TestPanel({
 
             {/* Content */}
             <div className="relative text-center z-10">
-              <FlaskConical className="h-12 w-12 text-cyan-600 dark:text-cyan-400 mb-4 mx-auto" />
-              <h4 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-2">Testing {serverName}</h4>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Starting the server and discovering tools...</p>
+              {getStageIcon(lifecycleStage ?? null)}
+              <h4 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-2">
+                {getStageTitle(lifecycleStage ?? null)}
+              </h4>
+              <p className="text-sm text-gray-600 dark:text-gray-400 max-w-xs">
+                {lifecycleMessage || `Testing ${serverName}`}
+              </p>
+              <StageIndicator stage={lifecycleStage ?? null} />
             </div>
           </div>
         );

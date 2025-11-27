@@ -10,5 +10,7 @@ export * from './runtime-reconnect.publish';
 export * from './runtime.discovered-tools.publish';
 export * from './runtime.call-tool.response';
 export * from './runtime.mcp-servers.publish';
+export * from './runtime.mcp-lifecycle.publish';
+export * from './runtime.test-mcp-server.request';
 export * from './toolset.list-tools.publish';
 export * from './toolset.call-tool.request';
