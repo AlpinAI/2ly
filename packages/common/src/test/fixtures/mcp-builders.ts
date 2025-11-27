@@ -304,7 +304,7 @@ export function buildDatabaseServer(options?: {
 export const getRuntimeIdByType = async (
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   graphql: <T = any>(query: string, variables?: Record<string, any>) => Promise<T>,
-  workspaceId: string,
+  _workspaceId: string,
   runtimeType: 'MCP' | 'EDGE',
 ): Promise<string | undefined> => {
   const query = `

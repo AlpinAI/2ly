@@ -544,6 +544,7 @@ describe('ToolSetRepository', () => {
         description: '',
         repositoryUrl: '',
         transport: dgraphResolversTypes.McpTransportType.Stdio,
+        runOn: dgraphResolversTypes.McpServerRunOn.Agent,
         registryServer: mockRegistryServer1,
         workspace: mockWorkspace,
       };
@@ -555,6 +556,7 @@ describe('ToolSetRepository', () => {
         description: '',
         repositoryUrl: '',
         transport: dgraphResolversTypes.McpTransportType.Stdio,
+        runOn: dgraphResolversTypes.McpServerRunOn.Agent,
         registryServer: mockRegistryServer2,
         workspace: mockWorkspace,
       };
@@ -653,6 +655,7 @@ describe('ToolSetRepository', () => {
         description: '',
         repositoryUrl: '',
         transport: dgraphResolversTypes.McpTransportType.Stdio,
+        runOn: dgraphResolversTypes.McpServerRunOn.Agent,
         registryServer: mockRegistryServer,
         workspace: mockWorkspace,
       };

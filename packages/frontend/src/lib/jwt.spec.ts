@@ -13,8 +13,8 @@ describe('JWT Utility Functions', () => {
 
   describe('decodeJWT', () => {
     it('should decode a valid JWT token', () => {
-      // This is a sample JWT with payload: { userId: "123", email: "user1@2ly.ai", exp: 1234567890 }
-      const token = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiIxMjMiLCJlbWFpbCI6InRlc3RAZXhhbXBsZS5jb20iLCJyb2xlIjoibWVtYmVyIiwiaWF0IjoxMjM0NTY3ODkwLCJleHAiOjEyMzQ1Njc4OTB9.signature';
+      // This is a sample JWT with payload: { userId: "123", email: "user1@2ly.ai", role: "member", iat: 1234567890, exp: 1234567890 }
+      const token = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiIxMjMiLCJlbWFpbCI6InVzZXIxQDJseS5haSIsInJvbGUiOiJtZW1iZXIiLCJpYXQiOjEyMzQ1Njc4OTAsImV4cCI6MTIzNDU2Nzg5MH0.signature';
 
       const payload = decodeJWT(token);
 
@@ -43,7 +43,7 @@ describe('JWT Utility Functions', () => {
       vi.setSystemTime(new Date('2009-02-14T00:00:00Z'));
 
       // Token expires at 1234567890 (2009-02-13 23:31:30) - already expired
-      const expiredToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiIxMjMiLCJlbWFpbCI6InRlc3RAZXhhbXBsZS5jb20iLCJyb2xlIjoibWVtYmVyIiwiaWF0IjoxMjM0NTY3ODkwLCJleHAiOjEyMzQ1Njc4OTB9.signature';
+      const expiredToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiIxMjMiLCJlbWFpbCI6InVzZXIxQDJseS5haSIsInJvbGUiOiJtZW1iZXIiLCJpYXQiOjEyMzQ1Njc4OTAsImV4cCI6MTIzNDU2Nzg5MH0.signature';
 
       expect(isTokenExpired(expiredToken)).toBe(true);
     });
@@ -53,7 +53,7 @@ describe('JWT Utility Functions', () => {
       vi.setSystemTime(new Date('2009-02-13T23:00:00Z'));
 
       // Token expires at 1234567890 (2009-02-13 23:31:30) - still valid
-      const validToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiIxMjMiLCJlbWFpbCI6InRlc3RAZXhhbXBsZS5jb20iLCJyb2xlIjoibWVtYmVyIiwiaWF0IjoxMjM0NTY3ODkwLCJleHAiOjEyMzQ1Njc4OTB9.signature';
+      const validToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiIxMjMiLCJlbWFpbCI6InVzZXIxQDJseS5haSIsInJvbGUiOiJtZW1iZXIiLCJpYXQiOjEyMzQ1Njc4OTAsImV4cCI6MTIzNDU2Nzg5MH0.signature';
 
       expect(isTokenExpired(validToken)).toBe(false);
     });
@@ -63,7 +63,7 @@ describe('JWT Utility Functions', () => {
       vi.setSystemTime(new Date('2009-02-13T23:31:00Z'));
 
       // Token expires at 1234567890 (2009-02-13 23:31:30)
-      const token = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiIxMjMiLCJlbWFpbCI6InRlc3RAZXhhbXBsZS5jb20iLCJyb2xlIjoibWVtYmVyIiwiaWF0IjoxMjM0NTY3ODkwLCJleHAiOjEyMzQ1Njc4OTB9.signature';
+      const token = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiIxMjMiLCJlbWFpbCI6InVzZXIxQDJseS5haSIsInJvbGUiOiJtZW1iZXIiLCJpYXQiOjEyMzQ1Njc4OTAsImV4cCI6MTIzNDU2Nzg5MH0.signature';
 
       // With default 60s buffer, token should be considered expired
       expect(isTokenExpired(token)).toBe(true);
@@ -80,7 +80,7 @@ describe('JWT Utility Functions', () => {
 
   describe('getTokenExpiry', () => {
     it('should return expiry date for valid token', () => {
-      const token = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiIxMjMiLCJlbWFpbCI6InRlc3RAZXhhbXBsZS5jb20iLCJyb2xlIjoibWVtYmVyIiwiaWF0IjoxMjM0NTY3ODkwLCJleHAiOjEyMzQ1Njc4OTB9.signature';
+      const token = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiIxMjMiLCJlbWFpbCI6InVzZXIxQDJseS5haSIsInJvbGUiOiJtZW1iZXIiLCJpYXQiOjEyMzQ1Njc4OTAsImV4cCI6MTIzNDU2Nzg5MH0.signature';
 
       const expiry = getTokenExpiry(token);
 
@@ -100,7 +100,7 @@ describe('JWT Utility Functions', () => {
       vi.setSystemTime(new Date('2009-02-13T23:00:00Z'));
 
       // Token expires at 1234567890 (2009-02-13 23:31:30) - 1890 seconds from now
-      const token = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiIxMjMiLCJlbWFpbCI6InRlc3RAZXhhbXBsZS5jb20iLCJyb2xlIjoibWVtYmVyIiwiaWF0IjoxMjM0NTY3ODkwLCJleHAiOjEyMzQ1Njc4OTB9.signature';
+      const token = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiIxMjMiLCJlbWFpbCI6InVzZXIxQDJseS5haSIsInJvbGUiOiJtZW1iZXIiLCJpYXQiOjEyMzQ1Njc4OTAsImV4cCI6MTIzNDU2Nzg5MH0.signature';
 
       const timeUntilExpiry = getTimeUntilExpiry(token);
 
@@ -111,7 +111,7 @@ describe('JWT Utility Functions', () => {
       // Set current time to 2009-02-14 00:00:00 (after expiry)
       vi.setSystemTime(new Date('2009-02-14T00:00:00Z'));
 
-      const token = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiIxMjMiLCJlbWFpbCI6InRlc3RAZXhhbXBsZS5jb20iLCJyb2xlIjoibWVtYmVyIiwiaWF0IjoxMjM0NTY3ODkwLCJleHAiOjEyMzQ1Njc4OTB9.signature';
+      const token = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiIxMjMiLCJlbWFpbCI6InVzZXIxQDJseS5haSIsInJvbGUiOiJtZW1iZXIiLCJpYXQiOjEyMzQ1Njc4OTAsImV4cCI6MTIzNDU2Nzg5MH0.signature';
 
       expect(getTimeUntilExpiry(token)).toBe(0);
     });

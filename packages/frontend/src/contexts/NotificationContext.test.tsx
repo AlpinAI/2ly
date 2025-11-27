@@ -5,8 +5,8 @@
  * for proper behavior, accessibility, and error handling
  */
 
-import { describe, it, expect } from 'vitest';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
 import { NotificationProvider, useNotification } from './NotificationContext';
 import { useState } from 'react';
 
@@ -296,7 +296,19 @@ describe('NotificationContext', () => {
   });
 
   describe('toast() function', () => {
-    it('shows toast when toast is called', async () => {
+    beforeEach(() => {
+      vi.useFakeTimers();
+    });
+
+    afterEach(() => {
+      // Run all pending timers to avoid unhandled errors
+      act(() => {
+        vi.runAllTimers();
+      });
+      vi.useRealTimers();
+    });
+
+    it('shows toast when toast is called', () => {
       const TestComponent = () => {
         const { toast } = useNotification();
 
@@ -319,13 +331,11 @@ describe('NotificationContext', () => {
       const button = screen.getByText('Show Toast');
       fireEvent.click(button);
 
-      // Toast should be visible
-      await waitFor(() => {
-        expect(screen.getByText('Test notification')).toBeDefined();
-      });
+      // Toast should be visible immediately
+      expect(screen.getByText('Test notification')).toBeDefined();
     });
 
-    it('displays toast with title and description', async () => {
+    it('displays toast with title and description', () => {
       const TestComponent = () => {
         const { toast } = useNotification();
 
@@ -348,13 +358,11 @@ describe('NotificationContext', () => {
 
       fireEvent.click(screen.getByText('Show Toast'));
 
-      await waitFor(() => {
-        expect(screen.getByText('Success')).toBeDefined();
-        expect(screen.getByText('Operation completed')).toBeDefined();
-      });
+      expect(screen.getByText('Success')).toBeDefined();
+      expect(screen.getByText('Operation completed')).toBeDefined();
     });
 
-    it('applies correct variant styling', async () => {
+    it('applies correct variant styling', () => {
       const TestComponent = () => {
         const { toast } = useNotification();
 
@@ -376,11 +384,9 @@ describe('NotificationContext', () => {
 
       fireEvent.click(screen.getByText('Show Toast'));
 
-      await waitFor(() => {
-        // Check for error variant styling
-        const errorToast = container.querySelector('.border-red-500');
-        expect(errorToast).toBeDefined();
-      });
+      // Check for error variant styling
+      const errorToast = container.querySelector('.border-red-500');
+      expect(errorToast).toBeDefined();
     });
 
     it('auto-dismisses toast after default duration', async () => {
@@ -405,21 +411,22 @@ describe('NotificationContext', () => {
 
       fireEvent.click(screen.getByText('Show Toast'));
 
-      // Toast should appear
-      await waitFor(() => {
-        expect(screen.getByText('Auto dismiss test')).toBeDefined();
+      // Toast should appear immediately
+      expect(screen.getByText('Auto dismiss test')).toBeDefined();
+
+      // Advance timers to trigger dismiss (duration + animation delay)
+      await act(async () => {
+        vi.advanceTimersByTime(100); // duration
+      });
+      await act(async () => {
+        vi.advanceTimersByTime(200); // TOAST_REMOVE_DELAY
       });
 
-      // Toast should disappear after duration + animation delay
-      await waitFor(
-        () => {
-          expect(screen.queryByText('Auto dismiss test')).toBeNull();
-        },
-        { timeout: 500 }
-      );
+      // Toast should be gone
+      expect(screen.queryByText('Auto dismiss test')).toBeNull();
     });
 
-    it('shows icon for success variant', async () => {
+    it('shows icon for success variant', () => {
       const TestComponent = () => {
         const { toast } = useNotification();
 
@@ -441,14 +448,12 @@ describe('NotificationContext', () => {
 
       fireEvent.click(screen.getByText('Show Toast'));
 
-      await waitFor(() => {
-        // Look for the CheckCircle2 icon (success icon)
-        const successIcon = container.querySelector('.text-green-600');
-        expect(successIcon).toBeDefined();
-      });
+      // Look for the CheckCircle2 icon (success icon)
+      const successIcon = container.querySelector('.text-green-600');
+      expect(successIcon).toBeDefined();
     });
 
-    it('limits toast queue to 3 toasts', async () => {
+    it('limits toast queue to 3 toasts', () => {
       const TestComponent = () => {
         const { toast } = useNotification();
 
@@ -470,13 +475,11 @@ describe('NotificationContext', () => {
 
       fireEvent.click(screen.getByText('Show Toasts'));
 
-      await waitFor(() => {
-        // Should only show 3 toasts (Toast 4, 3, 2 - newest first)
-        expect(screen.getByText('Toast 4')).toBeDefined();
-        expect(screen.getByText('Toast 3')).toBeDefined();
-        expect(screen.getByText('Toast 2')).toBeDefined();
-        expect(screen.queryByText('Toast 1')).toBeNull(); // Should be dropped
-      });
+      // Should only show 3 toasts (Toast 4, 3, 2 - newest first)
+      expect(screen.getByText('Toast 4')).toBeDefined();
+      expect(screen.getByText('Toast 3')).toBeDefined();
+      expect(screen.getByText('Toast 2')).toBeDefined();
+      expect(screen.queryByText('Toast 1')).toBeNull(); // Should be dropped
     });
   });
 });

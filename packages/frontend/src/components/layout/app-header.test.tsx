@@ -106,8 +106,8 @@ describe('AppHeader', () => {
   it('renders user initials in avatar', () => {
     renderWithProviders(<AppHeader />);
 
-    // user1@2ly.ai should give "TE" initials
-    const initials = screen.getByText('TE');
+    // user1@2ly.ai should give "US" initials (first 2 chars of username before @)
+    const initials = screen.getByText('US');
     expect(initials).toBeDefined();
   });
 

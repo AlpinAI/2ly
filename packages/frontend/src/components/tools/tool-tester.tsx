@@ -116,7 +116,7 @@ export function ToolTester({ toolId, inputSchema, runOn }: ToolTesterProps) {
 
         // Extract GraphQL error messages
         if (err.graphQLErrors && Array.isArray(err.graphQLErrors) && err.graphQLErrors.length > 0) {
-          errorMessage = err.graphQLErrors.map((e: any) => e.message).join('\n');
+          errorMessage = err.graphQLErrors.map((e: { message: string }) => e.message).join('\n');
         } else if (err.message) {
           errorMessage = err.message;
         }
@@ -135,10 +135,8 @@ export function ToolTester({ toolId, inputSchema, runOn }: ToolTesterProps) {
         return;
       }
 
-      console.log('Tool call response:', response);
-
       // Check for GraphQL errors in response - both singular 'error' and plural 'errors'
-      const responseError = (response as any).error;
+      const responseError = response.error;
       if (responseError) {
         console.log('GraphQL error found in response:', responseError);
         // Extract message from error object
@@ -150,15 +148,6 @@ export function ToolTester({ toolId, inputSchema, runOn }: ToolTesterProps) {
         return;
       }
 
-      if (response.errors && response.errors.length > 0) {
-        console.log('GraphQL errors found in response:', response.errors);
-        const errorMessages = response.errors.map((err) => err.message).join('\n');
-        setExecutionResult({
-          success: false,
-          error: errorMessages,
-        });
-        return;
-      }
 
       // Check if we have data
       if (!response || !response.data) {

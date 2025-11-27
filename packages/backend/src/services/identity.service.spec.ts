@@ -8,6 +8,8 @@ import { RuntimeRepository } from '../repositories/runtime.repository';
 import { ToolSetRepository } from '../repositories/toolset.repository';
 import { LoggerService, NatsService, dgraphResolversTypes } from '@2ly/common';
 
+type Workspace = dgraphResolversTypes.Workspace;
+
 // Mock dependencies
 vi.mock('../repositories/identity.repository');
 vi.mock('./key-rate-limiter.service');
@@ -622,7 +624,7 @@ describe('IdentityService', () => {
         nature: 'workspace',
         relatedId: 'workspace-123',
       });
-      vi.spyOn(mockWorkspaceRepository, 'findById').mockResolvedValue(null as any);
+      vi.spyOn(mockWorkspaceRepository, 'findById').mockResolvedValue(null as unknown as Workspace);
 
       await (service as unknown as { handleHandshake: (msg: unknown) => Promise<void> }).handleHandshake(handshakeRequest);
 
