@@ -44,9 +44,9 @@ export const SET_CALLED_BY = gql`
 `;
 
 export const COMPLETE_TOOL_CALL_SUCCESS = gql`
-  mutation completeToolCallSuccess($id: ID!, $toolOutput: String!, $completedAt: DateTime!, $executedById: ID!) {
+  mutation completeToolCallSuccess($id: ID!, $toolOutput: String!, $completedAt: DateTime!) {
     updateToolCall(
-      input: { filter: { id: [$id] }, set: { status: COMPLETED, toolOutput: $toolOutput, completedAt: $completedAt, executedBy: { id: $executedById } } }
+      input: { filter: { id: [$id] }, set: { status: COMPLETED, toolOutput: $toolOutput, completedAt: $completedAt } }
     ) {
       toolCall {
         id
@@ -54,7 +54,6 @@ export const COMPLETE_TOOL_CALL_SUCCESS = gql`
         toolOutput
         completedAt
         isTest
-        executedBy { id name }
       }
     }
   }
@@ -72,6 +71,26 @@ export const COMPLETE_TOOL_CALL_ERROR = gql`
         completedAt
         isTest
       }
+    }
+  }
+`;
+
+export const SET_EXECUTED_BY_AGENT = gql`
+  mutation setExecutedByAgent($id: ID!) {
+    updateToolCall(
+      input: { filter: { id: [$id] }, set: { executedByAgent: true } }
+    ) {
+      toolCall { id executedByAgent }
+    }
+  }
+`;
+
+export const SET_EXECUTED_BY = gql`
+  mutation setExecutedBy($id: ID!, $executedById: ID!) {
+    updateToolCall(
+      input: { filter: { id: [$id] }, set: { executedBy: { id: $executedById } } }
+    ) {
+      toolCall { id executedBy { id name } }
     }
   }
 `;
@@ -123,6 +142,7 @@ export const QUERY_TOOL_CALLS_FILTERED = gql`
           completedAt
           status
           isTest
+          executedByAgent
           calledBy {
             id
             name

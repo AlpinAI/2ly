@@ -31,6 +31,7 @@ interface ToolCall {
     id: string;
     name: string;
   } | null;
+  executedByAgent?: boolean | null;
   executedBy?: {
     id: string;
     name: string;
@@ -116,14 +117,20 @@ export function ToolCallDetail({ toolCall }: ToolCallDetailProps) {
             {toolCall.isTest ? 'Test' : ''} {toolCall.calledBy?.name}
           </p>
         </div>
-        {toolCall.executedBy && (
+        {(toolCall.executedByAgent || toolCall.executedBy) && (
           <div>
             <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Executed By</p>
-            <p className="text-sm font-medium text-gray-900 dark:text-white">
-              {toolCall.executedBy.name}
-            </p>
-            {toolCall.executedBy.hostname && (
-              <p className="text-xs text-gray-500 dark:text-gray-400">{toolCall.executedBy.hostname}</p>
+            {toolCall.executedByAgent ? (
+              <p className="text-sm font-medium text-gray-900 dark:text-white">Agent's runtime</p>
+            ) : (
+              <>
+                <p className="text-sm font-medium text-gray-900 dark:text-white">
+                  {toolCall.executedBy!.name}
+                </p>
+                {toolCall.executedBy!.hostname && (
+                  <p className="text-xs text-gray-500 dark:text-gray-400">{toolCall.executedBy!.hostname}</p>
+                )}
+              </>
             )}
           </div>
         )}

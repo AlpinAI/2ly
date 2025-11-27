@@ -65,7 +65,7 @@ export async function assertListAllowedDirectoriesCall(client: MCPClientFixture)
   };
 
   expect(callResult).toBeDefined();
-  expect(callResult.content[0].text).toBe('Allowed directories:\n/tmp');
+  expect(callResult.content[0].text).toBe('Allowed directories:\n/');
 
   return callResult;
 }

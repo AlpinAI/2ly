@@ -133,6 +133,7 @@ const start = () => {
   loggerService.setLogLevel('mcp-auto-config', (process.env.MCP_AUTO_CONFIG_LOG_LEVEL || 'info') as pino.Level);
   loggerService.setLogLevel('identity', (process.env.IDENTITY_LOG_LEVEL || 'info') as pino.Level);
   loggerService.setLogLevel('toolset', (process.env.TOOLSET_LOG_LEVEL || 'info') as pino.Level);
+  loggerService.setLogLevel('runtime.instance', (process.env.RUNTIME_INSTANCE_LOG_LEVEL || 'info') as pino.Level);
   
   // Init Runtime Instance Factory
   container.bind<RuntimeInstanceFactory>(RuntimeInstance).toFactory((context) => {

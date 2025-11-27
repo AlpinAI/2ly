@@ -1,5 +1,5 @@
 import { test, expect, performLogin, seedPresets } from '@2ly/common/test/fixtures/playwright';
-import { configureFileSystemMCPServer, createToolset } from '@2ly/common/test/fixtures/mcp-builders';
+import { configureFileSystemMCPServer, createToolset, getRuntimeIdByType } from '@2ly/common/test/fixtures/mcp-builders';
 import { sendToolsetHandshake, waitForOnboardingStepComplete } from '@2ly/common/test/fixtures';
 
 /**
@@ -27,7 +27,7 @@ test.describe('Onboarding Flow', () => {
   test.describe('Onboarding start', () => {
     
     test.beforeEach(async ({ page }) => {
-      await performLogin(page, 'user1@example.com', 'password123');
+      await performLogin(page, 'user1@2ly.ai', 'password123');
     });
 
     test('displays all three onboarding steps on initial load', async ({ page }) => {
@@ -72,12 +72,19 @@ test.describe('Onboarding Flow', () => {
 
   test.describe('Step 1 completed', () => {
     test.beforeAll(async ({ graphql }) => {
-      await configureFileSystemMCPServer(graphql, workspaceId, 'GLOBAL');
+      // Get the EDGE runtime ID (from the runtime started by resetDatabase(true))
+      const runtimeId = await getRuntimeIdByType(graphql, workspaceId, 'EDGE');
+
+      if (!runtimeId) {
+        throw new Error('No EDGE runtime found. Ensure resetDatabase(true) was called in parent beforeAll.');
+      }
+
+      await configureFileSystemMCPServer(graphql, workspaceId, 'EDGE', runtimeId);
       await new Promise((resolve) => setTimeout(resolve, 5000));
     });
 
     test.beforeEach(async ({ page }) => {
-      await performLogin(page, 'user1@example.com', 'password123');
+      await performLogin(page, 'user1@2ly.ai', 'password123');
     });
 
     test('step 1 shows completed status after server is installed', async ({ page }) => {  
@@ -133,7 +140,7 @@ test.describe('Onboarding Flow', () => {
     });
 
     test.beforeEach(async ({ page }) => {
-      await performLogin(page, 'user1@example.com', 'password123');
+      await performLogin(page, 'user1@2ly.ai', 'password123');
     });
 
     test('step 3 shows Connect button when agent with tools exists', async ({ page }) => {
@@ -163,7 +170,7 @@ test.describe('Onboarding Flow', () => {
 
     // step 3 should contain only one test case since on refresh the onboarding is hidden
     test('step 3 shows completed status after connection', async ({ page, graphql, workspaceId }) => {     
-      await performLogin(page, 'user1@example.com', 'password123');
+      await performLogin(page, 'user1@2ly.ai', 'password123');
 
       // Get the toolset key
       const toolsetKeyQuery = `
@@ -180,7 +187,7 @@ test.describe('Onboarding Flow', () => {
       await sendToolsetHandshake({
         toolsetKey,
         toolsetName: 'My tool set',
-      });      
+      });
   
       // Wait for the onboarding step to be marked as complete
       await waitForOnboardingStepComplete(workspaceId, 'connect-tool-set-to-agent');

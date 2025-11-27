@@ -19,12 +19,12 @@ class TestMCPClientInit:
 
     def test_init_with_workspace_key(self):
         """Test initialization with workspace key and name."""
-        instance = MCPClient(name="test-client", master_key="WSK_test123")
+        instance = MCPClient(name="test-client", workspace_key="WSK_test123")
 
         assert instance.name == "test-client"
         assert instance.serverParams.command == "npx"
         assert instance.serverParams.args == ["@2ly/runtime@latest"]
-        assert instance.serverParams.env["MASTER_KEY"] == "WSK_test123"
+        assert instance.serverParams.env["WORKSPACE_KEY"] == "WSK_test123"
         assert instance.serverParams.env["TOOLSET_NAME"] == "test-client"
         assert instance.serverParams.env["NATS_SERVERS"] == "nats://localhost:4222"
 
@@ -34,14 +34,14 @@ class TestMCPClientInit:
 
         assert instance.name is None
         assert instance.serverParams.env["TOOLSET_KEY"] == "TSK_test456"
-        assert "MASTER_KEY" not in instance.serverParams.env
+        assert "WORKSPACE_KEY" not in instance.serverParams.env
         assert "TOOLSET_NAME" not in instance.serverParams.env
 
     def test_init_with_custom_options(self):
         """Test initialization with custom options."""
         instance = MCPClient(
             name="custom",
-            master_key="WSK_abc",
+            workspace_key="WSK_abc",
             nats_servers="nats://custom:4222",
             version="1.2.3",
             log_level="debug"
@@ -60,11 +60,11 @@ class TestMCPClientInit:
         """Test with_workspace_key factory method."""
         instance = MCPClient.with_workspace_key(
             name="factory-test",
-            master_key="WSK_factory"
+            workspace_key="WSK_factory"
         )
 
         assert instance.name == "factory-test"
-        assert instance.serverParams.env["MASTER_KEY"] == "WSK_factory"
+        assert instance.serverParams.env["WORKSPACE_KEY"] == "WSK_factory"
         assert instance.serverParams.env["TOOLSET_NAME"] == "factory-test"
 
     def test_factory_with_toolset_key(self):
@@ -72,7 +72,7 @@ class TestMCPClientInit:
         instance = MCPClient.with_toolset_key(toolset_key="TSK_factory")
 
         assert instance.serverParams.env["TOOLSET_KEY"] == "TSK_factory"
-        assert "MASTER_KEY" not in instance.serverParams.env
+        assert "WORKSPACE_KEY" not in instance.serverParams.env
 
 
 @pytest.mark.asyncio
@@ -96,7 +96,7 @@ async def test_get_langchain_tools_and_tools_dict():
 
     with patch("langchain_2ly.mcp_only.stdio_client", return_value=stdio_ctx) as _stdio, \
          patch("langchain_2ly.mcp_only.ClientSession", return_value=client_ctx) as _client:
-        instance = MCPClient.with_workspace_key(name="test", master_key="WSK_test")
+        instance = MCPClient.with_workspace_key(name="test", workspace_key="WSK_test")
         lc_tools = await instance.get_langchain_tools()
         assert [t.name for t in lc_tools] == ["tA", "tB"]
         tools_dict = await instance.tools()
@@ -141,7 +141,7 @@ async def test_start_timeout_raises_runtime_error_and_cleans_up():
         stdio_mock.return_value.__aenter__.return_value = (AsyncMock(), AsyncMock())
         instance = MCPClient.with_workspace_key(
             name="test",
-            master_key="WSK_test",
+            workspace_key="WSK_test",
             startup_timeout_seconds=0.01
         )
         with pytest.raises(RuntimeError, match="startup timed out"):
@@ -197,7 +197,7 @@ async def test_stop_closes_session_and_clears_state():
 
     with patch("langchain_2ly.mcp_only.stdio_client", return_value=stdio_ctx), \
          patch("langchain_2ly.mcp_only.ClientSession", return_value=client_ctx):
-        instance = MCPClient.with_workspace_key(name="test", master_key="WSK_test")
+        instance = MCPClient.with_workspace_key(name="test", workspace_key="WSK_test")
         await instance.get_langchain_tools()
         assert instance._session is not None
         await instance.stop()
@@ -241,7 +241,7 @@ class TestMCPClientEnvironmentVariables:
 
     def test_no_deprecated_runtime_name(self):
         """Test that RUNTIME_NAME is not set (deprecated)."""
-        instance = MCPClient.with_workspace_key(name="test", master_key="WSK_test")
+        instance = MCPClient.with_workspace_key(name="test", workspace_key="WSK_test")
         assert "RUNTIME_NAME" not in instance.serverParams.env
 
     def test_no_deprecated_workspace_id(self):
@@ -251,14 +251,14 @@ class TestMCPClientEnvironmentVariables:
 
     def test_log_level_optional(self):
         """Test that log_level is optional."""
-        instance = MCPClient.with_workspace_key(name="test", master_key="WSK_test")
+        instance = MCPClient.with_workspace_key(name="test", workspace_key="WSK_test")
         assert "LOG_LEVEL" not in instance.serverParams.env
 
     def test_log_level_when_provided(self):
         """Test that log_level is set when provided."""
         instance = MCPClient.with_workspace_key(
             name="test",
-            master_key="WSK_test",
+            workspace_key="WSK_test",
             log_level="debug"
         )
         assert instance.serverParams.env["LOG_LEVEL"] == "debug"

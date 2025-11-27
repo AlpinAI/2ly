@@ -1,5 +1,5 @@
 # Get Workspace Keys Query
-# WHY: Fetch all identity keys (master keys) for a workspace
+# WHY: Fetch all identity keys (workspace keys) for a workspace
 query GetWorkspaceKeys($workspaceId: ID!) {
   workspaceKeys(workspaceId: $workspaceId) {
     id

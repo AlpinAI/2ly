@@ -191,7 +191,7 @@ const GIT_COMMIT_SCHEMA = JSON.stringify({
 export const comprehensiveSeededData: SeedData = {
   users: [
     {
-      email: 'test@example.com',
+      email: 'user1@2ly.ai',
       password: 'testpassword123'
     },
   ],

@@ -8,20 +8,21 @@
  * - Parse JSON Schema to generate appropriate form fields
  * - Schema-aware inputs (strings, numbers, booleans, enums, arrays, objects)
  * - Execute tool with callMCPTool mutation
+ * - Disables testing for tools that run on AGENT mode (not currently supported)
  * - Validation before submission
  * - Display formatted output (JSON/text)
  *
  * USAGE:
  * ```tsx
- * <ToolTester toolId="tool-123" toolName="search" inputSchema={schema} />
+ * <ToolTester toolId="tool-123" toolName="search" inputSchema={schema} runOn="TOOLSET" />
  * ```
  */
 
 import { useState, useMemo, useRef, useEffect } from 'react';
 import { useMutation } from '@apollo/client/react';
-import { Play, Loader2, CheckCircle, AlertCircle } from 'lucide-react';
+import { Play, Loader2, CheckCircle, AlertCircle, Info } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { CallMcpToolDocument } from '@/graphql/generated/graphql';
+import { CallMcpToolDocument, McpServerRunOn } from '@/graphql/generated/graphql';
 import { SchemaInput } from './schema-input';
 import { parseJSONSchema, convertValueToType, validateSchemaValue } from '@/lib/jsonSchemaHelpers';
 
@@ -29,13 +30,14 @@ export interface ToolTesterProps {
   toolId: string;
   toolName: string;
   inputSchema: string;
+  runOn?: McpServerRunOn | null;
 }
 
 interface ToolInput {
   [key: string]: unknown;
 }
 
-export function ToolTester({ toolId, inputSchema }: ToolTesterProps) {
+export function ToolTester({ toolId, inputSchema, runOn }: ToolTesterProps) {
   const [inputValues, setInputValues] = useState<ToolInput>({});
   const [executionResult, setExecutionResult] = useState<{
     success: boolean;
@@ -43,6 +45,9 @@ export function ToolTester({ toolId, inputSchema }: ToolTesterProps) {
     error?: string;
   } | null>(null);
   const resultSectionRef = useRef<HTMLDivElement>(null);
+
+  // Check if tool runs on AGENT (testing not supported)
+  const isAgentTool = runOn === McpServerRunOn.Agent;
 
   const [callTool, { loading: isExecuting }] = useMutation(CallMcpToolDocument);
 
@@ -103,9 +108,69 @@ export function ToolTester({ toolId, inputSchema }: ToolTesterProps) {
           toolId,
           input: JSON.stringify(processedInputs),
         },
+      }).catch((err) => {
+        // Apollo mutation error - handle it here to access error details
+        console.error('Apollo mutation error caught:', err);
+
+        let errorMessage = 'An unexpected error occurred';
+
+        // Extract GraphQL error messages
+        if (err.graphQLErrors && Array.isArray(err.graphQLErrors) && err.graphQLErrors.length > 0) {
+          errorMessage = err.graphQLErrors.map((e: any) => e.message).join('\n');
+        } else if (err.message) {
+          errorMessage = err.message;
+        }
+
+        setExecutionResult({
+          success: false,
+          error: errorMessage,
+        });
+
+        // Return a signal object instead of null
+        return { __handled: true };
       });
 
-      if (response.data?.callMCPTool) {
+      // If error was handled in catch above
+      if (response && '__handled' in response) {
+        return;
+      }
+
+      console.log('Tool call response:', response);
+
+      // Check for GraphQL errors in response - both singular 'error' and plural 'errors'
+      const responseError = (response as any).error;
+      if (responseError) {
+        console.log('GraphQL error found in response:', responseError);
+        // Extract message from error object
+        const errorMessage = responseError.message || responseError.toString() || 'An error occurred';
+        setExecutionResult({
+          success: false,
+          error: errorMessage,
+        });
+        return;
+      }
+
+      if (response.errors && response.errors.length > 0) {
+        console.log('GraphQL errors found in response:', response.errors);
+        const errorMessages = response.errors.map((err) => err.message).join('\n');
+        setExecutionResult({
+          success: false,
+          error: errorMessages,
+        });
+        return;
+      }
+
+      // Check if we have data
+      if (!response || !response.data) {
+        console.warn('No data in response:', response);
+        setExecutionResult({
+          success: false,
+          error: 'No response data received from server',
+        });
+        return;
+      }
+
+      if (response.data.callMCPTool) {
         const { success, result } = response.data.callMCPTool;
 
         if (success) {
@@ -124,15 +189,28 @@ export function ToolTester({ toolId, inputSchema }: ToolTesterProps) {
         } else {
           setExecutionResult({
             success: false,
-            error: 'Tool execution failed',
+            error: result || 'Tool execution failed',
           });
         }
+      } else {
+        console.warn('No callMCPTool in response.data:', response.data);
+        setExecutionResult({
+          success: false,
+          error: 'No response data received from server',
+        });
       }
     } catch (error) {
-      console.error('Error calling tool:', error);
+      // Catch any unexpected errors that weren't handled above
+      console.error('Unexpected error calling tool:', error);
+
+      let errorMessage = 'An unexpected error occurred';
+      if (error instanceof Error) {
+        errorMessage = error.message;
+      }
+
       setExecutionResult({
         success: false,
-        error: error instanceof Error ? error.message : 'An unexpected error occurred',
+        error: errorMessage,
       });
     }
   };
@@ -141,7 +219,12 @@ export function ToolTester({ toolId, inputSchema }: ToolTesterProps) {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h4 className="text-sm font-medium text-gray-900 dark:text-white">Test Tool</h4>
-        <Button onClick={handleTest} disabled={isExecuting} size="sm" className="gap-2">
+        <Button
+          onClick={handleTest}
+          disabled={isExecuting || isAgentTool}
+          size="sm"
+          className="gap-2"
+        >
           {isExecuting ? (
             <>
               <Loader2 className="h-4 w-4 animate-spin" />
@@ -155,6 +238,14 @@ export function ToolTester({ toolId, inputSchema }: ToolTesterProps) {
           )}
         </Button>
       </div>
+
+      {/* Info message for AGENT tools */}
+      {isAgentTool && (
+        <div className="flex items-start gap-2 text-sm text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 rounded-lg p-3">
+          <Info className="h-4 w-4 mt-0.5 flex-shrink-0" />
+          <p>Testing is not currently supported for tools running on agent mode.</p>
+        </div>
+      )}
 
       {/* Input Fields */}
       {inputProperties.length > 0 ? (

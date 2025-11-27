@@ -9,7 +9,7 @@
 
 export { startRuntime, stopRuntime, TestEnvironment, type TestEnvironmentConfig,
   type TestEnvironmentServices, } from './test.containers.environment';
-export { TEST_ENCRYPTION_KEY, TEST_MASTER_KEY } from './test.containers.constants';
+export { TEST_ENCRYPTION_KEY, TEST_SYSTEM_KEY as TEST_MASTER_KEY } from './test.containers.constants';
 export * from '../node-helpers/password';
 export * from '../messages/handshake.request';
 export * from '../messages/handshake.response';

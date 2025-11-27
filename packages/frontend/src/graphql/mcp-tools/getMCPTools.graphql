@@ -15,6 +15,7 @@ query GetMCPTools($workspaceId: ID!) {
       name
       description
       repositoryUrl
+      runOn
     }
     toolSets {
       id

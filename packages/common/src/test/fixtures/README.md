@@ -37,7 +37,7 @@ import {
   resetDatabase,
   seedDatabase,
   seedPresets,
-  createMCPClient  // ← Now available for integration tests!
+  createMCPClient, // ← Now available for integration tests!
 } from '@2ly/common/test/fixtures';
 
 describe('My Feature Tests', () => {
@@ -47,7 +47,14 @@ describe('My Feature Tests', () => {
   });
 
   it('should test something', async () => {
-    const result = await graphql(`query { workspaces { id name } }`);
+    const result = await graphql(`
+      query {
+        workspaces {
+          id
+          name
+        }
+      }
+    `);
     expect(result.workspaces).toHaveLength(1);
   });
 
@@ -71,7 +78,7 @@ test.describe('My Feature', () => {
   test.beforeEach(async ({ resetDatabase, seedDatabase, page }) => {
     await resetDatabase();
     await seedDatabase(seedPresets.withSingleMCPServer);
-    await performLogin(page, 'user1@example.com', 'password123');
+    await performLogin(page, 'user1@2ly.ai', 'password123');
   });
 
   test('should display MCP server', async ({ page, workspaceId }) => {
@@ -83,66 +90,86 @@ test.describe('My Feature', () => {
 ## Core Utilities
 
 ### `graphql(query, variables)`
+
 Execute GraphQL queries against the backend API.
 
 ### `resetDatabase()`
+
 Drop all data and reset database to empty state.
 
 ### `seedDatabase(data)`
+
 Populate database with test data.
+
 - **Integration tests**: Use simple version via backend API
 - **E2E tests**: Use Playwright fixture for comprehensive seeding with direct Dgraph access
 
 ### `getDatabaseState()`
+
 Inspect current database state for debugging/assertions.
 
 ### `request(path, options)`
+
 Make direct HTTP requests to the backend.
 
 ## Seed Presets
 
 ### `seedPresets.defaultWorkspace`
+
 Single workspace with no additional data.
 
 ### `seedPresets.multipleWorkspaces`
+
 Multiple workspaces for testing workspace management.
 
 ### `seedPresets.withUsers`
+
 Basic user setup for authentication tests.
 
 ### `seedPresets.withSingleMCPServer`
+
 Minimal MCP server setup (recommended for most tests).
 
 ### `seedPresets.workspaceWithServers`
+
 Multiple MCP servers without users.
 
 ### `seedPresets.fullSetup`
+
 Complete setup with users, workspaces, and servers.
 
 ### `seedPresets.comprehensive`
+
 Complete setup with multiple servers, tools, runtimes, and tool calls (E2E only).
 
 ## MCP Builders
 
 ### `buildFilesystemServerConfig(directoryPath?)`
+
 Create filesystem server configuration.
 
 ### `buildFilesystemRegistryServer(options?)`
+
 Create registry server entry for filesystem server.
 
 ### `buildMinimalFilesystemServer(options?)`
+
 Create minimal filesystem server seed (most common use case).
 
 ### `buildGenericServerConfig(identifier, version)`
+
 Create generic server config for SSE/STREAM transports.
 
 ### `buildWebFetchServer(options?)`
+
 Build a Web Fetch MCP server (SSE transport).
 
 ### `buildDevelopmentToolsServer(options?)`
+
 Build a Development Tools MCP server (STREAM transport).
 
 ### `buildDatabaseServer(options?)`
+
 Build a Database MCP server (STDIO transport).
 
 ## Dynamic Helpers
@@ -150,34 +177,43 @@ Build a Database MCP server (STDIO transport).
 These helpers create entities dynamically via GraphQL:
 
 ### `configureFileSystemMCPServer(graphql, workspaceId, runOn)`
+
 Create a filesystem MCP server via GraphQL.
 
 ### `createRuntime(graphql, waitForTimeout, workspaceId, name, description, type)`
+
 Create a runtime dynamically.
 
 ### `createToolset(graphql, workspaceId, name, description, nbToolsToLink)`
+
 Create a toolset and link tools dynamically.
 
 ## NATS Helpers
 
 ### `sendToolsetHandshake(params)`
+
 Send a toolset handshake message to trigger onboarding step 3.
 
 ### `waitForOnboardingStepComplete(workspaceId, stepId, timeoutMs, pollIntervalMs)`
+
 Poll for onboarding step completion using direct Dgraph queries.
 
 ### `closeNatsConnection()`
+
 Close the NATS connection.
 
 ## Playwright-Specific
 
 ### `test`
+
 Extended Playwright test with database fixtures.
 
 ### `performLogin(page, email, password)`
+
 Automate login flow for authenticated test scenarios.
 
 ### `createMCPClient()`
+
 Create an MCP client for testing STDIO, SSE, and STREAM transports.
 
 ## Best Practices
@@ -191,6 +227,7 @@ Create an MCP client for testing STDIO, SSE, and STREAM transports.
 ## Type Safety
 
 All fixtures are strongly-typed using:
+
 - `SeedData` interface for seed data
 - `MCPServerConfig` for MCP server configurations
 - `RegistryServerSeed` for registry servers

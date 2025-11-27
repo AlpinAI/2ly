@@ -26,10 +26,6 @@ export const QUERY_WORKSPACE = gql`
       id
       name
       createdAt
-      globalRuntime {
-        id
-        name
-      }
       onboardingSteps {
         id
         stepId
@@ -50,10 +46,6 @@ export const QUERY_WORKSPACES = gql`
       id
       name
       createdAt
-      globalRuntime {
-        id
-        name
-      }
     }
   }
 `;
@@ -66,10 +58,6 @@ export const QUERY_WORKSPACES_BY_USER = gql`
         id
         name
         createdAt
-        globalRuntime {
-          id
-          name
-        }
       }
     }
   }
@@ -97,6 +85,7 @@ export const QUERY_WORKSPACE_WITH_RUNTIMES = gql`
           id
           name
           description
+          runOn
         }
       }
     }
@@ -126,6 +115,7 @@ export const QUERY_WORKSPACE_WITH_MCP_SERVERS = gql`
             id
             name
             description
+            runOn
           }
         }
         runtime {
@@ -163,6 +153,7 @@ export const QUERY_WORKSPACE_WITH_MCP_TOOLS = gql`
           name
           description
           repositoryUrl
+          runOn
         }
         toolSets {
           id
@@ -181,27 +172,6 @@ export const UPDATE_WORKSPACE = gql`
         id
         name
         createdAt
-      }
-    }
-  }
-`;
-
-
-export const SET_GLOBAL_RUNTIME = gql`
-  mutation setGlobalRuntime($id: ID!, $runtimeId: ID!) {
-    updateWorkspace(input: { filter: { id: [$id] }, set: { globalRuntime: { id: $runtimeId } } }) {
-      workspace {
-        id
-      }
-    }
-  }
-`;
-
-export const UNSET_GLOBAL_RUNTIME = gql`
-  mutation unsetGlobalRuntime($id: ID!) {
-    updateWorkspace(input: { filter: { id: [$id] }, set: { globalRuntime: null } }) {
-      workspace {
-        id
       }
     }
   }

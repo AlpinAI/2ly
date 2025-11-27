@@ -8,7 +8,7 @@ import {
   RUNTIME_SUBJECT,
 } from '@2ly/common';
 import { RuntimeRepository } from '../repositories';
-import { BehaviorSubject, combineLatest, debounceTime, of, Subscription, switchMap, tap } from 'rxjs';
+import { BehaviorSubject, combineLatest, debounceTime, Subscription, tap } from 'rxjs';
 import type { ConnectionMetadata } from '../types';
 
 export const CHECK_HEARTBEAT_INTERVAL = 'check.heartbeat.interval';
@@ -18,7 +18,7 @@ export class RuntimeInstance extends Service {
   name = 'runtime-instance';
   private rxjsSubscriptions: Subscription[] = [];
   private natsSubscriptions: { unsubscribe: () => void; drain: () => Promise<void> }[] = [];
-  private isGlobalRuntime: BehaviorSubject<boolean> = new BehaviorSubject(false);
+  private isSystemRuntime: BehaviorSubject<boolean> = new BehaviorSubject(false);
 
   constructor(
     private logger: pino.Logger,
@@ -106,8 +106,6 @@ export class RuntimeInstance extends Service {
   /**
    * Observe the list of MCP servers that a runtime should run. This list is composed of:
    * - MCP Servers running "on the edge" with a direct link to the runtime (Runtime - (mcpServers) -> MCP Server(filter runOn: EDGE))
-   * - MCP Servers running "on the agent side" AND that are linked to the runtime via an MCP Tool (Runtime - (mcpToolCapabilities) -> MCP Tool - (mcpServer) -> MCP Server)
-   * - ONLY if the runtime is the global runtime, the list of MCP Servers running "on Main Runtime" with property runOn: GLOBAL
    *
    * Publish an UpdateConfiguredMCPServerMessage in the nats KV ephemeral store
    * - the message will stay in the KV ephemeral long enough to be observed by the runtime
@@ -119,34 +117,24 @@ export class RuntimeInstance extends Service {
     this.logger.info(`Observing MCP Servers for runtime ${this.instance.id}`);
     const runtime = await this.runtimeRepository.getRuntime(this.instance.id);
     const roots = this.runtimeRepository.observeRoots(this.instance.id);
-    const edgeMcpServers = this.runtimeRepository.observeMCPServersOnEdge(this.instance.id);
-    const agentMcpServers = this.runtimeRepository.observeMCPServersOnAgent(this.instance.id);
-    this.isGlobalRuntime.next(runtime.workspace.globalRuntime?.id === this.instance.id);
-    const globalMcpServers = this.isGlobalRuntime.pipe(
-      switchMap((isGlobal) => isGlobal ? this.runtimeRepository.observeMCPServersOnGlobal(runtime.workspace.id) : of([] as dgraphResolversTypes.McpServer[])),
-    );
-    const subscription = combineLatest([roots, edgeMcpServers, agentMcpServers, globalMcpServers])
+    const mcpServers = this.runtimeRepository.observeMCPServersOnEdge(this.instance.id);
+
+    this.isSystemRuntime.next(runtime.system?.id === this.instance.id);
+    const subscription = combineLatest([roots, mcpServers])
       .pipe(
         debounceTime(100), // debounce to avoid spamming the nats service
-        tap(([roots, edgeMcpServers, agentMcpServers, globalMcpServers]) => {
+        tap(([roots, mcpServers]) => {
           if (!this.instance) {
             // ignore
             return;
           }
-          const mcpServers = [...edgeMcpServers, ...agentMcpServers, ...globalMcpServers].reduce((acc, mcpServer) => {
-            if (!acc.has(mcpServer.id)) {
-              acc.set(mcpServer.id, mcpServer);
-            }
-            return acc;
-          }, new Map<string, dgraphResolversTypes.McpServer>());
-          this.logger.debug(`Update with ${mcpServers.size} MCP Servers for runtime ${this.instance.id}`);
+          this.logger.debug(`Update with ${mcpServers.length} MCP Servers for runtime ${this.instance.id}`);
           const mcpServersMessage = RuntimeMCPServersPublish.create({
-            workspaceId: runtime.workspace.id,
+            workspaceId: runtime.workspace?.id ?? null,
             runtimeId: this.instance.id,
             roots,
-            mcpServers: Array.from(mcpServers.values()),
+            mcpServers,
           }) as RuntimeMCPServersPublish;
-
           this.natsService.publishEphemeral(mcpServersMessage);
         }),
       )

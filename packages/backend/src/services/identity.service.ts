@@ -8,9 +8,10 @@ import { RuntimeRepository } from '../repositories/runtime.repository';
 import { ToolSetRepository } from '../repositories/toolset.repository';
 import { v4 as uuidv4 } from 'uuid';
 import { HandshakeRuntimeCallback, HandshakeToolsetCallback } from '../types';
+import { SystemRepository } from '../repositories/system.repository';
 
 /**
- * TokenService handles validation of Master Keys, Toolset Keys, and Runtime Keys.
+ * TokenService handles validation of System Keys, Workspace Keys, and Toolset Keys.
  * It also generates NATS JWTs for authenticated runtimes.
  */
 @injectable()
@@ -31,6 +32,7 @@ export class IdentityService extends Service {
     @inject(NatsService) private readonly natsService: NatsService,
     @inject(IdentityRepository) private readonly identityRepository: IdentityRepository,
     @inject(KeyRateLimiterService) private readonly keyRateLimiter: KeyRateLimiterService,
+    @inject(SystemRepository) private readonly systemRepository: SystemRepository,
     @inject(WorkspaceRepository) private readonly workspaceRepository: WorkspaceRepository,
     @inject(RuntimeRepository) private readonly runtimeRepository: RuntimeRepository,
     @inject(ToolSetRepository) private readonly toolsetRepository: ToolSetRepository,
@@ -103,7 +105,26 @@ export class IdentityService extends Service {
       let runtime: dgraphResolversTypes.Runtime | null = null;
       let toolset: dgraphResolversTypes.ToolSet | null = null;
 
-      if (nature === 'workspace') {
+      if (nature === 'system') {
+        this.logger.debug(`Handshake with system identity: ${relatedId}`);
+        const system = await this.systemRepository.getSystem();
+        if (!system) {
+          throw new Error(`System not found`);
+        }
+        // upsert the runtime or toolset
+        if (msg.data.nature === 'runtime' && msg.data.name) {
+          runtime = await this.runtimeRepository.findByName('system', system.id, msg.data.name) ?? null;
+          if (!runtime) {
+            this.logger.debug(`Creating runtime ${msg.data.name} for system ${system.id}`);
+            runtime = await this.runtimeRepository.create('system', system.id, msg.data.name, '', 'ACTIVE', 'EDGE');
+          } else {
+            this.logger.debug(`Found runtime identity for ${msg.data.name}: ${runtime.id}`);
+          }
+          finalNature = 'runtime';
+          finalRelatedId = runtime.id;
+          finalRelatedName = msg.data.name;
+        }
+      } else if (nature === 'workspace') {
         this.logger.debug(`Handshake with workspace identity: ${relatedId}`);
         const workspace = await this.workspaceRepository.findById(relatedId);
         if (!workspace) {
@@ -112,10 +133,10 @@ export class IdentityService extends Service {
         workspaceId = workspace.id;
         // upsert the runtime or toolset
         if (msg.data.nature === 'runtime' && msg.data.name) {
-          runtime = await this.runtimeRepository.findByName(workspace.id, msg.data.name) ?? null;
+          runtime = await this.runtimeRepository.findByName('workspace', workspace.id, msg.data.name) ?? null;
           if (!runtime) {
             this.logger.debug(`Creating runtime ${msg.data.name} for workspace ${workspace.id}`);
-            runtime = await this.runtimeRepository.create(msg.data.name, '', 'INACTIVE', workspace.id, 'EDGE');
+            runtime = await this.runtimeRepository.create('workspace', workspace.id, msg.data.name, '', 'ACTIVE', 'EDGE');
           } else {
             this.logger.debug(`Found runtime identity for ${msg.data.name}: ${runtime.id}`);
           }
@@ -140,7 +161,7 @@ export class IdentityService extends Service {
         if (!runtime) {
           throw new Error(`Runtime ${relatedId} not found`);
         }
-        workspaceId = runtime.workspace.id;
+        workspaceId = runtime.workspace?.id ?? null;
         finalNature = 'runtime';
         finalRelatedId = runtime.id;
         finalRelatedName = runtime.name;
@@ -158,8 +179,11 @@ export class IdentityService extends Service {
         throw new Error(`Unknown nature: ${nature}`);
       }
 
-      if (!workspaceId || !finalNature || !finalRelatedId || !finalRelatedName) {
+      if (!finalNature || !finalRelatedId || !finalRelatedName) {
         throw new Error('Could not retrieve identity');
+      }
+      if (finalNature === 'toolset' && !workspaceId) {
+        throw new Error('Authentication failed: workspace ID cannot be null for toolsets');
       }
       // set roots if provided
       if (finalNature === 'runtime' && runtime && msg.data.roots) {

@@ -156,7 +156,7 @@ export function buildMCPServerSeed(options: {
   repositoryUrl: string;
   transport: 'STDIO' | 'SSE' | 'STREAM';
   config: MCPServerConfig;
-  runOn: 'GLOBAL' | 'AGENT' | 'EDGE';
+  runOn: 'AGENT' | 'EDGE';
   registryServerId?: string;
   workspaceId?: string;
 }): MCPServerSeed {
@@ -181,7 +181,7 @@ export function buildMCPServerSeed(options: {
 export function buildMinimalFilesystemServer(options?: {
   name?: string;
   description?: string;
-  runOn?: 'GLOBAL' | 'AGENT' | 'EDGE';
+  runOn?: 'AGENT' | 'EDGE';
   directoryPath?: string;
   registryServerId?: string;
   workspaceId?: string;
@@ -192,7 +192,7 @@ export function buildMinimalFilesystemServer(options?: {
     repositoryUrl: 'https://github.com/modelcontextprotocol/servers',
     transport: 'STDIO',
     config: buildFilesystemServerConfig(options?.directoryPath),
-    runOn: options?.runOn ?? 'GLOBAL',
+    runOn: options?.runOn ?? 'AGENT',
     registryServerId: options?.registryServerId,
     workspaceId: options?.workspaceId,
   });
@@ -226,7 +226,7 @@ export function buildGenericServerConfig(identifier: string, version: string): M
 export function buildWebFetchServer(options?: {
   name?: string;
   description?: string;
-  runOn?: 'GLOBAL' | 'AGENT' | 'EDGE';
+  runOn?: 'AGENT' | 'EDGE';
   registryServerId?: string;
   workspaceId?: string;
 }): MCPServerSeed {
@@ -251,7 +251,7 @@ export function buildWebFetchServer(options?: {
 export function buildDevelopmentToolsServer(options?: {
   name?: string;
   description?: string;
-  runOn?: 'GLOBAL' | 'AGENT' | 'EDGE';
+  runOn?: 'AGENT' | 'EDGE';
   registryServerId?: string;
   workspaceId?: string;
 }): MCPServerSeed {
@@ -276,7 +276,7 @@ export function buildDevelopmentToolsServer(options?: {
 export function buildDatabaseServer(options?: {
   name?: string;
   description?: string;
-  runOn?: 'GLOBAL' | 'AGENT' | 'EDGE';
+  runOn?: 'AGENT' | 'EDGE';
   registryServerId?: string;
   workspaceId?: string;
 }): MCPServerSeed {
@@ -293,14 +293,53 @@ export function buildDatabaseServer(options?: {
 }
 
 /**
+ * Get runtime ID for a specific runtime type
+ * This is used in tests to query for runtime IDs dynamically
+ *
+ * @param graphql - GraphQL query function
+ * @param workspaceId - Workspace ID to query runtimes for
+ * @param runtimeType - Type of runtime to find ('MCP' or 'EDGE')
+ * @returns Runtime ID if found, undefined otherwise
+ */
+export const getRuntimeIdByType = async (
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  graphql: <T = any>(query: string, variables?: Record<string, any>) => Promise<T>,
+  workspaceId: string,
+  runtimeType: 'MCP' | 'EDGE',
+): Promise<string | undefined> => {
+  const query = `
+    query GetSystemRuntimes {
+      system {
+        runtimes {
+          id
+          type
+          status
+        }
+      }
+    }
+  `;
+  const result = await graphql<{ system: { runtimes: Array<{ id: string; type: string; status: string }> } }>(
+    query
+  );
+  const runtime = result.system.runtimes.find(r => r.type === runtimeType && r.status === 'ACTIVE');
+  return runtime?.id;
+};
+
+/**
  * Helper function to configure a FileSystem MCP server dynamically via GraphQL
  * This is used in tests that need to create servers on the fly
+ *
+ * @param graphql - GraphQL query function
+ * @param workspaceId - Workspace ID to create the server in
+ * @param runOn - Where the server should run ('AGENT' or 'EDGE')
+ * @param runtimeId - Optional runtime ID for EDGE deployments
  */
 export const configureFileSystemMCPServer = async (
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   graphql: <T = any>(query: string, variables?: Record<string, any>) => Promise<T>,
   workspaceId: string,
-  runOn: 'GLOBAL' | 'AGENT' | 'EDGE',
+  runOn: 'AGENT' | 'EDGE',
+  runtimeId?: string,
 ) => {
   // Get the FileSystem MCP Server from the registry
   const registryServersQuery = `
@@ -342,8 +381,28 @@ export const configureFileSystemMCPServer = async (
     workspaceId,
     registryServerId,
   });
+
+  const mcpServerId = createMCPServerResult.createMCPServer.id;
+
+  // If EDGE and runtimeId provided, link the server to the specific runtime
+  if (runOn === 'EDGE' && runtimeId) {
+    const updateMutation = `
+      mutation UpdateMCPServerRunOn($mcpServerId: ID!, $runOn: MCPServerRunOn!, $runtimeId: ID) {
+        updateMCPServerRunOn(mcpServerId: $mcpServerId, runOn: $runOn, runtimeId: $runtimeId) {
+          id
+          runOn
+          runtime {
+            id
+            name
+          }
+        }
+      }
+    `;
+    await graphql(updateMutation, { mcpServerId, runOn, runtimeId });
+  }
+
   return {
-    mcpServerId: createMCPServerResult.createMCPServer.id,
+    mcpServerId,
   };
 };
 
@@ -368,6 +427,7 @@ export const createToolset = async (
     }
   `;
   const toolResult = await graphql<{ mcpTools: Array<{ id: string }> }>(toolQuery, { workspaceId });
+  
   // Create a ToolSet
   const createToolSetMutation = `
     mutation CreateToolSet($name: String!, $description: String!, $workspaceId: ID!) {
@@ -412,4 +472,51 @@ export const createToolset = async (
   return {
     toolsetId: toolSetResult.createToolSet.id,
   };
+};
+
+/**
+ * Update an existing MCP server to run on EDGE runtime
+ * This is needed after seeding because presets default to AGENT runOn
+ *
+ * @param graphql - GraphQL query function
+ * @param mcpServerId - ID of the MCP server to update
+ * @param workspaceId - Workspace ID to find the EDGE runtime
+ * @returns Updated MCP server data
+ */
+export const updateMCPServerToEdgeRuntime = async (
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  graphql: <T = any>(query: string, variables?: Record<string, any>) => Promise<T>,
+  mcpServerId: string,
+  workspaceId: string,
+): Promise<{ id: string; runOn: string; runtime: { id: string; name: string } }> => {
+  // Get the EDGE runtime ID
+  const runtimeId = await getRuntimeIdByType(graphql, workspaceId, 'EDGE');
+
+  if (!runtimeId) {
+    throw new Error('No EDGE runtime found. Ensure resetDatabase(true) was called.');
+  }
+
+  // Update MCP server to use EDGE runtime
+  const updateMutation = `
+    mutation UpdateMCPServerRunOn($mcpServerId: ID!, $runOn: MCPServerRunOn!, $runtimeId: ID) {
+      updateMCPServerRunOn(mcpServerId: $mcpServerId, runOn: $runOn, runtimeId: $runtimeId) {
+        id
+        runOn
+        runtime {
+          id
+          name
+        }
+      }
+    }
+  `;
+
+  const result = await graphql<{
+    updateMCPServerRunOn: { id: string; runOn: string; runtime: { id: string; name: string } };
+  }>(updateMutation, {
+    mcpServerId,
+    runOn: 'EDGE',
+    runtimeId,
+  });
+
+  return result.updateMCPServerRunOn;
 };

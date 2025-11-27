@@ -8,6 +8,8 @@ import {
     COMPLETE_TOOL_CALL_SUCCESS,
     QUERY_TOOL_CALLS,
     QUERY_TOOL_CALLS_FILTERED,
+    SET_EXECUTED_BY_AGENT,
+    SET_EXECUTED_BY,
 } from './monitoring.operations';
 import { map, Observable } from 'rxjs';
 import { createSubscriptionFromQuery } from '../helpers';
@@ -50,20 +52,34 @@ export class MonitoringRepository {
         return toolCall;
     }
 
-    async completeToolCall(id: string, toolOutput: string, executedById: string): Promise<dgraphResolversTypes.ToolCall> {
+    async completeToolCall(id: string, toolOutput: string, executedByIdOrAgent: string | 'AGENT'): Promise<dgraphResolversTypes.ToolCall> {
         const completedAt = new Date().toISOString();
         const res = await this.dgraphService.mutation<{
             updateToolCall: { toolCall: dgraphResolversTypes.ToolCall[] };
-        }>(COMPLETE_TOOL_CALL_SUCCESS, { id, toolOutput, completedAt, executedById });
+        }>(COMPLETE_TOOL_CALL_SUCCESS, { id, toolOutput, completedAt });
+        await this.setExecutedBy(id, executedByIdOrAgent);
         return res.updateToolCall.toolCall[0];
     }
 
-    async errorToolCall(id: string, errorMessage: string): Promise<dgraphResolversTypes.ToolCall> {
+    async errorToolCall(id: string, errorMessage: string, executedByIdOrAgent: string | 'AGENT' | undefined): Promise<dgraphResolversTypes.ToolCall> {
         const completedAt = new Date().toISOString();
         const res = await this.dgraphService.mutation<{
             updateToolCall: { toolCall: dgraphResolversTypes.ToolCall[] };
         }>(COMPLETE_TOOL_CALL_ERROR, { id, error: errorMessage, completedAt });
+        await this.setExecutedBy(id, executedByIdOrAgent);
         return res.updateToolCall.toolCall[0];
+    }
+
+    async setExecutedBy(id: string, executedByIdOrAgent: string | 'AGENT' | undefined) {
+        if (executedByIdOrAgent === 'AGENT') {
+            await this.dgraphService.mutation<{
+                updateToolCall: { toolCall: dgraphResolversTypes.ToolCall[] };
+            }>(SET_EXECUTED_BY_AGENT, { id });
+        } else if (executedByIdOrAgent) {
+            await this.dgraphService.mutation<{
+                updateToolCall: { toolCall: dgraphResolversTypes.ToolCall[] };
+            }>(SET_EXECUTED_BY, { id, executedById: executedByIdOrAgent });
+        }
     }
 
     observeToolCalls(workspaceId: string): Observable<apolloResolversTypes.ToolCall[]> {

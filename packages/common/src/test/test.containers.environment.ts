@@ -22,7 +22,7 @@ import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
 import { execSync } from 'child_process';
-import { TEST_ENCRYPTION_KEY, TEST_MASTER_KEY, TEST_RUNTIME_ROUTE, TEST_RUNTIME_STOP_ROUTE } from './test.containers.constants';
+import { TEST_ENCRYPTION_KEY, TEST_SYSTEM_KEY, TEST_RUNTIME_ROUTE, TEST_RUNTIME_STOP_ROUTE } from './test.containers.constants';
 import { findProjectRoot, waitForHealth } from './test.containers.helpers';
 import { startControllerServer, registerRoute, callRoute } from './test.containers.web-server';
 import { testLog, testError } from './test.containers.logger';
@@ -451,7 +451,7 @@ export class TestEnvironment {
           EXPOSED_REMOTE_MCP: 'http://localhost:3001',
           CORS_ORIGINS: 'http://localhost:8888,http://localhost:9999',
           ENCRYPTION_KEY: TEST_ENCRYPTION_KEY,
-          MASTER_KEY: TEST_MASTER_KEY,
+          SYSTEM_KEY: TEST_SYSTEM_KEY,
           JWT_PRIVATE_KEY_PATH: '/keys/private.pem',
           JWT_PUBLIC_KEY_PATH: '/keys/public.pem',
           IDENTITY_LOG_LEVEL: 'debug',
@@ -516,7 +516,7 @@ export class TestEnvironment {
           NATS_SERVERS: 'nats:4222',
           RUNTIME_NAME: runtimeName,
           ROOTS: `TEMP:/tmp`,
-          MASTER_KEY: TEST_MASTER_KEY,
+          SYSTEM_KEY: TEST_SYSTEM_KEY,
           REMOTE_PORT: String(runtimePort),      // Enable HTTP server for SSE/STREAM transports
           REMOTE_HOST: '0.0.0.0',
         })

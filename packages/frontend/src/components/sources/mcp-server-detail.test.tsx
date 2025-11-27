@@ -40,7 +40,7 @@ const mockServer = {
   transport: McpTransportType.Stdio,
   config: '{"command":"test"}',
   repositoryUrl: 'https://github.com/test/repo',
-  runOn: McpServerRunOn.Global,
+  runOn: McpServerRunOn.Edge,
   runtime: null,
   tools: [],
 };

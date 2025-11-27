@@ -81,7 +81,7 @@ export const seedPresets = {
     ],
     users: [
       {
-        email: 'test@example.com',
+        email: 'user1@2ly.ai',
         password: 'testpassword123',
       },
     ],
@@ -95,11 +95,11 @@ export const seedPresets = {
   withUsers: {
     users: [
       {
-        email: 'user1@example.com',
+        email: 'user1@2ly.ai',
         password: 'password123',
       },
       {
-        email: 'user2@example.com',
+        email: 'user2@2ly.ai',
         password: 'password456',
       },
     ],
@@ -121,11 +121,11 @@ export const seedPresets = {
   withSingleMCPServer: {
     users: [
       {
-        email: 'user1@example.com',
+        email: 'user1@2ly.ai',
         password: 'password123',
       },
     ],
     registryServers: [buildFilesystemRegistryServer({ name: 'file-system' })],
-    mcpServers: [buildMinimalFilesystemServer({ name: 'file-system' })],
+    mcpServers: [buildMinimalFilesystemServer({ name: 'file-system', directoryPath: '/' })],
   },
 } satisfies Record<string, SeedData | { comprehensive: SeedData }>;

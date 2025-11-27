@@ -36,6 +36,7 @@ query GetToolCalls(
         id
         name
       }
+      executedByAgent
       executedBy {
         id
         name

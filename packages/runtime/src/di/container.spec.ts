@@ -15,7 +15,8 @@ describe('Runtime Container - Environment Variable Validation', () => {
     delete process.env.RUNTIME_KEY;
     delete process.env.REMOTE_PORT;
     delete process.env.WORKSPACE_ID;
-    delete process.env.MASTER_KEY;
+    delete process.env.SYSTER_KEY;
+    delete process.env.WORKSPACE_KEY;
   });
 
   afterEach(() => {

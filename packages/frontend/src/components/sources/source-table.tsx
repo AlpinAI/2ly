@@ -8,7 +8,7 @@
  * - Name
  * - Type (MCP Server, REST API)
  * - Transport (STREAM, STDIO, SSE) - MCP only
- * - Run On (GLOBAL, AGENT, EDGE) - MCP only
+ * - Run On (AGENT, EDGE) - MCP only
  * - # Tools
  *
  * FEATURES:
@@ -52,7 +52,6 @@ const TRANSPORT_OPTIONS = [
 ];
 
 const RUN_ON_OPTIONS = [
-  { id: 'GLOBAL', label: 'Global' },
   { id: 'AGENT', label: 'Agent' },
   { id: 'EDGE', label: 'Edge' },
 ];

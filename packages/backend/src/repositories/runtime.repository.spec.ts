@@ -7,14 +7,14 @@ import { MCPToolRepository } from './mcp-tool.repository';
 import { LoggerService } from '@2ly/common';
 import { Subject } from 'rxjs';
 import type { NatsService } from '@2ly/common';
-import type { WorkspaceRepository } from './workspace.repository';
+import type { IdentityRepository } from './identity.repository';
 
 describe('RuntimeRepository', () => {
     let dgraphService: DgraphServiceMock;
     let mcpToolRepository: MCPToolRepository;
     let loggerService: LoggerService;
     let natsService: NatsService;
-    let workspaceRepository: WorkspaceRepository;
+    let identityRepository: IdentityRepository;
     let runtimeRepository: RuntimeRepository;
 
     beforeEach(() => {
@@ -34,26 +34,23 @@ describe('RuntimeRepository', () => {
             request: vi.fn(),
             publishEphemeral: vi.fn(),
         } as unknown as NatsService;
-        workspaceRepository = {
-            checkAndCompleteStep: vi.fn().mockResolvedValue(undefined),
-            getRuntimes: vi.fn().mockResolvedValue([{ id: 'r1', name: 'Test Runtime' }]),
-            setGlobalRuntime: vi.fn().mockResolvedValue(undefined),
-        } as unknown as WorkspaceRepository;
+        identityRepository = {
+            createKey: vi.fn().mockResolvedValue({ id: 'k1', key: 'RK_test123' }),
+        } as unknown as IdentityRepository;
         runtimeRepository = new RuntimeRepository(
             dgraphService as unknown as DGraphService,
             mcpToolRepository,
             loggerService,
             natsService,
-            workspaceRepository,
+            identityRepository,
         );
     });
 
-    it('create creates runtime', async () => {
+    it('creates runtime', async () => {
         const runtime = { id: 'r1', name: 'Test Runtime' } as unknown as dgraphResolversTypes.Runtime;
 
         dgraphService.mutation.mockResolvedValue({ addRuntime: { runtime: [runtime] } });
-
-        const result = await runtimeRepository.create('Test Runtime', 'Description', 'ACTIVE', 'w1', 'MCP');
+        const result = await runtimeRepository.create('workspace', 'w1', 'Test Runtime', 'Description', 'ACTIVE', 'MCP');
 
         expect(dgraphService.mutation).toHaveBeenCalledWith(
             expect.any(Object),
@@ -66,6 +63,54 @@ describe('RuntimeRepository', () => {
             })
         );
         expect(result.id).toBe('r1');
+    });
+
+    it('creates runtime with automatic identity key generation', async () => {
+        const runtime = { id: 'r1', name: 'Test Runtime' } as unknown as dgraphResolversTypes.Runtime;
+
+        dgraphService.mutation.mockResolvedValue({ addRuntime: { runtime: [runtime] } });
+        const mockKey = { id: 'k1', key: 'RTK_test123' };
+        identityRepository.createKey = vi.fn().mockResolvedValue(mockKey);
+
+        const result = await runtimeRepository.create('workspace', 'w1', 'Test Runtime', 'Description', 'ACTIVE', 'EDGE');
+
+        expect(identityRepository.createKey).toHaveBeenCalledWith('runtime', 'r1', 'Test Runtime Runtime Key', '');
+        expect(result.id).toBe('r1');
+    });
+
+    it('creates system runtime with automatic identity key generation', async () => {
+        const runtime = { id: 'r1', name: 'System Runtime' } as unknown as dgraphResolversTypes.Runtime;
+
+        dgraphService.mutation.mockResolvedValue({ addRuntime: { runtime: [runtime] } });
+        const mockKey = { id: 'k1', key: 'RTK_system123' };
+        identityRepository.createKey = vi.fn().mockResolvedValue(mockKey);
+
+        const result = await runtimeRepository.create('system', 's1', 'System Runtime', 'System Description', 'ACTIVE', 'EDGE');
+
+        expect(dgraphService.mutation).toHaveBeenCalledWith(
+            expect.any(Object),
+            expect.objectContaining({
+                name: 'System Runtime',
+                description: 'System Description',
+                status: 'ACTIVE',
+                type: 'EDGE',
+                systemId: 's1',
+            })
+        );
+        expect(identityRepository.createKey).toHaveBeenCalledWith('runtime', 'r1', 'System Runtime Runtime Key', '');
+        expect(result.id).toBe('r1');
+    });
+
+    it('throws error when runtime creation fails', async () => {
+        dgraphService.mutation.mockResolvedValue({ addRuntime: { runtime: [] } });
+
+        await expect(runtimeRepository.create('workspace', 'w1', 'Test Runtime', 'Description', 'ACTIVE', 'MCP'))
+            .rejects.toThrow('Failed to create runtime for workspace w1 Test Runtime');
+    });
+
+    it('throws error for invalid connectedTo value', async () => {
+        await expect(runtimeRepository.create('invalid' as 'workspace' | 'system', 'w1', 'Test Runtime', 'Description', 'ACTIVE', 'MCP'))
+            .rejects.toThrow('Invalid connectedTo: invalid');
     });
 
     it('delete removes runtime', async () => {
@@ -194,36 +239,6 @@ describe('RuntimeRepository', () => {
         subscription.unsubscribe();
     });
 
-    it('observeMCPServersOnAgent returns MCP servers for agent', async () => {
-        const mcpServer = { id: 's1', runOn: 'AGENT' } as unknown as dgraphResolversTypes.McpServer;
-        const runtime = {
-            id: 'r1',
-            mcpServers: [mcpServer]
-        } as unknown as dgraphResolversTypes.Runtime;
-        const subject = new Subject<dgraphResolversTypes.Runtime>();
-        dgraphService.observe.mockReturnValue(subject.asObservable());
-
-        const results: dgraphResolversTypes.McpServer[][] = [];
-        const subscription = runtimeRepository.observeMCPServersOnAgent('r1').subscribe((servers) => results.push(servers));
-
-        subject.next(runtime);
-        expect(results[0]).toEqual([{ id: 's1', runOn: 'AGENT' }]);
-        subscription.unsubscribe();
-    });
-
-    it('observeMCPServersOnGlobal returns global MCP servers', async () => {
-        const runtime = { id: 'w1', mcpServers: [{ id: 's1' }] } as unknown as dgraphResolversTypes.Runtime;
-        const subject = new Subject<dgraphResolversTypes.Runtime>();
-        dgraphService.observe.mockReturnValue(subject.asObservable());
-
-        const results: dgraphResolversTypes.McpServer[][] = [];
-        const subscription = runtimeRepository.observeMCPServersOnGlobal('w1').subscribe((servers) => results.push(servers));
-
-        subject.next(runtime);
-        expect(results[0]).toEqual([{ id: 's1' }]);
-        subscription.unsubscribe();
-    });
-
     it('setInactive sets runtime inactive and tools inactive', async () => {
         const tool = { id: 't1' } as unknown as dgraphResolversTypes.McpTool;
         const mcpServer = { tools: [tool] } as unknown as dgraphResolversTypes.McpServer;
@@ -319,7 +334,7 @@ describe('RuntimeRepository', () => {
         const workspace = { runtimes: [runtime] } as unknown as dgraphResolversTypes.Workspace;
         dgraphService.query.mockResolvedValue({ getWorkspace: workspace });
 
-        const result = await runtimeRepository.findByName('w1', 'test-runtime');
+        const result = await runtimeRepository.findByName('workspace', 'w1', 'test-runtime');
 
         expect(dgraphService.query).toHaveBeenCalledWith(
             expect.any(Object),
@@ -332,7 +347,7 @@ describe('RuntimeRepository', () => {
         const workspace = { runtimes: [] } as unknown as dgraphResolversTypes.Workspace;
         dgraphService.query.mockResolvedValue({ getWorkspace: workspace });
 
-        const result = await runtimeRepository.findByName('w1', 'nonexistent');
+        const result = await runtimeRepository.findByName('workspace', 'w1', 'nonexistent');
 
         expect(result).toBeUndefined();
     });

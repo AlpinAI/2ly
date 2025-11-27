@@ -20,11 +20,11 @@ import {
   ToolCallStatus,
   OrderDirection,
   GetMcpToolsDocument,
-  GetRuntimesDocument,
 } from '@/graphql/generated/graphql';
 import { useWorkspaceId } from '@/stores/workspaceStore';
 import { cn } from '@/lib/utils';
 import { useScrollToEntity } from '@/hooks/useScrollToEntity';
+import { useRuntimeData } from '@/stores/runtimeStore';
 
 interface ToolCall {
   id: string;
@@ -105,14 +105,8 @@ export function ToolCallsTable({
   });
 
   // Fetch available runtimes for filter
-  const { data: runtimesData } = useQuery(GetRuntimesDocument, {
-    variables: { workspaceId: workspaceId || '' },
-    skip: !workspaceId,
-  });
-
+  const { runtimes } = useRuntimeData();
   const tools = toolsData?.mcpTools || [];
-  const runtimes = runtimesData?.workspace?.runtimes || [];
-
   const toolOptions = tools.map((tool: { id: string; name: string; mcpServer: { name: string } }) => ({
     id: tool.id,
     label: `${tool.name} (${tool.mcpServer.name})`,

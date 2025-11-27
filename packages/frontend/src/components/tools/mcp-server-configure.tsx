@@ -154,16 +154,6 @@ export function MCPServerConfigure({ selectedServer, onBack, onSuccess }: MCPSer
       }
       setDiscoveredTools(server.tools.map((t) => ({ id: t.id, name: t.name })));
       setTestStatus('success');
-
-      // Set server to GLOBAL mode (makes it available workspace-wide)
-      updateServerRunOn({
-        variables: {
-          mcpServerId: testServerId,
-          runOn: McpServerRunOn.Global,
-        },
-      }).catch((err) => {
-        console.error('Failed to set server to GLOBAL:', err);
-      });
     }
   }, [serversData, testServerId, testStatus, updateServerRunOn]);
 
@@ -213,7 +203,7 @@ export function MCPServerConfigure({ selectedServer, onBack, onSuccess }: MCPSer
 
       setTestServerId(serverId);
 
-      // Set server to run on EDGE with selected runtime for testing
+      // Set server to run on EDGE with selected runtime
       await updateServerRunOn({
         variables: {
           mcpServerId: serverId,

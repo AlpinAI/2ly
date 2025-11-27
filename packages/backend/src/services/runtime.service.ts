@@ -206,7 +206,7 @@ export class RuntimeService extends Service {
   }
 
   async getRuntimeByName(workspaceId: string, name: string) {
-    return this.runtimeRepository.findByName(workspaceId, name);
+    return this.runtimeRepository.findByName('workspace', workspaceId, name);
   }
 
   private handleDiscoveredTools() {

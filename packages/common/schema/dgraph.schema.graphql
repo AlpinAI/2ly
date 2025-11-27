@@ -12,7 +12,6 @@ enum MCPTransportType {
 }
 
 enum MCPServerRunOn {
-  GLOBAL
   AGENT
   EDGE
 }
@@ -22,12 +21,13 @@ enum RuntimeType {
   MCP
 }
 
-type System {
+type System @withSubscription {
   id: ID!
   initialized: Boolean!
   createdAt: DateTime!
   updatedAt: DateTime!
   instanceId: String!
+  runtimes: [Runtime!] @hasInverse(field: system)
   workspaces: [Workspace!] @hasInverse(field: system)
   defaultWorkspace: Workspace
   admins: [User!]
@@ -45,7 +45,6 @@ type Workspace @withSubscription {
   admins: [User!] @hasInverse(field: adminOfWorkspaces)
   users: [User!] @hasInverse(field: membersOfWorkspaces)
   system: System! @hasInverse(field: workspaces)
-  globalRuntime: Runtime
   onboardingSteps: [OnboardingStep!]
 }
 
@@ -141,7 +140,8 @@ type Runtime @withSubscription {
   mcpClientName: String
   lastSeenAt: DateTime
   mcpServers: [MCPServer!] @hasInverse(field: runtime)
-  workspace: Workspace! @hasInverse(field: runtimes)
+  workspace: Workspace @hasInverse(field: runtimes)
+  system: System @hasInverse(field: runtimes)
   toolResponses: [ToolCall!] @hasInverse(field: executedBy)
 }
 
@@ -211,6 +211,7 @@ type ToolCall {
   toolOutput: String
   error: String
   isTest: Boolean!
+  executedByAgent: Boolean
   mcpTool: MCPTool! @hasInverse(field: toolCalls)
   calledBy: ToolSet @hasInverse(field: toolCalls)
   executedBy: Runtime @hasInverse(field: toolResponses)

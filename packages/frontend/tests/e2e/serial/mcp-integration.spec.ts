@@ -16,6 +16,7 @@
  */
 
 import { test, expect, seedPresets } from '@2ly/common/test/fixtures/playwright';
+import { updateMCPServerToEdgeRuntime } from '@2ly/common/test/fixtures/mcp-builders';
 
 // Test configuration
 const TEST_FILE_PATH = '/tmp/test.txt';
@@ -34,9 +35,14 @@ test.describe('MCP Integration with Containerized Runtime', () => {
    */
   let entityIds: Record<string, string> = {};
 
-  test.beforeAll(async ({ resetDatabase, seedDatabase }) => {
+  test.beforeAll(async ({ resetDatabase, seedDatabase, graphql }) => {
     await resetDatabase(true);
     entityIds = await seedDatabase(seedPresets.withSingleMCPServer);
+
+    // Update MCP server to use EDGE runtime (GLOBAL runOn has been removed)
+    const workspaceId = entityIds['default-workspace'];
+    const mcpServerId = entityIds['server-file-system'];
+    await updateMCPServerToEdgeRuntime(graphql, mcpServerId, workspaceId);
   });
 
   test('should complete full MCP lifecycle: seeded server → discover → execute', async ({
@@ -47,7 +53,7 @@ test.describe('MCP Integration with Containerized Runtime', () => {
     // Step 1: Login and navigate to workspace
     // ========================================================================
     await page.goto('/login');
-    await page.fill('input[type="email"]', 'user1@example.com');
+    await page.fill('input[type="email"]', 'user1@2ly.ai');
     await page.fill('input[type="password"]', 'password123');
     await page.click('button[type="submit"]');
     await page.waitForURL(/\/w\/.+\/overview/, { timeout: 5000 });
@@ -302,7 +308,7 @@ test.describe('MCP Integration with Containerized Runtime', () => {
   test('should handle tool call failures gracefully', async ({ page, graphql }) => {
     // Login
     await page.goto('/login');
-    await page.fill('input[type="email"]', 'user1@example.com');
+    await page.fill('input[type="email"]', 'user1@2ly.ai');
     await page.fill('input[type="password"]', 'password123');
     await page.click('button[type="submit"]');
     await page.waitForURL(/\/w\/.+\/overview/, { timeout: 5000 });

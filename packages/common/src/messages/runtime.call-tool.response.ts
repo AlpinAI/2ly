@@ -5,12 +5,12 @@ const type = 'agent-call-response';
 
 export class RuntimeCallToolResponse extends NatsResponse<{
   result: CallToolResult;
-  executedById: string;
+  executedByIdOrAgent: string | 'AGENT';
 }> {
   static type = type;
   type = type;
-  validate(data: { result: CallToolResult; executedById: string }): boolean {
-    return data.result !== undefined && data.executedById !== undefined;
+  validate(data: { result: CallToolResult; executedByIdOrAgent: string | 'AGENT' }): boolean {
+    return data.result !== undefined && data.executedByIdOrAgent !== undefined;
   }
 }
 

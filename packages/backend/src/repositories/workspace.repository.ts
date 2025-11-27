@@ -8,8 +8,6 @@ import {
   QUERY_WORKSPACE_WITH_RUNTIMES,
   QUERY_WORKSPACE_WITH_MCP_SERVERS,
   QUERY_WORKSPACE_WITH_MCP_TOOLS,
-  SET_GLOBAL_RUNTIME,
-  UNSET_GLOBAL_RUNTIME,
   CREATE_ONBOARDING_STEP,
   LINK_ONBOARDING_STEP_TO_WORKSPACE,
   UPDATE_ONBOARDING_STEP_STATUS,
@@ -19,22 +17,30 @@ import {
   GET_REGISTRY_SERVER,
   QUERY_WORKSPACE_WITH_REGISTRY_SERVERS,
 } from './workspace.operations';
-import { GET_RUNTIME } from './runtime.operations';
 import { QUERY_SYSTEM } from './system.operations';
-import { Observable } from 'rxjs';
+import { Observable, combineLatestWith } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { createSubscriptionFromQuery } from '../helpers';
 import { INITIAL_ONBOARDING_STEPS } from './onboarding-step-definitions';
 import { INITIAL_FEATURED_SERVERS } from './initial-servers';
 import { QUERY_TOOLSETS_BY_WORKSPACE } from './toolset.operations';
 import { IdentityRepository } from './identity.repository';
+import { LoggerService } from '@2ly/common';
+import { SystemRepository } from './system.repository';
+import pino from 'pino';
 
 @injectable()
 export class WorkspaceRepository {
+  private logger: pino.Logger;
+
   constructor(
+    @inject(LoggerService) private readonly loggerService: LoggerService,
     @inject(DGraphService) private readonly dgraphService: DGraphService,
     @inject(IdentityRepository) private readonly identityRepository: IdentityRepository,
-  ) { }
+    @inject(SystemRepository) private readonly systemRepository: SystemRepository,
+  ) {
+    this.logger = this.loggerService.getLogger('WorkspaceRepository');
+  }
 
   async create(name: string, adminId: string, options: { masterKey?: string } = {}): Promise<apolloResolversTypes.Workspace> {
     const now = new Date().toISOString();
@@ -59,9 +65,9 @@ export class WorkspaceRepository {
     });
     const workspace = res.addWorkspace.workspace[0];
 
-    // 3. Create master key
+    // 3. Create workspace key
     const identityOptions = { key: options?.masterKey };
-    await this.identityRepository.createKey('workspace', workspace.id, 'Default Workspace Master key', '', identityOptions);
+    await this.identityRepository.createKey('workspace', workspace.id, 'Default Workspace key', '', identityOptions);
 
     // 4. Create featured servers directly on workspace from INITIAL_FEATURED_SERVERS
     const failedServers: string[] = [];
@@ -81,13 +87,13 @@ export class WorkspaceRepository {
         });
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : String(error);
-        console.error(`Failed to create initial server ${server.name} for workspace ${workspace.id}:`, errorMessage);
+        this.logger.error(`Failed to create initial server ${server.name} for workspace ${workspace.id}: ${errorMessage}`);
         failedServers.push(server.name);
       }
     }
 
     if (failedServers.length > 0) {
-      console.warn(`Workspace ${workspace.id} (${workspace.name}) created with ${failedServers.length} failed servers: ${failedServers.join(', ')}`);
+      this.logger.warn(`Workspace ${workspace.id} (${workspace.name}) created with ${failedServers.length} failed servers: ${failedServers.join(', ')}`);
     }
 
     // 5. Initialize onboarding steps for new workspace
@@ -134,31 +140,17 @@ export class WorkspaceRepository {
     return res.updateWorkspace.workspace[0];
   }
 
-
-  async setGlobalRuntime(runtimeId: string): Promise<void> {
-    const runtime = await this.dgraphService.query<{ getRuntime: dgraphResolversTypes.Runtime }>(GET_RUNTIME, { id: runtimeId });
-    if (!runtime.getRuntime.workspace) {
-      throw new Error('Runtime is not linked to a workspace');
-    }
-    const workspaceId = runtime.getRuntime.workspace.id;
-    await this.dgraphService.mutation<{
-      updateWorkspace: { workspace: apolloResolversTypes.Workspace[] };
-    }>(SET_GLOBAL_RUNTIME, { id: workspaceId, runtimeId: runtimeId });
-    return;
-  }
-
-  async unsetGlobalRuntime(workspaceId: string): Promise<void> {
-    await this.dgraphService.mutation<{
-      updateWorkspace: { workspace: apolloResolversTypes.Workspace[] };
-    }>(UNSET_GLOBAL_RUNTIME, { id: workspaceId });
-    return;
-  }
-
   observeRuntimes(workspaceId: string): Observable<apolloResolversTypes.Runtime[]> {
     const query = createSubscriptionFromQuery(QUERY_WORKSPACE_WITH_RUNTIMES);
     return this.dgraphService
       .observe<apolloResolversTypes.Workspace>(query, { workspaceId }, 'getWorkspace', true)
-      .pipe(map((workspace) => workspace.runtimes || []));
+      .pipe(
+        combineLatestWith(this.systemRepository.observeRuntimes()),
+        map(([workspace, systemRuntimes]) => {
+          const allRuntimes = workspace.runtimes ? [...workspace.runtimes] : [];
+          return [...allRuntimes, ...systemRuntimes];
+        })
+      );
   }
 
   observeMCPServers(workspaceId: string): Observable<apolloResolversTypes.McpServer[]> {

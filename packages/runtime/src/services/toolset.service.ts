@@ -63,10 +63,9 @@ export class ToolsetService extends Service {
   }
 
   private async subscribeToCapabilities() {
-    this.logger.info(`Subscribing to List Tools for toolset: ${this.identity.workspaceId} - ${this.identity.toolsetId}`);
-    const subscription = await this.natsService.observeEphemeral(
-      ToolsetListToolsPublish.subscribeToToolSet(this.identity.workspaceId, this.identity.toolsetId),
-    );
+    const toolSetSubject = ToolsetListToolsPublish.subscribeToToolSet(this.identity.workspaceId, this.identity.toolsetId);
+    this.logger.info(`Subscribing to List Tools for toolset: ${toolSetSubject}`);
+    const subscription = await this.natsService.observeEphemeral(toolSetSubject);
     this.subscriptions.push(subscription);
 
     (async () => {
@@ -102,16 +101,12 @@ export class ToolsetService extends Service {
     };
   }
 
-  /**
-   * Wait for tools to be available and return them
-   */
   public async waitForTools(): Promise<dgraphResolversTypes.McpTool[]> {
-    if (!this.tools.getValue()) {
-      return await firstValueFrom(
-        this.tools.pipe(filter((tools): tools is dgraphResolversTypes.McpTool[] => tools !== null)),
-      );
-    }
-    return this.tools.getValue()!;
+    return firstValueFrom(
+      this.tools.pipe(
+        filter((tools): tools is dgraphResolversTypes.McpTool[] => tools !== null),
+      ),
+    );
   }
 
   public async getToolsForMCP() {
@@ -131,12 +126,17 @@ export class ToolsetService extends Service {
     );
 
     const message = ToolSetCallToolRequest.create({
+      workspaceId: this.identity.workspaceId,
       from: this.identity.toolsetId,
       toolId: tool.id,
       arguments: args,
     }) as ToolSetCallToolRequest;
 
-    const response = await this.natsService.request(message, { timeout: MCP_CALL_TOOL_TIMEOUT });
+    this.logger.debug(`Sending tool call request to subject: ${message.getSubject()}`);
+
+    // retry on timeout to give another chance to succeed if the tool is not available yet.
+    // TODO: improve this by using a Jetstream queue.
+    const response = await this.natsService.request(message, { timeout: MCP_CALL_TOOL_TIMEOUT, retryOnTimeout: true });
 
     if (response instanceof ErrorResponse) {
       throw new Error(`Tool call (${name}) failed: ${response.data.error}`);

@@ -217,7 +217,7 @@ describe('MainService', () => {
       await service.start('test');
       expect(systemRepository.getSystem).toHaveBeenCalled();
       expect(systemRepository.createSystem).toHaveBeenCalled();
-      expect(workspaceRepository.create).toHaveBeenCalledWith('Default', 'admin-1', expect.objectContaining({ masterKey: undefined }));
+      expect(workspaceRepository.create).toHaveBeenCalledWith('Default', 'admin-1');
       expect(systemRepository.setDefaultWorkspace).toHaveBeenCalledWith('ws-1');
       await service.stop('test');
     });

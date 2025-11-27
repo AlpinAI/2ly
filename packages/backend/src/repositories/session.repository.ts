@@ -1,6 +1,6 @@
 import { injectable, inject } from 'inversify';
 import { DGraphService } from '../services/dgraph.service';
-import { dgraphResolversTypes } from '@2ly/common';
+import { dgraphResolversTypes, LoggerService } from '@2ly/common';
 import {
   CREATE_SESSION,
   FIND_SESSION_BY_REFRESH_TOKEN,
@@ -10,6 +10,7 @@ import {
   CLEANUP_EXPIRED_SESSIONS,
   GET_USER_ACTIVE_SESSIONS,
 } from './session.operations';
+import pino from 'pino';
 
 export interface CreateSessionData {
   refreshToken: string;
@@ -25,7 +26,10 @@ export interface CreateSessionData {
  */
 @injectable()
 export class SessionRepository {
-  constructor(@inject(DGraphService) private readonly dgraphService: DGraphService) {}
+  private logger: pino.Logger;
+  constructor(@inject(LoggerService) private readonly loggerService: LoggerService, @inject(DGraphService) private readonly dgraphService: DGraphService) {
+    this.logger = this.loggerService.getLogger('SessionRepository');
+  }
 
   /**
    * Create a new user session with refresh token.
@@ -49,7 +53,7 @@ export class SessionRepository {
 
       return res.addSession.session[0];
     } catch (error) {
-      console.error('Failed to create session:', error);
+      this.logger.error(`Failed to create session: ${error instanceof Error ? error.message : String(error)}`);
       throw new Error('Failed to create session');
     }
   }
@@ -78,7 +82,7 @@ export class SessionRepository {
 
       return session;
     } catch (error) {
-      console.error('Failed to find session by refresh token:', error);
+      this.logger.error(`Failed to find session by refresh token: ${error instanceof Error ? error.message : String(error)}`);
       throw new Error('Failed to find session by refresh token');
     }
   }
@@ -95,7 +99,7 @@ export class SessionRepository {
 
       return res.updateSession.session[0];
     } catch (error) {
-      console.error('Failed to update session last used:', error);
+      this.logger.error(`Failed to update session last used: ${error instanceof Error ? error.message : String(error)}`);
       throw new Error('Failed to update session last used');
     }
   }
@@ -111,7 +115,7 @@ export class SessionRepository {
 
       return res.updateSession.session[0];
     } catch (error) {
-      console.error('Failed to deactivate session:', error);
+      this.logger.error(`Failed to deactivate session: ${error instanceof Error ? error.message : String(error)}`);
       throw new Error('Failed to deactivate session');
     }
   }
@@ -127,7 +131,7 @@ export class SessionRepository {
 
       return res.updateSession.session;
     } catch (error) {
-      console.error('Failed to deactivate user sessions:', error);
+      this.logger.error(`Failed to deactivate user sessions: ${error instanceof Error ? error.message : String(error)}`);
       throw new Error('Failed to deactivate user sessions');
     }
   }
@@ -143,7 +147,7 @@ export class SessionRepository {
 
       return res.querySession || [];
     } catch (error) {
-      console.error('Failed to get user active sessions:', error);
+      this.logger.error(`Failed to get user active sessions: ${error instanceof Error ? error.message : String(error)}`);
       throw new Error('Failed to get user active sessions');
     }
   }
@@ -160,7 +164,7 @@ export class SessionRepository {
 
       return res.updateSession.session.length;
     } catch (error) {
-      console.error('Failed to cleanup expired sessions:', error);
+      this.logger.error(`Failed to cleanup expired sessions: ${error instanceof Error ? error.message : String(error)}`);
       throw new Error('Failed to cleanup expired sessions');
     }
   }

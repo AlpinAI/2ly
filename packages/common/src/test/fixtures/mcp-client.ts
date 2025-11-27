@@ -18,8 +18,8 @@ import type {
  * Authentication parameters for MCP client connections
  */
 export interface MCPAuthParams {
-  /** Master key for workspace authentication */
-  masterKey?: string;
+  /** Workspace key for workspace authentication */
+  workspaceKey?: string;
   /** Toolset key for toolset-specific connections */
   toolsetKey?: string;
   /** Toolset name for toolset-specific connections */
@@ -59,7 +59,7 @@ export class MCPClientFixture {
     // Merge auth params into environment
     const env = {
       ...params.env,
-      ...(auth.masterKey ? { MASTER_KEY: auth.masterKey } : {}),
+      ...(auth.workspaceKey ? { WORKSPACE_KEY: auth.workspaceKey } : {}),
       ...(auth.toolsetKey ? { TOOLSET_KEY: auth.toolsetKey } : {}),
       ...(auth.toolsetName ? { TOOLSET_NAME: auth.toolsetName } : {}),
     };
@@ -95,7 +95,7 @@ export class MCPClientFixture {
 
     // Create headers from auth params
     const headers: Record<string, string> = {};
-    if (auth.masterKey) headers['master_key'] = auth.masterKey;
+    if (auth.workspaceKey) headers['workspace_key'] = auth.workspaceKey;
     if (auth.toolsetKey) headers['toolset_key'] = auth.toolsetKey;
     if (auth.toolsetName) headers['toolset_name'] = auth.toolsetName;
 
@@ -132,7 +132,7 @@ export class MCPClientFixture {
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
     };
-    if (auth.masterKey) headers['master_key'] = auth.masterKey;
+    if (auth.workspaceKey) headers['workspace_key'] = auth.workspaceKey;
     if (auth.toolsetKey) headers['toolset_key'] = auth.toolsetKey;
     if (auth.toolsetName) headers['toolset_name'] = auth.toolsetName;
 

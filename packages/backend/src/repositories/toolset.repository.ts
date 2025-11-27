@@ -12,6 +12,7 @@ import {
   OBSERVE_TOOLSETS,
   QUERY_ALL_TOOLSETS,
   QUERY_TOOLSET_BY_NAME,
+  GET_TOOLSET_AGENT_MCP_SERVERS,
 } from './toolset.operations';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
@@ -178,5 +179,31 @@ export class ToolSetRepository {
         true,
       )
       .pipe(map((toolSets) => toolSets ?? []));
+  }
+
+  async getMCPServersOnAgent(toolsetId: string): Promise<dgraphResolversTypes.McpServer[]> {
+    const response = await this.dgraphService.query<{ getToolSet: dgraphResolversTypes.ToolSet }>(
+      GET_TOOLSET_AGENT_MCP_SERVERS,
+      { toolsetId },
+    );
+    return response.getToolSet?.mcpTools
+      ?.map((mcpTool) => mcpTool.mcpServer)
+      .filter((mcpServer) => mcpServer.runOn === 'AGENT') ?? [];
+  }
+
+  observeMCPServersOnAgent(toolsetId: string): Observable<dgraphResolversTypes.McpServer[]> {
+    const query = createSubscriptionFromQuery(GET_TOOLSET_AGENT_MCP_SERVERS);
+    return this.dgraphService.observe<dgraphResolversTypes.ToolSet>(
+      query,
+      { toolsetId },
+      'getToolSet',
+      true,
+    ).pipe(
+      map((toolset) =>
+        toolset?.mcpTools
+          ?.map((mcpTool) => mcpTool.mcpServer)
+          .filter((mcpServer) => mcpServer.runOn === 'AGENT') ?? []
+      ),
+    );
   }
 }

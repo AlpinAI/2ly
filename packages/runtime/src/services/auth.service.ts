@@ -13,15 +13,15 @@ export class PermanentAuthenticationError extends Error {};
  *
  * Responsibilities:
  * - Authentication:
- *   - login with master key (workspace-level) or toolset/runtime level key
+ *   - login runtime or toolset
  * - Identity:
  *   - retrieve runtime id and toolset id (depending on the active services)
- * - Auth tokens: masterKey, toolsetKey, accessToken, natsJwt, toolsetId
  * - Provide metadata during handshake: PID, hostname, host IP, platform info
  *
  * Environment variables (read-only, not stored):
- * - MASTER_KEY (workspace-level access)
- *   - require RUNTIME_NAME or TOOL-SET to be set
+ * - SYSTEM_KEY (system-level access)
+ * - WORKSPACE_KEY (workspace-level access)
+ *   - require TOOLSET_NAME or RUNTIME_NAME to be set
  * - TOOLSET_KEY (toolset-level access, toolset name will be implied by the key upon auth)
  * - RUNTIME_KEY (runtime-level access, runtime name will be implied by the key upon auth)
 */
@@ -70,10 +70,10 @@ export class AuthService extends Service {
 
   private prepareHandshakeRequest(): HandshakeRequest {
     // The DI already validates the mutually exclusive keys
-    const key = process.env.MASTER_KEY || process.env.TOOLSET_KEY || process.env.RUNTIME_KEY;
+    const key = process.env.SYSTEM_KEY || process.env.WORKSPACE_KEY || process.env.TOOLSET_KEY || process.env.RUNTIME_KEY;
     if (!key) {
       throw new Error(
-        'No key found in environment variables. Runtime requires MASTER_KEY, TOOLSET_KEY, or RUNTIME_KEY to operate.'
+        'No key found in environment variables. Runtime requires SYSTEM_KEY, WORKSPACE_KEY, TOOLSET_KEY, or RUNTIME_KEY to operate.'
       );
     }
     const nature = process.env.RUNTIME_NAME ? 'runtime' : process.env.TOOLSET_NAME ? 'toolset' : undefined;
@@ -124,12 +124,27 @@ export class AuthService extends Service {
     const handshakeResponse = await this.natsService.request(handshakeRequest);
     this.logger.info(`Handshake response received: ${JSON.stringify(handshakeResponse.data)}`);
     if (handshakeResponse instanceof HandshakeResponse) {
-      this.identity = {
-        nature: handshakeResponse.data.nature,
-        id: handshakeResponse.data.id,
-        name: handshakeResponse.data.name,
-        workspaceId: handshakeResponse.data.workspaceId,
-      };
+
+      if (handshakeResponse.data.nature === 'runtime') {
+        this.identity = {
+          nature: 'runtime',
+          id: handshakeResponse.data.id,
+          name: handshakeResponse.data.name,
+          workspaceId: handshakeResponse.data.workspaceId,
+        };
+      } else if (handshakeResponse.data.nature === 'toolset') {
+        if (!handshakeResponse.data.workspaceId) {
+          throw new Error('Authentication failed: workspace ID cannot be null for toolsets');
+        }
+        this.identity = {
+          nature: 'toolset',
+          id: handshakeResponse.data.id,
+          name: handshakeResponse.data.name,
+          workspaceId: handshakeResponse.data.workspaceId,
+        };
+      } else {
+        throw new Error('Invalid handshake response: unknown nature');
+      }
     } else if (handshakeResponse instanceof ErrorResponse) {
       this.logger.error(`Handshake error message: ${handshakeResponse.data.error}`);
       throw new Error(handshakeResponse.data.error);

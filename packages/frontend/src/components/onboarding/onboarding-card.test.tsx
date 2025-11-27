@@ -83,7 +83,6 @@ describe('OnboardingCard', () => {
       id: 'workspace-1',
       name: 'Test Workspace',
       createdAt: new Date(),
-      globalRuntime: null,
       registryServers: [],
       mcpServers: [],
       mcpTools: [],
@@ -91,6 +90,7 @@ describe('OnboardingCard', () => {
       runtimes: [],
       toolSets: [],
     },
+    system: null,
     toolResponses: [],
   };
 
@@ -123,7 +123,6 @@ describe('OnboardingCard', () => {
       id: 'workspace-1',
       name: 'Test Workspace',
       createdAt: new Date(),
-      globalRuntime: null,
       registryServers: [],
       mcpServers: [],
       mcpTools: [],
@@ -354,9 +353,9 @@ describe('OnboardingCard', () => {
           configurations: null,
           createdAt: new Date(),
           lastSeenAt: new Date(),
-          workspace: mockRuntime.workspace,
+          workspace: mockRuntime.workspace!,
         },
-        workspace: mockRuntime.workspace,
+        workspace: mockRuntime.workspace!,
       };
 
       vi.mocked(useMCPServers).mockReturnValue({

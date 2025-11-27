@@ -1,7 +1,7 @@
 /**
  * ApiKeysSection Component
  *
- * WHY: Manage workspace master keys for programmatic access to the platform.
+ * WHY: Manage workspace workspace keys for programmatic access to the platform.
  *
  * WHAT IT SHOWS:
  * - List of active and revoked workspace keys
@@ -87,7 +87,7 @@ export function ApiKeysSection() {
   return (
     <SettingsSection
       title="API Keys"
-      description="Manage workspace master keys for programmatic access."
+      description="Manage workspace keys for programmatic access."
       icon={Key}
     >
       <div className="space-y-4">
@@ -218,7 +218,7 @@ export function ApiKeysSection() {
               No API Keys
             </h4>
             <p className="text-sm text-gray-600 dark:text-gray-400 text-center max-w-md mb-4">
-              Generate your first workspace master key to enable programmatic access.
+              Generate your first workspace key to enable programmatic access.
             </p>
           </div>
         )}
@@ -229,10 +229,10 @@ export function ApiKeysSection() {
             <AlertCircle className="h-5 w-5 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
             <div className="text-sm">
               <p className="font-medium text-blue-900 dark:text-blue-100 mb-1">
-                About Master Keys
+                About Workspace Keys
               </p>
               <p className="text-blue-700 dark:text-blue-300">
-                Master keys provide full access to your workspace. Keep them secure and revoke any keys that may be compromised.
+                Workspace keys provide full access to your workspace. Keep them secure and revoke any keys that may be compromised.
               </p>
             </div>
           </div>

@@ -1,7 +1,7 @@
 import { GraphQLDateTime } from 'graphql-scalars';
 import { GraphQLError } from 'graphql';
 import { container as defaultContainer } from '../di/container';
-import { apolloResolversTypes, MCP_SERVER_RUN_ON } from '@2ly/common';
+import { apolloResolversTypes, LoggerService, MCP_SERVER_RUN_ON } from '@2ly/common';
 import { Observable } from 'rxjs';
 import { latestValueFrom } from 'rxjs-for-await';
 import { MCPServerAutoConfigService } from '../services/mcp-auto-config.service';
@@ -31,6 +31,9 @@ const observableToAsyncGenerator = <T, K extends string>(
 };
 
 export const resolvers = (container: Container = defaultContainer): apolloResolversTypes.Resolvers => {
+  const logger = container.get(LoggerService).getLogger('resolvers');
+  // eslint-disable-next-line @typescript-eslint/no-unused-expressions
+  logger;
   const systemRepository = container.get(SystemRepository);
   const mcpServerRepository = container.get(MCPServerRepository);
   const runtimeRepository = container.get(RuntimeRepository);
@@ -215,7 +218,7 @@ export const resolvers = (container: Container = defaultContainer): apolloResolv
           type: 'EDGE' | 'MCP';
         },
       ) => {
-        return runtimeRepository.create(name, description, 'INACTIVE', workspaceId, type);
+        return runtimeRepository.create('workspace', workspaceId, name, description, 'INACTIVE', type);
       },
       updateRuntime: async (
         _parent: unknown,
@@ -284,18 +287,10 @@ export const resolvers = (container: Container = defaultContainer): apolloResolv
       updateWorkspace: async (_parent: unknown, { id, name }: { id: string; name: string }) => {
         return workspaceRepository.update(id, name);
       },
-      setGlobalRuntime: async (_parent: unknown, { id, runtimeId }: { id: string; runtimeId: string }) => {
-        await workspaceRepository.setGlobalRuntime(runtimeId);
-        return workspaceRepository.findById(id);
-      },
-      unsetGlobalRuntime: async (_parent: unknown, { id }: { id: string }) => {
-        await workspaceRepository.unsetGlobalRuntime(id);
-        return workspaceRepository.findById(id);
-      },
       initSystem: async (_parent: unknown, { adminPassword, email }: { adminPassword: string; email: string }) => {
         return systemRepository.initSystem(adminPassword, email);
       },
-      callMCPTool: async (_parent: unknown, { toolId, input }: { toolId: string; input: string }) => {
+      callMCPTool: async (_parent: unknown, { toolId, input }: { toolId: string; input: string; }) => {
         try {
           return runtimeRepository.callMCPTool(toolId, input);
         } catch (error: unknown) {

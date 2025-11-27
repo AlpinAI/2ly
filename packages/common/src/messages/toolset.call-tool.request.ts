@@ -5,7 +5,7 @@ const type = 'call-tool';
 export class ToolSetCallToolRequest extends NatsRequest<{
   workspaceId: string;
   isTest?: boolean;
-  from?: string; // the identity of the runtime calling for this tool execution
+  from?: string; // the identity of the toolset calling for this tool execution
   toolId: string;
   arguments: Record<string, unknown>;
 }> {

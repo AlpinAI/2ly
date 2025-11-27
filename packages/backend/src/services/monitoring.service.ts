@@ -54,15 +54,15 @@ export class MonitoringService extends Service {
                                     response.unsubscribe();
                                     await promise.promise;
                                     this.logger.error(`Tool call timed out: ${toolCall!.id}`);
-                                    await this.monitoringRepository.errorToolCall(toolCall!.id, 'Timeout');
+                                    await this.monitoringRepository.errorToolCall(toolCall!.id, 'Timeout', undefined);
                                 }
                             }, MCP_CALL_TOOL_TIMEOUT);
                             for await (const msg of response) {
                                 if (msg instanceof RuntimeCallToolResponse) {
                                     await promise.promise;
-                                    this.logger.info(`Tool call response from ${msg.data.executedById}: ${JSON.stringify(msg.data)}`);
+                                    this.logger.info(`Tool call response from ${msg.data.executedByIdOrAgent}: ${JSON.stringify(msg.data)}`);
                                     clearTimeout(timeout);
-                                    await this.monitoringRepository.completeToolCall(toolCall!.id, JSON.stringify(msg.data.result), msg.data.executedById);
+                                    await this.monitoringRepository.completeToolCall(toolCall!.id, JSON.stringify(msg.data.result), msg.data.executedByIdOrAgent);
                                 }
                             }
                         })()

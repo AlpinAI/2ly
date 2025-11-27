@@ -42,7 +42,7 @@ test.describe('Login', () => {
       await page.goto('/login');
 
       // Fill in the form
-      await page.fill('input[type="email"]', 'user1@example.com');
+      await page.fill('input[type="email"]', 'user1@2ly.ai');
       await page.fill('input[type="password"]', 'password123');
 
       // Submit the form
@@ -59,7 +59,7 @@ test.describe('Login', () => {
       await page.goto('/login');
 
       // Fill in with wrong credentials
-      await page.fill('input[type="email"]', 'user1@example.com');
+      await page.fill('input[type="email"]', 'user1@2ly.ai');
       await page.fill('input[type="password"]', 'wrongpassword');
 
       // Submit the form
@@ -77,7 +77,7 @@ test.describe('Login', () => {
       await page.goto('/login');
 
       // Fill in with non-existent user
-      await page.fill('input[type="email"]', 'nonexistent@example.com');
+      await page.fill('input[type="email"]', 'nonexistent@2ly.ai');
       await page.fill('input[type="password"]', 'password123');
 
       // Submit the form
@@ -95,7 +95,7 @@ test.describe('Login', () => {
       await page.goto('/login');
 
       // Fill in the form
-      await page.fill('input[type="email"]', 'user1@example.com');
+      await page.fill('input[type="email"]', 'user1@2ly.ai');
       await page.fill('input[type="password"]', 'password123');
 
       // Submit the form
@@ -122,7 +122,7 @@ test.describe('Login', () => {
     test('should persist authentication after page reload', async ({ page }) => {
       // Login first
       await page.goto('/login');
-      await page.fill('input[type="email"]', 'user2@example.com');
+      await page.fill('input[type="email"]', 'user2@2ly.ai');
       await page.fill('input[type="password"]', 'password456');
       await page.click('button[type="submit"]');
       await page.waitForURL(/\/w\/.+\/overview/, { timeout: 5000 });
@@ -193,7 +193,7 @@ test.describe('Login', () => {
       await page.goto('/register');
 
       // Fill in the form
-      await page.fill('input[type="email"]', 'newuser@example.com');
+      await page.fill('input[type="email"]', 'newuser@2ly.ai');
       await page.fill('input#password', 'password123');
       await page.fill('input#confirmPassword', 'password123');
       await page.click('button[role="checkbox"]'); // Radix Checkbox uses button
@@ -212,7 +212,7 @@ test.describe('Login', () => {
       await page.goto('/register');
 
       // Fill in with existing user email
-      await page.fill('input[type="email"]', 'user1@example.com');
+      await page.fill('input[type="email"]', 'user1@2ly.ai');
       await page.fill('input#password', 'password123');
       await page.fill('input#confirmPassword', 'password123');
       await page.click('button[role="checkbox"]'); // Radix Checkbox
@@ -232,7 +232,7 @@ test.describe('Login', () => {
       await page.goto('/register');
 
       // Fill in the form with mismatched passwords
-      await page.fill('input[type="email"]', 'newuser2@example.com');
+      await page.fill('input[type="email"]', 'newuser2@2ly.ai');
       await page.fill('input#password', 'password123');
       await page.fill('input#confirmPassword', 'password456');
       await page.click('button[role="checkbox"]'); // Radix Checkbox
@@ -254,7 +254,7 @@ test.describe('Login', () => {
       await page.goto('/register');
 
       // Fill in the form with password missing a number
-      await page.fill('input[type="email"]', 'newuser3@example.com');
+      await page.fill('input[type="email"]', 'newuser3@2ly.ai');
       await page.fill('input#password', 'passwordabc');
       await page.fill('input#confirmPassword', 'passwordabc');
       await page.click('button[role="checkbox"]'); // Radix Checkbox
@@ -274,7 +274,7 @@ test.describe('Login', () => {
       await page.goto('/register');
 
       // Fill in the form with password missing a letter
-      await page.fill('input[type="email"]', 'newuser4@example.com');
+      await page.fill('input[type="email"]', 'newuser4@2ly.ai');
       await page.fill('input#password', '123456789');
       await page.fill('input#confirmPassword', '123456789');
       await page.click('button[role="checkbox"]'); // Radix Checkbox
@@ -294,7 +294,7 @@ test.describe('Login', () => {
       await page.goto('/register');
 
       // Fill in the form with password that is too short
-      await page.fill('input[type="email"]', 'newuser5@example.com');
+      await page.fill('input[type="email"]', 'newuser5@2ly.ai');
       await page.fill('input#password', 'pass1');
       await page.fill('input#confirmPassword', 'pass1');
       await page.click('button[role="checkbox"]'); // Radix Checkbox
@@ -327,7 +327,7 @@ test.describe('Login', () => {
       await page.goto('/register');
 
       // Fill in the form with valid data
-      await page.fill('input[type="email"]', 'validuser@example.com');
+      await page.fill('input[type="email"]', 'validuser@2ly.ai');
       await page.fill('input#password', 'password123');
       await page.fill('input#confirmPassword', 'password123');
       await page.click('button[role="checkbox"]'); // Radix Checkbox
@@ -341,7 +341,7 @@ test.describe('Login', () => {
       await page.goto('/register');
 
       // Fill in the form but don't check terms
-      await page.fill('input[type="email"]', 'newuser6@example.com');
+      await page.fill('input[type="email"]', 'newuser6@2ly.ai');
       await page.fill('input#password', 'password123');
       await page.fill('input#confirmPassword', 'password123');
 

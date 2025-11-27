@@ -76,21 +76,23 @@ export class MainService extends Service {
   private async initInstance() {
     // find if a workspace already exists
     this.logger.info('Initializing instance');
+    
     let system = await this.systemRepository.getSystem();
     if (!system) {
       this.logger.info('Creating system');
-      system = await this.systemRepository.createSystem();
+      const systemKey = process.env.SYSTEM_KEY ?? '';
+      system = await this.systemRepository.createSystem(systemKey);
       this.logger.info(`✅ Created system: ${system.instanceId}`);
     } else {
       this.logger.info(`✅ Loaded system: ${system.instanceId}`);
     }
     const defaultWorkspace = system?.defaultWorkspace;
-    const defaultMasterKey = process.env.MASTER_KEY;
+    
     this.logger.info(`Default workspace: ${defaultWorkspace?.name ?? 'not found'}`);
     if (!defaultWorkspace) {
       // create a default workspace
       this.logger.info('Creating default workspace');
-      const newDefaultWorkspace = await this.workspaceRepository.create('Default', system.admins![0].id, { masterKey: defaultMasterKey });
+      const newDefaultWorkspace = await this.workspaceRepository.create('Default', system.admins![0].id);
       await this.systemRepository.setDefaultWorkspace(newDefaultWorkspace.id);
       this.logger.info('Created default workspace');
     }
@@ -127,6 +129,8 @@ export class MainService extends Service {
         await dgraphService.dropAll();
         await dgraphService.initSchema(true);
         await this.initInstance();
+        // Reset the observed runtimes in system repository
+        this.systemRepository.stopObservingRuntimes();
 
         res.send({ response: 'OK' });
       } catch (error) {

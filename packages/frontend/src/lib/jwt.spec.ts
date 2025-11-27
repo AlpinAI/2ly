@@ -13,14 +13,14 @@ describe('JWT Utility Functions', () => {
 
   describe('decodeJWT', () => {
     it('should decode a valid JWT token', () => {
-      // This is a sample JWT with payload: { userId: "123", email: "test@example.com", exp: 1234567890 }
+      // This is a sample JWT with payload: { userId: "123", email: "user1@2ly.ai", exp: 1234567890 }
       const token = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiIxMjMiLCJlbWFpbCI6InRlc3RAZXhhbXBsZS5jb20iLCJyb2xlIjoibWVtYmVyIiwiaWF0IjoxMjM0NTY3ODkwLCJleHAiOjEyMzQ1Njc4OTB9.signature';
 
       const payload = decodeJWT(token);
 
       expect(payload).toBeTruthy();
       expect(payload?.userId).toBe('123');
-      expect(payload?.email).toBe('test@example.com');
+      expect(payload?.email).toBe('user1@2ly.ai');
       expect(payload?.role).toBe('member');
     });
 

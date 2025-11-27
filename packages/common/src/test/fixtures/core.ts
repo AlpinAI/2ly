@@ -38,14 +38,21 @@ function getApiUrl(): string {
 
 /**
  * Execute a GraphQL query against the backend
+ * @param authToken - Optional JWT token for authenticated requests
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export async function graphql<T = any>(query: string, variables?: Record<string, any>): Promise<T> {
+export async function graphql<T = any>(query: string, variables?: Record<string, any>, authToken?: string): Promise<T> {
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+  };
+
+  if (authToken) {
+    headers['Authorization'] = `Bearer ${authToken}`;
+  }
+
   const response = await fetch(`${getApiUrl()}/graphql`, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
+    headers,
     body: JSON.stringify({ query, variables }),
   });
 
@@ -62,19 +69,27 @@ export async function graphql<T = any>(query: string, variables?: Record<string,
  * Reset the database to empty state
  * WARNING: This will delete ALL data!
  */
-export async function resetDatabase(): Promise<void> {
+export async function resetDatabase(retry = 3): Promise<void> {
   const resetUrl = `${getApiUrl()}/reset`;
 
-  const response = await fetch(resetUrl, {
-    method: 'GET',
-  });
-
-  if (!response.ok) {
-    throw new Error(`Failed to reset database: ${response.statusText}`);
+  try {
+    const response = await fetch(resetUrl, {
+      method: 'GET',
+    });
+    if (!response.ok) {
+      throw new Error(`Failed to reset database: ${response.statusText}`);
+    }
+    // Wait for the reset to complete
+    await new Promise((resolve) => setTimeout(resolve, 100));
+  } catch (error) {
+    testWarn(`Failed to reset database: ${error instanceof Error ? error.message : String(error)}`);
+    if (retry > 0) {
+      await new Promise((resolve) => setTimeout(resolve, (3-retry) * 1000));
+      await resetDatabase(retry - 1);
+    } else {
+      throw error;
+    }
   }
-
-  // Wait for the reset to complete
-  await new Promise((resolve) => setTimeout(resolve, 100));
 }
 
 /**
@@ -82,6 +97,35 @@ export async function resetDatabase(): Promise<void> {
  */
 export async function request(path: string, options: RequestInit = {}): Promise<Response> {
   return fetch(`${getApiUrl()}${path}`, options);
+}
+
+/**
+ * Login and get authentication token
+ * @returns JWT access token for authenticated requests
+ */
+export async function loginAndGetToken(email: string, password: string): Promise<string> {
+  const loginMutation = `
+    mutation Login($email: String!, $password: String!) {
+      login(email: $email, password: $password) {
+        accessToken
+        refreshToken
+        user {
+          id
+          email
+        }
+      }
+    }
+  `;
+
+  const result = await graphql<{
+    login: {
+      accessToken: string;
+      refreshToken: string;
+      user: { id: string; email: string };
+    };
+  }>(loginMutation, { email, password });
+
+  return result.login.accessToken;
 }
 
 /**
@@ -460,6 +504,9 @@ export async function seedDatabase(data: SeedData): Promise<Record<string, strin
 
 /**
  * Get current database state (for debugging/assertions)
+ *
+ * Uses direct Dgraph queries to bypass Apollo authentication requirements.
+ * This is a test utility function that needs to work regardless of auth state.
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function getDatabaseState(): Promise<{
@@ -472,54 +519,58 @@ export async function getDatabaseState(): Promise<{
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   system: any;
 }> {
-  // First get workspaces and system (no auth required)
+  // Query workspaces and system directly from Dgraph
   const query1 = `
     query GetDatabaseState {
-      workspaces {
+      queryWorkspace {
         id
         name
       }
-      system {
+      querySystem {
         id
         initialized
       }
     }
   `;
 
-  const result1 = await graphql<{
+  const result1 = await dgraphQL<{
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    workspaces: any[];
+    queryWorkspace: any[];
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    system: any;
+    querySystem: any[];
   }>(query1);
 
-  const workspaces = result1.workspaces || [];
+  const workspaces = result1.queryWorkspace || [];
+  const system = result1.querySystem?.[0] || null;
   const workspaceId = workspaces[0]?.id;
 
-  // If we have a workspace, get MCP servers for it
+  // If we have a workspace, get MCP servers for it directly from Dgraph
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let mcpServers: any[] = [];
   if (workspaceId) {
     const query2 = `
       query GetMCPServers($workspaceId: ID!) {
-        mcpServers(workspaceId: $workspaceId) {
+        getWorkspace(id: $workspaceId) {
           id
-          name
-          transport
+          mcpServers {
+            id
+            name
+            transport
+          }
         }
       }
     `;
-    const result2 = await graphql<{
+    const result2 = await dgraphQL<{
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      mcpServers: any[];
+      getWorkspace: { mcpServers: any[] } | null;
     }>(query2, { workspaceId });
-    mcpServers = result2.mcpServers || [];
+    mcpServers = result2.getWorkspace?.mcpServers || [];
   }
 
   return {
     workspaces,
     users: [], // Cannot query users without auth - tests should seed and track separately
     mcpServers,
-    system: result1.system,
+    system,
   };
 }

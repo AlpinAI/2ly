@@ -101,6 +101,7 @@ export const GET_TOOLSET = gql`
         mcpServer {
           id
           name
+          runOn
         }
       }
       workspace {
@@ -169,6 +170,7 @@ export const ADD_MCP_TOOL_TO_TOOLSET = gql`
           mcpServer {
             id
             name
+            runOn
           }
         }
         workspace {
@@ -215,6 +217,7 @@ export const REMOVE_MCP_TOOL_FROM_TOOLSET = gql`
           mcpServer {
             id
             name
+            runOn
           }
         }
         workspace {
@@ -244,6 +247,7 @@ export const OBSERVE_TOOLSETS = (type: 'query' | 'subscription' = 'query') => gq
           mcpServer {
             id
             name
+            runOn
           }
         }
       }
@@ -271,6 +275,7 @@ export const QUERY_ALL_TOOLSETS = gql`
         mcpServer {
           id
           name
+          runOn
         }
       }
       workspace {
@@ -303,11 +308,36 @@ export const QUERY_TOOLSET_BY_NAME = gql`
           mcpServer {
             id
             name
+            runOn
           }
         }
         workspace {
           id
           name
+        }
+      }
+    }
+  }
+`;
+
+export const GET_TOOLSET_AGENT_MCP_SERVERS = gql`
+  query getToolSet($toolsetId: ID!) {
+    getToolSet(id: $toolsetId) {
+      mcpTools {
+        mcpServer {
+          id
+          name
+          description
+          transport
+          config
+          runOn
+          tools {
+            id
+            name
+            description
+            inputSchema
+            annotations
+          }
         }
       }
     }
