@@ -144,7 +144,7 @@ Start with the default runtime, but add more for:
 - **Workload isolation** - Separate production, staging, and development environments
 - **Scalability** - Distribute load across multiple runtime instances
 
-See [Runtime Documentation](https://docs.2ly.ai/runtimes) for deployment options (Docker, Kubernetes, bare metal).
+See [Runtime Documentation](https://docs.2ly.ai/core-concepts/runtime) for deployment options (Docker, Kubernetes, bare metal).
 
 ---
 
@@ -176,7 +176,7 @@ Unlike traditional gateways that proxy HTTP requests to fixed endpoints, 2LY use
 
 ### For Users
 
-- 📖 [Product Documentation](https://docs.2ly.ai/getting-started/welcome)
+- 📖 [Product Documentation](https://docs.2ly.ai/getting-started/installation)
 - 🌐 [Product Website](https://2ly.ai)
 
 ### For Developers & Contributors

@@ -3,9 +3,10 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import { OnboardingCard } from './onboarding-card';
 import * as uiStore from '@/stores/uiStore';
 import * as runtimeStore from '@/stores/runtimeStore';
-import { ActiveStatus, OnboardingStepStatus, type OnboardingStep, type Runtime, OnboardingStepType, type McpServer, McpTransportType, McpServerRunOn, RuntimeType } from '@/graphql/generated/graphql';
+import { ActiveStatus, OnboardingStepStatus, type OnboardingStep, type Runtime, OnboardingStepType, McpTransportType, McpServerRunOn, RuntimeType } from '@/graphql/generated/graphql';
 import { useMCPServers } from '@/hooks/useMCPServers';
 import { useToolSets } from '@/hooks/useToolSets';
+import { createMockMcpServer, createMockMcpServerRef } from '@/test/factories';
 
 // Mock stores and hooks
 vi.mock('@/stores/uiStore');
@@ -18,21 +19,6 @@ vi.mock('react-router-dom', () => ({
 }));
 
 describe('OnboardingCard', () => {
-  // Helper to create minimal MCP server mock for tool relations
-  const createMockMcpServerRef = (id: string, name: string) => ({
-    __typename: 'MCPServer' as const,
-    id,
-    name,
-    description: '',
-    repositoryUrl: '',
-    transport: McpTransportType.Stdio,
-    runOn: null,
-    config: '{}',
-    tools: null,
-    runtime: null,
-    registryServer: null as never,
-    workspace: null as never,
-  });
 
   const mockRuntime: Runtime = {
     __typename: 'Runtime',
@@ -65,7 +51,7 @@ describe('OnboardingCard', () => {
             status: ActiveStatus.Active,
             createdAt: new Date(),
             lastSeenAt: new Date(),
-            mcpServer: createMockMcpServerRef('server-1', 'test-server'),
+            mcpServer: createMockMcpServerRef({ id: 'server-1', name: 'test-server' }),
             workspace: null as never,
             toolSets: [],
           },
@@ -113,7 +99,7 @@ describe('OnboardingCard', () => {
         lastSeenAt: new Date(),
         runtimes: null,
         status: ActiveStatus.Active,
-        mcpServer: createMockMcpServerRef('server-1', 'test-server'),
+        mcpServer: createMockMcpServerRef({ id: 'server-1', name: 'test-server' }),
         workspace: null as never,
         toolSets: [],
       },
@@ -328,9 +314,7 @@ describe('OnboardingCard', () => {
         status: OnboardingStepStatus.Completed,
       };
 
-      const mockServer: McpServer = {
-        __typename: 'MCPServer',
-        id: 'server-1',
+      const mockServer = createMockMcpServer({
         name: 'Test Server',
         description: 'Test server description',
         repositoryUrl: 'https://test.com',
@@ -356,7 +340,7 @@ describe('OnboardingCard', () => {
           workspace: mockRuntime.workspace!,
         },
         workspace: mockRuntime.workspace!,
-      };
+      });
 
       vi.mocked(useMCPServers).mockReturnValue({
         servers: [mockServer],
@@ -420,7 +404,7 @@ describe('OnboardingCard', () => {
             createdAt: new Date(),
             lastSeenAt: new Date(),
             status: ActiveStatus.Active,
-            mcpServer: createMockMcpServerRef('server-1', 'test-server'),
+            mcpServer: createMockMcpServerRef({ id: 'server-1', name: 'test-server' }),
             workspace: null as never,
             toolSets: [],
           },
@@ -434,7 +418,7 @@ describe('OnboardingCard', () => {
             createdAt: new Date(),
             lastSeenAt: new Date(),
             status: ActiveStatus.Active,
-            mcpServer: createMockMcpServerRef('server-1', 'test-server'),
+            mcpServer: createMockMcpServerRef({ id: 'server-1', name: 'test-server' }),
             workspace: null as never,
             toolSets: [],
           },
