@@ -11,8 +11,6 @@ import path from 'path';
  * - Runs tests in parallel with isolated contexts
  * - Provides trace, screenshot, and video capture on failure
  *
- * Environment Variables:
- * - E2E_USE_IMAGE: Set to 'true' to use published images instead of building
  *
  * Note: Docker's layer cache automatically optimizes local builds
  */
@@ -78,14 +76,14 @@ export default defineConfig({
   // Projects use dependencies to run sequentially and avoid database conflicts
   projects: [
     // =============================================================================
-    // STRATEGY 1: Clean Slate Tests (Isolated, Fresh DB)
+    // STRATEGY 1: Serial Tests (Sequential Execution)
     // =============================================================================
-    // Tests that need a completely empty database before each test
+    // Tests that need specific database states and must run sequentially
     // Run sequentially (workers: 1) to prevent database race conditions
     // Projects run in sequence via dependencies
     {
-      name: 'clean-chromium',
-      testMatch: '**/tests/e2e/clean/**/*.spec.ts',
+      name: 'serial-chromium',
+      testMatch: '**/tests/e2e/serial/**/*.spec.ts',
       use: {
         ...devices['Desktop Chrome'],
         launchOptions: {
@@ -96,71 +94,31 @@ export default defineConfig({
       fullyParallel: false,
     },
     {
-      name: 'clean-firefox',
-      testMatch: '**/tests/e2e/clean/**/*.spec.ts',
+      name: 'serial-firefox',
+      testMatch: '**/tests/e2e/serial/**/*.spec.ts',
       use: {
         ...devices['Desktop Firefox'],
       },
       workers: 1,
       fullyParallel: false,
-      dependencies: ['clean-chromium'], // Wait for clean-chromium to complete
+      dependencies: ['serial-chromium'], // Wait for serial-chromium to complete
     },
     {
-      name: 'clean-webkit',
-      testMatch: '**/tests/e2e/clean/**/*.spec.ts',
+      name: 'serial-webkit',
+      testMatch: '**/tests/e2e/serial/**/*.spec.ts',
       use: {
         ...devices['Desktop Safari'],
       },
       workers: 1,
       fullyParallel: false,
-      dependencies: ['clean-firefox'], // Wait for clean-firefox to complete
+      dependencies: ['serial-firefox'], // Wait for serial-firefox to complete
     },
 
     // =============================================================================
-    // STRATEGY 2: Seeded Tests (Pre-populated DB)
+    // STRATEGY 2: Parallel Tests (UI-focused, Order-independent)
     // =============================================================================
-    // Tests that need database with predefined data (workspaces, users, etc.)
-    // Run sequentially per file (workers: 1), database is reset+seeded before each describe
-    // Projects run in sequence via dependencies
-    {
-      name: 'seeded-chromium',
-      testMatch: '**/tests/e2e/seeded/**/*.spec.ts',
-      use: {
-        ...devices['Desktop Chrome'],
-        launchOptions: {
-          args: ['--disable-dev-shm-usage'],
-        },
-      },
-      workers: 1,
-      fullyParallel: false,
-      dependencies: ['clean-webkit'], // Wait for all clean tests to complete
-    },
-    {
-      name: 'seeded-firefox',
-      testMatch: '**/tests/e2e/seeded/**/*.spec.ts',
-      use: {
-        ...devices['Desktop Firefox'],
-      },
-      workers: 1,
-      fullyParallel: false,
-      dependencies: ['seeded-chromium'], // Wait for seeded-chromium to complete
-    },
-    {
-      name: 'seeded-webkit',
-      testMatch: '**/tests/e2e/seeded/**/*.spec.ts',
-      use: {
-        ...devices['Desktop Safari'],
-      },
-      workers: 1,
-      fullyParallel: false,
-      dependencies: ['seeded-firefox'], // Wait for seeded-firefox to complete
-    },
-
-    // =============================================================================
-    // STRATEGY 3: Parallel Tests (UI-focused, Order-independent)
-    // =============================================================================
-    // Tests that run in parallel with pre-seeded database
-    // UI-focused tests that don't depend on specific data state
+    // Tests that can run in parallel with multiple workers
+    // UI-focused tests that don't depend on specific database state
     // Tests can run in any order
     // Projects run in sequence via dependencies
     {
@@ -172,7 +130,7 @@ export default defineConfig({
           args: ['--disable-dev-shm-usage'],
         },
       },
-      dependencies: ['seeded-webkit'], // Wait for all seeded tests to complete
+      dependencies: ['serial-webkit'], // Wait for all serial tests to complete
     },
     {
       name: 'parallel-firefox',

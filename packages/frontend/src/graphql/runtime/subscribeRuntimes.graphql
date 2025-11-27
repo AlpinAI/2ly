@@ -7,9 +7,9 @@ subscription SubscribeRuntimes($workspaceId: ID!) {
     name
     description
     status
+    type
     createdAt
     lastSeenAt
-    capabilities
     hostIP
     hostname
     mcpClientName
@@ -17,12 +17,12 @@ subscription SubscribeRuntimes($workspaceId: ID!) {
       id
       name
       description
-    }
-    mcpToolCapabilities {
-      id
-      name
-      description
-      status
+      tools {
+        id
+        name
+        description
+        status
+      }
     }
   }
 }

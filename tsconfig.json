@@ -3,13 +3,11 @@
     "baseUrl": ".",
     "module": "esnext",
     "target": "esnext",
+    "lib": ["ES2024", "DOM"],
     "strict": true,
     "jsx": "preserve",
     "isolatedModules": true,
     "moduleResolution": "bundler",
-    "customConditions": [
-      "source"
-    ],
     "experimentalDecorators": true,
     "useDefineForClassFields": false,
     "paths": {

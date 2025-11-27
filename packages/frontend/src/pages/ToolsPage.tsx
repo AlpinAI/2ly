@@ -11,7 +11,7 @@
  * FEATURES:
  * - Real-time tool updates (subscription)
  * - Search by name/description
- * - Filter by server(s), agent(s)
+ * - Filter by server(s), tool set(s)
  * - Click tool to view details and test
  * - Execute tools with input parameters
  * - "Add Tools" button (opens AddToolWorkflow)
@@ -19,26 +19,26 @@
 
 import { useMemo, useEffect } from 'react';
 import { Plus } from 'lucide-react';
+import { useParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { MasterDetailLayout } from '@/components/layout/master-detail-layout';
 import { ToolTable } from '@/components/tools/tool-table';
 import { ToolDetail } from '@/components/tools/tool-detail';
 import { useMCPTools } from '@/hooks/useMCPTools';
 import { useMCPServers } from '@/hooks/useMCPServers';
-import { useAgents } from '@/hooks/useAgents';
+import { useToolSets } from '@/hooks/useToolSets';
 import { useUIStore } from '@/stores/uiStore';
-import { useRuntimeData } from '@/stores/runtimeStore';
 import { useUrlSync } from '@/hooks/useUrlSync';
 
 export default function ToolsPage() {
+  const { workspaceId } = useParams<{ workspaceId: string }>();
   const { selectedId, setSelectedId } = useUrlSync();
   const setAddSourceWorkflowOpen = useUIStore((state) => state.setAddSourceWorkflowOpen);
 
-  // Fetch tools, servers, and agents
-  const { runtimes } = useRuntimeData();
+  // Fetch tools, servers, and tool sets
   const { filteredTools, loading, error, filters } = useMCPTools();
   const { servers } = useMCPServers();
-  const { agents } = useAgents(runtimes);
+  const { toolSets } = useToolSets(workspaceId || '');
 
   // Get selected tool from URL
   const selectedTool = useMemo(() => {
@@ -54,7 +54,7 @@ export default function ToolsPage() {
     }
   }, [selectedId, selectedTool, loading, setSelectedId]);
 
-  // Available servers and agents for filters
+  // Available servers and tool sets for filters
   const availableServers = useMemo(() => {
     return servers.map((server) => ({
       id: server.id,
@@ -62,12 +62,12 @@ export default function ToolsPage() {
     }));
   }, [servers]);
 
-  const availableAgents = useMemo(() => {
-    return agents.map((agent) => ({
-      id: agent.id,
-      name: agent.name,
+  const availableToolSets = useMemo(() => {
+    return toolSets.map((toolSet: { id: string; name: string }) => ({
+      id: toolSet.id,
+      name: toolSet.name,
     }));
-  }, [agents]);
+  }, [toolSets]);
 
   if (error) {
     return (
@@ -105,10 +105,10 @@ export default function ToolsPage() {
             onSearchChange={filters.setSearch}
             serverFilter={filters.serverIds}
             onServerFilterChange={filters.setServerIds}
-            agentFilter={filters.agentIds}
-            onAgentFilterChange={filters.setAgentIds}
+            toolSetFilter={filters.toolSetIds}
+            onToolSetFilterChange={filters.setToolSetIds}
             availableServers={availableServers}
-            availableAgents={availableAgents}
+            availableToolSets={availableToolSets}
             loading={loading}
           />
         }

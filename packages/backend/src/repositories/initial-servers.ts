@@ -38,6 +38,34 @@ export const INITIAL_FEATURED_SERVERS: Server[] = [
     remotes: null,
   },
   {
+    name: '@agent-infra/mcp-server-filesystem',
+    description: 'Secure file operations with configurable access controls',
+    version: '1.2.23',
+    repository: {
+      url: 'agent-infra/mcp-server-filesystem',
+      source: 'github',
+    },
+    packages: [
+      {
+        registryType: 'npm',
+        identifier: '@agent-infra/mcp-server-filesystem',
+        version: '1.2.23',
+        packageArguments: [
+          {
+            name: 'allowed-directories',
+            description: 'Comma-separated list of allowed directories for file operations',
+            format: 'string',
+            type: 'named',
+            isRequired: true,
+          },
+        ],
+        runtimeArguments: [],
+        environmentVariables: [],
+      },
+    ],
+    remotes: null,
+  },
+  {
     name: '@modelcontextprotocol/server-fetch',
     description: 'Web content fetching and conversion for efficient LLM usage',
     version: '0.6.2',

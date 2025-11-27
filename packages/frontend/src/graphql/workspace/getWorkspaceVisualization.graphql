@@ -25,16 +25,12 @@ query GetWorkspaceVisualization($workspaceId: ID!) {
       id
       name
     }
-    runtimes {
-      id
-      name
-    }
     toolSets {
       id
       name
     }
   }
-  workspace {
+  workspace(workspaceId: $workspaceId) {
     id
     name
     runtimes {
@@ -45,18 +41,17 @@ query GetWorkspaceVisualization($workspaceId: ID!) {
       mcpServers {
         id
         name
-      }
-      mcpToolCapabilities {
-        id
-        name
+        tools {
+          id
+          name
+        }
       }
     }
     toolSets {
       id
       name
       description
-      status
-      mcpToolCapabilities {
+      mcpTools {
         id
         name
       }

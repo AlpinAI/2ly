@@ -1,34 +1,38 @@
-import { inject, injectable } from 'inversify';
+import { inject, injectable, optional } from 'inversify';
 import pino from 'pino';
 import {
-  AckMessage,
   LoggerService,
   NatsService,
-  RuntimeConnectMessage,
-  RuntimeReconnectMessage,
+  RuntimeReconnectPublish,
   Service,
-  SetRuntimeCapabilitiesMessage,
 } from '@2ly/common';
 import { HealthService } from './runtime.health.service';
-import { AgentService } from './agent.service';
+import { McpStdioService } from './mcp.stdio.service';
+import { FastifyManagerService } from './fastify.manager.service';
+import { McpSseService } from './mcp.sse.service';
+import { McpStreamableService } from './mcp.streamable.service';
 import { ToolService } from './tool.service';
-import { IdentityService } from './identity.service';
+import { AuthService, PermanentAuthenticationError } from './auth.service';
+import { RUNTIME_MODE, type RuntimeMode } from '../di/symbols';
 
 @injectable()
 export class MainService extends Service {
   name = 'main';
   private logger: pino.Logger;
-  private RID: string | null = null;
   private failedConnectionCounter: number = 0;
   private subscriptions: { unsubscribe: () => void; drain: () => Promise<void>; isClosed?: () => boolean }[] = [];
 
   constructor(
     @inject(LoggerService) private loggerService: LoggerService,
     @inject(NatsService) private natsService: NatsService,
-    @inject(IdentityService) private identityService: IdentityService,
+    @inject(AuthService) private authService: AuthService,
     @inject(HealthService) private healthService: HealthService,
-    @inject(AgentService) private agentService: AgentService,
-    @inject(ToolService) private toolService: ToolService,
+    @inject(RUNTIME_MODE) private runtimeMode: RuntimeMode,
+    @inject(McpStdioService) @optional() private mcpStdioService: McpStdioService | undefined,
+    @inject(FastifyManagerService) @optional() private fastifyManager: FastifyManagerService | undefined,
+    @inject(McpSseService) @optional() private mcpSseService: McpSseService | undefined,
+    @inject(McpStreamableService) @optional() private mcpStreamableService: McpStreamableService | undefined,
+    @inject(ToolService) @optional() private toolService: ToolService | undefined,
   ) {
     super();
     this.logger = this.loggerService.getLogger(this.name);
@@ -48,111 +52,111 @@ export class MainService extends Service {
     // no need to send disconnect message, health service kills the heartbeat signal upon stopping
     await this.down();
     this.logActiveServices();
+    this.removeGracefulShutdownHandlers();
+    this.logger.info('Stopped');
   }
 
   // Keeps trying to up the services until the main is considered stopped
   private async up() {
-    if (this.state === 'STARTED' || this.state === 'STARTING') {
+    // If the main service is STOPPED or STOPPING, return
+    if (this.state === 'STOPPED' || this.state === 'STOPPING') {
+      return;
+    }
+
+    // Connect phase - Only when runtime or toolset is present
+    if (this.runtimeMode !== 'STANDALONE_MCP_STREAM') {
+      this.logger.debug(`Starting connect phase in ${this.runtimeMode} mode`);
       try {
+        // Start NATS service
         await this.startService(this.natsService);
-        await this.startService(this.identityService);
+        // Login and retrieve identity
+        try {
+          await this.startService(this.authService);
+        } catch (error) {
+          if (error instanceof PermanentAuthenticationError) {
+            this.logger.error(`Permanent authentication failure: ${error.message}`);
+            this.logger.error('Cannot recover from authentication failure. Process will exit.');
+            await this.gracefulShutdown('AUTH_FAILURE');
+            return;
+          }
+          throw error;
+        }
+        // Start heartbeat
+        await this.startService(this.healthService);
         // Subscribe to RuntimeReconnectMessage after NATS is connected
         await this.subscribeToReconnectMessage();
       } catch (error) {
-        this.logger.error(`Failed to start nats or identity service: ${error}`);
+        this.logger.error(`Failed to start nats or auth service: ${error}`);
         await this.reconnect();
         return;
       }
+    }
 
-      try {
-        // INIT PHASE
-        const identity = this.identityService.getIdentity();
-        const connectMessage = new RuntimeConnectMessage({
-          name: identity.name,
-          pid: identity.processId,
-          hostIP: identity.hostIP,
-          hostname: identity.hostname,
-          workspaceId: identity.workspaceId,
-        });
-        const ack = await this.natsService.request(connectMessage);
-        if (ack instanceof AckMessage) {
-          if (!ack.data.metadata?.id || !ack.data.metadata?.RID || !ack.data.metadata?.workspaceId) {
-            throw new Error('Runtime connected but no id, RID or workspaceId found');
-          }
-          this.logger.info(`Runtime connected with RID: ${ack.data.metadata?.RID}`);
-          this.identityService.setId(
-            ack.data.metadata?.id as string,
-            ack.data.metadata?.RID as string,
-            ack.data.metadata?.workspaceId as string,
-          );
-          // Reset failed connection counter on successful connection
-          this.failedConnectionCounter = 0;
-        } else {
-          throw new Error('Invalid Connection response received');
-        }
-      } catch (error) {
-        // When the INIT fails -> reconnect
-        this.logger.error(`Failed to connect to the backend: ${error}`);
-        await this.reconnect();
-        return;
+    try {
+      // START PHASE
+      // Only start runtime services if not in standalone MCP mode
+      if (this.toolService) {
+        this.logger.info(`Starting tool service in ${this.runtimeMode} mode`);
+        await this.startService(this.toolService);
       }
 
-      try {
-        // START PHASE
-        await this.startService(this.healthService);
-
-        if (
-          this.identityService.getAgentCapability() === true ||
-          this.identityService.getAgentCapability() === 'auto'
-        ) {
-          this.logger.info(`Starting agent service`);
-          await this.startService(this.agentService);
-        }
-        if (this.identityService.getToolCapability() === true) {
-          this.logger.info(`Starting tool service`);
-          await this.startService(this.toolService);
-        }
-
-        // When agent service initializes, it means that the runtime is acting as an MCP server
-        // known as an agent runtime. We must ensure this capability is captured by the backend.
-        this.agentService.onInitializeMCPServer(async () => {
-          this.logger.debug('Agent service initialized');
-          if (this.identityService.getAgentCapability() === 'auto') {
-            this.logger.info(`Agent service initialized, setting agent capability to true`);
-            const identity = this.identityService.getIdentity();
-            if (!identity.RID || !identity.capabilities || !Array.isArray(identity.capabilities)) {
-              this.logger.error('Identity not initialized');
-              return;
-            }
-            const capabilities = this.identityService.getIdentity().capabilities;
-            capabilities.push('agent');
-            const ack = (await this.natsService.request(
-              new SetRuntimeCapabilitiesMessage({
-                RID: identity.RID,
-                capabilities,
-              }),
-            )) as AckMessage;
-
-            if (ack.data) {
-              this.identityService.addCapability('agent');
-            }
-          }
-        });
-      } catch (error) {
-        this.logger.error(`Failed to start the health service: ${error}`);
-        await this.reconnect();
-        return;
+      // Start MCP services based on mode
+      if (this.mcpStdioService) {
+        this.logger.info(`Starting MCP stdio service in ${this.runtimeMode} mode`);
+        await this.startService(this.mcpStdioService);
       }
+
+      // Start Fastify Manager first (creates Fastify instance and MCP Server, but doesn't listen yet)
+      if (this.fastifyManager) {
+        this.logger.info(`Starting Fastify Manager in ${this.runtimeMode} mode`);
+        await this.startService(this.fastifyManager);
+      }
+
+      // Then start transport services (they register routes on the shared Fastify instance)
+      if (this.mcpSseService) {
+        this.logger.info(`Starting MCP SSE service in ${this.runtimeMode} mode`);
+        await this.startService(this.mcpSseService);
+      }
+
+      if (this.mcpStreamableService) {
+        this.logger.info(`Starting MCP Streamable HTTP service in ${this.runtimeMode} mode`);
+        await this.startService(this.mcpStreamableService);
+      }
+
+      // Finally, start listening on the port (after all routes are registered)
+      if (this.fastifyManager) {
+        this.logger.info('Starting Fastify server to listen for connections');
+        await this.fastifyManager.startListening();
+      }
+    } catch (error) {
+      this.logger.error(`Failed to start services: ${error}`);
+      await this.reconnect();
+      return;
     }
   }
 
   private async down() {
     await this.unsubscribeFromMessages();
+    if (this.mcpStdioService) {
+      await this.stopService(this.mcpStdioService);
+    }
+    // Stop transport services first (before closing the Fastify instance)
+    if (this.mcpSseService) {
+      await this.stopService(this.mcpSseService);
+    }
+    if (this.mcpStreamableService) {
+      await this.stopService(this.mcpStreamableService);
+    }
+    // Then stop Fastify Manager (closes Fastify instance and MCP Server)
+    if (this.fastifyManager) {
+      await this.stopService(this.fastifyManager);
+    }
+    if (this.toolService) {
+      await this.stopService(this.toolService);
+    }
     await this.stopService(this.healthService);
-    await this.stopService(this.toolService);
-    await this.stopService(this.agentService);
     await this.stopService(this.natsService);
-    await this.stopService(this.identityService);
+    await this.stopService(this.authService);
   }
 
   public async reconnect() {
@@ -197,17 +201,18 @@ export class MainService extends Service {
 
   private async subscribeToReconnectMessage() {
     this.logger.debug('Subscribing to RuntimeReconnectMessage');
-    const subscription = this.natsService.subscribe(RuntimeReconnectMessage.subscribe());
+    const subscription = this.natsService.subscribe(RuntimeReconnectPublish.subscribe());
     this.subscriptions.push(subscription);
 
     // Process messages in the background
     (async () => {
       try {
         for await (const msg of subscription) {
-          if (msg instanceof RuntimeReconnectMessage) {
+          if (msg instanceof RuntimeReconnectPublish) {
             this.logger.info(`Received RuntimeReconnectMessage: ${msg.data.reason || 'No reason provided'}`);
             // Clear identity to force re-registration
-            this.identityService.clearIdentity();
+            // DO WE STILL NEED TO CLEAR IDENTITY ?
+            // this.authService.clearIdentity();
             // Trigger reconnection
             await this.reconnect();
           }
@@ -233,25 +238,39 @@ export class MainService extends Service {
   }
 
   private isShuttingDown = false;
+
+  // Store handler references for cleanup
+  private sigintHandler = () => this.gracefulShutdown('SIGINT');
+  private sigtermHandler = () => this.gracefulShutdown('SIGTERM');
+  private uncaughtExceptionHandler = (error: Error) => {
+    this.logger.error(`Uncaught exception: ${error.message}`);
+    if (error.stack) {
+      this.logger.error(`Stack trace: ${error.stack}`);
+    }
+    console.error(error);
+    this.gracefulShutdown('uncaughtException');
+  };
+  private unhandledRejectionHandler = (error: unknown) => {
+    this.logger.error(`Unhandled rejection: ${error}`);
+    if (error instanceof Error && error.stack) {
+      this.logger.error(`Stack trace: ${error.stack}`);
+    }
+    console.error(error);
+    this.gracefulShutdown('unhandledRejection');
+  };
+
   private registerGracefulShutdown() {
-    process.on('SIGINT', () => this.gracefulShutdown('SIGINT'));
-    process.on('SIGTERM', () => this.gracefulShutdown('SIGTERM'));
-    process.on('uncaughtException', (error: Error) => {
-      this.logger.error(`Uncaught exception: ${error.message}`);
-      if (error.stack) {
-        this.logger.error(`Stack trace: ${error.stack}`);
-      }
-      console.error(error);
-      this.gracefulShutdown('uncaughtException');
-    });
-    process.on('unhandledRejection', (error) => {
-      this.logger.error(`Unhandled rejection: ${error}`);
-      if (error instanceof Error && error.stack) {
-        this.logger.error(`Stack trace: ${error.stack}`);
-      }
-      console.error(error);
-      this.gracefulShutdown('unhandledRejection');
-    });
+    process.on('SIGINT', this.sigintHandler);
+    process.on('SIGTERM', this.sigtermHandler);
+    process.on('uncaughtException', this.uncaughtExceptionHandler);
+    process.on('unhandledRejection', this.unhandledRejectionHandler);
+  }
+
+  private removeGracefulShutdownHandlers() {
+    process.off('SIGINT', this.sigintHandler);
+    process.off('SIGTERM', this.sigtermHandler);
+    process.off('uncaughtException', this.uncaughtExceptionHandler);
+    process.off('unhandledRejection', this.unhandledRejectionHandler);
   }
 
   private async gracefulShutdown(signal: string) {

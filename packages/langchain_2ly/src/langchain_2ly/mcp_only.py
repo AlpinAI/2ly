@@ -29,17 +29,58 @@ import asyncio
 class TwolyOptions(TypedDict, total=False):
     """Configuration for the MCP runtime process.
 
-    - workspace: Optional workspace identifier forwarded to the runtime.
+    - master_key: Workspace key (requires name parameter)
+    - toolset_key: Toolset-specific key (standalone)
     - nats_servers: NATS connection URL used by the runtime. Defaults to local.
     - version: npm version/range for `@2ly/runtime` when executed via `npx`.
     - startup_timeout_seconds: Max time to wait for session initialization.
     - log_level: Optional runtime log level forwarded via env var (info, debug, warn)
     """
-    workspace: str
+    master_key: str
+    toolset_key: str
     nats_servers: str
     version: str
     startup_timeout_seconds: float
     log_level: str
+
+def _validate_auth(name: Optional[str], master_key: Optional[str], toolset_key: Optional[str]) -> None:
+    """Validate authentication configuration.
+
+    Rules:
+    - Exactly one of master_key or toolset_key must be provided
+    - master_key requires name parameter
+    - toolset_key must not have name parameter
+
+    Raises:
+        ValueError: If authentication configuration is invalid
+    """
+    has_master_key = master_key is not None
+    has_toolset_key = toolset_key is not None
+
+    # Must have exactly one key type
+    if not has_master_key and not has_toolset_key:
+        raise ValueError(
+            "Authentication required: provide either 'master_key' (with 'name') or 'toolset_key'. "
+            "Get keys from the 2ly UI: Settings > API Keys (workspace key) or Toolsets page (toolset key)."
+        )
+
+    if has_master_key and has_toolset_key:
+        raise ValueError(
+            "Authentication conflict: provide either 'master_key' or 'toolset_key', not both."
+        )
+
+    # Validate master_key requirements
+    if has_master_key and not name:
+        raise ValueError(
+            "When using 'master_key' (workspace key), you must provide a 'name' parameter to identify the toolset."
+        )
+
+    # Validate toolset_key requirements
+    if has_toolset_key and name:
+        raise ValueError(
+            "When using 'toolset_key', do not provide a 'name' parameter. "
+            "The toolset is identified by the key itself."
+        )
 
 class MCPTool(BaseTool):
     """Light wrapper that adapts MCP tools to LangChain's `BaseTool`.
@@ -107,6 +148,18 @@ class MCPTool(BaseTool):
 class MCPClient:
     """Minimal MCP client with a lazy, shared session for LangChain tools.
 
+    Authentication approaches:
+    1. Workspace key + toolset name (auto-discovery):
+       MCPClient(name="My Agent", master_key="WSK_...", ...)
+       - Enables automatic creation and discovery of toolsets at runtime
+    2. Toolset-specific key (recommended):
+       MCPClient(toolset_key="TSK_...", ...)
+       - Provides granular security with access limited to one toolset
+
+    See factory methods for convenient initialization:
+    - MCPClient.with_workspace_key(name, master_key)
+    - MCPClient.with_toolset_key(toolset_key)
+
     Public API:
     - get_langchain_tools(): Fetch LangChain `BaseTool` objects (starts session
       on first use). Compatible with LangChain/LangGraph agents.
@@ -122,25 +175,54 @@ class MCPClient:
     - `stop()` requests shutdown and awaits the background task.
     """
 
-    def __init__(self, name: str, options: Optional[TwolyOptions] = None):
+    def __init__(
+        self,
+        name: Optional[str] = None,
+        master_key: Optional[str] = None,
+        toolset_key: Optional[str] = None,
+        nats_servers: str = "nats://localhost:4222",
+        version: str = "latest",
+        startup_timeout_seconds: float = 20.0,
+        log_level: Optional[str] = None
+    ):
+        """Initialize MCPClient with authentication.
+
+        Args:
+            name: Toolset name (required when using master_key)
+            master_key: Workspace key (requires name parameter)
+            toolset_key: Toolset-specific key (standalone)
+            nats_servers: NATS connection URL
+            version: npm version for @2ly/runtime
+            startup_timeout_seconds: Max time to wait for session initialization
+            log_level: Optional runtime log level (info, debug, warn)
+
+        Raises:
+            ValueError: If authentication configuration is invalid
+        """
+        # Validate authentication
+        _validate_auth(name, master_key, toolset_key)
+
         self.name = name
-        _opts: TwolyOptions = options or {}
 
-        nats_servers = _opts.get("nats_servers", "nats://localhost:4222")
-        version = _opts.get("version", "latest")
-
+        # Build environment variables
         env = {
-            "RUNTIME_NAME": name,
             "NATS_SERVERS": nats_servers,
         }
-        if "workspace" in _opts:
-            env["WORKSPACE_ID"] = _opts["workspace"]
-        if "log_level" in _opts:
-            env["LOG_LEVEL"] = str(_opts["log_level"])  
+
+        if master_key:
+            env["MASTER_KEY"] = master_key
+            env["TOOLSET_NAME"] = name  # type: ignore (validated above)
+        elif toolset_key:
+            env["TOOLSET_KEY"] = toolset_key
+
+        if log_level:
+            env["LOG_LEVEL"] = log_level
 
         self.serverParams = StdioServerParameters(
-            command="npx",
-            args=["@2ly/runtime@" + version],
+            # command="npx",
+            # args=["@2ly/runtime@" + version],
+            command="node",
+            args=["/Users/ben/web/alpinai/2ly/packages/runtime/dist/index.js"],
             env=env,
         )
 
@@ -152,7 +234,88 @@ class MCPClient:
         self._runner_exception: Optional[BaseException] = None
         self._started = False
         self._lock = asyncio.Lock()
-        self._startup_timeout_seconds = float(_opts.get("startup_timeout_seconds", 20.0))
+        self._startup_timeout_seconds = startup_timeout_seconds
+
+    @classmethod
+    def with_workspace_key(
+        cls,
+        name: str,
+        master_key: str,
+        nats_servers: str = "nats://localhost:4222",
+        version: str = "latest",
+        startup_timeout_seconds: float = 20.0,
+        log_level: Optional[str] = None
+    ) -> "MCPClient":
+        """Create MCPClient with workspace key for auto-discovery.
+
+        This approach enables automatic creation and discovery of toolsets
+        at runtime using a workspace-level key.
+
+        Args:
+            name: Toolset name to create or connect to
+            master_key: Workspace key (get from Settings > API Keys in UI)
+            nats_servers: NATS connection URL
+            version: npm version for @2ly/runtime
+            startup_timeout_seconds: Max time to wait for session initialization
+            log_level: Optional runtime log level (info, debug, warn)
+
+        Returns:
+            MCPClient instance configured with workspace authentication
+
+        Example:
+            async with MCPClient.with_workspace_key(
+                name="My LangGraph Agent",
+                master_key="WSK_xyz123..."
+            ) as mcp:
+                tools = await mcp.get_langchain_tools()
+        """
+        return cls(
+            name=name,
+            master_key=master_key,
+            nats_servers=nats_servers,
+            version=version,
+            startup_timeout_seconds=startup_timeout_seconds,
+            log_level=log_level
+        )
+
+    @classmethod
+    def with_toolset_key(
+        cls,
+        toolset_key: str,
+        nats_servers: str = "nats://localhost:4222",
+        version: str = "latest",
+        startup_timeout_seconds: float = 20.0,
+        log_level: Optional[str] = None
+    ) -> "MCPClient":
+        """Create MCPClient with toolset-specific key (recommended).
+
+        This approach provides granular security by using a key specific to
+        one toolset. Recommended for better security. Requires pre-creating
+        the toolset via UI or API.
+
+        Args:
+            toolset_key: Toolset-specific key (get from Toolsets page in UI)
+            nats_servers: NATS connection URL
+            version: npm version for @2ly/runtime
+            startup_timeout_seconds: Max time to wait for session initialization
+            log_level: Optional runtime log level (info, debug, warn)
+
+        Returns:
+            MCPClient instance configured with toolset authentication
+
+        Example:
+            async with MCPClient.with_toolset_key(
+                toolset_key="TSK_abc456..."
+            ) as mcp:
+                tools = await mcp.get_langchain_tools()
+        """
+        return cls(
+            toolset_key=toolset_key,
+            nats_servers=nats_servers,
+            version=version,
+            startup_timeout_seconds=startup_timeout_seconds,
+            log_level=log_level
+        )
 
     async def __aenter__(self) -> "MCPClient":
         await self.start()

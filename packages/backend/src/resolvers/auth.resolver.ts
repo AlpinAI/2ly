@@ -109,83 +109,45 @@ export class AuthResolver {
 
       if (!result.success) {
         if (result.accountLocked) {
-          return {
-            success: false,
-            user: {
-              id: '',
-              email: '',
-              createdAt: new Date(),
-              updatedAt: new Date(),
-            } as apolloResolversTypes.User,
-            tokens: null,
-            errors: [result.error || 'Account temporarily locked'],
-            accessToken: '',
-            refreshToken: '',
-            expiresIn: 0,
-          };
+          throw new GraphQLError(result.error || 'Account temporarily locked', {
+            extensions: {
+              code: 'ACCOUNT_LOCKED',
+            },
+          });
         }
 
-        return {
-          success: false,
-          user: {
-            id: '',
-            email: '',
-            createdAt: new Date(),
-            updatedAt: new Date(),
-          } as apolloResolversTypes.User,
-          tokens: null,
-          errors: [result.error || 'Authentication failed'],
-          accessToken: '',
-          refreshToken: '',
-          expiresIn: 0,
-        };
+        throw new GraphQLError(result.error || 'Authentication failed', {
+          extensions: {
+            code: 'UNAUTHENTICATED',
+          },
+        });
       }
 
       if (!result.user || !result.tokens) {
-        return {
-          success: false,
-          user: {
-            id: '',
-            email: '',
-            createdAt: new Date(),
-            updatedAt: new Date(),
-          } as apolloResolversTypes.User,
-          tokens: null,
-          errors: ['Authentication failed'],
-          accessToken: '',
-          refreshToken: '',
-          expiresIn: 0,
-        };
+        throw new GraphQLError('Authentication failed', {
+          extensions: {
+            code: 'UNAUTHENTICATED',
+          },
+        });
       }
 
       return {
-        success: true,
         user: result.user,
-        tokens: {
-          accessToken: result.tokens.accessToken,
-          refreshToken: result.tokens.refreshToken,
-        },
-        errors: [],
         accessToken: result.tokens.accessToken,
         refreshToken: result.tokens.refreshToken,
         expiresIn: 3600,
       };
     } catch (error) {
+      if (error instanceof GraphQLError) {
+        throw error;
+      }
+
       console.error('Login resolver error:', error);
-      return {
-        success: false,
-        user: {
-          id: '',
-          email: '',
-          createdAt: new Date(),
-          updatedAt: new Date(),
-        } as apolloResolversTypes.User,
-        tokens: null,
-        errors: ['Authentication service temporarily unavailable'],
-        accessToken: '',
-        refreshToken: '',
-        expiresIn: 0,
-      };
+      throw new GraphQLError('Authentication service temporarily unavailable', {
+        extensions: {
+          code: 'INTERNAL_ERROR',
+        },
+      });
     }
   }
 

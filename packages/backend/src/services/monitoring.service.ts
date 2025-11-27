@@ -1,5 +1,5 @@
 import { inject, injectable } from 'inversify';
-import { LoggerService, Service, NatsService, AgentCallMCPToolMessage, AgentCallResponseMessage, dgraphResolversTypes, MCP_CALL_TOOL_TIMEOUT } from '@2ly/common';
+import { LoggerService, Service, NatsService, ToolSetCallToolRequest, RuntimeCallToolResponse, dgraphResolversTypes, MCP_CALL_TOOL_TIMEOUT } from '@2ly/common';
 import { DGraphService } from './dgraph.service';
 import pino from 'pino';
 import { MonitoringRepository } from '../repositories/monitoring.repository';
@@ -34,10 +34,10 @@ export class MonitoringService extends Service {
     }
 
     private async monitorCallTools() {
-        const messages = this.natsService.subscribe('agent.call.tool.>');
+        const messages = this.natsService.subscribe(ToolSetCallToolRequest.subscribeToAll());
         for await (const message of messages) {
 
-            if (message instanceof AgentCallMCPToolMessage) {
+            if (message instanceof ToolSetCallToolRequest) {
                 // Persist the tool call
                 this.logger.info(`TOOL CALL: ${message.originalMsg?.reply}`);
                 try {
@@ -58,7 +58,7 @@ export class MonitoringService extends Service {
                                 }
                             }, MCP_CALL_TOOL_TIMEOUT);
                             for await (const msg of response) {
-                                if (msg instanceof AgentCallResponseMessage) {
+                                if (msg instanceof RuntimeCallToolResponse) {
                                     await promise.promise;
                                     this.logger.info(`Tool call response from ${msg.data.executedById}: ${JSON.stringify(msg.data)}`);
                                     clearTimeout(timeout);
@@ -71,6 +71,7 @@ export class MonitoringService extends Service {
                         toolInput: JSON.stringify(message.data.arguments),
                         calledById: message.data.from,
                         mcpToolId: message.data.toolId,
+                        isTest: message.data.isTest,
                     }).then((result) => {
                         toolCall = result;
                         this.logger.info(`Tool call persisted: ${toolCall.id}`);

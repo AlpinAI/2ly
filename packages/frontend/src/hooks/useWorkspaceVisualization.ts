@@ -142,16 +142,8 @@ export function useWorkspaceVisualization() {
         },
       });
 
-      // Add runtime nodes from tool (minimal data from nested query)
-      (tool.runtimes ?? []).forEach((runtime) => {
-        if (!runtime) return;
-        addNode({
-          id: runtime.id,
-          label: runtime.name,
-          type: 'runtime',
-          metadata: {},
-        });
-      });
+      // Note: Runtime information comes from workspace.runtimes, not from tool.runtimes
+      // The schema has MCPTool.toolSets but not MCPTool.runtimes
 
       // Add toolset nodes from tool (minimal data from nested query)
       (tool.toolSets ?? []).forEach((toolset) => {
@@ -166,7 +158,7 @@ export function useWorkspaceVisualization() {
     });
 
     // Add Runtimes as nodes
-    const workspaceData = data.workspace?.[0];
+    const workspaceData = data.workspace;
     (workspaceData?.runtimes ?? []).forEach((runtime) => {
       if (!runtime) return;
 
@@ -189,7 +181,6 @@ export function useWorkspaceVisualization() {
         id: toolset.id,
         label: toolset.name,
         type: 'toolset',
-        status: toolset.status,
         metadata: {
           description: toolset.description,
         },
@@ -271,18 +262,6 @@ export function useWorkspaceVisualization() {
     // Add edges from tools
     (data.mcpTools ?? []).forEach((tool) => {
       if (!tool) return;
-
-      // Add edges from tool to runtimes
-      (tool.runtimes ?? []).forEach((runtime) => {
-        if (!runtime) return;
-        addEdge({
-          id: `${tool.id}-runtime-${runtime.id}`,
-          source: tool.id,
-          target: runtime.id,
-          label: 'available on',
-          type: 'tool-runtime',
-        });
-      });
 
       // Add edges from tool to toolsets
       (tool.toolSets ?? []).forEach((toolset) => {

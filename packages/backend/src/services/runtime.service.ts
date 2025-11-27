@@ -1,31 +1,21 @@
 import { inject, injectable } from 'inversify';
 import {
   LoggerService,
-  NatsErrorMessage,
-  NatsMessage,
   NatsService,
   Service,
-  UpdateMcpToolsMessage,
-  dgraphResolversTypes,
-  AckMessage,
-  RUNTIME_SUBJECT,
-  NatsRequest,
-  RuntimeConnectMessage,
-  RuntimeReconnectMessage,
+  RuntimeDiscoveredToolsPublish,
+  RuntimeReconnectPublish,
 } from '@2ly/common';
 import { DGraphService } from './dgraph.service';
 import pino from 'pino';
-
+import { IdentityService } from './identity.service';
 import { type RuntimeInstanceFactory, RuntimeInstance } from './runtime.instance';
 import {
   MCPServerRepository,
   RuntimeRepository,
-  WorkspaceRepository,
-  SystemRepository,
 } from '../repositories';
 import { gql } from 'urql';
-
-export const DROP_ALL_DATA = 'dropAllData';
+import { RuntimeHandshakeIdentity } from '../types';
 
 @injectable()
 export class RuntimeService extends Service {
@@ -34,19 +24,16 @@ export class RuntimeService extends Service {
 
   private subscriptions: { unsubscribe: () => void; drain: () => Promise<void>; isClosed: () => boolean }[] = [];
   private runtimeInstances: Map<string, RuntimeInstance> = new Map();
-
-  @inject(DROP_ALL_DATA)
-  private dropAllData!: boolean;
+  private runtimeHandshakeCallbackId?: string;
 
   constructor(
     @inject(LoggerService) private loggerService: LoggerService,
     @inject(DGraphService) private dgraphService: DGraphService,
     @inject(NatsService) private natsService: NatsService,
+    @inject(IdentityService) private identityService: IdentityService,
     @inject(RuntimeInstance) private runtimeInstanceFactory: RuntimeInstanceFactory,
     @inject(MCPServerRepository) private mcpServerRepository: MCPServerRepository,
     @inject(RuntimeRepository) private runtimeRepository: RuntimeRepository,
-    @inject(WorkspaceRepository) private workspaceRepository: WorkspaceRepository,
-    @inject(SystemRepository) private systemRepository: SystemRepository,
   ) {
     super();
     this.logger = this.loggerService.getLogger(this.name);
@@ -55,14 +42,32 @@ export class RuntimeService extends Service {
   protected async initialize() {
     this.logger.info('Starting');
     await this.startService(this.dgraphService);
-    await this.dgraphService.initSchema(this.dropAllData);
     await this.startService(this.natsService);
     await this.rehydrateRuntimes();
-    this.subscribeToRuntime();
+    // listen for runtime handshakes and create runtime instances on the fly when connecting
+    this.runtimeHandshakeCallbackId = this.identityService.onHandshake('runtime', (identity: RuntimeHandshakeIdentity) => {
+      const instance = identity.instance;
+      const metadata = {pid: identity.pid, hostIP: identity.hostIP, hostname: identity.hostname};
+      const runtimeInstance = this.runtimeInstanceFactory(
+        instance,
+        metadata, () => {
+          this.runtimeInstances.set(instance.id, runtimeInstance);
+        }, () => {
+          runtimeInstance.stop('runtime');
+          this.runtimeInstances.delete(instance.id);
+        }
+      );
+    });
+    this.handleDiscoveredTools();
   }
 
   protected async shutdown() {
     this.logger.info('Stopping');
+    // Unregister handshake callback
+    if (this.runtimeHandshakeCallbackId) {
+      this.identityService.offHandshake('runtime', this.runtimeHandshakeCallbackId);
+      this.runtimeHandshakeCallbackId = undefined;
+    }
     for (const subscription of this.subscriptions) {
       try {
         if (!subscription.isClosed()) {
@@ -79,6 +84,7 @@ export class RuntimeService extends Service {
     this.runtimeInstances.clear();
     await this.stopService(this.natsService);
     await this.stopService(this.dgraphService);
+    this.logger.info('Stopped');
   }
 
   isRunning(): boolean {
@@ -98,7 +104,7 @@ export class RuntimeService extends Service {
     let nbMarkedInactiveRuntimes = 0;
     for (const key of heartbeatKeys) {
       // hydrate active runtime
-      const [runtimeId, pid] = key.split('-');
+      const runtimeId = key;
       aliveRuntimes.add(runtimeId);
       const runtime = activeRuntimes?.find((r) => r.id === runtimeId);
       if (runtime) {
@@ -107,11 +113,9 @@ export class RuntimeService extends Service {
         const runtimeInstance = this.runtimeInstanceFactory(
           runtime,
           {
-            RID: key,
-            pid: pid,
+            pid: runtime.processId ?? '',
             hostIP: runtime.hostIP ?? '',
             hostname: runtime.hostname ?? '',
-            mcpClientName: runtime.mcpClientName ?? '',
           },
           () => {
             this.runtimeInstances.set(key, runtimeInstance);
@@ -134,35 +138,9 @@ export class RuntimeService extends Service {
     this.logger.info(`Hydrated ${nbHydratedRuntimes} runtimes and marked ${nbMarkedInactiveRuntimes} runtimes as inactive`);
   }
 
-  async createRuntime(
-    workspaceId: string,
-    name: string,
-    processId: string,
-    hostIP: string,
-    hostname: string,
-    capabilities: string[],
-  ) {
-    this.logger.debug(`Creating runtime ${name}`);
-    const runtime = await this.runtimeRepository.create(name, '', 'ACTIVE', workspaceId, capabilities);
-    return this.runtimeRepository.setActive(runtime.id, processId, hostIP, hostname);
-  }
-
-  async setRuntimeActive(
-    runtimeId: string,
-    processId: string,
-    hostIP: string,
-    hostname: string,
-  ) {
-    this.logger.debug(`Updating runtime ${runtimeId} status to ACTIVE`);
-    return this.runtimeRepository.setActive(runtimeId, processId, hostIP, hostname);
-  }
-
-  async disconnectRuntime(runtimeId: string) {
-    this.logger.debug(`Disconnecting runtime ${runtimeId}`);
-    const response = (await this.runtimeRepository.setInactive(runtimeId)) as dgraphResolversTypes.Runtime;
-    return response;
-  }
-
+  /**
+   * Notify all runtime instances to reconnect
+   */
   async resetRuntimes() {
     this.logger.info('Resetting all runtime instances');
 
@@ -182,7 +160,7 @@ export class RuntimeService extends Service {
     ]);
 
     // Publish RuntimeReconnectMessage to all connected runtimes
-    const reconnectMessage = new RuntimeReconnectMessage({
+    const reconnectMessage = new RuntimeReconnectPublish({
       reason: 'Backend reset - please reconnect',
     });
     this.natsService.publish(reconnectMessage);
@@ -231,96 +209,46 @@ export class RuntimeService extends Service {
     return this.runtimeRepository.findByName(workspaceId, name);
   }
 
-  private async subscribeToRuntime() {
-    this.logger.debug(`Subscribing to runtime messages`);
-    const subscription = this.natsService.subscribe(`${RUNTIME_SUBJECT}.*`);
+  private handleDiscoveredTools() {
+    this.logger.debug(`Subscribing to discovered tools messages`);
+    const subscription = this.natsService.subscribe(RuntimeDiscoveredToolsPublish.subscribeToAll());
     this.subscriptions.push(subscription);
-    for await (const msg of subscription) {
-      try {
-        await this.handleRuntimeMessage(msg);
-      } catch (error) {
-        this.logger.error(`Error handling runtime message ${msg.type}: ${error}`);
-        if (msg instanceof NatsRequest && msg.shouldRespond() && error instanceof Error) {
-          const response = new NatsErrorMessage({ error: error.message });
-          msg.respond(response);
+
+    (async () => {
+      for await (const msg of subscription) {
+        try {
+          if (msg instanceof RuntimeDiscoveredToolsPublish) {
+            this.logger.debug(`${msg.data.mcpServerId} discovered ${msg.data.tools.length} tools`);
+      
+            // fetch current tools
+            const currentTools = await this.mcpServerRepository.getTools(msg.data.mcpServerId);
+      
+            // identify tools that are not in the current list -> must be disconnected
+            const toolsToDisconnect =
+              currentTools?.tools?.filter((tool) => !msg.data.tools.some((t) => t.name === tool.name)) ??
+              [];
+            // disconnect tools
+            for (const tool of toolsToDisconnect) {
+              await this.disconnectTool(tool.id);
+            }
+      
+            // upsert tools
+            for (const tool of msg.data.tools) {
+              await this.upsertTool(
+                msg.data.mcpServerId,
+                tool.name,
+                tool.description ?? '',
+                JSON.stringify(tool.inputSchema ?? {}),
+                JSON.stringify(tool.annotations ?? {}),
+              );
+            }
+          } else {
+            throw new Error(`Unknown message type: ${msg.type}`);
+          }
+        } catch (error) {
+          this.logger.error(`Error handling discovered tools message ${msg.type}: ${error}`);
         }
       }
-    }
-  }
-
-  private async getWorkspace(workspaceId: string) {
-    if (workspaceId !== 'DEFAULT') {
-      return this.workspaceRepository.findById(workspaceId);
-    } else {
-      return this.systemRepository.getDefaultWorkspace();
-    }
-  }
-
-  private async handleRuntimeMessage(msg: NatsMessage): Promise<void> {
-    this.logger.debug(`Handling ${msg.type} message: ${JSON.stringify(msg.data, null, 2)?.slice(0, 100)}...`);
-    if (msg instanceof RuntimeConnectMessage) {
-      const workspace = await this.getWorkspace(msg.data.workspaceId);
-      if (!workspace) {
-        throw new Error(`Workspace ${msg.data.workspaceId} not found`);
-      }
-      let instance = await this.runtimeRepository.findByName(workspace.id, msg.data.name);
-      if (!instance) {
-        instance = await this.runtimeRepository.create(msg.data.name, '', 'ACTIVE', workspace.id, []);
-      }
-      // Runtime ID is a unique identifier for the runtime, including its process id
-      const RID = `${instance.id}-${msg.data.pid}`;
-      if (this.runtimeInstances.has(RID)) {
-        msg.respond(new NatsErrorMessage({ error: `Runtime ${msg.data.name} already connected with process id ${msg.data.pid}` }));
-      } else {
-        const runtimeInstance = this.runtimeInstanceFactory(
-          instance,
-          {
-            RID: RID,
-            pid: msg.data.pid,
-            hostIP: msg.data.hostIP,
-            hostname: msg.data.hostname,
-            mcpClientName: msg.data.name || 'unknown',
-          }, () => {
-            this.runtimeInstances.set(RID, runtimeInstance);
-            msg.respond(new AckMessage({ metadata: { RID: RID, workspaceId: workspace.id, id: instance.id } }));
-          }, () => {
-            runtimeInstance.stop('runtime');
-            this.runtimeInstances.delete(RID);
-          });
-      }
-    } else if (msg instanceof UpdateMcpToolsMessage) {
-      this.logger.debug(
-        `Updating MCP Tools for MCP Server ${msg.data.mcpServerId} with ${msg.data.tools.length} tools`,
-      );
-
-      // fetch current capabilities
-      const currentTools = await this.mcpServerRepository.getTools(msg.data.mcpServerId);
-
-      // identify tools that are not in the current list -> must be disconnected
-      const toolsToDisconnect =
-        currentTools?.tools?.filter((tool) => !msg.data.tools.some((t) => t.name === tool.name)) ??
-        [];
-      // disconnect tools
-      for (const tool of toolsToDisconnect) {
-        await this.disconnectTool(tool.id);
-      }
-
-      // upsert tools
-      for (const tool of msg.data.tools) {
-        await this.upsertTool(
-          msg.data.mcpServerId,
-          tool.name,
-          tool.description ?? '',
-          JSON.stringify(tool.inputSchema ?? {}),
-          JSON.stringify(tool.annotations ?? {}),
-        );
-      }
-      return;
-    } else if (msg instanceof NatsErrorMessage) {
-      this.logger.error(`Error message received. ${msg.getSubject()}: ${msg.data.error}`);
-      return;
-    } else {
-      throw new Error(`Unknown message type: ${msg.type}`);
-    }
+    })();
   }
 }

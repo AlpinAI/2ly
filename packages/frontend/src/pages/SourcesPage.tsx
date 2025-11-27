@@ -23,8 +23,6 @@ import { MasterDetailLayout } from '@/components/layout/master-detail-layout';
 import { SourceTable } from '@/components/sources/source-table';
 import { SourceDetail } from '@/components/sources/source-detail';
 import { useMCPServers } from '@/hooks/useMCPServers';
-import { useAgents } from '@/hooks/useAgents';
-import { useRuntimeData } from '@/stores/runtimeStore';
 import { useUIStore } from '@/stores/uiStore';
 import { SourceType } from '@/types/sources';
 import { useUrlSync } from '@/hooks/useUrlSync';
@@ -32,11 +30,11 @@ import { useUrlSync } from '@/hooks/useUrlSync';
 export default function SourcesPage() {
   const { selectedId, setSelectedId } = useUrlSync();
   const [typeFilter, setTypeFilter] = useState<string[]>([]);
+  const [transportFilter, setTransportFilter] = useState<string[]>([]);
+  const [runOnFilter, setRunOnFilter] = useState<string[]>([]);
 
-  // Fetch servers and agents
-  const { runtimes } = useRuntimeData();
+  // Fetch servers
   const { servers, loading, error } = useMCPServers();
-  const { agents } = useAgents(runtimes);
 
   // UI store for opening add source workflow
   const setAddSourceWorkflowOpen = useUIStore((state) => state.setAddSourceWorkflowOpen);
@@ -50,11 +48,38 @@ export default function SourcesPage() {
     }));
   }, [servers]);
 
-  // Apply type filtering
+  // Apply filters (type, transport, runOn)
   const filteredSources = useMemo(() => {
-    if (typeFilter.length === 0) return sourcesWithType;
-    return sourcesWithType.filter(source => typeFilter.includes(source.type));
-  }, [sourcesWithType, typeFilter]);
+    return sourcesWithType.filter(source => {
+      // Type filter
+      if (typeFilter.length > 0 && !typeFilter.includes(source.type)) {
+        return false;
+      }
+
+      // Transport filter (only applies to MCP Servers)
+      if (transportFilter.length > 0) {
+        if (source.type === SourceType.MCP_SERVER && 'transport' in source) {
+          if (!transportFilter.includes(source.transport)) {
+            return false;
+          }
+        }
+        // Note: REST APIs don't have transport, so they pass this filter
+      }
+
+      // RunOn filter (only applies to MCP Servers)
+      if (runOnFilter.length > 0) {
+        if (source.type === SourceType.MCP_SERVER && 'runOn' in source) {
+          // source.runOn is nullable (Maybe<McpServerRunOn>)
+          if (!source.runOn || !runOnFilter.includes(source.runOn)) {
+            return false;
+          }
+        }
+        // Note: REST APIs don't have runOn, so they pass this filter
+      }
+
+      return true;
+    });
+  }, [sourcesWithType, typeFilter, transportFilter, runOnFilter]);
 
   // Get selected source from URL
   const selectedSource = useMemo(() => {
@@ -71,13 +96,6 @@ export default function SourcesPage() {
     }
   }, [selectedId, selectedSource, loading, setSelectedId]);
 
-  // Available agents for filter
-  const availableAgents = useMemo(() => {
-    return agents.map((agent) => ({
-      id: agent.id,
-      name: agent.name,
-    }));
-  }, [agents]);
 
   // Handle add source button click
   const handleAddSource = () => {
@@ -123,13 +141,13 @@ export default function SourcesPage() {
             onSearchChange={() => {}}
             typeFilter={typeFilter}
             onTypeFilterChange={setTypeFilter}
-            transportFilter={[]}
-            onTransportFilterChange={() => {}}
-            runOnFilter={[]}
-            onRunOnFilterChange={() => {}}
+            transportFilter={transportFilter}
+            onTransportFilterChange={setTransportFilter}
+            runOnFilter={runOnFilter}
+            onRunOnFilterChange={setRunOnFilter}
             agentFilter={[]}
             onAgentFilterChange={() => {}}
-            availableAgents={availableAgents}
+            availableAgents={[]}
             loading={loading}
           />
         }

@@ -142,18 +142,26 @@ export const errorLink = onError(({ error, operation }) => {
  * - 2LY uses JWT in Authorization header pattern
  */
 export const authLink = new ApolloLink((operation, forward) => {
-  // WHY: Get token from localStorage
-  // TODO: Integrate with AuthContext once it's implemented
-  const token = localStorage.getItem('2ly-auth-token');
+  // WHY: Get tokens from localStorage (matches AuthContext storage key)
+  const tokensJson = localStorage.getItem('2ly_auth_tokens');
 
   // WHY: Set authorization header if token exists
-  if (token) {
-    operation.setContext(({ headers = {} }) => ({
-      headers: {
-        ...headers,
-        authorization: `Bearer ${token}`,
-      },
-    }));
+  if (tokensJson) {
+    try {
+      const tokens = JSON.parse(tokensJson);
+      const accessToken = tokens.accessToken;
+
+      if (accessToken) {
+        operation.setContext(({ headers = {} }) => ({
+          headers: {
+            ...headers,
+            authorization: `Bearer ${accessToken}`,
+          },
+        }));
+      }
+    } catch (error) {
+      console.error('Failed to parse auth tokens from localStorage:', error);
+    }
   }
 
   return forward(operation);
@@ -186,8 +194,17 @@ export const wsLink = new GraphQLWsLink(
 
     // WHY: Connection parameters sent on WebSocket handshake
     connectionParams: () => {
-      const token = localStorage.getItem('2ly-auth-token');
-      return token ? { authorization: `Bearer ${token}` } : {};
+      const tokensJson = localStorage.getItem('2ly_auth_tokens');
+      if (tokensJson) {
+        try {
+          const tokens = JSON.parse(tokensJson);
+          return tokens.accessToken ? { authorization: `Bearer ${tokens.accessToken}` } : {};
+        } catch (error) {
+          console.error('Failed to parse auth tokens for WebSocket:', error);
+          return {};
+        }
+      }
+      return {};
     },
 
     // WHY: Retry connection on failure (important for subscriptions)

@@ -17,8 +17,14 @@ enum MCPServerRunOn {
   EDGE
 }
 
+enum RuntimeType {
+  EDGE
+  MCP
+}
+
 type Infra {
   nats: String
+  remoteMCP: String
 }
 
 type System {
@@ -67,7 +73,6 @@ type MCPTool {
   createdAt: Date!
   lastSeenAt: Date!
   mcpServer: MCPServer!
-  runtimes: [Runtime!]
   toolSets: [ToolSet!]
   workspace: Workspace!
 }
@@ -76,11 +81,21 @@ type ToolSet {
   id: ID!
   name: String!
   description: String
-  status: ActiveStatus!
   createdAt: Date!
-  lastSeenAt: Date
-  mcpToolCapabilities: [MCPTool!]
+  updatedAt: Date
+  mcpTools: [MCPTool!]
   workspace: Workspace!
+  toolCalls: [ToolCall!]
+}
+
+type IdentityKey {
+  id: ID!
+  key: String!
+  description: String
+  createdAt: Date!
+  expiresAt: Date
+  revokedAt: Date
+  relatedId: String!
 }
 
 type Runtime {
@@ -88,16 +103,16 @@ type Runtime {
   name: String!
   description: String
   status: ActiveStatus!
+  type: RuntimeType!
   createdAt: Date!
   lastSeenAt: Date
   roots: String
-  capabilities: [String!]
-  mcpToolCapabilities: [MCPTool!]
   mcpServers: [MCPServer!]
   workspace: Workspace!
   hostIP: String
   hostname: String
   mcpClientName: String
+  toolResponses: [ToolCall!]
 }
 
 enum OnboardingStepType {
@@ -124,6 +139,7 @@ type OnboardingStep {
   type: OnboardingStepType!
   status: OnboardingStepStatus!
   priority: Int
+  metadata: String
   createdAt: Date!
   updatedAt: Date
 }
@@ -136,8 +152,9 @@ type ToolCall {
   status: ToolCallStatus!
   toolOutput: String
   error: String
+  isTest: Boolean!
   mcpTool: MCPTool!
-  calledBy: Runtime!
+  calledBy: ToolSet
   executedBy: Runtime
 }
 
@@ -280,9 +297,11 @@ type ToolSetMetadataSuggestion {
 }
 
 type Query {
-  workspace: [Workspace!]
+  workspaces: [Workspace!]!
+  workspace(workspaceId: ID!): Workspace
   mcpServers(workspaceId: ID!): [MCPServer!]
   mcpTools(workspaceId: ID!): [MCPTool!]
+  toolSets(workspaceId: ID!): [ToolSet!]
   system: System
   infra: Infra!
   workspaceMCPTools(workspaceId: ID!): Workspace
@@ -296,6 +315,10 @@ type Query {
     filters: ToolCallFilters
     orderDirection: OrderDirection
   ): ToolCallsResult!
+  # Key management queries
+  workspaceKeys(workspaceId: ID!): [IdentityKey!]!
+  toolsetKey(toolsetId: ID!): IdentityKey
+  keyValue(keyId: ID!): String!
   # Authentication queries
   me: User
   # AI queries
@@ -332,13 +355,17 @@ type Mutation {
   ): MCPServer!
   linkMCPServerToRuntime(mcpServerId: ID!, runtimeId: ID!): MCPServer!
   unlinkMCPServerFromRuntime(mcpServerId: ID!): MCPServer!
-  createRuntime(name: String!, description: String!, capabilities: [String!]!, workspaceId: ID!): Runtime!
+  createRuntime(name: String!, description: String!, type: RuntimeType!, workspaceId: ID!): Runtime!
   updateRuntime(id: ID!, name: String!, description: String!): Runtime!
   deleteRuntime(id: ID!): Runtime!
   deleteMCPTool(id: ID!): MCPTool!
   deleteMCPServer(id: ID!): MCPServer!
-  linkMCPToolToRuntime(mcpToolId: ID!, runtimeId: ID!): Runtime!
-  unlinkMCPToolFromRuntime(mcpToolId: ID!, runtimeId: ID!): Runtime!
+  # ToolSet mutations
+  createToolSet(name: String!, description: String!, workspaceId: ID!): ToolSet!
+  updateToolSet(id: ID!, name: String!, description: String!): ToolSet!
+  deleteToolSet(id: ID!): ToolSet!
+  addMCPToolToToolSet(mcpToolId: ID!, toolSetId: ID!): ToolSet!
+  removeMCPToolFromToolSet(mcpToolId: ID!, toolSetId: ID!): ToolSet!
   initSystem(adminPassword: String!, email: String!): System!
   updateWorkspace(id: ID!, name: String!): Workspace!
   setGlobalRuntime(id: ID!, runtimeId: ID!): Workspace!
@@ -379,6 +406,10 @@ type Mutation {
   setAIConfig(workspaceId: ID!, provider: AIProvider!, model: String!, apiKey: String!): AIConfig!
   deleteAIConfig(workspaceId: ID!): Boolean!
 
+  # Key management mutations
+  createWorkspaceKey(workspaceId: ID!, description: String!): IdentityKey!
+  revokeKey(keyId: ID!): IdentityKey!
+
   # Authentication mutations
   registerUser(input: RegisterUserInput!): RegisterUserPayload!
   loginUser(input: LoginUserInput!): AuthPayload!
@@ -389,23 +420,9 @@ type Mutation {
 }
 
 # Authentication types
-type User {
-  id: ID!
-  email: String!
-  createdAt: Date!
-  lastLoginAt: Date
-}
-
 type AuthTokens {
   accessToken: String!
   refreshToken: String!
-}
-
-type AuthPayload {
-  success: Boolean!
-  user: User
-  tokens: AuthTokens
-  errors: [String!]
 }
 
 type RegisterUserPayload {
@@ -438,21 +455,7 @@ input LoginUserInput {
   deviceInfo: String
 }
 
-input LoginInput {
-  email: String!
-  password: String!
-  deviceInfo: String
-}
-
-input RefreshTokenInput {
-  refreshToken: String!
-}
-
 input LogoutUserInput {
-  refreshToken: String!
-}
-
-input LogoutInput {
   refreshToken: String!
 }
 
@@ -461,5 +464,7 @@ type Subscription {
   workspace(workspaceId: ID!): Workspace
   runtimes(workspaceId: ID!): [Runtime!]
   mcpServers(workspaceId: ID!): [MCPServer!]
+  mcpTools(workspaceId: ID!): [MCPTool!]
+  toolSets(workspaceId: ID!): [ToolSet!]
   toolCalls(workspaceId: ID!): [ToolCall!]
 }

@@ -1,6 +1,6 @@
 {
   "name": "@2ly/backend",
-  "version": "0.1.9",
+  "version": "0.2.3",
   "description": "",
   "author": "",
   "license": "See license in LICENSE.txt",
@@ -40,6 +40,8 @@
     "@fastify/helmet": "^13.0.1",
     "@fastify/rate-limit": "^10.3.0",
     "@grpc/grpc-js": "^1.13.4",
+    "@nats-io/jwt": "^0.0.11",
+    "@nats-io/nkeys": "^2.0.3",
     "@nitra/as-integrations-fastify": "^3.0.2",
     "dotenv": "^16.5.0",
     "fastify": "^5.3.3",

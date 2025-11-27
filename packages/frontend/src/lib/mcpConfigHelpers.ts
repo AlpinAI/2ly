@@ -28,6 +28,9 @@ type MCPRegistryServer = GetRegistryServersQuery['getRegistryServers'][number];
 type Package = mcpRegistry.components['schemas']['Package'];
 type Transport = mcpRegistry.components['schemas']['Transport'];
 
+// Augmented type for items that can be marked as configurable
+type Augmented<T> = T & { isConfigurable?: boolean };
+
 // Configuration option for dropdown
 export interface ConfigOption {
   id: string;
@@ -276,8 +279,8 @@ export function extractConfigurableFields(option: ConfigOption): ConfigField[] {
           .forEach((variable) => {
             fields.push(variableToConfigField(variable));
           });
-      } else if (env.value) {
-        // Already has a value set → skip (no configuration needed)
+      } else if (env.value && !(env as Augmented<typeof env>).isConfigurable) {
+        // Already has a value set AND NOT marked as configurable → skip
       } else {
         // Pattern 1: The field itself is configurable
         fields.push(directInputToConfigField({ ...env, choices: env.choices ?? undefined }, 'env'));
@@ -295,8 +298,8 @@ export function extractConfigurableFields(option: ConfigOption): ConfigField[] {
           .forEach((variable) => {
             fields.push(variableToConfigField(variable));
           });
-      } else if (arg.value) {
-        // Already has a value set → skip (no configuration needed)
+      } else if (arg.value && !(arg as Augmented<typeof arg>).isConfigurable) {
+        // Already has a value set AND NOT marked as configurable → skip
       } else {
         // Pattern 1: The field itself is configurable
         fields.push(directInputToConfigField({ ...arg, choices: arg.choices ?? undefined }, 'arg', `arg-${index}`));
@@ -314,8 +317,8 @@ export function extractConfigurableFields(option: ConfigOption): ConfigField[] {
           .forEach((variable) => {
             fields.push(variableToConfigField(variable));
           });
-      } else if (arg.value) {
-        // Already has a value set → skip (no configuration needed)
+      } else if (arg.value && !(arg as Augmented<typeof arg>).isConfigurable) {
+        // Already has a value set AND NOT marked as configurable → skip
       } else {
         // Pattern 1: The field itself is configurable
         fields.push(directInputToConfigField({ ...arg, choices: arg.choices ?? undefined }, 'arg', `runtime-arg-${index}`));
@@ -334,10 +337,11 @@ export function extractConfigurableFields(option: ConfigOption): ConfigField[] {
           .forEach((variable) => {
             fields.push(variableToConfigField(variable));
           });
-      } else if (header.value) {
-        // Already has a value set → skip (no configuration needed)
+      } else if (header.value && !(header as Augmented<typeof header>).isConfigurable) {
+        // Already has a value set AND NOT marked as configurable → skip
       } else {
         // Pattern 1: The field itself is configurable
+        // Even if it has a value, we want to allow editing it
         fields.push(directInputToConfigField({ ...header, choices: header.choices ?? undefined }, 'header'));
       }
     });
@@ -399,6 +403,7 @@ export function enrichConfigWithValues(
         const field = fields.find((f) => f.context === 'env' && f.name === env.name && !f.isVariable);
         if (field) {
           env.value = field.value || field.default || '';
+          (env as Augmented<typeof env>).isConfigurable = true;
         }
       }
     });
@@ -411,6 +416,7 @@ export function enrichConfigWithValues(
         const field = fields.find((f) => f.context === 'arg' && f.name === argName && !f.isVariable);
         if (field) {
           arg.value = field.value || field.default || '';
+          (arg as Augmented<typeof arg>).isConfigurable = true;
         }
       }
     });
@@ -423,6 +429,7 @@ export function enrichConfigWithValues(
         const field = fields.find((f) => f.context === 'arg' && f.name === argName && !f.isVariable);
         if (field) {
           arg.value = field.value || field.default || '';
+          (arg as Augmented<typeof arg>).isConfigurable = true;
         }
       }
     });
@@ -437,6 +444,7 @@ export function enrichConfigWithValues(
         const field = fields.find((f) => f.context === 'header' && f.name === header.name && !f.isVariable);
         if (field) {
           header.value = field.value || field.default || '';
+          (header as Augmented<typeof header>).isConfigurable = true;
         }
       }
     });

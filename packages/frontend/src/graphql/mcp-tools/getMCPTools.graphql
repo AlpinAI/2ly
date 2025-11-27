@@ -16,11 +16,10 @@ query GetMCPTools($workspaceId: ID!) {
       description
       repositoryUrl
     }
-    runtimes {
+    toolSets {
       id
       name
-      status
-      capabilities
+      description
     }
   }
 }

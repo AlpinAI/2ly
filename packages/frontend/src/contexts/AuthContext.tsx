@@ -19,6 +19,7 @@ import { resetApolloCache } from '@/lib/apollo/client';
 import { getRedirectIntent, clearRedirectIntent } from '@/components/logic/protected-route';
 import { isTokenExpired } from '@/lib/jwt';
 import { RefreshTokenDocument } from '@/graphql/generated/graphql';
+import { useWorkspaceStore } from '@/stores/workspaceStore';
 
 // ============================================================================
 // Types
@@ -174,6 +175,12 @@ export function AuthProvider({ children }: AuthProviderProps) {
     // Clear localStorage
     localStorage.removeItem(STORAGE_KEY_TOKENS);
     localStorage.removeItem(STORAGE_KEY_USER);
+
+    // Clear workspace store to prevent loading previous user's workspace
+    // Call clearWorkspace() to update store state
+    useWorkspaceStore.getState().clearWorkspace();
+    // Also directly remove from localStorage to handle Zustand persist timing issues
+    localStorage.removeItem('2ly-workspace');
 
     // Clear any redirect intent
     clearRedirectIntent();

@@ -9,9 +9,15 @@ model: claude-sonnet-4-5
 
 Automates the workflow from labeled GitHub issues to ready-to-review pull requests.
 
+## Arguments
+
+- `$ARGUMENTS` - Optional issue number(s). If provided, work on the specified issue(s) exclusively.
+  - Single issue: `123`
+  - Multiple issues: `123 456`
+
 ## Workflow
 
-1. **Fetch issues** with `issue-to-pr` label (without `in-progress`)
+1. **Fetch issues** - If issue number provided, fetch that issue directly. Otherwise, fetch issues with `issue-to-pr` label (without `in-progress`)
 2. **Analyze grouping** - decide if issues share context
 3. **Confirm with user** if grouping is uncertain
 4. **Setup**: Assign issues, create branch
@@ -38,6 +44,14 @@ Calculate score for each issue pair:
 ## Steps
 
 ### 1. Fetch Issues
+
+**If `$ARGUMENTS` is provided (issue number(s)):**
+```bash
+gh issue view {issue_number} --json number,title,body,labels
+```
+Skip grouping analysis if only one issue is specified and proceed directly to Setup.
+
+**Otherwise (no arguments):**
 ```bash
 gh issue list --label "issue-to-pr" --json number,title,body,labels --jq '.[] | select(.labels | map(.name) | contains(["in-progress"]) | not)'
 ```

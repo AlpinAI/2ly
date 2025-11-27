@@ -287,10 +287,14 @@ mutation {
   }
 }
 
-# Assign tool to runtime (capability)
+# Add tool to a ToolSet
 mutation {
-  linkMCPToolToRuntime(mcpToolId: "...", runtimeId: "...") {
+  addMCPToolToToolSet(mcpToolId: "...", toolSetId: "...") {
     id
+    mcpTools {
+      id
+      name
+    }
   }
 }
 ```

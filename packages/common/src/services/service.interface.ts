@@ -101,14 +101,13 @@ export abstract class Service {
       if (!this.currentPromise) {
         throw new Error(`Service state is STOPPING but no currentPromise set -> should not happen`);
       }
-      console.warn('Not sure this should happen ?? A service should not be stopping and a consumer unregister itself one more time ??')
       return this.currentPromise;
     } else if (this.state === 'STARTING') {
       if (!this.currentPromise) {
         throw new Error(`Service state is STARTING but no currentPromise set -> should not happen`);
       }
     } else if (this.state === 'STOPPED') {
-      console.warn('Not sure this should happen ?? A service should not be stopped and a consumer unregister itself one more time ??')
+      // silently ignore
     } else {
       throw new Error(`Unknown state ${this.state}`);
     }

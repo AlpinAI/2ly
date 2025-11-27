@@ -34,6 +34,10 @@ export class FastifyService extends Service {
 
   protected async shutdown() {
     this.logger.info('Stopping Fastify server');
-    await this.fastify.close();
+    this.fastify.server.close();
+    const timeoutPromise = new Promise((resolve) => setTimeout(resolve, 1000));
+    const closePromise = this.fastify.close();
+    await Promise.race([timeoutPromise, closePromise]);
+    this.logger.info('Fastify server stopped');
   }
 }

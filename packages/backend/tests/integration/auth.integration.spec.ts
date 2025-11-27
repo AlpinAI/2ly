@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { describe, it, expect, beforeEach } from 'vitest';
-import { graphql, resetDatabase } from '../fixtures/database';
+import { graphql, resetDatabase } from '@2ly/common/test/fixtures';
 
 /**
  * Authentication Integration Tests
@@ -105,6 +105,50 @@ describe('Authentication Integration Tests', () => {
 
       expect(result.registerUser.success).toBe(false);
       expect(result.registerUser.errors).toContain('Password must be at least 8 characters long');
+    });
+
+    it('should create a personal workspace when user registers', async () => {
+      const registerMutation = `
+        mutation RegisterUser($input: RegisterUserInput!) {
+          registerUser(input: $input) {
+            success
+            user {
+              id
+              email
+            }
+            tokens {
+              accessToken
+            }
+          }
+        }
+      `;
+
+      const uniqueEmail = `workspace-test-${Date.now()}@example.com`;
+      const registerResult = await graphql(registerMutation, {
+        input: {
+          email: uniqueEmail,
+          password: 'testpassword123',
+        },
+      });
+
+      expect(registerResult.registerUser.success).toBe(true);
+
+      // Query workspaces using the new user's token
+      const workspacesQuery = `
+        query GetWorkspaces {
+          workspaces {
+            id
+            name
+          }
+        }
+      `;
+
+      const accessToken = registerResult.registerUser.tokens.accessToken;
+      const workspacesResult = await authenticatedGraphql(workspacesQuery, accessToken);
+
+      // Should have one personal workspace
+      expect(workspacesResult.workspaces).toHaveLength(1);
+      expect(workspacesResult.workspaces[0].name).toBe(`Personal Workspace (${uniqueEmail})`);
     });
   });
 

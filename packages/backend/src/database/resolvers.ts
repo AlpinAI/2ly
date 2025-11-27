@@ -1,4 +1,5 @@
 import { GraphQLDateTime } from 'graphql-scalars';
+import { GraphQLError } from 'graphql';
 import { container as defaultContainer } from '../di/container';
 import { apolloResolversTypes, MCP_SERVER_RUN_ON, AiProvider } from '@2ly/common';
 import { Observable } from 'rxjs';
@@ -12,6 +13,8 @@ import {
   UserRepository,
   MonitoringRepository,
   AIConfigRepository,
+  ToolSetRepository,
+  IdentityRepository,
 } from '../repositories';
 import { createAuthResolvers } from '../resolvers/auth.resolver';
 import { AuthenticationService, JwtService, PasswordPolicyService } from '../services/auth';
@@ -35,6 +38,8 @@ export const resolvers = (container: Container = defaultContainer): apolloResolv
   const mcpServerRepository = container.get(MCPServerRepository);
   const runtimeRepository = container.get(RuntimeRepository);
   const workspaceRepository = container.get(WorkspaceRepository);
+  const toolSetRepository = container.get(ToolSetRepository);
+  const identityRepository = container.get(IdentityRepository);
   const mcpAutoConfigService = container.get(MCPServerAutoConfigService);
   const authenticationService = container.get(AuthenticationService);
   const jwtService = container.get(JwtService);
@@ -50,8 +55,18 @@ export const resolvers = (container: Container = defaultContainer): apolloResolv
     Date: GraphQLDateTime,
     Query: {
 
-      workspace: async () => {
-        return workspaceRepository.findAll();
+      workspaces: async (_parent: unknown, _args: unknown, context: { user?: { userId: string; email: string } }) => {
+        // Require authentication
+        if (!context.user?.userId) {
+          throw new GraphQLError('Authentication required', {
+            extensions: { code: 'UNAUTHENTICATED' },
+          });
+        }
+        // Filter workspaces by user's admin relationship
+        return workspaceRepository.findAll(context.user.userId);
+      },
+      workspace: async (_parent: unknown, { workspaceId }: { workspaceId: string }) => {
+        return workspaceRepository.findByIdWithRuntimes(workspaceId);
       },
       mcpServers: async () => {
         return mcpServerRepository.findAll();
@@ -59,16 +74,24 @@ export const resolvers = (container: Container = defaultContainer): apolloResolv
       mcpTools: async (_parent: unknown, { workspaceId }: { workspaceId: string }) => {
         return workspaceRepository.findMCPToolsByWorkspace(workspaceId);
       },
+      toolSets: async (_parent: unknown, { workspaceId }: { workspaceId: string }) => {
+        return toolSetRepository.findByWorkspace(workspaceId);
+      },
       system: async () => {
         return systemRepository.getSystem();
       },
       infra: async () => {
-        let exposedNatsServers = 'localhost:4222';
+        let exposedNatsServers = '';
+        let exposedRemoteMCP = '';
         if (process.env.EXPOSED_NATS_SERVERS) {
           exposedNatsServers = process.env.EXPOSED_NATS_SERVERS;
         }
+        if (process.env.EXPOSED_REMOTE_MCP) {
+          exposedRemoteMCP = process.env.EXPOSED_REMOTE_MCP;
+        }
         return {
           nats: exposedNatsServers,
+          remoteMCP: exposedRemoteMCP,
         };
       },
       workspaceMCPTools: async (_parent: unknown, { workspaceId }: { workspaceId: string }) => {
@@ -92,6 +115,21 @@ export const resolvers = (container: Container = defaultContainer): apolloResolv
           filters: args.filters ?? undefined,
           orderDirection: args.orderDirection ?? undefined,
         });
+      },
+      // Key management queries
+      workspaceKeys: async (_parent: unknown, { workspaceId }: { workspaceId: string }) => {
+        return identityRepository.findKeysByRelatedId(workspaceId);
+      },
+      toolsetKey: async (_parent: unknown, { toolsetId }: { toolsetId: string }) => {
+        const keys = await identityRepository.findKeysByRelatedId(toolsetId);
+        return keys.length > 0 ? keys[0] : null;
+      },
+      keyValue: async (_parent: unknown, { keyId }: { keyId: string }) => {
+        const key = await identityRepository.findKeyById(keyId);
+        if (!key) {
+          throw new Error('Key not found');
+        }
+        return key.key;
       },
       // Authentication queries
       ...authResolvers.Query,
@@ -191,6 +229,28 @@ export const resolvers = (container: Container = defaultContainer): apolloResolv
       // Authentication mutations
       ...authResolvers.Mutation,
 
+      // Override registerUser to create personal workspace
+      registerUser: async (
+        _: unknown,
+        { input }: { input: apolloResolversTypes.RegisterUserInput }
+      ) => {
+        // Register the user first using the original resolver
+        const result = await authResolvers.Mutation.registerUser(_, { input });
+
+        // If registration was successful, create a personal workspace
+        if (result.success && result.user) {
+          try {
+            const workspaceName = `Personal Workspace (${input.email})`;
+            await workspaceRepository.create(workspaceName, result.user.id);
+          } catch (error) {
+            console.error('Failed to create personal workspace for new user:', error);
+            // Don't fail the registration if workspace creation fails
+          }
+        }
+
+        return result;
+      },
+
       updateMCPServerRunOn: async (
         _parent: unknown,
         { mcpServerId, runOn, runtimeId }: { mcpServerId: string; runOn: MCP_SERVER_RUN_ON; runtimeId?: string | null },
@@ -243,15 +303,15 @@ export const resolvers = (container: Container = defaultContainer): apolloResolv
           name,
           description,
           workspaceId,
-          capabilities,
+          type,
         }: {
           name: string;
           description: string;
           workspaceId: string;
-          capabilities: string[];
+          type: 'EDGE' | 'MCP';
         },
       ) => {
-        return runtimeRepository.create(name, description, 'INACTIVE', workspaceId, capabilities);
+        return runtimeRepository.create(name, description, 'INACTIVE', workspaceId, type);
       },
       updateRuntime: async (
         _parent: unknown,
@@ -269,30 +329,6 @@ export const resolvers = (container: Container = defaultContainer): apolloResolv
       },
       deleteRuntime: async (_parent: unknown, { id }: { id: string }) => {
         return runtimeRepository.delete(id);
-      },
-      linkMCPToolToRuntime: async (
-        _parent: unknown,
-        {
-          mcpToolId,
-          runtimeId,
-        }: {
-          mcpToolId: string;
-          runtimeId: string;
-        },
-      ) => {
-        return runtimeRepository.linkMCPToolToRuntime(mcpToolId, runtimeId);
-      },
-      unlinkMCPToolFromRuntime: async (
-        _parent: unknown,
-        {
-          mcpToolId,
-          runtimeId,
-        }: {
-          mcpToolId: string;
-          runtimeId: string;
-        },
-      ) => {
-        return runtimeRepository.unlinkMCPToolFromRuntime(mcpToolId, runtimeId);
       },
       linkMCPServerToRuntime: async (
         _parent: unknown,
@@ -478,10 +514,60 @@ export const resolvers = (container: Container = defaultContainer): apolloResolv
         await aiConfigRepository.deleteAIConfig(config.id);
         return true;
       },
+
+      // Key management mutations
+      createWorkspaceKey: async (
+        _parent: unknown,
+        { workspaceId, description }: { workspaceId: string; description: string },
+      ) => {
+        return identityRepository.createKey('workspace', workspaceId, description);
+      },
+
+      revokeKey: async (_parent: unknown, { keyId }: { keyId: string }) => {
+        const key = await identityRepository.findKeyById(keyId);
+        if (!key) {
+          throw new Error('Key not found');
+        }
+        return identityRepository.revokeKey(key.key);
+      },
+
+      // ToolSet mutations
+      createToolSet: async (
+        _parent: unknown,
+        { name, description, workspaceId }: { name: string; description: string; workspaceId: string },
+      ) => {
+        return toolSetRepository.create(name, description, workspaceId);
+      },
+
+      updateToolSet: async (
+        _parent: unknown,
+        { id, name, description }: { id: string; name: string; description: string },
+      ) => {
+        return toolSetRepository.update(id, name, description);
+      },
+
+      deleteToolSet: async (_parent: unknown, { id }: { id: string }) => {
+        return toolSetRepository.delete(id);
+      },
+
+      addMCPToolToToolSet: async (
+        _parent: unknown,
+        { mcpToolId, toolSetId }: { mcpToolId: string; toolSetId: string },
+      ) => {
+        return toolSetRepository.addMCPToolToToolSet(mcpToolId, toolSetId);
+      },
+
+      removeMCPToolFromToolSet: async (
+        _parent: unknown,
+        { mcpToolId, toolSetId }: { mcpToolId: string; toolSetId: string },
+      ) => {
+        return toolSetRepository.removeMCPToolFromToolSet(mcpToolId, toolSetId);
+      },
     },
     Runtime: {},
     MCPServer: {},
     MCPTool: {},
+    ToolSet: {},
     Subscription: {
       workspace: {
         subscribe: (_parent: unknown, { workspaceId }: { workspaceId: string }) => {
@@ -501,9 +587,22 @@ export const resolvers = (container: Container = defaultContainer): apolloResolv
           return observableToAsyncGenerator(observable, 'mcpServers');
         },
       },
+      mcpTools: {
+        subscribe: (_parent: unknown, { workspaceId }: { workspaceId: string }) => {
+          const observable = workspaceRepository.observeMCPTools(workspaceId);
+          return observableToAsyncGenerator(observable, 'mcpTools');
+        },
+      },
       workspaces: {
-        subscribe: () => {
-          const observable = workspaceRepository.observeWorkspaces();
+        subscribe: (_parent: unknown, _args: unknown, context: { user?: { userId: string; email: string } }) => {
+          // Require authentication
+          if (!context.user?.userId) {
+            throw new GraphQLError('Authentication required', {
+              extensions: { code: 'UNAUTHENTICATED' },
+            });
+          }
+          // Filter workspaces by user's admin relationship
+          const observable = workspaceRepository.observeWorkspaces(context.user.userId);
           return observableToAsyncGenerator(observable, 'workspaces');
         },
       },
@@ -511,6 +610,12 @@ export const resolvers = (container: Container = defaultContainer): apolloResolv
         subscribe: (_parent: unknown, { workspaceId }: { workspaceId: string }) => {
           const observable = monitoringRepository.observeToolCalls(workspaceId);
           return observableToAsyncGenerator(observable, 'toolCalls');
+        },
+      },
+      toolSets: {
+        subscribe: (_parent: unknown, { workspaceId }: { workspaceId: string }) => {
+          const observable = toolSetRepository.observeToolSets(workspaceId);
+          return observableToAsyncGenerator(observable, 'toolSets');
         },
       },
     },

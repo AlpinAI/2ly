@@ -1,5 +1,5 @@
-from .mcp import MCPAdapter
+from .mcp import MCPToolset
 from .mcp_only import MCPClient
 
-__version__ = "0.0.1"
-__all__ = ["MCPAdapter", "MCPClient"]
+__version__ = "0.1.0"
+__all__ = ["MCPToolset", "MCPClient"]

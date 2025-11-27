@@ -1,10 +1,10 @@
 import { injectable, inject } from 'inversify';
 import { DGraphService } from '../services/dgraph.service';
-import { dgraphResolversTypes, NatsService, LoggerService, AgentCallMCPToolMessage, AgentCallResponseMessage, NatsErrorMessage, apolloResolversTypes } from '@2ly/common';
+import { dgraphResolversTypes, NatsService, LoggerService, ToolSetCallToolRequest, RuntimeCallToolResponse, ErrorResponse, apolloResolversTypes } from '@2ly/common';
+import { ConnectionMetadata } from '../types';
 import {
   QUERY_MCPSERVER_WITH_TOOL,
   SET_ROOTS,
-  SET_MCP_CLIENT_NAME,
   DELETE_RUNTIME,
   UPDATE_RUNTIME,
   ADD_RUNTIME,
@@ -14,15 +14,12 @@ import {
   QUERY_RUNTIME_BY_NAME,
   SET_RUNTIME_INACTIVE,
   SET_RUNTIME_ACTIVE,
-  LINK_MCP_TOOL,
-  UNLINK_MCP_TOOL,
-  QUERY_RUNTIME_MCP_TOOLS,
   UPDATE_MCP_TOOL,
   ADD_MCP_TOOL,
-  SET_RUNTIME_CAPABILITIES,
   GET_RUNTIME_EDGE_MCP_SERVERS,
-  GET_RUNTIME_AGENT_MCP_SERVERS,
+  GET_RUNTIME_AGENT_MCP_SERVERS_BY_LINK,
   GET_RUNTIME_GLOBAL_MCP_SERVERS,
+  GET_RUNTIME_ALL_TOOLS,
   UPDATE_RUNTIME_LAST_SEEN,
 } from './runtime.operations';
 import { map, Observable } from 'rxjs';
@@ -50,7 +47,7 @@ export class RuntimeRepository {
     description: string,
     status: 'ACTIVE' | 'INACTIVE',
     workspaceId: string,
-    capabilities: string[],
+    type: 'EDGE' | 'MCP',
   ): Promise<dgraphResolversTypes.Runtime> {
     const now = new Date().toISOString();
     const res = await this.dgraphService.mutation<{
@@ -59,14 +56,22 @@ export class RuntimeRepository {
       name,
       description,
       status,
+      type,
       createdAt: now,
       lastSeenAt: now,
       workspaceId,
-      capabilities,
     });
 
+    const runtime = res.addRuntime.runtime[0];
 
-    return res.addRuntime.runtime[0];
+    // Automatically set as global runtime if this is the first runtime in the workspace
+    const runtimes = await this.workspaceRepository.getRuntimes(workspaceId);
+    if (runtimes.length === 1) {
+      this.logger.info(`Setting runtime ${runtime.id} as global runtime for workspace ${workspaceId} (first runtime)`);
+      await this.workspaceRepository.setGlobalRuntime(runtime.id);
+    }
+
+    return runtime;
   }
 
   async update(id: string, name: string, description: string): Promise<dgraphResolversTypes.Runtime> {
@@ -191,14 +196,14 @@ export class RuntimeRepository {
   }
 
   observeMCPServersOnAgent(id: string): Observable<dgraphResolversTypes.McpServer[]> {
-    const query = createSubscriptionFromQuery(GET_RUNTIME_AGENT_MCP_SERVERS);
+    const query = createSubscriptionFromQuery(GET_RUNTIME_AGENT_MCP_SERVERS_BY_LINK);
     return this.dgraphService.observe<dgraphResolversTypes.Runtime>(
       query,
       { id },
       'getRuntime',
       true,
     ).pipe(
-      map((runtime) => runtime?.mcpToolCapabilities?.filter((mcpTool) => mcpTool.mcpServer.runOn === 'AGENT').map((mcpTool) => mcpTool.mcpServer) ?? []),
+      map((runtime) => runtime?.mcpServers ?? []),
     );
   }
 
@@ -244,22 +249,16 @@ export class RuntimeRepository {
 
   async setActive(
     id: string,
-    processId: string,
-    hostIP: string,
-    hostname: string,
+    metadata: ConnectionMetadata,
   ): Promise<dgraphResolversTypes.Runtime> {
     const res = await this.dgraphService.mutation<{
       updateRuntime: { runtime: dgraphResolversTypes.Runtime[] };
     }>(SET_RUNTIME_ACTIVE, {
       id,
-      processId,
-      hostIP,
-      hostname,
+      processId: metadata.pid,
+      hostIP: metadata.hostIP,
+      hostname: metadata.hostname,
     });
-    const runtime = res.updateRuntime.runtime[0]!;
-    if (runtime.workspace) {
-      await this.workspaceRepository.checkAndCompleteStep(runtime.workspace.id, 'connect-tool-set-to-agent');
-    }
     return res.updateRuntime.runtime[0];
   }
 
@@ -268,8 +267,8 @@ export class RuntimeRepository {
       updateRuntime: { runtime: dgraphResolversTypes.Runtime[] };
     }>(UPDATE_RUNTIME_LAST_SEEN, {
       id,
+      now: new Date().toISOString(),
     });
-
     return res.updateRuntime.runtime[0];
   }
 
@@ -289,47 +288,12 @@ export class RuntimeRepository {
     return res.updateRuntime.runtime[0];
   }
 
-  async setMcpClientName(id: string, mcpClientName: string): Promise<dgraphResolversTypes.Runtime> {
-    const res = await this.dgraphService.mutation<{
-      updateRuntime: { runtime: dgraphResolversTypes.Runtime[] };
-    }>(SET_MCP_CLIENT_NAME, {
-      id,
-      mcpClientName,
-    });
-    return res.updateRuntime.runtime[0];
-  }
-
-  async setCapabilities(id: string, capabilities: string[]): Promise<dgraphResolversTypes.Runtime> {
-    // validate capabilities
-    for (const capability of capabilities) {
-      if (capability !== 'agent' && capability !== 'tool') {
-        throw new Error(`Invalid capability: ${capability}`);
-      }
-    }
-    const res = await this.dgraphService.mutation<{
-      updateRuntime: { runtime: dgraphResolversTypes.Runtime[] };
-    }>(SET_RUNTIME_CAPABILITIES, {
-      id,
-      capabilities,
-    });
-    const updated = res.updateRuntime.runtime[0];
-
-    // Check and complete onboarding steps if this becomes an agent runtime with tools
-    const hasAgentCapability = capabilities.some((c) => c.toLowerCase() === 'agent');
-    if (hasAgentCapability) {
-      const runtime = await this.getRuntime(id);
-      const workspaceId = runtime.workspace?.id;
-      const hasTools = (runtime.mcpToolCapabilities?.length ?? 0) > 0;
-
-      if (workspaceId && hasTools) {
-        // Step 2: Create tool set (agent with tools exists)
-        await this.workspaceRepository.checkAndCompleteStep(workspaceId, 'create-tool-set');
-        // Step 3: Connect tool set to agent (agent runtime has tools)
-        await this.workspaceRepository.checkAndCompleteStep(workspaceId, 'connect-tool-set-to-agent');
-      }
-    }
-
-    return updated;
+  async findById(id: string): Promise<dgraphResolversTypes.Runtime | null> {
+    const response = await this.dgraphService.query<{ getRuntime: dgraphResolversTypes.Runtime | null }>(
+      GET_RUNTIME,
+      { id },
+    );
+    return response.getRuntime;
   }
 
   async findByName(workspaceId: string, name: string): Promise<dgraphResolversTypes.Runtime | undefined> {
@@ -340,41 +304,8 @@ export class RuntimeRepository {
     return res.getWorkspace?.runtimes?.[0];
   }
 
-  async linkMCPToolToRuntime(mcpToolId: string, runtimeId: string): Promise<dgraphResolversTypes.Runtime> {
-    const res = await this.dgraphService.mutation<{
-      updateRuntime: { runtime: dgraphResolversTypes.Runtime[] };
-    }>(LINK_MCP_TOOL, {
-      mcpToolId,
-      runtimeId,
-    });
-    const updated = res.updateRuntime.runtime[0];
-
-    // Check and complete onboarding steps if this is an agent runtime
-    const runtime = await this.getRuntime(runtimeId);
-    const workspaceId = runtime.workspace?.id;
-    const hasAgentCapability = runtime.capabilities?.some((c) => c.toLowerCase() === 'agent');
-    if (workspaceId && hasAgentCapability) {
-      // Step 2: Create tool set (agent with tools exists)
-      await this.workspaceRepository.checkAndCompleteStep(workspaceId, 'create-tool-set');
-      // Step 3: Connect tool set to agent (agent runtime has tools linked)
-      await this.workspaceRepository.checkAndCompleteStep(workspaceId, 'connect-tool-set-to-agent');
-    }
-
-    return updated;
-  }
-
-  async unlinkMCPToolFromRuntime(mcpToolId: string, runtimeId: string): Promise<dgraphResolversTypes.Runtime> {
-    const res = await this.dgraphService.mutation<{
-      updateRuntime: { runtime: dgraphResolversTypes.Runtime[] };
-    }>(UNLINK_MCP_TOOL, {
-      mcpToolId,
-      runtimeId,
-    });
-    return res.updateRuntime.runtime[0];
-  }
-
   observeCapabilities(runtimeId: string): Observable<dgraphResolversTypes.Runtime> {
-    const query = createSubscriptionFromQuery(QUERY_RUNTIME_MCP_TOOLS);
+    const query = createSubscriptionFromQuery(GET_RUNTIME_ALL_TOOLS);
     return this.dgraphService.observe<dgraphResolversTypes.Runtime>(
       query,
       { id: runtimeId },
@@ -386,6 +317,8 @@ export class RuntimeRepository {
   /**
    * Method to simulate a tool call to a MCP Tool
    * Uses the workspace's global runtime to execute the tool
+   * 
+   * TODO: Allow to specify the runtime on which the tool should be executed, particulary necessary for tool belonging to MCP server set to run on agent side
    */
   async callMCPTool(toolId: string, input: string): Promise<apolloResolversTypes.CallToolResult> {
     // Get the tool with its workspace to determine which runtime to use
@@ -410,9 +343,7 @@ export class RuntimeRepository {
       );
     }
 
-    this.logger.info(
-      `Calling tool ${tool.name} using global runtime ${globalRuntime.name} (${globalRuntime.id})`
-    );
+    this.logger.info(`Calling tool ${tool.name}`);
 
     // Arguments as JSON
     let args: Record<string, unknown>;
@@ -422,19 +353,20 @@ export class RuntimeRepository {
       throw new Error(`Invalid input: ${input}`);
     }
 
-    const message = new AgentCallMCPToolMessage({
+    const message = new ToolSetCallToolRequest({
+      workspaceId: tool.workspace.id,
+      isTest: true,
       toolId,
       arguments: args,
-      from: globalRuntime.id,
     });
 
     const response = await this.natsService.request(message);
-    if (response instanceof AgentCallResponseMessage) {
+    if (response instanceof RuntimeCallToolResponse) {
       return {
         success: !response.data.result.isError,
         result: JSON.stringify(response.data.result.content, null, 2),
       };
-    } else if (response instanceof NatsErrorMessage) {
+    } else if (response instanceof ErrorResponse) {
       throw new Error(`Error calling tool: ${response.data.error}`);
     } else {
       throw new Error(`Invalid response: ${JSON.stringify(response)}`);

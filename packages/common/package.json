@@ -1,6 +1,6 @@
 {
   "name": "@2ly/common",
-  "version": "0.1.9",
+  "version": "0.2.3",
   "type": "module",
   "exports": {
     ".": {
@@ -11,12 +11,12 @@
       },
       "types": "./src/index.ts"
     },
-    "./test/testcontainers": {
+    "./test/test.containers": {
       "import": {
-        "types": "./src/test/testcontainers.ts",
-        "default": "./src/test/testcontainers.ts"
+        "types": "./src/test/test.containers.ts",
+        "default": "./src/test/test.containers.ts"
       },
-      "types": "./src/test/testcontainers.ts"
+      "types": "./src/test/test.containers.ts"
     },
     "./test/vitest": {
       "import": {
@@ -24,10 +24,38 @@
         "default": "./src/test/vitest.ts"
       },
       "types": "./src/test/vitest.ts"
+    },
+    "./test/fixtures": {
+      "import": {
+        "types": "./src/test/fixtures/index.ts",
+        "default": "./src/test/fixtures/index.ts"
+      },
+      "types": "./src/test/fixtures/index.ts"
+    },
+    "./test/fixtures/mcp-builders": {
+      "import": {
+        "types": "./src/test/fixtures/mcp-builders.ts",
+        "default": "./src/test/fixtures/mcp-builders.ts"
+      },
+      "types": "./src/test/fixtures/mcp-builders.ts"
+    },
+    "./test/fixtures/playwright": {
+      "import": {
+        "types": "./src/test/playwright/index.ts",
+        "default": "./src/test/playwright/index.ts"
+      },
+      "types": "./src/test/playwright/index.ts"
+    },
+    "./test/fixtures/mcp-test-helpers": {
+      "import": {
+        "types": "./src/test/fixtures/mcp-test-helpers.ts",
+        "default": "./src/test/fixtures/mcp-test-helpers.ts"
+      },
+      "types": "./src/test/fixtures/mcp-test-helpers.ts"
     }
   },
   "scripts": {
-    "build": "tsc",
+    "build": "tsc -p tsconfig.build.json",
     "lint": "eslint \"{src,test}/**/*.{js,ts}\" --format unix --quiet",
     "lint:full": "eslint \"{src,test}/**/*.{js,ts}\"",
     "format": "prettier --write \"{src,test}/**/*.*\" && rm -rf node_modules/.cache/prettier",
@@ -42,7 +70,8 @@
   },
   "devDependencies": {
     "@testcontainers/nats": "^11.7.1",
-    "testcontainers": "^11.7.1"
+    "testcontainers": "^11.7.1",
+    "get-port": "^7.1.0"
   },
   "overrides": {}
 }

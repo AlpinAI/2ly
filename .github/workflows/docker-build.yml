@@ -3,9 +3,9 @@ name: Build and Push Docker Images
 on:
   push:
     branches:
-      - develop  # Build on every commit to develop for testing
+      - develop # Build on every commit to develop for testing
     tags:
-      - 'v*'  # Build on version tags from main (e.g., v0.1.0)
+      - 'v*' # Build on version tags from main (e.g., v0.1.0)
     paths:
       - 'packages/backend/**'
       - 'packages/runtime/**'

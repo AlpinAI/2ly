@@ -46,6 +46,47 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - With user permission, you CAN kill any process on port 3000 before launching your backend process
 - Only start services if the user explicitly requests it
 
+### Local Development with Key Sharing
+
+The project supports running backend/runtime locally (outside Docker) while sharing cryptographic keys with Docker services.
+
+**Setup (first time):**
+```bash
+npm run setup-local       # Generate cryptographic keys to dev/.docker-keys/
+npm run start:dev         # Start infrastructure (NATS, Dgraph) in Docker
+```
+
+**Daily workflow:**
+```bash
+npm run start:dev         # Start infrastructure (NATS, Dgraph) in Docker
+npm run dev:backend       # Run backend locally with hot reload
+npm run dev:frontend      # Run frontend locally with hot reload
+npm run build -w @2ly/runtime && npm run dev:main-runtime  # Run runtime locally without hot reload
+```
+
+**Note:** The `setup-local` command only needs to be run once to generate keys. Keys persist in `dev/.docker-keys/` across sessions.
+
+**Key Management Architecture:**
+- **Backend generates keys** → **Runtime consumes keys**
+- Backend has auto-generation capability (`AUTOGEN_KEYS=true` in Docker)
+- Runtime always requires pre-existing keys (no auto-generation)
+- Keys stored at `dev/.docker-keys/` shared between Docker and local processes
+- Each service has its own entrypoint script co-located with its Dockerfile:
+  - `packages/backend/entrypoint.sh` - Auto-generates keys if needed
+  - `packages/runtime/runtime-entrypoint.sh` - Loads existing keys only
+
+**Key Generation Flow:**
+1. **Local development**: Run `npm run setup-local` to generate keys once
+2. **Docker development**: Backend auto-generates keys on first start
+3. **Runtime**: Always consumes keys from `dev/.docker-keys/` or ENV vars
+4. **Custom keys**: Set `MASTER_KEY` and `ENCRYPTION_KEY` ENV vars
+
+**Key locations:**
+- Docker (dev): `dev/.docker-keys/` via bind mount
+- Docker (prod): `2ly-internal` volume (isolated, no host access)
+- Local dev: Loads `dev/.docker-keys/.env.generated` automatically
+- Generation script: `npm run setup-local` or `sh ./generate-keys.sh`
+
 ## Monorepo Architecture
 
 ### Package Structure
@@ -115,24 +156,19 @@ The project uses three types of tests with different tools and purposes:
 - **Run**: `npm run test:e2e`
 
 #### E2E Test Organization
-Tests are organized into three strategies:
+Tests are organized into two strategies:
 
-**clean/** - Fresh database for each test
-- Tests that need an empty database
-- Run sequentially (workers: 1)
-- Example: `init.spec.ts`, `backend-api.spec.ts`
+**serial/** - Sequential execution
+- Tests that need specific database states and must run sequentially
+- Run sequentially (workers: 1) to prevent database race conditions
+- Each test chooses its own reset/seed strategy (beforeEach vs beforeAll)
+- Example: `init.spec.ts`, `login.spec.ts`, `routing.spec.ts`, `onboarding.spec.ts`
 
-**seeded/** - Pre-populated database
-- Tests that need predefined data (workspaces, users, etc.)
-- Database is reset and seeded before each describe block
-- Run sequentially (workers: 1)
-- Example: `login.spec.ts`, `routing.spec.ts`
-
-**parallel/** - Order-independent UI tests
-- UI-focused tests that can run in any order
-- Pre-seeded database shared across tests
-- Run in parallel for speed
-- Example: `workspace-ui.spec.ts`, `password-validation.spec.ts`
+**parallel/** - Parallel execution
+- UI-focused tests that can run with multiple workers
+- Tests don't depend on specific database state
+- Can run in any order for speed
+- Example: `password-validation.spec.ts`
 
 ### Test Mocking Patterns
 - **Apollo Mocks**: Mock components using Apollo hooks instead of wrapping in providers

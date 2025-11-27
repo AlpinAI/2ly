@@ -17,30 +17,25 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
+import {
   ToolCallStatus,
   OrderDirection,
   GetMcpToolsDocument,
   GetRuntimesDocument,
+  GetToolCallsQuery,
 } from '@/graphql/generated/graphql';
 import { useWorkspaceId } from '@/stores/workspaceStore';
 import { cn } from '@/lib/utils';
 import { useScrollToEntity } from '@/hooks/useScrollToEntity';
+import { estimateTokens, formatTokenCount, formatTokenCountExact } from '@/utils/tokenEstimation';
 
-interface ToolCall {
-  id: string;
-  status: ToolCallStatus;
-  calledAt: Date;
-  completedAt: Date | null;
-  mcpTool: {
-    name: string;
-    mcpServer: {
-      name: string;
-    };
-  };
-  calledBy: {
-    name: string;
-  };
-}
+// Derive ToolCall type from the actual GraphQL query result
+type ToolCall = GetToolCallsQuery['toolCalls']['toolCalls'][number];
 
 interface ToolCallsTableProps {
   toolCalls: ToolCall[];
@@ -105,11 +100,12 @@ export function ToolCallsTable({
 
   // Fetch available runtimes for filter
   const { data: runtimesData } = useQuery(GetRuntimesDocument, {
+    variables: { workspaceId: workspaceId || '' },
     skip: !workspaceId,
   });
 
   const tools = toolsData?.mcpTools || [];
-  const runtimes = runtimesData?.workspace?.[0]?.runtimes || [];
+  const runtimes = runtimesData?.workspace?.runtimes || [];
 
   const toolOptions = tools.map((tool: { id: string; name: string; mcpServer: { name: string } }) => ({
     id: tool.id,
@@ -172,6 +168,13 @@ export function ToolCallsTable({
   const calculateDuration = (calledAt: Date, completedAt: Date | null) => {
     if (!completedAt) return null;
     return Math.round(new Date(completedAt).getTime() - new Date(calledAt).getTime());
+  };
+
+  // Calculate token count helper
+  const calculateTokens = (toolInput: string, toolOutput: string | null) => {
+    const inputTokens = estimateTokens(toolInput);
+    const outputTokens = estimateTokens(toolOutput);
+    return inputTokens + outputTokens;
   };
 
   return (
@@ -277,6 +280,9 @@ export function ToolCallsTable({
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
                   Duration
                 </th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
+                  Tokens
+                </th>
               </tr>
             </thead>
             <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
@@ -301,7 +307,7 @@ export function ToolCallsTable({
                     <div className="text-sm font-medium text-gray-900 dark:text-white">{call.mcpTool.name}</div>
                     <div className="text-xs text-gray-500 dark:text-gray-400">{call.mcpTool.mcpServer.name}</div>
                   </td>
-                  <td className="px-4 py-3 text-sm text-gray-700 dark:text-gray-300">{call.calledBy.name}</td>
+                  <td className="px-4 py-3 text-sm text-gray-700 dark:text-gray-300">{call.isTest ? 'Test' : ''} {call.calledBy?.name}</td>
                   <td className="px-4 py-3 text-xs text-gray-500 dark:text-gray-400">
                     {formatDate(call.calledAt)}
                   </td>
@@ -309,6 +315,20 @@ export function ToolCallsTable({
                     {calculateDuration(call.calledAt, call.completedAt)
                       ? `${calculateDuration(call.calledAt, call.completedAt)}ms`
                       : '-'}
+                  </td>
+                  <td className="px-4 py-3 text-sm text-gray-700 dark:text-gray-300">
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <span className="cursor-help">
+                            {formatTokenCount(calculateTokens(call.toolInput, call.toolOutput))}
+                          </span>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          {formatTokenCountExact(calculateTokens(call.toolInput, call.toolOutput))}
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
                   </td>
                 </tr>
               ))}

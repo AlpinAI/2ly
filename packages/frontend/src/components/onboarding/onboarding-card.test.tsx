@@ -3,32 +3,22 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import { OnboardingCard } from './onboarding-card';
 import * as uiStore from '@/stores/uiStore';
 import * as runtimeStore from '@/stores/runtimeStore';
-import { ActiveStatus, OnboardingStepStatus, type OnboardingStep, type Runtime, OnboardingStepType, type McpServer, McpTransportType, McpServerRunOn } from '@/graphql/generated/graphql';
+import { ActiveStatus, OnboardingStepStatus, type OnboardingStep, type Runtime, OnboardingStepType, McpTransportType, McpServerRunOn, RuntimeType } from '@/graphql/generated/graphql';
 import { useMCPServers } from '@/hooks/useMCPServers';
-import { useAgents } from '@/hooks/useAgents';
+import { useToolSets } from '@/hooks/useToolSets';
+import { createMockMcpServer, createMockMcpServerRef } from '@/test/factories';
 
 // Mock stores and hooks
 vi.mock('@/stores/uiStore');
 vi.mock('@/stores/runtimeStore');
 vi.mock('@/hooks/useMCPServers');
-vi.mock('@/hooks/useAgents');
+vi.mock('@/hooks/useToolSets');
+vi.mock('react-router-dom', () => ({
+  ...vi.importActual('react-router-dom'),
+  useParams: () => ({ workspaceId: 'workspace-1' }),
+}));
 
 describe('OnboardingCard', () => {
-  // Helper to create minimal MCP server mock for tool relations
-  const createMockMcpServerRef = (id: string, name: string) => ({
-    __typename: 'MCPServer' as const,
-    id,
-    name,
-    description: '',
-    repositoryUrl: '',
-    transport: McpTransportType.Stdio,
-    runOn: null,
-    config: '{}',
-    tools: null,
-    runtime: null,
-    registryServer: null as never,
-    workspace: null as never,
-  });
 
   const mockRuntime: Runtime = {
     __typename: 'Runtime',
@@ -36,10 +26,70 @@ describe('OnboardingCard', () => {
     name: 'Test Agent',
     description: 'Test agent description',
     status: ActiveStatus.Active,
-    capabilities: ['agent'],
-    mcpToolCapabilities: [
+    type: RuntimeType.Edge,
+    mcpServers: [
       {
-        __typename: 'MCPTool',
+        __typename: 'MCPServer',
+        id: 'server-1',
+        name: 'test-server',
+        description: '',
+        repositoryUrl: '',
+        transport: McpTransportType.Stdio,
+        config: '{}',
+        runOn: null,
+        runtime: null,
+        registryServer: null as never,
+        workspace: null as never,
+        tools: [
+          {
+            __typename: 'MCPTool',
+            id: 'tool-1',
+            name: 'test_tool',
+            description: '',
+            inputSchema: '',
+            annotations: '{}',
+            status: ActiveStatus.Active,
+            createdAt: new Date(),
+            lastSeenAt: new Date(),
+            mcpServer: createMockMcpServerRef({ id: 'server-1', name: 'test-server' }),
+            workspace: null as never,
+            toolSets: [],
+          },
+        ],
+      },
+    ],
+    createdAt: new Date(),
+    hostIP: null,
+    hostname: null,
+    mcpClientName: null,
+    lastSeenAt: null,
+    roots: null,
+    workspace: {
+      __typename: 'Workspace',
+      id: 'workspace-1',
+      name: 'Test Workspace',
+      createdAt: new Date(),
+      globalRuntime: null,
+      registryServers: [],
+      mcpServers: [],
+      mcpTools: [],
+      onboardingSteps: [],
+      runtimes: [],
+      toolSets: [],
+    },
+    toolResponses: [],
+  };
+
+  const mockToolSet = {
+    __typename: 'ToolSet' as const,
+    id: 'toolset-1',
+    name: 'Test Agent',
+    description: 'Test toolset description',
+    createdAt: new Date(),
+    updatedAt: null,
+    mcpTools: [
+      {
+        __typename: 'MCPTool' as const,
         id: 'tool-1',
         name: 'test_tool',
         description: '',
@@ -48,19 +98,12 @@ describe('OnboardingCard', () => {
         createdAt: new Date(),
         lastSeenAt: new Date(),
         runtimes: null,
-        toolSets: null,
         status: ActiveStatus.Active,
-        mcpServer: createMockMcpServerRef('server-1', 'test-server'),
+        mcpServer: createMockMcpServerRef({ id: 'server-1', name: 'test-server' }),
         workspace: null as never,
+        toolSets: [],
       },
     ],
-    createdAt: new Date(),
-    hostIP: null,
-    hostname: null,
-    mcpClientName: null,
-    lastSeenAt: null,
-    mcpServers: null,
-    roots: null,
     workspace: {
       __typename: 'Workspace',
       id: 'workspace-1',
@@ -84,6 +127,7 @@ describe('OnboardingCard', () => {
     status: OnboardingStepStatus.Pending,
     type: OnboardingStepType.Onboarding,
     priority: 3,
+    metadata: null,
     createdAt: new Date(),
     updatedAt: null,
   };
@@ -92,8 +136,8 @@ describe('OnboardingCard', () => {
   const mockOpenCreateToolSetDialog = vi.fn();
   const mockSetManageToolsDialogOpen = vi.fn();
   const mockSetSelectedToolSetForManagement = vi.fn();
-  const mockSetConnectAgentDialogOpen = vi.fn();
-  const mockSetSelectedAgentId = vi.fn();
+  const mockSetConnectToolsetDialogOpen = vi.fn();
+  const mockSetSelectedToolsetName = vi.fn();
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -109,7 +153,7 @@ describe('OnboardingCard', () => {
       }
     );
 
-    vi.mocked(uiStore.useCreateToolSetDialog).mockReturnValue({
+    vi.mocked(uiStore.useCreateToolsetDialog).mockReturnValue({
       open: false,
       callback: null,
       openDialog: mockOpenCreateToolSetDialog,
@@ -119,15 +163,17 @@ describe('OnboardingCard', () => {
     vi.mocked(uiStore.useManageToolsDialog).mockReturnValue({
       open: false,
       setOpen: mockSetManageToolsDialogOpen,
-      selectedToolSetId: null,
-      setSelectedToolSetId: mockSetSelectedToolSetForManagement,
+      selectedToolsetId: null,
+      setSelectedToolsetId: mockSetSelectedToolSetForManagement,
     });
 
-    vi.mocked(uiStore.useConnectAgentDialog).mockReturnValue({
+    vi.mocked(uiStore.useConnectToolsetDialog).mockReturnValue({
       open: false,
-      setOpen: mockSetConnectAgentDialogOpen,
-      selectedAgentId: null,
-      setSelectedAgentId: mockSetSelectedAgentId,
+      setOpen: mockSetConnectToolsetDialogOpen,
+      selectedToolsetName: null,
+      setSelectedToolsetName: mockSetSelectedToolsetName,
+      selectedToolsetId: null,
+      setSelectedToolsetId: vi.fn(),
     });
 
     vi.mocked(runtimeStore.useRuntimeData).mockReturnValue({
@@ -144,17 +190,15 @@ describe('OnboardingCard', () => {
       error: undefined,
     });
 
-    vi.mocked(useAgents).mockReturnValue({
-      agents: [mockRuntime],
-      filteredAgents: [mockRuntime],
-      stats: { total: 1, filtered: 1, active: 1, inactive: 0 },
+    vi.mocked(useToolSets).mockReturnValue({
+      toolSets: [mockToolSet],
+      filteredToolSets: [mockToolSet],
+      stats: { total: 1, filtered: 1 },
+      loading: false,
+      error: undefined,
       filters: {
         search: '',
         setSearch: vi.fn(),
-        serverIds: [],
-        setServerIds: vi.fn(),
-        statuses: [],
-        setStatuses: vi.fn(),
         reset: vi.fn(),
       },
     });
@@ -171,32 +215,30 @@ describe('OnboardingCard', () => {
     it('shows Connect button when agent with tools exists and step is pending', () => {
       render(<OnboardingCard step={mockStep} isCurrentStep={true} />);
 
-      const button = screen.getByRole('button', { name: /Connect/i });
-      expect(button).toBeInTheDocument();
+      const buttons = screen.getAllByRole('button', { name: /Connect/i });
+      expect(buttons.length).toBeGreaterThan(0);
     });
 
-    it('opens Connect Agent dialog when Connect button is clicked', () => {
+    it('opens Connect Toolset dialog when Connect button is clicked', () => {
       render(<OnboardingCard step={mockStep} isCurrentStep={true} />);
 
-      const button = screen.getByRole('button', { name: /Connect/i });
-      fireEvent.click(button);
+      const buttons = screen.getAllByRole('button', { name: /Connect/i });
+      fireEvent.click(buttons[0]);
 
-      expect(mockSetSelectedAgentId).toHaveBeenCalledWith('runtime-1');
-      expect(mockSetConnectAgentDialogOpen).toHaveBeenCalledWith(true);
+      expect(mockSetSelectedToolsetName).toHaveBeenCalledWith('Test Agent');
+      expect(mockSetConnectToolsetDialogOpen).toHaveBeenCalledWith(true);
     });
 
-    it('shows message when no agent with tools exists', () => {
-      vi.mocked(useAgents).mockReturnValue({
-        agents: [],
-        filteredAgents: [],
-        stats: { total: 0, filtered: 0, active: 0, inactive: 0 },
+    it('shows message when no tool set with tools exists', () => {
+      vi.mocked(useToolSets).mockReturnValue({
+        toolSets: [],
+        filteredToolSets: [],
+        stats: { total: 0, filtered: 0 },
+        loading: false,
+        error: undefined,
         filters: {
           search: '',
           setSearch: vi.fn(),
-          serverIds: [],
-          setServerIds: vi.fn(),
-          statuses: [],
-          setStatuses: vi.fn(),
           reset: vi.fn(),
         },
       });
@@ -215,66 +257,33 @@ describe('OnboardingCard', () => {
       render(<OnboardingCard step={completedStep} />);
 
       expect(screen.getByText('Completed')).toBeInTheDocument();
-      expect(screen.getByText(/Test Agent connected/)).toBeInTheDocument();
-    });
-
-    it('shows truncated agent name when too long', () => {
-      const longNameRuntime = {
-        ...mockRuntime,
-        name: 'This is a very long agent name that should be truncated',
-      };
-
-      vi.mocked(useAgents).mockReturnValue({
-        agents: [longNameRuntime],
-        filteredAgents: [longNameRuntime],
-        stats: { total: 1, filtered: 1, active: 1, inactive: 0 },
-        filters: {
-          search: '',
-          setSearch: vi.fn(),
-          serverIds: [],
-          setServerIds: vi.fn(),
-          statuses: [],
-          setStatuses: vi.fn(),
-          reset: vi.fn(),
-        },
-      });
-
-      const completedStep = {
-        ...mockStep,
-        status: OnboardingStepStatus.Completed,
-      };
-
-      render(<OnboardingCard step={completedStep} />);
-
-      const nameElement = screen.getByText(/This is a very long agent name that should be truncated connected/);
-      expect(nameElement).toBeInTheDocument();
-      expect(nameElement.className).toContain('truncate');
+      expect(screen.getByText(/Tool Set connected/)).toBeInTheDocument();
     });
 
     it('applies correct styling for current step', () => {
       render(<OnboardingCard step={mockStep} isCurrentStep={true} />);
 
-      const button = screen.getByRole('button', { name: /Connect/i });
-      // Check that button has default variant (not outline)
-      expect(button.className).not.toContain('variant-outline');
+      const buttons = screen.getAllByRole('button', { name: /Connect/i });
+      // Check that first button has default variant (not outline)
+      expect(buttons[0].className).not.toContain('variant-outline');
     });
 
     it('applies correct styling for non-current step', () => {
       render(<OnboardingCard step={mockStep} isCurrentStep={false} />);
 
-      const button = screen.getByRole('button', { name: /Connect/i });
-      // Check that button has outline variant
-      expect(button.className).toContain('outline');
+      const buttons = screen.getAllByRole('button', { name: /Connect/i });
+      // Check that first button has outline variant
+      expect(buttons[0].className).toContain('outline');
     });
 
     it('displays Link icon in Connect button', () => {
       render(<OnboardingCard step={mockStep} isCurrentStep={true} />);
 
-      const button = screen.getByRole('button', { name: /Connect/i });
-      expect(button).toBeInTheDocument();
+      const buttons = screen.getAllByRole('button', { name: /Connect/i });
+      expect(buttons[0]).toBeInTheDocument();
 
       // Check that the Link icon is present (it's rendered as an svg)
-      const svg = button.querySelector('svg');
+      const svg = buttons[0].querySelector('svg');
       expect(svg).toBeInTheDocument();
     });
   });
@@ -307,35 +316,13 @@ describe('OnboardingCard', () => {
         status: OnboardingStepStatus.Completed,
       };
 
-      const mockServer: McpServer = {
-        __typename: 'MCPServer',
-        id: 'server-1',
+      const mockServer = createMockMcpServer({
         name: 'Test Server',
         description: 'Test server description',
         repositoryUrl: 'https://test.com',
         transport: McpTransportType.Stdio,
         runOn: McpServerRunOn.Agent,
-        config: '{}',
-        tools: null,
-        runtime: null,
-        registryServer: {
-          __typename: 'MCPRegistryServer',
-          id: 'registry-1',
-          name: 'Test Registry Server',
-          description: 'Test registry',
-          repositoryUrl: 'https://test.com',
-          title: 'Test Registry Server',
-          version: '1.0.0',
-          packages: null,
-          remotes: null,
-          _meta: null,
-          configurations: null,
-          createdAt: new Date(),
-          lastSeenAt: new Date(),
-          workspace: mockRuntime.workspace,
-        },
-        workspace: mockRuntime.workspace,
-      };
+      });
 
       vi.mocked(useMCPServers).mockReturnValue({
         servers: [mockServer],
@@ -373,7 +360,7 @@ describe('OnboardingCard', () => {
       expect(mockOpenCreateToolSetDialog).toHaveBeenCalled();
     });
 
-    it('shows completed agent with tool count when step is completed', () => {
+    it('shows completed tool set with tool count when step is completed', () => {
       const completedStep = {
         ...step2,
         status: OnboardingStepStatus.Completed,
@@ -385,12 +372,12 @@ describe('OnboardingCard', () => {
       expect(screen.getByText(/Test Agent \(1 tool\)/)).toBeInTheDocument();
     });
 
-    it('shows plural "tools" when agent has multiple tools', () => {
-      const multiToolRuntime: Runtime = {
-        ...mockRuntime,
-        mcpToolCapabilities: [
+    it('shows plural "tools" when tool set has multiple tools', () => {
+      const multiToolToolSet = {
+        ...mockToolSet,
+        mcpTools: [
           {
-            __typename: 'MCPTool',
+            __typename: 'MCPTool' as const,
             id: 'tool-1',
             name: 'test_tool_1',
             description: '',
@@ -398,14 +385,13 @@ describe('OnboardingCard', () => {
             annotations: '{}',
             createdAt: new Date(),
             lastSeenAt: new Date(),
-            runtimes: null,
-            toolSets: null,
             status: ActiveStatus.Active,
-            mcpServer: createMockMcpServerRef('server-1', 'test-server'),
+            mcpServer: createMockMcpServerRef({ id: 'server-1', name: 'test-server' }),
             workspace: null as never,
+            toolSets: [],
           },
           {
-            __typename: 'MCPTool',
+            __typename: 'MCPTool' as const,
             id: 'tool-2',
             name: 'test_tool_2',
             description: '',
@@ -413,26 +399,23 @@ describe('OnboardingCard', () => {
             annotations: '{}',
             createdAt: new Date(),
             lastSeenAt: new Date(),
-            runtimes: null,
-            toolSets: null,
             status: ActiveStatus.Active,
-            mcpServer: createMockMcpServerRef('server-1', 'test-server'),
+            mcpServer: createMockMcpServerRef({ id: 'server-1', name: 'test-server' }),
             workspace: null as never,
+            toolSets: [],
           },
         ],
       };
 
-      vi.mocked(useAgents).mockReturnValue({
-        agents: [multiToolRuntime],
-        filteredAgents: [multiToolRuntime],
-        stats: { total: 1, filtered: 1, active: 1, inactive: 0 },
+      vi.mocked(useToolSets).mockReturnValue({
+        toolSets: [multiToolToolSet],
+        filteredToolSets: [multiToolToolSet],
+        stats: { total: 1, filtered: 1 },
+        loading: false,
+        error: undefined,
         filters: {
           search: '',
           setSearch: vi.fn(),
-          serverIds: [],
-          setServerIds: vi.fn(),
-          statuses: [],
-          setStatuses: vi.fn(),
           reset: vi.fn(),
         },
       });

@@ -1,69 +1,60 @@
 /**
- * Tool Sets Page
+ * Toolsets Page
  *
- * WHY: Manage and view tool set runtimes with detailed information.
- * Shows tool set list with filters and detail panel.
+ * WHY: Manage and view toolsets with detailed information.
+ * Shows toolset list with filters and detail panel.
  *
  * LAYOUT:
- * - 2/3: Tool set table with search and filters
+ * - 2/3: Tool set table with search
  * - 1/3: Tool set detail panel
  *
  * FEATURES:
- * - Real-time tool set updates (subscription)
+ * - Real-time toolset updates (subscription)
  * - Search by name/description/tool names
- * - Filter by source(s), status
- * - Click tool set to view details
- * - Show tool set capabilities, sources, and tools
+ * - Click toolset to view details
+ * - Show toolset tools and metadata
  */
 
 import { useMemo, useEffect } from 'react';
 import { Plus } from 'lucide-react';
+import { useParams } from 'react-router-dom';
 import { MasterDetailLayout } from '@/components/layout/master-detail-layout';
-import { AgentTable } from '@/components/agents/agent-table';
-import { AgentDetail } from '@/components/agents/agent-detail';
+import { ToolsetTable } from '@/components/toolsets/toolset-table';
+import { ToolsetDetail } from '@/components/toolsets/toolset-detail';
 import { Button } from '@/components/ui/button';
-import { useAgents } from '@/hooks/useAgents';
-import { useMCPServers } from '@/hooks/useMCPServers';
-import { useRuntimeData } from '@/stores/runtimeStore';
-import { useCreateToolSetDialog, useManageToolsDialog } from '@/stores/uiStore';
+import { useToolSets } from '@/hooks/useToolSets';
+import { useCreateToolsetDialog, useManageToolsDialog } from '@/stores/uiStore';
 import { useUrlSync } from '@/hooks/useUrlSync';
 
 export default function ToolSetsPage() {
+  const { workspaceId } = useParams<{ workspaceId: string }>();
   const { selectedId, setSelectedId } = useUrlSync();
-  const { openDialog } = useCreateToolSetDialog();
+  const { openDialog } = useCreateToolsetDialog();
 
-  // Fetch runtimes and servers
-  const { runtimes, loading, error } = useRuntimeData();
-  const { filteredAgents, filters } = useAgents(runtimes);
-  const { servers } = useMCPServers();
+  // Fetch toolsets via Apollo subscription
+  const { filteredToolSets, loading, error, filters } = useToolSets(workspaceId || '');
 
-  // Get selected agent from URL
-  const selectedAgent = useMemo(() => {
+  console.log('filteredToolSets', filteredToolSets);
+
+  // Get selected toolset from URL
+  const selectedToolSet = useMemo(() => {
     if (!selectedId) return null;
-    return filteredAgents.find((a) => a.id === selectedId) || null;
-  }, [selectedId, filteredAgents]);
+    return filteredToolSets.find((ts) => ts.id === selectedId) || null;
+  }, [selectedId, filteredToolSets]);
 
-  // Auto-open detail panel if ID in URL and agent exists
+  // Auto-close detail panel if toolset not found
   useEffect(() => {
-    if (selectedId && !selectedAgent && !loading) {
-      // Agent not found - might have been deleted or invalid ID
+    if (selectedId && !selectedToolSet && !loading) {
+      // Tool set not found - might have been deleted or invalid ID
       setSelectedId(null);
     }
-  }, [selectedId, selectedAgent, loading, setSelectedId]);
-
-  // Available servers for filter
-  const availableServers = useMemo(() => {
-    return servers.map((server) => ({
-      id: server.id,
-      name: server.name,
-    }));
-  }, [servers]);
+  }, [selectedId, selectedToolSet, loading, setSelectedId]);
 
   if (error) {
     return (
       <div className="flex items-center justify-center h-full">
         <div className="text-center">
-          <p className="text-red-600 dark:text-red-400">Error loading tool sets</p>
+          <p className="text-red-600 dark:text-red-400">Error loading toolsets</p>
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">{error.message}</p>
         </div>
       </div>
@@ -74,7 +65,7 @@ export default function ToolSetsPage() {
   const handleCreateToolSet = () => {
     openDialog((toolSetId) => {
       setSelectedId(toolSetId);
-      manageToolsDialog.setSelectedToolSetId(toolSetId);
+      manageToolsDialog.setSelectedToolsetId(toolSetId);
       manageToolsDialog.setOpen(true);
     });
   };
@@ -84,36 +75,30 @@ export default function ToolSetsPage() {
       {/* Page Header */}
       <div className="mb-6 flex items-start justify-between">
         <div>
-          <h2 className="text-3xl font-bold text-gray-900 dark:text-white">Tool Sets</h2>
-          <p className="text-gray-500 dark:text-gray-400 mt-1">Manage AI tool sets and view their capabilities</p>
+          <h2 className="text-3xl font-bold text-gray-900 dark:text-white">Toolsets</h2>
+          <p className="text-gray-500 dark:text-gray-400 mt-1">
+            Manage your toolsets and organize your tools
+          </p>
         </div>
-        <Button
-          onClick={handleCreateToolSet}
-          className="flex items-center gap-2"
-        >
+        <Button onClick={handleCreateToolSet} className="flex items-center gap-2">
           <Plus className="h-4 w-4" />
-          New Tool Set
+          New Toolset
         </Button>
       </div>
 
       {/* Master-Detail Layout */}
       <MasterDetailLayout
         table={
-          <AgentTable
-            agents={filteredAgents}
-            selectedAgentId={selectedId}
-            onSelectAgent={setSelectedId}
+          <ToolsetTable
+            toolSets={filteredToolSets}
+            selectedToolsetId={selectedId}
+            onSelectToolSet={setSelectedId}
             search={filters.search}
             onSearchChange={filters.setSearch}
-            serverFilter={filters.serverIds}
-            onServerFilterChange={filters.setServerIds}
-            statusFilter={filters.statuses}
-            onStatusFilterChange={filters.setStatuses}
-            availableServers={availableServers}
             loading={loading}
           />
         }
-        detail={selectedAgent ? <AgentDetail agent={selectedAgent} /> : null}
+        detail={selectedToolSet ? <ToolsetDetail toolSet={selectedToolSet} /> : null}
         onCloseDetail={() => setSelectedId(null)}
       />
     </div>
