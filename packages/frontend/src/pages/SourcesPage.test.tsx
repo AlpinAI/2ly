@@ -191,44 +191,6 @@ describe('SourcesPage', () => {
   });
 
   describe('RunOn Filter', () => {
-    it('filters sources by GLOBAL runOn', async () => {
-      const globalServer = createMockMcpServer({
-        name: 'Global Server',
-        description: 'A global server',
-      });
-
-      const agentServer = createMockMcpServer({
-        id: 'server-2',
-        name: 'Agent Server',
-        description: 'An agent server',
-        runOn: McpServerRunOn.Agent,
-      });
-
-      mockServers.push(globalServer, agentServer);
-
-      renderWithProviders(<SourcesPage />);
-
-      await waitFor(() => {
-        expect(mockSourceTableProps).toHaveBeenCalled();
-      });
-
-      // Initially, all sources are shown
-      const lastCall = mockSourceTableProps.mock.calls[mockSourceTableProps.mock.calls.length - 1][0];
-      expect(lastCall.sources).toHaveLength(2);
-      expect(lastCall.runOnFilter).toEqual([]);
-
-      // Simulate setting runOn filter to GLOBAL
-      lastCall.onRunOnFilterChange(['GLOBAL']);
-
-      // Wait for filter to be applied and re-render to occur
-      await waitFor(() => {
-        const filteredCall = mockSourceTableProps.mock.calls[mockSourceTableProps.mock.calls.length - 1][0];
-        expect(filteredCall.runOnFilter).toEqual(['GLOBAL']);
-        expect(filteredCall.sources).toHaveLength(1);
-        expect(filteredCall.sources[0].runOn).toBe(McpServerRunOn.Global);
-      });
-    });
-
     it('filters sources by AGENT runOn', async () => {
       const agentServer = createMockMcpServer({
         name: 'Agent Server',
@@ -288,7 +250,7 @@ describe('SourcesPage', () => {
 
   describe('Combined Filters', () => {
     it('combines transport and runOn filters with AND logic', async () => {
-      // Server that matches both filters (STREAM + GLOBAL)
+      // Server that matches both filters (STREAM + EDGE)
       const matchingServer = createMockMcpServer({
         name: 'Matching Server',
         description: 'Matches both filters',
@@ -302,7 +264,7 @@ describe('SourcesPage', () => {
         runOn: McpServerRunOn.Agent,
       });
 
-      // Server that matches runOn but not transport (STDIO + GLOBAL)
+      // Server that matches runOn but not transport (STDIO + EDGE)
       const wrongTransportServer = createMockMcpServer({
         id: 'server-3',
         name: 'Wrong Transport Server',
@@ -322,18 +284,18 @@ describe('SourcesPage', () => {
       const lastCall = mockSourceTableProps.mock.calls[mockSourceTableProps.mock.calls.length - 1][0];
       expect(lastCall.sources).toHaveLength(3);
 
-      // Apply both filters: STREAM transport AND GLOBAL runOn
+      // Apply both filters: STREAM transport AND EDGE runOn
       lastCall.onTransportFilterChange(['STREAM']);
-      lastCall.onRunOnFilterChange(['GLOBAL']);
+      lastCall.onRunOnFilterChange(['EDGE']);
 
       // Wait for filters to be applied - only server matching BOTH should remain
       await waitFor(() => {
         const filteredCall = mockSourceTableProps.mock.calls[mockSourceTableProps.mock.calls.length - 1][0];
         expect(filteredCall.transportFilter).toEqual(['STREAM']);
-        expect(filteredCall.runOnFilter).toEqual(['GLOBAL']);
+        expect(filteredCall.runOnFilter).toEqual(['EDGE']);
         expect(filteredCall.sources).toHaveLength(1);
         expect(filteredCall.sources[0].transport).toBe(McpTransportType.Stream);
-        expect(filteredCall.sources[0].runOn).toBe(McpServerRunOn.Global);
+        expect(filteredCall.sources[0].runOn).toBe(McpServerRunOn.Edge);
       });
     });
 

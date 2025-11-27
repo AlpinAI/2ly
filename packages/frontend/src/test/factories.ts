@@ -31,7 +31,6 @@ export const createMockWorkspace = (overrides: Partial<Workspace> = {}): Workspa
   id: 'workspace-1',
   name: 'Test Workspace',
   createdAt: new Date(),
-  globalRuntime: null,
   mcpServers: null,
   mcpTools: null,
   onboardingSteps: null,
@@ -75,7 +74,7 @@ export const createMockMcpServer = (overrides: Partial<McpServer> = {}): McpServ
   name: 'Test Server',
   description: 'A test server',
   transport: McpTransportType.Stream,
-  runOn: McpServerRunOn.Global,
+  runOn: McpServerRunOn.Edge,
   config: '{}',
   repositoryUrl: '',
   registryServer: createMockRegistryServer(),
@@ -161,6 +160,7 @@ export const createMockRuntimeRef = (overrides: Partial<Runtime> = {}): Runtime 
   mcpServers: null,
   toolResponses: null,
   workspace: null as never,
+  system: null as never,
   ...overrides,
 });
 
@@ -177,6 +177,7 @@ export const createMockToolCall = (overrides: Partial<ToolCall> = {}): ToolCall 
   completedAt: new Date('2025-01-15T10:30:05Z'),
   toolInput: '{"query":"test"}',
   toolOutput: 'result',
+  executedByAgent: false,
   error: null,
   mcpTool: createMockMcpToolRef(),
   calledBy: null,
