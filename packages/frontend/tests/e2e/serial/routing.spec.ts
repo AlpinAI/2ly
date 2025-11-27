@@ -212,7 +212,7 @@ test.describe('Routing and Navigation', () => {
   });
 
   test.describe('Loading States', () => {
-    test('should show loading state while checking authentication', async ({ page }) => {
+    test.only('should show loading state while checking authentication', async ({ page }) => {
       // Set up interceptor BEFORE any navigation to delay refresh token mutation
       await page.route('**/graphql', async (route) => {
         const request = route.request();
@@ -264,13 +264,15 @@ test.describe('Routing and Navigation', () => {
       const loading = page.locator('p:has-text("Loading...")');
 
       // Reload and immediately check for loading state
-      const reloadPromise = page.reload();
+      // Use waitUntil: 'commit' so the promise resolves early, allowing us to observe the loading state
+      const reloadPromise = page.reload({ waitUntil: 'commit' });
 
       // The loading should appear (because token is expired and refresh is delayed)
       await expect(loading).toBeVisible({ timeout: 1000 });
 
-      // Wait for reload to complete
+      // Wait for reload to complete fully
       await reloadPromise;
+      await page.waitForLoadState('networkidle');
 
       // Loading should eventually disappear
       await expect(loading).not.toBeVisible({ timeout: 5000 });
