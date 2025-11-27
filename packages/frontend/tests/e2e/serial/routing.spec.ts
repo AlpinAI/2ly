@@ -212,7 +212,7 @@ test.describe('Routing and Navigation', () => {
   });
 
   test.describe('Loading States', () => {
-    test.only('should show loading state while checking authentication', async ({ page }) => {
+    test('should show loading state while checking authentication', async ({ page }) => {
       // Set up interceptor BEFORE any navigation to delay refresh token mutation
       await page.route('**/graphql', async (route) => {
         const request = route.request();
