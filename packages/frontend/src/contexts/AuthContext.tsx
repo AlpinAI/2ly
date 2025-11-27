@@ -152,6 +152,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
    * Login function - saves tokens and user data
    */
   const login = (newTokens: AuthTokens, newUser: User) => {
+    console.log('[AuthContext] login() called with user:', newUser.email);
     setTokens(newTokens);
     setUser(newUser);
 
@@ -161,6 +162,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
     // Check for redirect intent and navigate there, otherwise go to root (which redirects to default workspace)
     const redirectTo = getRedirectIntent() || '/';
+    console.log('[AuthContext] Navigating to:', redirectTo);
     navigate(redirectTo);
   };
 

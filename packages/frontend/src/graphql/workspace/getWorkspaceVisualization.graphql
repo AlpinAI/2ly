@@ -1,0 +1,79 @@
+# Get all workspace entities and relationships for visualization
+# WHY: Force-directed graph needs complete entity data with relationships
+query GetWorkspaceVisualization($workspaceId: ID!) {
+  mcpServers(workspaceId: $workspaceId) {
+    id
+    name
+    description
+    transport
+    runOn
+    runtime {
+      id
+      name
+    }
+    tools {
+      id
+      name
+    }
+  }
+  mcpTools(workspaceId: $workspaceId) {
+    id
+    name
+    description
+    status
+    mcpServer {
+      id
+      name
+    }
+    toolSets {
+      id
+      name
+    }
+  }
+  workspace(workspaceId: $workspaceId) {
+    id
+    name
+    runtimes {
+      id
+      name
+      description
+      status
+      mcpServers {
+        id
+        name
+        tools {
+          id
+          name
+        }
+      }
+    }
+    toolSets {
+      id
+      name
+      description
+      mcpTools {
+        id
+        name
+      }
+    }
+  }
+  toolCalls(workspaceId: $workspaceId, limit: 100) {
+    toolCalls {
+      id
+      status
+      calledAt
+      mcpTool {
+        id
+        name
+      }
+      calledBy {
+        id
+        name
+      }
+      executedBy {
+        id
+        name
+      }
+    }
+  }
+}

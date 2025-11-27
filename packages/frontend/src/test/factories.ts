@@ -38,6 +38,7 @@ export const createMockWorkspace = (overrides: Partial<Workspace> = {}): Workspa
   registryServers: null,
   runtimes: null,
   toolSets: null,
+  aiConfig: null,
   ...overrides,
 });
 

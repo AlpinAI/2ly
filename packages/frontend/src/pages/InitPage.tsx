@@ -48,9 +48,17 @@ export default function InitPage() {
     };
   }>(LoginDocument, {
     onCompleted: (data) => {
+      console.log('[InitPage] Login mutation completed:', data);
       if (data.login.success && data.login.tokens && data.login.user) {
         // Auto-login successful, redirect to dashboard
+        console.log('[InitPage] Auto-login successful, calling login()');
         login(data.login.tokens, data.login.user);
+      } else {
+        console.warn('[InitPage] Login mutation completed but not successful:', data.login);
+        setSuccessMessage('System initialized successfully! Please log in.');
+        setTimeout(() => {
+          navigate('/login');
+        }, 2000);
       }
     },
     onError: (err) => {
@@ -69,13 +77,15 @@ export default function InitPage() {
       initialized: boolean;
     };
   }>(InitSystemDocument, {
-    onCompleted: async () => {
+    onCompleted: async (data) => {
       // System initialized successfully
+      console.log('[InitPage] Init system mutation completed:', data);
       setErrorMessage(null);
       setSuccessMessage('System initialized successfully! Logging you in...');
 
       // Auto-login the user with the credentials they just created
       try {
+        console.log('[InitPage] Calling login mutation with email:', email);
         await loginMutation({
           variables: {
             input: {

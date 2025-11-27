@@ -29,6 +29,7 @@ import {
   MCPToolRepository,
   SystemRepository,
   MonitoringRepository,
+  AIConfigRepository,
   ToolSetRepository,
   IdentityRepository,
 } from '../repositories';
@@ -39,6 +40,7 @@ import { IdentityService } from '../services/identity.service';
 import { KeyRateLimiterService } from '../services/key-rate-limiter.service';
 import pino from 'pino';
 import { MonitoringService } from '../services/monitoring.service';
+import { AIService } from '../services/ai.service';
 
 const container = new Container();
 const start = () => {
@@ -89,6 +91,7 @@ const start = () => {
   container.bind(MCPToolRepository).toSelf().inSingletonScope();
   container.bind(SystemRepository).toSelf().inSingletonScope();
   container.bind(MonitoringRepository).toSelf().inSingletonScope();
+  container.bind(AIConfigRepository).toSelf().inSingletonScope();
   container.bind(ToolSetRepository).toSelf().inSingletonScope();
   container.bind(IdentityRepository).toSelf().inSingletonScope();
 
@@ -116,6 +119,9 @@ const start = () => {
   container.bind(AZURE_API_KEY).toConstantValue(process.env.AZURE_API_KEY || '');
   container.bind(BRAVE_SEARCH_API_KEY).toConstantValue(process.env.BRAVE_SEARCH_API_KEY || '');
   container.bind(MCPServerAutoConfigService).toSelf().inSingletonScope();
+
+  // Init AI service
+  container.bind(AIService).toSelf().inSingletonScope();
 
   // Init logger service
   container.bind(MAIN_LOGGER_NAME).toConstantValue('2ly-backend');

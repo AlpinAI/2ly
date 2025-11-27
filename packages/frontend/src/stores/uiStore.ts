@@ -69,8 +69,6 @@ interface UIState {
   selectedToolsetIdForConnection: string | null;
   setSelectedToolsetIdForConnection: (toolsetId: string | null) => void;
 
-
-
   // Tool Catalog Filters
   toolCategoryFilter: string;
   setToolCategoryFilter: (category: string) => void;
@@ -168,8 +166,6 @@ export const useUIStore = create<UIState>()(
         setSelectedToolsetNameForConnection: (toolsetName) => set({ selectedToolsetNameForConnection: toolsetName }),
         selectedToolsetIdForConnection: null,
         setSelectedToolsetIdForConnection: (toolsetId) => set({ selectedToolsetIdForConnection: toolsetId }),
-
-
 
         // Actions
         resetFilters: () =>
@@ -305,5 +301,3 @@ export const useAddServerWorkflow = () => {
     setInitialStep,
   };
 };
-
-

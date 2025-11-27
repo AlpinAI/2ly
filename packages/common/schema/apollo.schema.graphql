@@ -46,6 +46,7 @@ type Workspace {
   registryServers: [MCPRegistryServer!]
   globalRuntime: Runtime
   onboardingSteps: [OnboardingStep!]
+  aiConfig: AIConfig
 }
 
 type MCPServer {
@@ -240,6 +241,61 @@ type ToolCallStats {
   avgDuration: Float
 }
 
+enum AIProvider {
+  OPENAI
+  ANTHROPIC
+}
+
+type AIConfig {
+  id: ID!
+  provider: AIProvider!
+  model: String!
+  encryptedApiKey: String!
+  createdAt: Date!
+  updatedAt: Date!
+}
+
+type AIToolSuggestion {
+  toolId: ID!
+  toolName: String!
+  reason: String!
+  confidence: Float!
+}
+
+type SuggestToolsResult {
+  suggestions: [AIToolSuggestion!]!
+  externalSuggestions: [String!]!
+}
+
+type EnvVar {
+  key: String!
+  value: String!
+}
+
+type Header {
+  key: String!
+  value: String!
+}
+
+type RepositoryAnalysis {
+  name: String!
+  description: String!
+  version: String!
+  transportType: String!
+  command: String
+  args: [String!]
+  envVars: [EnvVar!]
+  url: String
+  headers: [Header!]
+}
+
+type ToolSetMetadataSuggestion {
+  name: String!
+  description: String!
+  suggestions: [AIToolSuggestion!]!
+  externalSuggestions: [String!]!
+}
+
 type Query {
   workspaces: [Workspace!]!
   workspace(workspaceId: ID!): Workspace
@@ -265,6 +321,11 @@ type Query {
   keyValue(keyId: ID!): String!
   # Authentication queries
   me: User
+  # AI queries
+  getAIConfig(workspaceId: ID!): AIConfig
+  suggestToolsForToolSet(workspaceId: ID!, description: String!): SuggestToolsResult!
+  suggestToolSetMetadata(workspaceId: ID!, userGoal: String!): ToolSetMetadataSuggestion!
+  analyzeRepository(workspaceId: ID!, repositoryUrl: String!): RepositoryAnalysis!
 }
 
 type CallToolResult {
@@ -341,6 +402,10 @@ type Mutation {
   completeOnboardingStep(workspaceId: ID!, stepId: String!): Boolean!
   dismissOnboardingStep(workspaceId: ID!, stepId: String!): Boolean!
 
+  # AI mutations
+  setAIConfig(workspaceId: ID!, provider: AIProvider!, model: String!, apiKey: String!): AIConfig!
+  deleteAIConfig(workspaceId: ID!): Boolean!
+
   # Key management mutations
   createWorkspaceKey(workspaceId: ID!, description: String!): IdentityKey!
   revokeKey(keyId: ID!): IdentityKey!
@@ -355,23 +420,9 @@ type Mutation {
 }
 
 # Authentication types
-type User {
-  id: ID!
-  email: String!
-  createdAt: Date!
-  lastLoginAt: Date
-}
-
 type AuthTokens {
   accessToken: String!
   refreshToken: String!
-}
-
-type AuthPayload {
-  success: Boolean!
-  user: User
-  tokens: AuthTokens
-  errors: [String!]
 }
 
 type RegisterUserPayload {
@@ -404,21 +455,7 @@ input LoginUserInput {
   deviceInfo: String
 }
 
-input LoginInput {
-  email: String!
-  password: String!
-  deviceInfo: String
-}
-
-input RefreshTokenInput {
-  refreshToken: String!
-}
-
 input LogoutUserInput {
-  refreshToken: String!
-}
-
-input LogoutInput {
   refreshToken: String!
 }
 

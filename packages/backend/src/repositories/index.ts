@@ -8,5 +8,6 @@ export * from './mcp-tool.repository';
 export * from './runtime.repository';
 export * from './system.repository';
 export * from './monitoring.repository';
+export * from './ai-config.repository';
 export * from './toolset.repository';
 export * from './identity.repository';

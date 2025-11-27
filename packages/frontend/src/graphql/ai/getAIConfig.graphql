@@ -1,0 +1,9 @@
+query GetAIConfig($workspaceId: ID!) {
+  getAIConfig(workspaceId: $workspaceId) {
+    id
+    provider
+    model
+    createdAt
+    updatedAt
+  }
+}
