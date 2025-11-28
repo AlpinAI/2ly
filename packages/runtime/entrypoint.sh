@@ -61,7 +61,7 @@ fi
 if [ "$(id -u)" = "0" ] && [ -n "$SERVICE_USER" ]; then
   echo "🔧 Fixing ownership of $KEYS_DIR for $SERVICE_USER..."
   chown -R "$SERVICE_USER:$SERVICE_USER" "$KEYS_DIR" 2>/dev/null || true
-  chown -R "$SERVICE_USER:$SERVICE_USER" /app 2>/dev/null || true
+  # Note: /app ownership is set at build time (Dockerfile), no need to chown here
 
   echo "🔄 Dropping privileges to $SERVICE_USER..."
   echo ""
