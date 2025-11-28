@@ -27,7 +27,7 @@ COPY scripts/generate-keys.js ./scripts/
 # Build the backend
 RUN npm run build -w @2ly/backend
 
-# Bundle key generation script into standalone file (eliminates need for node_modules in production)
+# Bundle key generation script into standalone file
 # Using .cjs extension to force CommonJS in ESM project
 # Note: Source file already has shebang, no banner needed
 RUN npx esbuild scripts/generate-keys.js \
@@ -50,7 +50,7 @@ RUN apk add --no-cache curl su-exec && \
     mkdir -p /app/logs && \
     chown -R orchestrator:orchestrator /app
 
-# Copy only the built artifacts from builder (no node_modules needed!)
+# Copy only the built artifacts from builder
 COPY --from=builder /app/packages/backend/dist ./packages/backend/dist
 
 # Copy bundled key generation script (standalone, no dependencies needed)
@@ -69,7 +69,7 @@ ENV SERVICE_USER=orchestrator
 EXPOSE 3000
 
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-  CMD curl -f http://localhost:3000/health || exit 1
+    CMD curl -f http://localhost:3000/health || exit 1
 
 ENTRYPOINT ["/app/entrypoint.sh"]
 CMD ["node", "packages/backend/dist/index.js"]
