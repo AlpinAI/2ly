@@ -14,3 +14,7 @@ public.pem
 # Docker-generated keys (shared between Docker and local dev)
 .docker-keys/
 logs/
+
+# Bundled scripts (generated during Docker build)
+scripts/*.bundle.js
+scripts/*.bundle.cjs
