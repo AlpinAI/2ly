@@ -12,7 +12,7 @@ set -e
 # Default: dev/.docker-keys for local development
 # Can be overridden via KEYS_DIR environment variable
 if [ -z "$KEYS_DIR" ]; then
-  if [ -f "/app/scripts/generate-keys.js" ]; then
+  if [ -f "/app/scripts/generate-keys.bundle.cjs" ] || [ -f "/app/scripts/generate-keys.js" ]; then
     # Running inside Docker container
     KEYS_DIR="/keys"
   else
@@ -35,17 +35,26 @@ echo "Keys directory: $KEYS_DIR"
 echo ""
 
 # Determine Node.js script location
-if [ -f "/app/scripts/generate-keys.js" ]; then
-  # Running inside Docker container
+# Prefer bundled script (no dependencies needed) over source script
+if [ -f "/app/scripts/generate-keys.bundle.cjs" ]; then
+  # Running inside Docker container with bundled script
+  NODE_SCRIPT="/app/scripts/generate-keys.bundle.cjs"
+elif [ -f "/app/scripts/generate-keys.js" ]; then
+  # Running inside Docker container with source script (legacy)
   NODE_SCRIPT="/app/scripts/generate-keys.js"
+elif [ -f "$(dirname "$0")/scripts/generate-keys.bundle.cjs" ]; then
+  # Running on host with bundled script
+  NODE_SCRIPT="$(cd "$(dirname "$0")" && pwd)/scripts/generate-keys.bundle.cjs"
 elif [ -f "$(dirname "$0")/scripts/generate-keys.js" ]; then
-  # Running on host
+  # Running on host with source script
   NODE_SCRIPT="$(cd "$(dirname "$0")" && pwd)/scripts/generate-keys.js"
 else
   echo "❌ Error: generate-keys.js not found"
   echo "Expected locations:"
-  echo "  - /app/scripts/generate-keys.js (Docker)"
-  echo "  - ./scripts/generate-keys.js (host)"
+  echo "  - /app/scripts/generate-keys.bundle.cjs (Docker, bundled)"
+  echo "  - /app/scripts/generate-keys.js (Docker, source)"
+  echo "  - ./scripts/generate-keys.bundle.cjs (host, bundled)"
+  echo "  - ./scripts/generate-keys.js (host, source)"
   exit 1
 fi
 
