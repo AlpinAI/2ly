@@ -7,7 +7,7 @@
 import { AlertCircle, CheckCircle, Clock } from 'lucide-react';
 import { Link, useParams } from 'react-router-dom';
 import { ToolCallStatus, GetToolCallsQuery } from '@/graphql/generated/graphql';
-import { cn } from '@/lib/utils';
+import { cn, hasOutputError } from '@/lib/utils';
 import { estimateTokens, formatTokenCountExact } from '@/utils/tokenEstimation';
 
 // Derive ToolCall type from the actual GraphQL query result
@@ -171,12 +171,31 @@ export function ToolCallDetail({ toolCall }: ToolCallDetailProps) {
           </pre>
         </div>
       ) : toolCall.toolOutput ? (
-        <div>
-          <p className="text-sm font-medium text-gray-900 dark:text-white mb-2">Output</p>
-          <pre className="text-xs bg-green-50 dark:bg-green-900/20 p-3 rounded border border-green-200 dark:border-green-800 overflow-x-auto max-h-40">
-            <code>{toolCall.toolOutput}</code>
-          </pre>
-        </div>
+        (() => {
+          // Check if output contains isError: true
+          const outputHasError = hasOutputError(toolCall.toolOutput);
+
+          return (
+            <div>
+              <p className={cn(
+                "text-sm font-medium mb-2",
+                outputHasError
+                  ? "text-red-800 dark:text-red-300"
+                  : "text-gray-900 dark:text-white"
+              )}>
+                {outputHasError ? 'Error' : 'Output'}
+              </p>
+              <pre className={cn(
+                "text-xs p-3 rounded border overflow-x-auto max-h-40",
+                outputHasError
+                  ? "bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300 border-red-200 dark:border-red-800"
+                  : "bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800"
+              )}>
+                <code>{toolCall.toolOutput}</code>
+              </pre>
+            </div>
+          );
+        })()
       ) : null}
     </div>
   );

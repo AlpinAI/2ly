@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { cn, sanitizeIdentifier } from './utils';
+import { cn, sanitizeIdentifier, hasOutputError } from './utils';
 
 describe('cn', () => {
   it('merges class names correctly', () => {
@@ -129,6 +129,72 @@ describe('sanitizeIdentifier', () => {
 
     it('matches example: "Production Runtime" → "production-runtime"', () => {
       expect(sanitizeIdentifier('Production Runtime')).toBe('production-runtime');
+    });
+  });
+});
+
+describe('hasOutputError', () => {
+  describe('valid JSON with isError', () => {
+    it('returns true when isError is true', () => {
+      expect(hasOutputError('{"isError": true}')).toBe(true);
+      expect(hasOutputError('{"isError": true, "message": "Failed"}')).toBe(true);
+      expect(hasOutputError('{"data": "result", "isError": true}')).toBe(true);
+    });
+
+    it('returns false when isError is false', () => {
+      expect(hasOutputError('{"isError": false}')).toBe(false);
+      expect(hasOutputError('{"isError": false, "data": "success"}')).toBe(false);
+    });
+
+    it('returns false when isError is missing', () => {
+      expect(hasOutputError('{"data": "success"}')).toBe(false);
+      expect(hasOutputError('{"message": "completed"}')).toBe(false);
+      expect(hasOutputError('{}')).toBe(false);
+    });
+
+    it('returns false when isError is not a boolean', () => {
+      expect(hasOutputError('{"isError": "true"}')).toBe(false);
+      expect(hasOutputError('{"isError": 1}')).toBe(false);
+      expect(hasOutputError('{"isError": null}')).toBe(false);
+    });
+  });
+
+  describe('invalid JSON', () => {
+    it('returns false for plain text output', () => {
+      expect(hasOutputError('Plain text result')).toBe(false);
+      expect(hasOutputError('Tool executed successfully')).toBe(false);
+    });
+
+    it('returns false for malformed JSON', () => {
+      expect(hasOutputError('{"incomplete": ')).toBe(false);
+      expect(hasOutputError('{invalid json}')).toBe(false);
+      expect(hasOutputError('not json at all')).toBe(false);
+    });
+  });
+
+  describe('null/undefined/empty inputs', () => {
+    it('returns false for null', () => {
+      expect(hasOutputError(null)).toBe(false);
+    });
+
+    it('returns false for undefined', () => {
+      expect(hasOutputError(undefined)).toBe(false);
+    });
+
+    it('returns false for empty string', () => {
+      expect(hasOutputError('')).toBe(false);
+    });
+  });
+
+  describe('complex nested objects', () => {
+    it('checks top-level isError only', () => {
+      expect(hasOutputError('{"nested": {"isError": true}, "isError": false}')).toBe(false);
+      expect(hasOutputError('{"nested": {"isError": false}, "isError": true}')).toBe(true);
+    });
+
+    it('handles arrays correctly', () => {
+      expect(hasOutputError('{"items": [1, 2, 3], "isError": true}')).toBe(true);
+      expect(hasOutputError('{"items": [1, 2, 3]}')).toBe(false);
     });
   });
 });

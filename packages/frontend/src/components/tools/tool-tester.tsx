@@ -25,6 +25,7 @@ import { Button } from '@/components/ui/button';
 import { CallMcpToolDocument, McpServerRunOn } from '@/graphql/generated/graphql';
 import { SchemaInput } from './schema-input';
 import { parseJSONSchema, convertValueToType, validateSchemaValue } from '@/lib/jsonSchemaHelpers';
+import { hasOutputError } from '@/lib/utils';
 
 export interface ToolTesterProps {
   toolId: string;
@@ -162,7 +163,10 @@ export function ToolTester({ toolId, inputSchema, runOn }: ToolTesterProps) {
       if (response.data.callMCPTool) {
         const { success, result } = response.data.callMCPTool;
 
-        if (success) {
+        // Check if the output contains isError: true even if GraphQL success is true
+        const hasError = hasOutputError(result);
+
+        if (success && !hasError) {
           // Try to parse result as JSON for pretty display
           let parsedResult = result;
           try {

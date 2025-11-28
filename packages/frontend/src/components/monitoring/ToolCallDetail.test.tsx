@@ -341,4 +341,147 @@ describe('ToolCallDetail', () => {
     const inputIndex = Array.from(sections).indexOf(inputSection!);
     expect(tokenIndex).toBeLessThan(inputIndex);
   });
+
+  it('displays red error UI when output contains isError: true', () => {
+    const toolCallWithOutputError = {
+      ...mockToolCall,
+      status: ToolCallStatus.Completed,
+      toolOutput: '{"isError": true, "message": "Tool execution failed"}',
+      error: null,
+    };
+
+    const { container } = renderWithRouter(<ToolCallDetail toolCall={toolCallWithOutputError} />);
+
+    // Should show "Error" label instead of "Output"
+    expect(screen.getByText('Error')).toBeInTheDocument();
+    expect(screen.queryByText('Output')).not.toBeInTheDocument();
+
+    // Should have red styling
+    const errorContainer = container.querySelector('.bg-red-50');
+    expect(errorContainer).toBeInTheDocument();
+    expect(errorContainer).toHaveClass('text-red-700');
+    expect(errorContainer).toHaveClass('border-red-200');
+
+    // Should display the output content
+    expect(screen.getByText(/"isError": true/)).toBeInTheDocument();
+  });
+
+  it('displays green success UI when output contains isError: false', () => {
+    const toolCallWithSuccessOutput = {
+      ...mockToolCall,
+      status: ToolCallStatus.Completed,
+      toolOutput: '{"isError": false, "data": "success result"}',
+      error: null,
+    };
+
+    const { container } = renderWithRouter(<ToolCallDetail toolCall={toolCallWithSuccessOutput} />);
+
+    // Should show "Output" label
+    expect(screen.getByText('Output')).toBeInTheDocument();
+    expect(screen.queryByText('Error')).not.toBeInTheDocument();
+
+    // Should have green styling
+    const outputContainer = container.querySelector('.bg-green-50');
+    expect(outputContainer).toBeInTheDocument();
+    expect(outputContainer).toHaveClass('border-green-200');
+
+    // Should display the output content
+    expect(screen.getByText(/"data": "success result"/)).toBeInTheDocument();
+  });
+
+  it('displays green success UI when output does not contain isError field', () => {
+    const toolCallWithoutErrorField = {
+      ...mockToolCall,
+      status: ToolCallStatus.Completed,
+      toolOutput: '{"data": "success result"}',
+      error: null,
+    };
+
+    const { container } = renderWithRouter(<ToolCallDetail toolCall={toolCallWithoutErrorField} />);
+
+    // Should show "Output" label
+    expect(screen.getByText('Output')).toBeInTheDocument();
+
+    // Should have green styling
+    const outputContainer = container.querySelector('.bg-green-50');
+    expect(outputContainer).toBeInTheDocument();
+  });
+
+  it('handles non-JSON output gracefully and displays as success', () => {
+    const toolCallWithPlainTextOutput = {
+      ...mockToolCall,
+      status: ToolCallStatus.Completed,
+      toolOutput: 'Plain text output that is not JSON',
+      error: null,
+    };
+
+    const { container } = renderWithRouter(<ToolCallDetail toolCall={toolCallWithPlainTextOutput} />);
+
+    // Should show "Output" label (not error)
+    expect(screen.getByText('Output')).toBeInTheDocument();
+    expect(screen.queryByText('Error')).not.toBeInTheDocument();
+
+    // Should have green styling
+    const outputContainer = container.querySelector('.bg-green-50');
+    expect(outputContainer).toBeInTheDocument();
+
+    // Should display the plain text output
+    expect(screen.getByText('Plain text output that is not JSON')).toBeInTheDocument();
+  });
+
+  it('prioritizes status Failed over isError in output', () => {
+    // When status is FAILED with error field, it should use that instead of checking output
+    const failedToolCallWithOutput = {
+      ...mockToolCall,
+      status: ToolCallStatus.Failed,
+      error: 'GraphQL-level error',
+      toolOutput: '{"isError": false, "data": "some data"}',
+    };
+
+    const { container } = renderWithRouter(<ToolCallDetail toolCall={failedToolCallWithOutput} />);
+
+    // Should show "Error" label
+    expect(screen.getAllByText('Error').length).toBeGreaterThan(0);
+
+    // Should display the error field, not the output
+    expect(screen.getByText('GraphQL-level error')).toBeInTheDocument();
+    expect(screen.queryByText(/"data": "some data"/)).not.toBeInTheDocument();
+
+    // Should have red styling
+    const errorContainer = container.querySelector('.bg-red-50');
+    expect(errorContainer).toBeInTheDocument();
+  });
+
+  it('applies correct dark mode styling for error outputs', () => {
+    const toolCallWithOutputError = {
+      ...mockToolCall,
+      status: ToolCallStatus.Completed,
+      toolOutput: '{"isError": true, "message": "Failed"}',
+      error: null,
+    };
+
+    const { container } = renderWithRouter(<ToolCallDetail toolCall={toolCallWithOutputError} />);
+
+    // Should have dark mode classes
+    const errorContainer = container.querySelector('.dark\\:bg-red-900\\/20');
+    expect(errorContainer).toBeInTheDocument();
+    expect(errorContainer).toHaveClass('dark:text-red-300');
+    expect(errorContainer).toHaveClass('dark:border-red-800');
+  });
+
+  it('applies correct dark mode styling for success outputs', () => {
+    const toolCallWithSuccessOutput = {
+      ...mockToolCall,
+      status: ToolCallStatus.Completed,
+      toolOutput: '{"data": "success"}',
+      error: null,
+    };
+
+    const { container } = renderWithRouter(<ToolCallDetail toolCall={toolCallWithSuccessOutput} />);
+
+    // Should have dark mode classes for success
+    const outputContainer = container.querySelector('.dark\\:bg-green-900\\/20');
+    expect(outputContainer).toBeInTheDocument();
+    expect(outputContainer).toHaveClass('dark:border-green-800');
+  });
 });
