@@ -105,4 +105,86 @@ describe('WorkspaceRepository', () => {
         expect(results[0].map((w) => w.id)).toEqual(['w1', 'w3']);
         sub.unsubscribe();
     });
+
+    describe('hasUserAccess', () => {
+        it('returns true when user is admin of workspace', async () => {
+            dgraph.query.mockResolvedValue({
+                getUser: {
+                    id: 'user1',
+                    adminOfWorkspaces: [{ id: 'w1' }],
+                    membersOfWorkspaces: []
+                }
+            });
+            const result = await repo.hasUserAccess('user1', 'w1');
+            expect(result).toBe(true);
+        });
+
+        it('returns true when user is member of workspace', async () => {
+            dgraph.query.mockResolvedValue({
+                getUser: {
+                    id: 'user1',
+                    adminOfWorkspaces: [],
+                    membersOfWorkspaces: [{ id: 'w1' }]
+                }
+            });
+            const result = await repo.hasUserAccess('user1', 'w1');
+            expect(result).toBe(true);
+        });
+
+        it('returns true when user is both admin and member', async () => {
+            dgraph.query.mockResolvedValue({
+                getUser: {
+                    id: 'user1',
+                    adminOfWorkspaces: [{ id: 'w1' }],
+                    membersOfWorkspaces: [{ id: 'w1' }]
+                }
+            });
+            const result = await repo.hasUserAccess('user1', 'w1');
+            expect(result).toBe(true);
+        });
+
+        it('returns false when user has no access to workspace', async () => {
+            dgraph.query.mockResolvedValue({
+                getUser: {
+                    id: 'user1',
+                    adminOfWorkspaces: [],
+                    membersOfWorkspaces: []
+                }
+            });
+            const result = await repo.hasUserAccess('user1', 'w1');
+            expect(result).toBe(false);
+        });
+
+        it('returns false when user does not exist', async () => {
+            dgraph.query.mockResolvedValue({
+                getUser: null
+            });
+            const result = await repo.hasUserAccess('nonexistent', 'w1');
+            expect(result).toBe(false);
+        });
+
+        it('handles undefined adminOfWorkspaces gracefully', async () => {
+            dgraph.query.mockResolvedValue({
+                getUser: {
+                    id: 'user1',
+                    adminOfWorkspaces: undefined,
+                    membersOfWorkspaces: [{ id: 'w1' }]
+                }
+            });
+            const result = await repo.hasUserAccess('user1', 'w1');
+            expect(result).toBe(true);
+        });
+
+        it('handles undefined membersOfWorkspaces gracefully', async () => {
+            dgraph.query.mockResolvedValue({
+                getUser: {
+                    id: 'user1',
+                    adminOfWorkspaces: [{ id: 'w1' }],
+                    membersOfWorkspaces: undefined
+                }
+            });
+            const result = await repo.hasUserAccess('user1', 'w1');
+            expect(result).toBe(true);
+        });
+    });
 });

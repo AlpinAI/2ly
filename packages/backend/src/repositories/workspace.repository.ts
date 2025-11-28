@@ -5,6 +5,7 @@ import {
   ADD_WORKSPACE,
   QUERY_WORKSPACE,
   QUERY_WORKSPACES_BY_USER,
+  CHECK_USER_WORKSPACE_ACCESS,
   QUERY_WORKSPACE_WITH_RUNTIMES,
   QUERY_WORKSPACE_WITH_MCP_SERVERS,
   QUERY_WORKSPACE_WITH_MCP_TOOLS,
@@ -109,6 +110,29 @@ export class WorkspaceRepository {
     }>(QUERY_WORKSPACES_BY_USER, { userId });
 
     return res.getUser?.adminOfWorkspaces || [];
+  }
+
+  /**
+   * Check if a user has access to a specific workspace.
+   * A user has access if they are either an admin or member of the workspace.
+   */
+  async hasUserAccess(userId: string, workspaceId: string): Promise<boolean> {
+    const res = await this.dgraphService.query<{
+      getUser: {
+        id: string;
+        adminOfWorkspaces: { id: string }[];
+        membersOfWorkspaces: { id: string }[];
+      } | null;
+    }>(CHECK_USER_WORKSPACE_ACCESS, { userId, workspaceId });
+
+    if (!res.getUser) {
+      return false;
+    }
+
+    const isAdmin = (res.getUser.adminOfWorkspaces?.length ?? 0) > 0;
+    const isMember = (res.getUser.membersOfWorkspaces?.length ?? 0) > 0;
+
+    return isAdmin || isMember;
   }
 
   async findById(workspaceId: string): Promise<dgraphResolversTypes.Workspace> {

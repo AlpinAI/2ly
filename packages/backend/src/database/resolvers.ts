@@ -63,7 +63,27 @@ export const resolvers = (container: Container = defaultContainer): apolloResolv
         // Filter workspaces by user's admin relationship
         return workspaceRepository.findAll(context.user.userId);
       },
-      workspace: async (_parent: unknown, { workspaceId }: { workspaceId: string }) => {
+      workspace: async (
+        _parent: unknown,
+        { workspaceId }: { workspaceId: string },
+        context: { user?: { userId: string; email: string } }
+      ) => {
+        // Require authentication
+        if (!context.user?.userId) {
+          throw new GraphQLError('Authentication required', {
+            extensions: { code: 'UNAUTHENTICATED' },
+          });
+        }
+
+        // Verify workspace access
+        const hasAccess = await workspaceRepository.hasUserAccess(context.user.userId, workspaceId);
+
+        if (!hasAccess) {
+          throw new GraphQLError('Access denied to this workspace', {
+            extensions: { code: 'FORBIDDEN', reason: 'WORKSPACE_ACCESS_DENIED' },
+          });
+        }
+
         return workspaceRepository.findByIdWithRuntimes(workspaceId);
       },
       mcpServers: async () => {
