@@ -89,10 +89,40 @@ export const resolvers = (container: Container = defaultContainer): apolloResolv
       mcpServers: async () => {
         return mcpServerRepository.findAll();
       },
-      mcpTools: async (_parent: unknown, { workspaceId }: { workspaceId: string }) => {
+      mcpTools: async (
+        _parent: unknown,
+        { workspaceId }: { workspaceId: string },
+        context: { user?: { userId: string; email: string } }
+      ) => {
+        if (!context.user?.userId) {
+          throw new GraphQLError('Authentication required', {
+            extensions: { code: 'UNAUTHENTICATED' },
+          });
+        }
+        const hasAccess = await workspaceRepository.hasUserAccess(context.user.userId, workspaceId);
+        if (!hasAccess) {
+          throw new GraphQLError('Access denied to this workspace', {
+            extensions: { code: 'FORBIDDEN', reason: 'WORKSPACE_ACCESS_DENIED' },
+          });
+        }
         return workspaceRepository.findMCPToolsByWorkspace(workspaceId);
       },
-      toolSets: async (_parent: unknown, { workspaceId }: { workspaceId: string }) => {
+      toolSets: async (
+        _parent: unknown,
+        { workspaceId }: { workspaceId: string },
+        context: { user?: { userId: string; email: string } }
+      ) => {
+        if (!context.user?.userId) {
+          throw new GraphQLError('Authentication required', {
+            extensions: { code: 'UNAUTHENTICATED' },
+          });
+        }
+        const hasAccess = await workspaceRepository.hasUserAccess(context.user.userId, workspaceId);
+        if (!hasAccess) {
+          throw new GraphQLError('Access denied to this workspace', {
+            extensions: { code: 'FORBIDDEN', reason: 'WORKSPACE_ACCESS_DENIED' },
+          });
+        }
         return toolSetRepository.findByWorkspace(workspaceId);
       },
       system: async () => {
@@ -112,20 +142,62 @@ export const resolvers = (container: Container = defaultContainer): apolloResolv
           remoteMCP: exposedRemoteMCP,
         };
       },
-      workspaceMCPTools: async (_parent: unknown, { workspaceId }: { workspaceId: string }) => {
+      workspaceMCPTools: async (
+        _parent: unknown,
+        { workspaceId }: { workspaceId: string },
+        context: { user?: { userId: string; email: string } }
+      ) => {
+        if (!context.user?.userId) {
+          throw new GraphQLError('Authentication required', {
+            extensions: { code: 'UNAUTHENTICATED' },
+          });
+        }
+        const hasAccess = await workspaceRepository.hasUserAccess(context.user.userId, workspaceId);
+        if (!hasAccess) {
+          throw new GraphQLError('Access denied to this workspace', {
+            extensions: { code: 'FORBIDDEN', reason: 'WORKSPACE_ACCESS_DENIED' },
+          });
+        }
         return workspaceRepository.findById(workspaceId);
       },
       isMCPAutoConfigEnabled: async () => {
         return mcpAutoConfigService.isConfigured();
       },
-      getRegistryServers: async (_parent: unknown, { workspaceId }: { workspaceId: string }) => {
+      getRegistryServers: async (
+        _parent: unknown,
+        { workspaceId }: { workspaceId: string },
+        context: { user?: { userId: string; email: string } }
+      ) => {
+        if (!context.user?.userId) {
+          throw new GraphQLError('Authentication required', {
+            extensions: { code: 'UNAUTHENTICATED' },
+          });
+        }
+        const hasAccess = await workspaceRepository.hasUserAccess(context.user.userId, workspaceId);
+        if (!hasAccess) {
+          throw new GraphQLError('Access denied to this workspace', {
+            extensions: { code: 'FORBIDDEN', reason: 'WORKSPACE_ACCESS_DENIED' },
+          });
+        }
         return workspaceRepository.findRegistryServersByWorkspace(workspaceId);
       },
       // Monitoring query with filtering and pagination
       toolCalls: async (
         _parent: unknown,
-        args: apolloResolversTypes.QueryToolCallsArgs
+        args: apolloResolversTypes.QueryToolCallsArgs,
+        context: { user?: { userId: string; email: string } }
       ) => {
+        if (!context.user?.userId) {
+          throw new GraphQLError('Authentication required', {
+            extensions: { code: 'UNAUTHENTICATED' },
+          });
+        }
+        const hasAccess = await workspaceRepository.hasUserAccess(context.user.userId, args.workspaceId);
+        if (!hasAccess) {
+          throw new GraphQLError('Access denied to this workspace', {
+            extensions: { code: 'FORBIDDEN', reason: 'WORKSPACE_ACCESS_DENIED' },
+          });
+        }
         return monitoringRepository.queryToolCalls({
           workspaceId: args.workspaceId,
           limit: args.limit ?? 100,
@@ -135,7 +207,22 @@ export const resolvers = (container: Container = defaultContainer): apolloResolv
         });
       },
       // Key management queries
-      workspaceKeys: async (_parent: unknown, { workspaceId }: { workspaceId: string }) => {
+      workspaceKeys: async (
+        _parent: unknown,
+        { workspaceId }: { workspaceId: string },
+        context: { user?: { userId: string; email: string } }
+      ) => {
+        if (!context.user?.userId) {
+          throw new GraphQLError('Authentication required', {
+            extensions: { code: 'UNAUTHENTICATED' },
+          });
+        }
+        const hasAccess = await workspaceRepository.hasUserAccess(context.user.userId, workspaceId);
+        if (!hasAccess) {
+          throw new GraphQLError('Access denied to this workspace', {
+            extensions: { code: 'FORBIDDEN', reason: 'WORKSPACE_ACCESS_DENIED' },
+          });
+        }
         return identityRepository.findKeysByRelatedId(workspaceId);
       },
       toolsetKey: async (_parent: unknown, { toolsetId }: { toolsetId: string }) => {
@@ -425,25 +512,85 @@ export const resolvers = (container: Container = defaultContainer): apolloResolv
     ToolSet: {},
     Subscription: {
       workspace: {
-        subscribe: (_parent: unknown, { workspaceId }: { workspaceId: string }) => {
+        subscribe: async (
+          _parent: unknown,
+          { workspaceId }: { workspaceId: string },
+          context: { user?: { userId: string; email: string } }
+        ) => {
+          if (!context.user?.userId) {
+            throw new GraphQLError('Authentication required', {
+              extensions: { code: 'UNAUTHENTICATED' },
+            });
+          }
+          const hasAccess = await workspaceRepository.hasUserAccess(context.user.userId, workspaceId);
+          if (!hasAccess) {
+            throw new GraphQLError('Access denied to this workspace', {
+              extensions: { code: 'FORBIDDEN', reason: 'WORKSPACE_ACCESS_DENIED' },
+            });
+          }
           const observable = workspaceRepository.observeWorkspace(workspaceId);
           return observableToAsyncGenerator(observable, 'workspace');
         },
       },
       runtimes: {
-        subscribe: (_parent: unknown, { workspaceId }: { workspaceId: string }) => {
+        subscribe: async (
+          _parent: unknown,
+          { workspaceId }: { workspaceId: string },
+          context: { user?: { userId: string; email: string } }
+        ) => {
+          if (!context.user?.userId) {
+            throw new GraphQLError('Authentication required', {
+              extensions: { code: 'UNAUTHENTICATED' },
+            });
+          }
+          const hasAccess = await workspaceRepository.hasUserAccess(context.user.userId, workspaceId);
+          if (!hasAccess) {
+            throw new GraphQLError('Access denied to this workspace', {
+              extensions: { code: 'FORBIDDEN', reason: 'WORKSPACE_ACCESS_DENIED' },
+            });
+          }
           const observable = workspaceRepository.observeRuntimes(workspaceId);
           return observableToAsyncGenerator(observable, 'runtimes');
         },
       },
       mcpServers: {
-        subscribe: (_parent: unknown, { workspaceId }: { workspaceId: string }) => {
+        subscribe: async (
+          _parent: unknown,
+          { workspaceId }: { workspaceId: string },
+          context: { user?: { userId: string; email: string } }
+        ) => {
+          if (!context.user?.userId) {
+            throw new GraphQLError('Authentication required', {
+              extensions: { code: 'UNAUTHENTICATED' },
+            });
+          }
+          const hasAccess = await workspaceRepository.hasUserAccess(context.user.userId, workspaceId);
+          if (!hasAccess) {
+            throw new GraphQLError('Access denied to this workspace', {
+              extensions: { code: 'FORBIDDEN', reason: 'WORKSPACE_ACCESS_DENIED' },
+            });
+          }
           const observable = workspaceRepository.observeMCPServers(workspaceId);
           return observableToAsyncGenerator(observable, 'mcpServers');
         },
       },
       mcpTools: {
-        subscribe: (_parent: unknown, { workspaceId }: { workspaceId: string }) => {
+        subscribe: async (
+          _parent: unknown,
+          { workspaceId }: { workspaceId: string },
+          context: { user?: { userId: string; email: string } }
+        ) => {
+          if (!context.user?.userId) {
+            throw new GraphQLError('Authentication required', {
+              extensions: { code: 'UNAUTHENTICATED' },
+            });
+          }
+          const hasAccess = await workspaceRepository.hasUserAccess(context.user.userId, workspaceId);
+          if (!hasAccess) {
+            throw new GraphQLError('Access denied to this workspace', {
+              extensions: { code: 'FORBIDDEN', reason: 'WORKSPACE_ACCESS_DENIED' },
+            });
+          }
           const observable = workspaceRepository.observeMCPTools(workspaceId);
           return observableToAsyncGenerator(observable, 'mcpTools');
         },
@@ -462,13 +609,43 @@ export const resolvers = (container: Container = defaultContainer): apolloResolv
         },
       },
       toolCalls: {
-        subscribe: (_parent: unknown, { workspaceId }: { workspaceId: string }) => {
+        subscribe: async (
+          _parent: unknown,
+          { workspaceId }: { workspaceId: string },
+          context: { user?: { userId: string; email: string } }
+        ) => {
+          if (!context.user?.userId) {
+            throw new GraphQLError('Authentication required', {
+              extensions: { code: 'UNAUTHENTICATED' },
+            });
+          }
+          const hasAccess = await workspaceRepository.hasUserAccess(context.user.userId, workspaceId);
+          if (!hasAccess) {
+            throw new GraphQLError('Access denied to this workspace', {
+              extensions: { code: 'FORBIDDEN', reason: 'WORKSPACE_ACCESS_DENIED' },
+            });
+          }
           const observable = monitoringRepository.observeToolCalls(workspaceId);
           return observableToAsyncGenerator(observable, 'toolCalls');
         },
       },
       toolSets: {
-        subscribe: (_parent: unknown, { workspaceId }: { workspaceId: string }) => {
+        subscribe: async (
+          _parent: unknown,
+          { workspaceId }: { workspaceId: string },
+          context: { user?: { userId: string; email: string } }
+        ) => {
+          if (!context.user?.userId) {
+            throw new GraphQLError('Authentication required', {
+              extensions: { code: 'UNAUTHENTICATED' },
+            });
+          }
+          const hasAccess = await workspaceRepository.hasUserAccess(context.user.userId, workspaceId);
+          if (!hasAccess) {
+            throw new GraphQLError('Access denied to this workspace', {
+              extensions: { code: 'FORBIDDEN', reason: 'WORKSPACE_ACCESS_DENIED' },
+            });
+          }
           const observable = toolSetRepository.observeToolSets(workspaceId);
           return observableToAsyncGenerator(observable, 'toolSets');
         },

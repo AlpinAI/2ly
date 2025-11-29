@@ -333,13 +333,15 @@ export const getRuntimeIdByType = async (
  * @param workspaceId - Workspace ID to create the server in
  * @param runOn - Where the server should run ('AGENT' or 'EDGE')
  * @param runtimeId - Optional runtime ID for EDGE deployments
+ * @param authToken - Optional JWT token for authenticated requests
  */
 export const configureFileSystemMCPServer = async (
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  graphql: <T = any>(query: string, variables?: Record<string, any>) => Promise<T>,
+  graphql: <T = any>(query: string, variables?: Record<string, any>, authToken?: string) => Promise<T>,
   workspaceId: string,
   runOn: 'AGENT' | 'EDGE',
   runtimeId?: string,
+  authToken?: string,
 ) => {
   // Get the FileSystem MCP Server from the registry
   const registryServersQuery = `
@@ -350,7 +352,7 @@ export const configureFileSystemMCPServer = async (
       }
     }
   `;
-  const registryServersResult = await graphql<{ getRegistryServers: { id: string; name: string }[] }>(registryServersQuery, { workspaceId });
+  const registryServersResult = await graphql<{ getRegistryServers: { id: string; name: string }[] }>(registryServersQuery, { workspaceId }, authToken);
   const registryServer = registryServersResult.getRegistryServers.find(r => r.name === '@modelcontextprotocol/server-filesystem');
   if (!registryServer) {
     throw new Error('Filesystem MCP Server not found in registry');
@@ -380,7 +382,7 @@ export const configureFileSystemMCPServer = async (
     runOn,
     workspaceId,
     registryServerId,
-  });
+  }, authToken);
 
   const mcpServerId = createMCPServerResult.createMCPServer.id;
 
@@ -398,7 +400,7 @@ export const configureFileSystemMCPServer = async (
         }
       }
     `;
-    await graphql(updateMutation, { mcpServerId, runOn, runtimeId });
+    await graphql(updateMutation, { mcpServerId, runOn, runtimeId }, authToken);
   }
 
   return {
@@ -409,14 +411,17 @@ export const configureFileSystemMCPServer = async (
 /**
  * Helper function to create a toolset dynamically via GraphQL
  * This is used in tests that need to create toolsets on the fly
+ *
+ * @param authToken - Optional JWT token for authenticated requests
  */
 export const createToolset = async (
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  graphql: <T = any>(query: string, variables?: Record<string, any>) => Promise<T>,
+  graphql: <T = any>(query: string, variables?: Record<string, any>, authToken?: string) => Promise<T>,
   workspaceId: string,
   name: string,
   description: string,
   nbToolsToLink: number,
+  authToken?: string,
 ) => {
   // get tools
   const toolQuery = `
@@ -426,8 +431,8 @@ export const createToolset = async (
       }
     }
   `;
-  const toolResult = await graphql<{ mcpTools: Array<{ id: string }> }>(toolQuery, { workspaceId });
-  
+  const toolResult = await graphql<{ mcpTools: Array<{ id: string }> }>(toolQuery, { workspaceId }, authToken);
+
   // Create a ToolSet
   const createToolSetMutation = `
     mutation CreateToolSet($name: String!, $description: String!, $workspaceId: ID!) {
@@ -444,7 +449,8 @@ export const createToolset = async (
       name,
       description,
       workspaceId,
-    }
+    },
+    authToken
   );
 
   // Add tools to the toolset
@@ -466,7 +472,7 @@ export const createToolset = async (
     await graphql(addToolMutation, {
       mcpToolId: toolResult.mcpTools[i]!.id,
       toolSetId: toolSetResult.createToolSet.id,
-    });
+    }, authToken);
   }
 
   return {

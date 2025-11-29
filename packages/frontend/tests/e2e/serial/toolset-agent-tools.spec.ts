@@ -16,7 +16,7 @@
  * - MCP server has no runtime link (runOn: AGENT, runtime: null)
  */
 
-import { test, expect, seedPresets, dgraphQL } from '@2ly/common/test/fixtures/playwright';
+import { test, expect, seedPresets, dgraphQL, loginAndGetToken } from '@2ly/common/test/fixtures/playwright';
 import { createToolset, updateMCPServerToEdgeRuntime } from '@2ly/common/test/fixtures/mcp-builders';
 import { createMCPClient } from '@2ly/common/test/fixtures/playwright';
 import {
@@ -84,8 +84,11 @@ test.describe('MCP Client with AGENT RunOn Configuration', () => {
     workspaceKey = result.queryIdentityKey[0]?.key;
     expect(workspaceKey).toBeDefined();
 
+    // Get auth token for authenticated API calls
+    const authToken = await loginAndGetToken('user1@2ly.ai', 'password123');
+
     // Create a shared toolset that all tests will use
-    await createToolset(graphql, workspaceId, 'My tool set', 'My tool set description', 100);
+    await createToolset(graphql, workspaceId, 'My tool set', 'My tool set description', 100, authToken);
   });
 
   /**

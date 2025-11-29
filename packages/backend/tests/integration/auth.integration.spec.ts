@@ -587,5 +587,359 @@ describe('Authentication Integration Tests', () => {
       expect(workspace.workspace.id).toBe(workspaceId);
       expect(workspace.workspace.name).toContain('Personal Workspace');
     });
+
+    it('should deny access to mcpTools query when not authenticated', async () => {
+      const registerMutation = `
+        mutation RegisterUser($input: RegisterUserInput!) {
+          registerUser(input: $input) {
+            success
+            tokens {
+              accessToken
+            }
+          }
+        }
+      `;
+
+      const uniqueEmail = `mcptools-auth-${Date.now()}@2ly.ai`;
+      const registerResult = await graphql(registerMutation, {
+        input: {
+          email: uniqueEmail,
+          password: 'testpassword123',
+        },
+      });
+
+      const accessToken = registerResult.registerUser.tokens.accessToken;
+      const workspacesQuery = `
+        query GetWorkspaces {
+          workspaces {
+            id
+          }
+        }
+      `;
+      const workspacesResult = await authenticatedGraphql(workspacesQuery, accessToken);
+      const workspaceId = workspacesResult.workspaces[0].id;
+
+      const mcpToolsQuery = `
+        query GetMCPTools($workspaceId: ID!) {
+          mcpTools(workspaceId: $workspaceId) {
+            id
+            name
+          }
+        }
+      `;
+
+      try {
+        await graphql(mcpToolsQuery, { workspaceId });
+        expect(true).toBe(false);
+      } catch (error) {
+        expect((error as Error).message).toContain('UNAUTHENTICATED');
+      }
+    });
+
+    it('should deny access to mcpTools of another users workspace', async () => {
+      const registerMutation = `
+        mutation RegisterUser($input: RegisterUserInput!) {
+          registerUser(input: $input) {
+            success
+            tokens {
+              accessToken
+            }
+          }
+        }
+      `;
+
+      // Register User A
+      const userAEmail = `usera-tools-${Date.now()}@2ly.ai`;
+      const userAResult = await graphql(registerMutation, {
+        input: {
+          email: userAEmail,
+          password: 'password123',
+        },
+      });
+      const userAToken = userAResult.registerUser.tokens.accessToken;
+
+      // Get User A's workspace
+      const workspacesQuery = `
+        query GetWorkspaces {
+          workspaces {
+            id
+          }
+        }
+      `;
+      const userAWorkspaces = await authenticatedGraphql(workspacesQuery, userAToken);
+      const userAWorkspaceId = userAWorkspaces.workspaces[0].id;
+
+      // Register User B
+      const userBEmail = `userb-tools-${Date.now()}@2ly.ai`;
+      const userBResult = await graphql(registerMutation, {
+        input: {
+          email: userBEmail,
+          password: 'password123',
+        },
+      });
+      const userBToken = userBResult.registerUser.tokens.accessToken;
+
+      // User B tries to access User A's mcpTools
+      const mcpToolsQuery = `
+        query GetMCPTools($workspaceId: ID!) {
+          mcpTools(workspaceId: $workspaceId) {
+            id
+            name
+          }
+        }
+      `;
+
+      try {
+        await authenticatedGraphql(mcpToolsQuery, userBToken, { workspaceId: userAWorkspaceId });
+        expect(true).toBe(false);
+      } catch (error) {
+        expect((error as Error).message).toContain('FORBIDDEN');
+      }
+    });
+
+    it('should deny access to toolSets of another users workspace', async () => {
+      const registerMutation = `
+        mutation RegisterUser($input: RegisterUserInput!) {
+          registerUser(input: $input) {
+            success
+            tokens {
+              accessToken
+            }
+          }
+        }
+      `;
+
+      // Register User A
+      const userAEmail = `usera-toolsets-${Date.now()}@2ly.ai`;
+      const userAResult = await graphql(registerMutation, {
+        input: {
+          email: userAEmail,
+          password: 'password123',
+        },
+      });
+      const userAToken = userAResult.registerUser.tokens.accessToken;
+
+      // Get User A's workspace
+      const workspacesQuery = `
+        query GetWorkspaces {
+          workspaces {
+            id
+          }
+        }
+      `;
+      const userAWorkspaces = await authenticatedGraphql(workspacesQuery, userAToken);
+      const userAWorkspaceId = userAWorkspaces.workspaces[0].id;
+
+      // Register User B
+      const userBEmail = `userb-toolsets-${Date.now()}@2ly.ai`;
+      const userBResult = await graphql(registerMutation, {
+        input: {
+          email: userBEmail,
+          password: 'password123',
+        },
+      });
+      const userBToken = userBResult.registerUser.tokens.accessToken;
+
+      // User B tries to access User A's toolSets
+      const toolSetsQuery = `
+        query GetToolSets($workspaceId: ID!) {
+          toolSets(workspaceId: $workspaceId) {
+            id
+            name
+          }
+        }
+      `;
+
+      try {
+        await authenticatedGraphql(toolSetsQuery, userBToken, { workspaceId: userAWorkspaceId });
+        expect(true).toBe(false);
+      } catch (error) {
+        expect((error as Error).message).toContain('FORBIDDEN');
+      }
+    });
+
+    it('should deny access to getRegistryServers of another users workspace', async () => {
+      const registerMutation = `
+        mutation RegisterUser($input: RegisterUserInput!) {
+          registerUser(input: $input) {
+            success
+            tokens {
+              accessToken
+            }
+          }
+        }
+      `;
+
+      // Register User A
+      const userAEmail = `usera-registry-${Date.now()}@2ly.ai`;
+      const userAResult = await graphql(registerMutation, {
+        input: {
+          email: userAEmail,
+          password: 'password123',
+        },
+      });
+      const userAToken = userAResult.registerUser.tokens.accessToken;
+
+      // Get User A's workspace
+      const workspacesQuery = `
+        query GetWorkspaces {
+          workspaces {
+            id
+          }
+        }
+      `;
+      const userAWorkspaces = await authenticatedGraphql(workspacesQuery, userAToken);
+      const userAWorkspaceId = userAWorkspaces.workspaces[0].id;
+
+      // Register User B
+      const userBEmail = `userb-registry-${Date.now()}@2ly.ai`;
+      const userBResult = await graphql(registerMutation, {
+        input: {
+          email: userBEmail,
+          password: 'password123',
+        },
+      });
+      const userBToken = userBResult.registerUser.tokens.accessToken;
+
+      // User B tries to access User A's registry servers
+      const registryServersQuery = `
+        query GetRegistryServers($workspaceId: ID!) {
+          getRegistryServers(workspaceId: $workspaceId) {
+            id
+            name
+          }
+        }
+      `;
+
+      try {
+        await authenticatedGraphql(registryServersQuery, userBToken, { workspaceId: userAWorkspaceId });
+        expect(true).toBe(false);
+      } catch (error) {
+        expect((error as Error).message).toContain('FORBIDDEN');
+      }
+    });
+
+    it('should deny access to toolCalls of another users workspace', async () => {
+      const registerMutation = `
+        mutation RegisterUser($input: RegisterUserInput!) {
+          registerUser(input: $input) {
+            success
+            tokens {
+              accessToken
+            }
+          }
+        }
+      `;
+
+      // Register User A
+      const userAEmail = `usera-toolcalls-${Date.now()}@2ly.ai`;
+      const userAResult = await graphql(registerMutation, {
+        input: {
+          email: userAEmail,
+          password: 'password123',
+        },
+      });
+      const userAToken = userAResult.registerUser.tokens.accessToken;
+
+      // Get User A's workspace
+      const workspacesQuery = `
+        query GetWorkspaces {
+          workspaces {
+            id
+          }
+        }
+      `;
+      const userAWorkspaces = await authenticatedGraphql(workspacesQuery, userAToken);
+      const userAWorkspaceId = userAWorkspaces.workspaces[0].id;
+
+      // Register User B
+      const userBEmail = `userb-toolcalls-${Date.now()}@2ly.ai`;
+      const userBResult = await graphql(registerMutation, {
+        input: {
+          email: userBEmail,
+          password: 'password123',
+        },
+      });
+      const userBToken = userBResult.registerUser.tokens.accessToken;
+
+      // User B tries to access User A's tool calls
+      const toolCallsQuery = `
+        query GetToolCalls($workspaceId: ID!) {
+          toolCalls(workspaceId: $workspaceId) {
+            items {
+              id
+            }
+          }
+        }
+      `;
+
+      try {
+        await authenticatedGraphql(toolCallsQuery, userBToken, { workspaceId: userAWorkspaceId });
+        expect(true).toBe(false);
+      } catch (error) {
+        expect((error as Error).message).toContain('FORBIDDEN');
+      }
+    });
+
+    it('should deny access to workspaceKeys of another users workspace', async () => {
+      const registerMutation = `
+        mutation RegisterUser($input: RegisterUserInput!) {
+          registerUser(input: $input) {
+            success
+            tokens {
+              accessToken
+            }
+          }
+        }
+      `;
+
+      // Register User A
+      const userAEmail = `usera-keys-${Date.now()}@2ly.ai`;
+      const userAResult = await graphql(registerMutation, {
+        input: {
+          email: userAEmail,
+          password: 'password123',
+        },
+      });
+      const userAToken = userAResult.registerUser.tokens.accessToken;
+
+      // Get User A's workspace
+      const workspacesQuery = `
+        query GetWorkspaces {
+          workspaces {
+            id
+          }
+        }
+      `;
+      const userAWorkspaces = await authenticatedGraphql(workspacesQuery, userAToken);
+      const userAWorkspaceId = userAWorkspaces.workspaces[0].id;
+
+      // Register User B
+      const userBEmail = `userb-keys-${Date.now()}@2ly.ai`;
+      const userBResult = await graphql(registerMutation, {
+        input: {
+          email: userBEmail,
+          password: 'password123',
+        },
+      });
+      const userBToken = userBResult.registerUser.tokens.accessToken;
+
+      // User B tries to access User A's workspace keys
+      const workspaceKeysQuery = `
+        query GetWorkspaceKeys($workspaceId: ID!) {
+          workspaceKeys(workspaceId: $workspaceId) {
+            id
+            description
+          }
+        }
+      `;
+
+      try {
+        await authenticatedGraphql(workspaceKeysQuery, userBToken, { workspaceId: userAWorkspaceId });
+        expect(true).toBe(false);
+      } catch (error) {
+        expect((error as Error).message).toContain('FORBIDDEN');
+      }
+    });
   });
 });

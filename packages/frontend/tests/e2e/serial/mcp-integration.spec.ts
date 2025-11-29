@@ -15,7 +15,7 @@
  * - Tests complete within 2 minutes with proper timeouts
  */
 
-import { test, expect, seedPresets } from '@2ly/common/test/fixtures/playwright';
+import { test, expect, seedPresets, loginAndGetToken } from '@2ly/common/test/fixtures/playwright';
 import { updateMCPServerToEdgeRuntime } from '@2ly/common/test/fixtures/mcp-builders';
 
 // Test configuration
@@ -58,6 +58,9 @@ test.describe('MCP Integration with Containerized Runtime', () => {
     await page.click('button[type="submit"]');
     await page.waitForURL(/\/w\/.+\/overview/, { timeout: 5000 });
 
+    // Get auth token for authenticated API calls
+    const authToken = await loginAndGetToken('user1@2ly.ai', 'password123');
+
     const workspaceUrl = page.url();
     const workspaceId = workspaceUrl.match(/\/w\/([^/]+)/)?.[1];
     expect(workspaceId).toBeDefined();
@@ -97,7 +100,7 @@ test.describe('MCP Integration with Containerized Runtime', () => {
 
       const toolsResult = await graphql<{
         mcpTools: Array<{ id: string; name: string; description: string; mcpServer: { id: string } }>;
-      }>(toolsQuery, { workspaceId });
+      }>(toolsQuery, { workspaceId }, authToken);
 
       // Filter tools from our test server
       tools = toolsResult.mcpTools.filter((tool) => tool.mcpServer.id === mcpServerId);
@@ -265,7 +268,7 @@ test.describe('MCP Integration with Containerized Runtime', () => {
 
     const serverToolsResult = await graphql<{
       mcpServers: Array<{ id: string; name: string; tools: Array<{ id: string; name: string }> }>;
-    }>(serverToolsQuery, { workspaceId });
+    }>(serverToolsQuery, { workspaceId }, authToken);
 
     const testServer = serverToolsResult.mcpServers.find((s) => s.id === mcpServerId);
     expect(testServer).toBeDefined();
@@ -292,7 +295,7 @@ test.describe('MCP Integration with Containerized Runtime', () => {
 
     const toolServerResult = await graphql<{
       mcpTools: Array<{ id: string; name: string; mcpServer: { id: string; name: string }; toolSets: Array<{ id: string; name: string }> }>;
-    }>(toolServerQuery, { workspaceId });
+    }>(toolServerQuery, { workspaceId }, authToken);
 
     const testTools = toolServerResult.mcpTools.filter((t) => t.mcpServer.id === mcpServerId);
     expect(testTools.length).toBeGreaterThan(0);
@@ -313,6 +316,9 @@ test.describe('MCP Integration with Containerized Runtime', () => {
     await page.click('button[type="submit"]');
     await page.waitForURL(/\/w\/.+\/overview/, { timeout: 5000 });
 
+    // Get auth token for authenticated API calls
+    const authToken = await loginAndGetToken('user1@2ly.ai', 'password123');
+
     const workspaceUrl = page.url();
     const workspaceId = workspaceUrl.match(/\/w\/([^/]+)/)?.[1];
 
@@ -328,7 +334,7 @@ test.describe('MCP Integration with Containerized Runtime', () => {
 
     const toolsResult = await graphql<{
       mcpTools: Array<{ id: string; name: string }>;
-    }>(toolsQuery, { workspaceId });
+    }>(toolsQuery, { workspaceId }, authToken);
 
     const readFileTool = toolsResult.mcpTools.find((t) => t.name === 'read_file');
     expect(readFileTool).toBeDefined();

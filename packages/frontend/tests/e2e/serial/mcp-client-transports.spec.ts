@@ -14,7 +14,7 @@
  * runtime configurations not suitable for the current test setup.
  */
 
-import { test, expect, seedPresets } from '@2ly/common/test/fixtures/playwright';
+import { test, expect, seedPresets, loginAndGetToken } from '@2ly/common/test/fixtures/playwright';
 import { createToolset, updateMCPServerToEdgeRuntime } from '@2ly/common/test/fixtures/mcp-builders';
 import { createMCPClient } from '@2ly/common/test/fixtures/playwright';
 import {
@@ -58,9 +58,12 @@ test.describe('MCP Client Transports', () => {
     // Using a simple setTimeout since we can't use page.waitForTimeout in beforeAll
     await new Promise((resolve) => setTimeout(resolve, 15000));
 
+    // Get auth token for authenticated API calls
+    const authToken = await loginAndGetToken('user1@2ly.ai', 'password123');
+
     // Create a shared toolset that all tests will use
     // Tests only create their own MCP clients, they don't modify this toolset
-    await createToolset(graphql, workspaceId, 'My tool set', 'My tool set description', 100);
+    await createToolset(graphql, workspaceId, 'My tool set', 'My tool set description', 100, authToken);
   });
 
   /**

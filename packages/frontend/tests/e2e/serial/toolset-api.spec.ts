@@ -12,7 +12,7 @@
  * - Tests verify both new ToolSet API and backward compatibility
  */
 
-import { test, expect, performLogin, seedPresets } from '@2ly/common/test/fixtures/playwright';
+import { test, expect, performLogin, seedPresets, loginAndGetToken } from '@2ly/common/test/fixtures/playwright';
 import { updateMCPServerToEdgeRuntime } from '@2ly/common/test/fixtures/mcp-builders';
 
 test.describe('ToolSet API', () => {
@@ -75,6 +75,9 @@ test.describe('ToolSet API', () => {
     const workspaceId = workspaceUrl.match(/\/w\/([^/]+)/)?.[1];
     expect(workspaceId).toBeDefined();
 
+    // Get auth token for authenticated queries
+    const authToken = await loginAndGetToken('user1@2ly.ai', 'password123');
+
     // Create multiple toolsets
     const createToolSetMutation = `
       mutation CreateToolSet($workspaceId: ID!, $name: String!, $description: String!) {
@@ -110,7 +113,7 @@ test.describe('ToolSet API', () => {
 
     const toolsetsResult = await graphql<{
       toolSets: Array<{ id: string; name: string; description: string }>;
-    }>(queryToolSets, { workspaceId });
+    }>(queryToolSets, { workspaceId }, authToken);
 
     expect(toolsetsResult.toolSets).toBeDefined();
     expect(toolsetsResult.toolSets.length).toBeGreaterThanOrEqual(2);
@@ -126,6 +129,9 @@ test.describe('ToolSet API', () => {
     const workspaceUrl = page.url();
     const workspaceId = workspaceUrl.match(/\/w\/([^/]+)/)?.[1];
     expect(workspaceId).toBeDefined();
+
+    // Get auth token for authenticated queries
+    const authToken = await loginAndGetToken('user1@2ly.ai', 'password123');
 
     // Create a toolset
     const createToolSetMutation = `
@@ -159,7 +165,7 @@ test.describe('ToolSet API', () => {
 
     const toolsResult = await graphql<{
       mcpTools: Array<{ id: string; name: string }>;
-    }>(toolsQuery, { workspaceId });
+    }>(toolsQuery, { workspaceId }, authToken);
 
     if (toolsResult.mcpTools.length > 0) {
       const mcpToolId = toolsResult.mcpTools[0].id;
