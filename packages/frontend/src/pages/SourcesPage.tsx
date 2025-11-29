@@ -29,6 +29,7 @@ import { useUrlSync } from '@/hooks/useUrlSync';
 
 export default function SourcesPage() {
   const { selectedId, setSelectedId } = useUrlSync();
+  const [search, setSearch] = useState('');
   const [typeFilter, setTypeFilter] = useState<string[]>([]);
   const [transportFilter, setTransportFilter] = useState<string[]>([]);
   const [runOnFilter, setRunOnFilter] = useState<string[]>([]);
@@ -48,9 +49,20 @@ export default function SourcesPage() {
     }));
   }, [servers]);
 
-  // Apply filters (type, transport, runOn)
+  // Apply filters (search, type, transport, runOn)
   const filteredSources = useMemo(() => {
     return sourcesWithType.filter(source => {
+      // Search filter
+      if (search.trim()) {
+        const searchLower = search.toLowerCase();
+        if (
+          !source.name.toLowerCase().includes(searchLower) &&
+          !source.description?.toLowerCase().includes(searchLower)
+        ) {
+          return false;
+        }
+      }
+
       // Type filter
       if (typeFilter.length > 0 && !typeFilter.includes(source.type)) {
         return false;
@@ -79,7 +91,7 @@ export default function SourcesPage() {
 
       return true;
     });
-  }, [sourcesWithType, typeFilter, transportFilter, runOnFilter]);
+  }, [sourcesWithType, search, typeFilter, transportFilter, runOnFilter]);
 
   // Get selected source from URL
   const selectedSource = useMemo(() => {
@@ -137,8 +149,8 @@ export default function SourcesPage() {
             sources={filteredSources}
             selectedSourceId={selectedId}
             onSelectSource={setSelectedId}
-            search={''}
-            onSearchChange={() => {}}
+            search={search}
+            onSearchChange={setSearch}
             typeFilter={typeFilter}
             onTypeFilterChange={setTypeFilter}
             transportFilter={transportFilter}
