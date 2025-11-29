@@ -46,6 +46,7 @@ type Workspace @withSubscription {
   users: [User!] @hasInverse(field: membersOfWorkspaces)
   system: System! @hasInverse(field: workspaces)
   onboardingSteps: [OnboardingStep!]
+  aiProviders: [AIProviderConfig!] @hasInverse(field: workspace)
 }
 
 type MCPRegistryServer @withSubscription {
@@ -229,4 +230,30 @@ type IdentityKey @withSubscription {
   revokedAt: DateTime @search
   description: String
   permissions: String
+}
+
+# AI Provider Configuration - BYOK (Bring Your Own Key) support
+enum AIProviderType {
+  OPENAI
+  ANTHROPIC
+  GOOGLE
+  OLLAMA
+}
+
+type AIProviderConfig @withSubscription {
+  id: ID!
+  workspace: Workspace! @hasInverse(field: aiProviders)
+  provider: AIProviderType! @search
+  # Encrypted API key - null for Ollama (local)
+  encryptedApiKey: String
+  # Custom base URL - required for Ollama, optional for others (proxies, Azure, etc.)
+  baseUrl: String
+  # Default model to use for this provider
+  defaultModel: String
+  # Cached list of available models (refreshed on validation)
+  availableModels: [String!]
+  # Whether this provider is the active/default one for the workspace
+  isActive: Boolean! @search
+  createdAt: DateTime!
+  updatedAt: DateTime!
 }

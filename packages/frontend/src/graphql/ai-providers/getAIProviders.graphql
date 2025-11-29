@@ -1,0 +1,15 @@
+# Get AI Providers Query
+# WHY: Fetch all configured AI providers for a workspace
+query GetAIProviders($workspaceId: ID!) {
+  aiProviders(workspaceId: $workspaceId) {
+    id
+    provider
+    isConfigured
+    isActive
+    defaultModel
+    baseUrl
+    availableModels
+    createdAt
+    updatedAt
+  }
+}

@@ -16,6 +16,40 @@ export type Scalars = {
   Date: { input: Date; output: Date; }
 };
 
+export type AiModel = {
+  __typename: 'AIModel';
+  contextWindow: Maybe<Scalars['Int']['output']>;
+  id: Scalars['String']['output'];
+  name: Scalars['String']['output'];
+};
+
+export type AiProviderConfig = {
+  __typename: 'AIProviderConfig';
+  availableModels: Maybe<Array<Scalars['String']['output']>>;
+  baseUrl: Maybe<Scalars['String']['output']>;
+  createdAt: Scalars['Date']['output'];
+  defaultModel: Maybe<Scalars['String']['output']>;
+  id: Scalars['ID']['output'];
+  isActive: Scalars['Boolean']['output'];
+  isConfigured: Maybe<Scalars['Boolean']['output']>;
+  provider: AiProviderType;
+  updatedAt: Scalars['Date']['output'];
+};
+
+export enum AiProviderType {
+  Anthropic = 'ANTHROPIC',
+  Google = 'GOOGLE',
+  Ollama = 'OLLAMA',
+  Openai = 'OPENAI'
+}
+
+export type AiProviderValidation = {
+  __typename: 'AIProviderValidation';
+  availableModels: Maybe<Array<Scalars['String']['output']>>;
+  error: Maybe<Scalars['String']['output']>;
+  valid: Scalars['Boolean']['output'];
+};
+
 export enum ActiveStatus {
   Active = 'ACTIVE',
   Inactive = 'INACTIVE'
@@ -151,6 +185,7 @@ export type Mutation = {
   addServerToRegistry: McpRegistryServer;
   callMCPTool: CallToolResult;
   completeOnboardingStep: Scalars['Boolean']['output'];
+  configureAIProvider: AiProviderValidation;
   createMCPServer: McpServer;
   createRuntime: Runtime;
   createToolSet: ToolSet;
@@ -168,10 +203,13 @@ export type Mutation = {
   logoutUser: LogoutPayload;
   refreshToken: RefreshTokenPayload;
   registerUser: RegisterUserPayload;
+  removeAIProvider: Scalars['Boolean']['output'];
   removeMCPToolFromToolSet: ToolSet;
   removeServerFromRegistry: McpRegistryServer;
   revokeKey: IdentityKey;
+  setActiveAIProvider: AiProviderConfig;
   setGlobalRuntime: Workspace;
+  testAIProvider: Scalars['String']['output'];
   unlinkMCPServerFromRuntime: McpServer;
   unsetGlobalRuntime: Workspace;
   updateMCPServer: McpServer;
@@ -209,6 +247,15 @@ export type MutationCallMcpToolArgs = {
 
 export type MutationCompleteOnboardingStepArgs = {
   stepId: Scalars['String']['input'];
+  workspaceId: Scalars['ID']['input'];
+};
+
+
+export type MutationConfigureAiProviderArgs = {
+  apiKey?: InputMaybe<Scalars['String']['input']>;
+  baseUrl?: InputMaybe<Scalars['String']['input']>;
+  defaultModel?: InputMaybe<Scalars['String']['input']>;
+  provider: AiProviderType;
   workspaceId: Scalars['ID']['input'];
 };
 
@@ -314,6 +361,12 @@ export type MutationRegisterUserArgs = {
 };
 
 
+export type MutationRemoveAiProviderArgs = {
+  provider: AiProviderType;
+  workspaceId: Scalars['ID']['input'];
+};
+
+
 export type MutationRemoveMcpToolFromToolSetArgs = {
   mcpToolId: Scalars['ID']['input'];
   toolSetId: Scalars['ID']['input'];
@@ -330,9 +383,22 @@ export type MutationRevokeKeyArgs = {
 };
 
 
+export type MutationSetActiveAiProviderArgs = {
+  provider: AiProviderType;
+  workspaceId: Scalars['ID']['input'];
+};
+
+
 export type MutationSetGlobalRuntimeArgs = {
   id: Scalars['ID']['input'];
   runtimeId: Scalars['ID']['input'];
+};
+
+
+export type MutationTestAiProviderArgs = {
+  prompt?: InputMaybe<Scalars['String']['input']>;
+  provider: AiProviderType;
+  workspaceId: Scalars['ID']['input'];
 };
 
 
@@ -426,6 +492,8 @@ export enum OrderDirection {
 
 export type Query = {
   __typename: 'Query';
+  aiProviderModels: Array<Scalars['String']['output']>;
+  aiProviders: Array<AiProviderConfig>;
   getRegistryServers: Array<McpRegistryServer>;
   infra: Infra;
   isMCPAutoConfigEnabled: Scalars['Boolean']['output'];
@@ -441,6 +509,17 @@ export type Query = {
   workspaceKeys: Array<IdentityKey>;
   workspaceMCPTools: Maybe<Workspace>;
   workspaces: Array<Workspace>;
+};
+
+
+export type QueryAiProviderModelsArgs = {
+  provider: AiProviderType;
+  workspaceId: Scalars['ID']['input'];
+};
+
+
+export type QueryAiProvidersArgs = {
+  workspaceId: Scalars['ID']['input'];
 };
 
 
@@ -672,6 +751,7 @@ export type User = {
 
 export type Workspace = {
   __typename: 'Workspace';
+  aiProviders: Maybe<Array<AiProviderConfig>>;
   createdAt: Scalars['Date']['output'];
   id: Scalars['ID']['output'];
   mcpServers: Maybe<Array<McpServer>>;
@@ -682,6 +762,49 @@ export type Workspace = {
   runtimes: Maybe<Array<Runtime>>;
   toolSets: Maybe<Array<ToolSet>>;
 };
+
+export type ConfigureAiProviderMutationVariables = Exact<{
+  workspaceId: Scalars['ID']['input'];
+  provider: AiProviderType;
+  apiKey?: InputMaybe<Scalars['String']['input']>;
+  baseUrl?: InputMaybe<Scalars['String']['input']>;
+  defaultModel?: InputMaybe<Scalars['String']['input']>;
+}>;
+
+
+export type ConfigureAiProviderMutation = { configureAIProvider: { __typename: 'AIProviderValidation', valid: boolean, error: string | null, availableModels: Array<string> | null } };
+
+export type GetAiProvidersQueryVariables = Exact<{
+  workspaceId: Scalars['ID']['input'];
+}>;
+
+
+export type GetAiProvidersQuery = { aiProviders: Array<{ __typename: 'AIProviderConfig', id: string, provider: AiProviderType, isConfigured: boolean | null, isActive: boolean, defaultModel: string | null, baseUrl: string | null, availableModels: Array<string> | null, createdAt: Date, updatedAt: Date }> };
+
+export type RemoveAiProviderMutationVariables = Exact<{
+  workspaceId: Scalars['ID']['input'];
+  provider: AiProviderType;
+}>;
+
+
+export type RemoveAiProviderMutation = { removeAIProvider: boolean };
+
+export type SetActiveAiProviderMutationVariables = Exact<{
+  workspaceId: Scalars['ID']['input'];
+  provider: AiProviderType;
+}>;
+
+
+export type SetActiveAiProviderMutation = { setActiveAIProvider: { __typename: 'AIProviderConfig', id: string, provider: AiProviderType, isActive: boolean, isConfigured: boolean | null, defaultModel: string | null, baseUrl: string | null, availableModels: Array<string> | null } };
+
+export type TestAiProviderMutationVariables = Exact<{
+  workspaceId: Scalars['ID']['input'];
+  provider: AiProviderType;
+  prompt?: InputMaybe<Scalars['String']['input']>;
+}>;
+
+
+export type TestAiProviderMutation = { testAIProvider: string };
 
 export type LoginMutationVariables = Exact<{
   input: LoginInput;
@@ -1001,6 +1124,11 @@ export type ValidateWorkspaceQueryVariables = Exact<{
 export type ValidateWorkspaceQuery = { workspaceMCPTools: { __typename: 'Workspace', id: string, name: string } | null };
 
 
+export const ConfigureAiProviderDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"ConfigureAIProvider"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"workspaceId"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"provider"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"AIProviderType"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"apiKey"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"baseUrl"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"defaultModel"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"configureAIProvider"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"workspaceId"},"value":{"kind":"Variable","name":{"kind":"Name","value":"workspaceId"}}},{"kind":"Argument","name":{"kind":"Name","value":"provider"},"value":{"kind":"Variable","name":{"kind":"Name","value":"provider"}}},{"kind":"Argument","name":{"kind":"Name","value":"apiKey"},"value":{"kind":"Variable","name":{"kind":"Name","value":"apiKey"}}},{"kind":"Argument","name":{"kind":"Name","value":"baseUrl"},"value":{"kind":"Variable","name":{"kind":"Name","value":"baseUrl"}}},{"kind":"Argument","name":{"kind":"Name","value":"defaultModel"},"value":{"kind":"Variable","name":{"kind":"Name","value":"defaultModel"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"valid"}},{"kind":"Field","name":{"kind":"Name","value":"error"}},{"kind":"Field","name":{"kind":"Name","value":"availableModels"}}]}}]}}]} as unknown as DocumentNode<ConfigureAiProviderMutation, ConfigureAiProviderMutationVariables>;
+export const GetAiProvidersDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"GetAIProviders"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"workspaceId"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"aiProviders"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"workspaceId"},"value":{"kind":"Variable","name":{"kind":"Name","value":"workspaceId"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"provider"}},{"kind":"Field","name":{"kind":"Name","value":"isConfigured"}},{"kind":"Field","name":{"kind":"Name","value":"isActive"}},{"kind":"Field","name":{"kind":"Name","value":"defaultModel"}},{"kind":"Field","name":{"kind":"Name","value":"baseUrl"}},{"kind":"Field","name":{"kind":"Name","value":"availableModels"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}},{"kind":"Field","name":{"kind":"Name","value":"updatedAt"}}]}}]}}]} as unknown as DocumentNode<GetAiProvidersQuery, GetAiProvidersQueryVariables>;
+export const RemoveAiProviderDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"RemoveAIProvider"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"workspaceId"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"provider"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"AIProviderType"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"removeAIProvider"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"workspaceId"},"value":{"kind":"Variable","name":{"kind":"Name","value":"workspaceId"}}},{"kind":"Argument","name":{"kind":"Name","value":"provider"},"value":{"kind":"Variable","name":{"kind":"Name","value":"provider"}}}]}]}}]} as unknown as DocumentNode<RemoveAiProviderMutation, RemoveAiProviderMutationVariables>;
+export const SetActiveAiProviderDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"SetActiveAIProvider"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"workspaceId"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"provider"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"AIProviderType"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"setActiveAIProvider"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"workspaceId"},"value":{"kind":"Variable","name":{"kind":"Name","value":"workspaceId"}}},{"kind":"Argument","name":{"kind":"Name","value":"provider"},"value":{"kind":"Variable","name":{"kind":"Name","value":"provider"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"provider"}},{"kind":"Field","name":{"kind":"Name","value":"isActive"}},{"kind":"Field","name":{"kind":"Name","value":"isConfigured"}},{"kind":"Field","name":{"kind":"Name","value":"defaultModel"}},{"kind":"Field","name":{"kind":"Name","value":"baseUrl"}},{"kind":"Field","name":{"kind":"Name","value":"availableModels"}}]}}]}}]} as unknown as DocumentNode<SetActiveAiProviderMutation, SetActiveAiProviderMutationVariables>;
+export const TestAiProviderDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"TestAIProvider"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"workspaceId"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"provider"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"AIProviderType"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"prompt"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"testAIProvider"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"workspaceId"},"value":{"kind":"Variable","name":{"kind":"Name","value":"workspaceId"}}},{"kind":"Argument","name":{"kind":"Name","value":"provider"},"value":{"kind":"Variable","name":{"kind":"Name","value":"provider"}}},{"kind":"Argument","name":{"kind":"Name","value":"prompt"},"value":{"kind":"Variable","name":{"kind":"Name","value":"prompt"}}}]}]}}]} as unknown as DocumentNode<TestAiProviderMutation, TestAiProviderMutationVariables>;
 export const LoginDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"Login"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"LoginInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"login"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"success"}},{"kind":"Field","name":{"kind":"Name","value":"user"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"email"}}]}},{"kind":"Field","name":{"kind":"Name","value":"tokens"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"accessToken"}},{"kind":"Field","name":{"kind":"Name","value":"refreshToken"}}]}},{"kind":"Field","name":{"kind":"Name","value":"errors"}}]}}]}}]} as unknown as DocumentNode<LoginMutation, LoginMutationVariables>;
 export const LogoutDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"Logout"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"LogoutInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"logout"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}]}]}}]} as unknown as DocumentNode<LogoutMutation, LogoutMutationVariables>;
 export const RefreshTokenDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"RefreshToken"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"RefreshTokenInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"refreshToken"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"success"}},{"kind":"Field","name":{"kind":"Name","value":"accessToken"}},{"kind":"Field","name":{"kind":"Name","value":"errors"}}]}}]}}]} as unknown as DocumentNode<RefreshTokenMutation, RefreshTokenMutationVariables>;

@@ -1,0 +1,5 @@
+# Test AI Provider Mutation
+# WHY: Test an AI provider with a sample prompt to verify configuration
+mutation TestAIProvider($workspaceId: ID!, $provider: AIProviderType!, $prompt: String) {
+  testAIProvider(workspaceId: $workspaceId, provider: $provider, prompt: $prompt)
+}

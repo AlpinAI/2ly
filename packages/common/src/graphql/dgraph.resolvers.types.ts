@@ -16,6 +16,26 @@ export type Scalars = {
   DateTime: { input: any; output: any; }
 };
 
+export type AiProviderConfig = {
+  availableModels?: Maybe<Array<Scalars['String']['output']>>;
+  baseUrl?: Maybe<Scalars['String']['output']>;
+  createdAt: Scalars['DateTime']['output'];
+  defaultModel?: Maybe<Scalars['String']['output']>;
+  encryptedApiKey?: Maybe<Scalars['String']['output']>;
+  id: Scalars['ID']['output'];
+  isActive: Scalars['Boolean']['output'];
+  provider: AiProviderType;
+  updatedAt: Scalars['DateTime']['output'];
+  workspace: Workspace;
+};
+
+export enum AiProviderType {
+  Anthropic = 'ANTHROPIC',
+  Google = 'GOOGLE',
+  Ollama = 'OLLAMA',
+  Openai = 'OPENAI'
+}
+
 export enum ActiveStatus {
   Active = 'ACTIVE',
   Inactive = 'INACTIVE'
@@ -209,6 +229,7 @@ export type User = {
 
 export type Workspace = {
   admins?: Maybe<Array<User>>;
+  aiProviders?: Maybe<Array<AiProviderConfig>>;
   createdAt: Scalars['DateTime']['output'];
   id: Scalars['ID']['output'];
   mcpServers?: Maybe<Array<McpServer>>;
@@ -294,6 +315,8 @@ export type DirectiveResolverFn<TResult = {}, TParent = {}, TContext = {}, TArgs
 
 /** Mapping between all available schema types and the resolvers types */
 export type ResolversTypes = ResolversObject<{
+  AIProviderConfig: ResolverTypeWrapper<AiProviderConfig>;
+  AIProviderType: AiProviderType;
   ActiveStatus: ActiveStatus;
   Boolean: ResolverTypeWrapper<Scalars['Boolean']['output']>;
   DateTime: ResolverTypeWrapper<Scalars['DateTime']['output']>;
@@ -322,6 +345,7 @@ export type ResolversTypes = ResolversObject<{
 
 /** Mapping between all available schema types and the resolvers parents */
 export type ResolversParentTypes = ResolversObject<{
+  AIProviderConfig: AiProviderConfig;
   Boolean: Scalars['Boolean']['output'];
   DateTime: Scalars['DateTime']['output'];
   ID: Scalars['ID']['output'];
@@ -339,6 +363,20 @@ export type ResolversParentTypes = ResolversObject<{
   ToolSet: ToolSet;
   User: User;
   Workspace: Workspace;
+}>;
+
+export type AiProviderConfigResolvers<ContextType = any, ParentType extends ResolversParentTypes['AIProviderConfig'] = ResolversParentTypes['AIProviderConfig']> = ResolversObject<{
+  availableModels?: Resolver<Maybe<Array<ResolversTypes['String']>>, ParentType, ContextType>;
+  baseUrl?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  createdAt?: Resolver<ResolversTypes['DateTime'], ParentType, ContextType>;
+  defaultModel?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  encryptedApiKey?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
+  isActive?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
+  provider?: Resolver<ResolversTypes['AIProviderType'], ParentType, ContextType>;
+  updatedAt?: Resolver<ResolversTypes['DateTime'], ParentType, ContextType>;
+  workspace?: Resolver<ResolversTypes['Workspace'], ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
 export interface DateTimeScalarConfig extends GraphQLScalarTypeConfig<ResolversTypes['DateTime'], any> {
@@ -510,6 +548,7 @@ export type UserResolvers<ContextType = any, ParentType extends ResolversParentT
 
 export type WorkspaceResolvers<ContextType = any, ParentType extends ResolversParentTypes['Workspace'] = ResolversParentTypes['Workspace']> = ResolversObject<{
   admins?: Resolver<Maybe<Array<ResolversTypes['User']>>, ParentType, ContextType>;
+  aiProviders?: Resolver<Maybe<Array<ResolversTypes['AIProviderConfig']>>, ParentType, ContextType>;
   createdAt?: Resolver<ResolversTypes['DateTime'], ParentType, ContextType>;
   id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
   mcpServers?: Resolver<Maybe<Array<ResolversTypes['MCPServer']>>, ParentType, ContextType>;
@@ -525,6 +564,7 @@ export type WorkspaceResolvers<ContextType = any, ParentType extends ResolversPa
 }>;
 
 export type Resolvers<ContextType = any> = ResolversObject<{
+  AIProviderConfig?: AiProviderConfigResolvers<ContextType>;
   DateTime?: GraphQLScalarType;
   IdentityKey?: IdentityKeyResolvers<ContextType>;
   MCPRegistryServer?: McpRegistryServerResolvers<ContextType>;

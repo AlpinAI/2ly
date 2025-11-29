@@ -1,0 +1,13 @@
+# Set Active AI Provider Mutation
+# WHY: Set which AI provider is active/default for the workspace
+mutation SetActiveAIProvider($workspaceId: ID!, $provider: AIProviderType!) {
+  setActiveAIProvider(workspaceId: $workspaceId, provider: $provider) {
+    id
+    provider
+    isActive
+    isConfigured
+    defaultModel
+    baseUrl
+    availableModels
+  }
+}

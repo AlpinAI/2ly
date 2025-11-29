@@ -16,7 +16,9 @@ import {
   IdentityRepository,
 } from '../repositories';
 import { createAuthResolvers } from '../resolvers/auth.resolver';
+import { createAIProviderResolvers } from '../resolvers/ai-provider.resolver';
 import { AuthenticationService, JwtService, PasswordPolicyService } from '../services/auth';
+import { AIProviderService } from '../services/ai';
 import { Container } from 'inversify';
 
 const observableToAsyncGenerator = <T, K extends string>(
@@ -49,6 +51,11 @@ export const resolvers = (container: Container = defaultContainer): apolloResolv
   const userRepository = container.get(UserRepository);
   const passwordPolicyService = container.get(PasswordPolicyService);
   const authResolvers = createAuthResolvers(authenticationService, jwtService, userRepository, passwordPolicyService);
+
+  // Create AI provider resolvers
+  const aiProviderService = container.get(AIProviderService);
+  const aiProviderResolvers = createAIProviderResolvers(aiProviderService);
+
   return {
     Date: GraphQLDateTime,
     Query: {
@@ -131,6 +138,8 @@ export const resolvers = (container: Container = defaultContainer): apolloResolv
       },
       // Authentication queries
       ...authResolvers.Query,
+      // AI Provider queries
+      ...aiProviderResolvers.Query,
     },
     Mutation: {
       // Authentication mutations
@@ -398,11 +407,20 @@ export const resolvers = (container: Container = defaultContainer): apolloResolv
       ) => {
         return toolSetRepository.removeMCPToolFromToolSet(mcpToolId, toolSetId);
       },
+
+      // AI Provider mutations
+      ...aiProviderResolvers.Mutation,
     },
     Runtime: {},
     MCPServer: {},
     MCPTool: {},
     ToolSet: {},
+    AIProviderConfig: {
+      // Compute isConfigured based on whether there's an encrypted API key or it's Ollama
+      isConfigured: (parent: { encryptedApiKey?: string | null; provider: string }) => {
+        return !!parent.encryptedApiKey || parent.provider === 'OLLAMA';
+      },
+    },
     Subscription: {
       workspace: {
         subscribe: (_parent: unknown, { workspaceId }: { workspaceId: string }) => {

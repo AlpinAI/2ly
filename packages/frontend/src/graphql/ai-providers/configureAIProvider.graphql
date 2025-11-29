@@ -1,0 +1,21 @@
+# Configure AI Provider Mutation
+# WHY: Configure or update an AI provider with API key and settings
+mutation ConfigureAIProvider(
+  $workspaceId: ID!
+  $provider: AIProviderType!
+  $apiKey: String
+  $baseUrl: String
+  $defaultModel: String
+) {
+  configureAIProvider(
+    workspaceId: $workspaceId
+    provider: $provider
+    apiKey: $apiKey
+    baseUrl: $baseUrl
+    defaultModel: $defaultModel
+  ) {
+    valid
+    error
+    availableModels
+  }
+}

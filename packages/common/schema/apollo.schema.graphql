@@ -45,6 +45,7 @@ type Workspace {
   toolSets: [ToolSet!]
   registryServers: [MCPRegistryServer!]
   onboardingSteps: [OnboardingStep!]
+  aiProviders: [AIProviderConfig!]
 }
 
 type MCPServer {
@@ -210,6 +211,43 @@ type MCPRegistryServer {
   configurations: [MCPServer!]
 }
 
+# AI Provider Configuration - BYOK (Bring Your Own Key) support
+enum AIProviderType {
+  OPENAI
+  ANTHROPIC
+  GOOGLE
+  OLLAMA
+}
+
+type AIProviderConfig {
+  id: ID!
+  provider: AIProviderType!
+  # Whether this provider has valid credentials configured (computed field)
+  isConfigured: Boolean
+  # Whether this provider is the active/default one for the workspace
+  isActive: Boolean!
+  # Default model to use for this provider
+  defaultModel: String
+  # Custom base URL - for Ollama or custom endpoints
+  baseUrl: String
+  # Cached list of available models
+  availableModels: [String!]
+  createdAt: Date!
+  updatedAt: Date!
+}
+
+type AIProviderValidation {
+  valid: Boolean!
+  error: String
+  availableModels: [String!]
+}
+
+type AIModel {
+  id: String!
+  name: String!
+  contextWindow: Int
+}
+
 # Monitoring types for scalable tool call queries
 input ToolCallFilters {
   status: [ToolCallStatus!]
@@ -266,6 +304,9 @@ type Query {
   keyValue(keyId: ID!): String!
   # Authentication queries
   me: User
+  # AI Provider queries
+  aiProviders(workspaceId: ID!): [AIProviderConfig!]!
+  aiProviderModels(workspaceId: ID!, provider: AIProviderType!): [String!]!
 }
 
 type CallToolResult {
@@ -353,6 +394,21 @@ type Mutation {
   refreshToken(input: RefreshTokenInput!): RefreshTokenPayload!
   logout(input: LogoutInput!): Boolean!
   logoutUser(input: LogoutUserInput!): LogoutPayload!
+
+  # AI Provider mutations
+  configureAIProvider(
+    workspaceId: ID!
+    provider: AIProviderType!
+    apiKey: String
+    baseUrl: String
+    defaultModel: String
+  ): AIProviderValidation!
+
+  setActiveAIProvider(workspaceId: ID!, provider: AIProviderType!): AIProviderConfig!
+
+  removeAIProvider(workspaceId: ID!, provider: AIProviderType!): Boolean!
+
+  testAIProvider(workspaceId: ID!, provider: AIProviderType!, prompt: String): String!
 }
 
 # Authentication types
