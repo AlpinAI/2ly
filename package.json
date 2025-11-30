@@ -7,7 +7,8 @@
     "packages/common",
     "packages/frontend",
     "packages/mcp-client",
-    "packages/runtime"
+    "packages/runtime",
+    "packages/onboarding-prototype"
   ],
   "scripts": {
     "build": "npm run build --workspaces --if-present",
@@ -25,6 +26,7 @@
     "codegen:mcp-registry": "npm run codegen:mcp-registry -w @2ly/common",
     "dev:backend": "npm run dev -w @2ly/backend",
     "dev:frontend": "npm run dev -w @2ly/frontend",
+    "dev:onboarding-prototype": "npm run dev -w @2ly/onboarding-prototype",
     "dev:main-runtime": "npm run build -w @2ly/runtime && ROOTS=TEMP:/tmp RUNTIME_NAME=\"Main Runtime\" REMOTE_PORT=3001 node packages/runtime/dist/index.js",
     "dev:toolset": "TOOLSET_NAME=\"Test Toolset\" node packages/runtime/dist/index.js",
     "dev:doc": "cd packages/doc && npm run dev",
