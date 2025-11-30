@@ -8,6 +8,7 @@ export const mockTools: Record<string, MockMCPTool[]> = {
       name: 'create_task',
       description: 'Create a new task in the todo list',
       mcpServerName: 'todo-server',
+      category: 'input',
       inputSchema: {
         type: 'object',
         properties: {
@@ -24,6 +25,7 @@ export const mockTools: Record<string, MockMCPTool[]> = {
       name: 'list_tasks',
       description: 'List all tasks in the todo list',
       mcpServerName: 'todo-server',
+      category: 'output',
       inputSchema: {
         type: 'object',
         properties: {
@@ -37,6 +39,7 @@ export const mockTools: Record<string, MockMCPTool[]> = {
       name: 'complete_task',
       description: 'Mark a task as completed',
       mcpServerName: 'todo-server',
+      category: 'processing',
       inputSchema: {
         type: 'object',
         properties: {
@@ -50,6 +53,7 @@ export const mockTools: Record<string, MockMCPTool[]> = {
       name: 'delete_task',
       description: 'Delete a task from the todo list',
       mcpServerName: 'todo-server',
+      category: 'processing',
       inputSchema: {
         type: 'object',
         properties: {
@@ -65,6 +69,7 @@ export const mockTools: Record<string, MockMCPTool[]> = {
       name: 'search_docs',
       description: 'Search through documentation using semantic search',
       mcpServerName: 'docs-server',
+      category: 'input',
       inputSchema: {
         type: 'object',
         properties: {
@@ -79,6 +84,7 @@ export const mockTools: Record<string, MockMCPTool[]> = {
       name: 'get_document',
       description: 'Retrieve a specific document by ID or path',
       mcpServerName: 'docs-server',
+      category: 'input',
       inputSchema: {
         type: 'object',
         properties: {
@@ -92,6 +98,7 @@ export const mockTools: Record<string, MockMCPTool[]> = {
       name: 'list_categories',
       description: 'List all documentation categories',
       mcpServerName: 'docs-server',
+      category: 'output',
       inputSchema: {
         type: 'object',
         properties: {},
@@ -102,6 +109,7 @@ export const mockTools: Record<string, MockMCPTool[]> = {
       name: 'get_related_docs',
       description: 'Get documents related to a specific topic',
       mcpServerName: 'docs-server',
+      category: 'processing',
       inputSchema: {
         type: 'object',
         properties: {
@@ -118,6 +126,7 @@ export const mockTools: Record<string, MockMCPTool[]> = {
       name: 'get_hot_posts',
       description: 'Get hot posts from specified subreddits',
       mcpServerName: 'reddit-server',
+      category: 'input',
       inputSchema: {
         type: 'object',
         properties: {
@@ -136,6 +145,7 @@ export const mockTools: Record<string, MockMCPTool[]> = {
       name: 'get_top_posts',
       description: 'Get top posts from specified subreddits',
       mcpServerName: 'reddit-server',
+      category: 'input',
       inputSchema: {
         type: 'object',
         properties: {
@@ -159,6 +169,7 @@ export const mockTools: Record<string, MockMCPTool[]> = {
       name: 'search_reddit',
       description: 'Search Reddit for posts matching a query',
       mcpServerName: 'reddit-server',
+      category: 'processing',
       inputSchema: {
         type: 'object',
         properties: {
@@ -175,6 +186,7 @@ export const mockTools: Record<string, MockMCPTool[]> = {
       name: 'get_post_comments',
       description: 'Get comments from a specific Reddit post',
       mcpServerName: 'reddit-server',
+      category: 'output',
       inputSchema: {
         type: 'object',
         properties: {
@@ -187,3 +199,104 @@ export const mockTools: Record<string, MockMCPTool[]> = {
     },
   ],
 };
+
+// Additional tools for composition demonstration
+const additionalTools: MockMCPTool[] = [
+  {
+    id: 'tool-13',
+    name: 'send_notification',
+    description: 'Send a notification to a user or channel',
+    mcpServerName: 'notification-server',
+    category: 'output',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        message: { type: 'string', description: 'Notification message' },
+        channel: { type: 'string', description: 'Target channel or user' },
+      },
+      required: ['message'],
+    },
+  },
+  {
+    id: 'tool-14',
+    name: 'analyze_text',
+    description: 'Analyze text for sentiment, keywords, and entities',
+    mcpServerName: 'nlp-server',
+    category: 'processing',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        text: { type: 'string', description: 'Text to analyze' },
+        analysisType: { type: 'string', enum: ['sentiment', 'keywords', 'entities', 'all'] },
+      },
+      required: ['text'],
+    },
+  },
+  {
+    id: 'tool-15',
+    name: 'format_output',
+    description: 'Format data into various output formats',
+    mcpServerName: 'formatter-server',
+    category: 'output',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        data: { type: 'object', description: 'Data to format' },
+        format: { type: 'string', enum: ['json', 'markdown', 'html', 'csv'] },
+      },
+      required: ['data', 'format'],
+    },
+  },
+  {
+    id: 'tool-16',
+    name: 'read_file',
+    description: 'Read contents from a file',
+    mcpServerName: 'filesystem-server',
+    category: 'input',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        path: { type: 'string', description: 'File path to read' },
+      },
+      required: ['path'],
+    },
+  },
+  {
+    id: 'tool-17',
+    name: 'write_file',
+    description: 'Write content to a file',
+    mcpServerName: 'filesystem-server',
+    category: 'output',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        path: { type: 'string', description: 'File path to write' },
+        content: { type: 'string', description: 'Content to write' },
+      },
+      required: ['path', 'content'],
+    },
+  },
+  {
+    id: 'tool-18',
+    name: 'filter_data',
+    description: 'Filter data based on criteria',
+    mcpServerName: 'data-server',
+    category: 'processing',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        data: { type: 'array', description: 'Data array to filter' },
+        criteria: { type: 'object', description: 'Filter criteria' },
+      },
+      required: ['data', 'criteria'],
+    },
+  },
+];
+
+// Export all available tools for the tool picker
+export const allAvailableTools: MockMCPTool[] = [
+  ...mockTools.todoList,
+  ...mockTools.documentation,
+  ...mockTools.reddit,
+  ...additionalTools,
+];

@@ -5,6 +5,7 @@ export interface MockMCPTool {
   name: string;
   description?: string;
   mcpServerName: string;
+  category: 'input' | 'processing' | 'output';
   inputSchema: {
     type: 'object';
     properties?: Record<string, unknown>;
