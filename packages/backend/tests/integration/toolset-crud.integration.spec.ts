@@ -13,42 +13,90 @@
  * - Tests run sequentially to avoid conflicts
  */
 
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { describe, it, expect, beforeEach } from 'vitest';
 import { graphql, resetDatabase } from '@2ly/common/test/fixtures';
 
+/**
+ * Helper function for authenticated GraphQL requests
+ */
+async function authenticatedGraphql<T = any>(
+  query: string,
+  accessToken: string,
+  variables?: Record<string, any>,
+): Promise<T> {
+  const apiUrl = process.env.API_URL;
+  if (!apiUrl) {
+    throw new Error('API_URL not set. Ensure global setup has run.');
+  }
+
+  const response = await fetch(`${apiUrl}/graphql`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${accessToken}`,
+    },
+    body: JSON.stringify({ query, variables }),
+  });
+
+  const result = await response.json();
+
+  if (result.errors) {
+    throw new Error(`GraphQL errors: ${JSON.stringify(result.errors, null, 2)}`);
+  }
+
+  return result.data as T;
+}
+
 describe('ToolSet CRUD Operations', () => {
   let workspaceId: string;
+  let accessToken: string;
 
   beforeEach(async () => {
     // Reset database before each test
     await resetDatabase();
 
-    // Query for the auto-created default workspace
-    const systemQuery = `
-      query GetSystem {
-        system {
-          id
-          initialized
-          defaultWorkspace {
-            id
-            name
+    // Register a user to get authentication token
+    const registerMutation = `
+      mutation RegisterUser($input: RegisterUserInput!) {
+        registerUser(input: $input) {
+          success
+          tokens {
+            accessToken
           }
         }
       }
     `;
 
-    const systemResult = await graphql<{
-      system: {
-        id: string;
-        initialized: boolean;
-        defaultWorkspace: {
-          id: string;
-          name: string;
-        };
+    const uniqueEmail = `toolset-test-${Date.now()}@2ly.ai`;
+    const registerResult = await graphql<{
+      registerUser: {
+        success: boolean;
+        tokens: { accessToken: string };
       };
-    }>(systemQuery);
+    }>(registerMutation, {
+      input: {
+        email: uniqueEmail,
+        password: 'testpassword123',
+      },
+    });
 
-    workspaceId = systemResult.system.defaultWorkspace.id;
+    accessToken = registerResult.registerUser.tokens.accessToken;
+
+    // Get the user's workspace
+    const workspacesQuery = `
+      query GetWorkspaces {
+        workspaces {
+          id
+        }
+      }
+    `;
+
+    const workspacesResult = await authenticatedGraphql<{
+      workspaces: Array<{ id: string }>;
+    }>(workspacesQuery, accessToken);
+
+    workspaceId = workspacesResult.workspaces[0].id;
   });
 
   it('should create a new toolset', async () => {
@@ -64,7 +112,7 @@ describe('ToolSet CRUD Operations', () => {
       }
     `;
 
-    const result = await graphql<{
+    const result = await authenticatedGraphql<{
       createToolSet: {
         id: string;
         name: string;
@@ -72,7 +120,7 @@ describe('ToolSet CRUD Operations', () => {
         createdAt: string;
         updatedAt: string;
       };
-    }>(createToolSetMutation, {
+    }>(createToolSetMutation, accessToken, {
       workspaceId,
       name: 'My First ToolSet',
       description: 'A collection of useful tools',
@@ -97,13 +145,13 @@ describe('ToolSet CRUD Operations', () => {
       }
     `;
 
-    await graphql(createToolSetMutation, {
+    await authenticatedGraphql(createToolSetMutation, accessToken, {
       workspaceId,
       name: 'ToolSet 1',
       description: 'First toolset',
     });
 
-    await graphql(createToolSetMutation, {
+    await authenticatedGraphql(createToolSetMutation, accessToken, {
       workspaceId,
       name: 'ToolSet 2',
       description: 'Second toolset',
@@ -122,7 +170,7 @@ describe('ToolSet CRUD Operations', () => {
       }
     `;
 
-    const result = await graphql<{
+    const result = await authenticatedGraphql<{
       toolSets: Array<{
         id: string;
         name: string;
@@ -130,7 +178,7 @@ describe('ToolSet CRUD Operations', () => {
         createdAt: string;
         updatedAt: string;
       }>;
-    }>(queryToolSets, { workspaceId });
+    }>(queryToolSets, accessToken, { workspaceId });
 
     expect(result.toolSets).toBeDefined();
     expect(result.toolSets.length).toBe(2);
@@ -150,13 +198,13 @@ describe('ToolSet CRUD Operations', () => {
       }
     `;
 
-    const createResult = await graphql<{
+    const createResult = await authenticatedGraphql<{
       createToolSet: {
         id: string;
         name: string;
         description: string;
       };
-    }>(createMutation, {
+    }>(createMutation, accessToken, {
       workspaceId,
       name: 'Original Name',
       description: 'Original Description',
@@ -176,14 +224,14 @@ describe('ToolSet CRUD Operations', () => {
       }
     `;
 
-    const updateResult = await graphql<{
+    const updateResult = await authenticatedGraphql<{
       updateToolSet: {
         id: string;
         name: string;
         description: string;
         updatedAt: string;
       };
-    }>(updateMutation, {
+    }>(updateMutation, accessToken, {
       id: toolSetId,
       name: 'Updated Name',
       description: 'Updated Description',
@@ -206,12 +254,12 @@ describe('ToolSet CRUD Operations', () => {
       }
     `;
 
-    const createResult = await graphql<{
+    const createResult = await authenticatedGraphql<{
       createToolSet: {
         id: string;
         name: string;
       };
-    }>(createMutation, {
+    }>(createMutation, accessToken, {
       workspaceId,
       name: 'To Be Deleted',
       description: 'This will be deleted',
@@ -229,12 +277,12 @@ describe('ToolSet CRUD Operations', () => {
       }
     `;
 
-    const deleteResult = await graphql<{
+    const deleteResult = await authenticatedGraphql<{
       deleteToolSet: {
         id: string;
         name: string;
       };
-    }>(deleteMutation, { id: toolSetId });
+    }>(deleteMutation, accessToken, { id: toolSetId });
 
     expect(deleteResult.deleteToolSet.id).toBe(toolSetId);
     expect(deleteResult.deleteToolSet.name).toBe('To Be Deleted');
@@ -249,9 +297,9 @@ describe('ToolSet CRUD Operations', () => {
       }
     `;
 
-    const queryResult = await graphql<{
+    const queryResult = await authenticatedGraphql<{
       toolSets: Array<{ id: string; name: string }>;
-    }>(queryToolSets, { workspaceId });
+    }>(queryToolSets, accessToken, { workspaceId });
 
     expect(queryResult.toolSets.find((ts) => ts.id === toolSetId)).toBeUndefined();
   });
@@ -267,9 +315,9 @@ describe('ToolSet CRUD Operations', () => {
       }
     `;
 
-    const toolSetResult = await graphql<{
+    const toolSetResult = await authenticatedGraphql<{
       createToolSet: { id: string; name: string };
-    }>(createToolSetMutation, {
+    }>(createToolSetMutation, accessToken, {
       workspaceId,
       name: 'Test ToolSet',
       description: 'For testing tool addition',
@@ -288,9 +336,9 @@ describe('ToolSet CRUD Operations', () => {
       }
     `;
 
-    const registryResult = await graphql<{
+    const registryResult = await authenticatedGraphql<{
       getRegistryServers: Array<{ id: string; name: string; packages: string }>;
-    }>(getRegistryServersQuery, { workspaceId });
+    }>(getRegistryServersQuery, accessToken, { workspaceId });
 
     expect(registryResult.getRegistryServers.length).toBeGreaterThan(0);
     const registryServerId = registryResult.getRegistryServers[0].id;
@@ -321,9 +369,9 @@ describe('ToolSet CRUD Operations', () => {
       }
     `;
 
-    const mcpServerResult = await graphql<{
+    const mcpServerResult = await authenticatedGraphql<{
       createMCPServer: { id: string; name: string };
-    }>(createMCPServerMutation, {
+    }>(createMCPServerMutation, accessToken, {
       name: 'Test MCP Server',
       description: 'For testing',
       repositoryUrl: 'https://github.com/test/server',
@@ -346,9 +394,9 @@ describe('ToolSet CRUD Operations', () => {
       }
     `;
 
-    const toolsResult = await graphql<{
+    const toolsResult = await authenticatedGraphql<{
       mcpTools: Array<{ id: string; name: string; description: string }>;
-    }>(getMCPToolsQuery, { workspaceId });
+    }>(getMCPToolsQuery, accessToken, { workspaceId });
 
     // If there are tools, add one to the toolset
     if (toolsResult.mcpTools.length > 0) {
@@ -367,13 +415,13 @@ describe('ToolSet CRUD Operations', () => {
         }
       `;
 
-      const addToolResult = await graphql<{
+      const addToolResult = await authenticatedGraphql<{
         addMCPToolToToolSet: {
           id: string;
           name: string;
           mcpTools: Array<{ id: string; name: string }>;
         };
-      }>(addToolMutation, { mcpToolId, toolSetId });
+      }>(addToolMutation, accessToken, { mcpToolId, toolSetId });
 
       expect(addToolResult.addMCPToolToToolSet.id).toBe(toolSetId);
       expect(addToolResult.addMCPToolToToolSet.mcpTools.length).toBeGreaterThan(0);
@@ -394,9 +442,9 @@ describe('ToolSet CRUD Operations', () => {
       }
     `;
 
-    const toolSetResult = await graphql<{
+    const toolSetResult = await authenticatedGraphql<{
       createToolSet: { id: string };
-    }>(createToolSetMutation, {
+    }>(createToolSetMutation, accessToken, {
       workspaceId,
       name: 'Test ToolSet for Removal',
       description: 'Testing tool removal',

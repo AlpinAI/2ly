@@ -12,11 +12,12 @@
  * - Tests verify both new ToolSet API and backward compatibility
  */
 
-import { test, expect, performLogin, seedPresets } from '@2ly/common/test/fixtures/playwright';
+import { test, expect, performLogin, seedPresets, loginAndGetToken } from '@2ly/common/test/fixtures/playwright';
 import { updateMCPServerToEdgeRuntime } from '@2ly/common/test/fixtures/mcp-builders';
 
 test.describe('ToolSet API', () => {
   test.describe.configure({ mode: 'serial' });
+  let authToken: string;
 
   test.beforeAll(async ({ resetDatabase, seedDatabase, graphql }) => {
     await resetDatabase(true);
@@ -25,7 +26,8 @@ test.describe('ToolSet API', () => {
     // Update MCP server to use EDGE runtime (GLOBAL runOn has been removed)
     const workspaceId = entityIds['default-workspace'];
     const mcpServerId = entityIds['server-file-system'];
-    await updateMCPServerToEdgeRuntime(graphql, mcpServerId, workspaceId);
+    authToken = await loginAndGetToken('user1@2ly.ai', 'password123');
+    await updateMCPServerToEdgeRuntime(graphql, mcpServerId, workspaceId, authToken);
   });
 
   test('should create a toolset via new API', async ({ page, graphql }) => {
@@ -60,7 +62,7 @@ test.describe('ToolSet API', () => {
       workspaceId,
       name: 'My Custom ToolSet',
       description: 'A toolset created via new API',
-    });
+    }, authToken);
 
     expect(result.createToolSet).toBeDefined();
     expect(result.createToolSet.id).toBeDefined();
@@ -89,13 +91,13 @@ test.describe('ToolSet API', () => {
       workspaceId,
       name: 'ToolSet A',
       description: 'First toolset',
-    });
+    }, authToken);
 
     await graphql(createToolSetMutation, {
       workspaceId,
       name: 'ToolSet B',
       description: 'Second toolset',
-    });
+    }, authToken);
 
     // Query all toolsets
     const queryToolSets = `
@@ -110,7 +112,7 @@ test.describe('ToolSet API', () => {
 
     const toolsetsResult = await graphql<{
       toolSets: Array<{ id: string; name: string; description: string }>;
-    }>(queryToolSets, { workspaceId });
+    }>(queryToolSets, { workspaceId }, authToken);
 
     expect(toolsetsResult.toolSets).toBeDefined();
     expect(toolsetsResult.toolSets.length).toBeGreaterThanOrEqual(2);
@@ -143,7 +145,7 @@ test.describe('ToolSet API', () => {
       workspaceId,
       name: 'Direct Management ToolSet',
       description: 'For testing direct tool management',
-    });
+    }, authToken);
 
     const toolSetId = toolSetResult.createToolSet.id;
 
@@ -159,7 +161,7 @@ test.describe('ToolSet API', () => {
 
     const toolsResult = await graphql<{
       mcpTools: Array<{ id: string; name: string }>;
-    }>(toolsQuery, { workspaceId });
+    }>(toolsQuery, { workspaceId }, authToken);
 
     if (toolsResult.mcpTools.length > 0) {
       const mcpToolId = toolsResult.mcpTools[0].id;
@@ -184,7 +186,7 @@ test.describe('ToolSet API', () => {
           name: string;
           mcpTools: Array<{ id: string; name: string }>;
         };
-      }>(addToolMutation, { mcpToolId, toolSetId });
+      }>(addToolMutation, { mcpToolId, toolSetId }, authToken);
 
       expect(addResult.addMCPToolToToolSet.mcpTools.length).toBeGreaterThan(0);
       expect(addResult.addMCPToolToToolSet.mcpTools[0].id).toBe(mcpToolId);
@@ -208,7 +210,7 @@ test.describe('ToolSet API', () => {
           name: string;
           mcpTools: Array<{ id: string }>;
         };
-      }>(removeToolMutation, { mcpToolId, toolSetId });
+      }>(removeToolMutation, { mcpToolId, toolSetId }, authToken);
 
       expect(removeResult.removeMCPToolFromToolSet.mcpTools.length).toBe(0);
     }

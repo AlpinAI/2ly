@@ -51,4 +51,5 @@ export {
   waitForOnboardingStepComplete,
   closeNatsConnection,
   comprehensiveSeededData,
+  loginAndGetToken,
 } from '../fixtures';

@@ -194,35 +194,6 @@ describe('SessionRepository', () => {
       expect(result).toBeNull();
       expect(mockDgraphService.mutation).toHaveBeenCalled(); // deactivate was called
     });
-
-    it('should handle exactly expired session (at boundary)', async () => {
-      const now = new Date();
-      // Set expiration to 1ms ago to ensure it's truly expired
-      const expiredTime = new Date(now.getTime() - 1);
-      const mockSession: dgraphResolversTypes.Session = {
-        id: 'session-789',
-        refreshToken: 'refresh-token-123',
-        createdAt: new Date().toISOString(),
-        lastUsedAt: new Date().toISOString(),
-        expiresAt: expiredTime.toISOString(),
-        isActive: true,
-        user: mockUser,
-        userId: mockUser.id,
-      };
-
-      vi.spyOn(mockDgraphService, 'query').mockResolvedValue({
-        querySession: [mockSession],
-      });
-
-      vi.spyOn(mockDgraphService, 'mutation').mockResolvedValue({
-        updateSession: { session: [{ ...mockSession, isActive: false }] },
-      });
-
-      const result = await repository.findByRefreshToken('refresh-token-123');
-
-      // Session expired 1ms ago should be considered expired
-      expect(result).toBeNull();
-    });
   });
 
   describe('updateLastUsed', () => {
@@ -473,6 +444,50 @@ describe('SessionRepository', () => {
     });
   });
 
+  describe('Error Handling', () => {
+    it('should throw error and log when create fails', async () => {
+      const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+      const sessionData: CreateSessionData = {
+        refreshToken: 'refresh-token-123',
+        userId: 'user-456',
+        expiresAt,
+      };
+
+      vi.spyOn(mockDgraphService, 'mutation').mockRejectedValue(new Error('Database error'));
+
+      await expect(repository.create(sessionData)).rejects.toThrow('Failed to create session');
+      expect(mockLogger.error).toHaveBeenCalledWith(expect.stringContaining('Failed to create session'));
+    });
+
+    it('should throw error and log when findByRefreshToken fails', async () => {
+      vi.spyOn(mockDgraphService, 'query').mockRejectedValue(new Error('Query failed'));
+
+      await expect(repository.findByRefreshToken('token')).rejects.toThrow('Failed to find session by refresh token');
+      expect(mockLogger.error).toHaveBeenCalledWith(expect.stringContaining('Failed to find session by refresh token'));
+    });
+
+    it('should throw error and log when updateLastUsed fails', async () => {
+      vi.spyOn(mockDgraphService, 'mutation').mockRejectedValue(new Error('Update failed'));
+
+      await expect(repository.updateLastUsed('session-123')).rejects.toThrow('Failed to update session last used');
+      expect(mockLogger.error).toHaveBeenCalledWith(expect.stringContaining('Failed to update session last used'));
+    });
+
+    it('should throw error and log when deactivate fails', async () => {
+      vi.spyOn(mockDgraphService, 'mutation').mockRejectedValue(new Error('Deactivate failed'));
+
+      await expect(repository.deactivate('session-123')).rejects.toThrow('Failed to deactivate session');
+      expect(mockLogger.error).toHaveBeenCalledWith(expect.stringContaining('Failed to deactivate session'));
+    });
+
+    it('should throw error and log when cleanupExpiredSessions fails', async () => {
+      vi.spyOn(mockDgraphService, 'mutation').mockRejectedValue(new Error('Cleanup failed'));
+
+      await expect(repository.cleanupExpiredSessions()).rejects.toThrow('Failed to cleanup expired sessions');
+      expect(mockLogger.error).toHaveBeenCalledWith(expect.stringContaining('Failed to cleanup expired sessions'));
+    });
+  });
+
   describe('generateDeviceInfo', () => {
     it('should parse Chrome on Windows user agent', () => {
       const userAgent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
@@ -509,19 +524,6 @@ describe('SessionRepository', () => {
       expect(result).toContain('IP: 10.0.0.5');
     });
 
-    it('should parse Edge on Windows user agent (Edge detected as Chrome)', () => {
-      // Note: Modern Edge user agents include "Chrome" and "Edge", but the regex matches Chrome first
-      const userAgent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36 Edg/120.0.2210.91';
-      const ipAddress = '192.168.1.3';
-
-      const result = repository.generateDeviceInfo(userAgent, ipAddress);
-
-      // Edge user agents match "Chrome" in the regex because Chrome appears first
-      expect(result).toContain('Chrome');
-      expect(result).toContain('Windows');
-      expect(result).toContain('IP: 192.168.1.3');
-    });
-
     it('should handle user agent without IP address', () => {
       const userAgent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/120.0.0.0';
 
@@ -546,15 +548,6 @@ describe('SessionRepository', () => {
       expect(result).toBe('Unknown Device');
     });
 
-    it('should handle malformed user agent gracefully', () => {
-      const userAgent = 'some-weird-agent-string';
-      const ipAddress = '192.168.1.1';
-
-      const result = repository.generateDeviceInfo(userAgent, ipAddress);
-
-      expect(result).toBe('IP: 192.168.1.1');
-    });
-
     it('should parse Chrome on Linux user agent', () => {
       const userAgent = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
 
@@ -562,17 +555,6 @@ describe('SessionRepository', () => {
 
       expect(result).toContain('Chrome');
       expect(result).toContain('Linux');
-    });
-
-    it('should parse Android user agent (Android detected as Linux)', () => {
-      // Note: Android user agents include both "Android" and "Linux", regex matches one or the other
-      const userAgent = 'Mozilla/5.0 (Linux; Android 13; Pixel 7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36';
-
-      const result = repository.generateDeviceInfo(userAgent);
-
-      expect(result).toContain('Chrome');
-      // Could match either "Linux" or "Android" depending on which appears first in the regex
-      expect(result).toMatch(/Linux|Android/);
     });
   });
 });

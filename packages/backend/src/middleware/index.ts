@@ -12,3 +12,6 @@ export {
   createAuthContext,
 } from '../directives/auth.directive';
 export type { AuthDirectiveContext } from '../directives/auth.directive';
+
+// Re-export shared context types
+export type { GraphQLContext, AuthenticatedGraphQLContext, ContextUser } from '../types';

@@ -34,6 +34,9 @@ export const ADD_SYSTEM_RUNTIME = gql`
           id
           name
         }
+        system {
+          id
+        }
       }
     }
   }
@@ -72,6 +75,9 @@ export const ADD_WORKSPACE_RUNTIME = gql`
           id
           name
         }
+        system {
+          id
+        }
       }
     }
   }
@@ -92,6 +98,9 @@ export const UPDATE_RUNTIME = gql`
           id
           name
         }
+        system {
+          id
+        }
       }
     }
   }
@@ -107,10 +116,6 @@ export const DELETE_RUNTIME = gql`
         status
         createdAt
         lastSeenAt
-        workspace {
-          id
-          name
-        }
       }
     }
   }
@@ -148,6 +153,9 @@ export const GET_RUNTIME = gql`
       mcpClientName
       roots
       workspace {
+        id
+      }
+      system {
         id
       }
     }
@@ -216,6 +224,9 @@ export const QUERY_ACTIVE_RUNTIMES = gql`
       workspace {
         id
         name
+      }
+      system {
+        id
       }
     }
   }
@@ -306,6 +317,12 @@ export const SET_RUNTIME_INACTIVE = gql`
             status
           }
         }
+        workspace {
+          id
+        }
+        system {
+          id
+        }
       }
     }
   }
@@ -326,6 +343,9 @@ export const SET_RUNTIME_ACTIVE = gql`
         mcpClientName
         roots
         workspace {
+          id
+        }
+        system {
           id
         }
       }

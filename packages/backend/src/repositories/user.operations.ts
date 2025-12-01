@@ -116,3 +116,12 @@ export const UNLOCK_USER_ACCOUNT = gql`
     }
   }
 `;
+
+export const FIND_USER_BY_ID = gql`
+  query findUserById($id: ID!) {
+    getUser(id: $id) {
+      id
+      email
+    }
+  }
+`;
