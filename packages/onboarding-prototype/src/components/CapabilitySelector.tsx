@@ -1,4 +1,5 @@
-import { CheckSquare, BookOpen, MessageCircle } from 'lucide-react';
+import { useState } from 'react';
+import { CheckSquare, BookOpen, MessageCircle, Search, Send } from 'lucide-react';
 import { Button } from './ui/button';
 import { cn } from '@/lib/utils';
 import type { Capability } from '@/mocks/types';
@@ -22,14 +23,62 @@ export function CapabilitySelector({
   onSelect,
   onNext,
 }: CapabilitySelectorProps) {
+  const [skillRequest, setSkillRequest] = useState('');
+  const [isSubmittingRequest, setIsSubmittingRequest] = useState(false);
+
+  const handleSkillRequest = () => {
+    if (skillRequest.trim()) {
+      setIsSubmittingRequest(true);
+      // Mock submission - in real app would send to backend
+      setTimeout(() => {
+        alert(`Skill request submitted: "${skillRequest}"\n\nWe'll notify you when this skill is available!`);
+        setSkillRequest('');
+        setIsSubmittingRequest(false);
+      }, 1000);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="text-center space-y-2">
         <h2 className="text-3xl font-bold text-foreground">
-          Choose Your Starting Point
+          What Skill Should Your AI Agent Learn?
         </h2>
         <p className="text-muted-foreground text-lg">
-          Select a capability to see how 2ly can enhance your workflow
+          Each skill combines knowledge, instructions, and tools to make your agent capable
+        </p>
+      </div>
+
+      {/* Search/Request Bar */}
+      <div className="max-w-2xl mx-auto">
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <input
+            type="text"
+            value={skillRequest}
+            onChange={(e) => setSkillRequest(e.target.value)}
+            onKeyPress={(e) => e.key === 'Enter' && handleSkillRequest()}
+            placeholder="Don't see what you need? Request a skill... (e.g., 'Email management', 'Calendar scheduling')"
+            className="w-full pl-10 pr-24 py-3 rounded-lg border bg-card text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
+          />
+          <Button
+            onClick={handleSkillRequest}
+            disabled={!skillRequest.trim() || isSubmittingRequest}
+            size="sm"
+            className="absolute right-2 top-1/2 -translate-y-1/2"
+          >
+            {isSubmittingRequest ? (
+              'Submitting...'
+            ) : (
+              <>
+                <Send className="h-3 w-3 mr-1" />
+                Request
+              </>
+            )}
+          </Button>
+        </div>
+        <p className="text-xs text-muted-foreground mt-2 text-center">
+          Or choose from our pre-built skills below
         </p>
       </div>
 
@@ -68,6 +117,22 @@ export function CapabilitySelector({
                   <p className="text-sm text-muted-foreground">
                     {capability.description}
                   </p>
+                </div>
+
+                {/* Skill Components */}
+                <div className="space-y-1 pt-2 border-t border-border/50">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-muted-foreground">Knowledge</span>
+                    <span className="text-blue-600 font-medium">{capability.skill.knowledge.sources.length} sources</span>
+                  </div>
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-muted-foreground">Instructions</span>
+                    <span className="text-purple-600 font-medium">{capability.skill.instructions.guardrails.length} guardrails</span>
+                  </div>
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-muted-foreground">Tools</span>
+                    <span className="text-green-600 font-medium">{capability.skill.tools.length} MCP tools</span>
+                  </div>
                 </div>
 
                 {isSelected && (

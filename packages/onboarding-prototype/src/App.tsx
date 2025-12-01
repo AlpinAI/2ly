@@ -1,21 +1,17 @@
 import { useState, useEffect } from 'react';
 import { CapabilitySelector } from './components/CapabilitySelector';
 import { ToolsetPreview } from './components/ToolsetPreview';
-import { InteractionOptions } from './components/InteractionOptions';
-import { EmbeddedChatMock } from './components/EmbeddedChatMock';
-import { ConnectionInstructions } from './components/ConnectionInstructions';
+import { FrameworkIntegration } from './components/FrameworkIntegration';
 import { capabilities } from './mocks/capabilities';
-import { mockChatMessages } from './mocks/chat';
 import type { Capability } from './mocks/types';
 
-type WizardStep = 'capability' | 'toolset' | 'interaction' | 'chat' | 'connect';
+type WizardStep = 'capability' | 'toolset' | 'integration';
 
 const STORAGE_KEY = 'onboarding-wizard-state';
 
 interface WizardState {
   currentStep: WizardStep;
   selectedCapability: Capability | null;
-  selectedInteraction: 'chat' | 'connect' | null;
 }
 
 function App() {
@@ -39,7 +35,6 @@ function App() {
     return {
       currentStep: 'capability' as WizardStep,
       selectedCapability: null,
-      selectedInteraction: null,
     };
   });
 
@@ -57,38 +52,27 @@ function App() {
   };
 
   const handleToolsetNext = () => {
-    setState((prev) => ({ ...prev, currentStep: 'interaction' }));
+    setState((prev) => ({ ...prev, currentStep: 'integration' }));
   };
 
   const handleToolsetBack = () => {
     setState((prev) => ({ ...prev, currentStep: 'capability' }));
   };
 
-  const handleInteractionSelect = (option: 'chat' | 'connect') => {
-    setState((prev) => ({
-      ...prev,
-      selectedInteraction: option,
-      currentStep: option,
-    }));
-  };
-
-  const handleInteractionBack = () => {
+  const handleIntegrationBack = () => {
     setState((prev) => ({ ...prev, currentStep: 'toolset' }));
   };
 
-  const handleChatBack = () => {
-    setState((prev) => ({ ...prev, currentStep: 'interaction' }));
-  };
-
-  const handleConnectBack = () => {
-    setState((prev) => ({ ...prev, currentStep: 'interaction' }));
+  const handleComplete = () => {
+    // Reset wizard or show completion message
+    alert('Skill setup complete! Your skill is ready to integrate.');
+    resetWizard();
   };
 
   const resetWizard = () => {
     setState({
       currentStep: 'capability',
       selectedCapability: null,
-      selectedInteraction: null,
     });
     localStorage.removeItem(STORAGE_KEY);
   };
@@ -128,18 +112,16 @@ function App() {
       <div className="border-b bg-muted/30">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-center gap-2">
-            {['capability', 'toolset', 'interaction'].map((step, index) => {
+            {['capability', 'toolset', 'integration'].map((step, index) => {
               const stepNames = {
-                capability: 'Choose Capability',
-                toolset: 'Review Toolset',
-                interaction: 'Select Experience',
+                capability: 'Choose Skill',
+                toolset: 'Configure Skill',
+                integration: 'Integrate Skill',
               };
               const isActive = state.currentStep === step;
               const isCompleted =
                 (step === 'capability' && state.selectedCapability) ||
-                (step === 'toolset' &&
-                  ['interaction', 'chat', 'connect'].includes(state.currentStep)) ||
-                (step === 'interaction' && state.selectedInteraction);
+                (step === 'toolset' && state.currentStep === 'integration');
 
               return (
                 <div key={step} className="flex items-center">
@@ -190,32 +172,17 @@ function App() {
 
         {state.currentStep === 'toolset' && state.selectedCapability && (
           <ToolsetPreview
-            toolset={state.selectedCapability.toolsetPreset}
+            capability={state.selectedCapability}
             onNext={handleToolsetNext}
             onBack={handleToolsetBack}
           />
         )}
 
-        {state.currentStep === 'interaction' && (
-          <InteractionOptions
-            selectedOption={state.selectedInteraction}
-            onSelect={handleInteractionSelect}
-            onBack={handleInteractionBack}
-          />
-        )}
-
-        {state.currentStep === 'chat' && state.selectedCapability && (
-          <EmbeddedChatMock
-            messages={mockChatMessages[state.selectedCapability.id] || []}
-            capabilityName={state.selectedCapability.name}
-            onBack={handleChatBack}
-          />
-        )}
-
-        {state.currentStep === 'connect' && state.selectedCapability && (
-          <ConnectionInstructions
-            toolset={state.selectedCapability.toolsetPreset}
-            onBack={handleConnectBack}
+        {state.currentStep === 'integration' && state.selectedCapability && (
+          <FrameworkIntegration
+            capability={state.selectedCapability}
+            onBack={handleIntegrationBack}
+            onComplete={handleComplete}
           />
         )}
       </main>

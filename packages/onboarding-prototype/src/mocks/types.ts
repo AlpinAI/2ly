@@ -13,6 +13,35 @@ export interface MockMCPTool {
   };
 }
 
+export interface SkillKnowledge {
+  description: string;
+  sources: {
+    type: 'rag' | 'files';
+    name: string;
+    description: string;
+  }[];
+}
+
+export interface SkillInstructions {
+  scope: string;
+  guardrails: string[];
+}
+
+export interface Skill {
+  id: string;
+  name: string;
+  description: string;
+  icon: string;
+
+  // What the agent learns
+  knowledge: SkillKnowledge;
+  instructions: SkillInstructions;
+  tools: MockMCPTool[];
+
+  // How to demonstrate
+  exampleTasks: string[];
+}
+
 export interface MockToolSet {
   id: string;
   name: string;
@@ -25,6 +54,9 @@ export interface Capability {
   name: string;
   description: string;
   icon: string;
+  exampleActions: string[];
+  agentPrompt: string;
+  skill: Skill;
   toolsetPreset: MockToolSet;
 }
 
