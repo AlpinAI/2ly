@@ -7,6 +7,7 @@ import { latestValueFrom } from 'rxjs-for-await';
 import { MCPServerAutoConfigService } from '../services/mcp-auto-config.service';
 import {
   MCPServerRepository,
+  MCPToolRepository,
   RuntimeRepository,
   WorkspaceRepository,
   SystemRepository,
@@ -18,6 +19,7 @@ import {
 import { createAuthResolvers } from '../resolvers/auth.resolver';
 import { AuthenticationService, JwtService, PasswordPolicyService } from '../services/auth';
 import { Container } from 'inversify';
+import { requireAuth, requireWorkspaceAccess, requireAuthAndWorkspaceAccess, AuthContext } from './authorization.helpers';
 
 const observableToAsyncGenerator = <T, K extends string>(
   observable: Observable<T>,
@@ -36,6 +38,7 @@ export const resolvers = (container: Container = defaultContainer): apolloResolv
   logger;
   const systemRepository = container.get(SystemRepository);
   const mcpServerRepository = container.get(MCPServerRepository);
+  const mcpToolRepository = container.get(MCPToolRepository);
   const runtimeRepository = container.get(RuntimeRepository);
   const workspaceRepository = container.get(WorkspaceRepository);
   const toolSetRepository = container.get(ToolSetRepository);
@@ -53,37 +56,16 @@ export const resolvers = (container: Container = defaultContainer): apolloResolv
     Date: GraphQLDateTime,
     Query: {
 
-      workspaces: async (_parent: unknown, _args: unknown, context: { user?: { userId: string; email: string } }) => {
-        // Require authentication
-        if (!context.user?.userId) {
-          throw new GraphQLError('Authentication required', {
-            extensions: { code: 'UNAUTHENTICATED' },
-          });
-        }
-        // Filter workspaces by user's admin relationship
-        return workspaceRepository.findAll(context.user.userId);
+      workspaces: async (_parent: unknown, _args: unknown, context: AuthContext) => {
+        const userId = requireAuth(context);
+        return workspaceRepository.findAll(userId);
       },
       workspace: async (
         _parent: unknown,
         { workspaceId }: { workspaceId: string },
-        context: { user?: { userId: string; email: string } }
+        context: AuthContext
       ) => {
-        // Require authentication
-        if (!context.user?.userId) {
-          throw new GraphQLError('Authentication required', {
-            extensions: { code: 'UNAUTHENTICATED' },
-          });
-        }
-
-        // Verify workspace access
-        const hasAccess = await workspaceRepository.hasUserAccess(context.user.userId, workspaceId);
-
-        if (!hasAccess) {
-          throw new GraphQLError('Access denied to this workspace', {
-            extensions: { code: 'FORBIDDEN', reason: 'WORKSPACE_ACCESS_DENIED' },
-          });
-        }
-
+        await requireAuthAndWorkspaceAccess(workspaceRepository, context, workspaceId);
         return workspaceRepository.findByIdWithRuntimes(workspaceId);
       },
       mcpServers: async () => {
@@ -92,37 +74,17 @@ export const resolvers = (container: Container = defaultContainer): apolloResolv
       mcpTools: async (
         _parent: unknown,
         { workspaceId }: { workspaceId: string },
-        context: { user?: { userId: string; email: string } }
+        context: AuthContext
       ) => {
-        if (!context.user?.userId) {
-          throw new GraphQLError('Authentication required', {
-            extensions: { code: 'UNAUTHENTICATED' },
-          });
-        }
-        const hasAccess = await workspaceRepository.hasUserAccess(context.user.userId, workspaceId);
-        if (!hasAccess) {
-          throw new GraphQLError('Access denied to this workspace', {
-            extensions: { code: 'FORBIDDEN', reason: 'WORKSPACE_ACCESS_DENIED' },
-          });
-        }
+        await requireAuthAndWorkspaceAccess(workspaceRepository, context, workspaceId);
         return workspaceRepository.findMCPToolsByWorkspace(workspaceId);
       },
       toolSets: async (
         _parent: unknown,
         { workspaceId }: { workspaceId: string },
-        context: { user?: { userId: string; email: string } }
+        context: AuthContext
       ) => {
-        if (!context.user?.userId) {
-          throw new GraphQLError('Authentication required', {
-            extensions: { code: 'UNAUTHENTICATED' },
-          });
-        }
-        const hasAccess = await workspaceRepository.hasUserAccess(context.user.userId, workspaceId);
-        if (!hasAccess) {
-          throw new GraphQLError('Access denied to this workspace', {
-            extensions: { code: 'FORBIDDEN', reason: 'WORKSPACE_ACCESS_DENIED' },
-          });
-        }
+        await requireAuthAndWorkspaceAccess(workspaceRepository, context, workspaceId);
         return toolSetRepository.findByWorkspace(workspaceId);
       },
       system: async () => {
@@ -145,19 +107,9 @@ export const resolvers = (container: Container = defaultContainer): apolloResolv
       workspaceMCPTools: async (
         _parent: unknown,
         { workspaceId }: { workspaceId: string },
-        context: { user?: { userId: string; email: string } }
+        context: AuthContext
       ) => {
-        if (!context.user?.userId) {
-          throw new GraphQLError('Authentication required', {
-            extensions: { code: 'UNAUTHENTICATED' },
-          });
-        }
-        const hasAccess = await workspaceRepository.hasUserAccess(context.user.userId, workspaceId);
-        if (!hasAccess) {
-          throw new GraphQLError('Access denied to this workspace', {
-            extensions: { code: 'FORBIDDEN', reason: 'WORKSPACE_ACCESS_DENIED' },
-          });
-        }
+        await requireAuthAndWorkspaceAccess(workspaceRepository, context, workspaceId);
         return workspaceRepository.findById(workspaceId);
       },
       isMCPAutoConfigEnabled: async () => {
@@ -166,38 +118,18 @@ export const resolvers = (container: Container = defaultContainer): apolloResolv
       getRegistryServers: async (
         _parent: unknown,
         { workspaceId }: { workspaceId: string },
-        context: { user?: { userId: string; email: string } }
+        context: AuthContext
       ) => {
-        if (!context.user?.userId) {
-          throw new GraphQLError('Authentication required', {
-            extensions: { code: 'UNAUTHENTICATED' },
-          });
-        }
-        const hasAccess = await workspaceRepository.hasUserAccess(context.user.userId, workspaceId);
-        if (!hasAccess) {
-          throw new GraphQLError('Access denied to this workspace', {
-            extensions: { code: 'FORBIDDEN', reason: 'WORKSPACE_ACCESS_DENIED' },
-          });
-        }
+        await requireAuthAndWorkspaceAccess(workspaceRepository, context, workspaceId);
         return workspaceRepository.findRegistryServersByWorkspace(workspaceId);
       },
       // Monitoring query with filtering and pagination
       toolCalls: async (
         _parent: unknown,
         args: apolloResolversTypes.QueryToolCallsArgs,
-        context: { user?: { userId: string; email: string } }
+        context: AuthContext
       ) => {
-        if (!context.user?.userId) {
-          throw new GraphQLError('Authentication required', {
-            extensions: { code: 'UNAUTHENTICATED' },
-          });
-        }
-        const hasAccess = await workspaceRepository.hasUserAccess(context.user.userId, args.workspaceId);
-        if (!hasAccess) {
-          throw new GraphQLError('Access denied to this workspace', {
-            extensions: { code: 'FORBIDDEN', reason: 'WORKSPACE_ACCESS_DENIED' },
-          });
-        }
+        await requireAuthAndWorkspaceAccess(workspaceRepository, context, args.workspaceId);
         return monitoringRepository.queryToolCalls({
           workspaceId: args.workspaceId,
           limit: args.limit ?? 100,
@@ -210,19 +142,9 @@ export const resolvers = (container: Container = defaultContainer): apolloResolv
       workspaceKeys: async (
         _parent: unknown,
         { workspaceId }: { workspaceId: string },
-        context: { user?: { userId: string; email: string } }
+        context: AuthContext
       ) => {
-        if (!context.user?.userId) {
-          throw new GraphQLError('Authentication required', {
-            extensions: { code: 'UNAUTHENTICATED' },
-          });
-        }
-        const hasAccess = await workspaceRepository.hasUserAccess(context.user.userId, workspaceId);
-        if (!hasAccess) {
-          throw new GraphQLError('Access denied to this workspace', {
-            extensions: { code: 'FORBIDDEN', reason: 'WORKSPACE_ACCESS_DENIED' },
-          });
-        }
+        await requireAuthAndWorkspaceAccess(workspaceRepository, context, workspaceId);
         return identityRepository.findKeysByRelatedId(workspaceId);
       },
       toolsetKey: async (_parent: unknown, { toolsetId }: { toolsetId: string }) => {
@@ -268,7 +190,27 @@ export const resolvers = (container: Container = defaultContainer): apolloResolv
       updateMCPServerRunOn: async (
         _parent: unknown,
         { mcpServerId, runOn, runtimeId }: { mcpServerId: string; runOn: MCP_SERVER_RUN_ON; runtimeId?: string | null },
+        context: AuthContext,
       ) => {
+        const userId = requireAuth(context);
+        const mcpServer = await mcpServerRepository.findById(mcpServerId);
+        if (!mcpServer?.workspace?.id) {
+          throw new GraphQLError('MCP Server not found', { extensions: { code: 'NOT_FOUND' } });
+        }
+        // If runtimeId provided, verify it belongs to the same workspace
+        // or that it's a system runtime
+        if (runtimeId) {
+          const runtime = await runtimeRepository.getRuntime(runtimeId);
+          if (!runtime?.workspace?.id && !runtime?.system?.id) {
+            throw new GraphQLError('Runtime not found', { extensions: { code: 'NOT_FOUND' } });
+          }
+          if (runtime.workspace?.id && mcpServer.workspace.id !== runtime.workspace.id) {
+            throw new GraphQLError('MCP Server and Runtime must belong to the same workspace', {
+              extensions: { code: 'BAD_REQUEST' },
+            });
+          }
+        }
+        await requireWorkspaceAccess(workspaceRepository, userId, mcpServer.workspace.id);
         await mcpServerRepository.updateRunOn(mcpServerId, runOn);
         if (runOn !== 'EDGE') {
           return mcpServerRepository.unlinkRuntime(mcpServerId);
@@ -299,7 +241,9 @@ export const resolvers = (container: Container = defaultContainer): apolloResolv
           workspaceId: string;
           registryServerId: string;
         },
+        context: AuthContext,
       ) => {
+        await requireAuthAndWorkspaceAccess(workspaceRepository, context, workspaceId);
         return mcpServerRepository.create(
           name,
           description,
@@ -324,7 +268,9 @@ export const resolvers = (container: Container = defaultContainer): apolloResolv
           workspaceId: string;
           type: 'EDGE' | 'MCP';
         },
+        context: AuthContext,
       ) => {
+        await requireAuthAndWorkspaceAccess(workspaceRepository, context, workspaceId);
         return runtimeRepository.create('workspace', workspaceId, name, description, 'INACTIVE', type);
       },
       updateRuntime: async (
@@ -338,10 +284,23 @@ export const resolvers = (container: Container = defaultContainer): apolloResolv
           name: string;
           description: string;
         },
+        context: AuthContext,
       ) => {
+        const userId = requireAuth(context);
+        const runtime = await runtimeRepository.getRuntime(id);
+        if (!runtime?.workspace?.id) {
+          throw new GraphQLError('Runtime not found', { extensions: { code: 'NOT_FOUND' } });
+        }
+        await requireWorkspaceAccess(workspaceRepository, userId, runtime.workspace.id);
         return runtimeRepository.update(id, name, description);
       },
-      deleteRuntime: async (_parent: unknown, { id }: { id: string }) => {
+      deleteRuntime: async (_parent: unknown, { id }: { id: string }, context: AuthContext) => {
+        const userId = requireAuth(context);
+        const runtime = await runtimeRepository.getRuntime(id);
+        if (!runtime?.workspace?.id) {
+          throw new GraphQLError('Runtime not found', { extensions: { code: 'NOT_FOUND' } });
+        }
+        await requireWorkspaceAccess(workspaceRepository, userId, runtime.workspace.id);
         return runtimeRepository.delete(id);
       },
       linkMCPServerToRuntime: async (
@@ -353,7 +312,23 @@ export const resolvers = (container: Container = defaultContainer): apolloResolv
           mcpServerId: string;
           runtimeId: string;
         },
+        context: AuthContext,
       ) => {
+        const userId = requireAuth(context);
+        const mcpServer = await mcpServerRepository.findById(mcpServerId);
+        if (!mcpServer?.workspace?.id) {
+          throw new GraphQLError('MCP Server not found', { extensions: { code: 'NOT_FOUND' } });
+        }
+        const runtime = await runtimeRepository.getRuntime(runtimeId);
+        if (!runtime?.workspace?.id) {
+          throw new GraphQLError('Runtime not found', { extensions: { code: 'NOT_FOUND' } });
+        }
+        if (mcpServer.workspace.id !== runtime.workspace.id) {
+          throw new GraphQLError('MCP Server and Runtime must belong to the same workspace', {
+            extensions: { code: 'BAD_REQUEST' },
+          });
+        }
+        await requireWorkspaceAccess(workspaceRepository, userId, mcpServer.workspace.id);
         return mcpServerRepository.linkRuntime(mcpServerId, runtimeId);
       },
       unlinkMCPServerFromRuntime: async (
@@ -363,7 +338,14 @@ export const resolvers = (container: Container = defaultContainer): apolloResolv
         }: {
           mcpServerId: string;
         },
+        context: AuthContext,
       ) => {
+        const userId = requireAuth(context);
+        const mcpServer = await mcpServerRepository.findById(mcpServerId);
+        if (!mcpServer?.workspace?.id) {
+          throw new GraphQLError('MCP Server not found', { extensions: { code: 'NOT_FOUND' } });
+        }
+        await requireWorkspaceAccess(workspaceRepository, userId, mcpServer.workspace.id);
         return mcpServerRepository.unlinkRuntime(mcpServerId);
       },
       updateMCPServer: async (
@@ -385,19 +367,40 @@ export const resolvers = (container: Container = defaultContainer): apolloResolv
           config: string;
           runOn?: MCP_SERVER_RUN_ON | null;
         },
+        context: AuthContext,
       ) => {
+        const userId = requireAuth(context);
+        const mcpServer = await mcpServerRepository.findById(id);
+        if (!mcpServer?.workspace?.id) {
+          throw new GraphQLError('MCP Server not found', { extensions: { code: 'NOT_FOUND' } });
+        }
+        await requireWorkspaceAccess(workspaceRepository, userId, mcpServer.workspace.id);
         return mcpServerRepository.update(id, name, description, repositoryUrl, transport, config, runOn ?? null);
       },
-      deleteMCPServer: async (_parent: unknown, { id }: { id: string }) => {
+      deleteMCPServer: async (_parent: unknown, { id }: { id: string }, context: AuthContext) => {
+        const userId = requireAuth(context);
+        const mcpServer = await mcpServerRepository.findById(id);
+        if (!mcpServer?.workspace?.id) {
+          throw new GraphQLError('MCP Server not found', { extensions: { code: 'NOT_FOUND' } });
+        }
+        await requireWorkspaceAccess(workspaceRepository, userId, mcpServer.workspace.id);
         return mcpServerRepository.delete(id);
       },
-      updateWorkspace: async (_parent: unknown, { id, name }: { id: string; name: string }) => {
+      updateWorkspace: async (_parent: unknown, { id, name }: { id: string; name: string }, context: AuthContext) => {
+        // For updateWorkspace, the id IS the workspaceId
+        await requireAuthAndWorkspaceAccess(workspaceRepository, context, id);
         return workspaceRepository.update(id, name);
       },
       initSystem: async (_parent: unknown, { adminPassword, email }: { adminPassword: string; email: string }) => {
         return systemRepository.initSystem(adminPassword, email);
       },
-      callMCPTool: async (_parent: unknown, { toolId, input }: { toolId: string; input: string; }) => {
+      callMCPTool: async (_parent: unknown, { toolId, input }: { toolId: string; input: string }, context: AuthContext) => {
+        const userId = requireAuth(context);
+        const tool = await mcpToolRepository.getToolWithWorkspace(toolId);
+        if (!tool?.workspace?.id) {
+          throw new GraphQLError('MCP Tool not found', { extensions: { code: 'NOT_FOUND' } });
+        }
+        await requireWorkspaceAccess(workspaceRepository, userId, tool.workspace.id);
         try {
           return runtimeRepository.callMCPTool(toolId, input);
         } catch (error: unknown) {
@@ -411,7 +414,9 @@ export const resolvers = (container: Container = defaultContainer): apolloResolv
       addServerToRegistry: async (
         _parent: unknown,
         args: apolloResolversTypes.MutationAddServerToRegistryArgs,
+        context: AuthContext,
       ) => {
+        await requireAuthAndWorkspaceAccess(workspaceRepository, context, args.workspaceId);
         return workspaceRepository.addServerToWorkspace(args.workspaceId, {
           name: args.name,
           description: args.description,
@@ -425,7 +430,14 @@ export const resolvers = (container: Container = defaultContainer): apolloResolv
       updateServerInRegistry: async (
         _parent: unknown,
         args: apolloResolversTypes.MutationUpdateServerInRegistryArgs,
+        context: AuthContext,
       ) => {
+        const userId = requireAuth(context);
+        const server = await workspaceRepository.getRegistryServerById(args.serverId);
+        if (!server?.workspace?.id) {
+          throw new GraphQLError('Registry server not found', { extensions: { code: 'NOT_FOUND' } });
+        }
+        await requireWorkspaceAccess(workspaceRepository, userId, server.workspace.id);
         return workspaceRepository.updateServerInWorkspace(args.serverId, {
           name: args.name ?? undefined,
           description: args.description ?? undefined,
@@ -436,7 +448,13 @@ export const resolvers = (container: Container = defaultContainer): apolloResolv
           remotes: args.remotes ?? undefined,
         });
       },
-      removeServerFromRegistry: async (_parent: unknown, { serverId }: { serverId: string }) => {
+      removeServerFromRegistry: async (_parent: unknown, { serverId }: { serverId: string }, context: AuthContext) => {
+        const userId = requireAuth(context);
+        const server = await workspaceRepository.getRegistryServerById(serverId);
+        if (!server?.workspace?.id) {
+          throw new GraphQLError('Registry server not found', { extensions: { code: 'NOT_FOUND' } });
+        }
+        await requireWorkspaceAccess(workspaceRepository, userId, server.workspace.id);
         return workspaceRepository.removeServerFromWorkspace(serverId);
       },
 
@@ -444,7 +462,9 @@ export const resolvers = (container: Container = defaultContainer): apolloResolv
       completeOnboardingStep: async (
         _parent: unknown,
         { workspaceId, stepId }: { workspaceId: string; stepId: string },
+        context: AuthContext,
       ) => {
+        await requireAuthAndWorkspaceAccess(workspaceRepository, context, workspaceId);
         await workspaceRepository.completeOnboardingStep(workspaceId, stepId);
         return true;
       },
@@ -452,7 +472,9 @@ export const resolvers = (container: Container = defaultContainer): apolloResolv
       dismissOnboardingStep: async (
         _parent: unknown,
         { workspaceId, stepId }: { workspaceId: string; stepId: string },
+        context: AuthContext,
       ) => {
+        await requireAuthAndWorkspaceAccess(workspaceRepository, context, workspaceId);
         await workspaceRepository.dismissOnboardingStep(workspaceId, stepId);
         return true;
       },
@@ -461,15 +483,37 @@ export const resolvers = (container: Container = defaultContainer): apolloResolv
       createWorkspaceKey: async (
         _parent: unknown,
         { workspaceId, description }: { workspaceId: string; description: string },
+        context: AuthContext,
       ) => {
+        await requireAuthAndWorkspaceAccess(workspaceRepository, context, workspaceId);
         return identityRepository.createKey('workspace', workspaceId, description);
       },
 
-      revokeKey: async (_parent: unknown, { keyId }: { keyId: string }) => {
+      revokeKey: async (_parent: unknown, { keyId }: { keyId: string }, context: AuthContext) => {
+        const userId = requireAuth(context);
         const key = await identityRepository.findKeyById(keyId);
         if (!key) {
-          throw new Error('Key not found');
+          throw new GraphQLError('Key not found', { extensions: { code: 'NOT_FOUND' } });
         }
+        // Determine workspace based on key type (prefix: WSK=workspace, TSK=toolset, RTK=runtime)
+        const prefix = key.key.substring(0, 3);
+        let workspaceId: string | undefined;
+        if (prefix === 'WSK') {
+          // Workspace key - relatedId is the workspace ID
+          workspaceId = key.relatedId;
+        } else if (prefix === 'TSK') {
+          // Toolset key - lookup toolset to get workspace
+          const toolSet = await toolSetRepository.findById(key.relatedId);
+          workspaceId = toolSet?.workspace?.id;
+        } else if (prefix === 'RTK') {
+          // Runtime key - lookup runtime to get workspace
+          const runtime = await runtimeRepository.getRuntime(key.relatedId);
+          workspaceId = runtime?.workspace?.id;
+        }
+        if (!workspaceId) {
+          throw new GraphQLError('Cannot determine workspace for key', { extensions: { code: 'BAD_REQUEST' } });
+        }
+        await requireWorkspaceAccess(workspaceRepository, userId, workspaceId);
         return identityRepository.revokeKey(key.key);
       },
 
@@ -477,32 +521,79 @@ export const resolvers = (container: Container = defaultContainer): apolloResolv
       createToolSet: async (
         _parent: unknown,
         { name, description, workspaceId }: { name: string; description: string; workspaceId: string },
+        context: AuthContext,
       ) => {
+        await requireAuthAndWorkspaceAccess(workspaceRepository, context, workspaceId);
         return toolSetRepository.create(name, description, workspaceId);
       },
 
       updateToolSet: async (
         _parent: unknown,
         { id, name, description }: { id: string; name: string; description: string },
+        context: AuthContext,
       ) => {
+        const userId = requireAuth(context);
+        const toolSet = await toolSetRepository.findById(id);
+        if (!toolSet?.workspace?.id) {
+          throw new GraphQLError('Tool Set not found', { extensions: { code: 'NOT_FOUND' } });
+        }
+        await requireWorkspaceAccess(workspaceRepository, userId, toolSet.workspace.id);
         return toolSetRepository.update(id, name, description);
       },
 
-      deleteToolSet: async (_parent: unknown, { id }: { id: string }) => {
+      deleteToolSet: async (_parent: unknown, { id }: { id: string }, context: AuthContext) => {
+        const userId = requireAuth(context);
+        const toolSet = await toolSetRepository.findById(id);
+        if (!toolSet?.workspace?.id) {
+          throw new GraphQLError('Tool Set not found', { extensions: { code: 'NOT_FOUND' } });
+        }
+        await requireWorkspaceAccess(workspaceRepository, userId, toolSet.workspace.id);
         return toolSetRepository.delete(id);
       },
 
       addMCPToolToToolSet: async (
         _parent: unknown,
         { mcpToolId, toolSetId }: { mcpToolId: string; toolSetId: string },
+        context: AuthContext,
       ) => {
+        const userId = requireAuth(context);
+        const tool = await mcpToolRepository.getToolWithWorkspace(mcpToolId);
+        if (!tool?.workspace?.id) {
+          throw new GraphQLError('MCP Tool not found', { extensions: { code: 'NOT_FOUND' } });
+        }
+        const toolSet = await toolSetRepository.findById(toolSetId);
+        if (!toolSet?.workspace?.id) {
+          throw new GraphQLError('Tool Set not found', { extensions: { code: 'NOT_FOUND' } });
+        }
+        if (tool.workspace.id !== toolSet.workspace.id) {
+          throw new GraphQLError('MCP Tool and Tool Set must belong to the same workspace', {
+            extensions: { code: 'BAD_REQUEST' },
+          });
+        }
+        await requireWorkspaceAccess(workspaceRepository, userId, tool.workspace.id);
         return toolSetRepository.addMCPToolToToolSet(mcpToolId, toolSetId);
       },
 
       removeMCPToolFromToolSet: async (
         _parent: unknown,
         { mcpToolId, toolSetId }: { mcpToolId: string; toolSetId: string },
+        context: AuthContext,
       ) => {
+        const userId = requireAuth(context);
+        const tool = await mcpToolRepository.getToolWithWorkspace(mcpToolId);
+        if (!tool?.workspace?.id) {
+          throw new GraphQLError('MCP Tool not found', { extensions: { code: 'NOT_FOUND' } });
+        }
+        const toolSet = await toolSetRepository.findById(toolSetId);
+        if (!toolSet?.workspace?.id) {
+          throw new GraphQLError('Tool Set not found', { extensions: { code: 'NOT_FOUND' } });
+        }
+        if (tool.workspace.id !== toolSet.workspace.id) {
+          throw new GraphQLError('MCP Tool and Tool Set must belong to the same workspace', {
+            extensions: { code: 'BAD_REQUEST' },
+          });
+        }
+        await requireWorkspaceAccess(workspaceRepository, userId, tool.workspace.id);
         return toolSetRepository.removeMCPToolFromToolSet(mcpToolId, toolSetId);
       },
     },
@@ -515,19 +606,9 @@ export const resolvers = (container: Container = defaultContainer): apolloResolv
         subscribe: async (
           _parent: unknown,
           { workspaceId }: { workspaceId: string },
-          context: { user?: { userId: string; email: string } }
+          context: AuthContext
         ) => {
-          if (!context.user?.userId) {
-            throw new GraphQLError('Authentication required', {
-              extensions: { code: 'UNAUTHENTICATED' },
-            });
-          }
-          const hasAccess = await workspaceRepository.hasUserAccess(context.user.userId, workspaceId);
-          if (!hasAccess) {
-            throw new GraphQLError('Access denied to this workspace', {
-              extensions: { code: 'FORBIDDEN', reason: 'WORKSPACE_ACCESS_DENIED' },
-            });
-          }
+          await requireAuthAndWorkspaceAccess(workspaceRepository, context, workspaceId);
           const observable = workspaceRepository.observeWorkspace(workspaceId);
           return observableToAsyncGenerator(observable, 'workspace');
         },
@@ -536,19 +617,9 @@ export const resolvers = (container: Container = defaultContainer): apolloResolv
         subscribe: async (
           _parent: unknown,
           { workspaceId }: { workspaceId: string },
-          context: { user?: { userId: string; email: string } }
+          context: AuthContext
         ) => {
-          if (!context.user?.userId) {
-            throw new GraphQLError('Authentication required', {
-              extensions: { code: 'UNAUTHENTICATED' },
-            });
-          }
-          const hasAccess = await workspaceRepository.hasUserAccess(context.user.userId, workspaceId);
-          if (!hasAccess) {
-            throw new GraphQLError('Access denied to this workspace', {
-              extensions: { code: 'FORBIDDEN', reason: 'WORKSPACE_ACCESS_DENIED' },
-            });
-          }
+          await requireAuthAndWorkspaceAccess(workspaceRepository, context, workspaceId);
           const observable = workspaceRepository.observeRuntimes(workspaceId);
           return observableToAsyncGenerator(observable, 'runtimes');
         },
@@ -557,19 +628,9 @@ export const resolvers = (container: Container = defaultContainer): apolloResolv
         subscribe: async (
           _parent: unknown,
           { workspaceId }: { workspaceId: string },
-          context: { user?: { userId: string; email: string } }
+          context: AuthContext
         ) => {
-          if (!context.user?.userId) {
-            throw new GraphQLError('Authentication required', {
-              extensions: { code: 'UNAUTHENTICATED' },
-            });
-          }
-          const hasAccess = await workspaceRepository.hasUserAccess(context.user.userId, workspaceId);
-          if (!hasAccess) {
-            throw new GraphQLError('Access denied to this workspace', {
-              extensions: { code: 'FORBIDDEN', reason: 'WORKSPACE_ACCESS_DENIED' },
-            });
-          }
+          await requireAuthAndWorkspaceAccess(workspaceRepository, context, workspaceId);
           const observable = workspaceRepository.observeMCPServers(workspaceId);
           return observableToAsyncGenerator(observable, 'mcpServers');
         },
@@ -578,33 +639,17 @@ export const resolvers = (container: Container = defaultContainer): apolloResolv
         subscribe: async (
           _parent: unknown,
           { workspaceId }: { workspaceId: string },
-          context: { user?: { userId: string; email: string } }
+          context: AuthContext
         ) => {
-          if (!context.user?.userId) {
-            throw new GraphQLError('Authentication required', {
-              extensions: { code: 'UNAUTHENTICATED' },
-            });
-          }
-          const hasAccess = await workspaceRepository.hasUserAccess(context.user.userId, workspaceId);
-          if (!hasAccess) {
-            throw new GraphQLError('Access denied to this workspace', {
-              extensions: { code: 'FORBIDDEN', reason: 'WORKSPACE_ACCESS_DENIED' },
-            });
-          }
+          await requireAuthAndWorkspaceAccess(workspaceRepository, context, workspaceId);
           const observable = workspaceRepository.observeMCPTools(workspaceId);
           return observableToAsyncGenerator(observable, 'mcpTools');
         },
       },
       workspaces: {
-        subscribe: (_parent: unknown, _args: unknown, context: { user?: { userId: string; email: string } }) => {
-          // Require authentication
-          if (!context.user?.userId) {
-            throw new GraphQLError('Authentication required', {
-              extensions: { code: 'UNAUTHENTICATED' },
-            });
-          }
-          // Filter workspaces by user's admin relationship
-          const observable = workspaceRepository.observeWorkspaces(context.user.userId);
+        subscribe: (_parent: unknown, _args: unknown, context: AuthContext) => {
+          const userId = requireAuth(context);
+          const observable = workspaceRepository.observeWorkspaces(userId);
           return observableToAsyncGenerator(observable, 'workspaces');
         },
       },
@@ -612,19 +657,9 @@ export const resolvers = (container: Container = defaultContainer): apolloResolv
         subscribe: async (
           _parent: unknown,
           { workspaceId }: { workspaceId: string },
-          context: { user?: { userId: string; email: string } }
+          context: AuthContext
         ) => {
-          if (!context.user?.userId) {
-            throw new GraphQLError('Authentication required', {
-              extensions: { code: 'UNAUTHENTICATED' },
-            });
-          }
-          const hasAccess = await workspaceRepository.hasUserAccess(context.user.userId, workspaceId);
-          if (!hasAccess) {
-            throw new GraphQLError('Access denied to this workspace', {
-              extensions: { code: 'FORBIDDEN', reason: 'WORKSPACE_ACCESS_DENIED' },
-            });
-          }
+          await requireAuthAndWorkspaceAccess(workspaceRepository, context, workspaceId);
           const observable = monitoringRepository.observeToolCalls(workspaceId);
           return observableToAsyncGenerator(observable, 'toolCalls');
         },
@@ -633,19 +668,9 @@ export const resolvers = (container: Container = defaultContainer): apolloResolv
         subscribe: async (
           _parent: unknown,
           { workspaceId }: { workspaceId: string },
-          context: { user?: { userId: string; email: string } }
+          context: AuthContext
         ) => {
-          if (!context.user?.userId) {
-            throw new GraphQLError('Authentication required', {
-              extensions: { code: 'UNAUTHENTICATED' },
-            });
-          }
-          const hasAccess = await workspaceRepository.hasUserAccess(context.user.userId, workspaceId);
-          if (!hasAccess) {
-            throw new GraphQLError('Access denied to this workspace', {
-              extensions: { code: 'FORBIDDEN', reason: 'WORKSPACE_ACCESS_DENIED' },
-            });
-          }
+          await requireAuthAndWorkspaceAccess(workspaceRepository, context, workspaceId);
           const observable = toolSetRepository.observeToolSets(workspaceId);
           return observableToAsyncGenerator(observable, 'toolSets');
         },

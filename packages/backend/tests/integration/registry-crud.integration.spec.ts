@@ -13,11 +13,44 @@
  * - Tests run sequentially to avoid conflicts
  */
 
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { describe, it, expect, beforeEach } from 'vitest';
 import { graphql, resetDatabase } from '@2ly/common/test/fixtures';
 
+/**
+ * Helper function for authenticated GraphQL requests
+ */
+async function authenticatedGraphql<T = any>(
+  query: string,
+  accessToken: string,
+  variables?: Record<string, any>,
+): Promise<T> {
+  const apiUrl = process.env.API_URL;
+  if (!apiUrl) {
+    throw new Error('API_URL not set. Ensure global setup has run.');
+  }
+
+  const response = await fetch(`${apiUrl}/graphql`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${accessToken}`,
+    },
+    body: JSON.stringify({ query, variables }),
+  });
+
+  const result = await response.json();
+
+  if (result.errors) {
+    throw new Error(`GraphQL errors: ${JSON.stringify(result.errors, null, 2)}`);
+  }
+
+  return result.data as T;
+}
+
 describe('Registry CRUD Operations', () => {
   let workspaceId: string;
+  let accessToken: string;
 
   beforeEach(async () => {
     // Reset database before each test
@@ -27,33 +60,47 @@ describe('Registry CRUD Operations', () => {
     // - Default workspace with featured servers
     await resetDatabase();
 
-    // Query for the auto-created default workspace
-    const systemQuery = `
-      query GetSystem {
-        system {
-          id
-          initialized
-          defaultWorkspace {
-            id
-            name
+    // Register a user to get authentication token
+    const registerMutation = `
+      mutation RegisterUser($input: RegisterUserInput!) {
+        registerUser(input: $input) {
+          success
+          tokens {
+            accessToken
           }
         }
       }
     `;
 
-    const systemResult = await graphql<{
-      system: {
-        id: string;
-        initialized: boolean;
-        defaultWorkspace: {
-          id: string;
-          name: string;
-        };
+    const uniqueEmail = `registry-test-${Date.now()}@2ly.ai`;
+    const registerResult = await graphql<{
+      registerUser: {
+        success: boolean;
+        tokens: { accessToken: string };
       };
-    }>(systemQuery);
+    }>(registerMutation, {
+      input: {
+        email: uniqueEmail,
+        password: 'testpassword123',
+      },
+    });
 
-    // Use the auto-created default workspace
-    workspaceId = systemResult.system.defaultWorkspace.id;
+    accessToken = registerResult.registerUser.tokens.accessToken;
+
+    // Get the user's workspace
+    const workspacesQuery = `
+      query GetWorkspaces {
+        workspaces {
+          id
+        }
+      }
+    `;
+
+    const workspacesResult = await authenticatedGraphql<{
+      workspaces: Array<{ id: string }>;
+    }>(workspacesQuery, accessToken);
+
+    workspaceId = workspacesResult.workspaces[0].id;
 
     // Query for registry servers using the workspace ID
     const registryServersQuery = `
@@ -67,14 +114,14 @@ describe('Registry CRUD Operations', () => {
       }
     `;
 
-    const registryServersResult = await graphql<{
+    const registryServersResult = await authenticatedGraphql<{
       getRegistryServers: Array<{
         id: string;
         name: string;
         description: string;
         version: string;
       }>;
-    }>(registryServersQuery, { workspaceId });
+    }>(registryServersQuery, accessToken, { workspaceId });
 
     // Verify featured servers were auto-created
     expect(registryServersResult.getRegistryServers).toBeDefined();
@@ -95,7 +142,7 @@ describe('Registry CRUD Operations', () => {
       }
     `;
 
-    const result = await graphql<{
+    const result = await authenticatedGraphql<{
       getRegistryServers: Array<{
         id: string;
         name: string;
@@ -104,7 +151,7 @@ describe('Registry CRUD Operations', () => {
         packages: string | null;
         remotes: string | null;
       }>;
-    }>(query, { workspaceId });
+    }>(query, accessToken, { workspaceId });
 
     // Verify featured servers exist
     expect(result.getRegistryServers).toBeDefined();
@@ -161,7 +208,7 @@ describe('Registry CRUD Operations', () => {
       },
     ]);
 
-    const result = await graphql<{
+    const result = await authenticatedGraphql<{
       addServerToRegistry: {
         id: string;
         name: string;
@@ -171,7 +218,7 @@ describe('Registry CRUD Operations', () => {
         version: string;
         packages: string;
       };
-    }>(addServerMutation, {
+    }>(addServerMutation, accessToken, {
       workspaceId: workspaceId,
       name: 'custom-test-server',
       description: 'A custom test MCP server',
@@ -214,9 +261,9 @@ describe('Registry CRUD Operations', () => {
       }
     `;
 
-    const addResult = await graphql<{
+    const addResult = await authenticatedGraphql<{
       addServerToRegistry: { id: string; name: string; version: string };
-    }>(addServerMutation, {
+    }>(addServerMutation, accessToken, {
       workspaceId: workspaceId,
       name: 'test-update-server',
       description: 'Original description',
@@ -247,14 +294,14 @@ describe('Registry CRUD Operations', () => {
       }
     `;
 
-    const updateResult = await graphql<{
+    const updateResult = await authenticatedGraphql<{
       updateServerInRegistry: {
         id: string;
         name: string;
         version: string;
         description: string;
       };
-    }>(updateServerMutation, {
+    }>(updateServerMutation, accessToken, {
       serverId,
       version: '2.0.0',
       description: 'Updated description',
@@ -277,9 +324,9 @@ describe('Registry CRUD Operations', () => {
       }
     `;
 
-    const serversResult = await graphql<{
+    const serversResult = await authenticatedGraphql<{
       getRegistryServers: Array<{ id: string; name: string; packages: string | null }>;
-    }>(getServersQuery, { workspaceId });
+    }>(getServersQuery, accessToken, { workspaceId });
 
     const registryServer = serversResult.getRegistryServers[0];
     expect(registryServer).toBeDefined();
@@ -314,13 +361,13 @@ describe('Registry CRUD Operations', () => {
       }
     `;
 
-    const configResult = await graphql<{
+    const configResult = await authenticatedGraphql<{
       createMCPServer: {
         id: string;
         name: string;
         registryServer: { id: string; name: string };
       };
-    }>(createMcpServerMutation, {
+    }>(createMcpServerMutation, accessToken, {
       name: 'Test MCP Config',
       description: 'Test configuration',
       repositoryUrl: 'https://github.com/test/server',
@@ -346,9 +393,9 @@ describe('Registry CRUD Operations', () => {
       }
     `;
 
-    const serversResult = await graphql<{
+    const serversResult = await authenticatedGraphql<{
       getRegistryServers: Array<{ id: string; name: string; packages: string | null }>;
-    }>(getServersQuery, { workspaceId });
+    }>(getServersQuery, accessToken, { workspaceId });
 
     const registryServer = serversResult.getRegistryServers[0];
 
@@ -378,7 +425,7 @@ describe('Registry CRUD Operations', () => {
       }
     `;
 
-    await graphql(createMcpServerMutation, {
+    await authenticatedGraphql(createMcpServerMutation, accessToken, {
       name: 'Blocking Config',
       description: 'Config that blocks updates',
       repositoryUrl: 'https://github.com/test/server',
@@ -399,7 +446,7 @@ describe('Registry CRUD Operations', () => {
     `;
 
     await expect(
-      graphql(updateServerMutation, {
+      authenticatedGraphql(updateServerMutation, accessToken, {
         serverId: registryServer.id,
         version: '2.0.0',
       }),
@@ -418,9 +465,9 @@ describe('Registry CRUD Operations', () => {
       }
     `;
 
-    const serversResult = await graphql<{
+    const serversResult = await authenticatedGraphql<{
       getRegistryServers: Array<{ id: string; name: string; packages: string | null }>;
-    }>(getServersQuery, { workspaceId });
+    }>(getServersQuery, accessToken, { workspaceId });
 
     const registryServer = serversResult.getRegistryServers[0];
 
@@ -450,7 +497,7 @@ describe('Registry CRUD Operations', () => {
       }
     `;
 
-    await graphql(createMcpServerMutation, {
+    await authenticatedGraphql(createMcpServerMutation, accessToken, {
       name: 'Blocking Config',
       description: 'Config that blocks deletion',
       repositoryUrl: 'https://github.com/test/server',
@@ -470,7 +517,7 @@ describe('Registry CRUD Operations', () => {
     `;
 
     await expect(
-      graphql(deleteServerMutation, {
+      authenticatedGraphql(deleteServerMutation, accessToken, {
         serverId: registryServer.id,
       }),
     ).rejects.toThrow(/used by.*source/);
@@ -488,9 +535,9 @@ describe('Registry CRUD Operations', () => {
       }
     `;
 
-    const serversResult = await graphql<{
+    const serversResult = await authenticatedGraphql<{
       getRegistryServers: Array<{ id: string; name: string; packages: string | null }>;
-    }>(getServersQuery, { workspaceId });
+    }>(getServersQuery, accessToken, { workspaceId });
 
     const registryServer = serversResult.getRegistryServers[0];
 
@@ -520,9 +567,9 @@ describe('Registry CRUD Operations', () => {
       }
     `;
 
-    const configResult = await graphql<{
+    const configResult = await authenticatedGraphql<{
       createMCPServer: { id: string; name: string };
-    }>(createMcpServerMutation, {
+    }>(createMcpServerMutation, accessToken, {
       name: 'Temporary Config',
       description: 'Config to be removed',
       repositoryUrl: 'https://github.com/test/server',
@@ -543,7 +590,7 @@ describe('Registry CRUD Operations', () => {
       }
     `;
 
-    await graphql(deleteMcpServerMutation, { id: configId });
+    await authenticatedGraphql(deleteMcpServerMutation, accessToken, { id: configId });
 
     // Now delete should succeed
     const deleteServerMutation = `
@@ -555,9 +602,9 @@ describe('Registry CRUD Operations', () => {
       }
     `;
 
-    const deleteResult = await graphql<{
+    const deleteResult = await authenticatedGraphql<{
       removeServerFromRegistry: { id: string; name: string };
-    }>(deleteServerMutation, {
+    }>(deleteServerMutation, accessToken, {
       serverId: registryServer.id,
     });
 
@@ -577,9 +624,9 @@ describe('Registry CRUD Operations', () => {
       }
     `;
 
-    const serversResult = await graphql<{
+    const serversResult = await authenticatedGraphql<{
       getRegistryServers: Array<{ id: string; name: string; packages: string | null }>;
-    }>(getServersQuery, { workspaceId });
+    }>(getServersQuery, accessToken, { workspaceId });
 
     const registryServer = serversResult.getRegistryServers[0];
 
@@ -610,7 +657,7 @@ describe('Registry CRUD Operations', () => {
     `;
 
     for (let i = 1; i <= 3; i++) {
-      await graphql(createMcpServerMutation, {
+      await authenticatedGraphql(createMcpServerMutation, accessToken, {
         name: `Config ${i}`,
         description: `Test configuration ${i}`,
         repositoryUrl: 'https://github.com/test/server',
@@ -631,7 +678,7 @@ describe('Registry CRUD Operations', () => {
     `;
 
     try {
-      await graphql(deleteServerMutation, {
+      await authenticatedGraphql(deleteServerMutation, accessToken, {
         serverId: registryServer.id,
       });
       // Should not reach here

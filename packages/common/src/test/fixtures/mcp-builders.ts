@@ -491,11 +491,12 @@ export const createToolset = async (
  */
 export const updateMCPServerToEdgeRuntime = async (
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  graphql: <T = any>(query: string, variables?: Record<string, any>) => Promise<T>,
+  graphql: <T = any>(query: string, variables?: Record<string, any>, authToken?: string) => Promise<T>,
   mcpServerId: string,
   workspaceId: string,
+  authToken?: string,
 ): Promise<{ id: string; runOn: string; runtime: { id: string; name: string } }> => {
-  // Get the EDGE runtime ID
+  // Get the EDGE runtime ID (system query doesn't require auth)
   const runtimeId = await getRuntimeIdByType(graphql, workspaceId, 'EDGE');
 
   if (!runtimeId) {
@@ -522,7 +523,7 @@ export const updateMCPServerToEdgeRuntime = async (
     mcpServerId,
     runOn: 'EDGE',
     runtimeId,
-  });
+  }, authToken);
 
   return result.updateMCPServerRunOn;
 };

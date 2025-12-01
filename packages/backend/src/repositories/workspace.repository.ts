@@ -344,6 +344,17 @@ export class WorkspaceRepository {
   // Registry server management methods
 
   /**
+   * Get a registry server by ID with its workspace.
+   * Used for authorization checks on registry server mutations.
+   */
+  async getRegistryServerById(serverId: string): Promise<dgraphResolversTypes.McpRegistryServer | null> {
+    const result = await this.dgraphService.query<{
+      getMCPRegistryServer: dgraphResolversTypes.McpRegistryServer | null;
+    }>(GET_REGISTRY_SERVER, { id: serverId });
+    return result.getMCPRegistryServer;
+  }
+
+  /**
    * Get server usage information for error messages
    */
   private async getServerUsageInfo(serverId: string): Promise<{

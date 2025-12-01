@@ -114,6 +114,17 @@ export const GET_MCPSERVER = gql`
   }
 `;
 
+export const GET_MCPSERVER_WITH_WORKSPACE = gql`
+  query getMCPServerWithWorkspace($id: ID!) {
+    getMCPServer(id: $id) {
+      id
+      workspace {
+        id
+      }
+    }
+  }
+`;
+
 export const LINK_RUNTIME = gql`
   mutation linkRuntime($mcpServerId: ID!, $runtimeId: ID!) {
     updateMCPServer(input: { filter: { id: [$mcpServerId] }, set: { runtime: { id: $runtimeId } } }) {

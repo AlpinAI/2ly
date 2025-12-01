@@ -35,7 +35,7 @@ test.describe('MCP Client Transports', () => {
 
   test.beforeAll(async ({ resetDatabase, seedDatabase, graphql }) => {
     // Reset database and start runtime with HTTP server (port 3001)
-    // This only happens ONCE for all tests, saving ~120 seconds of runtime restarts
+    // This only happens ONCE for all tests of this file
     await resetDatabase(true);
 
     // Seed database with single MCP server (filesystem - STDIO transport)
@@ -44,8 +44,11 @@ test.describe('MCP Client Transports', () => {
     const workspaceId = entityIds['default-workspace'];
     const mcpServerId = entityIds['server-file-system'];
 
+    // Get auth token for authenticated API calls (needed for mutations)
+    const authToken = await loginAndGetToken('user1@2ly.ai', 'password123');
+
     // Update MCP server to use EDGE runtime (GLOBAL runOn has been removed)
-    await updateMCPServerToEdgeRuntime(graphql, mcpServerId, workspaceId);
+    await updateMCPServerToEdgeRuntime(graphql, mcpServerId, workspaceId, authToken);
 
     // Get the workspace key
     const result = await dgraphQL<{
@@ -57,9 +60,6 @@ test.describe('MCP Client Transports', () => {
     // The runtime needs time to connect to the MCP server and load its tools
     // Using a simple setTimeout since we can't use page.waitForTimeout in beforeAll
     await new Promise((resolve) => setTimeout(resolve, 15000));
-
-    // Get auth token for authenticated API calls
-    const authToken = await loginAndGetToken('user1@2ly.ai', 'password123');
 
     // Create a shared toolset that all tests will use
     // Tests only create their own MCP clients, they don't modify this toolset

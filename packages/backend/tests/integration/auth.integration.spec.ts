@@ -866,8 +866,8 @@ describe('Authentication Integration Tests', () => {
       const toolCallsQuery = `
         query GetToolCalls($workspaceId: ID!) {
           toolCalls(workspaceId: $workspaceId) {
-            items {
-              id
+            stats {
+              total
             }
           }
         }
@@ -940,6 +940,289 @@ describe('Authentication Integration Tests', () => {
       } catch (error) {
         expect((error as Error).message).toContain('FORBIDDEN');
       }
+    });
+  });
+
+  describe('Mutation Authorization', () => {
+    /**
+     * Test Category A: Direct workspaceId mutations
+     * createToolSet requires workspaceId parameter
+     */
+    it('should deny createToolSet mutation when not authenticated', async () => {
+      const registerMutation = `
+        mutation RegisterUser($input: RegisterUserInput!) {
+          registerUser(input: $input) {
+            success
+            tokens {
+              accessToken
+            }
+          }
+        }
+      `;
+
+      const uniqueEmail = `toolset-auth-${Date.now()}@2ly.ai`;
+      const registerResult = await graphql(registerMutation, {
+        input: {
+          email: uniqueEmail,
+          password: 'testpassword123',
+        },
+      });
+
+      const accessToken = registerResult.registerUser.tokens.accessToken;
+      const workspacesQuery = `
+        query GetWorkspaces {
+          workspaces {
+            id
+          }
+        }
+      `;
+      const workspacesResult = await authenticatedGraphql(workspacesQuery, accessToken);
+      const workspaceId = workspacesResult.workspaces[0].id;
+
+      // Try to create ToolSet without authentication
+      const createToolSetMutation = `
+        mutation CreateToolSet($name: String!, $description: String!, $workspaceId: ID!) {
+          createToolSet(name: $name, description: $description, workspaceId: $workspaceId) {
+            id
+            name
+          }
+        }
+      `;
+
+      try {
+        await graphql(createToolSetMutation, {
+          name: 'Test ToolSet',
+          description: 'A test tool set',
+          workspaceId,
+        });
+        expect(true).toBe(false);
+      } catch (error) {
+        expect((error as Error).message).toContain('UNAUTHENTICATED');
+      }
+    });
+
+    it('should deny createToolSet mutation in another users workspace', async () => {
+      const registerMutation = `
+        mutation RegisterUser($input: RegisterUserInput!) {
+          registerUser(input: $input) {
+            success
+            tokens {
+              accessToken
+            }
+          }
+        }
+      `;
+
+      // Register User A
+      const userAEmail = `usera-toolset-mut-${Date.now()}@2ly.ai`;
+      const userAResult = await graphql(registerMutation, {
+        input: {
+          email: userAEmail,
+          password: 'password123',
+        },
+      });
+      const userAToken = userAResult.registerUser.tokens.accessToken;
+
+      // Get User A's workspace
+      const workspacesQuery = `
+        query GetWorkspaces {
+          workspaces {
+            id
+          }
+        }
+      `;
+      const userAWorkspaces = await authenticatedGraphql(workspacesQuery, userAToken);
+      const userAWorkspaceId = userAWorkspaces.workspaces[0].id;
+
+      // Register User B
+      const userBEmail = `userb-toolset-mut-${Date.now()}@2ly.ai`;
+      const userBResult = await graphql(registerMutation, {
+        input: {
+          email: userBEmail,
+          password: 'password123',
+        },
+      });
+      const userBToken = userBResult.registerUser.tokens.accessToken;
+
+      // User B tries to create a ToolSet in User A's workspace
+      const createToolSetMutation = `
+        mutation CreateToolSet($name: String!, $description: String!, $workspaceId: ID!) {
+          createToolSet(name: $name, description: $description, workspaceId: $workspaceId) {
+            id
+            name
+          }
+        }
+      `;
+
+      try {
+        await authenticatedGraphql(createToolSetMutation, userBToken, {
+          name: 'Malicious ToolSet',
+          description: 'Trying to create in wrong workspace',
+          workspaceId: userAWorkspaceId,
+        });
+        expect(true).toBe(false);
+      } catch (error) {
+        expect((error as Error).message).toContain('FORBIDDEN');
+      }
+    });
+
+    /**
+     * Test Category B: Entity ID mutations requiring workspace lookup
+     * updateWorkspace requires looking up the workspace by ID
+     */
+    it('should deny updateWorkspace mutation in another users workspace', async () => {
+      const registerMutation = `
+        mutation RegisterUser($input: RegisterUserInput!) {
+          registerUser(input: $input) {
+            success
+            tokens {
+              accessToken
+            }
+          }
+        }
+      `;
+
+      // Register User A
+      const userAEmail = `usera-workspace-mut-${Date.now()}@2ly.ai`;
+      const userAResult = await graphql(registerMutation, {
+        input: {
+          email: userAEmail,
+          password: 'password123',
+        },
+      });
+      const userAToken = userAResult.registerUser.tokens.accessToken;
+
+      // Get User A's workspace
+      const workspacesQuery = `
+        query GetWorkspaces {
+          workspaces {
+            id
+          }
+        }
+      `;
+      const userAWorkspaces = await authenticatedGraphql(workspacesQuery, userAToken);
+      const userAWorkspaceId = userAWorkspaces.workspaces[0].id;
+
+      // Register User B
+      const userBEmail = `userb-workspace-mut-${Date.now()}@2ly.ai`;
+      const userBResult = await graphql(registerMutation, {
+        input: {
+          email: userBEmail,
+          password: 'password123',
+        },
+      });
+      const userBToken = userBResult.registerUser.tokens.accessToken;
+
+      // User B tries to update User A's workspace
+      const updateWorkspaceMutation = `
+        mutation UpdateWorkspace($id: ID!, $name: String!) {
+          updateWorkspace(id: $id, name: $name) {
+            id
+            name
+          }
+        }
+      `;
+
+      try {
+        await authenticatedGraphql(updateWorkspaceMutation, userBToken, {
+          id: userAWorkspaceId,
+          name: 'Hacked Workspace Name',
+        });
+        expect(true).toBe(false);
+      } catch (error) {
+        expect((error as Error).message).toContain('FORBIDDEN');
+      }
+    });
+
+    /**
+     * Test Category C: Cross-entity mutations (validates both entities)
+     * Test pattern: User creates entities in their own workspace,
+     * another user tries to manipulate them
+     */
+    it('should allow user to create and manage resources in their own workspace', async () => {
+      const registerMutation = `
+        mutation RegisterUser($input: RegisterUserInput!) {
+          registerUser(input: $input) {
+            success
+            tokens {
+              accessToken
+            }
+          }
+        }
+      `;
+
+      const uniqueEmail = `own-workspace-${Date.now()}@2ly.ai`;
+      const registerResult = await graphql(registerMutation, {
+        input: {
+          email: uniqueEmail,
+          password: 'testpassword123',
+        },
+      });
+
+      const accessToken = registerResult.registerUser.tokens.accessToken;
+
+      // Get workspace
+      const workspacesQuery = `
+        query GetWorkspaces {
+          workspaces {
+            id
+          }
+        }
+      `;
+      const workspacesResult = await authenticatedGraphql(workspacesQuery, accessToken);
+      const workspaceId = workspacesResult.workspaces[0].id;
+
+      // Create a ToolSet in own workspace - should succeed
+      const createToolSetMutation = `
+        mutation CreateToolSet($name: String!, $description: String!, $workspaceId: ID!) {
+          createToolSet(name: $name, description: $description, workspaceId: $workspaceId) {
+            id
+            name
+          }
+        }
+      `;
+
+      const createResult = await authenticatedGraphql(createToolSetMutation, accessToken, {
+        name: 'My ToolSet',
+        description: 'My own tool set',
+        workspaceId,
+      });
+
+      expect(createResult.createToolSet).toBeDefined();
+      expect(createResult.createToolSet.name).toBe('My ToolSet');
+
+      // Update the ToolSet - should succeed
+      const updateToolSetMutation = `
+        mutation UpdateToolSet($id: ID!, $name: String!, $description: String!) {
+          updateToolSet(id: $id, name: $name, description: $description) {
+            id
+            name
+          }
+        }
+      `;
+
+      const updateResult = await authenticatedGraphql(updateToolSetMutation, accessToken, {
+        id: createResult.createToolSet.id,
+        name: 'My Updated ToolSet',
+        description: 'Updated description',
+      });
+
+      expect(updateResult.updateToolSet.name).toBe('My Updated ToolSet');
+
+      // Delete the ToolSet - should succeed
+      const deleteToolSetMutation = `
+        mutation DeleteToolSet($id: ID!) {
+          deleteToolSet(id: $id) {
+            id
+          }
+        }
+      `;
+
+      const deleteResult = await authenticatedGraphql(deleteToolSetMutation, accessToken, {
+        id: createResult.createToolSet.id,
+      });
+
+      expect(deleteResult.deleteToolSet.id).toBe(createResult.createToolSet.id);
     });
   });
 });
