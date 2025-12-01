@@ -3,6 +3,7 @@ import { injectable, inject } from 'inversify';
 import { AuthenticationService } from '../services/auth/auth.service';
 import { GraphQLResolveInfo } from 'graphql';
 import { JwtPayload } from '../services/auth/jwt.service';
+import { WorkspaceRepository } from '../repositories';
 
 export interface AuthContext {
   user?: {
@@ -31,7 +32,8 @@ export interface AuthenticatedContext extends AuthContext {
 @injectable()
 export class GraphQLAuthMiddleware {
   constructor(
-    @inject(AuthenticationService) private readonly authService: AuthenticationService
+    @inject(AuthenticationService) private readonly authService: AuthenticationService,
+    @inject(WorkspaceRepository) private readonly workspaceRepository: WorkspaceRepository
   ) { }
 
   /**
@@ -138,21 +140,34 @@ export class GraphQLAuthMiddleware {
 
   /**
    * Middleware hook to check if user has access to workspace.
+   *
+   * SECURITY: This method validates workspace access against the database, not JWT claims.
+   * The JWT may contain a stale workspaceId from when it was issued, but the user
+   * may have since lost access to that workspace (e.g., removed as admin/member).
+   * Always verify current access in the database before granting workspace access.
    */
-  requireWorkspaceAccess(
+  async requireWorkspaceAccess(
     context: AuthContext,
     workspaceId: string,
     allowAdmin: boolean = true
-  ): AuthenticatedContext {
+  ): Promise<AuthenticatedContext> {
     const authContext = this.requireAuth(context);
 
-    // Admin can access any workspace if allowed
+    // Admin role from JWT can access any workspace if allowAdmin is true.
+    // Note: This trusts the JWT's admin claim. For high-security operations,
+    // consider verifying admin status in the database as well.
     if (allowAdmin && authContext.user.role === 'admin') {
       return authContext;
     }
 
-    // Check if user has access to the specific workspace
-    if (authContext.user.workspaceId !== workspaceId) {
+    // SECURITY: Validate workspace access against database.
+    // Do not rely on JWT claims (authContext.user.workspaceId) as they may be stale.
+    const hasAccess = await this.workspaceRepository.hasUserAccess(
+      authContext.user.userId,
+      workspaceId
+    );
+
+    if (!hasAccess) {
       throw new Error('Access denied to this workspace');
     }
 
@@ -240,6 +255,10 @@ export class GraphQLAuthMiddleware {
 
   /**
    * Create a resolver wrapper that requires workspace access.
+   *
+   * SECURITY: This wrapper validates workspace access against the database before
+   * executing the resolver. This ensures users cannot access workspaces they've
+   * been removed from, even if their JWT was issued when they had access.
    */
   withWorkspaceAccess<TSource, TArgs, TContext extends AuthContext, TReturn>(
     resolver: (
@@ -247,17 +266,18 @@ export class GraphQLAuthMiddleware {
       args: TArgs,
       context: AuthenticatedContext,
       info: GraphQLResolveInfo
-    ) => TReturn,
+    ) => TReturn | Promise<TReturn>,
     allowAdmin: boolean = true
   ) {
-    return (source: TSource, args: TArgs, context: TContext, info: GraphQLResolveInfo): TReturn => {
+    return async (source: TSource, args: TArgs, context: TContext, info: GraphQLResolveInfo): Promise<TReturn> => {
       const workspaceId = this.extractWorkspaceId(args as Record<string, unknown>, source as Record<string, unknown> | null);
 
       if (!workspaceId) {
         throw new Error('Workspace context required');
       }
 
-      const authContext = this.requireWorkspaceAccess(context, workspaceId, allowAdmin);
+      // Note: requireWorkspaceAccess is now async and validates against the database
+      const authContext = await this.requireWorkspaceAccess(context, workspaceId, allowAdmin);
       this.logAuthEvent(authContext, 'workspace_access', {
         resolver: info.fieldName,
         parentType: info.parentType.name,

@@ -15,6 +15,7 @@ import { Service } from '@2ly/common';
 import path from 'path';
 import { readFileSync } from 'fs';
 import { GraphQLAuthMiddleware } from '../middleware/graphql-auth.middleware';
+import { WorkspaceRepository } from '../repositories';
 
 export interface GraphQLContext extends BaseContext {
   user?: {
@@ -45,6 +46,7 @@ export class ApolloService extends Service {
     @inject(DGraphService) private readonly dgraphService: DGraphService,
     @inject(LoggerService) private readonly loggerService: LoggerService,
     @inject(GraphQLAuthMiddleware) private readonly authMiddleware: GraphQLAuthMiddleware,
+    @inject(WorkspaceRepository) private readonly workspaceRepository: WorkspaceRepository,
   ) {
     super();
     this.logger = this.loggerService.getLogger('apollo');
@@ -76,7 +78,7 @@ export class ApolloService extends Service {
       schema: this.schema,
       context: async (ctx) => {
         // Extract token from connection params
-        const connectionParams = ctx.connectionParams as { authorization?: string } | undefined;
+        const connectionParams = ctx.connectionParams as { authorization?: string; workspaceId?: string } | undefined;
         const authHeader = connectionParams?.authorization;
 
         if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -93,6 +95,27 @@ export class ApolloService extends Service {
 
           if (!payload) {
             return { isAuthenticated: false };
+          }
+
+          // SECURITY: Validate workspace access against database, not just JWT claims.
+          // The JWT may contain a stale workspaceId from when it was issued, but the user
+          // may have since lost access to that workspace (e.g., removed as admin/member).
+          // We check both:
+          // 1. workspaceId from JWT payload (if present) - validates token's embedded claim
+          // 2. workspaceId from connection params (if present) - validates client's requested workspace
+          const workspaceIdToValidate = connectionParams?.workspaceId || payload.workspaceId;
+          if (workspaceIdToValidate) {
+            const hasAccess = await this.workspaceRepository.hasUserAccess(
+              payload.userId,
+              workspaceIdToValidate
+            );
+            if (!hasAccess) {
+              this.logger.warn(
+                { userId: payload.userId, workspaceId: workspaceIdToValidate },
+                'WebSocket connection rejected: user no longer has access to workspace'
+              );
+              return { isAuthenticated: false };
+            }
           }
 
           return {

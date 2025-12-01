@@ -19,7 +19,7 @@ import {
 import { createAuthResolvers } from '../resolvers/auth.resolver';
 import { AuthenticationService, JwtService, PasswordPolicyService } from '../services/auth';
 import { Container } from 'inversify';
-import { requireAuth, requireWorkspaceAccess, requireAuthAndWorkspaceAccess, AuthContext } from './authorization.helpers';
+import { requireAuth, requireWorkspaceAccess, requireAuthAndWorkspaceAccess, AuthContext, withPeriodicValidation } from './authorization.helpers';
 
 const observableToAsyncGenerator = <T, K extends string>(
   observable: Observable<T>,
@@ -34,8 +34,6 @@ const observableToAsyncGenerator = <T, K extends string>(
 
 export const resolvers = (container: Container = defaultContainer): apolloResolversTypes.Resolvers => {
   const logger = container.get(LoggerService).getLogger('resolvers');
-  // eslint-disable-next-line @typescript-eslint/no-unused-expressions
-  logger;
   const systemRepository = container.get(SystemRepository);
   const mcpServerRepository = container.get(MCPServerRepository);
   const mcpToolRepository = container.get(MCPToolRepository);
@@ -602,15 +600,18 @@ export const resolvers = (container: Container = defaultContainer): apolloResolv
     MCPTool: {},
     ToolSet: {},
     Subscription: {
+      // SECURITY: All workspace-scoped subscriptions use withPeriodicValidation
+      // to re-check access every 5 minutes and complete gracefully if revoked
       workspace: {
         subscribe: async (
           _parent: unknown,
           { workspaceId }: { workspaceId: string },
           context: AuthContext
         ) => {
-          await requireAuthAndWorkspaceAccess(workspaceRepository, context, workspaceId);
+          const userId = await requireAuthAndWorkspaceAccess(workspaceRepository, context, workspaceId);
           const observable = workspaceRepository.observeWorkspace(workspaceId);
-          return observableToAsyncGenerator(observable, 'workspace');
+          const generator = observableToAsyncGenerator(observable, 'workspace');
+          return withPeriodicValidation(generator, userId, workspaceId, workspaceRepository, logger);
         },
       },
       runtimes: {
@@ -619,9 +620,10 @@ export const resolvers = (container: Container = defaultContainer): apolloResolv
           { workspaceId }: { workspaceId: string },
           context: AuthContext
         ) => {
-          await requireAuthAndWorkspaceAccess(workspaceRepository, context, workspaceId);
+          const userId = await requireAuthAndWorkspaceAccess(workspaceRepository, context, workspaceId);
           const observable = workspaceRepository.observeRuntimes(workspaceId);
-          return observableToAsyncGenerator(observable, 'runtimes');
+          const generator = observableToAsyncGenerator(observable, 'runtimes');
+          return withPeriodicValidation(generator, userId, workspaceId, workspaceRepository, logger);
         },
       },
       mcpServers: {
@@ -630,9 +632,10 @@ export const resolvers = (container: Container = defaultContainer): apolloResolv
           { workspaceId }: { workspaceId: string },
           context: AuthContext
         ) => {
-          await requireAuthAndWorkspaceAccess(workspaceRepository, context, workspaceId);
+          const userId = await requireAuthAndWorkspaceAccess(workspaceRepository, context, workspaceId);
           const observable = workspaceRepository.observeMCPServers(workspaceId);
-          return observableToAsyncGenerator(observable, 'mcpServers');
+          const generator = observableToAsyncGenerator(observable, 'mcpServers');
+          return withPeriodicValidation(generator, userId, workspaceId, workspaceRepository, logger);
         },
       },
       mcpTools: {
@@ -641,12 +644,15 @@ export const resolvers = (container: Container = defaultContainer): apolloResolv
           { workspaceId }: { workspaceId: string },
           context: AuthContext
         ) => {
-          await requireAuthAndWorkspaceAccess(workspaceRepository, context, workspaceId);
+          const userId = await requireAuthAndWorkspaceAccess(workspaceRepository, context, workspaceId);
           const observable = workspaceRepository.observeMCPTools(workspaceId);
-          return observableToAsyncGenerator(observable, 'mcpTools');
+          const generator = observableToAsyncGenerator(observable, 'mcpTools');
+          return withPeriodicValidation(generator, userId, workspaceId, workspaceRepository, logger);
         },
       },
       workspaces: {
+        // Note: This subscription is user-scoped (lists user's workspaces), not workspace-scoped.
+        // No periodic workspace validation needed as user is always viewing their own workspaces.
         subscribe: (_parent: unknown, _args: unknown, context: AuthContext) => {
           const userId = requireAuth(context);
           const observable = workspaceRepository.observeWorkspaces(userId);
@@ -659,9 +665,10 @@ export const resolvers = (container: Container = defaultContainer): apolloResolv
           { workspaceId }: { workspaceId: string },
           context: AuthContext
         ) => {
-          await requireAuthAndWorkspaceAccess(workspaceRepository, context, workspaceId);
+          const userId = await requireAuthAndWorkspaceAccess(workspaceRepository, context, workspaceId);
           const observable = monitoringRepository.observeToolCalls(workspaceId);
-          return observableToAsyncGenerator(observable, 'toolCalls');
+          const generator = observableToAsyncGenerator(observable, 'toolCalls');
+          return withPeriodicValidation(generator, userId, workspaceId, workspaceRepository, logger);
         },
       },
       toolSets: {
@@ -670,9 +677,10 @@ export const resolvers = (container: Container = defaultContainer): apolloResolv
           { workspaceId }: { workspaceId: string },
           context: AuthContext
         ) => {
-          await requireAuthAndWorkspaceAccess(workspaceRepository, context, workspaceId);
+          const userId = await requireAuthAndWorkspaceAccess(workspaceRepository, context, workspaceId);
           const observable = toolSetRepository.observeToolSets(workspaceId);
-          return observableToAsyncGenerator(observable, 'toolSets');
+          const generator = observableToAsyncGenerator(observable, 'toolSets');
+          return withPeriodicValidation(generator, userId, workspaceId, workspaceRepository, logger);
         },
       },
     },

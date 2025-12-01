@@ -4,6 +4,7 @@ import { GraphQLAuthMiddleware, AuthContext, AuthenticatedContext } from './grap
 import { AuthenticationService } from '../services/auth/auth.service';
 import { JwtPayload } from '../services/auth/jwt.service';
 import { GraphQLResolveInfo } from 'graphql';
+import { WorkspaceRepository } from '../repositories';
 
 // Mock authentication service
 const mockVerifyAccessToken = vi.fn();
@@ -11,12 +12,18 @@ const mockAuthService = {
   verifyAccessToken: mockVerifyAccessToken,
 } as unknown as AuthenticationService;
 
+// Mock workspace repository
+const mockHasUserAccess = vi.fn();
+const mockWorkspaceRepository = {
+  hasUserAccess: mockHasUserAccess,
+} as unknown as WorkspaceRepository;
+
 describe('GraphQLAuthMiddleware', () => {
   let middleware: GraphQLAuthMiddleware;
   let mockRequest: Partial<FastifyRequest>;
 
   beforeEach(() => {
-    middleware = new GraphQLAuthMiddleware(mockAuthService);
+    middleware = new GraphQLAuthMiddleware(mockAuthService, mockWorkspaceRepository);
     mockRequest = {
       headers: {},
       ip: '127.0.0.1',
@@ -196,7 +203,7 @@ describe('GraphQLAuthMiddleware', () => {
   });
 
   describe('Workspace Access Control', () => {
-    it('should allow admin access to any workspace by default', () => {
+    it('should allow admin access to any workspace by default', async () => {
       const context: AuthContext = {
         isAuthenticated: true,
         user: {
@@ -208,11 +215,12 @@ describe('GraphQLAuthMiddleware', () => {
         request: mockRequest as FastifyRequest,
       };
 
-      const authContext = middleware.requireWorkspaceAccess(context, 'different-ws');
+      const authContext = await middleware.requireWorkspaceAccess(context, 'different-ws');
       expect(authContext.user.workspaceId).toBe('ws1');
     });
 
-    it('should deny admin access when allowAdmin is false', () => {
+    it('should deny admin access when allowAdmin is false and no DB access', async () => {
+      mockHasUserAccess.mockResolvedValue(false);
       const context: AuthContext = {
         isAuthenticated: true,
         user: {
@@ -224,12 +232,14 @@ describe('GraphQLAuthMiddleware', () => {
         request: mockRequest as FastifyRequest,
       };
 
-      expect(() => middleware.requireWorkspaceAccess(context, 'different-ws', false)).toThrow(
+      await expect(middleware.requireWorkspaceAccess(context, 'different-ws', false)).rejects.toThrow(
         'Access denied to this workspace'
       );
+      expect(mockHasUserAccess).toHaveBeenCalledWith('456', 'different-ws');
     });
 
-    it('should allow member access to their workspace', () => {
+    it('should allow member access when they have database access', async () => {
+      mockHasUserAccess.mockResolvedValue(true);
       const context: AuthContext = {
         isAuthenticated: true,
         user: {
@@ -241,11 +251,13 @@ describe('GraphQLAuthMiddleware', () => {
         request: mockRequest as FastifyRequest,
       };
 
-      const authContext = middleware.requireWorkspaceAccess(context, 'ws1');
+      const authContext = await middleware.requireWorkspaceAccess(context, 'ws1');
       expect(authContext.user.workspaceId).toBe('ws1');
+      expect(mockHasUserAccess).toHaveBeenCalledWith('123', 'ws1');
     });
 
-    it('should deny member access to different workspace', () => {
+    it('should deny member access when they have no database access', async () => {
+      mockHasUserAccess.mockResolvedValue(false);
       const context: AuthContext = {
         isAuthenticated: true,
         user: {
@@ -257,9 +269,30 @@ describe('GraphQLAuthMiddleware', () => {
         request: mockRequest as FastifyRequest,
       };
 
-      expect(() => middleware.requireWorkspaceAccess(context, 'different-ws')).toThrow(
+      await expect(middleware.requireWorkspaceAccess(context, 'different-ws')).rejects.toThrow(
         'Access denied to this workspace'
       );
+      expect(mockHasUserAccess).toHaveBeenCalledWith('123', 'different-ws');
+    });
+
+    it('should validate against database, not JWT claims', async () => {
+      // Even though JWT has workspaceId: 'ws1', if user has DB access to 'ws2', allow it
+      mockHasUserAccess.mockResolvedValue(true);
+      const context: AuthContext = {
+        isAuthenticated: true,
+        user: {
+          userId: '123',
+          email: 'user1@2ly.ai',
+          workspaceId: 'ws1', // JWT says ws1
+          role: 'member',
+        },
+        request: mockRequest as FastifyRequest,
+      };
+
+      // Requesting ws2 - should check DB, not just compare JWT claims
+      const authContext = await middleware.requireWorkspaceAccess(context, 'ws2');
+      expect(authContext.user.userId).toBe('123');
+      expect(mockHasUserAccess).toHaveBeenCalledWith('123', 'ws2');
     });
   });
 
@@ -407,7 +440,8 @@ describe('GraphQLAuthMiddleware', () => {
       );
     });
 
-    it('should create workspace-protected resolver wrapper', () => {
+    it('should create workspace-protected resolver wrapper', async () => {
+      mockHasUserAccess.mockResolvedValue(true);
       const mockResolver = vi.fn().mockReturnValue('workspace-result');
       const wrappedResolver = middleware.withWorkspaceAccess(mockResolver);
 
@@ -428,10 +462,11 @@ describe('GraphQLAuthMiddleware', () => {
         parentType: { name: 'TestType' },
       } as GraphQLResolveInfo;
 
-      const result = wrappedResolver({}, args, context, info);
+      const result = await wrappedResolver({}, args, context, info);
 
       expect(result).toBe('workspace-result');
       expect(mockResolver).toHaveBeenCalledWith({}, args, context, info);
+      expect(mockHasUserAccess).toHaveBeenCalledWith('123', 'ws1');
       expect(mockRequest.log!.info).toHaveBeenCalledWith(
         expect.objectContaining({
           event: 'workspace_access',
@@ -444,7 +479,7 @@ describe('GraphQLAuthMiddleware', () => {
       );
     });
 
-    it('should throw error in workspace wrapper when workspace context is missing', () => {
+    it('should throw error in workspace wrapper when workspace context is missing', async () => {
       const mockResolver = vi.fn();
       const wrappedResolver = middleware.withWorkspaceAccess(mockResolver);
 
@@ -463,10 +498,36 @@ describe('GraphQLAuthMiddleware', () => {
       const source = {}; // No workspaceId
       const info = { fieldName: 'workspaceField', parentType: { name: 'TestType' } } as GraphQLResolveInfo;
 
-      expect(() => wrappedResolver(source, args, context, info)).toThrow(
+      await expect(wrappedResolver(source, args, context, info)).rejects.toThrow(
         'Workspace context required'
       );
       expect(mockResolver).not.toHaveBeenCalled();
+    });
+
+    it('should deny access in workspace wrapper when database check fails', async () => {
+      mockHasUserAccess.mockResolvedValue(false);
+      const mockResolver = vi.fn();
+      const wrappedResolver = middleware.withWorkspaceAccess(mockResolver);
+
+      const context: AuthenticatedContext = {
+        isAuthenticated: true,
+        user: {
+          userId: '123',
+          email: 'user1@2ly.ai',
+          workspaceId: 'ws1',
+          role: 'member',
+        },
+        request: mockRequest as FastifyRequest,
+      };
+
+      const args = { workspaceId: 'ws2' };
+      const info = { fieldName: 'workspaceField', parentType: { name: 'TestType' } } as GraphQLResolveInfo;
+
+      await expect(wrappedResolver({}, args, context, info)).rejects.toThrow(
+        'Access denied to this workspace'
+      );
+      expect(mockResolver).not.toHaveBeenCalled();
+      expect(mockHasUserAccess).toHaveBeenCalledWith('123', 'ws2');
     });
   });
 });
