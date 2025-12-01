@@ -4,7 +4,6 @@ import { container as defaultContainer } from '../di/container';
 import { apolloResolversTypes, LoggerService, MCP_SERVER_RUN_ON } from '@2ly/common';
 import { Observable } from 'rxjs';
 import { latestValueFrom } from 'rxjs-for-await';
-import { MCPServerAutoConfigService } from '../services/mcp-auto-config.service';
 import {
   MCPServerRepository,
   MCPToolRepository,
@@ -15,6 +14,7 @@ import {
   MonitoringRepository,
   ToolSetRepository,
   IdentityRepository,
+  KEY_NATURE_PREFIX,
 } from '../repositories';
 import { createAuthResolvers } from '../resolvers/auth.resolver';
 import { AuthenticationService, JwtService, PasswordPolicyService } from '../services/auth';
@@ -42,7 +42,6 @@ export const resolvers = (container: Container = defaultContainer): apolloResolv
   const workspaceRepository = container.get(WorkspaceRepository);
   const toolSetRepository = container.get(ToolSetRepository);
   const identityRepository = container.get(IdentityRepository);
-  const mcpAutoConfigService = container.get(MCPServerAutoConfigService);
   const authenticationService = container.get(AuthenticationService);
   const jwtService = container.get(JwtService);
   const monitoringRepository = container.get(MonitoringRepository);
@@ -67,8 +66,13 @@ export const resolvers = (container: Container = defaultContainer): apolloResolv
         await requireAuthAndWorkspaceAccess(workspaceRepository, context, workspaceId);
         return workspaceRepository.findByIdWithRuntimes(workspaceId);
       },
-      mcpServers: async () => {
-        return mcpServerRepository.findAll();
+      mcpServers: async (
+        _parent: unknown,
+        { workspaceId }: { workspaceId: string },
+        context: GraphQLContext
+      ) => {
+        await requireAuthAndWorkspaceAccess(workspaceRepository, context, workspaceId);
+        return mcpServerRepository.findByWorkspace(workspaceId);
       },
       mcpTools: async (
         _parent: unknown,
@@ -111,9 +115,6 @@ export const resolvers = (container: Container = defaultContainer): apolloResolv
         await requireAuthAndWorkspaceAccess(workspaceRepository, context, workspaceId);
         return workspaceRepository.findById(workspaceId);
       },
-      isMCPAutoConfigEnabled: async () => {
-        return mcpAutoConfigService.isConfigured();
-      },
       getRegistryServers: async (
         _parent: unknown,
         { workspaceId }: { workspaceId: string },
@@ -146,7 +147,17 @@ export const resolvers = (container: Container = defaultContainer): apolloResolv
         await requireAuthAndWorkspaceAccess(workspaceRepository, context, workspaceId);
         return identityRepository.findKeysByRelatedId(workspaceId);
       },
-      toolsetKey: async (_parent: unknown, { toolsetId }: { toolsetId: string }) => {
+      toolsetKey: async (
+        _parent: unknown,
+        { toolsetId }: { toolsetId: string },
+        context: GraphQLContext
+      ) => {
+        const userId = requireAuth(context);
+        const toolset = await toolSetRepository.findById(toolsetId);
+        if (!toolset?.workspace?.id) {
+          throw new GraphQLError('Toolset not found', { extensions: { code: 'NOT_FOUND' } });
+        }
+        await requireWorkspaceAccess(workspaceRepository, userId, toolset.workspace.id);
         const keys = await identityRepository.findKeysByRelatedId(toolsetId);
         return keys.length > 0 ? keys[0] : null;
       },
@@ -494,17 +505,17 @@ export const resolvers = (container: Container = defaultContainer): apolloResolv
         if (!key) {
           throw new GraphQLError('Key not found', { extensions: { code: 'NOT_FOUND' } });
         }
-        // Determine workspace based on key type (prefix: WSK=workspace, TSK=toolset, RTK=runtime)
+        // Determine workspace based on key type prefix
         const prefix = key.key.substring(0, 3);
         let workspaceId: string | undefined;
-        if (prefix === 'WSK') {
+        if (prefix === KEY_NATURE_PREFIX.workspace) {
           // Workspace key - relatedId is the workspace ID
           workspaceId = key.relatedId;
-        } else if (prefix === 'TSK') {
+        } else if (prefix === KEY_NATURE_PREFIX.toolset) {
           // Toolset key - lookup toolset to get workspace
           const toolSet = await toolSetRepository.findById(key.relatedId);
           workspaceId = toolSet?.workspace?.id;
-        } else if (prefix === 'RTK') {
+        } else if (prefix === KEY_NATURE_PREFIX.runtime) {
           // Runtime key - lookup runtime to get workspace
           const runtime = await runtimeRepository.getRuntime(key.relatedId);
           workspaceId = runtime?.workspace?.id;

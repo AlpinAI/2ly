@@ -243,3 +243,28 @@ export const QUERY_MCPSERVERS = gql`
     }
   }
 `;
+
+export const QUERY_MCPSERVERS_BY_WORKSPACE = gql`
+  query queryMCPServersByWorkspace($workspaceId: ID!) {
+    queryMCPServer(filter: { has: workspace }) @cascade {
+      id
+      name
+      description
+      repositoryUrl
+      transport
+      config
+      runOn
+      tools {
+        id
+        name
+      }
+      runtime {
+        id
+        name
+      }
+      workspace(filter: { id: [$workspaceId] }) {
+        id
+      }
+    }
+  }
+`;

@@ -175,8 +175,11 @@ test.describe('Onboarding Flow', () => {
     });
 
     // step 3 should contain only one test case since on refresh the onboarding is hidden
-    test('step 3 shows completed status after connection', async ({ page, graphql, workspaceId }) => {     
+    test('step 3 shows completed status after connection', async ({ page, graphql, workspaceId }) => {
       await performLogin(page, 'user1@2ly.ai', 'password123');
+
+      // Get auth token for API calls (toolsetKey requires authentication)
+      const authToken = await loginAndGetToken('user1@2ly.ai', 'password123');
 
       // Get the toolset key
       const toolsetKeyQuery = `
@@ -186,7 +189,7 @@ test.describe('Onboarding Flow', () => {
           }
         }
       `;
-      const keyResult = await graphql<{ toolsetKey: { key: string } }>(toolsetKeyQuery, { toolsetId });
+      const keyResult = await graphql<{ toolsetKey: { key: string } }>(toolsetKeyQuery, { toolsetId }, authToken);
       toolsetKey = keyResult.toolsetKey.key;
 
       // Send toolset handshake to complete step 3

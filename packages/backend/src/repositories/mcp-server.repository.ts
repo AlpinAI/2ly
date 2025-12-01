@@ -9,6 +9,7 @@ import {
   DELETE_MCPSERVER,
   QUERY_MCP_SERVER_CAPABILITIES,
   QUERY_MCPSERVERS,
+  QUERY_MCPSERVERS_BY_WORKSPACE,
   LINK_RUNTIME,
   UNLINK_RUNTIME,
   GET_MCPSERVER,
@@ -28,6 +29,13 @@ export class MCPServerRepository {
       queryMCPServer: dgraphResolversTypes.McpServer[];
     }>(QUERY_MCPSERVERS, {});
     return res.queryMCPServer;
+  }
+
+  async findByWorkspace(workspaceId: string): Promise<dgraphResolversTypes.McpServer[]> {
+    const res = await this.dgraphService.query<{
+      queryMCPServer: dgraphResolversTypes.McpServer[];
+    }>(QUERY_MCPSERVERS_BY_WORKSPACE, { workspaceId });
+    return res.queryMCPServer ?? [];
   }
 
   async findById(id: string): Promise<dgraphResolversTypes.McpServer | null> {

@@ -428,7 +428,6 @@ export type Query = {
   __typename: 'Query';
   getRegistryServers: Array<McpRegistryServer>;
   infra: Infra;
-  isMCPAutoConfigEnabled: Scalars['Boolean']['output'];
   keyValue: Scalars['String']['output'];
   mcpServers: Maybe<Array<McpServer>>;
   mcpTools: Maybe<Array<McpTool>>;
