@@ -19,7 +19,8 @@ import {
 import { createAuthResolvers } from '../resolvers/auth.resolver';
 import { AuthenticationService, JwtService, PasswordPolicyService } from '../services/auth';
 import { Container } from 'inversify';
-import { requireAuth, requireWorkspaceAccess, requireAuthAndWorkspaceAccess, AuthContext, withPeriodicValidation } from './authorization.helpers';
+import { requireAuth, requireWorkspaceAccess, requireAuthAndWorkspaceAccess, withPeriodicValidation } from './authorization.helpers';
+import { GraphQLContext } from '../types';
 
 const observableToAsyncGenerator = <T, K extends string>(
   observable: Observable<T>,
@@ -54,14 +55,14 @@ export const resolvers = (container: Container = defaultContainer): apolloResolv
     Date: GraphQLDateTime,
     Query: {
 
-      workspaces: async (_parent: unknown, _args: unknown, context: AuthContext) => {
+      workspaces: async (_parent: unknown, _args: unknown, context: GraphQLContext) => {
         const userId = requireAuth(context);
         return workspaceRepository.findAll(userId);
       },
       workspace: async (
         _parent: unknown,
         { workspaceId }: { workspaceId: string },
-        context: AuthContext
+        context: GraphQLContext
       ) => {
         await requireAuthAndWorkspaceAccess(workspaceRepository, context, workspaceId);
         return workspaceRepository.findByIdWithRuntimes(workspaceId);
@@ -72,7 +73,7 @@ export const resolvers = (container: Container = defaultContainer): apolloResolv
       mcpTools: async (
         _parent: unknown,
         { workspaceId }: { workspaceId: string },
-        context: AuthContext
+        context: GraphQLContext
       ) => {
         await requireAuthAndWorkspaceAccess(workspaceRepository, context, workspaceId);
         return workspaceRepository.findMCPToolsByWorkspace(workspaceId);
@@ -80,7 +81,7 @@ export const resolvers = (container: Container = defaultContainer): apolloResolv
       toolSets: async (
         _parent: unknown,
         { workspaceId }: { workspaceId: string },
-        context: AuthContext
+        context: GraphQLContext
       ) => {
         await requireAuthAndWorkspaceAccess(workspaceRepository, context, workspaceId);
         return toolSetRepository.findByWorkspace(workspaceId);
@@ -105,7 +106,7 @@ export const resolvers = (container: Container = defaultContainer): apolloResolv
       workspaceMCPTools: async (
         _parent: unknown,
         { workspaceId }: { workspaceId: string },
-        context: AuthContext
+        context: GraphQLContext
       ) => {
         await requireAuthAndWorkspaceAccess(workspaceRepository, context, workspaceId);
         return workspaceRepository.findById(workspaceId);
@@ -116,7 +117,7 @@ export const resolvers = (container: Container = defaultContainer): apolloResolv
       getRegistryServers: async (
         _parent: unknown,
         { workspaceId }: { workspaceId: string },
-        context: AuthContext
+        context: GraphQLContext
       ) => {
         await requireAuthAndWorkspaceAccess(workspaceRepository, context, workspaceId);
         return workspaceRepository.findRegistryServersByWorkspace(workspaceId);
@@ -125,7 +126,7 @@ export const resolvers = (container: Container = defaultContainer): apolloResolv
       toolCalls: async (
         _parent: unknown,
         args: apolloResolversTypes.QueryToolCallsArgs,
-        context: AuthContext
+        context: GraphQLContext
       ) => {
         await requireAuthAndWorkspaceAccess(workspaceRepository, context, args.workspaceId);
         return monitoringRepository.queryToolCalls({
@@ -140,7 +141,7 @@ export const resolvers = (container: Container = defaultContainer): apolloResolv
       workspaceKeys: async (
         _parent: unknown,
         { workspaceId }: { workspaceId: string },
-        context: AuthContext
+        context: GraphQLContext
       ) => {
         await requireAuthAndWorkspaceAccess(workspaceRepository, context, workspaceId);
         return identityRepository.findKeysByRelatedId(workspaceId);
@@ -188,7 +189,7 @@ export const resolvers = (container: Container = defaultContainer): apolloResolv
       updateMCPServerRunOn: async (
         _parent: unknown,
         { mcpServerId, runOn, runtimeId }: { mcpServerId: string; runOn: MCP_SERVER_RUN_ON; runtimeId?: string | null },
-        context: AuthContext,
+        context: GraphQLContext,
       ) => {
         const userId = requireAuth(context);
         const mcpServer = await mcpServerRepository.findById(mcpServerId);
@@ -239,7 +240,7 @@ export const resolvers = (container: Container = defaultContainer): apolloResolv
           workspaceId: string;
           registryServerId: string;
         },
-        context: AuthContext,
+        context: GraphQLContext,
       ) => {
         await requireAuthAndWorkspaceAccess(workspaceRepository, context, workspaceId);
         return mcpServerRepository.create(
@@ -266,7 +267,7 @@ export const resolvers = (container: Container = defaultContainer): apolloResolv
           workspaceId: string;
           type: 'EDGE' | 'MCP';
         },
-        context: AuthContext,
+        context: GraphQLContext,
       ) => {
         await requireAuthAndWorkspaceAccess(workspaceRepository, context, workspaceId);
         return runtimeRepository.create('workspace', workspaceId, name, description, 'INACTIVE', type);
@@ -282,7 +283,7 @@ export const resolvers = (container: Container = defaultContainer): apolloResolv
           name: string;
           description: string;
         },
-        context: AuthContext,
+        context: GraphQLContext,
       ) => {
         const userId = requireAuth(context);
         const runtime = await runtimeRepository.getRuntime(id);
@@ -292,7 +293,7 @@ export const resolvers = (container: Container = defaultContainer): apolloResolv
         await requireWorkspaceAccess(workspaceRepository, userId, runtime.workspace.id);
         return runtimeRepository.update(id, name, description);
       },
-      deleteRuntime: async (_parent: unknown, { id }: { id: string }, context: AuthContext) => {
+      deleteRuntime: async (_parent: unknown, { id }: { id: string }, context: GraphQLContext) => {
         const userId = requireAuth(context);
         const runtime = await runtimeRepository.getRuntime(id);
         if (!runtime?.workspace?.id) {
@@ -310,7 +311,7 @@ export const resolvers = (container: Container = defaultContainer): apolloResolv
           mcpServerId: string;
           runtimeId: string;
         },
-        context: AuthContext,
+        context: GraphQLContext,
       ) => {
         const userId = requireAuth(context);
         const mcpServer = await mcpServerRepository.findById(mcpServerId);
@@ -336,7 +337,7 @@ export const resolvers = (container: Container = defaultContainer): apolloResolv
         }: {
           mcpServerId: string;
         },
-        context: AuthContext,
+        context: GraphQLContext,
       ) => {
         const userId = requireAuth(context);
         const mcpServer = await mcpServerRepository.findById(mcpServerId);
@@ -365,7 +366,7 @@ export const resolvers = (container: Container = defaultContainer): apolloResolv
           config: string;
           runOn?: MCP_SERVER_RUN_ON | null;
         },
-        context: AuthContext,
+        context: GraphQLContext,
       ) => {
         const userId = requireAuth(context);
         const mcpServer = await mcpServerRepository.findById(id);
@@ -375,7 +376,7 @@ export const resolvers = (container: Container = defaultContainer): apolloResolv
         await requireWorkspaceAccess(workspaceRepository, userId, mcpServer.workspace.id);
         return mcpServerRepository.update(id, name, description, repositoryUrl, transport, config, runOn ?? null);
       },
-      deleteMCPServer: async (_parent: unknown, { id }: { id: string }, context: AuthContext) => {
+      deleteMCPServer: async (_parent: unknown, { id }: { id: string }, context: GraphQLContext) => {
         const userId = requireAuth(context);
         const mcpServer = await mcpServerRepository.findById(id);
         if (!mcpServer?.workspace?.id) {
@@ -384,7 +385,7 @@ export const resolvers = (container: Container = defaultContainer): apolloResolv
         await requireWorkspaceAccess(workspaceRepository, userId, mcpServer.workspace.id);
         return mcpServerRepository.delete(id);
       },
-      updateWorkspace: async (_parent: unknown, { id, name }: { id: string; name: string }, context: AuthContext) => {
+      updateWorkspace: async (_parent: unknown, { id, name }: { id: string; name: string }, context: GraphQLContext) => {
         // For updateWorkspace, the id IS the workspaceId
         await requireAuthAndWorkspaceAccess(workspaceRepository, context, id);
         return workspaceRepository.update(id, name);
@@ -392,7 +393,7 @@ export const resolvers = (container: Container = defaultContainer): apolloResolv
       initSystem: async (_parent: unknown, { adminPassword, email }: { adminPassword: string; email: string }) => {
         return systemRepository.initSystem(adminPassword, email);
       },
-      callMCPTool: async (_parent: unknown, { toolId, input }: { toolId: string; input: string }, context: AuthContext) => {
+      callMCPTool: async (_parent: unknown, { toolId, input }: { toolId: string; input: string }, context: GraphQLContext) => {
         const userId = requireAuth(context);
         const tool = await mcpToolRepository.getToolWithWorkspace(toolId);
         if (!tool?.workspace?.id) {
@@ -412,7 +413,7 @@ export const resolvers = (container: Container = defaultContainer): apolloResolv
       addServerToRegistry: async (
         _parent: unknown,
         args: apolloResolversTypes.MutationAddServerToRegistryArgs,
-        context: AuthContext,
+        context: GraphQLContext,
       ) => {
         await requireAuthAndWorkspaceAccess(workspaceRepository, context, args.workspaceId);
         return workspaceRepository.addServerToWorkspace(args.workspaceId, {
@@ -428,7 +429,7 @@ export const resolvers = (container: Container = defaultContainer): apolloResolv
       updateServerInRegistry: async (
         _parent: unknown,
         args: apolloResolversTypes.MutationUpdateServerInRegistryArgs,
-        context: AuthContext,
+        context: GraphQLContext,
       ) => {
         const userId = requireAuth(context);
         const server = await workspaceRepository.getRegistryServerById(args.serverId);
@@ -446,7 +447,7 @@ export const resolvers = (container: Container = defaultContainer): apolloResolv
           remotes: args.remotes ?? undefined,
         });
       },
-      removeServerFromRegistry: async (_parent: unknown, { serverId }: { serverId: string }, context: AuthContext) => {
+      removeServerFromRegistry: async (_parent: unknown, { serverId }: { serverId: string }, context: GraphQLContext) => {
         const userId = requireAuth(context);
         const server = await workspaceRepository.getRegistryServerById(serverId);
         if (!server?.workspace?.id) {
@@ -460,7 +461,7 @@ export const resolvers = (container: Container = defaultContainer): apolloResolv
       completeOnboardingStep: async (
         _parent: unknown,
         { workspaceId, stepId }: { workspaceId: string; stepId: string },
-        context: AuthContext,
+        context: GraphQLContext,
       ) => {
         await requireAuthAndWorkspaceAccess(workspaceRepository, context, workspaceId);
         await workspaceRepository.completeOnboardingStep(workspaceId, stepId);
@@ -470,7 +471,7 @@ export const resolvers = (container: Container = defaultContainer): apolloResolv
       dismissOnboardingStep: async (
         _parent: unknown,
         { workspaceId, stepId }: { workspaceId: string; stepId: string },
-        context: AuthContext,
+        context: GraphQLContext,
       ) => {
         await requireAuthAndWorkspaceAccess(workspaceRepository, context, workspaceId);
         await workspaceRepository.dismissOnboardingStep(workspaceId, stepId);
@@ -481,13 +482,13 @@ export const resolvers = (container: Container = defaultContainer): apolloResolv
       createWorkspaceKey: async (
         _parent: unknown,
         { workspaceId, description }: { workspaceId: string; description: string },
-        context: AuthContext,
+        context: GraphQLContext,
       ) => {
         await requireAuthAndWorkspaceAccess(workspaceRepository, context, workspaceId);
         return identityRepository.createKey('workspace', workspaceId, description);
       },
 
-      revokeKey: async (_parent: unknown, { keyId }: { keyId: string }, context: AuthContext) => {
+      revokeKey: async (_parent: unknown, { keyId }: { keyId: string }, context: GraphQLContext) => {
         const userId = requireAuth(context);
         const key = await identityRepository.findKeyById(keyId);
         if (!key) {
@@ -519,7 +520,7 @@ export const resolvers = (container: Container = defaultContainer): apolloResolv
       createToolSet: async (
         _parent: unknown,
         { name, description, workspaceId }: { name: string; description: string; workspaceId: string },
-        context: AuthContext,
+        context: GraphQLContext,
       ) => {
         await requireAuthAndWorkspaceAccess(workspaceRepository, context, workspaceId);
         return toolSetRepository.create(name, description, workspaceId);
@@ -528,7 +529,7 @@ export const resolvers = (container: Container = defaultContainer): apolloResolv
       updateToolSet: async (
         _parent: unknown,
         { id, name, description }: { id: string; name: string; description: string },
-        context: AuthContext,
+        context: GraphQLContext,
       ) => {
         const userId = requireAuth(context);
         const toolSet = await toolSetRepository.findById(id);
@@ -539,7 +540,7 @@ export const resolvers = (container: Container = defaultContainer): apolloResolv
         return toolSetRepository.update(id, name, description);
       },
 
-      deleteToolSet: async (_parent: unknown, { id }: { id: string }, context: AuthContext) => {
+      deleteToolSet: async (_parent: unknown, { id }: { id: string }, context: GraphQLContext) => {
         const userId = requireAuth(context);
         const toolSet = await toolSetRepository.findById(id);
         if (!toolSet?.workspace?.id) {
@@ -552,7 +553,7 @@ export const resolvers = (container: Container = defaultContainer): apolloResolv
       addMCPToolToToolSet: async (
         _parent: unknown,
         { mcpToolId, toolSetId }: { mcpToolId: string; toolSetId: string },
-        context: AuthContext,
+        context: GraphQLContext,
       ) => {
         const userId = requireAuth(context);
         const tool = await mcpToolRepository.getToolWithWorkspace(mcpToolId);
@@ -575,7 +576,7 @@ export const resolvers = (container: Container = defaultContainer): apolloResolv
       removeMCPToolFromToolSet: async (
         _parent: unknown,
         { mcpToolId, toolSetId }: { mcpToolId: string; toolSetId: string },
-        context: AuthContext,
+        context: GraphQLContext,
       ) => {
         const userId = requireAuth(context);
         const tool = await mcpToolRepository.getToolWithWorkspace(mcpToolId);
@@ -606,7 +607,7 @@ export const resolvers = (container: Container = defaultContainer): apolloResolv
         subscribe: async (
           _parent: unknown,
           { workspaceId }: { workspaceId: string },
-          context: AuthContext
+          context: GraphQLContext
         ) => {
           const userId = await requireAuthAndWorkspaceAccess(workspaceRepository, context, workspaceId);
           const observable = workspaceRepository.observeWorkspace(workspaceId);
@@ -618,7 +619,7 @@ export const resolvers = (container: Container = defaultContainer): apolloResolv
         subscribe: async (
           _parent: unknown,
           { workspaceId }: { workspaceId: string },
-          context: AuthContext
+          context: GraphQLContext
         ) => {
           const userId = await requireAuthAndWorkspaceAccess(workspaceRepository, context, workspaceId);
           const observable = workspaceRepository.observeRuntimes(workspaceId);
@@ -630,7 +631,7 @@ export const resolvers = (container: Container = defaultContainer): apolloResolv
         subscribe: async (
           _parent: unknown,
           { workspaceId }: { workspaceId: string },
-          context: AuthContext
+          context: GraphQLContext
         ) => {
           const userId = await requireAuthAndWorkspaceAccess(workspaceRepository, context, workspaceId);
           const observable = workspaceRepository.observeMCPServers(workspaceId);
@@ -642,7 +643,7 @@ export const resolvers = (container: Container = defaultContainer): apolloResolv
         subscribe: async (
           _parent: unknown,
           { workspaceId }: { workspaceId: string },
-          context: AuthContext
+          context: GraphQLContext
         ) => {
           const userId = await requireAuthAndWorkspaceAccess(workspaceRepository, context, workspaceId);
           const observable = workspaceRepository.observeMCPTools(workspaceId);
@@ -653,7 +654,7 @@ export const resolvers = (container: Container = defaultContainer): apolloResolv
       workspaces: {
         // Note: This subscription is user-scoped (lists user's workspaces), not workspace-scoped.
         // No periodic workspace validation needed as user is always viewing their own workspaces.
-        subscribe: (_parent: unknown, _args: unknown, context: AuthContext) => {
+        subscribe: (_parent: unknown, _args: unknown, context: GraphQLContext) => {
           const userId = requireAuth(context);
           const observable = workspaceRepository.observeWorkspaces(userId);
           return observableToAsyncGenerator(observable, 'workspaces');
@@ -663,7 +664,7 @@ export const resolvers = (container: Container = defaultContainer): apolloResolv
         subscribe: async (
           _parent: unknown,
           { workspaceId }: { workspaceId: string },
-          context: AuthContext
+          context: GraphQLContext
         ) => {
           const userId = await requireAuthAndWorkspaceAccess(workspaceRepository, context, workspaceId);
           const observable = monitoringRepository.observeToolCalls(workspaceId);
@@ -675,7 +676,7 @@ export const resolvers = (container: Container = defaultContainer): apolloResolv
         subscribe: async (
           _parent: unknown,
           { workspaceId }: { workspaceId: string },
-          context: AuthContext
+          context: GraphQLContext
         ) => {
           const userId = await requireAuthAndWorkspaceAccess(workspaceRepository, context, workspaceId);
           const observable = toolSetRepository.observeToolSets(workspaceId);

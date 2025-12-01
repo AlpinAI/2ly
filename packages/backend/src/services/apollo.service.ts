@@ -1,4 +1,4 @@
-import { ApolloServer, BaseContext } from '@apollo/server';
+import { ApolloServer } from '@apollo/server';
 import { ApolloServerPluginLandingPageLocalDefault } from '@apollo/server/plugin/landingPage/default';
 import { fastifyApolloDrainPlugin, fastifyApolloHandler } from '@nitra/as-integrations-fastify';
 import { injectable, inject } from 'inversify';
@@ -16,19 +16,7 @@ import path from 'path';
 import { readFileSync } from 'fs';
 import { GraphQLAuthMiddleware } from '../middleware/graphql-auth.middleware';
 import { WorkspaceRepository } from '../repositories';
-
-export interface GraphQLContext extends BaseContext {
-  user?: {
-    userId: string;
-    email: string;
-    workspaceId?: string;
-    role?: string;
-  };
-  req?: {
-    ip?: string;
-    headers?: { [key: string]: string | string[] | undefined };
-  };
-}
+import { GraphQLContext } from '../types';
 
 @injectable()
 export class ApolloService extends Service {

@@ -4,25 +4,23 @@ import { AuthenticationService } from '../services/auth/auth.service';
 import { GraphQLResolveInfo } from 'graphql';
 import { JwtPayload } from '../services/auth/jwt.service';
 import { WorkspaceRepository } from '../repositories';
+import { GraphQLContext } from '../types';
 
-export interface AuthContext {
-  user?: {
-    userId: string;
-    email: string;
-    workspaceId?: string;
-    role: string;
-  };
+/**
+ * Middleware context with required fields.
+ * The middleware always populates isAuthenticated and request.
+ */
+export interface AuthContext extends GraphQLContext {
   isAuthenticated: boolean;
   request: FastifyRequest;
 }
 
+/**
+ * Authenticated context with guaranteed user.
+ * The middleware always populates role (defaults to 'member').
+ */
 export interface AuthenticatedContext extends AuthContext {
-  user: {
-    userId: string;
-    email: string;
-    workspaceId?: string;
-    role: string;
-  };
+  user: NonNullable<GraphQLContext['user']> & { role: string };
   isAuthenticated: true;
 }
 

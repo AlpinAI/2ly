@@ -1,8 +1,7 @@
 import { GraphQLError } from 'graphql';
 import { WorkspaceRepository } from '../repositories';
 import pino from 'pino';
-
-export type AuthContext = { user?: { userId: string; email: string } };
+import { GraphQLContext } from '../types';
 
 /**
  * Configuration for periodic subscription validation.
@@ -34,7 +33,7 @@ export const SUBSCRIPTION_VALIDATION_CONFIG = {
  * @returns userId for subsequent operations
  * @throws GraphQLError with code UNAUTHENTICATED if not authenticated
  */
-export function requireAuth(context: AuthContext): string {
+export function requireAuth(context: GraphQLContext): string {
   if (!context.user?.userId) {
     throw new GraphQLError('Authentication required', {
       extensions: { code: 'UNAUTHENTICATED' },
@@ -67,7 +66,7 @@ export async function requireWorkspaceAccess(
  */
 export async function requireAuthAndWorkspaceAccess(
   workspaceRepository: WorkspaceRepository,
-  context: AuthContext,
+  context: GraphQLContext,
   workspaceId: string
 ): Promise<string> {
   const userId = requireAuth(context);
