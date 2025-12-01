@@ -34,7 +34,6 @@ import {
 } from '../repositories';
 import { JwtService, AuthenticationService, AccountSecurityService, PasswordPolicyService } from '../services/auth';
 import { SecurityMiddleware, RateLimitMiddleware, GraphQLAuthMiddleware } from '../middleware';
-import { MCPServerAutoConfigService, AZURE_ENDPOINT, AZURE_API_KEY, BRAVE_SEARCH_API_KEY } from '../services/mcp-auto-config.service';
 import { IdentityService } from '../services/identity.service';
 import { KeyRateLimiterService } from '../services/key-rate-limiter.service';
 import pino from 'pino';
@@ -111,12 +110,6 @@ const start = () => {
   container.bind(RateLimitMiddleware).toSelf().inSingletonScope();
   container.bind(GraphQLAuthMiddleware).toSelf().inSingletonScope();
 
-  // Init MCP server auto config service
-  container.bind(AZURE_ENDPOINT).toConstantValue(process.env.AZURE_ENDPOINT || 'https://models.inference.ai.azure.com');
-  container.bind(AZURE_API_KEY).toConstantValue(process.env.AZURE_API_KEY || '');
-  container.bind(BRAVE_SEARCH_API_KEY).toConstantValue(process.env.BRAVE_SEARCH_API_KEY || '');
-  container.bind(MCPServerAutoConfigService).toSelf().inSingletonScope();
-
   // Init logger service
   container.bind(MAIN_LOGGER_NAME).toConstantValue('2ly-backend');
   container.bind(FORWARD_STDERR).toConstantValue(false);
@@ -130,7 +123,6 @@ const start = () => {
   loggerService.setLogLevel('fastify', (process.env.FASTIFY_LOG_LEVEL || 'info') as pino.Level);
   loggerService.setLogLevel('apollo', (process.env.APOLLO_LOG_LEVEL || 'info') as pino.Level);
   loggerService.setLogLevel('runtime', (process.env.RUNTIME_LOG_LEVEL || 'info') as pino.Level);
-  loggerService.setLogLevel('mcp-auto-config', (process.env.MCP_AUTO_CONFIG_LOG_LEVEL || 'info') as pino.Level);
   loggerService.setLogLevel('identity', (process.env.IDENTITY_LOG_LEVEL || 'info') as pino.Level);
   loggerService.setLogLevel('toolset', (process.env.TOOLSET_LOG_LEVEL || 'info') as pino.Level);
   loggerService.setLogLevel('runtime.instance', (process.env.RUNTIME_INSTANCE_LOG_LEVEL || 'info') as pino.Level);

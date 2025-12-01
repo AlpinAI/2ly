@@ -1,4 +1,4 @@
-import { test, expect, performLogin, seedPresets } from '@2ly/common/test/fixtures/playwright';
+import { test, expect, performLogin, seedPresets, loginAndGetToken } from '@2ly/common/test/fixtures/playwright';
 import { configureFileSystemMCPServer, createToolset, getRuntimeIdByType } from '@2ly/common/test/fixtures/mcp-builders';
 import { sendToolsetHandshake, waitForOnboardingStepComplete } from '@2ly/common/test/fixtures';
 
@@ -72,6 +72,9 @@ test.describe('Onboarding Flow', () => {
 
   test.describe('Step 1 completed', () => {
     test.beforeAll(async ({ graphql }) => {
+      // Get auth token for API calls
+      const authToken = await loginAndGetToken('user1@2ly.ai', 'password123');
+
       // Get the EDGE runtime ID (from the runtime started by resetDatabase(true))
       const runtimeId = await getRuntimeIdByType(graphql, workspaceId, 'EDGE');
 
@@ -79,7 +82,7 @@ test.describe('Onboarding Flow', () => {
         throw new Error('No EDGE runtime found. Ensure resetDatabase(true) was called in parent beforeAll.');
       }
 
-      await configureFileSystemMCPServer(graphql, workspaceId, 'EDGE', runtimeId);
+      await configureFileSystemMCPServer(graphql, workspaceId, 'EDGE', runtimeId, authToken);
       await new Promise((resolve) => setTimeout(resolve, 5000));
     });
 
@@ -133,8 +136,11 @@ test.describe('Onboarding Flow', () => {
 
   test.describe('Step 2 completed', () => {
     test.beforeAll(async ({ graphql }) => {
+      // Get auth token for API calls
+      const authToken = await loginAndGetToken('user1@2ly.ai', 'password123');
+
       // complete step 2
-      const toolsetResult = await createToolset(graphql, workspaceId, 'My tool set', 'My tool set description', 1);
+      const toolsetResult = await createToolset(graphql, workspaceId, 'My tool set', 'My tool set description', 1, authToken);
       toolsetId = toolsetResult.toolsetId;
       await new Promise((resolve) => setTimeout(resolve, 5000));
     });
@@ -169,8 +175,11 @@ test.describe('Onboarding Flow', () => {
     });
 
     // step 3 should contain only one test case since on refresh the onboarding is hidden
-    test('step 3 shows completed status after connection', async ({ page, graphql, workspaceId }) => {     
+    test('step 3 shows completed status after connection', async ({ page, graphql, workspaceId }) => {
       await performLogin(page, 'user1@2ly.ai', 'password123');
+
+      // Get auth token for API calls (toolsetKey requires authentication)
+      const authToken = await loginAndGetToken('user1@2ly.ai', 'password123');
 
       // Get the toolset key
       const toolsetKeyQuery = `
@@ -180,7 +189,7 @@ test.describe('Onboarding Flow', () => {
           }
         }
       `;
-      const keyResult = await graphql<{ toolsetKey: { key: string } }>(toolsetKeyQuery, { toolsetId });
+      const keyResult = await graphql<{ toolsetKey: { key: string } }>(toolsetKeyQuery, { toolsetId }, authToken);
       toolsetKey = keyResult.toolsetKey.key;
 
       // Send toolset handshake to complete step 3

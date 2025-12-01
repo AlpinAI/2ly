@@ -5,6 +5,7 @@ import {
   ADD_WORKSPACE,
   QUERY_WORKSPACE,
   QUERY_WORKSPACES_BY_USER,
+  CHECK_USER_WORKSPACE_ACCESS,
   QUERY_WORKSPACE_WITH_RUNTIMES,
   QUERY_WORKSPACE_WITH_MCP_SERVERS,
   QUERY_WORKSPACE_WITH_MCP_TOOLS,
@@ -27,6 +28,7 @@ import { QUERY_TOOLSETS_BY_WORKSPACE } from './toolset.operations';
 import { IdentityRepository } from './identity.repository';
 import { LoggerService } from '@2ly/common';
 import { SystemRepository } from './system.repository';
+import { UserRepository } from './user.repository';
 import pino from 'pino';
 
 @injectable()
@@ -38,6 +40,7 @@ export class WorkspaceRepository {
     @inject(DGraphService) private readonly dgraphService: DGraphService,
     @inject(IdentityRepository) private readonly identityRepository: IdentityRepository,
     @inject(SystemRepository) private readonly systemRepository: SystemRepository,
+    @inject(UserRepository) private readonly userRepository: UserRepository,
   ) {
     this.logger = this.loggerService.getLogger('WorkspaceRepository');
   }
@@ -54,7 +57,13 @@ export class WorkspaceRepository {
     }
     const systemId = system.querySystem[0].id;
 
-    // 2. Create workspace
+    // 2. Validate admin exists
+    const admin = await this.userRepository.findById(adminId);
+    if (!admin) {
+      throw new Error(`User with ID '${adminId}' not found`);
+    }
+
+    // 3. Create workspace
     const res = await this.dgraphService.mutation<{
       addWorkspace: { workspace: apolloResolversTypes.Workspace[] };
     }>(ADD_WORKSPACE, {
@@ -65,11 +74,11 @@ export class WorkspaceRepository {
     });
     const workspace = res.addWorkspace.workspace[0];
 
-    // 3. Create workspace key
+    // 4. Create workspace key
     const identityOptions = { key: options?.masterKey };
     await this.identityRepository.createKey('workspace', workspace.id, 'Default Workspace key', '', identityOptions);
 
-    // 4. Create featured servers directly on workspace from INITIAL_FEATURED_SERVERS
+    // 5. Create featured servers directly on workspace from INITIAL_FEATURED_SERVERS
     const failedServers: string[] = [];
     for (const server of INITIAL_FEATURED_SERVERS) {
       try {
@@ -96,7 +105,7 @@ export class WorkspaceRepository {
       this.logger.warn(`Workspace ${workspace.id} (${workspace.name}) created with ${failedServers.length} failed servers: ${failedServers.join(', ')}`);
     }
 
-    // 5. Initialize onboarding steps for new workspace
+    // 6. Initialize onboarding steps for new workspace
     await this.initializeOnboardingSteps(workspace.id);
 
     return workspace;
@@ -109,6 +118,29 @@ export class WorkspaceRepository {
     }>(QUERY_WORKSPACES_BY_USER, { userId });
 
     return res.getUser?.adminOfWorkspaces || [];
+  }
+
+  /**
+   * Check if a user has access to a specific workspace.
+   * A user has access if they are either an admin or member of the workspace.
+   */
+  async hasUserAccess(userId: string, workspaceId: string): Promise<boolean> {
+    const res = await this.dgraphService.query<{
+      getUser: {
+        id: string;
+        adminOfWorkspaces: { id: string }[];
+        membersOfWorkspaces: { id: string }[];
+      } | null;
+    }>(CHECK_USER_WORKSPACE_ACCESS, { userId, workspaceId });
+
+    if (!res.getUser) {
+      return false;
+    }
+
+    const isAdmin = (res.getUser.adminOfWorkspaces?.length ?? 0) > 0;
+    const isMember = (res.getUser.membersOfWorkspaces?.length ?? 0) > 0;
+
+    return isAdmin || isMember;
   }
 
   async findById(workspaceId: string): Promise<dgraphResolversTypes.Workspace> {
@@ -318,6 +350,17 @@ export class WorkspaceRepository {
   }
 
   // Registry server management methods
+
+  /**
+   * Get a registry server by ID with its workspace.
+   * Used for authorization checks on registry server mutations.
+   */
+  async getRegistryServerById(serverId: string): Promise<dgraphResolversTypes.McpRegistryServer | null> {
+    const result = await this.dgraphService.query<{
+      getMCPRegistryServer: dgraphResolversTypes.McpRegistryServer | null;
+    }>(GET_REGISTRY_SERVER, { id: serverId });
+    return result.getMCPRegistryServer;
+  }
 
   /**
    * Get server usage information for error messages
