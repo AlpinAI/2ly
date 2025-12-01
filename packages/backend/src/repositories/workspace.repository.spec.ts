@@ -7,12 +7,14 @@ import { apolloResolversTypes, LoggerService } from '@2ly/common';
 import { LoggerServiceMock } from '@2ly/common/test/vitest';
 import type { IdentityRepository } from './identity.repository';
 import type { SystemRepository } from './system.repository';
+import type { UserRepository } from './user.repository';
 
 describe('WorkspaceRepository', () => {
     let dgraph: DgraphServiceMock;
     let loggerService: LoggerServiceMock;
     let identityRepo: IdentityRepository;
     let systemRepo: SystemRepository;
+    let userRepo: UserRepository;
     let repo: WorkspaceRepository;
 
     beforeEach(() => {
@@ -22,13 +24,24 @@ describe('WorkspaceRepository', () => {
         systemRepo = {
             observeRuntimes: vi.fn().mockReturnValue(of([])),
         } as unknown as SystemRepository;
-        repo = new WorkspaceRepository(loggerService as unknown as LoggerService, dgraph as unknown as DGraphService, identityRepo, systemRepo);
+        userRepo = {
+            findById: vi.fn().mockResolvedValue({ id: 'admin1', email: 'admin@example.com' }),
+        } as unknown as UserRepository;
+        repo = new WorkspaceRepository(loggerService as unknown as LoggerService, dgraph as unknown as DGraphService, identityRepo, systemRepo, userRepo);
     });
 
     it('create throws error when system not found', async () => {
         dgraph.query.mockResolvedValue({ querySystem: [] });
         await expect(repo.create('W', 'admin1')).rejects.toThrow('System not found');
         expect(dgraph.query).toHaveBeenCalled();
+        expect(dgraph.mutation).not.toHaveBeenCalled();
+    });
+
+    it('create throws error when admin user not found', async () => {
+        dgraph.query.mockResolvedValue({ querySystem: [{ id: 'sys1' }] });
+        (userRepo.findById as ReturnType<typeof vi.fn>).mockResolvedValue(null);
+        await expect(repo.create('W', 'invalid-admin')).rejects.toThrow("User with ID 'invalid-admin' not found");
+        expect(userRepo.findById).toHaveBeenCalledWith('invalid-admin');
         expect(dgraph.mutation).not.toHaveBeenCalled();
     });
 
