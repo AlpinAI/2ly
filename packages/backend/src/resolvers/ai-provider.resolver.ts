@@ -1,7 +1,10 @@
 import { apolloResolversTypes, dgraphResolversTypes } from '@2ly/common';
 import { Container } from 'inversify';
+import { GraphQLError } from 'graphql';
 import { AIProviderService, AIProviderType } from '../services/ai/ai-provider.service';
-import { AIProviderRepository } from '../repositories';
+import { AIProviderRepository, WorkspaceRepository } from '../repositories';
+import { GraphQLContext } from '../types';
+import { requireAuth, requireWorkspaceAccess, requireAuthAndWorkspaceAccess } from '../database/authorization.helpers';
 
 /**
  * Factory function to create resolver functions for GraphQL schema.
@@ -10,15 +13,39 @@ export function createAIProviderResolvers(container: Container) {
 
   const aiProviderService = container.get(AIProviderService);
   const aiProviderRepository = container.get(AIProviderRepository);
+  const workspaceRepository = container.get(WorkspaceRepository);
 
   return {
     Query: {
-      getAIProviders: (_: unknown, { workspaceId }: { workspaceId: string }) => aiProviderRepository.getByWorkspace(workspaceId),
-      getAIProvider: (_: unknown, { provider, workspaceId }: { provider: apolloResolversTypes.AiProviderType; workspaceId: string }) => aiProviderRepository.findByType(workspaceId, provider.toUpperCase() as dgraphResolversTypes.AiProviderType),
-      getAIModels: (_: unknown, { workspaceId }: { workspaceId: string }) => aiProviderRepository.listAllModels(workspaceId),
+      getAIProviders: async (
+        _: unknown,
+        { workspaceId }: { workspaceId: string },
+        context: GraphQLContext
+      ) => {
+        await requireAuthAndWorkspaceAccess(workspaceRepository, context, workspaceId);
+        return aiProviderRepository.getByWorkspace(workspaceId);
+      },
+
+      getAIProvider: async (
+        _: unknown,
+        { provider, workspaceId }: { provider: apolloResolversTypes.AiProviderType; workspaceId: string },
+        context: GraphQLContext
+      ) => {
+        await requireAuthAndWorkspaceAccess(workspaceRepository, context, workspaceId);
+        return aiProviderRepository.findByType(workspaceId, provider.toUpperCase() as dgraphResolversTypes.AiProviderType);
+      },
+
+      getAIModels: async (
+        _: unknown,
+        { workspaceId }: { workspaceId: string },
+        context: GraphQLContext
+      ) => {
+        await requireAuthAndWorkspaceAccess(workspaceRepository, context, workspaceId);
+        return aiProviderRepository.listAllModels(workspaceId);
+      },
     },
     Mutation: {
-      configureAIProvider: (
+      configureAIProvider: async (
         _: unknown,
         {
           workspaceId,
@@ -30,23 +57,44 @@ export function createAIProviderResolvers(container: Container) {
           provider: apolloResolversTypes.AiProviderType;
           apiKey?: string | null;
           baseUrl?: string | null;
+        },
+        context: GraphQLContext
+      ) => {
+        await requireAuthAndWorkspaceAccess(workspaceRepository, context, workspaceId);
+        return aiProviderService.configure(workspaceId, provider.toLowerCase() as AIProviderType, apiKey ?? undefined, baseUrl ?? undefined);
+      },
+
+      removeAIProvider: async (
+        _: unknown,
+        { providerId }: { providerId: string },
+        context: GraphQLContext
+      ) => {
+        const userId = requireAuth(context);
+        const provider = await aiProviderRepository.findById(providerId);
+        if (!provider) {
+          throw new GraphQLError('AI provider not found', { extensions: { code: 'NOT_FOUND' } });
         }
-      ) => aiProviderService.configure(workspaceId, provider.toLowerCase() as AIProviderType, apiKey ?? undefined, baseUrl ?? undefined),
+        await requireWorkspaceAccess(workspaceRepository, userId, provider.workspaceId);
+        return aiProviderRepository.delete(providerId);
+      },
 
-      removeAIProvider: (
+      setDefaultAIModel: async (
         _: unknown,
-        { providerId }: { providerId: string }
-      ) => aiProviderRepository.delete(providerId),
+        { workspaceId, defaultModel }: { workspaceId: string; defaultModel: string },
+        context: GraphQLContext
+      ) => {
+        await requireAuthAndWorkspaceAccess(workspaceRepository, context, workspaceId);
+        return aiProviderRepository.setDefaultModel(workspaceId, defaultModel);
+      },
 
-      setDefaultAIModel: (
+      chatWithModel: async (
         _: unknown,
-        { workspaceId, defaultModel }: { workspaceId: string; defaultModel: string }
-      ) => aiProviderRepository.setDefaultModel(workspaceId, defaultModel),
-
-      chatWithModel: (
-        _: unknown,
-        { workspaceId, model, message }: { workspaceId: string; model: string; message: string }
-      ) => aiProviderService.chat(workspaceId, model, message),
+        { workspaceId, model, message }: { workspaceId: string; model: string; message: string },
+        context: GraphQLContext
+      ) => {
+        await requireAuthAndWorkspaceAccess(workspaceRepository, context, workspaceId);
+        return aiProviderService.chat(workspaceId, model, message);
+      },
     },
   };
 }

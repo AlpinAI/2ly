@@ -111,6 +111,18 @@ const DELETE_AI_PROVIDER = `
   }
 `;
 
+const GET_AI_PROVIDER_BY_ID = `
+  query GetAIProviderById($id: ID!) {
+    getAIProviderConfig(id: $id) {
+      id
+      provider
+      workspace {
+        id
+      }
+    }
+  }
+`;
+
 const SET_DEFAULT_MODEL = `
   mutation SetDefaultModel($workspaceId: ID!, $providerModel: String!) {
     updateWorkspace(input: { filter: { id: [$workspaceId] }, set: { defaultAIModel: $providerModel } }) {
@@ -166,6 +178,24 @@ export class AIProviderRepository {
       return providers.length > 0 ? providers[0] : null;
     } catch (error) {
       this.logger.error(`Failed to find AI provider for workspace ${workspaceId} and provider ${provider}: ${error}`);
+      throw new Error('Failed to find AI provider');
+    }
+  }
+
+  async findById(id: string): Promise<{ id: string; provider: string; workspaceId: string } | null> {
+    try {
+      const res = await this.dgraphService.query<{
+        getAIProviderConfig: { id: string; provider: string; workspace: { id: string } } | null;
+      }>(GET_AI_PROVIDER_BY_ID, { id });
+
+      if (!res.getAIProviderConfig) return null;
+      return {
+        id: res.getAIProviderConfig.id,
+        provider: res.getAIProviderConfig.provider,
+        workspaceId: res.getAIProviderConfig.workspace.id,
+      };
+    } catch (error) {
+      this.logger.error(`Failed to find AI provider by id ${id}: ${error}`);
       throw new Error('Failed to find AI provider');
     }
   }
