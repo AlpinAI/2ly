@@ -16,7 +16,7 @@
  * - MCP server has no runtime link (runOn: AGENT, runtime: null)
  */
 
-import { test, expect, seedPresets, dgraphQL } from '@2ly/common/test/fixtures/playwright';
+import { test, expect, seedPresets, dgraphQL, loginAndGetToken } from '@2ly/common/test/fixtures/playwright';
 import { createToolset, updateMCPServerToEdgeRuntime } from '@2ly/common/test/fixtures/mcp-builders';
 import { createMCPClient } from '@2ly/common/test/fixtures/playwright';
 import {
@@ -32,6 +32,7 @@ test.describe('MCP Client with AGENT RunOn Configuration', () => {
   let workspaceKey: string | undefined;
   let mcpServerId: string;
   let workspaceId: string;
+  let authToken: string;
 
   // Configure tests to run serially (one at a time)
   test.describe.configure({ mode: 'serial' });
@@ -46,9 +47,12 @@ test.describe('MCP Client with AGENT RunOn Configuration', () => {
     workspaceId = entityIds['default-workspace'];
     mcpServerId = entityIds['server-file-system'];
 
+    // Get auth token for authenticated API calls (needed for mutations)
+    authToken = await loginAndGetToken('user1@2ly.ai', 'password123');
+
     // IMPORTANT: FIRST configure the MCP Server on the EDGE for tool discovery
     // and then configure it to AGENT runOn for tool execution
-    await updateMCPServerToEdgeRuntime(graphql, mcpServerId, workspaceId);
+    await updateMCPServerToEdgeRuntime(graphql, mcpServerId, workspaceId, authToken);
 
     // Wait 15s for tool discovery to complete
     await new Promise((resolve) => setTimeout(resolve, 15000));
@@ -71,7 +75,7 @@ test.describe('MCP Client with AGENT RunOn Configuration', () => {
     }>(updateMutation, {
       mcpServerId,
       runOn: 'AGENT',
-    });
+    }, authToken);
 
     // Verify the MCP server is configured correctly
     expect(updateResult.updateMCPServerRunOn.runOn).toBe('AGENT');
@@ -85,7 +89,7 @@ test.describe('MCP Client with AGENT RunOn Configuration', () => {
     expect(workspaceKey).toBeDefined();
 
     // Create a shared toolset that all tests will use
-    await createToolset(graphql, workspaceId, 'My tool set', 'My tool set description', 100);
+    await createToolset(graphql, workspaceId, 'My tool set', 'My tool set description', 100, authToken);
   });
 
   /**

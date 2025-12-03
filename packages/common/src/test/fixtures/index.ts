@@ -12,6 +12,7 @@ export {
   getDatabaseState,
   request,
   seedDatabase,
+  loginAndGetToken,
 } from './core';
 
 // Dgraph client for direct database access

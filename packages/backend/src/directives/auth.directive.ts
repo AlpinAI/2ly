@@ -13,14 +13,13 @@ import {
   GraphQLFieldResolver,
 } from 'graphql';
 import { getDirective, MapperKind, mapSchema } from '@graphql-tools/utils';
+import { GraphQLContext } from '../types';
 
-export interface AuthDirectiveContext {
-  user?: {
-    userId: string;
-    email: string;
-    workspaceId?: string;
-    role: string;
-  };
+/**
+ * Context type expected by auth directives.
+ * Requires isAuthenticated to be present (populated by middleware).
+ */
+export interface AuthDirectiveContext extends GraphQLContext {
   isAuthenticated: boolean;
 }
 

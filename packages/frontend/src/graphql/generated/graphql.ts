@@ -492,7 +492,6 @@ export type Query = {
   getAIProviders: Array<AiProviderConfig>;
   getRegistryServers: Array<McpRegistryServer>;
   infra: Infra;
-  isMCPAutoConfigEnabled: Scalars['Boolean']['output'];
   keyValue: Scalars['String']['output'];
   mcpServers: Maybe<Array<McpServer>>;
   mcpTools: Maybe<Array<McpTool>>;

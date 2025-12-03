@@ -51,6 +51,45 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 /**
+ * hasOutputError - Checks if a tool output contains isError: true
+ *
+ * WHY: Tool outputs may be successful at the GraphQL level (success: true)
+ * but contain error information within the output itself (isError: true).
+ * This function helps determine if the actual tool execution failed.
+ *
+ * APPROACH:
+ * 1. Attempt to parse the output as JSON
+ * 2. Check if the parsed object has isError property set to true
+ * 3. Return false if parsing fails or isError is not true
+ *
+ * @param output - The tool output string to check
+ * @returns true if output contains isError: true, false otherwise
+ *
+ * @example
+ * ```ts
+ * hasOutputError('{"isError": true, "message": "Failed"}') // true
+ * hasOutputError('{"isError": false, "data": "success"}') // false
+ * hasOutputError('{"data": "success"}') // false
+ * hasOutputError('Plain text output') // false
+ * hasOutputError('') // false
+ * hasOutputError(null) // false
+ * ```
+ */
+export function hasOutputError(output: string | null | undefined): boolean {
+  if (!output) {
+    return false;
+  }
+
+  try {
+    const parsed = JSON.parse(output);
+    return parsed?.isError === true;
+  } catch {
+    // If parsing fails, treat as non-error (fall back to GraphQL success field)
+    return false;
+  }
+}
+
+/**
  * sanitizeIdentifier - Converts a name into a valid identifier
  *
  * WHY: Used to create safe configuration keys from user-provided names.

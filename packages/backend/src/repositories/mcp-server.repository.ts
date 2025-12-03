@@ -9,9 +9,11 @@ import {
   DELETE_MCPSERVER,
   QUERY_MCP_SERVER_CAPABILITIES,
   QUERY_MCPSERVERS,
+  QUERY_MCPSERVERS_BY_WORKSPACE,
   LINK_RUNTIME,
   UNLINK_RUNTIME,
   GET_MCPSERVER,
+  GET_MCPSERVER_WITH_WORKSPACE,
 } from './mcp-server.operations';
 import { WorkspaceRepository } from './workspace.repository';
 
@@ -27,6 +29,20 @@ export class MCPServerRepository {
       queryMCPServer: dgraphResolversTypes.McpServer[];
     }>(QUERY_MCPSERVERS, {});
     return res.queryMCPServer;
+  }
+
+  async findByWorkspace(workspaceId: string): Promise<dgraphResolversTypes.McpServer[]> {
+    const res = await this.dgraphService.query<{
+      queryMCPServer: dgraphResolversTypes.McpServer[];
+    }>(QUERY_MCPSERVERS_BY_WORKSPACE, { workspaceId });
+    return res.queryMCPServer ?? [];
+  }
+
+  async findById(id: string): Promise<dgraphResolversTypes.McpServer | null> {
+    const res = await this.dgraphService.query<{
+      getMCPServer: dgraphResolversTypes.McpServer | null;
+    }>(GET_MCPSERVER_WITH_WORKSPACE, { id });
+    return res.getMCPServer;
   }
 
   async create(
