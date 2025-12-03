@@ -51,8 +51,8 @@ export default async function Page(props: PageProps<'/[[...slug]]'>) {
 
                     <ol>
                         <li>Configure your tools and their secret (setup once, use many times)</li>
-                        <li>Prepare toolsets - curated sets of tools design to solve specific problems</li>
-                        <li>Consume your toolsets by connect 2LY to your agents</li>
+                        <li>Prepare skills - curated sets of tools design to solve specific problems</li>
+                        <li>Consume your skills by connect 2LY to your agents</li>
                     </ol>
 
                     <h2>Next Steps</h2>

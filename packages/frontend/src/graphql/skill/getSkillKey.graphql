@@ -1,0 +1,13 @@
+# Get Skill Key Query
+# WHY: Fetch the identity key for a specific skill to display in the Connect Skill dialog
+query GetSkillKey($skillId: ID!) {
+  skillKey(skillId: $skillId) {
+    id
+    key
+    description
+    createdAt
+    expiresAt
+    revokedAt
+    relatedId
+  }
+}

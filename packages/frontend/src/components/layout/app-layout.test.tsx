@@ -41,20 +41,20 @@ vi.mock('@/components/registry/add-server-workflow', () => ({
   AddServerWorkflow: () => null,
 }));
 
-vi.mock('@/components/toolsets/toolset-management-panel', () => ({
-  ToolsetManagementPanel: () => null,
+vi.mock('@/components/skills/skill-management-panel', () => ({
+  SkillManagementPanel: () => null,
 }));
 
-vi.mock('@/components/toolsets/create-toolset-dialog', () => ({
-  CreateToolsetDialog: () => null,
+vi.mock('@/components/skills/create-skill-dialog', () => ({
+  CreateSkillDialog: () => null,
 }));
 
-vi.mock('@/components/toolsets/connect-toolset-dialog', () => ({
-  ConnectToolsetDialog: () => null,
+vi.mock('@/components/skills/connect-skill-dialog', () => ({
+  ConnectSkillDialog: () => null,
 }));
 
-vi.mock('@/components/toolsets/connect-toolset-dialog-new', () => ({
-  ConnectToolsetDialogNew: () => null,
+vi.mock('@/components/skills/connect-skill-dialog-new', () => ({
+  ConnectSkillDialogNew: () => null,
 }));
 
 const renderWithProviders = (component: React.ReactElement) => {
@@ -80,7 +80,7 @@ describe('AppLayout', () => {
 
     // Check for nav items from AppNavigation
     expect(screen.getByText('Overview')).toBeDefined();
-    expect(screen.getByText('Tool Sets')).toBeDefined();
+    expect(screen.getByText('Skills')).toBeDefined();
   });
 
   it('renders children via Outlet', () => {

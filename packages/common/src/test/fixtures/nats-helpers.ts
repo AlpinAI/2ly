@@ -31,20 +31,20 @@ export async function closeNatsConnection(): Promise<void> {
 }
 
 /**
- * Send a toolset handshake message to trigger onboarding step 3 completion
+ * Send a skill handshake message to trigger onboarding step 3 completion
  * Uses HandshakeRequest class for validation but raw NATS for transport
  */
-export async function sendToolsetHandshake(params: {
-  toolsetKey: string;
-  toolsetName: string;
+export async function sendSkillHandshake(params: {
+  skillKey: string;
+  skillName: string;
 }): Promise<{ workspaceId: string | null; nature: string; id: string; name: string }> {
   const nc = await getNatsConnection();
 
   // Use production HandshakeRequest class for proper validation and message construction
   const handshakeRequest = new HandshakeRequest({
-    key: params.toolsetKey,
-    nature: 'toolset',
-    name: params.toolsetName,
+    key: params.skillKey,
+    nature: 'skill',
+    name: params.skillName,
     pid: uuidv4(),
     hostIP: '127.0.0.1',
     hostname: 'playwright-test-host',

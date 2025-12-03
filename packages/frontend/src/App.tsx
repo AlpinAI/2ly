@@ -25,7 +25,7 @@ import { AppLayout } from '@/components/layout/app-layout';
 import LoginPage from '@/pages/LoginPage';
 import RegisterPage from '@/pages/RegisterPage';
 import DashboardPage from '@/pages/DashboardPage';
-import ToolSetsPage from '@/pages/ToolSetsPage';
+import SkillsPage from '@/pages/SkillsPage';
 import ToolsPage from '@/pages/ToolsPage';
 import SourcesPage from '@/pages/SourcesPage';
 import SettingsPage from '@/pages/SettingsPage';
@@ -80,7 +80,7 @@ function App() {
                 >
                   {/* Nested routes - AppLayout provides header + navigation */}
                   <Route path="overview" element={<DashboardPage />} />
-                  <Route path="toolsets" element={<ToolSetsPage />} />
+                  <Route path="skills" element={<SkillsPage />} />
                   <Route path="tools" element={<ToolsPage />} />
                   <Route path="sources" element={<SourcesPage />} />
                   <Route path="monitoring" element={<MonitoringPage />} />

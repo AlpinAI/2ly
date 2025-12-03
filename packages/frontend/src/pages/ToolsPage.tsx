@@ -11,7 +11,7 @@
  * FEATURES:
  * - Real-time tool updates (subscription)
  * - Search by name/description
- * - Filter by server(s), tool set(s)
+ * - Filter by server(s), skill(s)
  * - Click tool to view details and test
  * - Execute tools with input parameters
  * - "Add Tools" button (opens AddToolWorkflow)
@@ -26,7 +26,7 @@ import { ToolTable } from '@/components/tools/tool-table';
 import { ToolDetail } from '@/components/tools/tool-detail';
 import { useMCPTools } from '@/hooks/useMCPTools';
 import { useMCPServers } from '@/hooks/useMCPServers';
-import { useToolSets } from '@/hooks/useToolSets';
+import { useSkills } from '@/hooks/useSkills';
 import { useUIStore } from '@/stores/uiStore';
 import { useUrlSync } from '@/hooks/useUrlSync';
 
@@ -35,10 +35,10 @@ export default function ToolsPage() {
   const { selectedId, setSelectedId } = useUrlSync();
   const setAddSourceWorkflowOpen = useUIStore((state) => state.setAddSourceWorkflowOpen);
 
-  // Fetch tools, servers, and tool sets
+  // Fetch tools, servers, and skills
   const { filteredTools, loading, error, filters } = useMCPTools();
   const { servers } = useMCPServers();
-  const { toolSets } = useToolSets(workspaceId || '');
+  const { skills } = useSkills(workspaceId || '');
 
   // Get selected tool from URL
   const selectedTool = useMemo(() => {
@@ -54,7 +54,7 @@ export default function ToolsPage() {
     }
   }, [selectedId, selectedTool, loading, setSelectedId]);
 
-  // Available servers and tool sets for filters
+  // Available servers and skills for filters
   const availableServers = useMemo(() => {
     return servers.map((server) => ({
       id: server.id,
@@ -62,12 +62,12 @@ export default function ToolsPage() {
     }));
   }, [servers]);
 
-  const availableToolSets = useMemo(() => {
-    return toolSets.map((toolSet: { id: string; name: string }) => ({
-      id: toolSet.id,
-      name: toolSet.name,
+  const availableSkills = useMemo(() => {
+    return skills.map((skill: { id: string; name: string }) => ({
+      id: skill.id,
+      name: skill.name,
     }));
-  }, [toolSets]);
+  }, [skills]);
 
   if (error) {
     return (
@@ -105,10 +105,10 @@ export default function ToolsPage() {
             onSearchChange={filters.setSearch}
             serverFilter={filters.serverIds}
             onServerFilterChange={filters.setServerIds}
-            toolSetFilter={filters.toolSetIds}
-            onToolSetFilterChange={filters.setToolSetIds}
+            skillFilter={filters.skillIds}
+            onSkillFilterChange={filters.setSkillIds}
             availableServers={availableServers}
-            availableToolSets={availableToolSets}
+            availableSkills={availableSkills}
             loading={loading}
           />
         }

@@ -21,8 +21,8 @@ export interface OnboardingStepDefinition {
  *
  * WHY: These 3 steps guide users through the core 2LY setup:
  * 1. Install MCP server (add tools to workspace)
- * 2. Create tool set with tools (organize and manage tools)
- * 3. Connect tool set to an agent (integrate with AI workflows)
+ * 2. Create skill with tools (organize and manage tools)
+ * 3. Connect skill to an agent (integrate with AI workflows)
  */
 export const INITIAL_ONBOARDING_STEPS: OnboardingStepDefinition[] = [
   {
@@ -31,12 +31,12 @@ export const INITIAL_ONBOARDING_STEPS: OnboardingStepDefinition[] = [
     priority: 1,
   },
   {
-    stepId: 'create-tool-set',
+    stepId: 'create-skill',
     type: 'ONBOARDING',
     priority: 2,
   },
   {
-    stepId: 'connect-tool-set-to-agent',
+    stepId: 'connect-skill-to-agent',
     type: 'ONBOARDING',
     priority: 3,
   },

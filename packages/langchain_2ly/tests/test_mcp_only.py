@@ -25,17 +25,17 @@ class TestMCPClientInit:
         assert instance.serverParams.command == "npx"
         assert instance.serverParams.args == ["@2ly/runtime@latest"]
         assert instance.serverParams.env["WORKSPACE_KEY"] == "WSK_test123"
-        assert instance.serverParams.env["TOOLSET_NAME"] == "test-client"
+        assert instance.serverParams.env["SKILL_NAME"] == "test-client"
         assert instance.serverParams.env["NATS_SERVERS"] == "nats://localhost:4222"
 
-    def test_init_with_toolset_key(self):
-        """Test initialization with toolset-specific key."""
-        instance = MCPClient(toolset_key="TSK_test456")
+    def test_init_with_skill_key(self):
+        """Test initialization with skill-specific key."""
+        instance = MCPClient(skill_key="SKL_test456")
 
         assert instance.name is None
-        assert instance.serverParams.env["TOOLSET_KEY"] == "TSK_test456"
+        assert instance.serverParams.env["SKILL_KEY"] == "SKL_test456"
         assert "WORKSPACE_KEY" not in instance.serverParams.env
-        assert "TOOLSET_NAME" not in instance.serverParams.env
+        assert "SKILL_NAME" not in instance.serverParams.env
 
     def test_init_with_custom_options(self):
         """Test initialization with custom options."""
@@ -65,13 +65,13 @@ class TestMCPClientInit:
 
         assert instance.name == "factory-test"
         assert instance.serverParams.env["WORKSPACE_KEY"] == "WSK_factory"
-        assert instance.serverParams.env["TOOLSET_NAME"] == "factory-test"
+        assert instance.serverParams.env["SKILL_NAME"] == "factory-test"
 
-    def test_factory_with_toolset_key(self):
-        """Test with_toolset_key factory method."""
-        instance = MCPClient.with_toolset_key(toolset_key="TSK_factory")
+    def test_factory_with_skill_key(self):
+        """Test with_skill_key factory method."""
+        instance = MCPClient.with_skill_key(skill_key="SKL_factory")
 
-        assert instance.serverParams.env["TOOLSET_KEY"] == "TSK_factory"
+        assert instance.serverParams.env["SKILL_KEY"] == "SKL_factory"
         assert "WORKSPACE_KEY" not in instance.serverParams.env
 
 
@@ -125,7 +125,7 @@ async def test_call_tool_uses_same_session_and_returns_content():
 
     with patch("langchain_2ly.mcp_only.stdio_client", return_value=stdio_ctx), \
          patch("langchain_2ly.mcp_only.ClientSession", return_value=client_ctx):
-        instance = MCPClient.with_toolset_key(toolset_key="TSK_test")
+        instance = MCPClient.with_skill_key(skill_key="SKL_test")
         await instance.get_langchain_tools()
         result = await instance.call_tool("x", {"a": 1})
         assert result == {"content": [{"type": "text", "text": "ok"}], "isError": False}
@@ -154,7 +154,7 @@ async def test_lazy_initialization_only_on_first_use():
     """Test that session is initialized lazily on first use."""
     with patch("langchain_2ly.mcp_only.stdio_client") as stdio_mock, \
          patch("langchain_2ly.mcp_only.ClientSession") as client_mock:
-        instance = MCPClient.with_toolset_key(toolset_key="TSK_test")
+        instance = MCPClient.with_skill_key(skill_key="SKL_test")
         assert stdio_mock.called is False
 
         mock_read = AsyncMock()
@@ -227,7 +227,7 @@ async def test_context_manager_lifecycle():
 
     with patch("langchain_2ly.mcp_only.stdio_client", return_value=stdio_ctx), \
          patch("langchain_2ly.mcp_only.ClientSession", return_value=client_ctx):
-        async with MCPClient.with_toolset_key(toolset_key="TSK_test") as instance:
+        async with MCPClient.with_skill_key(skill_key="SKL_test") as instance:
             await instance.get_langchain_tools()
             assert instance._session is not None
 
@@ -246,7 +246,7 @@ class TestMCPClientEnvironmentVariables:
 
     def test_no_deprecated_workspace_id(self):
         """Test that WORKSPACE_ID is not set (deprecated)."""
-        instance = MCPClient.with_toolset_key(toolset_key="TSK_test")
+        instance = MCPClient.with_skill_key(skill_key="SKL_test")
         assert "WORKSPACE_ID" not in instance.serverParams.env
 
     def test_log_level_optional(self):

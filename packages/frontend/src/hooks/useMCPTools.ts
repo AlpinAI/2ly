@@ -9,7 +9,7 @@
  * - useSubscription for real-time updates
  * - Subscription writes to query cache for persistence
  * - useMemo for client-side filtering
- * - Multi-select filters for servers and tool sets
+ * - Multi-select filters for servers and skills
  *
  * USAGE:
  * ```tsx
@@ -37,7 +37,7 @@ export function useMCPTools() {
   // Filter state
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedServerIds, setSelectedServerIds] = useState<string[]>([]);
-  const [selectedToolSetIds, setSelectedToolSetIds] = useState<string[]>([]);
+  const [selectedSkillIds, setSelectedSkillIds] = useState<string[]>([]);
 
   // 1️⃣ Read cached tools first (fetchPolicy: cache-only)
   const { data: queryData, loading: queryLoading, error: queryError } = useQuery(GetMcpToolsDocument, {
@@ -83,17 +83,17 @@ export function useMCPTools() {
       result = result.filter((tool) => selectedServerIds.includes(tool.mcpServer.id));
     }
 
-    // ToolSet filter (tools available in specific tool sets)
-    // Note: Tools don't directly have toolSets in current schema, filtering disabled for now
-    // TODO: Update schema to add toolSets relationship to MCPTool
-    if (selectedToolSetIds.length > 0) {
+    // Skill filter (tools available in specific skills)
+    // Note: Tools don't directly have skills in current schema, filtering disabled for now
+    // TODO: Update schema to add skills relationship to MCPTool
+    if (selectedSkillIds.length > 0) {
       // Placeholder - this would need schema changes to work
       // For now, just log a warning
-      console.warn('ToolSet filtering not yet implemented - requires schema update');
+      console.warn('Skill filtering not yet implemented - requires schema update');
     }
 
     return result;
-  }, [allTools, searchTerm, selectedServerIds, selectedToolSetIds]);
+  }, [allTools, searchTerm, selectedServerIds, selectedSkillIds]);
 
   // Calculate stats
   const stats = {
@@ -107,7 +107,7 @@ export function useMCPTools() {
   const resetFilters = useCallback(() => {
     setSearchTerm('');
     setSelectedServerIds([]);
-    setSelectedToolSetIds([]);
+    setSelectedSkillIds([]);
   }, []);
 
   // Memoize the filters object to prevent recreating it on every render
@@ -116,10 +116,10 @@ export function useMCPTools() {
     setSearch: setSearchTerm,
     serverIds: selectedServerIds,
     setServerIds: setSelectedServerIds,
-    toolSetIds: selectedToolSetIds,
-    setToolSetIds: setSelectedToolSetIds,
+    skillIds: selectedSkillIds,
+    setSkillIds: setSelectedSkillIds,
     reset: resetFilters,
-  }), [searchTerm, selectedServerIds, selectedToolSetIds, resetFilters]);
+  }), [searchTerm, selectedServerIds, selectedSkillIds, resetFilters]);
 
   // Memoize the stats object to prevent recreating it on every render
   const memoizedStats = useMemo(() => stats, [stats.total, stats.filtered, stats.active, stats.inactive]);

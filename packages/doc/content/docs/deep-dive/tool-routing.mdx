@@ -188,23 +188,23 @@ Returned from tool runtime with result:
 
 ## Tool Capability Assignment
 
-Before an agent can call a tool, the tool must be organized into a ToolSet:
+Before an agent can call a tool, the tool must be organized into a Skill:
 
-### Organizing Tools into ToolSets
+### Organizing Tools into Skills
 
 ```graphql
 mutation {
-  # Create a ToolSet
-  createToolSet(name: "My Tools", description: "Tools for my agent", workspaceId: "workspace-id") {
+  # Create a Skill
+  createSkill(name: "My Tools", description: "Tools for my agent", workspaceId: "workspace-id") {
     id
   }
 
-  # Add tool to ToolSet
-  addMCPToolToToolSet(mcpToolId: "tool-id", toolSetId: "toolset-id")
+  # Add tool to Skill
+  addMCPToolToSkill(mcpToolId: "tool-id", skillId: "skill-id")
 }
 ```
 
-This creates an edge: `ToolSet --[mcpTools]--> MCPTool`
+This creates an edge: `Skill --[mcpTools]--> MCPTool`
 
 ### Capability Message
 
@@ -289,13 +289,13 @@ mutation {
   linkMCPServerToRuntime(mcpServerId: "docker-server-id", runtimeId: "alice-edge-runtime-id")
 }
 
-# Create a ToolSet and add the tool
+# Create a Skill and add the tool
 mutation {
-  createToolSet(name: "Alice's Tools", description: "Tools for Alice's agent", workspaceId: "workspace-id") {
+  createSkill(name: "Alice's Tools", description: "Tools for Alice's agent", workspaceId: "workspace-id") {
     id
   }
 
-  addMCPToolToToolSet(mcpToolId: "docker-list-containers-id", toolSetId: "alice-toolset-id")
+  addMCPToolToSkill(mcpToolId: "docker-list-containers-id", skillId: "alice-skill-id")
 }
 ```
 

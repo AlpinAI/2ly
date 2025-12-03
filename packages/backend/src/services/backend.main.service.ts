@@ -9,7 +9,7 @@ import { container } from '../di/container';
 import { WorkspaceRepository, SystemRepository } from '../repositories';
 import { MonitoringService } from './monitoring.service';
 import packageJson from '../../package.json';
-import { ToolSetService } from './toolset.service';
+import { SkillService } from './skill.service';
 import { IdentityService } from './identity.service';
 
 export const DROP_ALL_DATA = 'dropAllData';
@@ -27,7 +27,7 @@ export class MainService extends Service {
     @inject(DGraphService) private dgraphService: DGraphService,
     @inject(ApolloService) private apolloService: ApolloService,
     @inject(RuntimeService) private runtimeService: RuntimeService,
-    @inject(ToolSetService) private toolSetService: ToolSetService,
+    @inject(SkillService) private skillService: SkillService,
     @inject(FastifyService) private fastifyService: FastifyService,
     @inject(SystemRepository) private systemRepository: SystemRepository,
     @inject(WorkspaceRepository) private workspaceRepository: WorkspaceRepository,
@@ -44,7 +44,7 @@ export class MainService extends Service {
     await this.dgraphService.initSchema(this.dropAllData);
     await this.startService(this.identityService);
     await this.startService(this.runtimeService);
-    await this.startService(this.toolSetService);
+    await this.startService(this.skillService);
     this.registerHealthCheck();
     this.registerUtilityEndpoints();
     await this.startService(this.apolloService);
@@ -61,7 +61,7 @@ export class MainService extends Service {
       this.stopService(this.apolloService),
       this.stopService(this.monitoringService),
       this.stopService(this.dgraphService),
-      this.stopService(this.toolSetService),
+      this.stopService(this.skillService),
     ]);
     this.logger.info('All services stopped');
     this.logActiveServices();

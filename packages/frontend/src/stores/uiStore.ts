@@ -56,18 +56,18 @@ interface UIState {
   setAddServerWorkflowInitialStep: (step: 'selection' | 'upstream' | 'easy-manual' | 'advanced-manual' | null) => void;
   manageToolsDialogOpen: boolean;
   setManageToolsDialogOpen: (open: boolean) => void;
-  selectedToolsetForManagement: string | null;
-  setSelectedToolsetForManagement: (id: string | null) => void;
-  createToolsetDialogOpen: boolean;
-  createToolsetDialogCallback: ((toolSetId: string) => void) | null;
-  openCreateToolsetDialog: (onSuccess?: (toolSetId: string) => void) => void;
-  closeCreateToolsetDialog: () => void;
-  connectToolsetDialogOpen: boolean;
-  setConnectToolsetDialogOpen: (open: boolean) => void;
-  selectedToolsetNameForConnection: string | null;
-  setSelectedToolsetNameForConnection: (toolsetName: string | null) => void;
-  selectedToolsetIdForConnection: string | null;
-  setSelectedToolsetIdForConnection: (toolsetId: string | null) => void;
+  selectedSkillForManagement: string | null;
+  setSelectedSkillForManagement: (id: string | null) => void;
+  createSkillDialogOpen: boolean;
+  createSkillDialogCallback: ((skillId: string) => void) | null;
+  openCreateSkillDialog: (onSuccess?: (skillId: string) => void) => void;
+  closeCreateSkillDialog: () => void;
+  connectSkillDialogOpen: boolean;
+  setConnectSkillDialogOpen: (open: boolean) => void;
+  selectedSkillNameForConnection: string | null;
+  setSelectedSkillNameForConnection: (skillName: string | null) => void;
+  selectedSkillIdForConnection: string | null;
+  setSelectedSkillIdForConnection: (skillId: string | null) => void;
 
 
 
@@ -124,8 +124,8 @@ export const useUIStore = create<UIState>()(
         setAddServerWorkflowInitialStep: (step) => set({ addServerWorkflowInitialStep: step }),
         manageToolsDialogOpen: false,
         setManageToolsDialogOpen: (open) => set({ manageToolsDialogOpen: open }),
-        selectedToolsetForManagement: null,
-        setSelectedToolsetForManagement: (id) => set({ selectedToolsetForManagement: id }),
+        selectedSkillForManagement: null,
+        setSelectedSkillForManagement: (id) => set({ selectedSkillForManagement: id }),
 
         // Initial State - Tool Catalog Filters
         toolCategoryFilter: 'all',
@@ -147,27 +147,27 @@ export const useUIStore = create<UIState>()(
         playgroundConsoleExpanded: false,
         setPlaygroundConsoleExpanded: (expanded) => set({ playgroundConsoleExpanded: expanded }),
 
-        // Initial State - Create Toolset Dialog
-        createToolsetDialogOpen: false,
-        createToolsetDialogCallback: null,
-        openCreateToolsetDialog: (onSuccess) =>
+        // Initial State - Create Skill Dialog
+        createSkillDialogOpen: false,
+        createSkillDialogCallback: null,
+        openCreateSkillDialog: (onSuccess) =>
           set({
-            createToolsetDialogOpen: true,
-            createToolsetDialogCallback: onSuccess || null,
+            createSkillDialogOpen: true,
+            createSkillDialogCallback: onSuccess || null,
           }),
-        closeCreateToolsetDialog: () =>
+        closeCreateSkillDialog: () =>
           set({
-            createToolsetDialogOpen: false,
-            createToolsetDialogCallback: null,
+            createSkillDialogOpen: false,
+            createSkillDialogCallback: null,
           }),
 
-        // Initial State - Connect Toolset Dialog
-        connectToolsetDialogOpen: false,
-        setConnectToolsetDialogOpen: (open) => set({ connectToolsetDialogOpen: open }),
-        selectedToolsetNameForConnection: null,
-        setSelectedToolsetNameForConnection: (toolsetName) => set({ selectedToolsetNameForConnection: toolsetName }),
-        selectedToolsetIdForConnection: null,
-        setSelectedToolsetIdForConnection: (toolsetId) => set({ selectedToolsetIdForConnection: toolsetId }),
+        // Initial State - Connect Skill Dialog
+        connectSkillDialogOpen: false,
+        setConnectSkillDialogOpen: (open) => set({ connectSkillDialogOpen: open }),
+        selectedSkillNameForConnection: null,
+        setSelectedSkillNameForConnection: (skillName) => set({ selectedSkillNameForConnection: skillName }),
+        selectedSkillIdForConnection: null,
+        setSelectedSkillIdForConnection: (skillId) => set({ selectedSkillIdForConnection: skillId }),
 
 
 
@@ -249,22 +249,22 @@ export const useAddSourceWorkflow = () =>
 export const useManageToolsDialog = () => {
   const open = useUIStore((state) => state.manageToolsDialogOpen);
   const setOpen = useUIStore((state) => state.setManageToolsDialogOpen);
-  const selectedToolsetId = useUIStore((state) => state.selectedToolsetForManagement);
-  const setSelectedToolsetId = useUIStore((state) => state.setSelectedToolsetForManagement);
+  const selectedSkillId = useUIStore((state) => state.selectedSkillForManagement);
+  const setSelectedSkillId = useUIStore((state) => state.setSelectedSkillForManagement);
 
   return {
     open,
     setOpen,
-    selectedToolsetId,
-    setSelectedToolsetId,
+    selectedSkillId,
+    setSelectedSkillId,
   };
 };
 
-export const useCreateToolsetDialog = () => {
-  const open = useUIStore((state) => state.createToolsetDialogOpen);
-  const callback = useUIStore((state) => state.createToolsetDialogCallback);
-  const openDialog = useUIStore((state) => state.openCreateToolsetDialog);
-  const close = useUIStore((state) => state.closeCreateToolsetDialog);
+export const useCreateSkillDialog = () => {
+  const open = useUIStore((state) => state.createSkillDialogOpen);
+  const callback = useUIStore((state) => state.createSkillDialogCallback);
+  const openDialog = useUIStore((state) => state.openCreateSkillDialog);
+  const close = useUIStore((state) => state.closeCreateSkillDialog);
 
   return {
     open,
@@ -274,21 +274,21 @@ export const useCreateToolsetDialog = () => {
   };
 };
 
-export const useConnectToolsetDialog = () => {
-  const open = useUIStore((state) => state.connectToolsetDialogOpen);
-  const setOpen = useUIStore((state) => state.setConnectToolsetDialogOpen);
-  const selectedToolsetName = useUIStore((state) => state.selectedToolsetNameForConnection);
-  const setSelectedToolsetName = useUIStore((state) => state.setSelectedToolsetNameForConnection);
-  const selectedToolsetId = useUIStore((state) => state.selectedToolsetIdForConnection);
-  const setSelectedToolsetId = useUIStore((state) => state.setSelectedToolsetIdForConnection);
+export const useConnectSkillDialog = () => {
+  const open = useUIStore((state) => state.connectSkillDialogOpen);
+  const setOpen = useUIStore((state) => state.setConnectSkillDialogOpen);
+  const selectedSkillName = useUIStore((state) => state.selectedSkillNameForConnection);
+  const setSelectedSkillName = useUIStore((state) => state.setSelectedSkillNameForConnection);
+  const selectedSkillId = useUIStore((state) => state.selectedSkillIdForConnection);
+  const setSelectedSkillId = useUIStore((state) => state.setSelectedSkillIdForConnection);
 
   return {
     open,
     setOpen,
-    selectedToolsetName,
-    setSelectedToolsetName,
-    selectedToolsetId,
-    setSelectedToolsetId,
+    selectedSkillName,
+    setSelectedSkillName,
+    selectedSkillId,
+    setSelectedSkillId,
   };
 };
 

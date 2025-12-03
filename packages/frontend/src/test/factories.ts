@@ -10,7 +10,7 @@ import type {
   McpTool,
   Runtime,
   ToolCall,
-  ToolSet,
+  Skill,
   Workspace,
   McpRegistryServer,
 } from '@/graphql/generated/graphql';
@@ -36,9 +36,9 @@ export const createMockWorkspace = (overrides: Partial<Workspace> = {}): Workspa
   onboardingSteps: null,
   registryServers: null,
   runtimes: null,
-  toolSets: null,
   aiProviders: null,
   defaultAIModel: null,
+  skills: null,
   ...overrides,
 });
 
@@ -122,17 +122,17 @@ export const createMockMcpToolRef = (overrides: Partial<McpTool> = {}): McpTool 
   createdAt: new Date(),
   lastSeenAt: new Date(),
   mcpServer: createMockMcpServerRef(),
-  toolSets: null,
+  skills: null,
   workspace: null as never,
   ...overrides,
 });
 
 /**
- * Creates a lightweight mock ToolSet for use as calledBy references in ToolCall.
+ * Creates a lightweight mock Skill for use as calledBy references in ToolCall.
  */
-export const createMockToolSetRef = (overrides: Partial<ToolSet> = {}): ToolSet => ({
-  __typename: 'ToolSet',
-  id: 'toolset-1',
+export const createMockSkillRef = (overrides: Partial<Skill> = {}): Skill => ({
+  __typename: 'Skill',
+  id: 'skill-1',
   name: 'Test Agent',
   description: null,
   createdAt: new Date(),

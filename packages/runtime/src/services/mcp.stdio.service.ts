@@ -17,11 +17,11 @@ import {
 } from '@modelcontextprotocol/sdk/types.js';
 import { AuthService } from './auth.service';
 import { BehaviorSubject, Subscription, tap } from 'rxjs';
-import { ToolsetService } from './toolset.service';
+import { SkillService } from './skill.service';
 
 /**
  * McpStdioService handles MCP server with stdio transport.
- * This service has a 1:1 relationship with a single toolset.
+ * This service has a 1:1 relationship with a single skill.
  */
 @injectable()
 export class McpStdioService extends Service {
@@ -34,7 +34,7 @@ export class McpStdioService extends Service {
   private clientRoots: BehaviorSubject<{ name: string; uri: string }[]> = new BehaviorSubject<
     { name: string; uri: string }[]
   >([]);
-  private toolsetService: ToolsetService | undefined;
+  private skillService: SkillService | undefined;
   private rxjsSubscriptions: Subscription[] = [];
 
   constructor(
@@ -86,13 +86,13 @@ export class McpStdioService extends Service {
     );
 
     // TODO: we probably should start the server in the initialize phase
-    // Create and start the toolset service
-    this.toolsetService = new ToolsetService(this.loggerService, this.natsService, {
+    // Create and start the skill service
+    this.skillService = new SkillService(this.loggerService, this.natsService, {
       workspaceId: identity.workspaceId!,
-      toolsetId: identity.id!,
-      toolsetName: identity.name,
+      skillId: identity.id!,
+      skillName: identity.name,
     });
-    await this.startService(this.toolsetService);
+    await this.startService(this.skillService);
 
     // Setup transport
     this.transport = new StdioServerTransport();
@@ -102,7 +102,7 @@ export class McpStdioService extends Service {
     await this.setServerHandlers();
 
     // Notify changes
-    const sub = this.toolsetService.observeTools().pipe(tap(() => this.server?.sendToolListChanged())).subscribe();
+    const sub = this.skillService.observeTools().pipe(tap(() => this.server?.sendToolListChanged())).subscribe();
     this.rxjsSubscriptions.push(sub);
   }
 
@@ -149,7 +149,7 @@ export class McpStdioService extends Service {
 
       // Wait for tools to be available before responding
       // TODO: I suppose we don't need to wait for tools to be available here
-      await this.toolsetService!.waitForTools();
+      await this.skillService!.waitForTools();
 
       return response;
     });
@@ -175,7 +175,7 @@ export class McpStdioService extends Service {
 
     this.server.setRequestHandler(ListToolsRequestSchema, async () => {
       try {
-        const tools = await this.toolsetService!.getToolsForMCP();
+        const tools = await this.skillService!.getToolsForMCP();
         this.logger.debug(`List tools, responding with ${tools.length} tools`);
         return {tools};
       } catch (error) {
@@ -189,7 +189,7 @@ export class McpStdioService extends Service {
         if (!request.params.arguments) {
           throw new Error('Arguments are required');
         }
-        const result = await this.toolsetService!.callTool(request.params.name, request.params.arguments);
+        const result = await this.skillService!.callTool(request.params.name, request.params.arguments);
         return result;
       } catch (error) {
         this.logger.error(`Error listing tools: ${error instanceof Error ? error.message : String(error)}`);
@@ -203,8 +203,8 @@ export class McpStdioService extends Service {
     await this.transport?.close();
     await this.server?.close();
 
-    if (this.toolsetService) {
-      await this.stopService(this.toolsetService);
+    if (this.skillService) {
+      await this.stopService(this.skillService);
     }
 
     this.server = undefined;

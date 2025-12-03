@@ -24,7 +24,7 @@ export const KEY_NATURE_PREFIX = {
   system: 'SYK',
   workspace: 'WSK',
   runtime: 'RTK',
-  toolset: 'TSK',
+  skill: 'SKK',
 } as const;
 
 type KeyNature = keyof typeof KEY_NATURE_PREFIX;
@@ -50,12 +50,12 @@ export class IdentityRepository {
    * - Revocation is the primary security mechanism for compromised keys
    *
    * Key Format:
-   * - Prefix (3 chars): WSK, RTK, or TSK
+   * - Prefix (3 chars): WSK, RTK, or SKK
    * - Random portion (43 chars): Base64url-encoded 32 random bytes (256-bit entropy)
    * - Total length: 46 characters
    * - Example: "WSK_a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6q7r8s9t0u1"
    */
-  async createKey(nature: 'system' | 'workspace' | 'runtime' | 'toolset', relatedId: string, description?: string, permissions?: string, options?: {key?: string}): Promise<dgraphResolversTypes.IdentityKey> {
+  async createKey(nature: 'system' | 'workspace' | 'runtime' | 'skill', relatedId: string, description?: string, permissions?: string, options?: {key?: string}): Promise<dgraphResolversTypes.IdentityKey> {
     try {
       const now = new Date().toISOString();
       const expiresAtDate = new Date(now);
@@ -184,7 +184,7 @@ export class IdentityRepository {
    * - EXPIRED: If the identity key is expired
    * - REVOKED: If the identity key is revoked
    */
-  async findKey(key: string): Promise<{ relatedId: string; nature: 'system' | 'workspace' | 'runtime' | 'toolset' }> {
+  async findKey(key: string): Promise<{ relatedId: string; nature: 'system' | 'workspace' | 'runtime' | 'skill' }> {
     // Validate key format before database lookup
     this.validateKeyFormat(key);
 
@@ -206,7 +206,7 @@ export class IdentityRepository {
     }
 
     // Extract nature from validated prefix
-    const prefix = identityKey.key.substring(0, 3) as 'SYK' | 'WSK' | 'RTK' | 'TSK';
+    const prefix = identityKey.key.substring(0, 3) as 'SYK' | 'WSK' | 'RTK' | 'SKK';
     const nature = this.getNatureFromPrefix(prefix);
 
     return { relatedId: identityKey.relatedId, nature };
@@ -216,11 +216,11 @@ export class IdentityRepository {
    * Get key nature from prefix with strict validation.
    * Throws error for unrecognized prefixes instead of defaulting.
    *
-   * @param prefix - The 3-character key prefix (WSK, RTK, or TSK)
+   * @param prefix - The 3-character key prefix (SYK, WSK, RTK, or SKK)
    * @returns The key nature
    * @throws Error if prefix is not recognized
    */
-  private getNatureFromPrefix(prefix: string): 'system' | 'workspace' | 'runtime' | 'toolset' {
+  private getNatureFromPrefix(prefix: string): 'system' | 'workspace' | 'runtime' | 'skill' {
     switch (prefix) {
       case 'SYK':
         return 'system';
@@ -228,8 +228,8 @@ export class IdentityRepository {
         return 'workspace';
       case 'RTK':
         return 'runtime';
-      case 'TSK':
-        return 'toolset';
+      case 'SKK':
+        return 'skill';
       default:
         throw new Error(`INVALID_KEY_PREFIX: Unrecognized prefix '${prefix}'`);
     }

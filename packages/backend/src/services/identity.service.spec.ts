@@ -5,7 +5,7 @@ import { KeyRateLimiterService } from './key-rate-limiter.service';
 import { SystemRepository } from '../repositories/system.repository';
 import { WorkspaceRepository } from '../repositories/workspace.repository';
 import { RuntimeRepository } from '../repositories/runtime.repository';
-import { ToolSetRepository } from '../repositories/toolset.repository';
+import { SkillRepository } from '../repositories/skill.repository';
 import { LoggerService, NatsService, dgraphResolversTypes } from '@2ly/common';
 
 type Workspace = dgraphResolversTypes.Workspace;
@@ -16,7 +16,7 @@ vi.mock('./key-rate-limiter.service');
 vi.mock('../repositories/system.repository');
 vi.mock('../repositories/workspace.repository');
 vi.mock('../repositories/runtime.repository');
-vi.mock('../repositories/toolset.repository');
+vi.mock('../repositories/skill.repository');
 vi.mock('@2ly/common', async () => {
   const actual = await vi.importActual('@2ly/common');
   return {
@@ -35,7 +35,7 @@ describe('IdentityService', () => {
   let mockSystemRepository: SystemRepository;
   let mockWorkspaceRepository: WorkspaceRepository;
   let mockRuntimeRepository: RuntimeRepository;
-  let mockToolsetRepository: ToolSetRepository;
+  let mockSkillRepository: SkillRepository;
   let mockLogger: ReturnType<LoggerService['getLogger']>;
 
   // Shared mock objects for type consistency
@@ -102,11 +102,11 @@ describe('IdentityService', () => {
       setRoots: vi.fn(),
     } as unknown as RuntimeRepository;
 
-    mockToolsetRepository = {
+    mockSkillRepository = {
       findByName: vi.fn(),
       findById: vi.fn(),
       create: vi.fn(),
-    } as unknown as ToolSetRepository;
+    } as unknown as SkillRepository;
 
     service = new IdentityService(
       mockLoggerService,
@@ -116,7 +116,7 @@ describe('IdentityService', () => {
       mockSystemRepository,
       mockWorkspaceRepository,
       mockRuntimeRepository,
-      mockToolsetRepository
+      mockSkillRepository
     );
   });
 
@@ -271,10 +271,10 @@ describe('IdentityService', () => {
       );
     });
 
-    it('should create toolset for workspace identity when toolset does not exist', async () => {
-      const mockToolset: dgraphResolversTypes.ToolSet = {
-        id: 'toolset-789',
-        name: 'test-toolset',
+    it('should create skill for workspace identity when skill does not exist', async () => {
+      const mockSkill: dgraphResolversTypes.Skill = {
+        id: 'skill-789',
+        name: 'test-skill',
         createdAt: new Date().toISOString(),
         workspace: mockWorkspace,
       };
@@ -282,8 +282,8 @@ describe('IdentityService', () => {
       const handshakeRequest = {
         data: {
           key: 'WSK1234567890',
-          nature: 'toolset' as const,
-          name: 'test-toolset',
+          nature: 'skill' as const,
+          name: 'test-skill',
           hostIP: '192.168.1.1',
         },
         respond: vi.fn(),
@@ -295,28 +295,28 @@ describe('IdentityService', () => {
         relatedId: 'workspace-123',
       });
       vi.spyOn(mockWorkspaceRepository, 'findById').mockResolvedValue(mockWorkspace);
-      vi.spyOn(mockToolsetRepository, 'findByName').mockResolvedValue(null);
-      vi.spyOn(mockToolsetRepository, 'create').mockResolvedValue(mockToolset);
+      vi.spyOn(mockSkillRepository, 'findByName').mockResolvedValue(null);
+      vi.spyOn(mockSkillRepository, 'create').mockResolvedValue(mockSkill);
 
       await (service as unknown as { handleHandshake: (msg: unknown) => Promise<void> }).handleHandshake(handshakeRequest);
 
-      expect(mockToolsetRepository.create).toHaveBeenCalledWith('test-toolset', '', 'workspace-123');
+      expect(mockSkillRepository.create).toHaveBeenCalledWith('test-skill', '', 'workspace-123');
       expect(handshakeRequest.respond).toHaveBeenCalledWith(
         expect.objectContaining({
           data: expect.objectContaining({
-            nature: 'toolset',
-            id: 'toolset-789',
-            name: 'test-toolset',
+            nature: 'skill',
+            id: 'skill-789',
+            name: 'test-skill',
             workspaceId: 'workspace-123',
           }),
         })
       );
     });
 
-    it('should use existing toolset for workspace identity when toolset exists', async () => {
-      const mockToolset: dgraphResolversTypes.ToolSet = {
-        id: 'toolset-existing',
-        name: 'test-toolset',
+    it('should use existing skill for workspace identity when skill exists', async () => {
+      const mockSkill: dgraphResolversTypes.Skill = {
+        id: 'skill-existing',
+        name: 'test-skill',
         createdAt: new Date().toISOString(),
         workspace: mockWorkspace,
       };
@@ -324,8 +324,8 @@ describe('IdentityService', () => {
       const handshakeRequest = {
         data: {
           key: 'WSK1234567890',
-          nature: 'toolset' as const,
-          name: 'test-toolset',
+          nature: 'skill' as const,
+          name: 'test-skill',
           hostIP: '192.168.1.1',
         },
         respond: vi.fn(),
@@ -337,17 +337,17 @@ describe('IdentityService', () => {
         relatedId: 'workspace-123',
       });
       vi.spyOn(mockWorkspaceRepository, 'findById').mockResolvedValue(mockWorkspace);
-      vi.spyOn(mockToolsetRepository, 'findByName').mockResolvedValue(mockToolset);
+      vi.spyOn(mockSkillRepository, 'findByName').mockResolvedValue(mockSkill);
 
       await (service as unknown as { handleHandshake: (msg: unknown) => Promise<void> }).handleHandshake(handshakeRequest);
 
-      expect(mockToolsetRepository.create).not.toHaveBeenCalled();
+      expect(mockSkillRepository.create).not.toHaveBeenCalled();
       expect(handshakeRequest.respond).toHaveBeenCalledWith(
         expect.objectContaining({
           data: expect.objectContaining({
-            nature: 'toolset',
-            id: 'toolset-existing',
-            name: 'test-toolset',
+            nature: 'skill',
+            id: 'skill-existing',
+            name: 'test-skill',
           }),
         })
       );
@@ -431,11 +431,11 @@ describe('IdentityService', () => {
     });
   });
 
-  describe('handleHandshake - Direct Toolset Identity', () => {
-    it('should authenticate toolset with direct toolset identity', async () => {
-      const mockToolset: dgraphResolversTypes.ToolSet = {
-        id: 'toolset-789',
-        name: 'test-toolset',
+  describe('handleHandshake - Direct Skill Identity', () => {
+    it('should authenticate skill with direct skill identity', async () => {
+      const mockSkill: dgraphResolversTypes.Skill = {
+        id: 'skill-789',
+        name: 'test-skill',
         createdAt: new Date().toISOString(),
         workspace: mockWorkspace,
       };
@@ -443,8 +443,8 @@ describe('IdentityService', () => {
       const handshakeRequest = {
         data: {
           key: 'TSK1234567890',
-          nature: 'toolset' as const,
-          name: 'test-toolset',
+          nature: 'skill' as const,
+          name: 'test-skill',
           hostIP: '192.168.1.1',
         },
         respond: vi.fn(),
@@ -452,19 +452,19 @@ describe('IdentityService', () => {
 
       vi.spyOn(mockKeyRateLimiter, 'checkKeyAttempt').mockReturnValue(true);
       vi.spyOn(mockIdentityRepository, 'findKey').mockResolvedValue({
-        nature: 'toolset',
-        relatedId: 'toolset-789',
+        nature: 'skill',
+        relatedId: 'skill-789',
       });
-      vi.spyOn(mockToolsetRepository, 'findById').mockResolvedValue(mockToolset);
+      vi.spyOn(mockSkillRepository, 'findById').mockResolvedValue(mockSkill);
 
       await (service as unknown as { handleHandshake: (msg: unknown) => Promise<void> }).handleHandshake(handshakeRequest);
 
       expect(handshakeRequest.respond).toHaveBeenCalledWith(
         expect.objectContaining({
           data: expect.objectContaining({
-            nature: 'toolset',
-            id: 'toolset-789',
-            name: 'test-toolset',
+            nature: 'skill',
+            id: 'skill-789',
+            name: 'test-skill',
             workspaceId: 'workspace-123',
           }),
         })
@@ -689,10 +689,10 @@ describe('IdentityService', () => {
       });
     });
 
-    it('should invoke toolset handshake callbacks', async () => {
-      const mockToolset: dgraphResolversTypes.ToolSet = {
-        id: 'toolset-789',
-        name: 'test-toolset',
+    it('should invoke skill handshake callbacks', async () => {
+      const mockSkill: dgraphResolversTypes.Skill = {
+        id: 'skill-789',
+        name: 'test-skill',
         createdAt: new Date().toISOString(),
         workspace: mockWorkspace,
       };
@@ -700,32 +700,32 @@ describe('IdentityService', () => {
       const handshakeRequest = {
         data: {
           key: 'TSK1234567890',
-          nature: 'toolset' as const,
-          name: 'test-toolset',
+          nature: 'skill' as const,
+          name: 'test-skill',
           hostIP: '192.168.1.1',
           pid: 5678,
-          hostname: 'toolset-host',
+          hostname: 'skill-host',
         },
         respond: vi.fn(),
       };
 
       const callback = vi.fn();
-      service.onHandshake('toolset', callback);
+      service.onHandshake('skill', callback);
 
       vi.spyOn(mockKeyRateLimiter, 'checkKeyAttempt').mockReturnValue(true);
       vi.spyOn(mockIdentityRepository, 'findKey').mockResolvedValue({
-        nature: 'toolset',
-        relatedId: 'toolset-789',
+        nature: 'skill',
+        relatedId: 'skill-789',
       });
-      vi.spyOn(mockToolsetRepository, 'findById').mockResolvedValue(mockToolset);
+      vi.spyOn(mockSkillRepository, 'findById').mockResolvedValue(mockSkill);
 
       await (service as unknown as { handleHandshake: (msg: unknown) => Promise<void> }).handleHandshake(handshakeRequest);
 
       expect(callback).toHaveBeenCalledWith({
-        instance: mockToolset,
+        instance: mockSkill,
         pid: 5678,
         hostIP: '192.168.1.1',
-        hostname: 'toolset-host',
+        hostname: 'skill-host',
       });
     });
 

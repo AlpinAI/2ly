@@ -7,7 +7,7 @@
       ],
       "env": {
         "NATS_SERVERS": "nats://localhost:4222",
-        "TOOLSET_NAME": "Test Toolset",
+        "SKILL_NAME": "Test Skill",
         "ROOTS": "tmp:/tmp"
       }
     },
@@ -26,7 +26,7 @@
       ],
       "env": {
         "NATS_SERVERS": "nats://nats.2ly.ai",
-        "TOOL_SET": "2ly-saas"
+        "SKILL_NAME": "2ly-saas"
       }
     }
   }

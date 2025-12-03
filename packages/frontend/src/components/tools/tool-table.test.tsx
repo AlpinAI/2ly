@@ -32,12 +32,12 @@ describe('ToolTable', () => {
         repositoryUrl: '',
         runOn: null,
       },
-      toolSets: [
+      skills: [
         {
-          __typename: 'ToolSet',
-          id: 'toolset-1',
-          name: 'Test ToolSet 1',
-          description: 'Test toolset description',
+          __typename: 'Skill',
+          id: 'skill-1',
+          name: 'Test Skill 1',
+          description: 'Test skill description',
         },
       ],
     },
@@ -59,7 +59,7 @@ describe('ToolTable', () => {
         repositoryUrl: '',
         runOn: null,
       },
-      toolSets: null,
+      skills: null,
     },
   ];
 
@@ -71,10 +71,10 @@ describe('ToolTable', () => {
     onSearchChange: vi.fn(),
     serverFilter: [],
     onServerFilterChange: vi.fn(),
-    toolSetFilter: [],
-    onToolSetFilterChange: vi.fn(),
+    skillFilter: [],
+    onSkillFilterChange: vi.fn(),
     availableServers: [{ id: 'server-1', name: 'Test Server 1' }],
-    availableToolSets: [{ id: 'toolset-1', name: 'Test ToolSet 1' }],
+    availableSkills: [{ id: 'skill-1', name: 'Test Skill 1' }],
     loading: false,
   };
 
@@ -138,7 +138,7 @@ describe('ToolTable', () => {
     expect(screen.getByText('Showing 2 tools')).toBeDefined();
   });
 
-  it('displays correct toolset count', () => {
+  it('displays correct skill count', () => {
     render(<ToolTable {...defaultProps} />);
 
     const cells = screen.getAllByText('1');

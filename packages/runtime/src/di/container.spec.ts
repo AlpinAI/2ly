@@ -14,9 +14,9 @@ describe('DI Container - validateAndDetectMode', () => {
     // Clear all keys to start fresh
     delete process.env.SYSTEM_KEY;
     delete process.env.WORKSPACE_KEY;
-    delete process.env.TOOLSET_KEY;
+    delete process.env.SKILL_KEY;
     delete process.env.RUNTIME_KEY;
-    delete process.env.TOOLSET_NAME;
+    delete process.env.SKILL_NAME;
     delete process.env.RUNTIME_NAME;
     delete process.env.REMOTE_PORT;
     delete process.env.MASTER_KEY;
@@ -40,13 +40,13 @@ describe('DI Container - validateAndDetectMode', () => {
   }
 
   describe('Key mutual exclusivity', () => {
-    it('should warn and remove MASTER_KEY when TOOLSET_KEY is provided', async () => {
+    it('should warn and remove MASTER_KEY when SKILL_KEY is provided', async () => {
       process.env.MASTER_KEY = 'mk_test';
-      process.env.TOOLSET_KEY = 'tsk_test';
+      process.env.SKILL_KEY = 'tsk_test';
 
       await testValidation();
 
-      expect(consoleWarnSpy).toHaveBeenCalledWith('TOOLSET_KEY provided -> ignoring MASTER_KEY');
+      expect(consoleWarnSpy).toHaveBeenCalledWith('SKILL_KEY provided -> ignoring MASTER_KEY');
       expect(process.env.MASTER_KEY).toBeUndefined();
     });
 
@@ -63,7 +63,7 @@ describe('DI Container - validateAndDetectMode', () => {
     it('should warn and remove SYSTEM_KEY when WORKSPACE_KEY is provided', async () => {
       process.env.SYSTEM_KEY = 'sk_test';
       process.env.WORKSPACE_KEY = 'wsk_test';
-      process.env.TOOLSET_NAME = 'test-toolset';
+      process.env.SKILL_NAME = 'test-skill';
 
       await testValidation();
 
@@ -73,11 +73,11 @@ describe('DI Container - validateAndDetectMode', () => {
 
     it('should throw when multiple keys are set after cleanup', async () => {
       process.env.WORKSPACE_KEY = 'wsk_test';
-      process.env.TOOLSET_KEY = 'tsk_test';
-      process.env.TOOLSET_NAME = 'test-toolset';
+      process.env.SKILL_KEY = 'tsk_test';
+      process.env.SKILL_NAME = 'test-skill';
 
       await expect(async () => await testValidation()).rejects.toThrow(
-        'Invalid configuration: Only one of SYSTEM_KEY, WORKSPACE_KEY, TOOLSET_KEY, or RUNTIME_KEY can be set',
+        'Invalid configuration: Only one of SYSTEM_KEY, WORKSPACE_KEY, SKILL_KEY, or RUNTIME_KEY can be set',
       );
     });
   });
@@ -100,56 +100,56 @@ describe('DI Container - validateAndDetectMode', () => {
   });
 
   describe('WORKSPACE_KEY validation', () => {
-    it('should require TOOLSET_NAME when WORKSPACE_KEY is provided', async () => {
+    it('should require SKILL_NAME when WORKSPACE_KEY is provided', async () => {
       process.env.WORKSPACE_KEY = 'wsk_test';
 
       await expect(async () => await testValidation()).rejects.toThrow(
-        'Invalid configuration: WORKSPACE_KEY requires TOOLSET_NAME',
+        'Invalid configuration: WORKSPACE_KEY requires SKILL_NAME',
       );
     });
 
-    it('should pass validation with WORKSPACE_KEY and TOOLSET_NAME', async () => {
+    it('should pass validation with WORKSPACE_KEY and SKILL_NAME', async () => {
       process.env.WORKSPACE_KEY = 'wsk_test';
-      process.env.TOOLSET_NAME = 'test-toolset';
+      process.env.SKILL_NAME = 'test-skill';
 
       await expect(testValidation()).resolves.not.toThrow();
     });
   });
 
-  describe('TOOLSET_KEY validation', () => {
-    it('should forbid RUNTIME_NAME when TOOLSET_KEY is provided', async () => {
-      process.env.TOOLSET_KEY = 'tsk_test';
+  describe('SKILL_KEY validation', () => {
+    it('should forbid RUNTIME_NAME when SKILL_KEY is provided', async () => {
+      process.env.SKILL_KEY = 'tsk_test';
       process.env.RUNTIME_NAME = 'test-runtime';
 
       await expect(async () => await testValidation()).rejects.toThrow(
-        'Invalid configuration: trying to start both a runtime and a toolset, this is not supported',
+        'Invalid configuration: trying to start both a runtime and a skill, this is not supported',
       );
     });
 
-    it('should forbid TOOLSET_NAME when TOOLSET_KEY is provided (via REMOTE_PORT check)', async () => {
-      process.env.TOOLSET_KEY = 'tsk_test';
-      process.env.TOOLSET_NAME = 'test-toolset';
+    it('should forbid SKILL_NAME when SKILL_KEY is provided (via REMOTE_PORT check)', async () => {
+      process.env.SKILL_KEY = 'tsk_test';
+      process.env.SKILL_NAME = 'test-skill';
       process.env.REMOTE_PORT = '3001';
 
       await expect(async () => await testValidation()).rejects.toThrow(
-        'Invalid configuration: REMOTE_PORT is mutually exclusive with TOOLSET_NAME and TOOLSET_KEY',
+        'Invalid configuration: REMOTE_PORT is mutually exclusive with SKILL_NAME and SKILL_KEY',
       );
     });
 
-    it('should pass validation with TOOLSET_KEY alone', async () => {
-      process.env.TOOLSET_KEY = 'tsk_test';
+    it('should pass validation with SKILL_KEY alone', async () => {
+      process.env.SKILL_KEY = 'tsk_test';
 
       await expect(testValidation()).resolves.not.toThrow();
     });
   });
 
   describe('RUNTIME_KEY validation', () => {
-    it('should forbid TOOLSET_NAME when RUNTIME_KEY is provided', async () => {
+    it('should forbid SKILL_NAME when RUNTIME_KEY is provided', async () => {
       process.env.RUNTIME_KEY = 'rtk_test';
-      process.env.TOOLSET_NAME = 'test-toolset';
+      process.env.SKILL_NAME = 'test-skill';
 
       await expect(async () => await testValidation()).rejects.toThrow(
-        'Invalid configuration: trying to start both a runtime and a toolset, this is not supported',
+        'Invalid configuration: trying to start both a runtime and a skill, this is not supported',
       );
     });
 
@@ -168,22 +168,22 @@ describe('DI Container - validateAndDetectMode', () => {
   });
 
   describe('REMOTE_PORT validation', () => {
-    it('should throw when REMOTE_PORT is set with TOOLSET_NAME', async () => {
+    it('should throw when REMOTE_PORT is set with SKILL_NAME', async () => {
       process.env.REMOTE_PORT = '3001';
-      process.env.TOOLSET_NAME = 'test-toolset';
-      process.env.TOOLSET_KEY = 'tsk_test';
+      process.env.SKILL_NAME = 'test-skill';
+      process.env.SKILL_KEY = 'tsk_test';
 
       await expect(async () => await testValidation()).rejects.toThrow(
-        'Invalid configuration: REMOTE_PORT is mutually exclusive with TOOLSET_NAME and TOOLSET_KEY',
+        'Invalid configuration: REMOTE_PORT is mutually exclusive with SKILL_NAME and SKILL_KEY',
       );
     });
 
-    it('should throw when REMOTE_PORT is set with TOOLSET_KEY', async () => {
+    it('should throw when REMOTE_PORT is set with SKILL_KEY', async () => {
       process.env.REMOTE_PORT = '3001';
-      process.env.TOOLSET_KEY = 'tsk_test';
+      process.env.SKILL_KEY = 'tsk_test';
 
       await expect(async () => await testValidation()).rejects.toThrow(
-        'Invalid configuration: REMOTE_PORT is mutually exclusive with TOOLSET_NAME and TOOLSET_KEY',
+        'Invalid configuration: REMOTE_PORT is mutually exclusive with SKILL_NAME and SKILL_KEY',
       );
     });
 
@@ -202,37 +202,37 @@ describe('DI Container - validateAndDetectMode', () => {
     });
   });
 
-  describe('Runtime vs Toolset mutual exclusivity', () => {
-    it('should throw when both RUNTIME_NAME and TOOLSET_NAME are set', async () => {
+  describe('Runtime vs Skill mutual exclusivity', () => {
+    it('should throw when both RUNTIME_NAME and SKILL_NAME are set', async () => {
       process.env.RUNTIME_KEY = 'rtk_test';
       process.env.RUNTIME_NAME = 'test-runtime';
-      process.env.TOOLSET_NAME = 'test-toolset';
+      process.env.SKILL_NAME = 'test-skill';
 
       await expect(async () => await testValidation()).rejects.toThrow(
-        'Invalid configuration: trying to start both a runtime and a toolset, this is not supported',
+        'Invalid configuration: trying to start both a runtime and a skill, this is not supported',
       );
     });
 
-    it('should throw when both RUNTIME_KEY and TOOLSET_KEY are set', async () => {
+    it('should throw when both RUNTIME_KEY and SKILL_KEY are set', async () => {
       process.env.RUNTIME_KEY = 'rtk_test';
-      process.env.TOOLSET_KEY = 'tsk_test';
+      process.env.SKILL_KEY = 'tsk_test';
 
       await expect(async () => await testValidation()).rejects.toThrow(
-        'Invalid configuration: Only one of SYSTEM_KEY, WORKSPACE_KEY, TOOLSET_KEY, or RUNTIME_KEY can be set',
+        'Invalid configuration: Only one of SYSTEM_KEY, WORKSPACE_KEY, SKILL_KEY, or RUNTIME_KEY can be set',
       );
     });
   });
 
   describe('Mode detection', () => {
-    it('should detect MCP_STDIO mode with TOOLSET_NAME', async () => {
-      process.env.TOOLSET_KEY = 'tsk_test';
+    it('should detect MCP_STDIO mode with SKILL_NAME', async () => {
+      process.env.SKILL_KEY = 'tsk_test';
       // Note: We can't directly test the return value of validateAndDetectMode since it's not exported
       // But we can verify it doesn't throw, which means MCP_STDIO mode was detected
       await expect(testValidation()).resolves.not.toThrow();
     });
 
-    it('should detect MCP_STDIO mode with TOOLSET_KEY', async () => {
-      process.env.TOOLSET_KEY = 'tsk_test';
+    it('should detect MCP_STDIO mode with SKILL_KEY', async () => {
+      process.env.SKILL_KEY = 'tsk_test';
       await expect(testValidation()).resolves.not.toThrow();
     });
 
@@ -257,7 +257,7 @@ describe('DI Container - validateAndDetectMode', () => {
     it('should throw when no valid configuration is provided', async () => {
       // No keys, no names, no remote port
       await expect(async () => await testValidation()).rejects.toThrow(
-        'Invalid configuration: At least one of TOOLSET_NAME, TOOLSET_KEY, RUNTIME_NAME, RUNTIME_KEY, or REMOTE_PORT must be set',
+        'Invalid configuration: At least one of SKILL_NAME, SKILL_KEY, RUNTIME_NAME, RUNTIME_KEY, or REMOTE_PORT must be set',
       );
     });
   });
@@ -266,17 +266,17 @@ describe('DI Container - validateAndDetectMode', () => {
     it('should handle empty string values as falsy', async () => {
       process.env.SYSTEM_KEY = '';
       process.env.WORKSPACE_KEY = '';
-      process.env.TOOLSET_KEY = '';
+      process.env.SKILL_KEY = '';
       process.env.RUNTIME_KEY = '';
 
       await expect(async () => await testValidation()).rejects.toThrow(
-        'Invalid configuration: At least one of TOOLSET_NAME, TOOLSET_KEY, RUNTIME_NAME, RUNTIME_KEY, or REMOTE_PORT must be set',
+        'Invalid configuration: At least one of SKILL_NAME, SKILL_KEY, RUNTIME_NAME, RUNTIME_KEY, or REMOTE_PORT must be set',
       );
     });
 
     it('should handle whitespace-only values', async () => {
-      process.env.TOOLSET_KEY = '   ';
-      process.env.TOOLSET_NAME = '   ';
+      process.env.SKILL_KEY = '   ';
+      process.env.SKILL_NAME = '   ';
 
       // Whitespace strings are truthy, so this should pass basic validation
       // The actual authentication will fail later, which is correct
@@ -286,12 +286,12 @@ describe('DI Container - validateAndDetectMode', () => {
     it('should validate all four key types are mutually exclusive', async () => {
       // Test all four keys set at once (after cleanup rules)
       process.env.WORKSPACE_KEY = 'wsk_test';
-      process.env.TOOLSET_KEY = 'tsk_test';
+      process.env.SKILL_KEY = 'tsk_test';
       process.env.RUNTIME_KEY = 'rtk_test';
-      process.env.TOOLSET_NAME = 'test-toolset';
+      process.env.SKILL_NAME = 'test-skill';
 
       await expect(async () => await testValidation()).rejects.toThrow(
-        'Invalid configuration: Only one of SYSTEM_KEY, WORKSPACE_KEY, TOOLSET_KEY, or RUNTIME_KEY can be set',
+        'Invalid configuration: Only one of SYSTEM_KEY, WORKSPACE_KEY, SKILL_KEY, or RUNTIME_KEY can be set',
       );
     });
   });

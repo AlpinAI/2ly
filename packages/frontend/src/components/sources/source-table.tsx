@@ -139,8 +139,8 @@ export function SourceTable({
           />
 
           <CheckboxDropdown
-            label="Tool Set"
-            placeholder="All tool sets"
+            label="Skill"
+            placeholder="All skills"
             items={availableAgents.map((a) => ({ id: a.id, label: a.name }))}
             selectedIds={agentFilter}
             onChange={onAgentFilterChange}

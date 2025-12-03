@@ -13,7 +13,7 @@ import { ToolCallStatus } from '@/graphql/generated/graphql';
 import {
   createMockToolCall,
   createMockMcpToolRef,
-  createMockToolSetRef,
+  createMockSkillRef,
   createMockRuntimeRef,
 } from '@/test/factories';
 
@@ -24,7 +24,7 @@ describe('ToolCallDetail', () => {
     mcpTool: createMockMcpToolRef({
       description: 'This is a test tool description that should not be displayed',
     }),
-    calledBy: createMockToolSetRef({ id: 'runtime-1' }),
+    calledBy: createMockSkillRef({ id: 'runtime-1' }),
     executedBy: createMockRuntimeRef({ id: 'runtime-2', hostname: 'runtime-host-1' }),
   });
 
@@ -196,7 +196,7 @@ describe('ToolCallDetail', () => {
   it('renders without hostname when not provided', () => {
     const toolCallWithoutHostnames = {
       ...mockToolCall,
-      calledBy: createMockToolSetRef({ id: 'runtime-1' }),
+      calledBy: createMockSkillRef({ id: 'runtime-1' }),
       executedBy: createMockRuntimeRef({ id: 'runtime-2', hostname: null }),
     };
 

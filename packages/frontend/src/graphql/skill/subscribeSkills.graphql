@@ -1,0 +1,20 @@
+# Subscribe to Skills
+# WHY: Real-time updates when skills change
+subscription SubscribeSkills($workspaceId: ID!) {
+  skills(workspaceId: $workspaceId) {
+    id
+    name
+    description
+    createdAt
+    updatedAt
+    mcpTools {
+      id
+      name
+      description
+      mcpServer {
+        id
+        name
+      }
+    }
+  }
+}

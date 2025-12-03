@@ -184,15 +184,15 @@ Create a filesystem MCP server via GraphQL.
 
 Create a runtime dynamically.
 
-### `createToolset(graphql, workspaceId, name, description, nbToolsToLink)`
+### `createSkill(graphql, workspaceId, name, description, nbToolsToLink)`
 
-Create a toolset and link tools dynamically.
+Create a skill and link tools dynamically.
 
 ## NATS Helpers
 
-### `sendToolsetHandshake(params)`
+### `sendSkillHandshake(params)`
 
-Send a toolset handshake message to trigger onboarding step 3.
+Send a skill handshake message to trigger onboarding step 3.
 
 ### `waitForOnboardingStepComplete(workspaceId, stepId, timeoutMs, pollIntervalMs)`
 

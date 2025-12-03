@@ -12,7 +12,7 @@
  *
  * STEP-SPECIFIC CONTENT:
  * - Step 1: "Browse MCP Servers" button (opens Add Source Workflow)
- * - Step 2: "Create Tool Set" button (opens Create Tool Set dialog, then Manage Tools dialog)
+ * - Step 2: "Create Skill" button (opens Create Skill dialog, then Manage Tools dialog)
  * - Step 3: "Connect" button (opens Connect Agent dialog for the first agent with tools)
  */
 
@@ -26,10 +26,10 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { useUIStore, useCreateToolsetDialog, useManageToolsDialog, useConnectToolsetDialog } from '@/stores/uiStore';
+import { useUIStore, useCreateSkillDialog, useManageToolsDialog, useConnectSkillDialog } from '@/stores/uiStore';
 import { STEP_METADATA, ONBOARDING_STEPS } from '@/constants/onboarding-steps';
 import { useMCPServers } from '@/hooks/useMCPServers';
-import { useToolSets } from '@/hooks/useToolSets';
+import { useSkills } from '@/hooks/useSkills';
 import { useParams } from 'react-router-dom';
 import type { OnboardingStep } from '@/graphql/generated/graphql';
 
@@ -42,9 +42,9 @@ interface OnboardingCardProps {
 export function OnboardingCard({ step, isCurrentStep = false }: OnboardingCardProps) {
   const setAddSourceWorkflowOpen = useUIStore((state) => state.setAddSourceWorkflowOpen);
 
-  const { openDialog: openCreateToolsetDialog } = useCreateToolsetDialog();
+  const { openDialog: openCreateSkillDialog } = useCreateSkillDialog();
   const manageToolsDialog = useManageToolsDialog();
-  const { setOpen: setConnectToolsetDialogOpen, setSelectedToolsetName, setSelectedToolsetId } = useConnectToolsetDialog();
+  const { setOpen: setConnectSkillDialogOpen, setSelectedSkillName, setSelectedSkillId } = useConnectSkillDialog();
 
 
   const metadata = STEP_METADATA[step.stepId];
@@ -64,10 +64,10 @@ export function OnboardingCard({ step, isCurrentStep = false }: OnboardingCardPr
     }
   };
   
-  // Handle creating tool set with callback to open manage tools dialog
-  const handleCreateToolSet = () => {
-    openCreateToolsetDialog((toolSetId) => {
-      manageToolsDialog.setSelectedToolsetId(toolSetId);
+  // Handle creating skill with callback to open manage tools dialog
+  const handleCreateSkill = () => {
+    openCreateSkillDialog((skillId) => {
+      manageToolsDialog.setSelectedSkillId(skillId);
       manageToolsDialog.setOpen(true);
     });
   };
@@ -108,25 +108,25 @@ export function OnboardingCard({ step, isCurrentStep = false }: OnboardingCardPr
         );
       }
         
-      case ONBOARDING_STEPS.CREATE_TOOL_SET: {
+      case ONBOARDING_STEPS.CREATE_SKILL: {
         const { workspaceId } = useParams<{ workspaceId: string }>();
-        const { toolSets } = useToolSets(workspaceId || '');
+        const { skills } = useSkills(workspaceId || '');
 
-        // Find first tool set with at least one tool
-        const firstToolSetWithTools = toolSets.find(toolSet =>
-          toolSet.mcpTools && toolSet.mcpTools.length > 0
+        // Find first skill with at least one tool
+        const firstSkillWithTools = skills.find(skill =>
+          skill.mcpTools && skill.mcpTools.length > 0
         );
 
-        if (isCompleted && firstToolSetWithTools) {
-          const toolCount = firstToolSetWithTools.mcpTools?.length || 0;
+        if (isCompleted && firstSkillWithTools) {
+          const toolCount = firstSkillWithTools.mcpTools?.length || 0;
           return (
             <div className="space-y-3">
               <div className="rounded-lg bg-green-400/20 dark:bg-green-900/20 p-3">
                 <p className="text-sm text-green-800 dark:text-green-200">
                   <span className="flex items-center">
                     <Package className="mr-2 h-4 w-4" />
-                    <span className="font-medium truncate max-w-xs overflow-hidden whitespace-nowrap" title={firstToolSetWithTools.name}>
-                      {firstToolSetWithTools.name} ({toolCount} {toolCount === 1 ? 'tool' : 'tools'})
+                    <span className="font-medium truncate max-w-xs overflow-hidden whitespace-nowrap" title={firstSkillWithTools.name}>
+                      {firstSkillWithTools.name} ({toolCount} {toolCount === 1 ? 'tool' : 'tools'})
                     </span>
                   </span>
                 </p>
@@ -137,39 +137,39 @@ export function OnboardingCard({ step, isCurrentStep = false }: OnboardingCardPr
 
         return (
           <Button
-            onClick={handleCreateToolSet}
+            onClick={handleCreateSkill}
             className="w-full"
             variant={isCurrentStep ? "default" : "outline"}
           >
             <Plus className="mr-2 h-4 w-4" />
-            Create Tool Set
+            Create Skill
           </Button>
         );
       }
 
       case ONBOARDING_STEPS.CONNECT_AGENT: {
         const { workspaceId } = useParams<{ workspaceId: string }>();
-        const { toolSets } = useToolSets(workspaceId || '');
+        const { skills } = useSkills(workspaceId || '');
 
-        // Find first tool set with tools
-        const firstToolSetWithTools = toolSets.find(toolSet =>
-          toolSet.mcpTools && toolSet.mcpTools.length > 0
+        // Find first skill with tools
+        const firstSkillWithTools = skills.find(skill =>
+          skill.mcpTools && skill.mcpTools.length > 0
         );
 
         if (isCompleted) {
-          // Try to get toolset name from metadata first
-          let toolsetName: string | undefined;
+          // Try to get skill name from metadata first
+          let skillName: string | undefined;
           try {
             if (step.metadata) {
               const metadata = JSON.parse(step.metadata);
-              toolsetName = metadata.toolsetName;
+              skillName = metadata.skillName;
             }
           } catch {
             // Ignore JSON parse errors
           }
 
-          // Fallback to runtime name if no toolset name in metadata
-          const displayName = toolsetName || 'Tool Set';
+          // Fallback to runtime name if no skill name in metadata
+          const displayName = skillName || 'Skill';
 
           return (
             <div className="space-y-3">
@@ -187,12 +187,12 @@ export function OnboardingCard({ step, isCurrentStep = false }: OnboardingCardPr
           );
         }
 
-        // Need to have a tool set first
-        if (!firstToolSetWithTools) {
+        // Need to have a skill first
+        if (!firstSkillWithTools) {
           return (
             <div className="space-y-3">
               <p className="text-sm text-gray-600 dark:text-gray-400 italic">
-                Create a tool set first to connect to an agent.
+                Create a skill first to connect to an agent.
               </p>
             </div>
           );
@@ -202,10 +202,10 @@ export function OnboardingCard({ step, isCurrentStep = false }: OnboardingCardPr
           <div className="flex gap-2">
             <Button
               onClick={() => {
-                // Use the first toolSet name for connection instructions
-                setSelectedToolsetName(firstToolSetWithTools.name);
-                setSelectedToolsetId(firstToolSetWithTools.id);
-                setConnectToolsetDialogOpen(true);
+                // Use the first skill name for connection instructions
+                setSelectedSkillName(firstSkillWithTools.name);
+                setSelectedSkillId(firstSkillWithTools.id);
+                setConnectSkillDialogOpen(true);
               }}
               className="flex-1"
               variant={isCurrentStep ? "default" : "outline"}

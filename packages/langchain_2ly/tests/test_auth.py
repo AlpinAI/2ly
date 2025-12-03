@@ -1,5 +1,5 @@
 import pytest
-from langchain_2ly.mcp import MCPToolset, _validate_auth
+from langchain_2ly.mcp import MCPSkill, _validate_auth
 from langchain_2ly.mcp_only import MCPClient
 
 
@@ -9,78 +9,78 @@ class TestAuthenticationValidation:
     def test_validate_auth_requires_one_key(self):
         """Test that at least one authentication key is required."""
         with pytest.raises(ValueError, match="Authentication required"):
-            _validate_auth(name="test", workspace_key=None, toolset_key=None)
+            _validate_auth(name="test", workspace_key=None, skill_key=None)
 
     def test_validate_auth_rejects_both_keys(self):
         """Test that both keys cannot be provided together."""
         with pytest.raises(ValueError, match="Authentication conflict"):
-            _validate_auth(name="test", workspace_key="WSK_123", toolset_key="TSK_456")
+            _validate_auth(name="test", workspace_key="WSK_123", skill_key="SKL_456")
 
     def test_validate_auth_workspace_key_requires_name(self):
         """Test that workspace_key requires a name."""
         with pytest.raises(ValueError, match="must provide a 'name' parameter"):
-            _validate_auth(name=None, workspace_key="WSK_123", toolset_key=None)
+            _validate_auth(name=None, workspace_key="WSK_123", skill_key=None)
 
-    def test_validate_auth_toolset_key_rejects_name(self):
-        """Test that toolset_key must not have a name."""
+    def test_validate_auth_skill_key_rejects_name(self):
+        """Test that skill_key must not have a name."""
         with pytest.raises(ValueError, match="do not provide a 'name' parameter"):
-            _validate_auth(name="test", workspace_key=None, toolset_key="TSK_456")
+            _validate_auth(name="test", workspace_key=None, skill_key="SKL_456")
 
     def test_validate_auth_workspace_key_with_name_ok(self):
         """Test valid workspace_key + name combination."""
         # Should not raise
-        _validate_auth(name="test", workspace_key="WSK_123", toolset_key=None)
+        _validate_auth(name="test", workspace_key="WSK_123", skill_key=None)
 
-    def test_validate_auth_toolset_key_without_name_ok(self):
-        """Test valid toolset_key without name."""
+    def test_validate_auth_skill_key_without_name_ok(self):
+        """Test valid skill_key without name."""
         # Should not raise
-        _validate_auth(name=None, workspace_key=None, toolset_key="TSK_456")
+        _validate_auth(name=None, workspace_key=None, skill_key="SKL_456")
 
 
-class TestMCPToolsetAuthentication:
-    """Test MCPToolset authentication configuration."""
+class TestMCPSkillAuthentication:
+    """Test MCPSkill authentication configuration."""
 
     def test_init_with_workspace_key_and_name(self):
         """Test initialization with workspace_key and name."""
-        mcp = MCPToolset(name="test", workspace_key="WSK_123")
+        mcp = MCPSkill(name="test", workspace_key="WSK_123")
 
         assert mcp.name == "test"
         assert mcp.serverParams.env["WORKSPACE_KEY"] == "WSK_123"
-        assert mcp.serverParams.env["TOOLSET_NAME"] == "test"
-        assert "TOOLSET_KEY" not in mcp.serverParams.env
+        assert mcp.serverParams.env["SKILL_NAME"] == "test"
+        assert "SKILL_KEY" not in mcp.serverParams.env
 
-    def test_init_with_toolset_key(self):
-        """Test initialization with toolset_key."""
-        mcp = MCPToolset(toolset_key="TSK_456")
+    def test_init_with_skill_key(self):
+        """Test initialization with skill_key."""
+        mcp = MCPSkill(skill_key="SKL_456")
 
         assert mcp.name is None
-        assert mcp.serverParams.env["TOOLSET_KEY"] == "TSK_456"
+        assert mcp.serverParams.env["SKILL_KEY"] == "SKL_456"
         assert "WORKSPACE_KEY" not in mcp.serverParams.env
-        assert "TOOLSET_NAME" not in mcp.serverParams.env
+        assert "SKILL_NAME" not in mcp.serverParams.env
 
     def test_init_with_no_auth_raises(self):
         """Test that initialization without auth raises error."""
         with pytest.raises(ValueError, match="Authentication required"):
-            MCPToolset()
+            MCPSkill()
 
     def test_init_with_both_keys_raises(self):
         """Test that initialization with both keys raises error."""
         with pytest.raises(ValueError, match="Authentication conflict"):
-            MCPToolset(name="test", workspace_key="WSK_123", toolset_key="TSK_456")
+            MCPSkill(name="test", workspace_key="WSK_123", skill_key="SKL_456")
 
     def test_with_workspace_key_factory(self):
         """Test with_workspace_key factory method."""
-        mcp = MCPToolset.with_workspace_key(name="test", workspace_key="WSK_123")
+        mcp = MCPSkill.with_workspace_key(name="test", workspace_key="WSK_123")
 
         assert mcp.name == "test"
         assert mcp.serverParams.env["WORKSPACE_KEY"] == "WSK_123"
-        assert mcp.serverParams.env["TOOLSET_NAME"] == "test"
+        assert mcp.serverParams.env["SKILL_NAME"] == "test"
 
-    def test_with_toolset_key_factory(self):
-        """Test with_toolset_key factory method."""
-        mcp = MCPToolset.with_toolset_key(toolset_key="TSK_456")
+    def test_with_skill_key_factory(self):
+        """Test with_skill_key factory method."""
+        mcp = MCPSkill.with_skill_key(skill_key="SKL_456")
 
-        assert mcp.serverParams.env["TOOLSET_KEY"] == "TSK_456"
+        assert mcp.serverParams.env["SKILL_KEY"] == "SKL_456"
         assert "WORKSPACE_KEY" not in mcp.serverParams.env
 
 
@@ -93,17 +93,17 @@ class TestMCPClientAuthentication:
 
         assert mcp.name == "test"
         assert mcp.serverParams.env["WORKSPACE_KEY"] == "WSK_123"
-        assert mcp.serverParams.env["TOOLSET_NAME"] == "test"
-        assert "TOOLSET_KEY" not in mcp.serverParams.env
+        assert mcp.serverParams.env["SKILL_NAME"] == "test"
+        assert "SKILL_KEY" not in mcp.serverParams.env
 
-    def test_init_with_toolset_key(self):
-        """Test initialization with toolset_key."""
-        mcp = MCPClient(toolset_key="TSK_456")
+    def test_init_with_skill_key(self):
+        """Test initialization with skill_key."""
+        mcp = MCPClient(skill_key="SKL_456")
 
         assert mcp.name is None
-        assert mcp.serverParams.env["TOOLSET_KEY"] == "TSK_456"
+        assert mcp.serverParams.env["SKILL_KEY"] == "SKL_456"
         assert "WORKSPACE_KEY" not in mcp.serverParams.env
-        assert "TOOLSET_NAME" not in mcp.serverParams.env
+        assert "SKILL_NAME" not in mcp.serverParams.env
 
     def test_with_workspace_key_factory(self):
         """Test with_workspace_key factory method."""
@@ -111,13 +111,13 @@ class TestMCPClientAuthentication:
 
         assert mcp.name == "test"
         assert mcp.serverParams.env["WORKSPACE_KEY"] == "WSK_123"
-        assert mcp.serverParams.env["TOOLSET_NAME"] == "test"
+        assert mcp.serverParams.env["SKILL_NAME"] == "test"
 
-    def test_with_toolset_key_factory(self):
-        """Test with_toolset_key factory method."""
-        mcp = MCPClient.with_toolset_key(toolset_key="TSK_456")
+    def test_with_skill_key_factory(self):
+        """Test with_skill_key factory method."""
+        mcp = MCPClient.with_skill_key(skill_key="SKL_456")
 
-        assert mcp.serverParams.env["TOOLSET_KEY"] == "TSK_456"
+        assert mcp.serverParams.env["SKILL_KEY"] == "SKL_456"
         assert "WORKSPACE_KEY" not in mcp.serverParams.env
 
     def test_log_level_option(self):
@@ -132,20 +132,20 @@ class TestEnvironmentVariables:
 
     def test_nats_servers_default(self):
         """Test default NATS servers."""
-        mcp = MCPToolset(name="test", workspace_key="WSK_123")
+        mcp = MCPSkill(name="test", workspace_key="WSK_123")
         assert mcp.serverParams.env["NATS_SERVERS"] == "nats://localhost:4222"
 
     def test_nats_servers_custom(self):
         """Test custom NATS servers."""
-        mcp = MCPToolset(name="test", workspace_key="WSK_123", nats_servers="nats://custom:4222")
+        mcp = MCPSkill(name="test", workspace_key="WSK_123", nats_servers="nats://custom:4222")
         assert mcp.serverParams.env["NATS_SERVERS"] == "nats://custom:4222"
 
     def test_version_default(self):
         """Test default version."""
-        mcp = MCPToolset(name="test", workspace_key="WSK_123")
+        mcp = MCPSkill(name="test", workspace_key="WSK_123")
         assert mcp.serverParams.args == ["@2ly/runtime@latest"]
 
     def test_version_custom(self):
         """Test custom version."""
-        mcp = MCPToolset(name="test", workspace_key="WSK_123", version="1.2.3")
+        mcp = MCPSkill(name="test", workspace_key="WSK_123", version="1.2.3")
         assert mcp.serverParams.args == ["@2ly/runtime@1.2.3"]

@@ -170,7 +170,7 @@ export const QUERY_WORKSPACE_WITH_MCP_TOOLS = gql`
           repositoryUrl
           runOn
         }
-        toolSets {
+        skills {
           id
           name
           description

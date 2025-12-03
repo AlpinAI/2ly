@@ -5,7 +5,7 @@
  * - Dgraph (Zero + Alpha) for database
  * - NATS with JetStream for messaging
  * - Backend API server
- * - Runtime, including MCP server and toolset
+ * - Runtime, including MCP server and skill
  *
  * Can be used for both frontend (Playwright) and backend integration tests
  */

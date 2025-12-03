@@ -20,10 +20,10 @@ import type {
 export interface MCPAuthParams {
   /** Workspace key for workspace authentication */
   workspaceKey?: string;
-  /** Toolset key for toolset-specific connections */
-  toolsetKey?: string;
-  /** Toolset name for toolset-specific connections */
-  toolsetName?: string;
+  /** Skill key for skill-specific connections */
+  skillKey?: string;
+  /** Skill name for skill-specific connections */
+  skillName?: string;
 }
 
 /**
@@ -49,7 +49,7 @@ export class MCPClientFixture {
 
   /**
    * Connect to runtime via STDIO transport
-   * This is used for direct process communication (1:1 with toolset)
+   * This is used for direct process communication (1:1 with skill)
    */
   async connectSTDIO(params: STDIOConnectionParams, auth: MCPAuthParams): Promise<void> {
     if (this.client) {
@@ -60,8 +60,8 @@ export class MCPClientFixture {
     const env = {
       ...params.env,
       ...(auth.workspaceKey ? { WORKSPACE_KEY: auth.workspaceKey } : {}),
-      ...(auth.toolsetKey ? { TOOLSET_KEY: auth.toolsetKey } : {}),
-      ...(auth.toolsetName ? { TOOLSET_NAME: auth.toolsetName } : {}),
+      ...(auth.skillKey ? { SKILL_KEY: auth.skillKey } : {}),
+      ...(auth.skillName ? { SKILL_NAME: auth.skillName } : {}),
     };
 
     this.transport = new StdioClientTransport({
@@ -96,8 +96,8 @@ export class MCPClientFixture {
     // Create headers from auth params
     const headers: Record<string, string> = {};
     if (auth.workspaceKey) headers['workspace_key'] = auth.workspaceKey;
-    if (auth.toolsetKey) headers['toolset_key'] = auth.toolsetKey;
-    if (auth.toolsetName) headers['toolset_name'] = auth.toolsetName;
+    if (auth.skillKey) headers['skill_key'] = auth.skillKey;
+    if (auth.skillName) headers['skill_name'] = auth.skillName;
 
     this.transport = new SSEClientTransport(new URL(`${baseUrl}/sse`), {
       requestInit: {
@@ -133,8 +133,8 @@ export class MCPClientFixture {
       'Content-Type': 'application/json',
     };
     if (auth.workspaceKey) headers['workspace_key'] = auth.workspaceKey;
-    if (auth.toolsetKey) headers['toolset_key'] = auth.toolsetKey;
-    if (auth.toolsetName) headers['toolset_name'] = auth.toolsetName;
+    if (auth.skillKey) headers['skill_key'] = auth.skillKey;
+    if (auth.skillName) headers['skill_name'] = auth.skillName;
 
     const url = new URL(`${baseUrl}/mcp`);
 

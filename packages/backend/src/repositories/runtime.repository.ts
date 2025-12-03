@@ -1,6 +1,6 @@
 import { injectable, inject } from 'inversify';
 import { DGraphService } from '../services/dgraph.service';
-import { dgraphResolversTypes, NatsService, LoggerService, ToolSetCallToolRequest, RuntimeCallToolResponse, ErrorResponse, apolloResolversTypes } from '@2ly/common';
+import { dgraphResolversTypes, NatsService, LoggerService, SkillCallToolRequest, RuntimeCallToolResponse, ErrorResponse, apolloResolversTypes } from '@2ly/common';
 import { ConnectionMetadata } from '../types';
 import {
   QUERY_MCPSERVER_WITH_TOOL,
@@ -88,7 +88,7 @@ export class RuntimeRepository {
       throw new Error(`Failed to create runtime for ${connectedTo} ${relatedId} ${name}`);
     }
 
-    // 2. Create the toolset key
+    // 2. Create the skill key
     await this.identityRepository.createKey('runtime', runtime.id, `${name} Runtime Key`, '');
 
     return runtime;
@@ -351,7 +351,7 @@ export class RuntimeRepository {
       throw new Error(`Invalid input: ${input}`);
     }
 
-    const message = new ToolSetCallToolRequest({
+    const message = new SkillCallToolRequest({
       workspaceId: tool.workspace.id,
       isTest: true,
       toolId,

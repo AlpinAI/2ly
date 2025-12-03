@@ -77,19 +77,21 @@ Our design system uses **CSS custom properties (variables)** for theming, define
 
 ```css
 :root {
-  --primary: 186 100% 42%;    /* Cyan #06b6d4 */
-  --background: 0 0% 100%;    /* White */
+  --primary: 186 100% 42%; /* Cyan #06b6d4 */
+  --background: 0 0% 100%; /* White */
   --foreground: 222.2 84% 4.9%; /* Near black */
   /* ... more tokens */
 }
 ```
 
 **Why HSL format?**
+
 - HSL values are stored WITHOUT the `hsl()` wrapper
 - This allows Tailwind to apply opacity: `bg-primary/50` = primary at 50% opacity
 - Format: `"hue saturation% lightness%"`
 
 **Why semantic naming?**
+
 - Colors are named by purpose (primary, muted) not appearance (blue, gray)
 - Enables theme changes without touching component code
 - Example: `--primary` is cyan in both light and dark modes
@@ -97,6 +99,7 @@ Our design system uses **CSS custom properties (variables)** for theming, define
 ### Theme System
 
 **Architecture:**
+
 - ThemeContext (`src/contexts/ThemeContext.tsx`) manages theme state
 - Applies `.dark` class to `<html>` element when dark mode is active
 - CSS variables in `.dark` selector override light theme values
@@ -104,6 +107,7 @@ Our design system uses **CSS custom properties (variables)** for theming, define
 - Respects system preference (`prefers-color-scheme`) as default
 
 **Usage:**
+
 ```tsx
 import { useTheme } from '@/contexts/ThemeContext';
 
@@ -129,11 +133,13 @@ import { cn } from '@/lib/utils';
 
 function Button({ className }) {
   return (
-    <button className={cn(
-      'base-class',           // Base styles
-      'hover:bg-blue-500',    // Conditional
-      className               // User overrides
-    )}>
+    <button
+      className={cn(
+        'base-class', // Base styles
+        'hover:bg-blue-500', // Conditional
+        className, // User overrides
+      )}
+    >
       Click me
     </button>
   );
@@ -141,6 +147,7 @@ function Button({ className }) {
 ```
 
 **Why it exists:**
+
 - Combines `clsx` (conditional classes) + `tailwind-merge` (conflict resolution)
 - Prevents Tailwind class conflicts (e.g., `p-4 p-2` becomes just `p-2`)
 - Standard pattern in Tailwind/shadcn ecosystem
@@ -150,6 +157,7 @@ function Button({ className }) {
 Centralized theme management to avoid prop drilling:
 
 **Features:**
+
 - ✅ Light/Dark mode toggle
 - ✅ localStorage persistence
 - ✅ System preference detection
@@ -160,6 +168,7 @@ Centralized theme management to avoid prop drilling:
 ## 🗄️ State Management
 
 We use a **hybrid state management** approach that separates concerns:
+
 - **Apollo Client** - Server state (data from backend)
 - **Zustand** - Client state (UI preferences, filters)
 
@@ -168,17 +177,18 @@ We use a **hybrid state management** approach that separates concerns:
 **Problem**: Mixing server and client state leads to complexity.
 **Solution**: Use the right tool for each type of state.
 
-| State Type | Tool | Example |
-|------------|------|---------|
-| Server Data | Apollo Client | Agents, Tools, Runtimes from backend |
-| UI State | Zustand | Modal open/closed, filters, search |
-| System State | React Context | Theme, Auth session |
+| State Type   | Tool          | Example                              |
+| ------------ | ------------- | ------------------------------------ |
+| Server Data  | Apollo Client | Agents, Tools, Runtimes from backend |
+| UI State     | Zustand       | Modal open/closed, filters, search   |
+| System State | React Context | Theme, Auth session                  |
 
 ### Apollo Client - Server State
 
 **What**: GraphQL client with normalized caching, real-time subscriptions, and optimistic updates.
 
 **Key Features**:
+
 - ✅ Normalized cache (update once, reflect everywhere)
 - ✅ WebSocket subscriptions (real-time monitoring)
 - ✅ Automatic refetching
@@ -187,6 +197,7 @@ We use a **hybrid state management** approach that separates concerns:
 - ✅ React 19 compatible
 
 **Configuration**: `src/lib/apollo/`
+
 ```
 apollo/
 ├── client.ts       # Apollo Client instance & cache config
@@ -195,6 +206,7 @@ apollo/
 ```
 
 **Apollo Client v4 Pattern** (Typed Document Nodes):
+
 ```tsx
 import { useQuery } from '@apollo/client/react';
 import { GetRuntimesDocument } from '@/graphql/generated/graphql';
@@ -211,12 +223,14 @@ function RuntimesList() {
 ```
 
 **Why Typed Document Nodes?**
+
 - Official Apollo v4 approach ([docs](https://www.apollographql.com/docs/react/development-testing/graphql-codegen))
 - Better type inference than generated hooks
 - Smaller bundle size (no hook generation code)
 - More flexible and maintainable
 
 **How Normalized Cache Works**:
+
 ```
 Backend returns:
 ├─ Query 1: agents list → [Agent:123, Agent:456]
@@ -235,12 +249,14 @@ Mutation updates Agent:123 → BOTH queries update automatically!
 **What**: Lightweight state management for UI-only state.
 
 **Why Zustand** (not Context):
+
 - No provider wrapping
 - Better performance (selective subscriptions)
 - Simpler API than Redux
 - Tiny (1KB)
 
 **Stores**: `src/stores/`
+
 ```
 stores/
 ├── uiStore.ts        # UI state (modals, filters, navigation)
@@ -248,6 +264,7 @@ stores/
 ```
 
 **UI Store Example**:
+
 ```tsx
 import { useUIStore, useToolFilters } from '@/stores/uiStore';
 
@@ -255,13 +272,14 @@ import { useUIStore, useToolFilters } from '@/stores/uiStore';
 const uiState = useUIStore();
 
 // Option 2: Select specific state (re-renders only when this changes) ✅
-const deployModalOpen = useUIStore(state => state.deployModalOpen);
+const deployModalOpen = useUIStore((state) => state.deployModalOpen);
 
 // Option 3: Use focused selector (best performance) ✅✅
 const { category, setCategory } = useToolFilters();
 ```
 
 **Workspace Store Example**:
+
 ```tsx
 import { useQuery } from '@apollo/client/react';
 import { GetMcpToolsDocument } from '@/graphql/generated/graphql';
@@ -285,30 +303,35 @@ function MyComponent() {
 **Apollo v4 Approach**: Uses `typed-document-node` instead of generated hooks for better type safety and smaller bundle size. ([Official Guide](https://www.apollographql.com/docs/react/development-testing/graphql-codegen))
 
 **Run codegen**:
+
 ```bash
 npm run codegen        # Generate once
 npm run codegen:watch  # Watch mode
 ```
 
 **Configuration**: `codegen.ts`
+
 - Schema source: `../backend/dist/apollo.schema.graphql`
 - Operations: `src/graphql/**/*.graphql`
 - Output: `src/graphql/generated/`
 - Plugins: `typescript` + `typescript-operations` + `typed-document-node`
 
 **Generated Files**:
+
 ```
 src/graphql/generated/
 └── graphql.ts        # All TypeScript types + Typed Document Nodes
 ```
 
 **What's Generated**:
+
 - TypeScript types for all GraphQL schema types
 - TypeScript types for all operations (queries, mutations, subscriptions)
 - Typed document nodes (e.g., `GetRuntimesDocument`, `GetMcpToolsDocument`)
 - Full type safety with Apollo Client hooks
 
 **Writing Operations**:
+
 ```
 src/graphql/
 ├── queries/
@@ -326,6 +349,7 @@ src/graphql/
 **Why**: Wrap Apollo Client hooks with custom logic for data transformation and business rules.
 
 **Apollo v4 Pattern**: `src/hooks/`
+
 ```tsx
 // src/hooks/useRuntimes.ts
 import { useQuery } from '@apollo/client/react';
@@ -338,12 +362,12 @@ export function useRuntimes() {
   });
 
   // Transform data
-  const runtimes = data?.workspace.flatMap(ws => ws.runtimes ?? []) ?? [];
+  const runtimes = data?.workspace.flatMap((ws) => ws.runtimes ?? []) ?? [];
 
   // Calculate stats
   const stats = {
     total: runtimes.length,
-    active: runtimes.filter(r => r.status === 'ACTIVE').length,
+    active: runtimes.filter((r) => r.status === 'ACTIVE').length,
   };
 
   return { runtimes, stats, loading, error };
@@ -353,6 +377,7 @@ export function useRuntimes() {
 ### Integration Example: Apollo + Zustand
 
 **Tool Catalog** (combines both):
+
 ```tsx
 // src/hooks/useToolCatalog.ts
 import { useQuery } from '@apollo/client/react';
@@ -372,9 +397,7 @@ export function useToolCatalog() {
 
   // Combine: Client-side filtering
   const filteredTools = useMemo(() => {
-    return data?.workspaceMCPTools?.mcpTools?.filter(tool =>
-      tool.name.includes(filters.search)
-    ) ?? [];
+    return data?.workspaceMCPTools?.mcpTools?.filter((tool) => tool.name.includes(filters.search)) ?? [];
   }, [data, filters.search]);
 
   return { tools: filteredTools, loading, filters };
@@ -443,11 +466,13 @@ npm run codegen:watch
 ### VSCode Setup
 
 Install recommended extensions when prompted:
+
 - **Tailwind CSS IntelliSense** - Autocomplete for Tailwind classes
 - **ESLint** - Code linting
 - **Prettier** - Code formatting
 
 The `.vscode/settings.json` configures Tailwind to work with:
+
 - `cn()` function
 - TypeScript/TSX files
 - CSS files with `@tailwind` directives
@@ -459,17 +484,20 @@ The frontend supports runtime configuration for flexible deployment across diffe
 ### Environment Variables
 
 **Primary variable:**
+
 - `VITE_GRAPHQL_HOST` - Sets the backend host
   - Example: `VITE_GRAPHQL_HOST=api.example.com`
   - Results in: `https://api.example.com/graphql` and `wss://api.example.com/graphql-ws`
 
 **Optional SSL override:**
+
 - `VITE_GRAPHQL_HOST_SSL` - Override SSL detection (boolean)
   - `true` - Force HTTPS/WSS
   - `false` - Force HTTP/WS
   - Not set - Auto-detect (localhost → HTTP, others → HTTPS)
 
 **Default behavior:**
+
 - No env vars set → `http://localhost:3000/graphql` and `ws://localhost:3000/graphql-ws`
 - `VITE_GRAPHQL_HOST=api.example.com` → `https://api.example.com/graphql` and `wss://api.example.com/graphql-ws`
 - `VITE_GRAPHQL_HOST=localhost:8080` → `http://localhost:8080/graphql` and `ws://localhost:8080/graphql-ws`
@@ -477,6 +505,7 @@ The frontend supports runtime configuration for flexible deployment across diffe
 ### Docker Run Examples
 
 **Basic deployment:**
+
 ```bash
 docker run -d \
   -e VITE_GRAPHQL_HOST=api.example.com \
@@ -486,6 +515,7 @@ docker run -d \
 ```
 
 **With SSL override:**
+
 ```bash
 docker run -d \
   -e VITE_GRAPHQL_HOST=api.example.com \
@@ -504,7 +534,7 @@ services:
   frontend:
     image: 2ly/frontend:latest
     ports:
-      - "8080:80"
+      - '8080:80'
     environment:
       - VITE_GRAPHQL_HOST=api.production.example.com
     restart: unless-stopped
@@ -513,7 +543,7 @@ services:
   frontend-staging:
     image: 2ly/frontend:latest
     ports:
-      - "8081:80"
+      - '8081:80'
     environment:
       - VITE_GRAPHQL_HOST=api.staging.example.com
     restart: unless-stopped
@@ -535,27 +565,32 @@ docker build \
 ## 🎯 Pages
 
 ### LoginPage (`/login`)
+
 - Email/password form
 - Remember me checkbox
 - Link to registration
 - Theme toggle in top right
 
 ### RegisterPage (`/register`)
+
 - Email/password/confirm password
 - Terms of service acceptance
 - Link to login
 - Theme toggle in top right
 
 ### Workspace Routes (`/w/:workspaceId/*`)
+
 The application uses workspace-based routing:
+
 - **Root path (`/`)**: Redirects to default workspace via `WorkspaceRedirect` component
 - **Workspace Overview (`/w/:workspaceId/overview`)**: Main dashboard view for a workspace
-- **Workspace Tool Sets (`/w/:workspaceId/toolsets`)**: Tool set management
+- **Workspace Skills (`/w/:workspaceId/skills`)**: Skill management
 - **Workspace Tools (`/w/:workspaceId/tools`)**: Tool catalog
 - **Workspace Sources (`/w/:workspaceId/sources`)**: Source management
 - **Workspace Settings (`/w/:workspaceId/settings`)**: Workspace configuration
 
 All workspace routes include:
+
 - Top navigation with user actions
 - Secondary navigation tabs
 - Theme toggle
@@ -565,6 +600,7 @@ All workspace routes include:
 ### `tailwind.config.ts`
 
 Extends Tailwind with:
+
 - Design system colors (`border`, `input`, `ring`, etc.)
 - Cyan brand color palette
 - Border radius tokens
@@ -586,6 +622,7 @@ Extends Tailwind with:
 ## 🎨 Styling Guidelines
 
 ### DO:
+
 ✅ Use Tailwind utilities for all styling
 ✅ Reference design tokens (`bg-background`, `text-foreground`)
 ✅ Use `cn()` for conditional classes
@@ -593,6 +630,7 @@ Extends Tailwind with:
 ✅ Use semantic color names
 
 ### DON'T:
+
 ❌ Hardcode colors (`bg-gray-100` → `bg-muted`)
 ❌ Skip `cn()` when merging classes
 ❌ Forget dark mode variants
@@ -611,14 +649,16 @@ interface CardProps {
 
 export function Card({ children, className }: CardProps) {
   return (
-    <div className={cn(
-      // Base styles - from design system
-      'bg-card text-card-foreground',
-      'rounded-lg border border-border',
-      'shadow-sm',
-      // User overrides
-      className
-    )}>
+    <div
+      className={cn(
+        // Base styles - from design system
+        'bg-card text-card-foreground',
+        'rounded-lg border border-border',
+        'shadow-sm',
+        // User overrides
+        className,
+      )}
+    >
       {children}
     </div>
   );
@@ -629,18 +669,19 @@ export function Card({ children, className }: CardProps) {
 
 This frontend is a complete rewrite, not an incremental update. Key differences:
 
-| v1 | v2 | Why Changed |
-|----|----|----|
-| React 18 | React 19 | Latest features, better concurrent rendering |
-| React Router 6 | React Router 7 | Modern data loading patterns |
-| Apollo Client v3 | Apollo Client v4 | React 19 support, typed-document-node pattern |
-| Custom components | Radix UI | Accessibility out of the box |
-| Scattered styles | Design system | Consistency and maintainability |
-| Manual dark mode | Context-based | Cleaner, more maintainable |
+| v1                | v2               | Why Changed                                   |
+| ----------------- | ---------------- | --------------------------------------------- |
+| React 18          | React 19         | Latest features, better concurrent rendering  |
+| React Router 6    | React Router 7   | Modern data loading patterns                  |
+| Apollo Client v3  | Apollo Client v4 | React 19 support, typed-document-node pattern |
+| Custom components | Radix UI         | Accessibility out of the box                  |
+| Scattered styles  | Design system    | Consistency and maintainability               |
+| Manual dark mode  | Context-based    | Cleaner, more maintainable                    |
 
 ## 🚧 Next Steps
 
 ### Immediate Priorities
+
 1. **Add Radix UI components** - Button, Input, Card, Dialog, etc.
 2. **Authentication integration** - Connect to backend auth system
 3. **Form validation** - Integrate with existing validation utils
@@ -648,6 +689,7 @@ This frontend is a complete rewrite, not an incremental update. Key differences:
 5. **Real-time subscriptions** - Implement GraphQL subscriptions for live updates
 
 ### Future Enhancements
+
 - Component library with Storybook
 - E2E tests with Playwright
 - Performance monitoring
@@ -661,12 +703,14 @@ This project uses **Apollo Client v4.0.7** with the official typed-document-node
 ### Key Technical Decisions
 
 **Why Apollo Client v4?**
+
 - Full React 19 support
 - Latest features and performance improvements
 - Active development and long-term support
 - Better TypeScript inference
 
 **Why Typed Document Nodes over Generated Hooks?**
+
 - **Official Apollo recommendation** for v4 ([docs](https://www.apollographql.com/docs/react/development-testing/graphql-codegen))
 - Smaller bundle size (no hook generation code)
 - Better type inference and editor support
@@ -676,22 +720,25 @@ This project uses **Apollo Client v4.0.7** with the official typed-document-node
 ### Code Generation Configuration
 
 **Plugins Used**:
+
 ```typescript
 // codegen.ts
 plugins: [
-  'typescript',              // Schema types
-  'typescript-operations',   // Operation types
-  'typed-document-node',     // Typed document nodes
-]
+  'typescript', // Schema types
+  'typescript-operations', // Operation types
+  'typed-document-node', // Typed document nodes
+];
 ```
 
 **NOT Used** (deprecated for v4):
+
 - ❌ `typescript-react-apollo` - Generates hooks (not recommended for v4)
 - ❌ `client-preset` - Incompatible with Apollo Client
 
 ### Migration Pattern
 
 **Old Pattern (v3 with generated hooks)**:
+
 ```tsx
 import { useGetRuntimesQuery } from '@/graphql/generated/graphql';
 
@@ -699,6 +746,7 @@ const { data } = useGetRuntimesQuery();
 ```
 
 **New Pattern (v4 with typed documents)**:
+
 ```tsx
 import { useQuery } from '@apollo/client/react';
 import { GetRuntimesDocument } from '@/graphql/generated/graphql';
@@ -734,6 +782,7 @@ import { ApolloClient, InMemoryCache } from '@apollo/client';
 ## 📚 Additional Resources
 
 ### Official Documentation
+
 - [Apollo Client v4 Docs](https://www.apollographql.com/docs/react/)
 - [Apollo Client + GraphQL Codegen Guide](https://www.apollographql.com/docs/react/development-testing/graphql-codegen)
 - [React 19 Release Notes](https://react.dev/blog/2024/12/05/react-19)
@@ -743,6 +792,7 @@ import { ApolloClient, InMemoryCache } from '@apollo/client';
 - [Zustand Docs](https://zustand-demo.pmnd.rs/)
 
 ### GraphQL & Apollo
+
 - [GraphQL Code Generator](https://the-guild.dev/graphql/codegen)
 - [Typed Document Node](https://the-guild.dev/graphql/codegen/plugins/typescript/typed-document-node)
 

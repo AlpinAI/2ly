@@ -6,7 +6,7 @@ import {
   Service,
   dgraphResolversTypes,
   RuntimeDiscoveredToolsPublish,
-  ToolSetCallToolRequest,
+  SkillCallToolRequest,
   RuntimeCallToolResponse,
   RuntimeMCPServersPublish,
   MCP_SERVER_RUN_ON,
@@ -213,8 +213,8 @@ export class ToolClientService extends Service {
     }
     const subject =
       runOn === 'AGENT'
-        ? ToolSetCallToolRequest.subscribeToToolOnOneRuntime(toolId, workspaceId!, runtimeId)
-        : ToolSetCallToolRequest.subscribeToTool(toolId);
+        ? SkillCallToolRequest.subscribeToToolOnOneRuntime(toolId, workspaceId!, runtimeId)
+        : SkillCallToolRequest.subscribeToTool(toolId);
 
     this.logger.debug(`Subscribing to tool ${toolId} on subject: ${subject}`);
     const subscription = this.natsService.subscribe(subject);
@@ -228,7 +228,7 @@ export class ToolClientService extends Service {
     const identity = this.authService.getIdentity();
     const executedByIdOrAgent = identity?.nature === 'runtime' ? identity.id! : 'AGENT';
     for await (const msg of subscription) {
-      if (msg instanceof ToolSetCallToolRequest) {
+      if (msg instanceof SkillCallToolRequest) {
         this.logger.info(`Tool call request: ${JSON.stringify(msg.data)}`);
         // find the capability
         let toolCalled = false;

@@ -12,7 +12,7 @@ import { extractSessionIdFromQuery, isValidSessionId } from '../helpers/session.
 import {
   SessionContext,
   authenticateSession,
-  createToolsetService,
+  createSkillService,
   completeSessionContext,
   cleanupSession,
   cleanupAllSessions,
@@ -42,7 +42,7 @@ import {
  * Security:
  * - Origin header validation for DNS rebinding protection (configurable)
  * - Protocol version validation
- * - Workspace key or toolset key authentication
+ * - Workspace key or skill key authentication
  *
  * Spec: https://modelcontextprotocol.io/specification/2025-06-18/basic/transports#server-sent-events-sse
  */
@@ -142,10 +142,10 @@ export class McpSseService extends Service {
 
         // Authenticate the request
         const identity = await authenticateSession(request, this.loggerService, this.natsService);
-        this.logger.info(`Authenticated SSE connection for toolset: ${identity.toolsetName}`);
+        this.logger.info(`Authenticated SSE connection for skill: ${identity.skillName}`);
 
-        // Create the toolset service
-        const toolsetService = await createToolsetService(
+        // Create the skill service
+        const skillService = await createSkillService(
           identity,
           this.loggerService,
           this.natsService,
@@ -175,9 +175,9 @@ export class McpSseService extends Service {
         await this.server!.connect(transport);
 
         // Complete the session context
-        completeSessionContext(transport, toolsetService, partialSession);
+        completeSessionContext(transport, skillService, partialSession);
 
-        this.logger.info(`Created SSE session ${sessionId} for toolset: ${identity.toolsetName}`);
+        this.logger.info(`Created SSE session ${sessionId} for skill: ${identity.skillName}`);
       } catch (error) {
         this.logger.error(`Error handling SSE connection: ${error}`);
 

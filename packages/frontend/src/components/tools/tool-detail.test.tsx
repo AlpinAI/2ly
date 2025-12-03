@@ -8,13 +8,13 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { ToolDetail } from './tool-detail';
-import * as useToolSetsHook from '@/hooks/useToolSets';
+import * as useSkillsHook from '@/hooks/useSkills';
 import * as notificationContext from '@/contexts/NotificationContext';
 import { ActiveStatus } from '@/graphql/generated/graphql';
 import type { GetMcpToolsQuery } from '@/graphql/generated/graphql';
 
 // Mock hooks and contexts
-vi.mock('@/hooks/useToolSets');
+vi.mock('@/hooks/useSkills');
 vi.mock('@/contexts/NotificationContext');
 
 // Mock Apollo Client
@@ -40,9 +40,9 @@ vi.mock('./tool-tester', () => ({
   ),
 }));
 
-// Mock LinkToolSetDialog component
-vi.mock('./link-toolset-dialog', () => ({
-  LinkToolSetDialog: () => <div data-testid="link-toolset-dialog">Link ToolSet Dialog</div>,
+// Mock LinkSkillDialog component
+vi.mock('./link-skill-dialog', () => ({
+  LinkSkillDialog: () => <div data-testid="link-skill-dialog">Link Skill Dialog</div>,
 }));
 
 describe('ToolDetail', () => {
@@ -64,12 +64,12 @@ describe('ToolDetail', () => {
       repositoryUrl: 'https://github.com/test/server',
       runOn: null,
     },
-    toolSets: [
+    skills: [
       {
-        __typename: 'ToolSet',
-        id: 'toolset-1',
-        name: 'Test Tool Set',
-        description: 'Test tool set description',
+        __typename: 'Skill',
+        id: 'skill-1',
+        name: 'Test Skill',
+        description: 'Test skill description',
       },
     ],
   };
@@ -77,25 +77,25 @@ describe('ToolDetail', () => {
   beforeEach(() => {
     vi.clearAllMocks();
 
-    // Mock useToolSets hook
-    vi.mocked(useToolSetsHook.useToolSets).mockReturnValue({
-      toolSets: [
+    // Mock useSkills hook
+    vi.mocked(useSkillsHook.useSkills).mockReturnValue({
+      skills: [
         {
-          __typename: 'ToolSet',
-          id: 'toolset-1',
-          name: 'Test Tool Set',
-          description: 'Test tool set description',
+          __typename: 'Skill',
+          id: 'skill-1',
+          name: 'Test Skill',
+          description: 'Test skill description',
           createdAt: new Date('2025-01-01'),
           updatedAt: null,
           mcpTools: null,
         },
       ],
-      filteredToolSets: [
+      filteredSkills: [
         {
-          __typename: 'ToolSet',
-          id: 'toolset-1',
-          name: 'Test Tool Set',
-          description: 'Test tool set description',
+          __typename: 'Skill',
+          id: 'skill-1',
+          name: 'Test Skill',
+          description: 'Test skill description',
           createdAt: new Date('2025-01-01'),
           updatedAt: null,
           mcpTools: null,
@@ -170,11 +170,11 @@ describe('ToolDetail', () => {
     expect(screen.getByText('Test server description')).toBeInTheDocument();
   });
 
-  it('renders linked toolsets', () => {
+  it('renders linked skills', () => {
     renderComponent(mockTool);
 
-    expect(screen.getByText(/Available in Tool Sets \(1\)/)).toBeInTheDocument();
-    expect(screen.getByText('Test Tool Set')).toBeInTheDocument();
+    expect(screen.getByText(/Available in Skills \(1\)/)).toBeInTheDocument();
+    expect(screen.getByText('Test Skill')).toBeInTheDocument();
   });
 
   it('renders ToolTester component', () => {
@@ -185,28 +185,28 @@ describe('ToolDetail', () => {
     expect(toolTester).toHaveTextContent('Tool Tester for test-tool (tool-1)');
   });
 
-  it('shows message when tool has no linked toolsets', () => {
-    const toolWithNoToolSets = { ...mockTool, toolSets: [] };
+  it('shows message when tool has no linked skills', () => {
+    const toolWithNoSkills = { ...mockTool, skills: [] };
 
-    renderComponent(toolWithNoToolSets);
+    renderComponent(toolWithNoSkills);
 
-    expect(screen.getByText('Not available in any tool sets yet')).toBeInTheDocument();
+    expect(screen.getByText('Not available in any skills yet')).toBeInTheDocument();
   });
 
-  it('shows add button when unlinked toolsets exist', () => {
-    const toolWithNoToolSets = { ...mockTool, toolSets: [] };
+  it('shows add button when unlinked skills exist', () => {
+    const toolWithNoSkills = { ...mockTool, skills: [] };
 
-    renderComponent(toolWithNoToolSets);
+    renderComponent(toolWithNoSkills);
 
-    // Should show the add button since we have a toolset in the store but it's not linked
+    // Should show the add button since we have a skill in the store but it's not linked
     const buttons = screen.getAllByRole('button');
     expect(buttons.length).toBeGreaterThan(0);
   });
 
-  it('does not show add button when all toolsets are linked', () => {
+  it('does not show add button when all skills are linked', () => {
     renderComponent(mockTool);
 
-    // All toolsets from the store are already linked to the tool
+    // All skills from the store are already linked to the tool
     const addButtons = screen.queryByRole('button', { name: /add/i });
     // The add button should not be present
     expect(addButtons).not.toBeInTheDocument();
@@ -233,11 +233,11 @@ describe('ToolDetail', () => {
     expect(statusElement.className).toContain('bg-gray-100');
   });
 
-  it('renders toolset description when available', () => {
+  it('renders skill description when available', () => {
     renderComponent(mockTool);
 
-    // Check for toolset description
-    expect(screen.getByText('Test tool set description')).toBeInTheDocument();
+    // Check for skill description
+    expect(screen.getByText('Test skill description')).toBeInTheDocument();
   });
 
   it('container supports smooth scrolling for ToolTester', () => {
@@ -256,7 +256,7 @@ describe('ToolDetail', () => {
   it('ToolTester is placed after other content for scroll behavior', () => {
     renderComponent(mockTool);
 
-    // ToolTester should be in the last section (after toolsets section)
+    // ToolTester should be in the last section (after skills section)
     const toolTester = screen.getByTestId('tool-tester');
     expect(toolTester).toBeInTheDocument();
 
@@ -265,7 +265,7 @@ describe('ToolDetail', () => {
     expect(toolTesterSection).toBeInTheDocument();
   });
 
-  it('renders unlink button for linked toolsets', () => {
+  it('renders unlink button for linked skills', () => {
     renderComponent(mockTool);
 
     // Check for unlink button (X icon button)
