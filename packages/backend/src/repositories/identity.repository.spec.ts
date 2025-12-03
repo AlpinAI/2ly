@@ -97,7 +97,7 @@ describe('IdentityRepository', () => {
     it('should create a skill key with correct format', async () => {
       const mockKey: dgraphResolversTypes.IdentityKey = {
         id: 'key-id',
-        key: 'TSK' + randomBytes(32).toString('base64').replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, ''),
+        key: 'SKK' + randomBytes(32).toString('base64').replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, ''),
         relatedId: 'skill-id',
         createdAt: new Date().toISOString(),
         expiresAt: new Date(Date.now() + 20 * 365 * 24 * 60 * 60 * 1000).toISOString(),
@@ -114,7 +114,7 @@ describe('IdentityRepository', () => {
 
       const result = await repository.createKey('skill', 'skill-id', 'Skill key');
 
-      expect(result.key).toMatch(/^TSK[A-Za-z0-9_-]{43}$/);
+      expect(result.key).toMatch(/^SKK[A-Za-z0-9_-]{43}$/);
       expect(result.key.length).toBe(46);
     });
 

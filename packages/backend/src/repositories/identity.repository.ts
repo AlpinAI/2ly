@@ -24,7 +24,7 @@ export const KEY_NATURE_PREFIX = {
   system: 'SYK',
   workspace: 'WSK',
   runtime: 'RTK',
-  skill: 'SKL',
+  skill: 'SKK',
 } as const;
 
 type KeyNature = keyof typeof KEY_NATURE_PREFIX;
@@ -50,7 +50,7 @@ export class IdentityRepository {
    * - Revocation is the primary security mechanism for compromised keys
    *
    * Key Format:
-   * - Prefix (3 chars): WSK, RTK, or TSK
+   * - Prefix (3 chars): WSK, RTK, or SKK
    * - Random portion (43 chars): Base64url-encoded 32 random bytes (256-bit entropy)
    * - Total length: 46 characters
    * - Example: "WSK_a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6q7r8s9t0u1"
@@ -206,7 +206,7 @@ export class IdentityRepository {
     }
 
     // Extract nature from validated prefix
-    const prefix = identityKey.key.substring(0, 3) as 'SYK' | 'WSK' | 'RTK' | 'TSK';
+    const prefix = identityKey.key.substring(0, 3) as 'SYK' | 'WSK' | 'RTK' | 'SKK';
     const nature = this.getNatureFromPrefix(prefix);
 
     return { relatedId: identityKey.relatedId, nature };
@@ -216,7 +216,7 @@ export class IdentityRepository {
    * Get key nature from prefix with strict validation.
    * Throws error for unrecognized prefixes instead of defaulting.
    *
-   * @param prefix - The 3-character key prefix (SYK, WSK, RTK, or SKL)
+   * @param prefix - The 3-character key prefix (SYK, WSK, RTK, or SKK)
    * @returns The key nature
    * @throws Error if prefix is not recognized
    */
@@ -228,7 +228,7 @@ export class IdentityRepository {
         return 'workspace';
       case 'RTK':
         return 'runtime';
-      case 'SKL':
+      case 'SKK':
         return 'skill';
       default:
         throw new Error(`INVALID_KEY_PREFIX: Unrecognized prefix '${prefix}'`);
