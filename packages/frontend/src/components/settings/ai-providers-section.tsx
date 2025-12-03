@@ -63,13 +63,16 @@ export function AIProvidersSection() {
   };
 
   const handleRemove = async (provider: AiProviderType) => {
+    const config = providerConfigMap[provider];
+    if (!config) return;
+
     const providerInfo = PROVIDER_INFO[provider];
     if (!confirm(`Are you sure you want to remove ${providerInfo.name} configuration?`)) {
       return;
     }
 
     try {
-      await removeProvider(provider);
+      await removeProvider(config.id);
       toast({ description: `${providerInfo.name} configuration removed`, variant: 'success' });
     } catch (_error) {
       toast({ description: 'Failed to remove provider', variant: 'error' });
