@@ -17,6 +17,7 @@ import {
   KEY_NATURE_PREFIX,
 } from '../repositories';
 import { createAuthResolvers } from '../resolvers/auth.resolver';
+import { createAIProviderResolvers } from '../resolvers/ai-provider.resolver';
 import { AuthenticationService, JwtService, PasswordPolicyService } from '../services/auth';
 import { Container } from 'inversify';
 import { requireAuth, requireWorkspaceAccess, requireAuthAndWorkspaceAccess, withPeriodicValidation } from './authorization.helpers';
@@ -50,6 +51,10 @@ export const resolvers = (container: Container = defaultContainer): apolloResolv
   const userRepository = container.get(UserRepository);
   const passwordPolicyService = container.get(PasswordPolicyService);
   const authResolvers = createAuthResolvers(authenticationService, jwtService, userRepository, passwordPolicyService);
+
+  // Create AI provider resolvers
+  const aiProviderResolvers = createAIProviderResolvers(container);
+
   return {
     Date: GraphQLDateTime,
     Query: {
@@ -170,6 +175,8 @@ export const resolvers = (container: Container = defaultContainer): apolloResolv
       },
       // Authentication queries
       ...authResolvers.Query,
+      // AI Provider queries
+      ...aiProviderResolvers.Query,
     },
     Mutation: {
       // Authentication mutations
@@ -606,6 +613,9 @@ export const resolvers = (container: Container = defaultContainer): apolloResolv
         await requireWorkspaceAccess(workspaceRepository, userId, tool.workspace.id);
         return toolSetRepository.removeMCPToolFromToolSet(mcpToolId, toolSetId);
       },
+
+      // AI Provider mutations
+      ...aiProviderResolvers.Mutation,
     },
     Runtime: {},
     MCPServer: {},

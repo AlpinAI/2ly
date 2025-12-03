@@ -132,10 +132,11 @@ The project uses three types of tests with different tools and purposes:
 
 ### 1. Unit Tests
 - **Tool**: Vitest + React Testing Library
-- **Location**: `*.test.ts` / `*.test.tsx` files alongside source code in `src/` directories
+- **Location**: `*.spec.ts` / `*.spec.tsx` files alongside source code in `src/` directories
+- **IMPORTANT**: Always use `.spec.ts` extension, NOT `.test.ts` - this is the project convention
 - **Purpose**: Test individual components and functions in isolation
 - **Pattern**: Mock external dependencies (Apollo hooks, stores, etc.) to keep tests focused
-- **Example**: `src/components/ui/button.test.tsx`
+- **Example**: `src/components/ui/button.spec.tsx`
 - **Run**: `npm run test` (all unit tests) or `npm run test:watch` (watch mode)
 
 ### 2. Integration Tests
