@@ -1,5 +1,3 @@
-// TODO: remove the test configuration endpoint, only use it when configuring a new provider
-
 import { inject, injectable } from 'inversify';
 import { LoggerService, dgraphResolversTypes } from '@2ly/common';
 import pino from 'pino';
@@ -7,7 +5,7 @@ import { generateText, streamText, type LanguageModel } from 'ai';
 import { createOpenAI } from '@ai-sdk/openai';
 import { createAnthropic } from '@ai-sdk/anthropic';
 import { createGoogleGenerativeAI } from '@ai-sdk/google';
-import { createOllama } from 'ollama-ai-provider';
+import { createOllama, ollama } from 'ollama-ai-provider-v2';
 import { EncryptionService } from './encryption.service';
 import { AIProviderRepository } from '../../repositories/ai-provider.repository';
 
@@ -72,8 +70,8 @@ export class AIProviderService {
         }
       case 'ollama':
         {
-          const host = config.baseUrl || 'http://localhost:11434';
-          const res = await fetch(`${host}/api/tags`);
+          const host = config.baseUrl || 'http://localhost:11434/api';
+          const res = await fetch(`${host}/tags`);
           if (!res.ok) throw new Error(`Ollama error: ${await res.text()}`);
           const data: { models: { name: string }[] } = await res.json();
           return data.models.map(m => m.name);
@@ -90,14 +88,13 @@ export class AIProviderService {
   private getProviderModel(provider: AIProviderType, modelName: string, config: ProviderConfig): LanguageModel {
     switch (provider) {
       case 'openai':
-        return createOpenAI({ apiKey: config.apiKey, baseURL: config.baseUrl })(modelName) as LanguageModel;
+        return createOpenAI({ apiKey: config.apiKey, baseURL: config.baseUrl })(modelName);
       case 'anthropic':
-        return createAnthropic({ apiKey: config.apiKey, baseURL: config.baseUrl })(modelName) as LanguageModel;
+        return createAnthropic({ apiKey: config.apiKey, baseURL: config.baseUrl })(modelName);
       case 'google':
-        return createGoogleGenerativeAI({ apiKey: config.apiKey, baseURL: config.baseUrl })(modelName) as LanguageModel;
+        return createGoogleGenerativeAI({ apiKey: config.apiKey, baseURL: config.baseUrl })(modelName);
       case 'ollama':
-        // Ollama returns LanguageModelV1, cast through unknown
-        return createOllama({ baseURL: config.baseUrl || 'http://localhost:11434' })(modelName) as unknown as LanguageModel;
+        return config.baseUrl ? createOllama({ baseURL: config.baseUrl })(modelName) : ollama(modelName);
       default:
         throw new Error(`Unknown provider: ${provider}`);
     }
@@ -145,34 +142,17 @@ export class AIProviderService {
     const { provider, modelName } = this.parseModelString(modelString);
     const config = await this.getDecryptedConfig(workspaceId, provider);
 
-    if (provider === 'ollama') {
-      const baseUrl = config.baseUrl ?? "http://localhost:11434";
-      const res = await fetch(`${baseUrl}/api/chat`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          model: modelName,
-          messages: [{ role: "user", content: message }],
-          stream: false,
-        }),
-      });
-
-      if (!res.ok) {
-        throw new Error(`Ollama error: ${await res.text()}`);
-      }
-
-      const data = await res.json(); // { message: { content: string } }
-      return data.message?.content ?? "";
-    }
-
-    // Vercel SDK compatible providers use the generateText function
     const model = this.getProviderModel(provider, modelName, config);
-    const result = await generateText({
-      model,
-      messages: [{ role: 'user', content: message }],
-    });
-
-    return result.text;
+    try {
+      const result = await generateText({
+        model,
+        messages: [{ role: 'user', content: message }],
+      });
+      return result.text;  
+    } catch (error) {
+      this.logger.error(`Failed to chat with model ${modelString}: ${error}`);
+      throw error;
+    }
   }
 
   /**
@@ -182,59 +162,6 @@ export class AIProviderService {
   async *stream(workspaceId: string, modelString: string, message: string): AsyncIterable<string> {
     const { provider, modelName } = this.parseModelString(modelString);
     const config = await this.getDecryptedConfig(workspaceId, provider);
-
-    if (provider === 'ollama') {
-      const baseUrl = config.baseUrl ?? "http://localhost:11434";
-
-      const res = await fetch(`${baseUrl}/api/chat`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          model: modelName,
-          messages: [{ role: "user", content: message }],
-          stream: true,
-        }),
-      });
-
-      if (!res.ok || !res.body) {
-        throw new Error(`Ollama streaming error: ${await res.text()}`);
-      }
-
-      const reader = res.body.getReader();
-      const decoder = new TextDecoder();
-      let buffer = "";
-
-      try {
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
-
-          buffer += decoder.decode(value, { stream: true });
-
-          // Ollama sends newline-delimited JSON chunks
-          let newlineIndex;
-          while ((newlineIndex = buffer.indexOf("\n")) !== -1) {
-            const line = buffer.slice(0, newlineIndex).trim();
-            buffer = buffer.slice(newlineIndex + 1);
-
-            if (!line) continue;
-
-            try {
-              const json = JSON.parse(line);
-              const text = json.message?.content;
-              if (text) yield text;
-            } catch (_err) {
-              // malformed partial JSON, ignore until buffer completes
-            }
-          }
-        }
-      } finally {
-        reader.releaseLock();
-      }
-      return;
-    }
-
-    // Vercel SDK compatible providers use the streamText function
     const model = this.getProviderModel(provider, modelName, config);
     const result = streamText({
       model,
@@ -280,21 +207,22 @@ export class AIProviderService {
   }
 
 
-  // Private helpers
   private parseModelString(modelString: string): { provider: AIProviderType; modelName: string } {
-    const slashIndex = modelString.indexOf('/');
-    if (slashIndex === -1) {
-      throw new Error('Invalid model format. Expected "provider/model-name"');
+    const [provider, modelName] = modelString.split('/');
+
+    if (!provider) {
+      throw new Error('Invalid model format. Provider cannot be empty');
     }
 
-    const provider = modelString.substring(0, slashIndex).toLowerCase() as AIProviderType;
-    const modelName = modelString.substring(slashIndex + 1);
+    if (!modelName) {
+      throw new Error('Invalid model format. Model name cannot be empty');
+    }
 
     if (!['openai', 'anthropic', 'google', 'ollama'].includes(provider)) {
       throw new Error(`Unknown provider: ${provider}`);
     }
 
-    return { provider, modelName };
+    return { provider: provider.toLowerCase() as AIProviderType, modelName };
   }
 
   private async getDecryptedConfig(workspaceId: string, provider: AIProviderType): Promise<ProviderConfig> {

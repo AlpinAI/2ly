@@ -5,7 +5,7 @@
  * Includes a minimal tester UI to test configured models.
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Sparkles, Trash2, Settings2, Send, Loader2 } from 'lucide-react';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { SettingsSection } from './settings-section';
@@ -43,9 +43,12 @@ export function AIProvidersSection() {
   const {
     providers,
     allModels,
+    defaultModel,
     loading,
     configureProvider,
     removeProvider,
+    setDefaultModel,
+    settingDefaultModel,
     chatWithModel,
     chatting,
     removing,
@@ -106,6 +109,59 @@ export function AIProvidersSection() {
     }
   }, [hasProviders, activeTab]);
 
+  // Track the last attempted auto-selection to prevent infinite loops on error
+  const lastAutoSelectAttempt = useRef<string | null>(null);
+
+  // Auto-set default model when first models become available
+  // or when current default model's provider is removed
+  useEffect(() => {
+    if (allModels.length === 0) {
+      // No models available - reset the attempt tracker
+      lastAutoSelectAttempt.current = null;
+      return;
+    }
+
+    const targetModel = allModels[0];
+
+    // If no default model is set, auto-select the first one
+    if (!defaultModel) {
+      // Don't retry if we already attempted this exact model
+      if (lastAutoSelectAttempt.current === targetModel) {
+        return;
+      }
+      lastAutoSelectAttempt.current = targetModel;
+      setDefaultModel(targetModel).catch(() => {
+        toast({ description: 'Failed to auto-set default model', variant: 'error' });
+      });
+      return;
+    }
+
+    // Check if current default model is still available
+    if (!allModels.includes(defaultModel)) {
+      // Default model's provider was removed - auto-select first available
+      // Don't retry if we already attempted this exact model
+      if (lastAutoSelectAttempt.current === targetModel) {
+        return;
+      }
+      lastAutoSelectAttempt.current = targetModel;
+      setDefaultModel(targetModel).catch(() => {
+        toast({ description: 'Failed to auto-set default model', variant: 'error' });
+      });
+    }
+  }, [allModels, defaultModel, setDefaultModel, toast]);
+
+  /**
+   * Handle default model selection from dropdown
+   */
+  const handleDefaultModelChange = async (model: string) => {
+    if (!model) return;
+    try {
+      await setDefaultModel(model);
+    } catch (_error) {
+      toast({ description: 'Failed to set default model', variant: 'error' });
+    }
+  };
+
   return (
     <SettingsSection
       title="AI Providers"
@@ -132,6 +188,30 @@ export function AIProvidersSection() {
 
         <TabsContent value="configuration" className="mt-0">
           <div className="space-y-4">
+            {/* Default Model Selector */}
+            <div className="flex items-center gap-3 p-4 bg-gray-50 dark:bg-gray-800/50 rounded-lg border border-gray-200 dark:border-gray-700">
+              <Label htmlFor="default-model" className="text-sm font-medium whitespace-nowrap">
+                Default workspace model:
+              </Label>
+              <Select
+                value={defaultModel || ''}
+                onValueChange={handleDefaultModelChange}
+                disabled={allModels.length === 0 || settingDefaultModel}
+              >
+                <SelectTrigger id="default-model" className="w-64 bg-white dark:bg-gray-800">
+                  <SelectValue placeholder={allModels.length === 0 ? 'No models available' : 'Select a model...'} />
+                </SelectTrigger>
+                <SelectContent>
+                  {allModels.map((model) => (
+                    <SelectItem key={model} value={model}>
+                      {model}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {settingDefaultModel && <Loader2 className="h-4 w-4 animate-spin text-gray-500" />}
+            </div>
+
             {/* Summary */}
             <div className="flex justify-between items-center">
               <p className="text-sm text-gray-600 dark:text-gray-400">

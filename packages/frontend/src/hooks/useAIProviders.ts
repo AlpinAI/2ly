@@ -12,8 +12,10 @@ import { useQuery, useMutation } from '@apollo/client/react';
 import {
   GetAiProvidersDocument,
   GetAiModelsDocument,
+  GetDefaultAiModelDocument,
   ConfigureAiProviderDocument,
   RemoveAiProviderDocument,
+  SetDefaultAiModelDocument,
   ChatWithModelDocument,
   AiProviderType,
 } from '@/graphql/generated/graphql';
@@ -31,6 +33,13 @@ export function useAIProviders() {
 
   // Query: Get all available models from all configured providers
   const { data: modelsData, refetch: refetchModels } = useQuery(GetAiModelsDocument, {
+    variables: { workspaceId: workspaceId || '' },
+    skip: !workspaceId,
+    fetchPolicy: 'cache-and-network',
+  });
+
+  // Query: Get default AI model for workspace
+  const { data: defaultModelData, refetch: refetchDefaultModel } = useQuery(GetDefaultAiModelDocument, {
     variables: { workspaceId: workspaceId || '' },
     skip: !workspaceId,
     fetchPolicy: 'cache-and-network',
@@ -55,8 +64,38 @@ export function useAIProviders() {
   // Mutation: Chat with model
   const [chatMutation, { loading: chatting }] = useMutation(ChatWithModelDocument);
 
+  // Mutation: Set default AI model
+  const [setDefaultModelMutation, { loading: settingDefaultModel }] = useMutation(SetDefaultAiModelDocument, {
+    refetchQueries: [
+      { query: GetDefaultAiModelDocument, variables: { workspaceId } },
+    ],
+  });
+
   const providers = data?.getAIProviders ?? [];
   const allModels = modelsData?.getAIModels ?? [];
+  const defaultModel = defaultModelData?.workspace?.defaultAIModel ?? null;
+
+  /**
+   * Set the workspace's default AI model.
+   * @param model - Format: "provider/model-name" (e.g., "openai/gpt-4o") or null to clear
+   */
+  const setDefaultModel = async (model: string | null) => {
+    if (!workspaceId) return false;
+    if (!model) {
+      // For now, we can't clear the default model via GraphQL (mutation requires non-null)
+      // The component will handle the null case by not calling this
+      return false;
+    }
+
+    const result = await setDefaultModelMutation({
+      variables: {
+        workspaceId,
+        defaultModel: model,
+      },
+    });
+
+    return result.data?.setDefaultAIModel ?? false;
+  };
 
   /**
    * Configure a provider (tests and persists).
@@ -116,14 +155,18 @@ export function useAIProviders() {
   return {
     providers,
     allModels,
+    defaultModel,
     loading,
     error,
     refetch,
     refetchModels,
+    refetchDefaultModel,
     configureProvider,
     configuring,
     removeProvider,
     removing,
+    setDefaultModel,
+    settingDefaultModel,
     chatWithModel,
     chatting,
   };

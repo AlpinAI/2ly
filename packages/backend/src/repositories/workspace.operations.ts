@@ -68,6 +68,7 @@ export const QUERY_WORKSPACE_WITH_RUNTIMES = gql`
     getWorkspace(id: $workspaceId) {
       id
       name
+      defaultAIModel
       runtimes {
         id
         name

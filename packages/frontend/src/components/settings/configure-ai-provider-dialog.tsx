@@ -53,7 +53,7 @@ export function ConfigureAIProviderDialog({
   useEffect(() => {
     if (open) {
       setApiKey('');
-      setBaseUrl(existingConfig?.baseUrl || (isOllama ? 'http://localhost:11434' : ''));
+      setBaseUrl(existingConfig?.baseUrl || (isOllama ? 'http://localhost:11434/api' : ''));
       setShowApiKey(false);
       setResult(null);
     }
@@ -104,7 +104,7 @@ export function ConfigureAIProviderDialog({
   };
 
   return (
-    <Dialog.Root open={open} onOpenChange={handleClose}>
+    <Dialog.Root open={open} onOpenChange={(isOpen) => !isOpen && handleClose()}>
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 bg-black/50 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 z-50" />
         <Dialog.Content className="fixed left-[50%] top-[50%] max-h-[85vh] w-[90vw] max-w-[500px] translate-x-[-50%] translate-y-[-50%] rounded-lg border border-gray-200 bg-white shadow-lg p-0 dark:border-gray-700 dark:bg-gray-800 z-50 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 overflow-hidden">
@@ -156,7 +156,7 @@ export function ConfigureAIProviderDialog({
                     </button>
                   </div>
                   <p className="text-xs text-gray-500 dark:text-gray-400">
-                    {existingConfig !== null
+                    {existingConfig !== undefined
                       ? 'Leave empty to keep the existing key, or enter a new one to update'
                       : 'Your API key will be encrypted and stored securely'}
                   </p>
@@ -172,7 +172,7 @@ export function ConfigureAIProviderDialog({
                   <Input
                     id="baseUrl"
                     type="url"
-                    placeholder="http://localhost:11434"
+                    placeholder="http://localhost:11434/api"
                     value={baseUrl}
                     onChange={(e) => setBaseUrl(e.target.value)}
                     disabled={loading}
@@ -236,7 +236,7 @@ export function ConfigureAIProviderDialog({
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   Validating...
                 </>
-              ) : existingConfig !== null ? (
+              ) : existingConfig !== undefined ? (
                 'Update Configuration'
               ) : (
                 'Configure'

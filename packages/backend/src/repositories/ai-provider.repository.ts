@@ -222,7 +222,12 @@ export class AIProviderRepository {
     const existing = await this.findByType(workspaceId, data.provider);
 
     if (existing) {
-      return this.update(existing.id, {encryptedApiKey: existing.encryptedApiKey, ...data});
+      const { encryptedApiKey, baseUrl, availableModels } = data;
+      return this.update(existing.id, {
+        encryptedApiKey: encryptedApiKey ?? existing.encryptedApiKey,
+        baseUrl: baseUrl ?? existing.baseUrl,
+        availableModels: availableModels ?? existing.availableModels,
+      });
     }
 
     return this.create(workspaceId, data);
@@ -261,18 +266,20 @@ export class AIProviderRepository {
   }
 
   async setDefaultModel(workspaceId: string, providerModel: string): Promise<boolean> {
+    const [providerId, model] = providerModel.split('/');
+    if (!providerId || !model) {
+      this.logger.error(`Invalid model format: ${providerModel}`);
+      throw new Error(`Invalid model format: expected "provider/model", got "${providerModel}"`);
+    }
+
+    const providerType = providerId.toUpperCase() as dgraphResolversTypes.AiProviderType;
+    const provider = await this.findByType(workspaceId, providerType);
+    if (!provider) {
+      this.logger.error(`Provider ${providerType} not found for workspace ${workspaceId}`);
+      throw new Error(`Provider "${providerId}" is not configured for this workspace`);
+    }
+
     try {
-
-      const [providerId, model] = providerModel.split('/');
-      if (!providerId || !model) {
-        throw new Error('Invalid model');
-      }
-
-      const provider = await this.findByType(workspaceId, providerId.toUpperCase() as dgraphResolversTypes.AiProviderType);
-      if (!provider) {
-        throw new Error('Provider not found');
-      }
-
       await this.dgraphService.mutation<{
         updateWorkspace: { workspace: { id: string; defaultAIModel: string }[] };
       }>(SET_DEFAULT_MODEL, {
@@ -284,7 +291,7 @@ export class AIProviderRepository {
       return true;
     } catch (error) {
       this.logger.error(`Failed to set default model for workspace ${workspaceId} to ${providerModel}: ${error}`);
-      throw new Error('Failed to set AI provider as active');
+      throw new Error('Failed to update workspace default model');
     }
   }
 
