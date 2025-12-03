@@ -38,6 +38,11 @@ export function createAIProviderResolvers(container: Container) {
         { providerId }: { providerId: string }
       ) => aiProviderRepository.delete(providerId),
 
+      setDefaultAIModel: (
+        _: unknown,
+        { workspaceId, defaultModel }: { workspaceId: string; defaultModel: string }
+      ) => aiProviderRepository.setDefaultModel(workspaceId, defaultModel),
+
       chatWithModel: (
         _: unknown,
         { workspaceId, model, message }: { workspaceId: string; model: string; message: string }
