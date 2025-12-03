@@ -163,26 +163,25 @@ export function ConfigureAIProviderDialog({
                 </div>
               )}
 
-              {/* Base URL field - always show for Ollama, optional for others */}
-              <div className="space-y-2">
-                <Label htmlFor="baseUrl">
-                  {isOllama ? 'Ollama URL' : 'Custom Base URL'}{' '}
-                  {isOllama && <span className="text-red-500">*</span>}
-                </Label>
-                <Input
-                  id="baseUrl"
-                  type="url"
-                  placeholder={isOllama ? 'http://localhost:11434' : 'https://api.example.com'}
-                  value={baseUrl}
-                  onChange={(e) => setBaseUrl(e.target.value)}
-                  disabled={loading}
-                />
-                <p className="text-xs text-gray-500 dark:text-gray-400">
-                  {isOllama
-                    ? 'The URL where your Ollama instance is running'
-                    : 'Optional: Use a custom API endpoint instead of the default'}
-                </p>
-              </div>
+              {/* Base URL field - only for Ollama */}
+              {isOllama && (
+                <div className="space-y-2">
+                  <Label htmlFor="baseUrl">
+                    Ollama URL <span className="text-red-500">*</span>
+                  </Label>
+                  <Input
+                    id="baseUrl"
+                    type="url"
+                    placeholder="http://localhost:11434"
+                    value={baseUrl}
+                    onChange={(e) => setBaseUrl(e.target.value)}
+                    disabled={loading}
+                  />
+                  <p className="text-xs text-gray-500 dark:text-gray-400">
+                    Run local models for free. Enter the URL where your Ollama instance is running.
+                  </p>
+                </div>
+              )}
 
               {/* Result display */}
               {result && (

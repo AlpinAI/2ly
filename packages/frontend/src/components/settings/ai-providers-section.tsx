@@ -6,7 +6,7 @@
  */
 
 import { useState, useEffect } from 'react';
-import { Sparkles, AlertCircle, Trash2, Settings2, Send, Loader2 } from 'lucide-react';
+import { Sparkles, Trash2, Settings2, Send, Loader2 } from 'lucide-react';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { SettingsSection } from './settings-section';
 import { ConfigureAIProviderDialog } from './configure-ai-provider-dialog';
@@ -210,19 +210,6 @@ export function AIProvidersSection() {
               </div>
             )}
 
-            {/* Info Box */}
-            <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
-              <div className="flex gap-3">
-                <AlertCircle className="h-5 w-5 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
-                <div className="text-sm">
-                  <p className="font-medium text-blue-900 dark:text-blue-100 mb-1">About AI Providers</p>
-                  <p className="text-blue-700 dark:text-blue-300">
-                    API keys are encrypted and stored securely. You can use cloud providers (OpenAI, Anthropic, Google)
-                    with your own API keys, or run Ollama locally for free, open-source models.
-                  </p>
-                </div>
-              </div>
-            </div>
           </div>
         </TabsContent>
 
