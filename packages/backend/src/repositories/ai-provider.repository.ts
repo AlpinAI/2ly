@@ -222,7 +222,7 @@ export class AIProviderRepository {
     const existing = await this.findByType(workspaceId, data.provider);
 
     if (existing) {
-      return this.update(existing.id, data);
+      return this.update(existing.id, {encryptedApiKey: existing.encryptedApiKey, ...data});
     }
 
     return this.create(workspaceId, data);

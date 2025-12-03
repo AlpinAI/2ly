@@ -122,7 +122,7 @@ export function ConfigureAIProviderDialog({
               </Dialog.Close>
             </div>
             <Dialog.Description className="text-sm text-gray-500 dark:text-gray-400">
-              {existingConfig !== null
+              {existingConfig !== undefined
                 ? `Update your ${providerInfo.name} configuration`
                 : `Enter your ${providerInfo.name} credentials to enable this provider`}
             </Dialog.Description>
@@ -141,7 +141,7 @@ export function ConfigureAIProviderDialog({
                     <Input
                       id="apiKey"
                       type={showApiKey ? 'text' : 'password'}
-                      placeholder={existingConfig !== null ? '••••••••••••••••' : 'Enter your API key'}
+                      placeholder={existingConfig !== undefined ? '••••••••••••••••' : 'Enter your API key'}
                       value={apiKey}
                       onChange={(e) => setApiKey(e.target.value)}
                       disabled={loading}
