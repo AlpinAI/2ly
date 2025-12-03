@@ -63,6 +63,20 @@ export const QUERY_WORKSPACES_BY_USER = gql`
   }
 `;
 
+export const CHECK_USER_WORKSPACE_ACCESS = gql`
+  query checkUserWorkspaceAccess($userId: ID!, $workspaceId: ID!) {
+    getUser(id: $userId) {
+      id
+      adminOfWorkspaces(filter: { id: [$workspaceId] }) {
+        id
+      }
+      membersOfWorkspaces(filter: { id: [$workspaceId] }) {
+        id
+      }
+    }
+  }
+`;
+
 export const QUERY_WORKSPACE_WITH_RUNTIMES = gql`
   query getWorkspace($workspaceId: ID!) {
     getWorkspace(id: $workspaceId) {

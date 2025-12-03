@@ -54,7 +54,11 @@ export class MonitoringService extends Service {
                                     response.unsubscribe();
                                     await promise.promise;
                                     this.logger.error(`Tool call timed out: ${toolCall!.id}`);
-                                    await this.monitoringRepository.errorToolCall(toolCall!.id, 'Timeout', undefined);
+                                    try {
+                                        await this.monitoringRepository.errorToolCall(toolCall!.id, 'Timeout', undefined);
+                                    } catch (error) {
+                                        this.logger.warn(`Failed to register the tool call timeout: ${error}`);
+                                    }
                                 }
                             }, MCP_CALL_TOOL_TIMEOUT);
                             for await (const msg of response) {

@@ -8,6 +8,7 @@ import {
   UPDATE_USER_PASSWORD,
   UPDATE_USER_EMAIL,
   FIND_USER_BY_EMAIL,
+  FIND_USER_BY_ID,
   UPDATE_USER_LAST_LOGIN,
   INCREMENT_FAILED_LOGIN_ATTEMPTS,
   UNLOCK_USER_ACCOUNT,
@@ -90,6 +91,22 @@ export class UserRepository {
     } catch (error) {
       this.logger.error(`Failed to find user by email: ${error instanceof Error ? error.message : String(error)}`);
       throw new Error('Failed to find user by email');
+    }
+  }
+
+  /**
+   * Find user by ID.
+   */
+  async findById(id: string): Promise<dgraphResolversTypes.User | null> {
+    try {
+      const res = await this.dgraphService.query<{
+        getUser: dgraphResolversTypes.User | null;
+      }>(FIND_USER_BY_ID, { id });
+
+      return res.getUser ?? null;
+    } catch (error) {
+      this.logger.error(`Failed to find user by id: ${error instanceof Error ? error.message : String(error)}`);
+      throw new Error('Failed to find user by id');
     }
   }
 

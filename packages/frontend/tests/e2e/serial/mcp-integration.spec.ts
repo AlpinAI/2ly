@@ -15,7 +15,7 @@
  * - Tests complete within 2 minutes with proper timeouts
  */
 
-import { test, expect, seedPresets } from '@2ly/common/test/fixtures/playwright';
+import { test, expect, seedPresets, loginAndGetToken } from '@2ly/common/test/fixtures/playwright';
 import { updateMCPServerToEdgeRuntime } from '@2ly/common/test/fixtures/mcp-builders';
 
 // Test configuration
@@ -34,15 +34,19 @@ test.describe('MCP Integration with Containerized Runtime', () => {
    * Runtime container is started globally in global-setup.ts
    */
   let entityIds: Record<string, string> = {};
+  let authToken: string;
 
   test.beforeAll(async ({ resetDatabase, seedDatabase, graphql }) => {
     await resetDatabase(true);
     entityIds = await seedDatabase(seedPresets.withSingleMCPServer);
 
+    // Get auth token for authenticated API calls (needed for mutations)
+    authToken = await loginAndGetToken('user1@2ly.ai', 'password123');
+
     // Update MCP server to use EDGE runtime (GLOBAL runOn has been removed)
     const workspaceId = entityIds['default-workspace'];
     const mcpServerId = entityIds['server-file-system'];
-    await updateMCPServerToEdgeRuntime(graphql, mcpServerId, workspaceId);
+    await updateMCPServerToEdgeRuntime(graphql, mcpServerId, workspaceId, authToken);
   });
 
   test('should complete full MCP lifecycle: seeded server → discover → execute', async ({
@@ -97,7 +101,7 @@ test.describe('MCP Integration with Containerized Runtime', () => {
 
       const toolsResult = await graphql<{
         mcpTools: Array<{ id: string; name: string; description: string; mcpServer: { id: string } }>;
-      }>(toolsQuery, { workspaceId });
+      }>(toolsQuery, { workspaceId }, authToken);
 
       // Filter tools from our test server
       tools = toolsResult.mcpTools.filter((tool) => tool.mcpServer.id === mcpServerId);
@@ -141,7 +145,8 @@ test.describe('MCP Integration with Containerized Runtime', () => {
         name: 'Test Tools',
         description: 'Tools for testing',
         workspaceId: workspaceId!,
-      }
+      },
+      authToken,
     );
 
     // Add tools to the toolset
@@ -161,13 +166,13 @@ test.describe('MCP Integration with Containerized Runtime', () => {
     await graphql(addToolMutation, {
       mcpToolId: writeFileTool!.id,
       toolSetId: toolSetResult.createToolSet.id,
-    });
+    }, authToken);
 
     // Add read_file tool
     await graphql(addToolMutation, {
       mcpToolId: readFileTool!.id,
       toolSetId: toolSetResult.createToolSet.id,
-    });
+    }, authToken);
 
     // ========================================================================
     // Step 5: Execute tool calls against FileSystem server
@@ -193,7 +198,8 @@ test.describe('MCP Integration with Containerized Runtime', () => {
           path: TEST_FILE_PATH,
           content: TEST_FILE_CONTENT,
         }),
-      }
+      },
+      authToken,
     );
 
     expect(writeResult.callMCPTool.success).toBe(true);
@@ -215,7 +221,8 @@ test.describe('MCP Integration with Containerized Runtime', () => {
         input: JSON.stringify({
           path: TEST_FILE_PATH,
         }),
-      }
+      },
+      authToken,
     );
 
     expect(readResult.callMCPTool.success).toBe(true);
@@ -240,7 +247,8 @@ test.describe('MCP Integration with Containerized Runtime', () => {
         input: JSON.stringify({
           path: '/tmp',
         }),
-      }
+      },
+      authToken,
     );
 
     expect(listResult.callMCPTool.success).toBe(true);
@@ -265,7 +273,8 @@ test.describe('MCP Integration with Containerized Runtime', () => {
 
     const serverToolsResult = await graphql<{
       mcpServers: Array<{ id: string; name: string; tools: Array<{ id: string; name: string }> }>;
-    }>(serverToolsQuery, { workspaceId });
+    }>(serverToolsQuery, { workspaceId }, authToken);
+
 
     const testServer = serverToolsResult.mcpServers.find((s) => s.id === mcpServerId);
     expect(testServer).toBeDefined();
@@ -292,7 +301,7 @@ test.describe('MCP Integration with Containerized Runtime', () => {
 
     const toolServerResult = await graphql<{
       mcpTools: Array<{ id: string; name: string; mcpServer: { id: string; name: string }; toolSets: Array<{ id: string; name: string }> }>;
-    }>(toolServerQuery, { workspaceId });
+    }>(toolServerQuery, { workspaceId }, authToken);
 
     const testTools = toolServerResult.mcpTools.filter((t) => t.mcpServer.id === mcpServerId);
     expect(testTools.length).toBeGreaterThan(0);
@@ -313,6 +322,7 @@ test.describe('MCP Integration with Containerized Runtime', () => {
     await page.click('button[type="submit"]');
     await page.waitForURL(/\/w\/.+\/overview/, { timeout: 5000 });
 
+
     const workspaceUrl = page.url();
     const workspaceId = workspaceUrl.match(/\/w\/([^/]+)/)?.[1];
 
@@ -328,7 +338,7 @@ test.describe('MCP Integration with Containerized Runtime', () => {
 
     const toolsResult = await graphql<{
       mcpTools: Array<{ id: string; name: string }>;
-    }>(toolsQuery, { workspaceId });
+    }>(toolsQuery, { workspaceId }, authToken);
 
     const readFileTool = toolsResult.mcpTools.find((t) => t.name === 'read_file');
     expect(readFileTool).toBeDefined();
@@ -350,7 +360,8 @@ test.describe('MCP Integration with Containerized Runtime', () => {
         input: JSON.stringify({
           path: '/tmp/test-fs/nonexistent-file.txt',
         }),
-      }
+      },
+      authToken,
     );
 
     // Tool call should fail gracefully
