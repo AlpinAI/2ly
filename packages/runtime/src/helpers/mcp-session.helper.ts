@@ -5,7 +5,7 @@ import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/
 import { SSEServerTransport } from '@modelcontextprotocol/sdk/server/sse.js';
 import { tap } from 'rxjs';
 import { SessionAuthService, AuthHeaders } from '../services/session.auth.service';
-import { ToolsetService, ToolsetIdentity } from '../services/skill.service';
+import { SkillService, SkillIdentity } from '../services/skill.service';
 import { HealthService } from '../services/runtime.health.service';
 
 /**
@@ -13,7 +13,7 @@ import { HealthService } from '../services/runtime.health.service';
  */
 export interface SessionContext {
   transport: StreamableHTTPServerTransport | SSEServerTransport;
-  skillService: ToolsetService;
+  skillService: SkillService;
   drain: () => void;
 }
 
@@ -46,7 +46,7 @@ export async function authenticateSession(
   request: FastifyRequest,
   loggerService: LoggerService,
   natsService: NatsService,
-): Promise<ToolsetIdentity> {
+): Promise<SkillIdentity> {
   const authHeaders = extractAuthHeaders(request);
   const sessionAuthService = new SessionAuthService(loggerService, natsService);
 
@@ -57,13 +57,13 @@ export async function authenticateSession(
 /**
  * Create and start a skill service for a session
  */
-export async function createToolsetService(
-  identity: ToolsetIdentity,
+export async function createSkillService(
+  identity: SkillIdentity,
   loggerService: LoggerService,
   natsService: NatsService,
   healthService: HealthService,
-): Promise<ToolsetService> {
-  const skillService = new ToolsetService(loggerService, natsService, identity);
+): Promise<SkillService> {
+  const skillService = new SkillService(loggerService, natsService, identity);
   await healthService.startService(skillService);
   return skillService;
 }
@@ -74,7 +74,7 @@ export async function createToolsetService(
  */
 export function completeSessionContext(
   transport: StreamableHTTPServerTransport | SSEServerTransport,
-  skillService: ToolsetService,
+  skillService: SkillService,
   partialSession: Partial<SessionContext>,
 ): void {
   // Listen for tool changes and notify clients

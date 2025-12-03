@@ -117,7 +117,7 @@ packages/frontend/src/
 │   ├── ui/         # Radix UI primitives (button, select, dropdown, etc.)
 │   ├── monitoring/ # Domain-specific components
 │   ├── layout/     # Layout components (header, navigation)
-│   ├── toolsets/   # Tool set management components
+│   ├── skills/     # Skill management components
 │   ├── agents/     # Agent-related components
 │   └── sources/    # Source management components
 ├── hooks/          # Custom hooks (useToolCalls, useMCPServers, etc.)

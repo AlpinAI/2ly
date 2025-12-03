@@ -55,7 +55,7 @@ export class SkillRepository {
     this.logger.debug(`Created skill ${name} with id ${skill.id}`);
 
     // 2. Create the skill key
-    await this.identityRepository.createKey('skill', skill.id, `${name} Toolset Key`, '');
+    await this.identityRepository.createKey('skill', skill.id, `${name} Skill Key`, '');
 
     return skill;
   }

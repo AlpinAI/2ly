@@ -135,7 +135,7 @@ export function ToolDetail({ tool }: ToolDetailProps) {
           </div>
         </div>
 
-        {/* Tool Sets */}
+        {/* Skills */}
         <div>
           <div className="flex items-center justify-between mb-2">
             <h4 className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">

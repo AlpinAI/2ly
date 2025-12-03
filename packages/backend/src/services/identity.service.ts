@@ -11,7 +11,7 @@ import { HandshakeRuntimeCallback, HandshakeSkillCallback } from '../types';
 import { SystemRepository } from '../repositories/system.repository';
 
 /**
- * TokenService handles validation of System Keys, Workspace Keys, and Toolset Keys.
+ * TokenService handles validation of System Keys, Workspace Keys, and Skill Keys.
  * It also generates NATS JWTs for authenticated runtimes.
  */
 @injectable()
@@ -169,7 +169,7 @@ export class IdentityService extends Service {
         this.logger.debug(`Handshake with skill identity: ${relatedId}`);
         skill = await this.skillRepository.findById(relatedId);
         if (!skill) {
-          throw new Error(`Toolset ${relatedId} not found`);
+          throw new Error(`Skill ${relatedId} not found`);
         }
         workspaceId = skill.workspace.id;
         finalNature = 'skill';

@@ -134,8 +134,8 @@ describe('OnboardingCard', () => {
   const mockOpenCreateSkillDialog = vi.fn();
   const mockSetManageToolsDialogOpen = vi.fn();
   const mockSetSelectedSkillForManagement = vi.fn();
-  const mockSetConnectToolsetDialogOpen = vi.fn();
-  const mockSetSelectedToolsetName = vi.fn();
+  const mockSetConnectSkillDialogOpen = vi.fn();
+  const mockSetSelectedSkillName = vi.fn();
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -167,9 +167,9 @@ describe('OnboardingCard', () => {
 
     vi.mocked(uiStore.useConnectSkillDialog).mockReturnValue({
       open: false,
-      setOpen: mockSetConnectToolsetDialogOpen,
+      setOpen: mockSetConnectSkillDialogOpen,
       selectedSkillName: null,
-      setSelectedSkillName: mockSetSelectedToolsetName,
+      setSelectedSkillName: mockSetSelectedSkillName,
       selectedSkillId: null,
       setSelectedSkillId: vi.fn(),
     });
@@ -202,7 +202,7 @@ describe('OnboardingCard', () => {
     });
   });
 
-  describe('Step 3: Connect Tool Set to Agent', () => {
+  describe('Step 3: Connect Skill to Agent', () => {
     it('renders step title and description', () => {
       render(<OnboardingCard step={mockStep} />);
 
@@ -217,14 +217,14 @@ describe('OnboardingCard', () => {
       expect(buttons.length).toBeGreaterThan(0);
     });
 
-    it('opens Connect Toolset dialog when Connect button is clicked', () => {
+    it('opens Connect Skill dialog when Connect button is clicked', () => {
       render(<OnboardingCard step={mockStep} isCurrentStep={true} />);
 
       const buttons = screen.getAllByRole('button', { name: /Connect/i });
       fireEvent.click(buttons[0]);
 
-      expect(mockSetSelectedToolsetName).toHaveBeenCalledWith('Test Agent');
-      expect(mockSetConnectToolsetDialogOpen).toHaveBeenCalledWith(true);
+      expect(mockSetSelectedSkillName).toHaveBeenCalledWith('Test Agent');
+      expect(mockSetConnectSkillDialogOpen).toHaveBeenCalledWith(true);
     });
 
     it('shows message when no skill with tools exists', () => {

@@ -31,7 +31,7 @@ def _validate_auth(name: Optional[str], workspace_key: Optional[str], skill_key:
     if not has_workspace_key and not has_skill_key:
         raise ValueError(
             "Authentication required: provide either 'workspace_key' (with 'name') or 'skill_key'. "
-            "Get keys from the 2ly UI: Settings > API Keys (workspace key) or Toolsets page (skill key)."
+            "Get keys from the 2ly UI: Settings > API Keys (workspace key) or Skills page (skill key)."
         )
 
     if has_workspace_key and has_skill_key:
@@ -52,20 +52,20 @@ def _validate_auth(name: Optional[str], workspace_key: Optional[str], skill_key:
             "The skill is identified by the key itself."
         )
 
-class MCPToolset:
+class MCPSkill:
     """Connect to 2ly skills and access MCP tools via LangChain.
 
     Authentication approaches:
     1. Workspace key + skill name (auto-discovery):
-       MCPToolset(name="My Agent", workspace_key="WSK_...", ...)
+       MCPSkill(name="My Agent", workspace_key="WSK_...", ...)
        - Enables automatic creation and discovery of skills at runtime
-    2. Toolset-specific key (recommended):
-       MCPToolset(skill_key="SKL_...", ...)
+    2. Skill-specific key (recommended):
+       MCPSkill(skill_key="SKL_...", ...)
        - Provides granular security with access limited to one skill
 
     See factory methods for convenient initialization:
-    - MCPToolset.with_workspace_key(name, workspace_key)
-    - MCPToolset.with_skill_key(skill_key)
+    - MCPSkill.with_workspace_key(name, workspace_key)
+    - MCPSkill.with_skill_key(skill_key)
     """
 
     def __init__(
@@ -77,12 +77,12 @@ class MCPToolset:
         version: str = "latest",
         startup_timeout_seconds: float = 20.0
     ):
-        """Initialize MCPToolset with authentication.
+        """Initialize MCPSkill with authentication.
 
         Args:
-            name: Toolset name (required when using workspace_key)
+            name: Skill name (required when using workspace_key)
             workspace_key: Workspace key (requires name parameter)
-            skill_key: Toolset-specific key (standalone)
+            skill_key: Skill-specific key (standalone)
             nats_servers: NATS connection URL
             version: npm version for @2ly/runtime
             startup_timeout_seconds: Max time to wait for session initialization
@@ -137,24 +137,24 @@ class MCPToolset:
         nats_servers: str = "nats://localhost:4222",
         version: str = "latest",
         startup_timeout_seconds: float = 20.0
-    ) -> "MCPToolset":
-        """Create MCPToolset with workspace key for auto-discovery.
+    ) -> "MCPSkill":
+        """Create MCPSkill with workspace key for auto-discovery.
 
         This approach enables automatic creation and discovery of skills
         at runtime using a workspace-level key.
 
         Args:
-            name: Toolset name to create or connect to
+            name: Skill name to create or connect to
             workspace_key: Workspace key (get from Settings > API Keys in UI)
             nats_servers: NATS connection URL
             version: npm version for @2ly/runtime
             startup_timeout_seconds: Max time to wait for session initialization
 
         Returns:
-            MCPToolset instance configured with workspace authentication
+            MCPSkill instance configured with workspace authentication
 
         Example:
-            async with MCPToolset.with_workspace_key(
+            async with MCPSkill.with_workspace_key(
                 name="My LangGraph Agent",
                 workspace_key="WSK_xyz123..."
             ) as mcp:
@@ -175,24 +175,24 @@ class MCPToolset:
         nats_servers: str = "nats://localhost:4222",
         version: str = "latest",
         startup_timeout_seconds: float = 20.0
-    ) -> "MCPToolset":
-        """Create MCPToolset with skill-specific key (recommended).
+    ) -> "MCPSkill":
+        """Create MCPSkill with skill-specific key (recommended).
 
         This approach provides granular security by using a key specific to
         one skill. Recommended for better security. Requires pre-creating
         the skill via UI or API.
 
         Args:
-            skill_key: Toolset-specific key (get from Toolsets page in UI)
+            skill_key: Skill-specific key (get from Skills page in UI)
             nats_servers: NATS connection URL
             version: npm version for @2ly/runtime
             startup_timeout_seconds: Max time to wait for session initialization
 
         Returns:
-            MCPToolset instance configured with skill authentication
+            MCPSkill instance configured with skill authentication
 
         Example:
-            async with MCPToolset.with_skill_key(
+            async with MCPSkill.with_skill_key(
                 skill_key="SKL_abc456..."
             ) as mcp:
                 tools = await mcp.get_langchain_tools()
@@ -204,7 +204,7 @@ class MCPToolset:
             startup_timeout_seconds=startup_timeout_seconds
         )
 
-    async def __aenter__(self) -> "MCPToolset":
+    async def __aenter__(self) -> "MCPSkill":
         await self.start()
         return self
 

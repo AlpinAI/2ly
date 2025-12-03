@@ -13,18 +13,18 @@ import {
 } from '@2ly/common';
 import { BehaviorSubject, filter, firstValueFrom, map } from 'rxjs';
 
-export interface ToolsetIdentity {
+export interface SkillIdentity {
   workspaceId: string;
   skillId: string;
   skillName: string;
 }
 
 /**
- * ToolsetService manages the skill subscriptions and tool management.
+ * SkillService manages the skill subscriptions and tool management.
  * This service can be instantiated per-session in remote mode or as a singleton in stdio mode.
  */
 @injectable()
-export class ToolsetService extends Service {
+export class SkillService extends Service {
   name = 'skill';
   private logger: pino.Logger;
   private tools = new BehaviorSubject<dgraphResolversTypes.McpTool[] | null>(null);
@@ -33,7 +33,7 @@ export class ToolsetService extends Service {
   constructor(
     private loggerService: LoggerService,
     private natsService: NatsService,
-    private identity: ToolsetIdentity,
+    private identity: SkillIdentity,
   ) {
     super();
     this.logger = this.loggerService.getLogger(`${this.name}`);
@@ -150,16 +150,16 @@ export class ToolsetService extends Service {
   /**
    * Get the identity associated with this skill
    */
-  public getIdentity(): ToolsetIdentity {
+  public getIdentity(): SkillIdentity {
     return this.identity;
   }
 }
 
 /**
- * Factory type for creating ToolsetService instances
+ * Factory type for creating SkillService instances
  */
-export type ToolsetServiceFactory = (
+export type SkillServiceFactory = (
   loggerService: LoggerService,
   natsService: NatsService,
-  identity: ToolsetIdentity,
-) => ToolsetService;
+  identity: SkillIdentity,
+) => SkillService;

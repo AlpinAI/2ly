@@ -1,5 +1,5 @@
 /**
- * Tool Set Management E2E Tests
+ * Skill Management E2E Tests
  *
  * Tests the skill detail view and the "Manage Tools" button functionality.
  * Verifies that the Manage Tools panel opens correctly and displays tool management UI.
@@ -11,7 +11,7 @@
 
 import { test, expect, performLogin, seedPresets } from '@2ly/common/test/fixtures/playwright';
 
-test.describe('Tool Set Management', () => {
+test.describe('Skill Management', () => {
   test.describe.configure({ mode: 'serial' });
 
   test.beforeAll(async ({ resetDatabase, seedDatabase }) => {
@@ -23,7 +23,7 @@ test.describe('Tool Set Management', () => {
     // Step 1: Login
     await performLogin(page, 'user1@2ly.ai', 'testpassword123');
 
-    // Step 2: Navigate to Tool Sets page
+    // Step 2: Navigate to Skills page
     await page.goto(`/w/${workspaceId}/skills`);
 
     // Step 3: Wait for skills to load
@@ -35,7 +35,7 @@ test.describe('Tool Set Management', () => {
     await firstSkillRow.click();
 
     // Step 5: Wait for detail panel to open and verify it's visible
-    await expect(page.locator('text=/Tool Set|Skill/i').first()).toBeVisible({ timeout: 5000 });
+    await expect(page.locator('text=/Skill/i').first()).toBeVisible({ timeout: 5000 });
 
     // Step 6: Click "Manage Tools" button (scoped within the detail panel)
     const detailPanel = page.getByRole('complementary');

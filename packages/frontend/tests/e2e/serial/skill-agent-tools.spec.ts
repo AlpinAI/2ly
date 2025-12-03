@@ -17,7 +17,7 @@
  */
 
 import { test, expect, seedPresets, dgraphQL, loginAndGetToken } from '@2ly/common/test/fixtures/playwright';
-import { createToolset, updateMCPServerToEdgeRuntime } from '@2ly/common/test/fixtures/mcp-builders';
+import { createSkill, updateMCPServerToEdgeRuntime } from '@2ly/common/test/fixtures/mcp-builders';
 import { createMCPClient } from '@2ly/common/test/fixtures/playwright';
 import {
   assertToolListing,
@@ -89,7 +89,7 @@ test.describe('MCP Client with AGENT RunOn Configuration', () => {
     expect(workspaceKey).toBeDefined();
 
     // Create a shared skill that all tests will use
-    await createToolset(graphql, workspaceId, 'My skill', 'My skill description', 100, authToken);
+    await createSkill(graphql, workspaceId, 'My skill', 'My skill description', 100, authToken);
   });
 
   /**

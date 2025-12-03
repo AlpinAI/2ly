@@ -19,7 +19,7 @@ import {
 import {
   SessionContext,
   authenticateSession,
-  createToolsetService,
+  createSkillService,
   completeSessionContext,
   cleanupSession,
   cleanupAllSessions,
@@ -425,7 +425,7 @@ export class McpStreamableService extends Service {
       this.logger.info(`Authenticated new stream connection for skill: ${identity.skillName}`);
 
       // Create the skill service first
-      const skillService = await createToolsetService(
+      const skillService = await createSkillService(
         identity,
         this.loggerService,
         this.natsService,

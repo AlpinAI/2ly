@@ -34,7 +34,7 @@ export async function closeNatsConnection(): Promise<void> {
  * Send a skill handshake message to trigger onboarding step 3 completion
  * Uses HandshakeRequest class for validation but raw NATS for transport
  */
-export async function sendToolsetHandshake(params: {
+export async function sendSkillHandshake(params: {
   skillKey: string;
   skillName: string;
 }): Promise<{ workspaceId: string | null; nature: string; id: string; name: string }> {

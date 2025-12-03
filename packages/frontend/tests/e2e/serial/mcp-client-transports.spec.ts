@@ -15,7 +15,7 @@
  */
 
 import { test, expect, seedPresets, loginAndGetToken } from '@2ly/common/test/fixtures/playwright';
-import { createToolset, updateMCPServerToEdgeRuntime } from '@2ly/common/test/fixtures/mcp-builders';
+import { createSkill, updateMCPServerToEdgeRuntime } from '@2ly/common/test/fixtures/mcp-builders';
 import { createMCPClient } from '@2ly/common/test/fixtures/playwright';
 import {
   assertToolListing,
@@ -63,7 +63,7 @@ test.describe('MCP Client Transports', () => {
 
     // Create a shared skill that all tests will use
     // Tests only create their own MCP clients, they don't modify this skill
-    await createToolset(graphql, workspaceId, 'My skill', 'My skill description', 100, authToken);
+    await createSkill(graphql, workspaceId, 'My skill', 'My skill description', 100, authToken);
   });
 
   /**

@@ -20,9 +20,9 @@ import type {
 export interface MCPAuthParams {
   /** Workspace key for workspace authentication */
   workspaceKey?: string;
-  /** Toolset key for skill-specific connections */
+  /** Skill key for skill-specific connections */
   skillKey?: string;
-  /** Toolset name for skill-specific connections */
+  /** Skill name for skill-specific connections */
   skillName?: string;
 }
 

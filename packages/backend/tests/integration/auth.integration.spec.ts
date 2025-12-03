@@ -1113,7 +1113,7 @@ describe('Authentication Integration Tests', () => {
 
       // User B tries to access User A's skill key
       const skillKeyQuery = `
-        query GetToolsetKey($skillId: ID!) {
+        query GetSkillKey($skillId: ID!) {
           skillKey(skillId: $skillId) {
             id
             key
@@ -1179,7 +1179,7 @@ describe('Authentication Integration Tests', () => {
 
       // Try to access skill key without authentication
       const skillKeyQuery = `
-        query GetToolsetKey($skillId: ID!) {
+        query GetSkillKey($skillId: ID!) {
           skillKey(skillId: $skillId) {
             id
             key

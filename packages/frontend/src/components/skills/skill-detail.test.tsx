@@ -36,7 +36,7 @@ vi.mock('react-router-dom', async () => {
 const mockSkill = {
   __typename: 'Skill' as const,
   id: 'skill-1',
-  name: 'Test Toolset',
+  name: 'Test Skill',
   description: 'Test skill description',
   createdAt: new Date('2024-01-01'),
   updatedAt: new Date('2024-01-02'),
@@ -57,12 +57,12 @@ const mockSkill = {
 
 describe('SkillDetail - Inline Editing', () => {
   const mockUpdateSkill = vi.fn();
-  const mockGetToolsetKey = vi.fn();
+  const mockGetSkillKey = vi.fn();
   const mockSetOpen = vi.fn();
-  const mockSetSelectedToolsetId = vi.fn();
+  const mockSetSelectedSkillId = vi.fn();
   const mockSetConnectDialogOpen = vi.fn();
-  const mockSetSelectedToolsetName = vi.fn();
-  const mockSetConnectToolsetId = vi.fn();
+  const mockSetSelectedSkillName = vi.fn();
+  const mockSetConnectSkillId = vi.fn();
   const mockConfirm = vi.fn();
   const mockToast = vi.fn();
 
@@ -73,16 +73,16 @@ describe('SkillDetail - Inline Editing', () => {
       open: false,
       setOpen: mockSetOpen,
       selectedSkillId: null,
-      setSelectedSkillId: mockSetSelectedToolsetId,
+      setSelectedSkillId: mockSetSelectedSkillId,
     });
 
     vi.mocked(uiStore.useConnectSkillDialog).mockReturnValue({
       open: false,
       setOpen: mockSetConnectDialogOpen,
       selectedSkillName: null,
-      setSelectedSkillName: mockSetSelectedToolsetName,
+      setSelectedSkillName: mockSetSelectedSkillName,
       selectedSkillId: null,
-      setSelectedSkillId: mockSetConnectToolsetId,
+      setSelectedSkillId: mockSetConnectSkillId,
     });
 
     vi.mocked(NotificationContext.useNotification).mockReturnValue({
@@ -96,9 +96,9 @@ describe('SkillDetail - Inline Editing', () => {
       { loading: false, error: undefined, data: undefined },
     ] as never);
 
-    // Mock useLazyQuery - return getToolsetKey by default
+    // Mock useLazyQuery - return getSkillKey by default
     vi.mocked(useLazyQuery).mockReturnValue([
-      mockGetToolsetKey,
+      mockGetSkillKey,
       { loading: false },
     ] as never);
   });
@@ -111,11 +111,11 @@ describe('SkillDetail - Inline Editing', () => {
         </BrowserRouter>
       );
 
-      const nameInput = screen.getByDisplayValue('Test Toolset');
+      const nameInput = screen.getByDisplayValue('Test Skill');
       expect(nameInput).toBeInTheDocument();
 
-      fireEvent.change(nameInput, { target: { value: 'New Toolset Name' } });
-      expect(nameInput).toHaveValue('New Toolset Name');
+      fireEvent.change(nameInput, { target: { value: 'New Skill Name' } });
+      expect(nameInput).toHaveValue('New Skill Name');
     });
 
     it('saves name on blur when changed', async () => {
@@ -127,15 +127,15 @@ describe('SkillDetail - Inline Editing', () => {
         </BrowserRouter>
       );
 
-      const nameInput = screen.getByDisplayValue('Test Toolset');
-      fireEvent.change(nameInput, { target: { value: 'New Toolset Name' } });
+      const nameInput = screen.getByDisplayValue('Test Skill');
+      fireEvent.change(nameInput, { target: { value: 'New Skill Name' } });
       fireEvent.blur(nameInput);
 
       await waitFor(() => {
         expect(mockUpdateSkill).toHaveBeenCalledWith({
           variables: {
             id: 'skill-1',
-            name: 'New Toolset Name',
+            name: 'New Skill Name',
             description: 'Test skill description',
           },
         });
@@ -149,7 +149,7 @@ describe('SkillDetail - Inline Editing', () => {
         </BrowserRouter>
       );
 
-      const nameInput = screen.getByDisplayValue('Test Toolset');
+      const nameInput = screen.getByDisplayValue('Test Skill');
       fireEvent.blur(nameInput);
 
       await waitFor(() => {
@@ -164,7 +164,7 @@ describe('SkillDetail - Inline Editing', () => {
         </BrowserRouter>
       );
 
-      const nameInput = screen.getByDisplayValue('Test Toolset');
+      const nameInput = screen.getByDisplayValue('Test Skill');
       fireEvent.change(nameInput, { target: { value: 'AB' } });
       fireEvent.blur(nameInput);
 
@@ -185,7 +185,7 @@ describe('SkillDetail - Inline Editing', () => {
         </BrowserRouter>
       );
 
-      const nameInput = screen.getByDisplayValue('Test Toolset');
+      const nameInput = screen.getByDisplayValue('Test Skill');
       fireEvent.change(nameInput, { target: { value: longName } });
       fireEvent.blur(nameInput);
 
@@ -207,7 +207,7 @@ describe('SkillDetail - Inline Editing', () => {
         </BrowserRouter>
       );
 
-      const nameInput = screen.getByDisplayValue('Test Toolset');
+      const nameInput = screen.getByDisplayValue('Test Skill');
       fireEvent.change(nameInput, { target: { value: '  Valid Name  ' } });
       fireEvent.blur(nameInput);
 
@@ -232,8 +232,8 @@ describe('SkillDetail - Inline Editing', () => {
         </BrowserRouter>
       );
 
-      const nameInput = screen.getByDisplayValue('Test Toolset');
-      fireEvent.change(nameInput, { target: { value: 'New Toolset Name' } });
+      const nameInput = screen.getByDisplayValue('Test Skill');
+      fireEvent.change(nameInput, { target: { value: 'New Skill Name' } });
       fireEvent.blur(nameInput);
 
       await waitFor(() => {
@@ -241,7 +241,7 @@ describe('SkillDetail - Inline Editing', () => {
           description: 'Failed to save name',
           variant: 'error',
         });
-        expect(nameInput).toHaveValue('Test Toolset');
+        expect(nameInput).toHaveValue('Test Skill');
       });
 
       consoleErrorSpy.mockRestore();
@@ -292,7 +292,7 @@ describe('SkillDetail - Inline Editing', () => {
         expect(mockUpdateSkill).toHaveBeenCalledWith({
           variables: {
             id: 'skill-1',
-            name: 'Test Toolset',
+            name: 'Test Skill',
             description: 'Updated description',
           },
         });
@@ -331,7 +331,7 @@ describe('SkillDetail - Inline Editing', () => {
         expect(mockUpdateSkill).toHaveBeenCalledWith({
           variables: {
             id: 'skill-1',
-            name: 'Test Toolset',
+            name: 'Test Skill',
             description: '',
           },
         });
@@ -393,18 +393,18 @@ describe('SkillDetail - Inline Editing', () => {
         </BrowserRouter>
       );
 
-      const nameInput = screen.getByDisplayValue('Test Toolset');
+      const nameInput = screen.getByDisplayValue('Test Skill');
       fireEvent.change(nameInput, { target: { value: 'Changed Name' } });
       expect(nameInput).toHaveValue('Changed Name');
 
-      const updatedSkill = { ...mockSkill, name: 'Updated Toolset' };
+      const updatedSkill = { ...mockSkill, name: 'Updated Skill' };
       rerender(
         <BrowserRouter>
           <SkillDetail skill={updatedSkill} />
         </BrowserRouter>
       );
 
-      expect(screen.getByDisplayValue('Updated Toolset')).toBeInTheDocument();
+      expect(screen.getByDisplayValue('Updated Skill')).toBeInTheDocument();
     });
   });
 
@@ -417,7 +417,7 @@ describe('SkillDetail - Inline Editing', () => {
       );
 
       // Verify editable fields exist
-      expect(screen.getByDisplayValue('Test Toolset')).toBeInTheDocument();
+      expect(screen.getByDisplayValue('Test Skill')).toBeInTheDocument();
       expect(screen.getByDisplayValue('Test skill description')).toBeInTheDocument();
 
       // Verify other UI elements still render
@@ -441,7 +441,7 @@ describe('SkillDetail - Inline Editing', () => {
 });
 
 describe('SkillDetail - Identity Key Copy Functionality', () => {
-  const mockGetToolsetKey = vi.fn();
+  const mockGetSkillKey = vi.fn();
   const mockGetKeyValue = vi.fn();
   const mockClipboardWriteText = vi.fn();
   const mockToast = vi.fn();
@@ -485,10 +485,10 @@ describe('SkillDetail - Identity Key Copy Functionality', () => {
       },
     });
 
-    // Setup useLazyQuery to return both getToolsetKey and getKeyValue
+    // Setup useLazyQuery to return both getSkillKey and getKeyValue
     vi.mocked(useLazyQuery)
       .mockReturnValueOnce([
-        mockGetToolsetKey,
+        mockGetSkillKey,
         { loading: false },
       ] as never)
       .mockReturnValueOnce([
@@ -514,8 +514,8 @@ describe('SkillDetail - Identity Key Copy Functionality', () => {
     const testKey = 'test-key-value-123';
     mockClipboardWriteText.mockResolvedValue(undefined);
 
-    // Mock getToolsetKey to return key metadata
-    mockGetToolsetKey.mockResolvedValue({
+    // Mock getSkillKey to return key metadata
+    mockGetSkillKey.mockResolvedValue({
       data: { skillKey: { id: 'key-1' } },
     });
 
@@ -535,7 +535,7 @@ describe('SkillDetail - Identity Key Copy Functionality', () => {
     fireEvent.click(showButton);
 
     await waitFor(() => {
-      expect(mockGetToolsetKey).toHaveBeenCalledWith({ variables: { skillId: 'skill-1' } });
+      expect(mockGetSkillKey).toHaveBeenCalledWith({ variables: { skillId: 'skill-1' } });
       expect(mockGetKeyValue).toHaveBeenCalledWith({ variables: { keyId: 'key-1' } });
     });
 
@@ -556,8 +556,8 @@ describe('SkillDetail - Identity Key Copy Functionality', () => {
     const testKey = 'test-key-value-456';
     mockClipboardWriteText.mockResolvedValue(undefined);
 
-    // Mock getToolsetKey to return key metadata
-    mockGetToolsetKey.mockResolvedValue({
+    // Mock getSkillKey to return key metadata
+    mockGetSkillKey.mockResolvedValue({
       data: { skillKey: { id: 'key-1' } },
     });
 
@@ -577,7 +577,7 @@ describe('SkillDetail - Identity Key Copy Functionality', () => {
     fireEvent.click(copyButton);
 
     await waitFor(() => {
-      expect(mockGetToolsetKey).toHaveBeenCalledWith({ variables: { skillId: 'skill-1' } });
+      expect(mockGetSkillKey).toHaveBeenCalledWith({ variables: { skillId: 'skill-1' } });
       expect(mockGetKeyValue).toHaveBeenCalledWith({ variables: { keyId: 'key-1' } });
       expect(mockClipboardWriteText).toHaveBeenCalledWith(testKey);
       expect(mockToast).toHaveBeenCalledWith({
@@ -592,12 +592,12 @@ describe('SkillDetail - Identity Key Copy Functionality', () => {
     mockClipboardWriteText.mockResolvedValue(undefined);
 
     // Create a promise that we can control
-    let resolveGetToolsetKey: (value: { data: { skillKey: { id: string } } }) => void;
-    const getToolsetKeyPromise = new Promise<{ data: { skillKey: { id: string } } }>((resolve) => {
-      resolveGetToolsetKey = resolve;
+    let resolveGetSkillKey: (value: { data: { skillKey: { id: string } } }) => void;
+    const getSkillKeyPromise = new Promise<{ data: { skillKey: { id: string } } }>((resolve) => {
+      resolveGetSkillKey = resolve;
     });
 
-    mockGetToolsetKey.mockReturnValue(getToolsetKeyPromise);
+    mockGetSkillKey.mockReturnValue(getSkillKeyPromise);
 
     render(
       <BrowserRouter>
@@ -614,7 +614,7 @@ describe('SkillDetail - Identity Key Copy Functionality', () => {
     });
 
     // Resolve the promise
-    resolveGetToolsetKey!({
+    resolveGetSkillKey!({
       data: { skillKey: { id: 'key-1' } },
     });
 
@@ -631,7 +631,7 @@ describe('SkillDetail - Identity Key Copy Functionality', () => {
     const testKey = 'test-key-value-secret';
     mockClipboardWriteText.mockResolvedValue(undefined);
 
-    mockGetToolsetKey.mockResolvedValue({
+    mockGetSkillKey.mockResolvedValue({
       data: { skillKey: { id: 'key-1' } },
     });
 
@@ -666,7 +666,7 @@ describe('SkillDetail - Identity Key Copy Functionality', () => {
     const testKey = 'test-key-value-cached';
     mockClipboardWriteText.mockResolvedValue(undefined);
 
-    mockGetToolsetKey.mockResolvedValue({
+    mockGetSkillKey.mockResolvedValue({
       data: { skillKey: { id: 'key-1' } },
     });
 
@@ -685,7 +685,7 @@ describe('SkillDetail - Identity Key Copy Functionality', () => {
     fireEvent.click(copyButton);
 
     await waitFor(() => {
-      expect(mockGetToolsetKey).toHaveBeenCalledTimes(1);
+      expect(mockGetSkillKey).toHaveBeenCalledTimes(1);
       expect(mockGetKeyValue).toHaveBeenCalledTimes(1);
       expect(mockClipboardWriteText).toHaveBeenCalledWith(testKey);
     });
@@ -698,7 +698,7 @@ describe('SkillDetail - Identity Key Copy Functionality', () => {
     });
 
     // Verify queries were not called again
-    expect(mockGetToolsetKey).toHaveBeenCalledTimes(1);
+    expect(mockGetSkillKey).toHaveBeenCalledTimes(1);
     expect(mockGetKeyValue).toHaveBeenCalledTimes(1);
   });
 
@@ -706,7 +706,7 @@ describe('SkillDetail - Identity Key Copy Functionality', () => {
     const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
     mockClipboardWriteText.mockRejectedValue(new Error('Clipboard error'));
 
-    mockGetToolsetKey.mockResolvedValue({
+    mockGetSkillKey.mockResolvedValue({
       data: { skillKey: { id: 'key-1' } },
     });
 
@@ -735,7 +735,7 @@ describe('SkillDetail - Identity Key Copy Functionality', () => {
 
   it('handles fetch error during copy gracefully', async () => {
     const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-    mockGetToolsetKey.mockRejectedValue(new Error('Network error'));
+    mockGetSkillKey.mockRejectedValue(new Error('Network error'));
 
     render(
       <BrowserRouter>

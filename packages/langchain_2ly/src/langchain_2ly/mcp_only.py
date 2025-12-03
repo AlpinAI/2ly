@@ -30,7 +30,7 @@ class TwolyOptions(TypedDict, total=False):
     """Configuration for the MCP runtime process.
 
     - workspace_key: Workspace key (requires name parameter)
-    - skill_key: Toolset-specific key (standalone)
+    - skill_key: Skill-specific key (standalone)
     - nats_servers: NATS connection URL used by the runtime. Defaults to local.
     - version: npm version/range for `@2ly/runtime` when executed via `npx`.
     - startup_timeout_seconds: Max time to wait for session initialization.
@@ -61,7 +61,7 @@ def _validate_auth(name: Optional[str], workspace_key: Optional[str], skill_key:
     if not has_workspace_key and not has_skill_key:
         raise ValueError(
             "Authentication required: provide either 'workspace_key' (with 'name') or 'skill_key'. "
-            "Get keys from the 2ly UI: Settings > API Keys (workspace key) or Toolsets page (skill key)."
+            "Get keys from the 2ly UI: Settings > API Keys (workspace key) or Skills page (skill key)."
         )
 
     if has_workspace_key and has_skill_key:
@@ -152,7 +152,7 @@ class MCPClient:
     1. Workspace key + skill name (auto-discovery):
        MCPClient(name="My Agent", workspace_key="WSK_...", ...)
        - Enables automatic creation and discovery of skills at runtime
-    2. Toolset-specific key (recommended):
+    2. Skill-specific key (recommended):
        MCPClient(skill_key="SKL_...", ...)
        - Provides granular security with access limited to one skill
 
@@ -188,9 +188,9 @@ class MCPClient:
         """Initialize MCPClient with authentication.
 
         Args:
-            name: Toolset name (required when using workspace_key)
+            name: Skill name (required when using workspace_key)
             workspace_key: Workspace key (requires name parameter)
-            skill_key: Toolset-specific key (standalone)
+            skill_key: Skill-specific key (standalone)
             nats_servers: NATS connection URL
             version: npm version for @2ly/runtime
             startup_timeout_seconds: Max time to wait for session initialization
@@ -252,7 +252,7 @@ class MCPClient:
         at runtime using a workspace-level key.
 
         Args:
-            name: Toolset name to create or connect to
+            name: Skill name to create or connect to
             workspace_key: Workspace key (get from Settings > API Keys in UI)
             nats_servers: NATS connection URL
             version: npm version for @2ly/runtime
@@ -294,7 +294,7 @@ class MCPClient:
         the skill via UI or API.
 
         Args:
-            skill_key: Toolset-specific key (get from Toolsets page in UI)
+            skill_key: Skill-specific key (get from Skills page in UI)
             nats_servers: NATS connection URL
             version: npm version for @2ly/runtime
             startup_timeout_seconds: Max time to wait for session initialization

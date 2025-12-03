@@ -3,7 +3,7 @@ import os
 from dotenv import load_dotenv
 from langchain_openai import ChatOpenAI
 from pydantic import SecretStr
-from langchain_2ly import MCPToolset
+from langchain_2ly import MCPSkill
 from langgraph.prebuilt import create_react_agent
 from format_response import format_agent_response
 import openai
@@ -45,7 +45,7 @@ async def main():
     try:
         # Using workspace key + skill name for auto-discovery
         # Automatically creates or connects to a skill named "Langgraph Agent"
-        async with MCPToolset.with_workspace_key(
+        async with MCPSkill.with_workspace_key(
             name="Langgraph Agent",
             workspace_key=workspace_key
         ) as mcp:

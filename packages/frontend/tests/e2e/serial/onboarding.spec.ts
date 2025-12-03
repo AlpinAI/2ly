@@ -1,13 +1,13 @@
 import { test, expect, performLogin, seedPresets, loginAndGetToken } from '@2ly/common/test/fixtures/playwright';
-import { configureFileSystemMCPServer, createToolset, getRuntimeIdByType } from '@2ly/common/test/fixtures/mcp-builders';
-import { sendToolsetHandshake, waitForOnboardingStepComplete } from '@2ly/common/test/fixtures';
+import { configureFileSystemMCPServer, createSkill, getRuntimeIdByType } from '@2ly/common/test/fixtures/mcp-builders';
+import { sendSkillHandshake, waitForOnboardingStepComplete } from '@2ly/common/test/fixtures';
 
 /**
  * Onboarding Flow E2E Tests
  *
  * Tests the complete onboarding flow with all three steps:
  * 1. Install an MCP Server
- * 2. Create Your First Tool Set
+ * 2. Create Your First Skill
  * 3. Connect your Agent
  *
  */
@@ -39,8 +39,8 @@ test.describe('Onboarding Flow', () => {
       await expect(page.getByRole('heading', { name: 'Install an MCP Server' })).toBeVisible();
       await expect(page.getByText('Add your first MCP server to start using tools')).toBeVisible();
   
-      // Check step 2: Create Tool Set
-      await expect(page.getByRole('heading', { name: 'Create Your First Tool Set' })).toBeVisible();
+      // Check step 2: Create Skill
+      await expect(page.getByRole('heading', { name: 'Create Your First Skill' })).toBeVisible();
       await expect(page.getByText('Create a skill with at least one tool')).toBeVisible();
   
       // Check step 3: Connect Agent
@@ -109,7 +109,7 @@ test.describe('Onboarding Flow', () => {
         .getByRole('heading', { name: 'Create Your First Skill' })
         .locator('xpath=ancestor::*[contains(@class,"onboarding-card")][1]');    
       
-      // Should show Create Tool Set button
+      // Should show Create Skill button
       await expect(step2Card.getByRole('button', { name: /Create Skill/i })).toBeVisible();
     });
   
@@ -140,7 +140,7 @@ test.describe('Onboarding Flow', () => {
       const authToken = await loginAndGetToken('user1@2ly.ai', 'password123');
 
       // complete step 2
-      const skillResult = await createToolset(graphql, workspaceId, 'My skill', 'My skill description', 1, authToken);
+      const skillResult = await createSkill(graphql, workspaceId, 'My skill', 'My skill description', 1, authToken);
       skillId = skillResult.skillId;
       await new Promise((resolve) => setTimeout(resolve, 5000));
     });
@@ -183,7 +183,7 @@ test.describe('Onboarding Flow', () => {
 
       // Get the skill key
       const skillKeyQuery = `
-        query GetToolsetKey($skillId: ID!) {
+        query GetSkillKey($skillId: ID!) {
           skillKey(skillId: $skillId) {
             key
           }
@@ -193,7 +193,7 @@ test.describe('Onboarding Flow', () => {
       skillKey = keyResult.skillKey.key;
 
       // Send skill handshake to complete step 3
-      await sendToolsetHandshake({
+      await sendSkillHandshake({
         skillKey,
         skillName: 'My skill',
       });

@@ -3,7 +3,7 @@ import os
 from dotenv import load_dotenv
 from langchain_openai import ChatOpenAI
 from pydantic import SecretStr
-from langchain_2ly import MCPToolset
+from langchain_2ly import MCPSkill
 from langgraph.prebuilt import create_react_agent
 from format_response import format_agent_response
 import openai
@@ -16,14 +16,14 @@ if not token:
     exit(1)
 
 # Get 2ly authentication - skill-specific key (recommended)
-# Get your skill key from: Toolsets page in the 2ly UI
+# Get your skill key from: Skills page in the 2ly UI
 # 1. Create a skill in the UI first
 # 2. Click on the skill to view details
 # 3. Copy the skill key
 skill_key = os.environ.get("SKILL_KEY")
 if not skill_key:
     print("Error: Please set the SKILL_KEY environment variable with a skill key from 2ly")
-    print("Get your key from the 2ly UI: Toolsets page > Select skill > Copy key")
+    print("Get your key from the 2ly UI: Skills page > Select skill > Copy key")
     exit(1)
 
 endpoint = "https://models.inference.ai.azure.com"
@@ -49,7 +49,7 @@ async def main():
         # Using skill-specific key (recommended for better security)
         # Provides granular access - each key only has access to one skill
         # Requires pre-creating the skill in the 2ly UI
-        async with MCPToolset.with_skill_key(
+        async with MCPSkill.with_skill_key(
             skill_key=skill_key
         ) as mcp:
             tools = await mcp.get_langchain_tools()

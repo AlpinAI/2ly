@@ -17,7 +17,7 @@ import { Button } from '@/components/ui/button';
 import { useConnectSkillDialog } from '@/stores/uiStore';
 import { useRuntimeData } from '@/stores/runtimeStore';
 import { useSystemInit } from '@/hooks/useSystemInit';
-import { GetToolsetKeyDocument, GetKeyValueDocument } from '@/graphql/generated/graphql';
+import { GetSkillKeyDocument, GetKeyValueDocument } from '@/graphql/generated/graphql';
 import { CONNECTION_OPTIONS, type PlatformOption } from './connection-options';
 import { N8NInstructions } from './instructions/n8n-instructions';
 import { LangflowInstructions } from './instructions/langflow-instructions';
@@ -32,7 +32,7 @@ export function ConnectSkillDialog() {
   const [selectedPlatform, setSelectedPlatform] = useState<PlatformOption | null>(null);
 
   // Fetch skill key metadata
-  const { data: keyData } = useQuery(GetToolsetKeyDocument, {
+  const { data: keyData } = useQuery(GetSkillKeyDocument, {
     variables: { skillId: selectedSkillId ?? '' },
     skip: !selectedSkillId || !open,
   });

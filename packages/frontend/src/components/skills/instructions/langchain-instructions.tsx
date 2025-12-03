@@ -13,13 +13,13 @@ export interface LangchainInstructionsProps {
 export function LangchainInstructions({ skillKey }: LangchainInstructionsProps) {
   const installCommand = 'pip install langchain_2ly';
 
-  const quickStartCode = `from langchain_2ly import MCPToolset
+  const quickStartCode = `from langchain_2ly import MCPSkill
 
 options = {
     "skill_key": "${skillKey || '<skill_key>'}"
 }
 
-async with MCPToolset.with_skill_key(options) as mcp:
+async with MCPSkill.with_skill_key(options) as mcp:
     tools = await mcp.get_langchain_tools()
     agent = create_react_agent(llm, tools)
     response = await agent.ainvoke(...)`;
@@ -43,7 +43,7 @@ async with MCPToolset.with_skill_key(options) as mcp:
           </div>
         </li>
         <li>
-          Use the MCPToolset in your code:
+          Use the MCPSkill in your code:
           <div className="mt-2">
             <CodeBlock code={quickStartCode} language="python" size="small" />
           </div>

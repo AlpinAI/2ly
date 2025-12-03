@@ -12,7 +12,7 @@ import { extractSessionIdFromQuery, isValidSessionId } from '../helpers/session.
 import {
   SessionContext,
   authenticateSession,
-  createToolsetService,
+  createSkillService,
   completeSessionContext,
   cleanupSession,
   cleanupAllSessions,
@@ -145,7 +145,7 @@ export class McpSseService extends Service {
         this.logger.info(`Authenticated SSE connection for skill: ${identity.skillName}`);
 
         // Create the skill service
-        const skillService = await createToolsetService(
+        const skillService = await createSkillService(
           identity,
           this.loggerService,
           this.natsService,

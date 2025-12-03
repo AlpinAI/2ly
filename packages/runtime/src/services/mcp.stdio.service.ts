@@ -17,7 +17,7 @@ import {
 } from '@modelcontextprotocol/sdk/types.js';
 import { AuthService } from './auth.service';
 import { BehaviorSubject, Subscription, tap } from 'rxjs';
-import { ToolsetService } from './skill.service';
+import { SkillService } from './skill.service';
 
 /**
  * McpStdioService handles MCP server with stdio transport.
@@ -34,7 +34,7 @@ export class McpStdioService extends Service {
   private clientRoots: BehaviorSubject<{ name: string; uri: string }[]> = new BehaviorSubject<
     { name: string; uri: string }[]
   >([]);
-  private skillService: ToolsetService | undefined;
+  private skillService: SkillService | undefined;
   private rxjsSubscriptions: Subscription[] = [];
 
   constructor(
@@ -87,7 +87,7 @@ export class McpStdioService extends Service {
 
     // TODO: we probably should start the server in the initialize phase
     // Create and start the skill service
-    this.skillService = new ToolsetService(this.loggerService, this.natsService, {
+    this.skillService = new SkillService(this.loggerService, this.natsService, {
       workspaceId: identity.workspaceId!,
       skillId: identity.id!,
       skillName: identity.name,

@@ -8,7 +8,7 @@ import {
 } from '@2ly/common';
 import { getHostIP } from '../utils';
 import os from 'os';
-import { ToolsetIdentity } from './skill.service';
+import { SkillIdentity } from './skill.service';
 
 export interface AuthHeaders {
   workspaceKey?: string;
@@ -22,7 +22,7 @@ export interface AuthHeaders {
  */
 export class SessionAuthService {
   private logger: pino.Logger;
-  private identity: ToolsetIdentity | null = null;
+  private identity: SkillIdentity | null = null;
 
   constructor(
     private loggerService: LoggerService,
@@ -61,7 +61,7 @@ export class SessionAuthService {
   /**
    * Authenticate via handshake and return the session identity
    */
-  public async authenticateViaHandshake(headers: AuthHeaders): Promise<ToolsetIdentity> {
+  public async authenticateViaHandshake(headers: AuthHeaders): Promise<SkillIdentity> {
     const { workspaceKey, skillKey, skillName } = headers;
     const key = workspaceKey || skillKey!;
 
@@ -112,7 +112,7 @@ export class SessionAuthService {
   /**
    * Get the authenticated identity
    */
-  public getIdentity(): ToolsetIdentity | null {
+  public getIdentity(): SkillIdentity | null {
     return this.identity;
   }
 }

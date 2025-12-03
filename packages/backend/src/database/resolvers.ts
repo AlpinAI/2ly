@@ -155,7 +155,7 @@ export const resolvers = (container: Container = defaultContainer): apolloResolv
         const userId = requireAuth(context);
         const skill = await skillRepository.findById(skillId);
         if (!skill?.workspace?.id) {
-          throw new GraphQLError('Toolset not found', { extensions: { code: 'NOT_FOUND' } });
+          throw new GraphQLError('Skill not found', { extensions: { code: 'NOT_FOUND' } });
         }
         await requireWorkspaceAccess(workspaceRepository, userId, skill.workspace.id);
         const keys = await identityRepository.findKeysByRelatedId(skillId);
@@ -512,7 +512,7 @@ export const resolvers = (container: Container = defaultContainer): apolloResolv
           // Workspace key - relatedId is the workspace ID
           workspaceId = key.relatedId;
         } else if (prefix === KEY_NATURE_PREFIX.skill) {
-          // Toolset key - lookup skill to get workspace
+          // Skill key - lookup skill to get workspace
           const skill = await skillRepository.findById(key.relatedId);
           workspaceId = skill?.workspace?.id;
         } else if (prefix === KEY_NATURE_PREFIX.runtime) {
@@ -545,7 +545,7 @@ export const resolvers = (container: Container = defaultContainer): apolloResolv
         const userId = requireAuth(context);
         const skill = await skillRepository.findById(id);
         if (!skill?.workspace?.id) {
-          throw new GraphQLError('Tool Set not found', { extensions: { code: 'NOT_FOUND' } });
+          throw new GraphQLError('Skill not found', { extensions: { code: 'NOT_FOUND' } });
         }
         await requireWorkspaceAccess(workspaceRepository, userId, skill.workspace.id);
         return skillRepository.update(id, name, description);
@@ -555,7 +555,7 @@ export const resolvers = (container: Container = defaultContainer): apolloResolv
         const userId = requireAuth(context);
         const skill = await skillRepository.findById(id);
         if (!skill?.workspace?.id) {
-          throw new GraphQLError('Tool Set not found', { extensions: { code: 'NOT_FOUND' } });
+          throw new GraphQLError('Skill not found', { extensions: { code: 'NOT_FOUND' } });
         }
         await requireWorkspaceAccess(workspaceRepository, userId, skill.workspace.id);
         return skillRepository.delete(id);
@@ -573,10 +573,10 @@ export const resolvers = (container: Container = defaultContainer): apolloResolv
         }
         const skill = await skillRepository.findById(skillId);
         if (!skill?.workspace?.id) {
-          throw new GraphQLError('Tool Set not found', { extensions: { code: 'NOT_FOUND' } });
+          throw new GraphQLError('Skill not found', { extensions: { code: 'NOT_FOUND' } });
         }
         if (tool.workspace.id !== skill.workspace.id) {
-          throw new GraphQLError('MCP Tool and Tool Set must belong to the same workspace', {
+          throw new GraphQLError('MCP Tool and Skill must belong to the same workspace', {
             extensions: { code: 'BAD_REQUEST' },
           });
         }
@@ -596,10 +596,10 @@ export const resolvers = (container: Container = defaultContainer): apolloResolv
         }
         const skill = await skillRepository.findById(skillId);
         if (!skill?.workspace?.id) {
-          throw new GraphQLError('Tool Set not found', { extensions: { code: 'NOT_FOUND' } });
+          throw new GraphQLError('Skill not found', { extensions: { code: 'NOT_FOUND' } });
         }
         if (tool.workspace.id !== skill.workspace.id) {
-          throw new GraphQLError('MCP Tool and Tool Set must belong to the same workspace', {
+          throw new GraphQLError('MCP Tool and Skill must belong to the same workspace', {
             extensions: { code: 'BAD_REQUEST' },
           });
         }

@@ -202,7 +202,7 @@ describe('DI Container - validateAndDetectMode', () => {
     });
   });
 
-  describe('Runtime vs Toolset mutual exclusivity', () => {
+  describe('Runtime vs Skill mutual exclusivity', () => {
     it('should throw when both RUNTIME_NAME and SKILL_NAME are set', async () => {
       process.env.RUNTIME_KEY = 'rtk_test';
       process.env.RUNTIME_NAME = 'test-runtime';

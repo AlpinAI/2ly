@@ -38,7 +38,7 @@ export function LangflowInstructions({ sseUrl, skillName }: LangflowInstructions
         </li>
         <li>Click <strong>Add Server</strong></li>
         <li>At the top of the component, toggle the <strong>Tool Mode</strong> switch</li>
-        <li>Now you can plug the Toolset output into your agent Tools input</li>
+        <li>Now you can plug the Skill output into your agent Tools input</li>
       </ol>
     </div>
   );

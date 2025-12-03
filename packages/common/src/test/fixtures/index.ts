@@ -45,13 +45,13 @@ export {
   buildDevelopmentToolsServer,
   buildDatabaseServer,
   configureFileSystemMCPServer,
-  createToolset,
+  createSkill,
   updateMCPServerToEdgeRuntime,
 } from './mcp-builders';
 
 // NATS helpers
 export {
-  sendToolsetHandshake,
+  sendSkillHandshake,
   waitForOnboardingStepComplete,
   closeNatsConnection,
 } from './nats-helpers';

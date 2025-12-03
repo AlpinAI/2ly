@@ -112,7 +112,7 @@ describe('IdentityRepository', () => {
         addIdentityKey: { identityKey: [mockKey] },
       });
 
-      const result = await repository.createKey('skill', 'skill-id', 'Toolset key');
+      const result = await repository.createKey('skill', 'skill-id', 'Skill key');
 
       expect(result.key).toMatch(/^TSK[A-Za-z0-9_-]{43}$/);
       expect(result.key.length).toBe(46);

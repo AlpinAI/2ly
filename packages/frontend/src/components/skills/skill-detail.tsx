@@ -19,7 +19,7 @@ import { AutoGrowTextarea } from '@/components/ui/autogrow-textarea';
 import { useManageToolsDialog, useConnectSkillDialog } from '@/stores/uiStore';
 import { useMutation, useLazyQuery } from '@apollo/client/react';
 import { useNotification } from '@/contexts/NotificationContext';
-import { DeleteSkillDocument, GetToolsetKeyDocument, GetKeyValueDocument, UpdateSkillDocument } from '@/graphql/generated/graphql';
+import { DeleteSkillDocument, GetSkillKeyDocument, GetKeyValueDocument, UpdateSkillDocument } from '@/graphql/generated/graphql';
 import type { SubscribeSkillsSubscription } from '@/graphql/generated/graphql';
 
 type Skill = NonNullable<SubscribeSkillsSubscription['skills']>[number];
@@ -38,20 +38,20 @@ export function SkillDetail({ skill }: SkillDetailProps) {
   const [updateSkill] = useMutation(UpdateSkillDocument);
 
   // Inline edit state
-  const [skillName, setToolsetName] = useState(skill.name);
-  const [skillDescription, setToolsetDescription] = useState(skill.description || '');
+  const [skillName, setSkillName] = useState(skill.name);
+  const [skillDescription, setSkillDescription] = useState(skill.description || '');
 
   // Key visibility state
   const [keyVisible, setKeyVisible] = useState(false);
   const [keyValue, setKeyValue] = useState<string | null>(null);
   const [loadingCopy, setLoadingCopy] = useState(false);
-  const [getToolsetKey, { loading: loadingKey }] = useLazyQuery(GetToolsetKeyDocument);
+  const [getSkillKey, { loading: loadingKey }] = useLazyQuery(GetSkillKeyDocument);
   const [getKeyValue, { loading: loadingKeyValue }] = useLazyQuery(GetKeyValueDocument);
 
   // Reset values when skill changes
   useEffect(() => {
-    setToolsetName(skill.name);
-    setToolsetDescription(skill.description || '');
+    setSkillName(skill.name);
+    setSkillDescription(skill.description || '');
   }, [skill]);
 
   const formatDate = (dateString: string | Date) => {
@@ -83,7 +83,7 @@ export function SkillDetail({ skill }: SkillDetailProps) {
         description: 'Name must be between 3 and 100 characters',
         variant: 'error',
       });
-      setToolsetName(skill.name); // Revert to original
+      setSkillName(skill.name); // Revert to original
       return;
     }
 
@@ -101,7 +101,7 @@ export function SkillDetail({ skill }: SkillDetailProps) {
         description: 'Failed to save name',
         variant: 'error',
       });
-      setToolsetName(skill.name); // Revert on error
+      setSkillName(skill.name); // Revert on error
     }
   };
 
@@ -115,7 +115,7 @@ export function SkillDetail({ skill }: SkillDetailProps) {
         description: 'Description must not exceed 1000 characters',
         variant: 'error',
       });
-      setToolsetDescription(skill.description || ''); // Revert to original
+      setSkillDescription(skill.description || ''); // Revert to original
       return;
     }
 
@@ -133,7 +133,7 @@ export function SkillDetail({ skill }: SkillDetailProps) {
         description: 'Failed to save description',
         variant: 'error',
       });
-      setToolsetDescription(skill.description || ''); // Revert on error
+      setSkillDescription(skill.description || ''); // Revert on error
     }
   };
 
@@ -169,7 +169,7 @@ export function SkillDetail({ skill }: SkillDetailProps) {
       // Fetch and show the key
       try {
         // First get the key metadata
-        const keyResult = await getToolsetKey({ variables: { skillId: skill.id } });
+        const keyResult = await getSkillKey({ variables: { skillId: skill.id } });
         if (keyResult.data?.skillKey) {
           // Then get the actual key value
           const valueResult = await getKeyValue({ variables: { keyId: keyResult.data.skillKey.id } });
@@ -196,7 +196,7 @@ export function SkillDetail({ skill }: SkillDetailProps) {
       if (!valueToUse) {
         setLoadingCopy(true);
         // First get the key metadata
-        const keyResult = await getToolsetKey({ variables: { skillId: skill.id } });
+        const keyResult = await getSkillKey({ variables: { skillId: skill.id } });
         if (!keyResult.data?.skillKey) {
           throw new Error('Skill key not found');
         }
@@ -238,13 +238,13 @@ export function SkillDetail({ skill }: SkillDetailProps) {
           <div className="flex-1 min-w-0">
             <Input
               value={skillName}
-              onChange={(e) => setToolsetName(e.target.value)}
+              onChange={(e) => setSkillName(e.target.value)}
               onBlur={handleNameSave}
               className="text-lg font-semibold h-auto p-0 border-none bg-transparent focus:ring-0 focus:border-none"
             />
             <AutoGrowTextarea
               value={skillDescription}
-              onChange={(e) => setToolsetDescription(e.target.value)}
+              onChange={(e) => setSkillDescription(e.target.value)}
               onBlur={handleDescriptionSave}
               placeholder="Click to add description..."
               className="text-sm text-gray-500 dark:text-gray-400 mt-1 min-h-0 h-auto p-0 border-none bg-transparent focus:ring-0 focus:border-none"

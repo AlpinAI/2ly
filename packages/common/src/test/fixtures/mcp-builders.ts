@@ -414,7 +414,7 @@ export const configureFileSystemMCPServer = async (
  *
  * @param authToken - Optional JWT token for authenticated requests
  */
-export const createToolset = async (
+export const createSkill = async (
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   graphql: <T = any>(query: string, variables?: Record<string, any>, authToken?: string) => Promise<T>,
   workspaceId: string,

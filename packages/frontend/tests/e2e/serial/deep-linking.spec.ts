@@ -273,7 +273,7 @@ test.describe('Deep Linking with Comprehensive Data', () => {
     });
   });
 
-  test.describe('Tool Sets Page - Agent Deep Links', () => {
+  test.describe('Skills Page - Agent Deep Links', () => {
     test('should open detail panel when visiting URL with skill ID', async ({ page, getDatabaseState }) => {
       const state = await getDatabaseState();
       const workspace = state.workspaces[0];

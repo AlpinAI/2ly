@@ -85,9 +85,9 @@ describe('SkillRepository', () => {
 
   describe('create', () => {
     it('should create skill with automatic identity key generation', async () => {
-      const mockToolset: dgraphResolversTypes.Skill = {
+      const mockSkill: dgraphResolversTypes.Skill = {
         id: 'skill-456',
-        name: 'Test Toolset',
+        name: 'Test Skill',
         description: 'Test Description',
         createdAt: new Date().toISOString(),
         workspace: mockWorkspace,
@@ -99,12 +99,12 @@ describe('SkillRepository', () => {
       };
 
       vi.spyOn(mockDgraphService, 'mutation').mockResolvedValue({
-        addSkill: { skill: [mockToolset] },
+        addSkill: { skill: [mockSkill] },
       });
 
       vi.spyOn(mockIdentityRepository, 'createKey').mockResolvedValue(mockKey as dgraphResolversTypes.IdentityKey);
 
-      const result = await repository.create('Test Toolset', 'Test Description', 'workspace-123');
+      const result = await repository.create('Test Skill', 'Test Description', 'workspace-123');
 
       // Verify mutation was called
       expect(mockDgraphService.mutation).toHaveBeenCalled();
@@ -113,24 +113,24 @@ describe('SkillRepository', () => {
       expect(mockIdentityRepository.createKey).toHaveBeenCalledWith(
         'skill',
         'skill-456',
-        'Test Toolset Toolset Key',
+        'Test Skill Skill Key',
         ''
       );
 
-      expect(result).toEqual(mockToolset);
+      expect(result).toEqual(mockSkill);
     });
 
     it('should create skill without description', async () => {
-      const mockToolset: dgraphResolversTypes.Skill = {
+      const mockSkill: dgraphResolversTypes.Skill = {
         id: 'skill-456',
-        name: 'Test Toolset',
+        name: 'Test Skill',
         description: '',
         createdAt: new Date().toISOString(),
         workspace: mockWorkspace,
       };
 
       vi.spyOn(mockDgraphService, 'mutation').mockResolvedValue({
-        addSkill: { skill: [mockToolset] },
+        addSkill: { skill: [mockSkill] },
       });
 
       vi.spyOn(mockIdentityRepository, 'createKey').mockResolvedValue({
@@ -138,12 +138,12 @@ describe('SkillRepository', () => {
         key: 'SKL_abc123',
       } as dgraphResolversTypes.IdentityKey);
 
-      const result = await repository.create('Test Toolset', undefined, 'workspace-123');
+      const result = await repository.create('Test Skill', undefined, 'workspace-123');
 
       expect(mockDgraphService.mutation).toHaveBeenCalledWith(
         expect.any(Object),
         expect.objectContaining({
-          name: 'Test Toolset',
+          name: 'Test Skill',
           description: '',
           workspaceId: 'workspace-123',
         })
@@ -155,9 +155,9 @@ describe('SkillRepository', () => {
 
   describe('update', () => {
     it('should update skill with new name and description', async () => {
-      const mockToolset: dgraphResolversTypes.Skill = {
+      const mockSkill: dgraphResolversTypes.Skill = {
         id: 'skill-456',
-        name: 'Updated Toolset',
+        name: 'Updated Skill',
         description: 'Updated Description',
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
@@ -165,30 +165,30 @@ describe('SkillRepository', () => {
       };
 
       vi.spyOn(mockDgraphService, 'mutation').mockResolvedValue({
-        updateSkill: { skill: [mockToolset] },
+        updateSkill: { skill: [mockSkill] },
       });
 
-      const result = await repository.update('skill-456', 'Updated Toolset', 'Updated Description');
+      const result = await repository.update('skill-456', 'Updated Skill', 'Updated Description');
 
       // Verify mutation was called
       expect(mockDgraphService.mutation).toHaveBeenCalled();
-      expect(result).toEqual(mockToolset);
+      expect(result).toEqual(mockSkill);
     });
 
     it('should update skill with empty description when undefined', async () => {
-      const mockToolset: dgraphResolversTypes.Skill = {
+      const mockSkill: dgraphResolversTypes.Skill = {
         id: 'skill-456',
-        name: 'Updated Toolset',
+        name: 'Updated Skill',
         description: '',
         createdAt: new Date().toISOString(),
         workspace: mockWorkspace,
       };
 
       vi.spyOn(mockDgraphService, 'mutation').mockResolvedValue({
-        updateSkill: { skill: [mockToolset] },
+        updateSkill: { skill: [mockSkill] },
       });
 
-      await repository.update('skill-456', 'Updated Toolset', undefined);
+      await repository.update('skill-456', 'Updated Skill', undefined);
 
       expect(mockDgraphService.mutation).toHaveBeenCalledWith(
         expect.any(Object),
@@ -201,15 +201,15 @@ describe('SkillRepository', () => {
 
   describe('delete', () => {
     it('should delete skill by id', async () => {
-      const mockToolset: dgraphResolversTypes.Skill = {
+      const mockSkill: dgraphResolversTypes.Skill = {
         id: 'skill-456',
-        name: 'Test Toolset',
+        name: 'Test Skill',
         createdAt: new Date().toISOString(),
         workspace: mockWorkspace,
       };
 
       vi.spyOn(mockDgraphService, 'mutation').mockResolvedValue({
-        deleteSkill: { skill: [mockToolset] },
+        deleteSkill: { skill: [mockSkill] },
       });
 
       const result = await repository.delete('skill-456');
@@ -219,21 +219,21 @@ describe('SkillRepository', () => {
         { id: 'skill-456' }
       );
 
-      expect(result).toEqual(mockToolset);
+      expect(result).toEqual(mockSkill);
     });
   });
 
   describe('findById', () => {
     it('should return skill when found', async () => {
-      const mockToolset: dgraphResolversTypes.Skill = {
+      const mockSkill: dgraphResolversTypes.Skill = {
         id: 'skill-456',
-        name: 'Test Toolset',
+        name: 'Test Skill',
         createdAt: new Date().toISOString(),
         workspace: mockWorkspace,
       };
 
       vi.spyOn(mockDgraphService, 'query').mockResolvedValue({
-        getSkill: mockToolset,
+        getSkill: mockSkill,
       });
 
       const result = await repository.findById('skill-456');
@@ -243,7 +243,7 @@ describe('SkillRepository', () => {
         { id: 'skill-456' }
       );
 
-      expect(result).toEqual(mockToolset);
+      expect(result).toEqual(mockSkill);
     });
 
     it('should return null when skill not found', async () => {
@@ -259,25 +259,25 @@ describe('SkillRepository', () => {
 
   describe('findByName', () => {
     it('should return skill when found by name in workspace', async () => {
-      const mockToolset: dgraphResolversTypes.Skill = {
+      const mockSkill: dgraphResolversTypes.Skill = {
         id: 'skill-456',
-        name: 'Test Toolset',
+        name: 'Test Skill',
         createdAt: new Date().toISOString(),
         workspace: mockWorkspace,
       };
 
       vi.spyOn(mockDgraphService, 'query').mockResolvedValue({
-        getWorkspace: { skills: [mockToolset] },
+        getWorkspace: { skills: [mockSkill] },
       });
 
-      const result = await repository.findByName('workspace-123', 'Test Toolset');
+      const result = await repository.findByName('workspace-123', 'Test Skill');
 
       expect(mockDgraphService.query).toHaveBeenCalledWith(
         expect.any(Object),
-        { workspaceId: 'workspace-123', name: 'Test Toolset' }
+        { workspaceId: 'workspace-123', name: 'Test Skill' }
       );
 
-      expect(result).toEqual(mockToolset);
+      expect(result).toEqual(mockSkill);
     });
 
     it('should return null when skill not found by name', async () => {
@@ -285,7 +285,7 @@ describe('SkillRepository', () => {
         getWorkspace: { skills: [] },
       });
 
-      const result = await repository.findByName('workspace-123', 'Nonexistent Toolset');
+      const result = await repository.findByName('workspace-123', 'Nonexistent Skill');
 
       expect(result).toBeNull();
     });
@@ -295,7 +295,7 @@ describe('SkillRepository', () => {
         getWorkspace: null,
       });
 
-      const result = await repository.findByName('nonexistent-workspace', 'Test Toolset');
+      const result = await repository.findByName('nonexistent-workspace', 'Test Skill');
 
       expect(result).toBeNull();
     });
@@ -303,23 +303,23 @@ describe('SkillRepository', () => {
 
   describe('findByWorkspace', () => {
     it('should return all skills for a workspace', async () => {
-      const mockToolsets: dgraphResolversTypes.Skill[] = [
+      const mockSkills: dgraphResolversTypes.Skill[] = [
         {
           id: 'skill-1',
-          name: 'Toolset 1',
+          name: 'Skill 1',
           createdAt: new Date().toISOString(),
           workspace: mockWorkspace,
         },
         {
           id: 'skill-2',
-          name: 'Toolset 2',
+          name: 'Skill 2',
           createdAt: new Date().toISOString(),
           workspace: mockWorkspace,
         },
       ];
 
       vi.spyOn(mockDgraphService, 'query').mockResolvedValue({
-        getWorkspace: { skills: mockToolsets },
+        getWorkspace: { skills: mockSkills },
       });
 
       const result = await repository.findByWorkspace('workspace-123');
@@ -329,7 +329,7 @@ describe('SkillRepository', () => {
         { workspaceId: 'workspace-123' }
       );
 
-      expect(result).toEqual(mockToolsets);
+      expect(result).toEqual(mockSkills);
       expect(result).toHaveLength(2);
     });
 
@@ -356,34 +356,34 @@ describe('SkillRepository', () => {
 
   describe('addMCPToolToSkill', () => {
     it('should add MCP tool to skill', async () => {
-      const mockToolset: dgraphResolversTypes.Skill = {
+      const mockSkill: dgraphResolversTypes.Skill = {
         id: 'skill-456',
-        name: 'Test Toolset',
+        name: 'Test Skill',
         createdAt: new Date().toISOString(),
         workspace: mockWorkspace,
       };
 
       vi.spyOn(mockDgraphService, 'mutation').mockResolvedValue({
-        updateSkill: { skill: [mockToolset] },
+        updateSkill: { skill: [mockSkill] },
       });
 
       const result = await repository.addMCPToolToSkill('mcp-tool-789', 'skill-456');
 
       // Verify mutation was called
       expect(mockDgraphService.mutation).toHaveBeenCalled();
-      expect(result).toEqual(mockToolset);
+      expect(result).toEqual(mockSkill);
     });
 
     it('should trigger onboarding step completion when adding MCP tool', async () => {
-      const mockToolset: dgraphResolversTypes.Skill = {
+      const mockSkill: dgraphResolversTypes.Skill = {
         id: 'skill-456',
-        name: 'Test Toolset',
+        name: 'Test Skill',
         createdAt: new Date().toISOString(),
         workspace: mockWorkspace,
       };
 
       vi.spyOn(mockDgraphService, 'mutation').mockResolvedValue({
-        updateSkill: { skill: [mockToolset] },
+        updateSkill: { skill: [mockSkill] },
       });
 
       vi.spyOn(mockWorkspaceRepository, 'checkAndCompleteStep').mockResolvedValue(undefined);
@@ -397,15 +397,15 @@ describe('SkillRepository', () => {
     });
 
     it('should not trigger onboarding step when workspace is missing', async () => {
-      const mockToolsetWithoutWorkspace = {
+      const mockSkillWithoutWorkspace = {
         id: 'skill-456',
-        name: 'Test Toolset',
+        name: 'Test Skill',
         createdAt: new Date().toISOString(),
         // Intentionally omit workspace to test the case where it's missing
       } as dgraphResolversTypes.Skill;
 
       vi.spyOn(mockDgraphService, 'mutation').mockResolvedValue({
-        updateSkill: { skill: [mockToolsetWithoutWorkspace] },
+        updateSkill: { skill: [mockSkillWithoutWorkspace] },
       });
 
       await repository.addMCPToolToSkill('mcp-tool-789', 'skill-456');
@@ -416,31 +416,31 @@ describe('SkillRepository', () => {
 
   describe('removeMCPToolFromSkill', () => {
     it('should remove MCP tool from skill', async () => {
-      const mockToolset: dgraphResolversTypes.Skill = {
+      const mockSkill: dgraphResolversTypes.Skill = {
         id: 'skill-456',
-        name: 'Test Toolset',
+        name: 'Test Skill',
         createdAt: new Date().toISOString(),
         workspace: mockWorkspace,
       };
 
       vi.spyOn(mockDgraphService, 'mutation').mockResolvedValue({
-        updateSkill: { skill: [mockToolset] },
+        updateSkill: { skill: [mockSkill] },
       });
 
       const result = await repository.removeMCPToolFromSkill('mcp-tool-789', 'skill-456');
 
       // Verify mutation was called
       expect(mockDgraphService.mutation).toHaveBeenCalled();
-      expect(result).toEqual(mockToolset);
+      expect(result).toEqual(mockSkill);
     });
   });
 
   describe('observeSkills', () => {
     it('should return observable of skills for a workspace', () => {
-      const mockToolsets: dgraphResolversTypes.Skill[] = [
+      const mockSkills: dgraphResolversTypes.Skill[] = [
         {
           id: 'skill-1',
-          name: 'Toolset 1',
+          name: 'Skill 1',
           createdAt: new Date().toISOString(),
           workspace: mockWorkspace,
         },
@@ -454,9 +454,9 @@ describe('SkillRepository', () => {
         results.push(skills);
       });
 
-      subject.next({ skills: mockToolsets });
+      subject.next({ skills: mockSkills });
 
-      expect(results[0]).toEqual(mockToolsets);
+      expect(results[0]).toEqual(mockSkills);
       subscription.unsubscribe();
     });
 
@@ -478,16 +478,16 @@ describe('SkillRepository', () => {
 
   describe('observeAllSkills', () => {
     it('should return observable of all skills', () => {
-      const mockToolsets: dgraphResolversTypes.Skill[] = [
+      const mockSkills: dgraphResolversTypes.Skill[] = [
         {
           id: 'skill-1',
-          name: 'Toolset 1',
+          name: 'Skill 1',
           createdAt: new Date().toISOString(),
           workspace: mockWorkspace,
         },
         {
           id: 'skill-2',
-          name: 'Toolset 2',
+          name: 'Skill 2',
           createdAt: new Date().toISOString(),
           workspace: mockWorkspace,
         },
@@ -501,9 +501,9 @@ describe('SkillRepository', () => {
         results.push(skills);
       });
 
-      subject.next(mockToolsets);
+      subject.next(mockSkills);
 
-      expect(results[0]).toEqual(mockToolsets);
+      expect(results[0]).toEqual(mockSkills);
       expect(results[0]).toHaveLength(2);
       subscription.unsubscribe();
     });
@@ -561,9 +561,9 @@ describe('SkillRepository', () => {
         workspace: mockWorkspace,
       };
 
-      const mockToolset: dgraphResolversTypes.Skill = {
+      const mockSkill: dgraphResolversTypes.Skill = {
         id: 'skill-456',
-        name: 'Test Toolset',
+        name: 'Test Skill',
         createdAt: new Date().toISOString(),
         workspace: mockWorkspace,
         mcpTools: [
@@ -595,7 +595,7 @@ describe('SkillRepository', () => {
       };
 
       vi.spyOn(mockDgraphService, 'query').mockResolvedValue({
-        getSkill: mockToolset,
+        getSkill: mockSkill,
       });
 
       const result = await repository.getMCPServersOnAgent('skill-456');
@@ -605,16 +605,16 @@ describe('SkillRepository', () => {
     });
 
     it('should return empty array when skill has no MCP tools', async () => {
-      const mockToolset: dgraphResolversTypes.Skill = {
+      const mockSkill: dgraphResolversTypes.Skill = {
         id: 'skill-456',
-        name: 'Test Toolset',
+        name: 'Test Skill',
         createdAt: new Date().toISOString(),
         workspace: mockWorkspace,
         mcpTools: [],
       };
 
       vi.spyOn(mockDgraphService, 'query').mockResolvedValue({
-        getSkill: mockToolset,
+        getSkill: mockSkill,
       });
 
       const result = await repository.getMCPServersOnAgent('skill-456');
@@ -660,9 +660,9 @@ describe('SkillRepository', () => {
         workspace: mockWorkspace,
       };
 
-      const mockToolset: dgraphResolversTypes.Skill = {
+      const mockSkill: dgraphResolversTypes.Skill = {
         id: 'skill-456',
-        name: 'Test Toolset',
+        name: 'Test Skill',
         createdAt: new Date().toISOString(),
         workspace: mockWorkspace,
         mcpTools: [
@@ -689,16 +689,16 @@ describe('SkillRepository', () => {
         results.push(servers);
       });
 
-      subject.next(mockToolset);
+      subject.next(mockSkill);
 
       expect(results[0]).toEqual([mockMCPServer]);
       subscription.unsubscribe();
     });
 
     it('should return empty array when skill has no MCP tools', () => {
-      const mockToolset: dgraphResolversTypes.Skill = {
+      const mockSkill: dgraphResolversTypes.Skill = {
         id: 'skill-456',
-        name: 'Test Toolset',
+        name: 'Test Skill',
         createdAt: new Date().toISOString(),
         workspace: mockWorkspace,
       };
@@ -711,7 +711,7 @@ describe('SkillRepository', () => {
         results.push(servers);
       });
 
-      subject.next(mockToolset);
+      subject.next(mockSkill);
 
       expect(results[0]).toEqual([]);
       subscription.unsubscribe();
