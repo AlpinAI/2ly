@@ -1,5 +1,6 @@
 import bcrypt from 'bcryptjs';
 import { scrypt, randomBytes, timingSafeEqual, createHmac, ScryptOptions } from 'crypto';
+import { getValidatedEncryptionKey } from './encryption-key';
 
 // const SALT_ROUNDS = 12 as const; // Legacy bcrypt support
 const ERR_PASSWORD_HASH_FAILED = 'ERR_PASSWORD_HASH_FAILED';
@@ -23,30 +24,8 @@ function scryptAsync(password: string, salt: Buffer, keyLength: number, options:
   });
 }
 
-function getEncryptionKey(): string {
-  const key = process.env.ENCRYPTION_KEY;
-  if (!key) {
-    throw new Error(
-      'ENCRYPTION_KEY environment variable is required for password security. Please set a strong, unique encryption key.'
-    );
-  }
-
-  // Basic validation for key strength
-  if (key.length < 32) {
-    throw new Error(
-      'ENCRYPTION_KEY must be at least 32 characters long for adequate security.'
-    );
-  }
-
-  if (key === 'zR6xG6E9#h@dNquSM&DYwM#trbmn%nzR') {
-    console.warn('PRODUCTION ISSUE! ENCRYPTION_KEY is still the default value. Please set a strong, unique encryption key with at least 32 characters.');
-  }
-
-  return key;
-}
-
 function derivePepperedPassword(plainPassword: string): string {
-  const encryptionKey = getEncryptionKey();
+  const encryptionKey = getValidatedEncryptionKey();
   return createHmac('sha256', encryptionKey).update(plainPassword, 'utf8').digest('hex');
 }
 

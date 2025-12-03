@@ -11,6 +11,7 @@ import {
   DEFAULT_HEARTBAT_TTL,
   EPHEMERAL_TTL,
   DEFAULT_EPHEMERAL_TTL,
+  EncryptionService,
 } from '@2ly/common';
 import { DGraphService, DGRAPH_URL } from '../services/dgraph.service';
 import { ApolloService } from '../services/apollo.service';
@@ -31,6 +32,7 @@ import {
   MonitoringRepository,
   SkillRepository,
   IdentityRepository,
+  AIProviderRepository,
 } from '../repositories';
 import { JwtService, AuthenticationService, AccountSecurityService, PasswordPolicyService } from '../services/auth';
 import { SecurityMiddleware, RateLimitMiddleware, GraphQLAuthMiddleware } from '../middleware';
@@ -38,6 +40,7 @@ import { IdentityService } from '../services/identity.service';
 import { KeyRateLimiterService } from '../services/key-rate-limiter.service';
 import pino from 'pino';
 import { MonitoringService } from '../services/monitoring.service';
+import { AIProviderService } from '../services/ai';
 
 const container = new Container();
 const start = () => {
@@ -90,6 +93,7 @@ const start = () => {
   container.bind(MonitoringRepository).toSelf().inSingletonScope();
   container.bind(SkillRepository).toSelf().inSingletonScope();
   container.bind(IdentityRepository).toSelf().inSingletonScope();
+  container.bind(AIProviderRepository).toSelf().inSingletonScope();
 
   // Init authentication services
   container.bind(JwtService).toSelf().inSingletonScope();
@@ -100,6 +104,10 @@ const start = () => {
 
   // Init key rate limiter service
   container.bind(KeyRateLimiterService).toSelf().inSingletonScope();
+
+  // Init AI provider services
+  container.bind(EncryptionService).toSelf().inSingletonScope();
+  container.bind(AIProviderService).toSelf().inSingletonScope();
 
   // Init security services
   container.bind(AccountSecurityService).toSelf().inSingletonScope();
@@ -126,7 +134,9 @@ const start = () => {
   loggerService.setLogLevel('identity', (process.env.IDENTITY_LOG_LEVEL || 'info') as pino.Level);
   loggerService.setLogLevel('skill', (process.env.SKILL_LOG_LEVEL || 'info') as pino.Level);
   loggerService.setLogLevel('runtime.instance', (process.env.RUNTIME_INSTANCE_LOG_LEVEL || 'info') as pino.Level);
-  
+  loggerService.setLogLevel('ai-provider-service', (process.env.AI_PROVIDER_LOG_LEVEL || 'info') as pino.Level);
+  loggerService.setLogLevel('ai-provider-repository', (process.env.AI_PROVIDER_LOG_LEVEL || 'info') as pino.Level);
+
   // Init Runtime Instance Factory
   container.bind<RuntimeInstanceFactory>(RuntimeInstance).toFactory((context) => {
     return (

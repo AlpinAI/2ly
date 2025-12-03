@@ -1,0 +1,5 @@
+# Remove AI Provider Mutation
+# WHY: Remove an AI provider configuration from the workspace
+mutation RemoveAIProvider($providerId: ID!) {
+  removeAIProvider(providerId: $providerId)
+}

@@ -12,7 +12,7 @@
  */
 
 import { useState } from 'react';
-import { Database, Users, Cpu, Key, Plus } from 'lucide-react';
+import { Database, Users, Cpu, Key, Plus, Sparkles } from 'lucide-react';
 import { useWorkspaceId } from '@/stores/workspaceStore';
 import { useMCPRegistries } from '@/hooks/useMCPRegistries';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
@@ -21,6 +21,7 @@ import { PrivateRegistrySection } from '@/components/settings/private-registry-s
 import { UsersRolesSection } from '@/components/settings/users-roles-section';
 import { RuntimesSection } from '@/components/settings/runtimes-section';
 import { ApiKeysSection } from '@/components/settings/api-keys-section';
+import { AIProvidersSection } from '@/components/settings/ai-providers-section';
 import { useAddServerWorkflow } from '@/stores/uiStore';
 
 
@@ -55,6 +56,10 @@ export default function SettingsPage() {
               <Key className="h-4 w-4" />
               <span>API Keys</span>
             </TabsTrigger>
+            <TabsTrigger value="ai-providers" className="flex items-center gap-2">
+              <Sparkles className="h-4 w-4" />
+              <span>AI Providers</span>
+            </TabsTrigger>
           </TabsList>
 
           {/* Conditional Action Button - Only show for Private Registry */}
@@ -84,6 +89,10 @@ export default function SettingsPage() {
 
         <TabsContent value="api-keys">
           <ApiKeysSection />
+        </TabsContent>
+
+        <TabsContent value="ai-providers">
+          <AIProvidersSection />
         </TabsContent>
       </Tabs>
     </div>

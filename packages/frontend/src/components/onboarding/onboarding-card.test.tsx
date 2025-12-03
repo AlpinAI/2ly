@@ -74,6 +74,8 @@ describe('OnboardingCard', () => {
       mcpTools: [],
       onboardingSteps: [],
       runtimes: [],
+      aiProviders: [],
+      defaultAIModel: null,
       skills: [],
     },
     system: null,
@@ -114,6 +116,7 @@ describe('OnboardingCard', () => {
       mcpTools: [],
       onboardingSteps: [],
       runtimes: [],
+      aiProviders: [],
       skills: [],
     },
   };
