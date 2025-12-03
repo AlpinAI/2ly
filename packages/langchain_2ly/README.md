@@ -14,7 +14,7 @@ Before using the package, you need authentication credentials from your 2ly work
 
 ### Approach 1: Workspace Key (Auto-Discovery)
 
-Use a workspace-level key that can create and access any toolset in your workspace. This approach enables auto-discovery and creation of toolsets at runtime.
+Use a workspace-level key that can create and access any skill in your workspace. This approach enables auto-discovery and creation of skills at runtime.
 
 **Get your key:**
 1. Open the 2ly UI
@@ -24,13 +24,13 @@ Use a workspace-level key that can create and access any toolset in your workspa
 
 ### Approach 2: Toolset-Specific Key (Recommended)
 
-Use a toolset-specific key for granular security - each key only has access to one specific toolset. This is the recommended approach due to better security through limited scope.
+Use a skill-specific key for granular security - each key only has access to one specific skill. This is the recommended approach due to better security through limited scope.
 
 **Get your key:**
 1. Open the 2ly UI
 2. Go to the Toolsets page
-3. Create or select a toolset
-4. Copy the toolset key (starts with `TSK_`)
+3. Create or select a skill
+4. Copy the skill key (starts with `SKL_`)
 
 ## Quick Start
 
@@ -42,7 +42,7 @@ from langchain_2ly import MCPToolset
 from langgraph.prebuilt import create_react_agent
 
 async def main():
-    # Automatically creates or connects to a toolset named "My Agent"
+    # Automatically creates or connects to a skill named "My Agent"
     async with MCPToolset.with_workspace_key(
         name="My Agent",
         workspace_key="WSK_your_workspace_key_here"
@@ -62,9 +62,9 @@ import asyncio
 from langchain_2ly import MCPToolset
 
 async def main():
-    # Uses a pre-created toolset with its own key
-    async with MCPToolset.with_toolset_key(
-        toolset_key="TSK_your_toolset_key_here"
+    # Uses a pre-created skill with its own key
+    async with MCPToolset.with_skill_key(
+        skill_key="SKL_your_skill_key_here"
     ) as mcp:
         tools = await mcp.get_langchain_tools()
         agent = create_react_agent(llm, tools)
@@ -82,14 +82,14 @@ if __name__ == "__main__":
 
 **Factory methods:**
 - `MCPToolset.with_workspace_key(name, workspace_key, ...)` - Auto-discovery mode
-- `MCPToolset.with_toolset_key(toolset_key, ...)` - Toolset-specific mode (recommended)
+- `MCPToolset.with_skill_key(skill_key, ...)` - Toolset-specific mode (recommended)
 
 **Constructor:**
 ```python
 MCPToolset(
     name=None,                      # Toolset name (required with workspace_key)
     workspace_key=None,                # Workspace key WSK_...
-    toolset_key=None,               # Toolset key TSK_...
+    skill_key=None,               # Toolset key SKL_...
     nats_servers="nats://localhost:4222",
     version="latest",               # @2ly/runtime npm version
     startup_timeout_seconds=20.0
@@ -102,14 +102,14 @@ MCPToolset(
 
 **Factory methods:**
 - `MCPClient.with_workspace_key(name, workspace_key, ...)` - Auto-discovery mode
-- `MCPClient.with_toolset_key(toolset_key, ...)` - Toolset-specific mode (recommended)
+- `MCPClient.with_skill_key(skill_key, ...)` - Toolset-specific mode (recommended)
 
 **Constructor:**
 ```python
 MCPClient(
     name=None,                      # Toolset name (required with workspace_key)
     workspace_key=None,                # Workspace key WSK_...
-    toolset_key=None,               # Toolset key TSK_...
+    skill_key=None,               # Toolset key SKL_...
     nats_servers="nats://localhost:4222",
     version="latest",               # @2ly/runtime npm version
     startup_timeout_seconds=20.0,
@@ -143,7 +143,7 @@ await mcp.stop()
 All examples are in the `examples/` directory:
 
 * **[langgraph_agent.py](examples/langgraph_agent.py)** - LangGraph agent with MCPToolset (workspace key)
-* **[toolset_key_agent.py](examples/toolset_key_agent.py)** - LangGraph agent with toolset-specific key
+* **[skill_key_agent.py](examples/skill_key_agent.py)** - LangGraph agent with skill-specific key
 * **[langgraph_without_adapter.py](examples/langgraph_without_adapter.py)** - LangGraph agent with MCPClient
 * **[list_tools.py](examples/list_tools.py)** - Simple tool listing example
 

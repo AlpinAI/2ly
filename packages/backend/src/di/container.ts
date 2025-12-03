@@ -15,7 +15,7 @@ import {
 import { DGraphService, DGRAPH_URL } from '../services/dgraph.service';
 import { ApolloService } from '../services/apollo.service';
 import { RuntimeService } from '../services/runtime.service';
-import { ToolSetService } from '../services/toolset.service';
+import { SkillService } from '../services/skill.service';
 import { FastifyService } from '../services/fastify.service';
 import { MainService, DROP_ALL_DATA } from '../services/backend.main.service';
 import { RuntimeInstance, RuntimeInstanceFactory } from '../services/runtime.instance';
@@ -29,7 +29,7 @@ import {
   MCPToolRepository,
   SystemRepository,
   MonitoringRepository,
-  ToolSetRepository,
+  SkillRepository,
   IdentityRepository,
 } from '../repositories';
 import { JwtService, AuthenticationService, AccountSecurityService, PasswordPolicyService } from '../services/auth';
@@ -67,8 +67,8 @@ const start = () => {
   // Init runtime service
   container.bind(RuntimeService).toSelf().inSingletonScope();
 
-  // Init tool set service
-  container.bind(ToolSetService).toSelf().inSingletonScope();
+  // Init skill service
+  container.bind(SkillService).toSelf().inSingletonScope();
 
   // Init fastify service
   container.bind(FastifyService).toSelf().inSingletonScope();
@@ -88,7 +88,7 @@ const start = () => {
   container.bind(MCPToolRepository).toSelf().inSingletonScope();
   container.bind(SystemRepository).toSelf().inSingletonScope();
   container.bind(MonitoringRepository).toSelf().inSingletonScope();
-  container.bind(ToolSetRepository).toSelf().inSingletonScope();
+  container.bind(SkillRepository).toSelf().inSingletonScope();
   container.bind(IdentityRepository).toSelf().inSingletonScope();
 
   // Init authentication services
@@ -124,7 +124,7 @@ const start = () => {
   loggerService.setLogLevel('apollo', (process.env.APOLLO_LOG_LEVEL || 'info') as pino.Level);
   loggerService.setLogLevel('runtime', (process.env.RUNTIME_LOG_LEVEL || 'info') as pino.Level);
   loggerService.setLogLevel('identity', (process.env.IDENTITY_LOG_LEVEL || 'info') as pino.Level);
-  loggerService.setLogLevel('toolset', (process.env.TOOLSET_LOG_LEVEL || 'info') as pino.Level);
+  loggerService.setLogLevel('skill', (process.env.SKILL_LOG_LEVEL || 'info') as pino.Level);
   loggerService.setLogLevel('runtime.instance', (process.env.RUNTIME_INSTANCE_LOG_LEVEL || 'info') as pino.Level);
   
   // Init Runtime Instance Factory

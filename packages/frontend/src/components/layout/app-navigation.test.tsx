@@ -52,8 +52,8 @@ describe('AppNavigation', () => {
       </MemoryRouter>
     );
 
-    const toolSetsLink = screen.getByText('Tool Sets').closest('a');
-    expect(toolSetsLink?.getAttribute('aria-current')).toBeNull();
+    const skillsLink = screen.getByText('Tool Sets').closest('a');
+    expect(skillsLink?.getAttribute('aria-current')).toBeNull();
   });
 
   it('renders with proper ARIA navigation role', () => {
@@ -91,13 +91,13 @@ describe('AppNavigation', () => {
     );
 
     const overviewLink = screen.getByText('Overview').closest('a');
-    const toolSetsLink = screen.getByText('Tool Sets').closest('a');
+    const skillsLink = screen.getByText('Tool Sets').closest('a');
     const toolsLink = screen.getByText('Tools').closest('a');
     const sourcesLink = screen.getByText('Sources').closest('a');
     const settingsLink = screen.getByText('Settings').closest('a');
 
     expect(overviewLink?.getAttribute('href')).toBe('/w/test-workspace/overview');
-    expect(toolSetsLink?.getAttribute('href')).toBe('/w/test-workspace/toolsets');
+    expect(skillsLink?.getAttribute('href')).toBe('/w/test-workspace/skills');
     expect(toolsLink?.getAttribute('href')).toBe('/w/test-workspace/tools');
     expect(sourcesLink?.getAttribute('href')).toBe('/w/test-workspace/sources');
     expect(settingsLink?.getAttribute('href')).toBe('/w/test-workspace/settings');

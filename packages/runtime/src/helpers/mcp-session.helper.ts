@@ -5,7 +5,7 @@ import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/
 import { SSEServerTransport } from '@modelcontextprotocol/sdk/server/sse.js';
 import { tap } from 'rxjs';
 import { SessionAuthService, AuthHeaders } from '../services/session.auth.service';
-import { ToolsetService, ToolsetIdentity } from '../services/toolset.service';
+import { ToolsetService, ToolsetIdentity } from '../services/skill.service';
 import { HealthService } from '../services/runtime.health.service';
 
 /**
@@ -13,13 +13,13 @@ import { HealthService } from '../services/runtime.health.service';
  */
 export interface SessionContext {
   transport: StreamableHTTPServerTransport | SSEServerTransport;
-  toolsetService: ToolsetService;
+  skillService: ToolsetService;
   drain: () => void;
 }
 
 /**
  * Extract authentication headers from a Fastify request.
- * Supports query string auth via ?key=<toolset_key> as a simplified alternative.
+ * Supports query string auth via ?key=<skill_key> as a simplified alternative.
  */
 export function extractAuthHeaders(request: FastifyRequest): AuthHeaders {
   const headers = request.headers;
@@ -28,14 +28,14 @@ export function extractAuthHeaders(request: FastifyRequest): AuthHeaders {
   // Check query string first for simplified auth
   const queryKey = query?.key;
   if (queryKey) {
-    return { toolsetKey: queryKey };
+    return { skillKey: queryKey };
   }
 
   // Fall back to header-based auth
   return {
     workspaceKey: typeof headers['workspace_key'] === 'string' ? headers['workspace_key'] : undefined,
-    toolsetKey: typeof headers['toolset_key'] === 'string' ? headers['toolset_key'] : undefined,
-    toolsetName: typeof headers['toolset_name'] === 'string' ? headers['toolset_name'] : undefined,
+    skillKey: typeof headers['skill_key'] === 'string' ? headers['skill_key'] : undefined,
+    skillName: typeof headers['skill_name'] === 'string' ? headers['skill_name'] : undefined,
   };
 }
 
@@ -55,7 +55,7 @@ export async function authenticateSession(
 }
 
 /**
- * Create and start a toolset service for a session
+ * Create and start a skill service for a session
  */
 export async function createToolsetService(
   identity: ToolsetIdentity,
@@ -63,9 +63,9 @@ export async function createToolsetService(
   natsService: NatsService,
   healthService: HealthService,
 ): Promise<ToolsetService> {
-  const toolsetService = new ToolsetService(loggerService, natsService, identity);
-  await healthService.startService(toolsetService);
-  return toolsetService;
+  const skillService = new ToolsetService(loggerService, natsService, identity);
+  await healthService.startService(skillService);
+  return skillService;
 }
 
 /**
@@ -74,11 +74,11 @@ export async function createToolsetService(
  */
 export function completeSessionContext(
   transport: StreamableHTTPServerTransport | SSEServerTransport,
-  toolsetService: ToolsetService,
+  skillService: ToolsetService,
   partialSession: Partial<SessionContext>,
 ): void {
   // Listen for tool changes and notify clients
-  const subscription = toolsetService
+  const subscription = skillService
     .observeTools()
     .pipe(
       tap(() => {
@@ -94,12 +94,12 @@ export function completeSessionContext(
   // This is important because the partial session may already be stored in the sessions map
   // and accessed by other code paths (e.g., from onsessioninitialized callback)
   partialSession.transport = transport;
-  partialSession.toolsetService = toolsetService;
+  partialSession.skillService = skillService;
   partialSession.drain = () => subscription?.unsubscribe();
 }
 
 /**
- * Cleanup a session by unsubscribing from observables, stopping the toolset service,
+ * Cleanup a session by unsubscribing from observables, stopping the skill service,
  * and removing from the sessions map
  */
 export async function cleanupSession(
@@ -112,7 +112,7 @@ export async function cleanupSession(
   if (session) {
     logger.info(`Cleaning up session ${sessionId}`);
     session.drain();
-    await healthService.stopService(session.toolsetService);
+    await healthService.stopService(session.skillService);
     sessions.delete(sessionId);
   }
 }
@@ -128,7 +128,7 @@ export async function cleanupAllSessions(
   for (const [sessionId, session] of sessions) {
     logger.debug(`Closing session: ${sessionId}`);
     await session.transport.close();
-    await healthService.stopService(session.toolsetService);
+    await healthService.stopService(session.skillService);
   }
   sessions.clear();
 }

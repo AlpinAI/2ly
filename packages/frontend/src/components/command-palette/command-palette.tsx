@@ -86,9 +86,9 @@ export function CommandPalette() {
   };
 
   const manageToolsDialog = useManageToolsDialog();
-  const handleCreateToolSet = () => {
-    openCreateToolsetDialog((toolSetId: string) => {
-      manageToolsDialog.setSelectedToolsetId(toolSetId);
+  const handleCreateSkill = () => {
+    openCreateToolsetDialog((skillId: string) => {
+      manageToolsDialog.setSelectedToolsetId(skillId);
       manageToolsDialog.setOpen(true);
     });
     setOpen(false);
@@ -197,14 +197,14 @@ export function CommandPalette() {
                   </CommandItem>
 
                   <CommandItem
-                    value="new-tool-set"
-                    onSelect={handleCreateToolSet}
+                    value="new-skill"
+                    onSelect={handleCreateSkill}
                     className="gap-3 cursor-pointer"
                   >
                     <FolderPlus className="h-4 w-4" />
                     <div className="flex flex-1 items-center justify-between">
                       <span className="font-medium">New Tool Set</span>
-                      <span className="text-xs text-gray-500 dark:text-gray-400">Create a new tool set</span>
+                      <span className="text-xs text-gray-500 dark:text-gray-400">Create a new skill</span>
                     </div>
                   </CommandItem>
 

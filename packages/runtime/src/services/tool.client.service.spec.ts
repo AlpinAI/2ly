@@ -297,11 +297,11 @@ describe('ToolClientService', () => {
       expect(executedByIdOrAgent).toBe(runtimeId);
     });
 
-    it('should determine executedByIdOrAgent as AGENT when nature is toolset', () => {
+    it('should determine executedByIdOrAgent as AGENT when nature is skill', () => {
       vi.mocked(mockAuthService.getIdentity).mockReturnValue({
-        nature: 'toolset',
+        nature: 'skill',
         id: '0x3',
-        name: 'test-toolset',
+        name: 'test-skill',
         workspaceId: '0x2',
       });
 

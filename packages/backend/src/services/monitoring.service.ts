@@ -1,5 +1,5 @@
 import { inject, injectable } from 'inversify';
-import { LoggerService, Service, NatsService, ToolSetCallToolRequest, RuntimeCallToolResponse, dgraphResolversTypes, MCP_CALL_TOOL_TIMEOUT } from '@2ly/common';
+import { LoggerService, Service, NatsService, SkillCallToolRequest, RuntimeCallToolResponse, dgraphResolversTypes, MCP_CALL_TOOL_TIMEOUT } from '@2ly/common';
 import { DGraphService } from './dgraph.service';
 import pino from 'pino';
 import { MonitoringRepository } from '../repositories/monitoring.repository';
@@ -34,10 +34,10 @@ export class MonitoringService extends Service {
     }
 
     private async monitorCallTools() {
-        const messages = this.natsService.subscribe(ToolSetCallToolRequest.subscribeToAll());
+        const messages = this.natsService.subscribe(SkillCallToolRequest.subscribeToAll());
         for await (const message of messages) {
 
-            if (message instanceof ToolSetCallToolRequest) {
+            if (message instanceof SkillCallToolRequest) {
                 // Persist the tool call
                 this.logger.info(`TOOL CALL: ${message.originalMsg?.reply}`);
                 try {

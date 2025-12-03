@@ -41,19 +41,19 @@ vi.mock('@/components/registry/add-server-workflow', () => ({
   AddServerWorkflow: () => null,
 }));
 
-vi.mock('@/components/toolsets/toolset-management-panel', () => ({
+vi.mock('@/components/skills/skill-management-panel', () => ({
   ToolsetManagementPanel: () => null,
 }));
 
-vi.mock('@/components/toolsets/create-toolset-dialog', () => ({
+vi.mock('@/components/skills/create-skill-dialog', () => ({
   CreateToolsetDialog: () => null,
 }));
 
-vi.mock('@/components/toolsets/connect-toolset-dialog', () => ({
+vi.mock('@/components/skills/connect-skill-dialog', () => ({
   ConnectToolsetDialog: () => null,
 }));
 
-vi.mock('@/components/toolsets/connect-toolset-dialog-new', () => ({
+vi.mock('@/components/skills/connect-skill-dialog-new', () => ({
   ConnectToolsetDialogNew: () => null,
 }));
 

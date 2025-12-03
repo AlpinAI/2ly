@@ -50,11 +50,11 @@ describe('AuthService', () => {
     it('should throw when no key is provided', async () => {
       delete process.env.SYSTEM_KEY;
       delete process.env.WORKSPACE_KEY;
-      delete process.env.TOOLSET_KEY;
+      delete process.env.SKILL_KEY;
       delete process.env.RUNTIME_KEY;
 
       await expect(authService['initialize']()).rejects.toThrow(
-        'No key found in environment variables. Runtime requires SYSTEM_KEY, WORKSPACE_KEY, TOOLSET_KEY, or RUNTIME_KEY to operate.',
+        'No key found in environment variables. Runtime requires SYSTEM_KEY, WORKSPACE_KEY, SKILL_KEY, or RUNTIME_KEY to operate.',
       );
     });
 
@@ -83,13 +83,13 @@ describe('AuthService', () => {
 
     it('should successfully initialize with WORKSPACE_KEY', async () => {
       process.env.WORKSPACE_KEY = 'wsk_test456';
-      process.env.TOOLSET_NAME = 'test-toolset';
+      process.env.SKILL_NAME = 'test-skill';
 
       const mockHandshakeResponse = new HandshakeResponse({
         workspaceId: '0x2',
-        nature: 'toolset' as const,
+        nature: 'skill' as const,
         id: '0x3',
-        name: 'test-toolset',
+        name: 'test-skill',
       });
 
       vi.mocked(mockNatsService.request).mockResolvedValue(mockHandshakeResponse);
@@ -97,21 +97,21 @@ describe('AuthService', () => {
       await authService['initialize']();
 
       expect(authService.getIdentity()).toEqual({
-        nature: 'toolset',
+        nature: 'skill',
         id: '0x3',
-        name: 'test-toolset',
+        name: 'test-skill',
         workspaceId: '0x2',
       });
     });
 
-    it('should successfully initialize with TOOLSET_KEY', async () => {
-      process.env.TOOLSET_KEY = 'tsk_test789';
+    it('should successfully initialize with SKILL_KEY', async () => {
+      process.env.SKILL_KEY = 'tsk_test789';
 
       const mockHandshakeResponse = new HandshakeResponse({
         workspaceId: '0x4',
-        nature: 'toolset' as const,
+        nature: 'skill' as const,
         id: '0x5',
-        name: 'my-toolset',
+        name: 'my-skill',
       });
 
       vi.mocked(mockNatsService.request).mockResolvedValue(mockHandshakeResponse);
@@ -119,9 +119,9 @@ describe('AuthService', () => {
       await authService['initialize']();
 
       expect(authService.getIdentity()).toEqual({
-        nature: 'toolset',
+        nature: 'skill',
         id: '0x5',
-        name: 'my-toolset',
+        name: 'my-skill',
         workspaceId: '0x4',
       });
     });
@@ -175,15 +175,15 @@ describe('AuthService', () => {
       );
     });
 
-    it('should determine nature as toolset when TOOLSET_NAME is set', async () => {
+    it('should determine nature as skill when SKILL_NAME is set', async () => {
       process.env.WORKSPACE_KEY = 'wsk_test';
-      process.env.TOOLSET_NAME = 'test-toolset';
+      process.env.SKILL_NAME = 'test-skill';
 
       const mockHandshakeResponse = new HandshakeResponse({
         workspaceId: '0x1',
-        nature: 'toolset' as const,
+        nature: 'skill' as const,
         id: '0x2',
-        name: 'test-toolset',
+        name: 'test-skill',
       });
 
       vi.mocked(mockNatsService.request).mockResolvedValue(mockHandshakeResponse);
@@ -193,21 +193,21 @@ describe('AuthService', () => {
       expect(mockNatsService.request).toHaveBeenCalledWith(
         expect.objectContaining({
           data: expect.objectContaining({
-            nature: 'toolset',
-            name: 'test-toolset',
+            nature: 'skill',
+            name: 'test-skill',
           }),
         }),
       );
     });
 
-    it('should leave nature undefined when neither RUNTIME_NAME nor TOOLSET_NAME is set', async () => {
-      process.env.TOOLSET_KEY = 'tsk_test';
+    it('should leave nature undefined when neither RUNTIME_NAME nor SKILL_NAME is set', async () => {
+      process.env.SKILL_KEY = 'tsk_test';
 
       const mockHandshakeResponse = new HandshakeResponse({
         workspaceId: '0x1',
-        nature: 'toolset' as const,
+        nature: 'skill' as const,
         id: '0x2',
-        name: 'inferred-toolset',
+        name: 'inferred-skill',
       });
 
       vi.mocked(mockNatsService.request).mockResolvedValue(mockHandshakeResponse);
@@ -225,13 +225,13 @@ describe('AuthService', () => {
     });
 
     it('should include pid, hostIP, and hostname in handshake request', async () => {
-      process.env.TOOLSET_KEY = 'tsk_test';
+      process.env.SKILL_KEY = 'tsk_test';
 
       const mockHandshakeResponse = new HandshakeResponse({
         workspaceId: '0x1',
-        nature: 'toolset' as const,
+        nature: 'skill' as const,
         id: '0x2',
-        name: 'test-toolset',
+        name: 'test-skill',
       });
 
       vi.mocked(mockNatsService.request).mockResolvedValue(mockHandshakeResponse);
@@ -252,14 +252,14 @@ describe('AuthService', () => {
 
   describe('prepareRoots - ROOTS validation', () => {
     it('should return undefined when ROOTS is not set', async () => {
-      process.env.TOOLSET_KEY = 'tsk_test';
+      process.env.SKILL_KEY = 'tsk_test';
       delete process.env.ROOTS;
 
       const mockHandshakeResponse = new HandshakeResponse({
         workspaceId: '0x1',
-        nature: 'toolset' as const,
+        nature: 'skill' as const,
         id: '0x2',
-        name: 'test-toolset',
+        name: 'test-skill',
       });
 
       vi.mocked(mockNatsService.request).mockResolvedValue(mockHandshakeResponse);
@@ -276,7 +276,7 @@ describe('AuthService', () => {
     });
 
     it('should parse and validate single root correctly', async () => {
-      process.env.TOOLSET_KEY = 'tsk_test';
+      process.env.SKILL_KEY = 'tsk_test';
       process.env.ROOTS = 'home:/Users/test';
 
       vi.spyOn(fs, 'existsSync').mockReturnValue(true);
@@ -284,9 +284,9 @@ describe('AuthService', () => {
 
       const mockHandshakeResponse = new HandshakeResponse({
         workspaceId: '0x1',
-        nature: 'toolset' as const,
+        nature: 'skill' as const,
         id: '0x2',
-        name: 'test-toolset',
+        name: 'test-skill',
       });
 
       vi.mocked(mockNatsService.request).mockResolvedValue(mockHandshakeResponse);
@@ -303,7 +303,7 @@ describe('AuthService', () => {
     });
 
     it('should parse and validate multiple roots correctly', async () => {
-      process.env.TOOLSET_KEY = 'tsk_test';
+      process.env.SKILL_KEY = 'tsk_test';
       process.env.ROOTS = 'home:/Users/test,workspace:/var/workspace';
 
       vi.spyOn(fs, 'existsSync').mockReturnValue(true);
@@ -311,9 +311,9 @@ describe('AuthService', () => {
 
       const mockHandshakeResponse = new HandshakeResponse({
         workspaceId: '0x1',
-        nature: 'toolset' as const,
+        nature: 'skill' as const,
         id: '0x2',
-        name: 'test-toolset',
+        name: 'test-skill',
       });
 
       vi.mocked(mockNatsService.request).mockResolvedValue(mockHandshakeResponse);
@@ -333,7 +333,7 @@ describe('AuthService', () => {
     });
 
     it('should throw error when root format is invalid (missing colon)', async () => {
-      process.env.TOOLSET_KEY = 'tsk_test';
+      process.env.SKILL_KEY = 'tsk_test';
       process.env.ROOTS = 'invalidformat';
 
       await expect(authService['initialize']()).rejects.toThrow(
@@ -342,7 +342,7 @@ describe('AuthService', () => {
     });
 
     it('should throw error when root file does not exist', async () => {
-      process.env.TOOLSET_KEY = 'tsk_test';
+      process.env.SKILL_KEY = 'tsk_test';
       process.env.ROOTS = 'home:/nonexistent/path';
 
       vi.spyOn(fs, 'existsSync').mockReturnValue(false);
@@ -353,7 +353,7 @@ describe('AuthService', () => {
     });
 
     it('should throw error when root is not a directory', async () => {
-      process.env.TOOLSET_KEY = 'tsk_test';
+      process.env.SKILL_KEY = 'tsk_test';
       process.env.ROOTS = 'file:/Users/test.txt';
 
       vi.spyOn(fs, 'existsSync').mockReturnValue(true);
@@ -367,7 +367,7 @@ describe('AuthService', () => {
 
   describe('handshake - error handling', () => {
     it('should throw PermanentAuthenticationError when AUTHENTICATION_FAILED is returned', async () => {
-      process.env.TOOLSET_KEY = 'tsk_invalid';
+      process.env.SKILL_KEY = 'tsk_invalid';
 
       const mockErrorResponse = new ErrorResponse({
         error: 'AUTHENTICATION_FAILED: Invalid key',
@@ -380,7 +380,7 @@ describe('AuthService', () => {
     });
 
     it('should throw regular Error when non-authentication error is returned', async () => {
-      process.env.TOOLSET_KEY = 'tsk_test';
+      process.env.SKILL_KEY = 'tsk_test';
 
       const mockErrorResponse = new ErrorResponse({
         error: 'SERVICE_UNAVAILABLE: Backend is down',
@@ -393,7 +393,7 @@ describe('AuthService', () => {
     });
 
     it('should throw error when handshake response is invalid', async () => {
-      process.env.TOOLSET_KEY = 'tsk_test';
+      process.env.SKILL_KEY = 'tsk_test';
 
       vi.mocked(mockNatsService.request).mockResolvedValue({} as HandshakeResponse);
 
@@ -401,11 +401,11 @@ describe('AuthService', () => {
     });
 
     it('should throw error when handshake response has unknown nature', async () => {
-      process.env.TOOLSET_KEY = 'tsk_test';
+      process.env.SKILL_KEY = 'tsk_test';
 
       const mockHandshakeResponse = new HandshakeResponse({
         workspaceId: '0x1',
-        nature: 'unknown' as 'runtime' | 'toolset',
+        nature: 'unknown' as 'runtime' | 'skill',
         id: '0x2',
         name: 'test',
       });
@@ -463,14 +463,14 @@ describe('AuthService', () => {
       });
     });
 
-    it('should parse toolset identity correctly', async () => {
-      process.env.TOOLSET_KEY = 'tsk_test';
+    it('should parse skill identity correctly', async () => {
+      process.env.SKILL_KEY = 'tsk_test';
 
       const mockHandshakeResponse = new HandshakeResponse({
         workspaceId: '0x2',
-        nature: 'toolset' as const,
+        nature: 'skill' as const,
         id: '0x3',
-        name: 'my-toolset',
+        name: 'my-skill',
       });
 
       vi.mocked(mockNatsService.request).mockResolvedValue(mockHandshakeResponse);
@@ -478,27 +478,27 @@ describe('AuthService', () => {
       await authService['initialize']();
 
       expect(authService.getIdentity()).toEqual({
-        nature: 'toolset',
+        nature: 'skill',
         id: '0x3',
-        name: 'my-toolset',
+        name: 'my-skill',
         workspaceId: '0x2',
       });
     });
 
-    it('should throw error when toolset workspaceId is null', async () => {
-      process.env.TOOLSET_KEY = 'tsk_test';
+    it('should throw error when skill workspaceId is null', async () => {
+      process.env.SKILL_KEY = 'tsk_test';
 
       const mockHandshakeResponse = new HandshakeResponse({
         workspaceId: null,
-        nature: 'toolset' as const,
+        nature: 'skill' as const,
         id: '0x4',
-        name: 'invalid-toolset',
+        name: 'invalid-skill',
       });
 
       vi.mocked(mockNatsService.request).mockResolvedValue(mockHandshakeResponse);
 
       await expect(authService['initialize']()).rejects.toThrow(
-        'Authentication failed: workspace ID cannot be null for toolsets',
+        'Authentication failed: workspace ID cannot be null for skills',
       );
     });
   });
@@ -509,13 +509,13 @@ describe('AuthService', () => {
     });
 
     it('should return identity after successful initialization', async () => {
-      process.env.TOOLSET_KEY = 'tsk_test';
+      process.env.SKILL_KEY = 'tsk_test';
 
       const mockHandshakeResponse = new HandshakeResponse({
         workspaceId: '0x1',
-        nature: 'toolset' as const,
+        nature: 'skill' as const,
         id: '0x2',
-        name: 'test-toolset',
+        name: 'test-skill',
       });
 
       vi.mocked(mockNatsService.request).mockResolvedValue(mockHandshakeResponse);
@@ -523,9 +523,9 @@ describe('AuthService', () => {
       await authService['initialize']();
 
       expect(authService.getIdentity()).toEqual({
-        nature: 'toolset',
+        nature: 'skill',
         id: '0x2',
-        name: 'test-toolset',
+        name: 'test-skill',
         workspaceId: '0x1',
       });
     });
@@ -533,13 +533,13 @@ describe('AuthService', () => {
 
   describe('shutdown', () => {
     it('should stop NatsService on shutdown', async () => {
-      process.env.TOOLSET_KEY = 'tsk_test';
+      process.env.SKILL_KEY = 'tsk_test';
 
       const mockHandshakeResponse = new HandshakeResponse({
         workspaceId: '0x1',
-        nature: 'toolset' as const,
+        nature: 'skill' as const,
         id: '0x2',
-        name: 'test-toolset',
+        name: 'test-skill',
       });
 
       vi.mocked(mockNatsService.request).mockResolvedValue(mockHandshakeResponse);

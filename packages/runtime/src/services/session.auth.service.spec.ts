@@ -27,68 +27,68 @@ describe('SessionAuthService', () => {
   });
 
   describe('validateAuthHeaders', () => {
-    it('should throw when both WORKSPACE_KEY and TOOLSET_KEY are provided', () => {
+    it('should throw when both WORKSPACE_KEY and SKILL_KEY are provided', () => {
       expect(() => {
         sessionAuthService.validateAuthHeaders({
           workspaceKey: 'wsk_test',
-          toolsetKey: 'tsk_test',
+          skillKey: 'tsk_test',
         });
-      }).toThrow('WORKSPACE_KEY and TOOLSET_KEY are mutually exclusive');
+      }).toThrow('WORKSPACE_KEY and SKILL_KEY are mutually exclusive');
     });
 
-    it('should throw when neither WORKSPACE_KEY nor TOOLSET_KEY is provided', () => {
+    it('should throw when neither WORKSPACE_KEY nor SKILL_KEY is provided', () => {
       expect(() => {
         sessionAuthService.validateAuthHeaders({});
-      }).toThrow('Either WORKSPACE_KEY or TOOLSET_KEY is required');
+      }).toThrow('Either WORKSPACE_KEY or SKILL_KEY is required');
     });
 
-    it('should throw when WORKSPACE_KEY is provided without TOOLSET_NAME', () => {
+    it('should throw when WORKSPACE_KEY is provided without SKILL_NAME', () => {
       expect(() => {
         sessionAuthService.validateAuthHeaders({
           workspaceKey: 'wsk_test',
         });
-      }).toThrow('WORKSPACE_KEY requires TOOLSET_NAME');
+      }).toThrow('WORKSPACE_KEY requires SKILL_NAME');
     });
 
-    it('should throw when TOOLSET_KEY is provided with TOOLSET_NAME', () => {
+    it('should throw when SKILL_KEY is provided with SKILL_NAME', () => {
       expect(() => {
         sessionAuthService.validateAuthHeaders({
-          toolsetKey: 'tsk_test',
-          toolsetName: 'my-toolset',
+          skillKey: 'tsk_test',
+          skillName: 'my-skill',
         });
-      }).toThrow('TOOLSET_KEY must not be used with TOOLSET_NAME');
+      }).toThrow('SKILL_KEY must not be used with SKILL_NAME');
     });
 
-    it('should pass validation with valid WORKSPACE_KEY and TOOLSET_NAME', () => {
+    it('should pass validation with valid WORKSPACE_KEY and SKILL_NAME', () => {
       expect(() => {
         sessionAuthService.validateAuthHeaders({
           workspaceKey: 'wsk_test',
-          toolsetName: 'my-toolset',
+          skillName: 'my-skill',
         });
       }).not.toThrow();
     });
 
-    it('should pass validation with valid TOOLSET_KEY only', () => {
+    it('should pass validation with valid SKILL_KEY only', () => {
       expect(() => {
         sessionAuthService.validateAuthHeaders({
-          toolsetKey: 'tsk_test',
+          skillKey: 'tsk_test',
         });
       }).not.toThrow();
     });
   });
 
   describe('authenticateViaHandshake', () => {
-    it('should successfully authenticate with WORKSPACE_KEY and return toolset identity', async () => {
+    it('should successfully authenticate with WORKSPACE_KEY and return skill identity', async () => {
       const headers = {
         workspaceKey: 'wsk_test123',
-        toolsetName: 'test-toolset',
+        skillName: 'test-skill',
       };
 
       const mockHandshakeResponse = new HandshakeResponse({
         workspaceId: '0x1',
-        nature: 'toolset' as const,
+        nature: 'skill' as const,
         id: '0x2',
-        name: 'test-toolset',
+        name: 'test-skill',
       });
 
       vi.mocked(mockNatsService.request).mockResolvedValue(mockHandshakeResponse);
@@ -97,32 +97,32 @@ describe('SessionAuthService', () => {
 
       expect(identity).toEqual({
         workspaceId: '0x1',
-        toolsetId: '0x2',
-        toolsetName: 'test-toolset',
+        skillId: '0x2',
+        skillName: 'test-skill',
       });
 
       expect(mockNatsService.request).toHaveBeenCalledWith(
         expect.objectContaining({
           data: expect.objectContaining({
             key: 'wsk_test123',
-            nature: 'toolset',
-            name: 'test-toolset',
+            nature: 'skill',
+            name: 'test-skill',
           }),
         }),
         { timeout: 5000 },
       );
     });
 
-    it('should successfully authenticate with TOOLSET_KEY and return toolset identity', async () => {
+    it('should successfully authenticate with SKILL_KEY and return skill identity', async () => {
       const headers = {
-        toolsetKey: 'tsk_test456',
+        skillKey: 'tsk_test456',
       };
 
       const mockHandshakeResponse = new HandshakeResponse({
         workspaceId: '0x3',
-        nature: 'toolset' as const,
+        nature: 'skill' as const,
         id: '0x4',
-        name: 'another-toolset',
+        name: 'another-skill',
       });
 
       vi.mocked(mockNatsService.request).mockResolvedValue(mockHandshakeResponse);
@@ -131,15 +131,15 @@ describe('SessionAuthService', () => {
 
       expect(identity).toEqual({
         workspaceId: '0x3',
-        toolsetId: '0x4',
-        toolsetName: 'another-toolset',
+        skillId: '0x4',
+        skillName: 'another-skill',
       });
 
       expect(mockNatsService.request).toHaveBeenCalledWith(
         expect.objectContaining({
           data: expect.objectContaining({
             key: 'tsk_test456',
-            nature: 'toolset',
+            nature: 'skill',
             name: undefined,
           }),
         }),
@@ -150,7 +150,7 @@ describe('SessionAuthService', () => {
     it('should throw error when handshake returns ErrorResponse', async () => {
       const headers = {
         workspaceKey: 'wsk_invalid',
-        toolsetName: 'test-toolset',
+        skillName: 'test-skill',
       };
 
       const mockErrorResponse = new ErrorResponse({
@@ -166,7 +166,7 @@ describe('SessionAuthService', () => {
 
     it('should throw error when response is not HandshakeResponse or ErrorResponse', async () => {
       const headers = {
-        toolsetKey: 'tsk_test',
+        skillKey: 'tsk_test',
       };
 
       // Mock an invalid response type
@@ -177,9 +177,9 @@ describe('SessionAuthService', () => {
       );
     });
 
-    it('should throw error when response nature is not toolset', async () => {
+    it('should throw error when response nature is not skill', async () => {
       const headers = {
-        toolsetKey: 'tsk_test',
+        skillKey: 'tsk_test',
       };
 
       const mockHandshakeResponse = new HandshakeResponse({
@@ -192,39 +192,39 @@ describe('SessionAuthService', () => {
       vi.mocked(mockNatsService.request).mockResolvedValue(mockHandshakeResponse);
 
       await expect(sessionAuthService.authenticateViaHandshake(headers)).rejects.toThrow(
-        'Authentication failed: expected toolset nature, got runtime',
+        'Authentication failed: expected skill nature, got runtime',
       );
     });
 
-    it('should throw error when workspaceId is null for toolset', async () => {
+    it('should throw error when workspaceId is null for skill', async () => {
       const headers = {
-        toolsetKey: 'tsk_test',
+        skillKey: 'tsk_test',
       };
 
       const mockHandshakeResponse = new HandshakeResponse({
         workspaceId: null,
-        nature: 'toolset' as const,
+        nature: 'skill' as const,
         id: '0x6',
-        name: 'test-toolset',
+        name: 'test-skill',
       });
 
       vi.mocked(mockNatsService.request).mockResolvedValue(mockHandshakeResponse);
 
       await expect(sessionAuthService.authenticateViaHandshake(headers)).rejects.toThrow(
-        'Authentication failed: workspace ID cannot be null for toolsets',
+        'Authentication failed: workspace ID cannot be null for skills',
       );
     });
 
     it('should include pid, hostIP, and hostname in handshake request', async () => {
       const headers = {
-        toolsetKey: 'tsk_test',
+        skillKey: 'tsk_test',
       };
 
       const mockHandshakeResponse = new HandshakeResponse({
         workspaceId: '0x1',
-        nature: 'toolset' as const,
+        nature: 'skill' as const,
         id: '0x2',
-        name: 'test-toolset',
+        name: 'test-skill',
       });
 
       vi.mocked(mockNatsService.request).mockResolvedValue(mockHandshakeResponse);
@@ -251,14 +251,14 @@ describe('SessionAuthService', () => {
 
     it('should return identity after successful authentication', async () => {
       const headers = {
-        toolsetKey: 'tsk_test',
+        skillKey: 'tsk_test',
       };
 
       const mockHandshakeResponse = new HandshakeResponse({
         workspaceId: '0x1',
-        nature: 'toolset' as const,
+        nature: 'skill' as const,
         id: '0x2',
-        name: 'test-toolset',
+        name: 'test-skill',
       });
 
       vi.mocked(mockNatsService.request).mockResolvedValue(mockHandshakeResponse);
@@ -267,8 +267,8 @@ describe('SessionAuthService', () => {
 
       expect(sessionAuthService.getIdentity()).toEqual({
         workspaceId: '0x1',
-        toolsetId: '0x2',
-        toolsetName: 'test-toolset',
+        skillId: '0x2',
+        skillName: 'test-skill',
       });
     });
   });

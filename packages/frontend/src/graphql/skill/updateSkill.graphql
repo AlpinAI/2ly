@@ -1,0 +1,11 @@
+# Update Skill Mutation
+# WHY: Update an existing skill's name and description
+mutation UpdateSkill($id: ID!, $name: String!, $description: String!) {
+  updateSkill(id: $id, name: $name, description: $description) {
+    id
+    name
+    description
+    createdAt
+    updatedAt
+  }
+}

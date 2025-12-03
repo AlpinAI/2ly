@@ -16,8 +16,8 @@ test.describe('Onboarding Flow', () => {
 
   let entityIds: Record<string, string> = {};
   let workspaceId: string = '';
-  let toolsetId: string = '';
-  let toolsetKey: string = '';
+  let skillId: string = '';
+  let skillKey: string = '';
   test.beforeAll(async ({ resetDatabase, seedDatabase }) => {
     await resetDatabase(true);
     entityIds = await seedDatabase(seedPresets.withUsers);
@@ -41,11 +41,11 @@ test.describe('Onboarding Flow', () => {
   
       // Check step 2: Create Tool Set
       await expect(page.getByRole('heading', { name: 'Create Your First Tool Set' })).toBeVisible();
-      await expect(page.getByText('Create a tool set with at least one tool')).toBeVisible();
+      await expect(page.getByText('Create a skill with at least one tool')).toBeVisible();
   
       // Check step 3: Connect Agent
       await expect(page.getByRole('heading', { name: 'Connect your Agent' })).toBeVisible();
-      await expect(page.getByText('Connect your tool set to an agent to start using your tools in AI workflows')).toBeVisible();
+      await expect(page.getByText('Connect your skill to an agent to start using your tools in AI workflows')).toBeVisible();
     });
   
     test('shows step priority badges', async ({ page }) => {
@@ -130,7 +130,7 @@ test.describe('Onboarding Flow', () => {
         .locator('xpath=ancestor::*[contains(@class,"onboarding-card")][1]');
   
       // Should show message
-      await expect(step3Card.getByText(/Create a tool set first to connect to an agent/)).toBeVisible();
+      await expect(step3Card.getByText(/Create a skill first to connect to an agent/)).toBeVisible();
     });
   });
 
@@ -140,8 +140,8 @@ test.describe('Onboarding Flow', () => {
       const authToken = await loginAndGetToken('user1@2ly.ai', 'password123');
 
       // complete step 2
-      const toolsetResult = await createToolset(graphql, workspaceId, 'My tool set', 'My tool set description', 1, authToken);
-      toolsetId = toolsetResult.toolsetId;
+      const skillResult = await createToolset(graphql, workspaceId, 'My skill', 'My skill description', 1, authToken);
+      skillId = skillResult.skillId;
       await new Promise((resolve) => setTimeout(resolve, 5000));
     });
 
@@ -170,7 +170,7 @@ test.describe('Onboarding Flow', () => {
   
       // Dialog should open
       await expect(page.getByRole('dialog')).toBeVisible();
-      await expect(page.getByText('Connect: My tool set')).toBeVisible();
+      await expect(page.getByText('Connect: My skill')).toBeVisible();
       await expect(page.getByText('Select Platform')).toBeVisible();
     });
 
@@ -178,35 +178,35 @@ test.describe('Onboarding Flow', () => {
     test('step 3 shows completed status after connection', async ({ page, graphql, workspaceId }) => {
       await performLogin(page, 'user1@2ly.ai', 'password123');
 
-      // Get auth token for API calls (toolsetKey requires authentication)
+      // Get auth token for API calls (skillKey requires authentication)
       const authToken = await loginAndGetToken('user1@2ly.ai', 'password123');
 
-      // Get the toolset key
-      const toolsetKeyQuery = `
-        query GetToolsetKey($toolsetId: ID!) {
-          toolsetKey(toolsetId: $toolsetId) {
+      // Get the skill key
+      const skillKeyQuery = `
+        query GetToolsetKey($skillId: ID!) {
+          skillKey(skillId: $skillId) {
             key
           }
         }
       `;
-      const keyResult = await graphql<{ toolsetKey: { key: string } }>(toolsetKeyQuery, { toolsetId }, authToken);
-      toolsetKey = keyResult.toolsetKey.key;
+      const keyResult = await graphql<{ skillKey: { key: string } }>(skillKeyQuery, { skillId }, authToken);
+      skillKey = keyResult.skillKey.key;
 
-      // Send toolset handshake to complete step 3
+      // Send skill handshake to complete step 3
       await sendToolsetHandshake({
-        toolsetKey,
-        toolsetName: 'My tool set',
+        skillKey,
+        skillName: 'My skill',
       });
   
       // Wait for the onboarding step to be marked as complete
-      await waitForOnboardingStepComplete(workspaceId, 'connect-tool-set-to-agent');
+      await waitForOnboardingStepComplete(workspaceId, 'connect-skill-to-agent');
 
       // Select the step 3 card containing the correct step title
       const step3Card = page
         .getByRole('heading', { name: 'Connect your Agent' })
         .locator('xpath=ancestor::*[contains(@class,"onboarding-card")][1]');
       await expect(step3Card.getByText('Completed')).toBeVisible();
-      await expect(step3Card.getByText(/My tool set connected/)).toBeVisible();
+      await expect(step3Card.getByText(/My skill connected/)).toBeVisible();
 
       const completedBadges = page.locator('text=Completed');
       await expect(completedBadges).toHaveCount(3);

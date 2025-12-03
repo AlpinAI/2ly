@@ -39,7 +39,7 @@ const leftNavItems: NavItem[] = [
   },
   {
     label: 'Tool Sets',
-    path: 'toolsets',
+    path: 'skills',
     icon: Bot,
   },
   {

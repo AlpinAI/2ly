@@ -43,8 +43,8 @@ user_prompt = "Tell me how many tools you have access to and their names. If you
 
 async def main():
     try:
-        # Using workspace key + toolset name for auto-discovery
-        # Automatically creates or connects to a toolset named "Langgraph Agent"
+        # Using workspace key + skill name for auto-discovery
+        # Automatically creates or connects to a skill named "Langgraph Agent"
         async with MCPToolset.with_workspace_key(
             name="Langgraph Agent",
             workspace_key=workspace_key

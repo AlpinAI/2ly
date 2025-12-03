@@ -5,9 +5,9 @@ import { LoggerService, NatsService, Service, HandshakeRequest, HandshakeRespons
 import pino from 'pino';
 import { WorkspaceRepository } from '../repositories/workspace.repository';
 import { RuntimeRepository } from '../repositories/runtime.repository';
-import { ToolSetRepository } from '../repositories/toolset.repository';
+import { SkillRepository } from '../repositories/skill.repository';
 import { v4 as uuidv4 } from 'uuid';
-import { HandshakeRuntimeCallback, HandshakeToolsetCallback } from '../types';
+import { HandshakeRuntimeCallback, HandshakeSkillCallback } from '../types';
 import { SystemRepository } from '../repositories/system.repository';
 
 /**
@@ -25,7 +25,7 @@ export class IdentityService extends Service {
   private subscriptions: { unsubscribe: () => void; drain: () => Promise<void>; isClosed: () => boolean }[] = [];
 
   private onRuntimeHandshakeCallbacks: Map<string, HandshakeRuntimeCallback> = new Map();
-  private onToolsetHandshakeCallbacks: Map<string, HandshakeToolsetCallback> = new Map();
+  private onSkillHandshakeCallbacks: Map<string, HandshakeSkillCallback> = new Map();
 
   constructor(
     @inject(LoggerService) private loggerService: LoggerService,
@@ -35,7 +35,7 @@ export class IdentityService extends Service {
     @inject(SystemRepository) private readonly systemRepository: SystemRepository,
     @inject(WorkspaceRepository) private readonly workspaceRepository: WorkspaceRepository,
     @inject(RuntimeRepository) private readonly runtimeRepository: RuntimeRepository,
-    @inject(ToolSetRepository) private readonly toolsetRepository: ToolSetRepository,
+    @inject(SkillRepository) private readonly skillRepository: SkillRepository,
   ) {
     super();
     this.logger = this.loggerService.getLogger(this.name);
@@ -61,7 +61,7 @@ export class IdentityService extends Service {
     this.subscriptions = [];
     // Clear callback maps as defensive cleanup
     this.onRuntimeHandshakeCallbacks.clear();
-    this.onToolsetHandshakeCallbacks.clear();
+    this.onSkillHandshakeCallbacks.clear();
     await this.stopService(this.natsService);
     this.logger.info('Stopped');
   }
@@ -99,11 +99,11 @@ export class IdentityService extends Service {
       // 3. Record successful validation
       this.keyRateLimiter.recordSuccessfulAttempt(keyPrefix);
       let workspaceId: string | null = null;
-      let finalNature: 'runtime' | 'toolset' | null = null;
+      let finalNature: 'runtime' | 'skill' | null = null;
       let finalRelatedId: string | null = null;
       let finalRelatedName: string | null = null;
       let runtime: dgraphResolversTypes.Runtime | null = null;
-      let toolset: dgraphResolversTypes.ToolSet | null = null;
+      let skill: dgraphResolversTypes.Skill | null = null;
 
       if (nature === 'system') {
         this.logger.debug(`Handshake with system identity: ${relatedId}`);
@@ -111,7 +111,7 @@ export class IdentityService extends Service {
         if (!system) {
           throw new Error(`System not found`);
         }
-        // upsert the runtime or toolset
+        // upsert the runtime or skill
         if (msg.data.nature === 'runtime' && msg.data.name) {
           runtime = await this.runtimeRepository.findByName('system', system.id, msg.data.name) ?? null;
           if (!runtime) {
@@ -131,7 +131,7 @@ export class IdentityService extends Service {
           throw new Error(`Workspace ${relatedId} not found`);
         }
         workspaceId = workspace.id;
-        // upsert the runtime or toolset
+        // upsert the runtime or skill
         if (msg.data.nature === 'runtime' && msg.data.name) {
           runtime = await this.runtimeRepository.findByName('workspace', workspace.id, msg.data.name) ?? null;
           if (!runtime) {
@@ -143,16 +143,16 @@ export class IdentityService extends Service {
           finalNature = 'runtime';
           finalRelatedId = runtime.id;
           finalRelatedName = msg.data.name;
-        } else if (msg.data.nature === 'toolset' && msg.data.name) {
-          toolset = await this.toolsetRepository.findByName(workspace.id, msg.data.name) ?? null;
-          if (!toolset) {
-            this.logger.debug(`Creating toolset ${msg.data.name} for workspace ${workspace.id}`);
-            toolset = await this.toolsetRepository.create(msg.data.name, '', workspace.id);
+        } else if (msg.data.nature === 'skill' && msg.data.name) {
+          skill = await this.skillRepository.findByName(workspace.id, msg.data.name) ?? null;
+          if (!skill) {
+            this.logger.debug(`Creating skill ${msg.data.name} for workspace ${workspace.id}`);
+            skill = await this.skillRepository.create(msg.data.name, '', workspace.id);
           } else {
-            this.logger.debug(`Found toolset identity for ${msg.data.name}: ${toolset.id}`);
+            this.logger.debug(`Found skill identity for ${msg.data.name}: ${skill.id}`);
           }
-          finalNature = 'toolset';
-          finalRelatedId = toolset.id;
+          finalNature = 'skill';
+          finalRelatedId = skill.id;
           finalRelatedName = msg.data.name;
         }
       } else if (nature === 'runtime') {
@@ -165,16 +165,16 @@ export class IdentityService extends Service {
         finalNature = 'runtime';
         finalRelatedId = runtime.id;
         finalRelatedName = runtime.name;
-      } else if (nature === 'toolset') {
-        this.logger.debug(`Handshake with toolset identity: ${relatedId}`);
-        toolset = await this.toolsetRepository.findById(relatedId);
-        if (!toolset) {
+      } else if (nature === 'skill') {
+        this.logger.debug(`Handshake with skill identity: ${relatedId}`);
+        skill = await this.skillRepository.findById(relatedId);
+        if (!skill) {
           throw new Error(`Toolset ${relatedId} not found`);
         }
-        workspaceId = toolset.workspace.id;
-        finalNature = 'toolset';
-        finalRelatedId = toolset.id;
-        finalRelatedName = toolset.name;
+        workspaceId = skill.workspace.id;
+        finalNature = 'skill';
+        finalRelatedId = skill.id;
+        finalRelatedName = skill.name;
       } else {
         throw new Error(`Unknown nature: ${nature}`);
       }
@@ -182,8 +182,8 @@ export class IdentityService extends Service {
       if (!finalNature || !finalRelatedId || !finalRelatedName) {
         throw new Error('Could not retrieve identity');
       }
-      if (finalNature === 'toolset' && !workspaceId) {
-        throw new Error('Authentication failed: workspace ID cannot be null for toolsets');
+      if (finalNature === 'skill' && !workspaceId) {
+        throw new Error('Authentication failed: workspace ID cannot be null for skills');
       }
       // set roots if provided
       if (finalNature === 'runtime' && runtime && msg.data.roots) {
@@ -193,9 +193,9 @@ export class IdentityService extends Service {
         for (const callback of this.onRuntimeHandshakeCallbacks.values()) {
           callback({ instance: runtime, pid: msg.data.pid, hostIP: msg.data.hostIP, hostname: msg.data.hostname });
         }
-      } else if (finalNature === 'toolset' && toolset) {
-        for (const callback of this.onToolsetHandshakeCallbacks.values()) {
-          callback({ instance: toolset, pid: msg.data.pid, hostIP: msg.data.hostIP, hostname: msg.data.hostname });
+      } else if (finalNature === 'skill' && skill) {
+        for (const callback of this.onSkillHandshakeCallbacks.values()) {
+          callback({ instance: skill, pid: msg.data.pid, hostIP: msg.data.hostIP, hostname: msg.data.hostname });
         }
       }
       const handshakeResponse = new HandshakeResponse({
@@ -228,27 +228,27 @@ export class IdentityService extends Service {
   }
 
   onHandshake(nature: 'runtime', callback: HandshakeRuntimeCallback): string;
-  onHandshake(nature: 'toolset', callback: HandshakeToolsetCallback): string;
+  onHandshake(nature: 'skill', callback: HandshakeSkillCallback): string;
   onHandshake(
-    nature: 'runtime' | 'toolset',
-    callback: HandshakeRuntimeCallback | HandshakeToolsetCallback
+    nature: 'runtime' | 'skill',
+    callback: HandshakeRuntimeCallback | HandshakeSkillCallback
   ): string {
     const callbackId = uuidv4();
     if (nature === 'runtime') {
       this.onRuntimeHandshakeCallbacks.set(callbackId, callback as HandshakeRuntimeCallback);
-    } else if (nature === 'toolset') {
-      this.onToolsetHandshakeCallbacks.set(callbackId, callback as HandshakeToolsetCallback);
+    } else if (nature === 'skill') {
+      this.onSkillHandshakeCallbacks.set(callbackId, callback as HandshakeSkillCallback);
     }
     return callbackId;
   }
 
   offHandshake(nature: 'runtime', callbackId: string): void;
-  offHandshake(nature: 'toolset', callbackId: string): void;
-  offHandshake(nature: 'runtime' | 'toolset', callbackId: string): void {
+  offHandshake(nature: 'skill', callbackId: string): void;
+  offHandshake(nature: 'runtime' | 'skill', callbackId: string): void {
     if (nature === 'runtime') {
       this.onRuntimeHandshakeCallbacks.delete(callbackId);
-    } else if (nature === 'toolset') {
-      this.onToolsetHandshakeCallbacks.delete(callbackId);
+    } else if (nature === 'skill') {
+      this.onSkillHandshakeCallbacks.delete(callbackId);
     }
   }
 }

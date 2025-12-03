@@ -12,7 +12,7 @@ if not workspace_key:
     exit(1)
 
 async def main():
-    # Using workspace key + toolset name for auto-discovery
+    # Using workspace key + skill name for auto-discovery
     async with MCPClient.with_workspace_key(
         name="List Tools Example",
         workspace_key=workspace_key

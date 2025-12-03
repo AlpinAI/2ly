@@ -14,7 +14,7 @@ import {
   createMockToolCall,
   createMockMcpToolRef,
   createMockMcpServerRef,
-  createMockToolSetRef,
+  createMockSkillRef,
 } from '@/test/factories';
 
 // Mock Apollo Client
@@ -65,7 +65,7 @@ describe('ToolCallsTable', () => {
       id: 'tc-1',
       toolInput: '{"query":"test"}',
       toolOutput: 'result',
-      calledBy: createMockToolSetRef(),
+      calledBy: createMockSkillRef(),
     }),
     createMockToolCall({
       id: 'tc-2',

@@ -1,0 +1,13 @@
+# Get Toolset Key Query
+# WHY: Fetch the identity key for a specific skill to display in the Connect Toolset dialog
+query GetToolsetKey($skillId: ID!) {
+  skillKey(skillId: $skillId) {
+    id
+    key
+    description
+    createdAt
+    expiresAt
+    revokedAt
+    relatedId
+  }
+}

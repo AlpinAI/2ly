@@ -94,11 +94,11 @@ describe('IdentityRepository', () => {
       expect(result.key.length).toBe(46);
     });
 
-    it('should create a toolset key with correct format', async () => {
+    it('should create a skill key with correct format', async () => {
       const mockKey: dgraphResolversTypes.IdentityKey = {
         id: 'key-id',
         key: 'TSK' + randomBytes(32).toString('base64').replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, ''),
-        relatedId: 'toolset-id',
+        relatedId: 'skill-id',
         createdAt: new Date().toISOString(),
         expiresAt: new Date(Date.now() + 20 * 365 * 24 * 60 * 60 * 1000).toISOString(),
       };
@@ -112,7 +112,7 @@ describe('IdentityRepository', () => {
         addIdentityKey: { identityKey: [mockKey] },
       });
 
-      const result = await repository.createKey('toolset', 'toolset-id', 'Toolset key');
+      const result = await repository.createKey('skill', 'skill-id', 'Toolset key');
 
       expect(result.key).toMatch(/^TSK[A-Za-z0-9_-]{43}$/);
       expect(result.key.length).toBe(46);
@@ -286,11 +286,11 @@ describe('IdentityRepository', () => {
       });
     });
 
-    it('should find and return a valid toolset key', async () => {
+    it('should find and return a valid skill key', async () => {
       const mockKey: dgraphResolversTypes.IdentityKey = {
         id: 'key-id',
-        key: 'TSKabcdefghijklmnopqrstuvwxyz1234567890abcde',
-        relatedId: 'toolset-id',
+        key: 'SKLabcdefghijklmnopqrstuvwxyz1234567890abcde',
+        relatedId: 'skill-id',
         createdAt: new Date().toISOString(),
         expiresAt: new Date(Date.now() + 1000000).toISOString(),
       };
@@ -302,8 +302,8 @@ describe('IdentityRepository', () => {
       const result = await repository.findKey(mockKey.key);
 
       expect(result).toEqual({
-        relatedId: 'toolset-id',
-        nature: 'toolset',
+        relatedId: 'skill-id',
+        nature: 'skill',
       });
     });
 

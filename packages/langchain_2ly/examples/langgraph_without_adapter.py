@@ -43,7 +43,7 @@ user_prompt = "Tell me how many tools you have access to and their names. If you
 
 async def main():
     try:
-        # Using workspace key + toolset name for auto-discovery
+        # Using workspace key + skill name for auto-discovery
         # MCPClient provides the same functionality without the langchain_mcp_adapters dependency
         async with MCPClient.with_workspace_key(
             name="Langgraph Agent without adapter",

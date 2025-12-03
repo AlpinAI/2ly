@@ -32,8 +32,8 @@ interface FakeRuntimeRepository {
 interface FakeIdentityService {
     start: () => Promise<void>;
     stop: () => Promise<void>;
-    onHandshake: (nature: 'runtime' | 'toolset', callback: (identity: RuntimeHandshakeIdentity) => void) => string;
-    offHandshake: (nature: 'runtime' | 'toolset', callbackId: string) => void;
+    onHandshake: (nature: 'runtime' | 'skill', callback: (identity: RuntimeHandshakeIdentity) => void) => string;
+    offHandshake: (nature: 'runtime' | 'skill', callbackId: string) => void;
 }
 
 class FakeRuntimeInstance {

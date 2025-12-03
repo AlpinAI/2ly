@@ -42,7 +42,7 @@ type Workspace {
   mcpServers: [MCPServer!]
   mcpTools: [MCPTool!]
   runtimes: [Runtime!]
-  toolSets: [ToolSet!]
+  skills: [Skill!]
   registryServers: [MCPRegistryServer!]
   onboardingSteps: [OnboardingStep!]
 }
@@ -71,11 +71,11 @@ type MCPTool {
   createdAt: Date!
   lastSeenAt: Date!
   mcpServer: MCPServer!
-  toolSets: [ToolSet!]
+  skills: [Skill!]
   workspace: Workspace!
 }
 
-type ToolSet {
+type Skill {
   id: ID!
   name: String!
   description: String
@@ -154,7 +154,7 @@ type ToolCall {
   isTest: Boolean!
   executedByAgent: Boolean
   mcpTool: MCPTool!
-  calledBy: ToolSet
+  calledBy: Skill
   executedBy: Runtime
 }
 
@@ -246,7 +246,7 @@ type Query {
   workspace(workspaceId: ID!): Workspace
   mcpServers(workspaceId: ID!): [MCPServer!]
   mcpTools(workspaceId: ID!): [MCPTool!]
-  toolSets(workspaceId: ID!): [ToolSet!]
+  skills(workspaceId: ID!): [Skill!]
   system: System
   infra: Infra!
   workspaceMCPTools(workspaceId: ID!): Workspace
@@ -261,7 +261,7 @@ type Query {
   ): ToolCallsResult!
   # Key management queries
   workspaceKeys(workspaceId: ID!): [IdentityKey!]!
-  toolsetKey(toolsetId: ID!): IdentityKey
+  skillKey(skillId: ID!): IdentityKey
   keyValue(keyId: ID!): String!
   # Authentication queries
   me: User
@@ -299,12 +299,12 @@ type Mutation {
   deleteRuntime(id: ID!): Runtime!
   deleteMCPTool(id: ID!): MCPTool!
   deleteMCPServer(id: ID!): MCPServer!
-  # ToolSet mutations
-  createToolSet(name: String!, description: String!, workspaceId: ID!): ToolSet!
-  updateToolSet(id: ID!, name: String!, description: String!): ToolSet!
-  deleteToolSet(id: ID!): ToolSet!
-  addMCPToolToToolSet(mcpToolId: ID!, toolSetId: ID!): ToolSet!
-  removeMCPToolFromToolSet(mcpToolId: ID!, toolSetId: ID!): ToolSet!
+  # Skill mutations
+  createSkill(name: String!, description: String!, workspaceId: ID!): Skill!
+  updateSkill(id: ID!, name: String!, description: String!): Skill!
+  deleteSkill(id: ID!): Skill!
+  addMCPToolToSkill(mcpToolId: ID!, skillId: ID!): Skill!
+  removeMCPToolFromSkill(mcpToolId: ID!, skillId: ID!): Skill!
   initSystem(adminPassword: String!, email: String!): System!
   updateWorkspace(id: ID!, name: String!): Workspace!
   setGlobalRuntime(id: ID!, runtimeId: ID!): Workspace!
@@ -428,6 +428,6 @@ type Subscription {
   runtimes(workspaceId: ID!): [Runtime!]
   mcpServers(workspaceId: ID!): [MCPServer!]
   mcpTools(workspaceId: ID!): [MCPTool!]
-  toolSets(workspaceId: ID!): [ToolSet!]
+  skills(workspaceId: ID!): [Skill!]
   toolCalls(workspaceId: ID!): [ToolCall!]
 }

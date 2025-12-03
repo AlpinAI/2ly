@@ -5,14 +5,14 @@ import * as uiStore from '@/stores/uiStore';
 import * as runtimeStore from '@/stores/runtimeStore';
 import { ActiveStatus, OnboardingStepStatus, type OnboardingStep, type Runtime, OnboardingStepType, McpTransportType, McpServerRunOn, RuntimeType } from '@/graphql/generated/graphql';
 import { useMCPServers } from '@/hooks/useMCPServers';
-import { useToolSets } from '@/hooks/useToolSets';
+import { useSkills } from '@/hooks/useSkills';
 import { createMockMcpServer, createMockMcpServerRef } from '@/test/factories';
 
 // Mock stores and hooks
 vi.mock('@/stores/uiStore');
 vi.mock('@/stores/runtimeStore');
 vi.mock('@/hooks/useMCPServers');
-vi.mock('@/hooks/useToolSets');
+vi.mock('@/hooks/useSkills');
 vi.mock('react-router-dom', () => ({
   ...vi.importActual('react-router-dom'),
   useParams: () => ({ workspaceId: 'workspace-1' }),
@@ -53,7 +53,7 @@ describe('OnboardingCard', () => {
             lastSeenAt: new Date(),
             mcpServer: createMockMcpServerRef({ id: 'server-1', name: 'test-server' }),
             workspace: null as never,
-            toolSets: [],
+            skills: [],
           },
         ],
       },
@@ -74,17 +74,17 @@ describe('OnboardingCard', () => {
       mcpTools: [],
       onboardingSteps: [],
       runtimes: [],
-      toolSets: [],
+      skills: [],
     },
     system: null,
     toolResponses: [],
   };
 
-  const mockToolSet = {
-    __typename: 'ToolSet' as const,
-    id: 'toolset-1',
+  const mockSkill = {
+    __typename: 'Skill' as const,
+    id: 'skill-1',
     name: 'Test Agent',
-    description: 'Test toolset description',
+    description: 'Test skill description',
     createdAt: new Date(),
     updatedAt: null,
     mcpTools: [
@@ -101,7 +101,7 @@ describe('OnboardingCard', () => {
         status: ActiveStatus.Active,
         mcpServer: createMockMcpServerRef({ id: 'server-1', name: 'test-server' }),
         workspace: null as never,
-        toolSets: [],
+        skills: [],
       },
     ],
     workspace: {
@@ -114,14 +114,14 @@ describe('OnboardingCard', () => {
       mcpTools: [],
       onboardingSteps: [],
       runtimes: [],
-      toolSets: [],
+      skills: [],
     },
   };
 
   const mockStep: OnboardingStep = {
     __typename: 'OnboardingStep',
     id: 'step-1',
-    stepId: 'connect-tool-set-to-agent',
+    stepId: 'connect-skill-to-agent',
     status: OnboardingStepStatus.Pending,
     type: OnboardingStepType.Onboarding,
     priority: 3,
@@ -131,9 +131,9 @@ describe('OnboardingCard', () => {
   };
 
   const mockSetAddSourceWorkflowOpen = vi.fn();
-  const mockOpenCreateToolSetDialog = vi.fn();
+  const mockOpenCreateSkillDialog = vi.fn();
   const mockSetManageToolsDialogOpen = vi.fn();
-  const mockSetSelectedToolSetForManagement = vi.fn();
+  const mockSetSelectedSkillForManagement = vi.fn();
   const mockSetConnectToolsetDialogOpen = vi.fn();
   const mockSetSelectedToolsetName = vi.fn();
 
@@ -154,7 +154,7 @@ describe('OnboardingCard', () => {
     vi.mocked(uiStore.useCreateToolsetDialog).mockReturnValue({
       open: false,
       callback: null,
-      openDialog: mockOpenCreateToolSetDialog,
+      openDialog: mockOpenCreateSkillDialog,
       close: vi.fn(),
     });
 
@@ -162,7 +162,7 @@ describe('OnboardingCard', () => {
       open: false,
       setOpen: mockSetManageToolsDialogOpen,
       selectedToolsetId: null,
-      setSelectedToolsetId: mockSetSelectedToolSetForManagement,
+      setSelectedToolsetId: mockSetSelectedSkillForManagement,
     });
 
     vi.mocked(uiStore.useConnectToolsetDialog).mockReturnValue({
@@ -188,9 +188,9 @@ describe('OnboardingCard', () => {
       error: undefined,
     });
 
-    vi.mocked(useToolSets).mockReturnValue({
-      toolSets: [mockToolSet],
-      filteredToolSets: [mockToolSet],
+    vi.mocked(useSkills).mockReturnValue({
+      skills: [mockSkill],
+      filteredSkills: [mockSkill],
       stats: { total: 1, filtered: 1 },
       loading: false,
       error: undefined,
@@ -207,7 +207,7 @@ describe('OnboardingCard', () => {
       render(<OnboardingCard step={mockStep} />);
 
       expect(screen.getByText('Connect your Agent')).toBeInTheDocument();
-      expect(screen.getByText(/Connect your tool set to an agent to start using your tools in AI workflows/)).toBeInTheDocument();
+      expect(screen.getByText(/Connect your skill to an agent to start using your tools in AI workflows/)).toBeInTheDocument();
     });
 
     it('shows Connect button when agent with tools exists and step is pending', () => {
@@ -227,10 +227,10 @@ describe('OnboardingCard', () => {
       expect(mockSetConnectToolsetDialogOpen).toHaveBeenCalledWith(true);
     });
 
-    it('shows message when no tool set with tools exists', () => {
-      vi.mocked(useToolSets).mockReturnValue({
-        toolSets: [],
-        filteredToolSets: [],
+    it('shows message when no skill with tools exists', () => {
+      vi.mocked(useSkills).mockReturnValue({
+        skills: [],
+        filteredSkills: [],
         stats: { total: 0, filtered: 0 },
         loading: false,
         error: undefined,
@@ -243,7 +243,7 @@ describe('OnboardingCard', () => {
 
       render(<OnboardingCard step={mockStep} />);
 
-      expect(screen.getByText(/Create a tool set first to connect to an agent/)).toBeInTheDocument();
+      expect(screen.getByText(/Create a skill first to connect to an agent/)).toBeInTheDocument();
     });
 
     it('shows completed status when step is completed', () => {
@@ -359,7 +359,7 @@ describe('OnboardingCard', () => {
   describe('Step 2: Create Tool Set', () => {
     const step2: OnboardingStep = {
       ...mockStep,
-      stepId: 'create-tool-set',
+      stepId: 'create-skill',
       priority: 2,
     };
 
@@ -375,10 +375,10 @@ describe('OnboardingCard', () => {
       const button = screen.getByRole('button', { name: /Create Tool Set/i });
       fireEvent.click(button);
 
-      expect(mockOpenCreateToolSetDialog).toHaveBeenCalled();
+      expect(mockOpenCreateSkillDialog).toHaveBeenCalled();
     });
 
-    it('shows completed tool set with tool count when step is completed', () => {
+    it('shows completed skill with tool count when step is completed', () => {
       const completedStep = {
         ...step2,
         status: OnboardingStepStatus.Completed,
@@ -390,9 +390,9 @@ describe('OnboardingCard', () => {
       expect(screen.getByText(/Test Agent \(1 tool\)/)).toBeInTheDocument();
     });
 
-    it('shows plural "tools" when tool set has multiple tools', () => {
-      const multiToolToolSet = {
-        ...mockToolSet,
+    it('shows plural "tools" when skill has multiple tools', () => {
+      const multiToolSkill = {
+        ...mockSkill,
         mcpTools: [
           {
             __typename: 'MCPTool' as const,
@@ -406,7 +406,7 @@ describe('OnboardingCard', () => {
             status: ActiveStatus.Active,
             mcpServer: createMockMcpServerRef({ id: 'server-1', name: 'test-server' }),
             workspace: null as never,
-            toolSets: [],
+            skills: [],
           },
           {
             __typename: 'MCPTool' as const,
@@ -420,14 +420,14 @@ describe('OnboardingCard', () => {
             status: ActiveStatus.Active,
             mcpServer: createMockMcpServerRef({ id: 'server-1', name: 'test-server' }),
             workspace: null as never,
-            toolSets: [],
+            skills: [],
           },
         ],
       };
 
-      vi.mocked(useToolSets).mockReturnValue({
-        toolSets: [multiToolToolSet],
-        filteredToolSets: [multiToolToolSet],
+      vi.mocked(useSkills).mockReturnValue({
+        skills: [multiToolSkill],
+        filteredSkills: [multiToolSkill],
         stats: { total: 1, filtered: 1 },
         loading: false,
         error: undefined,

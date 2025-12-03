@@ -24,7 +24,7 @@
  * ```tsx
  * <Route path="/app" element={<AppLayout />}>
  *   <Route path="overview" element={<DashboardPage />} />
- *   <Route path="toolsets" element={<ToolSetsPage />} />
+ *   <Route path="skills" element={<SkillsPage />} />
  * </Route>
  * ```
  */
@@ -34,9 +34,9 @@ import { AppHeader } from './app-header';
 import { AppNavigation } from './app-navigation';
 import { AddSourceWorkflow } from '@/components/sources/add-source-workflow';
 import { AddServerWorkflow } from '@/components/registry/add-server-workflow';
-import { ToolsetManagementPanel } from '@/components/toolsets/toolset-management-panel';
-import { CreateToolsetDialog } from '@/components/toolsets/create-toolset-dialog';
-import { ConnectToolsetDialog } from '@/components/toolsets/connect-toolset-dialog';
+import { ToolsetManagementPanel } from '@/components/skills/skill-management-panel';
+import { CreateToolsetDialog } from '@/components/skills/create-skill-dialog';
+import { ConnectToolsetDialog } from '@/components/skills/connect-skill-dialog';
 
 export function AppLayout() {
 

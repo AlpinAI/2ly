@@ -1,0 +1,19 @@
+# Remove MCP Tool from Skill Mutation
+# WHY: Remove a tool from a skill
+mutation RemoveMCPToolFromSkill($mcpToolId: ID!, $skillId: ID!) {
+  removeMCPToolFromSkill(mcpToolId: $mcpToolId, skillId: $skillId) {
+    id
+    name
+    description
+    updatedAt
+    mcpTools {
+      id
+      name
+      description
+      mcpServer {
+        id
+        name
+      }
+    }
+  }
+}

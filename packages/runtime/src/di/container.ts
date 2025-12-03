@@ -34,8 +34,8 @@ const container = new Container();
  * Validates environment variables and determines the runtime operational mode
  */
 function validateAndDetectMode(): RuntimeMode {
-  if (process.env.MASTER_KEY && process.env.TOOLSET_KEY) {
-    console.warn('TOOLSET_KEY provided -> ignoring MASTER_KEY');
+  if (process.env.MASTER_KEY && process.env.SKILL_KEY) {
+    console.warn('SKILL_KEY provided -> ignoring MASTER_KEY');
     delete process.env.MASTER_KEY;
   } else if (process.env.SYSTEM_KEY && process.env.RUNTIME_KEY) {
     console.warn('RUNTIME_KEY provided -> ignoring SYSTEM_KEY');
@@ -48,21 +48,21 @@ function validateAndDetectMode(): RuntimeMode {
   // Get keys from environment variables
   const systemKey = process.env.SYSTEM_KEY;
   const workspaceKey = process.env.WORKSPACE_KEY;
-  const toolsetKey = process.env.TOOLSET_KEY;
+  const skillKey = process.env.SKILL_KEY;
   const runtimeKey = process.env.RUNTIME_KEY;
 
   // Get names from environment variables
-  const toolsetName = process.env.TOOLSET_NAME;
+  const skillName = process.env.SKILL_NAME;
   const runtimeName = process.env.RUNTIME_NAME;
 
   // Get remote port from environment variables
   const remotePort = process.env.REMOTE_PORT;
   
   // Keys are mutually exclusive
-  const keyVariables = [systemKey, workspaceKey, toolsetKey, runtimeKey];
+  const keyVariables = [systemKey, workspaceKey, skillKey, runtimeKey];
   const keyVariablesSet = keyVariables.filter((key) => !!key);
   if (keyVariablesSet.length > 1) {
-    throw new Error(`Invalid configuration: Only one of SYSTEM_KEY, WORKSPACE_KEY, TOOLSET_KEY, or RUNTIME_KEY can be set but found values for ${keyVariablesSet.join(', ')}`);
+    throw new Error(`Invalid configuration: Only one of SYSTEM_KEY, WORKSPACE_KEY, SKILL_KEY, or RUNTIME_KEY can be set but found values for ${keyVariablesSet.join(', ')}`);
   }
 
   // Validate name with their respective keys
@@ -73,26 +73,26 @@ function validateAndDetectMode(): RuntimeMode {
   }
 
   if (workspaceKey) {
-    if (!toolsetName) {
-      throw new Error('Invalid configuration: WORKSPACE_KEY requires TOOLSET_NAME');
+    if (!skillName) {
+      throw new Error('Invalid configuration: WORKSPACE_KEY requires SKILL_NAME');
     }
   }
 
   // Validate mutually exclusive environment variables
-  if (remotePort && (toolsetName || toolsetKey)) {
+  if (remotePort && (skillName || skillKey)) {
     throw new Error(
-      'Invalid configuration: REMOTE_PORT is mutually exclusive with TOOLSET_NAME and TOOLSET_KEY. ' +
+      'Invalid configuration: REMOTE_PORT is mutually exclusive with SKILL_NAME and SKILL_KEY. ' +
         'Please use only REMOTE_PORT for edge runtimes',
     );
   }
 
-  // Runtime and toolset cannot be set at the same time
-  if ((runtimeName || runtimeKey) && (toolsetName || toolsetKey)) {
-    throw new Error('Invalid configuration: trying to start both a runtime and a toolset, this is not supported');
+  // Runtime and skill cannot be set at the same time
+  if ((runtimeName || runtimeKey) && (skillName || skillKey)) {
+    throw new Error('Invalid configuration: trying to start both a runtime and a skill, this is not supported');
   }
 
   // Determine mode and runtime type based on environment variables
-  if (toolsetName || toolsetKey) {
+  if (skillName || skillKey) {
     return 'MCP_STDIO';
   } else if (runtimeName || runtimeKey) {
     if (remotePort) {
@@ -103,7 +103,7 @@ function validateAndDetectMode(): RuntimeMode {
     return 'STANDALONE_MCP_STREAM';
   } else {
     throw new Error(
-      'Invalid configuration: At least one of TOOLSET_NAME, TOOLSET_KEY, RUNTIME_NAME, RUNTIME_KEY, or REMOTE_PORT must be set. ' +
+      'Invalid configuration: At least one of SKILL_NAME, SKILL_KEY, RUNTIME_NAME, RUNTIME_KEY, or REMOTE_PORT must be set. ' +
         'See documentation for valid operational modes.',
     );
   }
@@ -192,7 +192,7 @@ const start = () => {
   loggerService.setLogLevel('mcp-streamable', (process.env.LOG_LEVEL_MCP_STREAMABLE || 'info') as pino.Level);
   loggerService.setLogLevel('tool', (process.env.LOG_LEVEL_TOOL || 'info') as pino.Level);
   loggerService.setLogLevel('tool.client', (process.env.LOG_LEVEL_TOOL_CLIENT || 'info') as pino.Level);
-  loggerService.setLogLevel('toolset', (process.env.LOG_LEVEL_TOOLSET || 'info') as pino.Level);
+  loggerService.setLogLevel('skill', (process.env.LOG_LEVEL_SKILL || 'info') as pino.Level);
 
   // Init MCP server service factory
   container.bind<ToolServerServiceFactory>(ToolServerService).toFactory((context) => {

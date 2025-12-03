@@ -12,7 +12,7 @@
  *
  * FEATURES:
  * - Search by name/description
- * - Filter by server(s), tool set(s)
+ * - Filter by server(s), skill(s)
  * - Click row to select
  * - Highlight selected row
  */
@@ -35,10 +35,10 @@ export interface ToolTableProps {
   onSearchChange: (search: string) => void;
   serverFilter: string[];
   onServerFilterChange: (serverIds: string[]) => void;
-  toolSetFilter: string[];
-  onToolSetFilterChange: (toolSetIds: string[]) => void;
+  skillFilter: string[];
+  onSkillFilterChange: (skillIds: string[]) => void;
   availableServers: Array<{ id: string; name: string }>;
-  availableToolSets: Array<{ id: string; name: string }>;
+  availableSkills: Array<{ id: string; name: string }>;
   loading?: boolean;
 }
 
@@ -50,16 +50,16 @@ export function ToolTable({
   onSearchChange,
   serverFilter,
   onServerFilterChange,
-  toolSetFilter,
-  onToolSetFilterChange,
+  skillFilter,
+  onSkillFilterChange,
   availableServers,
-  availableToolSets,
+  availableSkills,
   loading,
 }: ToolTableProps) {
   const scrollToEntity = useScrollToEntity();
   const rowRefs = useRef<Map<string, HTMLTableRowElement>>(new Map());
 
-  const hasActiveFilters = search.length > 0 || serverFilter.length > 0 || toolSetFilter.length > 0;
+  const hasActiveFilters = search.length > 0 || serverFilter.length > 0 || skillFilter.length > 0;
 
   // Scroll to selected entity when ID changes and element is ready
   useEffect(() => {
@@ -76,7 +76,7 @@ export function ToolTable({
   const handleClearFilters = () => {
     onSearchChange('');
     onServerFilterChange([]);
-    onToolSetFilterChange([]);
+    onSkillFilterChange([]);
   };
 
   return (
@@ -96,10 +96,10 @@ export function ToolTable({
 
           <CheckboxDropdown
             label="Tool Set"
-            placeholder="All tool sets"
-            items={availableToolSets.map((ts) => ({ id: ts.id, label: ts.name }))}
-            selectedIds={toolSetFilter}
-            onChange={onToolSetFilterChange}
+            placeholder="All skills"
+            items={availableSkills.map((ts) => ({ id: ts.id, label: ts.name }))}
+            selectedIds={skillFilter}
+            onChange={onSkillFilterChange}
           />
 
           {hasActiveFilters && (
@@ -168,7 +168,7 @@ export function ToolTable({
                         <div className="text-xs text-gray-500 dark:text-gray-400 line-clamp-1 max-w-md">{tool.description}</div>
                       </td>
                       <td className="px-4 py-3 text-sm text-gray-700 dark:text-gray-300">{tool.mcpServer.name}</td>
-                      <td className="px-4 py-3 text-sm text-gray-700 dark:text-gray-300">{tool.toolSets?.length || 0}</td>
+                      <td className="px-4 py-3 text-sm text-gray-700 dark:text-gray-300">{tool.skills?.length || 0}</td>
                       <td className="px-4 py-3 text-sm">
                         <span
                           className={`inline-flex items-center px-2 py-1 rounded text-xs font-medium ${

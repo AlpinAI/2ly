@@ -62,10 +62,10 @@ This ensures everything is configured correctly before integrating with your age
 
 ## Step 5: Connect Your Agent
 
-Now your toolset is ready to be consumed by agents:
+Now your skill is ready to be consumed by agents:
 
 1. Navigate to the **Toolsets** page
-2. Click **Connect** on your toolset
+2. Click **Connect** on your skill
 3. Choose your agent framework:
    - **LangChain** - Copy the Python code snippet
    - **JSON** - Use the raw MCP configuration
@@ -81,7 +81,7 @@ from twoly import MCPAdapter
 adapter = MCPAdapter(
     endpoint="http://localhost:3000/mcp",
     workspace_id="your-workspace-id",
-    toolset_id="your-toolset-id"
+    skill_id="your-skill-id"
 )
 
 # Use with LangChain
@@ -163,5 +163,5 @@ docker compose restart
 **Tools not appearing in agent?**
 
 - Ensure your agent is properly configured with the MCP endpoint
-- Check that the toolset includes at least one tool
+- Check that the skill includes at least one tool
 - Verify the runtime is connected in the dashboard

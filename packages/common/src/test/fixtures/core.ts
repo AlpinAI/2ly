@@ -137,7 +137,7 @@ export async function loginAndGetToken(email: string, password: string): Promise
  * - Registry Servers
  * - MCP Servers
  * - Tools
- * - ToolSets (with tool linking)
+ * - Skills (with tool linking)
  * - Runtimes
  * - ToolCalls
  *
@@ -378,21 +378,21 @@ export async function seedDatabase(data: SeedData): Promise<Record<string, strin
     }
   }
 
-  // 8. Create ToolSets
-  if (data.toolSets && workspaceId) {
-    const toolsetKeys = ['claude-desktop-agent', 'web-assistant-agent'];
-    for (let i = 0; i < data.toolSets.length; i++) {
-      const toolSet = data.toolSets[i];
-      // Create the toolSet first
-      const toolSetMutation = `
-        mutation AddToolSet($workspaceId: ID!) {
-          addToolSet(input: {
-            name: "${toolSet.name}"
-            description: "${toolSet.description ?? ''}"
+  // 8. Create Skills
+  if (data.skills && workspaceId) {
+    const skillKeys = ['claude-desktop-agent', 'web-assistant-agent'];
+    for (let i = 0; i < data.skills.length; i++) {
+      const skill = data.skills[i];
+      // Create the skill first
+      const skillMutation = `
+        mutation AddSkill($workspaceId: ID!) {
+          addSkill(input: {
+            name: "${skill.name}"
+            description: "${skill.description ?? ''}"
             createdAt: "${now}"
             workspace: { id: $workspaceId }
           }) {
-            toolSet {
+            skill {
               id
               name
             }
@@ -401,19 +401,19 @@ export async function seedDatabase(data: SeedData): Promise<Record<string, strin
       `;
       try {
         const result = await dgraphQL<{
-          addToolSet: { toolSet: Array<{ id: string; name: string }> };
-        }>(toolSetMutation, { workspaceId });
+          addSkill: { skill: Array<{ id: string; name: string }> };
+        }>(skillMutation, { workspaceId });
 
-        const toolSetId = result.addToolSet.toolSet[0].id;
-        const toolSetKey = toolSet.name.toLowerCase().replace(/\s+/g, '-');
-        entityIds[`toolset-${toolSetKey}`] = toolSetId;
-        // Store toolset ID for cross-referencing
-        entityIds[toolsetKeys[i]] = toolSetId;
+        const skillId = result.addSkill.skill[0].id;
+        const skillKey = skill.name.toLowerCase().replace(/\s+/g, '-');
+        entityIds[`skill-${skillKey}`] = skillId;
+        // Store skill ID for cross-referencing
+        entityIds[skillKeys[i]] = skillId;
 
-        // Link tools to the toolSet using direct Dgraph mutations
-        if (toolSet.toolIds && toolSet.toolIds.length > 0) {
+        // Link tools to the skill using direct Dgraph mutations
+        if (skill.toolIds && skill.toolIds.length > 0) {
           const toolIdsToLink: string[] = [];
-          for (const toolName of toolSet.toolIds) {
+          for (const toolName of skill.toolIds) {
             const toolKey = toolName.replace(/[^a-zA-Z0-9]/g, '_');
             const toolId = entityIds[toolKey];
             if (toolId) {
@@ -424,14 +424,14 @@ export async function seedDatabase(data: SeedData): Promise<Record<string, strin
           if (toolIdsToLink.length > 0) {
             const toolRefs = toolIdsToLink.map(id => `{ id: "${id}" }`).join(', ');
             const linkMutation = `
-              mutation LinkToolsToToolSet($toolSetId: ID!) {
-                updateToolSet(input: {
-                  filter: { id: [$toolSetId] }
+              mutation LinkToolsToSkill($skillId: ID!) {
+                updateSkill(input: {
+                  filter: { id: [$skillId] }
                   set: {
                     mcpTools: [${toolRefs}]
                   }
                 }) {
-                  toolSet {
+                  skill {
                     id
                     name
                   }
@@ -439,14 +439,14 @@ export async function seedDatabase(data: SeedData): Promise<Record<string, strin
               }
             `;
             try {
-              await dgraphQL(linkMutation, { toolSetId });
+              await dgraphQL(linkMutation, { skillId });
             } catch (error) {
-              testWarn(`Failed to link tools to toolSet ${toolSet.name}:`, error);
+              testWarn(`Failed to link tools to skill ${skill.name}:`, error);
             }
           }
         }
       } catch (error) {
-        testWarn(`Failed to seed toolSet ${toolSet.name}:`, error);
+        testWarn(`Failed to seed skill ${skill.name}:`, error);
       }
     }
   }

@@ -4,7 +4,7 @@
  * This file contains realistic, comprehensive fixture data for E2E testing:
  * - Multiple MCP servers with different transports (STDIO, SSE, STREAM)
  * - Realistic tools with proper schemas and descriptions
- * - Tool sets (agent-capable runtimes) with various tool combinations
+ * - Skills (agent-capable runtimes) with various tool combinations
  * - Tool call history with different states (success, error, pending)
  *
  * WHY: Enables thorough UI and navigation testing without requiring live MCP server integrations.
@@ -185,7 +185,7 @@ const GIT_COMMIT_SCHEMA = JSON.stringify({
  * - 3 registry servers
  * - 23 tools across servers
  * - 2 runtimes
- * - 2 tool sets (agent-capable runtimes)
+ * - 2 skills (agent-capable runtimes)
  * - 15 tool calls (various states)
  */
 export const comprehensiveSeededData: SeedData = {
@@ -535,7 +535,7 @@ export const comprehensiveSeededData: SeedData = {
       workspaceId: '', // Will be set during seeding
     },
   ],
-  toolSets: [
+  skills: [
     {
       name: 'Claude Desktop Agent',
       description: 'Primary agent runtime for Claude Desktop application with filesystem and development tools',

@@ -17,7 +17,7 @@ query GetMCPTools($workspaceId: ID!) {
       repositoryUrl
       runOn
     }
-    toolSets {
+    skills {
       id
       name
       description

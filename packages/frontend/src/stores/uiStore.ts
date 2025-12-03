@@ -59,15 +59,15 @@ interface UIState {
   selectedToolsetForManagement: string | null;
   setSelectedToolsetForManagement: (id: string | null) => void;
   createToolsetDialogOpen: boolean;
-  createToolsetDialogCallback: ((toolSetId: string) => void) | null;
-  openCreateToolsetDialog: (onSuccess?: (toolSetId: string) => void) => void;
+  createToolsetDialogCallback: ((skillId: string) => void) | null;
+  openCreateToolsetDialog: (onSuccess?: (skillId: string) => void) => void;
   closeCreateToolsetDialog: () => void;
   connectToolsetDialogOpen: boolean;
   setConnectToolsetDialogOpen: (open: boolean) => void;
   selectedToolsetNameForConnection: string | null;
-  setSelectedToolsetNameForConnection: (toolsetName: string | null) => void;
+  setSelectedToolsetNameForConnection: (skillName: string | null) => void;
   selectedToolsetIdForConnection: string | null;
-  setSelectedToolsetIdForConnection: (toolsetId: string | null) => void;
+  setSelectedToolsetIdForConnection: (skillId: string | null) => void;
 
 
 
@@ -165,9 +165,9 @@ export const useUIStore = create<UIState>()(
         connectToolsetDialogOpen: false,
         setConnectToolsetDialogOpen: (open) => set({ connectToolsetDialogOpen: open }),
         selectedToolsetNameForConnection: null,
-        setSelectedToolsetNameForConnection: (toolsetName) => set({ selectedToolsetNameForConnection: toolsetName }),
+        setSelectedToolsetNameForConnection: (skillName) => set({ selectedToolsetNameForConnection: skillName }),
         selectedToolsetIdForConnection: null,
-        setSelectedToolsetIdForConnection: (toolsetId) => set({ selectedToolsetIdForConnection: toolsetId }),
+        setSelectedToolsetIdForConnection: (skillId) => set({ selectedToolsetIdForConnection: skillId }),
 
 
 

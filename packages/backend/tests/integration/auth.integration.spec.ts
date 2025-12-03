@@ -697,7 +697,7 @@ describe('Authentication Integration Tests', () => {
       }
     });
 
-    it('should deny access to toolSets of another users workspace', async () => {
+    it('should deny access to skills of another users workspace', async () => {
       const registerMutation = `
         mutation RegisterUser($input: RegisterUserInput!) {
           registerUser(input: $input) {
@@ -710,7 +710,7 @@ describe('Authentication Integration Tests', () => {
       `;
 
       // Register User A
-      const userAEmail = `usera-toolsets-${Date.now()}@2ly.ai`;
+      const userAEmail = `usera-skills-${Date.now()}@2ly.ai`;
       const userAResult = await graphql(registerMutation, {
         input: {
           email: userAEmail,
@@ -731,7 +731,7 @@ describe('Authentication Integration Tests', () => {
       const userAWorkspaceId = userAWorkspaces.workspaces[0].id;
 
       // Register User B
-      const userBEmail = `userb-toolsets-${Date.now()}@2ly.ai`;
+      const userBEmail = `userb-skills-${Date.now()}@2ly.ai`;
       const userBResult = await graphql(registerMutation, {
         input: {
           email: userBEmail,
@@ -740,10 +740,10 @@ describe('Authentication Integration Tests', () => {
       });
       const userBToken = userBResult.registerUser.tokens.accessToken;
 
-      // User B tries to access User A's toolSets
-      const toolSetsQuery = `
-        query GetToolSets($workspaceId: ID!) {
-          toolSets(workspaceId: $workspaceId) {
+      // User B tries to access User A's skills
+      const skillsQuery = `
+        query GetSkills($workspaceId: ID!) {
+          skills(workspaceId: $workspaceId) {
             id
             name
           }
@@ -751,7 +751,7 @@ describe('Authentication Integration Tests', () => {
       `;
 
       try {
-        await authenticatedGraphql(toolSetsQuery, userBToken, { workspaceId: userAWorkspaceId });
+        await authenticatedGraphql(skillsQuery, userBToken, { workspaceId: userAWorkspaceId });
         expect(true).toBe(false);
       } catch (error) {
         expect((error as Error).message).toContain('FORBIDDEN');
@@ -1051,7 +1051,7 @@ describe('Authentication Integration Tests', () => {
       }
     });
 
-    it('should deny access to toolsetKey of another users toolset', async () => {
+    it('should deny access to skillKey of another users skill', async () => {
       const registerMutation = `
         mutation RegisterUser($input: RegisterUserInput!) {
           registerUser(input: $input) {
@@ -1063,8 +1063,8 @@ describe('Authentication Integration Tests', () => {
         }
       `;
 
-      // Register User A and create a toolset
-      const userAEmail = `usera-toolsetkey-${Date.now()}@2ly.ai`;
+      // Register User A and create a skill
+      const userAEmail = `usera-skillkey-${Date.now()}@2ly.ai`;
       const userAResult = await graphql(registerMutation, {
         input: {
           email: userAEmail,
@@ -1084,25 +1084,25 @@ describe('Authentication Integration Tests', () => {
       const userAWorkspaces = await authenticatedGraphql(workspacesQuery, userAToken);
       const userAWorkspaceId = userAWorkspaces.workspaces[0].id;
 
-      // User A creates a ToolSet
-      const createToolSetMutation = `
-        mutation CreateToolSet($name: String!, $description: String!, $workspaceId: ID!) {
-          createToolSet(name: $name, description: $description, workspaceId: $workspaceId) {
+      // User A creates a Skill
+      const createSkillMutation = `
+        mutation CreateSkill($name: String!, $description: String!, $workspaceId: ID!) {
+          createSkill(name: $name, description: $description, workspaceId: $workspaceId) {
             id
             name
           }
         }
       `;
 
-      const toolSetResult = await authenticatedGraphql(createToolSetMutation, userAToken, {
-        name: 'User A ToolSet',
-        description: 'A test tool set',
+      const skillResult = await authenticatedGraphql(createSkillMutation, userAToken, {
+        name: 'User A Skill',
+        description: 'A test skill',
         workspaceId: userAWorkspaceId,
       });
-      const toolsetId = toolSetResult.createToolSet.id;
+      const skillId = skillResult.createSkill.id;
 
       // Register User B
-      const userBEmail = `userb-toolsetkey-${Date.now()}@2ly.ai`;
+      const userBEmail = `userb-skillkey-${Date.now()}@2ly.ai`;
       const userBResult = await graphql(registerMutation, {
         input: {
           email: userBEmail,
@@ -1111,10 +1111,10 @@ describe('Authentication Integration Tests', () => {
       });
       const userBToken = userBResult.registerUser.tokens.accessToken;
 
-      // User B tries to access User A's toolset key
-      const toolsetKeyQuery = `
-        query GetToolsetKey($toolsetId: ID!) {
-          toolsetKey(toolsetId: $toolsetId) {
+      // User B tries to access User A's skill key
+      const skillKeyQuery = `
+        query GetToolsetKey($skillId: ID!) {
+          skillKey(skillId: $skillId) {
             id
             key
           }
@@ -1122,14 +1122,14 @@ describe('Authentication Integration Tests', () => {
       `;
 
       try {
-        await authenticatedGraphql(toolsetKeyQuery, userBToken, { toolsetId });
+        await authenticatedGraphql(skillKeyQuery, userBToken, { skillId });
         expect(true).toBe(false);
       } catch (error) {
         expect((error as Error).message).toContain('FORBIDDEN');
       }
     });
 
-    it('should deny access to toolsetKey query when not authenticated', async () => {
+    it('should deny access to skillKey query when not authenticated', async () => {
       const registerMutation = `
         mutation RegisterUser($input: RegisterUserInput!) {
           registerUser(input: $input) {
@@ -1141,8 +1141,8 @@ describe('Authentication Integration Tests', () => {
         }
       `;
 
-      // Register and create a toolset
-      const uniqueEmail = `toolsetkey-auth-${Date.now()}@2ly.ai`;
+      // Register and create a skill
+      const uniqueEmail = `skillkey-auth-${Date.now()}@2ly.ai`;
       const registerResult = await graphql(registerMutation, {
         input: {
           email: uniqueEmail,
@@ -1161,26 +1161,26 @@ describe('Authentication Integration Tests', () => {
       const workspacesResult = await authenticatedGraphql(workspacesQuery, accessToken);
       const workspaceId = workspacesResult.workspaces[0].id;
 
-      // Create a ToolSet
-      const createToolSetMutation = `
-        mutation CreateToolSet($name: String!, $description: String!, $workspaceId: ID!) {
-          createToolSet(name: $name, description: $description, workspaceId: $workspaceId) {
+      // Create a Skill
+      const createSkillMutation = `
+        mutation CreateSkill($name: String!, $description: String!, $workspaceId: ID!) {
+          createSkill(name: $name, description: $description, workspaceId: $workspaceId) {
             id
           }
         }
       `;
 
-      const toolSetResult = await authenticatedGraphql(createToolSetMutation, accessToken, {
-        name: 'Test ToolSet',
-        description: 'A test tool set',
+      const skillResult = await authenticatedGraphql(createSkillMutation, accessToken, {
+        name: 'Test Skill',
+        description: 'A test skill',
         workspaceId,
       });
-      const toolsetId = toolSetResult.createToolSet.id;
+      const skillId = skillResult.createSkill.id;
 
-      // Try to access toolset key without authentication
-      const toolsetKeyQuery = `
-        query GetToolsetKey($toolsetId: ID!) {
-          toolsetKey(toolsetId: $toolsetId) {
+      // Try to access skill key without authentication
+      const skillKeyQuery = `
+        query GetToolsetKey($skillId: ID!) {
+          skillKey(skillId: $skillId) {
             id
             key
           }
@@ -1188,7 +1188,7 @@ describe('Authentication Integration Tests', () => {
       `;
 
       try {
-        await graphql(toolsetKeyQuery, { toolsetId });
+        await graphql(skillKeyQuery, { skillId });
         expect(true).toBe(false);
       } catch (error) {
         expect((error as Error).message).toContain('UNAUTHENTICATED');
@@ -1199,9 +1199,9 @@ describe('Authentication Integration Tests', () => {
   describe('Mutation Authorization', () => {
     /**
      * Test Category A: Direct workspaceId mutations
-     * createToolSet requires workspaceId parameter
+     * createSkill requires workspaceId parameter
      */
-    it('should deny createToolSet mutation when not authenticated', async () => {
+    it('should deny createSkill mutation when not authenticated', async () => {
       const registerMutation = `
         mutation RegisterUser($input: RegisterUserInput!) {
           registerUser(input: $input) {
@@ -1213,7 +1213,7 @@ describe('Authentication Integration Tests', () => {
         }
       `;
 
-      const uniqueEmail = `toolset-auth-${Date.now()}@2ly.ai`;
+      const uniqueEmail = `skill-auth-${Date.now()}@2ly.ai`;
       const registerResult = await graphql(registerMutation, {
         input: {
           email: uniqueEmail,
@@ -1232,10 +1232,10 @@ describe('Authentication Integration Tests', () => {
       const workspacesResult = await authenticatedGraphql(workspacesQuery, accessToken);
       const workspaceId = workspacesResult.workspaces[0].id;
 
-      // Try to create ToolSet without authentication
-      const createToolSetMutation = `
-        mutation CreateToolSet($name: String!, $description: String!, $workspaceId: ID!) {
-          createToolSet(name: $name, description: $description, workspaceId: $workspaceId) {
+      // Try to create Skill without authentication
+      const createSkillMutation = `
+        mutation CreateSkill($name: String!, $description: String!, $workspaceId: ID!) {
+          createSkill(name: $name, description: $description, workspaceId: $workspaceId) {
             id
             name
           }
@@ -1243,9 +1243,9 @@ describe('Authentication Integration Tests', () => {
       `;
 
       try {
-        await graphql(createToolSetMutation, {
-          name: 'Test ToolSet',
-          description: 'A test tool set',
+        await graphql(createSkillMutation, {
+          name: 'Test Skill',
+          description: 'A test skill',
           workspaceId,
         });
         expect(true).toBe(false);
@@ -1254,7 +1254,7 @@ describe('Authentication Integration Tests', () => {
       }
     });
 
-    it('should deny createToolSet mutation in another users workspace', async () => {
+    it('should deny createSkill mutation in another users workspace', async () => {
       const registerMutation = `
         mutation RegisterUser($input: RegisterUserInput!) {
           registerUser(input: $input) {
@@ -1267,7 +1267,7 @@ describe('Authentication Integration Tests', () => {
       `;
 
       // Register User A
-      const userAEmail = `usera-toolset-mut-${Date.now()}@2ly.ai`;
+      const userAEmail = `usera-skill-mut-${Date.now()}@2ly.ai`;
       const userAResult = await graphql(registerMutation, {
         input: {
           email: userAEmail,
@@ -1288,7 +1288,7 @@ describe('Authentication Integration Tests', () => {
       const userAWorkspaceId = userAWorkspaces.workspaces[0].id;
 
       // Register User B
-      const userBEmail = `userb-toolset-mut-${Date.now()}@2ly.ai`;
+      const userBEmail = `userb-skill-mut-${Date.now()}@2ly.ai`;
       const userBResult = await graphql(registerMutation, {
         input: {
           email: userBEmail,
@@ -1297,10 +1297,10 @@ describe('Authentication Integration Tests', () => {
       });
       const userBToken = userBResult.registerUser.tokens.accessToken;
 
-      // User B tries to create a ToolSet in User A's workspace
-      const createToolSetMutation = `
-        mutation CreateToolSet($name: String!, $description: String!, $workspaceId: ID!) {
-          createToolSet(name: $name, description: $description, workspaceId: $workspaceId) {
+      // User B tries to create a Skill in User A's workspace
+      const createSkillMutation = `
+        mutation CreateSkill($name: String!, $description: String!, $workspaceId: ID!) {
+          createSkill(name: $name, description: $description, workspaceId: $workspaceId) {
             id
             name
           }
@@ -1308,8 +1308,8 @@ describe('Authentication Integration Tests', () => {
       `;
 
       try {
-        await authenticatedGraphql(createToolSetMutation, userBToken, {
-          name: 'Malicious ToolSet',
+        await authenticatedGraphql(createSkillMutation, userBToken, {
+          name: 'Malicious Skill',
           description: 'Trying to create in wrong workspace',
           workspaceId: userAWorkspaceId,
         });
@@ -1425,57 +1425,57 @@ describe('Authentication Integration Tests', () => {
       const workspacesResult = await authenticatedGraphql(workspacesQuery, accessToken);
       const workspaceId = workspacesResult.workspaces[0].id;
 
-      // Create a ToolSet in own workspace - should succeed
-      const createToolSetMutation = `
-        mutation CreateToolSet($name: String!, $description: String!, $workspaceId: ID!) {
-          createToolSet(name: $name, description: $description, workspaceId: $workspaceId) {
+      // Create a Skill in own workspace - should succeed
+      const createSkillMutation = `
+        mutation CreateSkill($name: String!, $description: String!, $workspaceId: ID!) {
+          createSkill(name: $name, description: $description, workspaceId: $workspaceId) {
             id
             name
           }
         }
       `;
 
-      const createResult = await authenticatedGraphql(createToolSetMutation, accessToken, {
-        name: 'My ToolSet',
-        description: 'My own tool set',
+      const createResult = await authenticatedGraphql(createSkillMutation, accessToken, {
+        name: 'My Skill',
+        description: 'My own skill',
         workspaceId,
       });
 
-      expect(createResult.createToolSet).toBeDefined();
-      expect(createResult.createToolSet.name).toBe('My ToolSet');
+      expect(createResult.createSkill).toBeDefined();
+      expect(createResult.createSkill.name).toBe('My Skill');
 
-      // Update the ToolSet - should succeed
-      const updateToolSetMutation = `
-        mutation UpdateToolSet($id: ID!, $name: String!, $description: String!) {
-          updateToolSet(id: $id, name: $name, description: $description) {
+      // Update the Skill - should succeed
+      const updateSkillMutation = `
+        mutation UpdateSkill($id: ID!, $name: String!, $description: String!) {
+          updateSkill(id: $id, name: $name, description: $description) {
             id
             name
           }
         }
       `;
 
-      const updateResult = await authenticatedGraphql(updateToolSetMutation, accessToken, {
-        id: createResult.createToolSet.id,
-        name: 'My Updated ToolSet',
+      const updateResult = await authenticatedGraphql(updateSkillMutation, accessToken, {
+        id: createResult.createSkill.id,
+        name: 'My Updated Skill',
         description: 'Updated description',
       });
 
-      expect(updateResult.updateToolSet.name).toBe('My Updated ToolSet');
+      expect(updateResult.updateSkill.name).toBe('My Updated Skill');
 
-      // Delete the ToolSet - should succeed
-      const deleteToolSetMutation = `
-        mutation DeleteToolSet($id: ID!) {
-          deleteToolSet(id: $id) {
+      // Delete the Skill - should succeed
+      const deleteSkillMutation = `
+        mutation DeleteSkill($id: ID!) {
+          deleteSkill(id: $id) {
             id
           }
         }
       `;
 
-      const deleteResult = await authenticatedGraphql(deleteToolSetMutation, accessToken, {
-        id: createResult.createToolSet.id,
+      const deleteResult = await authenticatedGraphql(deleteSkillMutation, accessToken, {
+        id: createResult.createSkill.id,
       });
 
-      expect(deleteResult.deleteToolSet.id).toBe(createResult.createToolSet.id);
+      expect(deleteResult.deleteSkill.id).toBe(createResult.createSkill.id);
     });
   });
 });

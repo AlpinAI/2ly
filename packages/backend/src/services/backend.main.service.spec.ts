@@ -32,7 +32,7 @@ interface FakeRuntimeService {
   resetRuntimes: () => Promise<void>;
 }
 
-interface FakeToolSetService {
+interface FakeSkillService {
   start: () => Promise<void>;
   stop: () => Promise<void>;
 }
@@ -95,7 +95,7 @@ function createService(dropAllData: boolean = false) {
     resetRuntimes: vi.fn(async () => {}),
   };
 
-  const toolSetService: FakeToolSetService = {
+  const skillService: FakeSkillService = {
     start: vi.fn(async () => {}),
     stop: vi.fn(async () => {}),
   };
@@ -141,7 +141,7 @@ function createService(dropAllData: boolean = false) {
     dgraphService as unknown as import('./dgraph.service').DGraphService,
     apolloService as unknown as import('./apollo.service').ApolloService,
     runtimeService as unknown as import('./runtime.service').RuntimeService,
-    toolSetService as unknown as import('./toolset.service').ToolSetService,
+    skillService as unknown as import('./skill.service').SkillService,
     fastifyService as unknown as import('./fastify.service').FastifyService,
     systemRepository as unknown as import('../repositories').SystemRepository,
     workspaceRepository as unknown as import('../repositories').WorkspaceRepository,
@@ -157,7 +157,7 @@ function createService(dropAllData: boolean = false) {
     dgraphService,
     apolloService,
     runtimeService,
-    toolSetService,
+    skillService,
     fastifyService,
     systemRepository,
     workspaceRepository,
@@ -185,19 +185,19 @@ describe('MainService', () => {
     });
 
     it('starts all services in correct order', async () => {
-      const { service, dgraphService, identityService, runtimeService, toolSetService, apolloService, monitoringService } = createService();
+      const { service, dgraphService, identityService, runtimeService, skillService, apolloService, monitoringService } = createService();
       const callOrder: string[] = [];
 
       dgraphService.start = vi.fn(async () => { callOrder.push('dgraph'); });
       identityService.start = vi.fn(async () => { callOrder.push('identity'); });
       runtimeService.start = vi.fn(async () => { callOrder.push('runtime'); });
-      toolSetService.start = vi.fn(async () => { callOrder.push('toolset'); });
+      skillService.start = vi.fn(async () => { callOrder.push('skill'); });
       apolloService.start = vi.fn(async () => { callOrder.push('apollo'); });
       monitoringService.start = vi.fn(async () => { callOrder.push('monitoring'); });
 
       await service.start('test');
 
-      expect(callOrder).toEqual(['dgraph', 'identity', 'runtime', 'toolset', 'apollo', 'monitoring']);
+      expect(callOrder).toEqual(['dgraph', 'identity', 'runtime', 'skill', 'apollo', 'monitoring']);
       await service.stop('test');
     });
 
@@ -366,7 +366,7 @@ describe('MainService', () => {
 
   describe('shutdown', () => {
     it('stops all services in correct order', async () => {
-      const { service, identityService, runtimeService, apolloService, monitoringService, dgraphService, toolSetService } = createService();
+      const { service, identityService, runtimeService, apolloService, monitoringService, dgraphService, skillService } = createService();
       const callOrder: string[] = [];
 
       identityService.stop = vi.fn(async () => { callOrder.push('identity'); });
@@ -374,12 +374,12 @@ describe('MainService', () => {
       apolloService.stop = vi.fn(async () => { callOrder.push('apollo'); });
       monitoringService.stop = vi.fn(async () => { callOrder.push('monitoring'); });
       dgraphService.stop = vi.fn(async () => { callOrder.push('dgraph'); });
-      toolSetService.stop = vi.fn(async () => { callOrder.push('toolset'); });
+      skillService.stop = vi.fn(async () => { callOrder.push('skill'); });
 
       await service.start('test');
       await service.stop('test');
 
-      expect(callOrder).toEqual(['identity', 'runtime', 'apollo', 'monitoring', 'dgraph', 'toolset']);
+      expect(callOrder).toEqual(['identity', 'runtime', 'apollo', 'monitoring', 'dgraph', 'skill']);
     });
   });
 });

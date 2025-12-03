@@ -30,56 +30,56 @@ class TwolyOptions(TypedDict, total=False):
     """Configuration for the MCP runtime process.
 
     - workspace_key: Workspace key (requires name parameter)
-    - toolset_key: Toolset-specific key (standalone)
+    - skill_key: Toolset-specific key (standalone)
     - nats_servers: NATS connection URL used by the runtime. Defaults to local.
     - version: npm version/range for `@2ly/runtime` when executed via `npx`.
     - startup_timeout_seconds: Max time to wait for session initialization.
     - log_level: Optional runtime log level forwarded via env var (info, debug, warn)
     """
     workspace_key: str
-    toolset_key: str
+    skill_key: str
     nats_servers: str
     version: str
     startup_timeout_seconds: float
     log_level: str
 
-def _validate_auth(name: Optional[str], workspace_key: Optional[str], toolset_key: Optional[str]) -> None:
+def _validate_auth(name: Optional[str], workspace_key: Optional[str], skill_key: Optional[str]) -> None:
     """Validate authentication configuration.
 
     Rules:
-    - Exactly one of workspace_key or toolset_key must be provided
+    - Exactly one of workspace_key or skill_key must be provided
     - workspace_key requires name parameter
-    - toolset_key must not have name parameter
+    - skill_key must not have name parameter
 
     Raises:
         ValueError: If authentication configuration is invalid
     """
     has_workspace_key = workspace_key is not None
-    has_toolset_key = toolset_key is not None
+    has_skill_key = skill_key is not None
 
     # Must have exactly one key type
-    if not has_workspace_key and not has_toolset_key:
+    if not has_workspace_key and not has_skill_key:
         raise ValueError(
-            "Authentication required: provide either 'workspace_key' (with 'name') or 'toolset_key'. "
-            "Get keys from the 2ly UI: Settings > API Keys (workspace key) or Toolsets page (toolset key)."
+            "Authentication required: provide either 'workspace_key' (with 'name') or 'skill_key'. "
+            "Get keys from the 2ly UI: Settings > API Keys (workspace key) or Toolsets page (skill key)."
         )
 
-    if has_workspace_key and has_toolset_key:
+    if has_workspace_key and has_skill_key:
         raise ValueError(
-            "Authentication conflict: provide either 'workspace_key' or 'toolset_key', not both."
+            "Authentication conflict: provide either 'workspace_key' or 'skill_key', not both."
         )
 
     # Validate workspace_key requirements
     if has_workspace_key and not name:
         raise ValueError(
-            "When using 'workspace_key' (workspace key), you must provide a 'name' parameter to identify the toolset."
+            "When using 'workspace_key' (workspace key), you must provide a 'name' parameter to identify the skill."
         )
 
-    # Validate toolset_key requirements
-    if has_toolset_key and name:
+    # Validate skill_key requirements
+    if has_skill_key and name:
         raise ValueError(
-            "When using 'toolset_key', do not provide a 'name' parameter. "
-            "The toolset is identified by the key itself."
+            "When using 'skill_key', do not provide a 'name' parameter. "
+            "The skill is identified by the key itself."
         )
 
 class MCPTool(BaseTool):
@@ -149,16 +149,16 @@ class MCPClient:
     """Minimal MCP client with a lazy, shared session for LangChain tools.
 
     Authentication approaches:
-    1. Workspace key + toolset name (auto-discovery):
+    1. Workspace key + skill name (auto-discovery):
        MCPClient(name="My Agent", workspace_key="WSK_...", ...)
-       - Enables automatic creation and discovery of toolsets at runtime
+       - Enables automatic creation and discovery of skills at runtime
     2. Toolset-specific key (recommended):
-       MCPClient(toolset_key="TSK_...", ...)
-       - Provides granular security with access limited to one toolset
+       MCPClient(skill_key="SKL_...", ...)
+       - Provides granular security with access limited to one skill
 
     See factory methods for convenient initialization:
     - MCPClient.with_workspace_key(name, workspace_key)
-    - MCPClient.with_toolset_key(toolset_key)
+    - MCPClient.with_skill_key(skill_key)
 
     Public API:
     - get_langchain_tools(): Fetch LangChain `BaseTool` objects (starts session
@@ -179,7 +179,7 @@ class MCPClient:
         self,
         name: Optional[str] = None,
         workspace_key: Optional[str] = None,
-        toolset_key: Optional[str] = None,
+        skill_key: Optional[str] = None,
         nats_servers: str = "nats://localhost:4222",
         version: str = "latest",
         startup_timeout_seconds: float = 20.0,
@@ -190,7 +190,7 @@ class MCPClient:
         Args:
             name: Toolset name (required when using workspace_key)
             workspace_key: Workspace key (requires name parameter)
-            toolset_key: Toolset-specific key (standalone)
+            skill_key: Toolset-specific key (standalone)
             nats_servers: NATS connection URL
             version: npm version for @2ly/runtime
             startup_timeout_seconds: Max time to wait for session initialization
@@ -200,7 +200,7 @@ class MCPClient:
             ValueError: If authentication configuration is invalid
         """
         # Validate authentication
-        _validate_auth(name, workspace_key, toolset_key)
+        _validate_auth(name, workspace_key, skill_key)
 
         self.name = name
 
@@ -211,9 +211,9 @@ class MCPClient:
 
         if workspace_key:
             env["WORKSPACE_KEY"] = workspace_key
-            env["TOOLSET_NAME"] = name  # type: ignore (validated above)
-        elif toolset_key:
-            env["TOOLSET_KEY"] = toolset_key
+            env["SKILL_NAME"] = name  # type: ignore (validated above)
+        elif skill_key:
+            env["SKILL_KEY"] = skill_key
 
         if log_level:
             env["LOG_LEVEL"] = log_level
@@ -248,7 +248,7 @@ class MCPClient:
     ) -> "MCPClient":
         """Create MCPClient with workspace key for auto-discovery.
 
-        This approach enables automatic creation and discovery of toolsets
+        This approach enables automatic creation and discovery of skills
         at runtime using a workspace-level key.
 
         Args:
@@ -279,38 +279,38 @@ class MCPClient:
         )
 
     @classmethod
-    def with_toolset_key(
+    def with_skill_key(
         cls,
-        toolset_key: str,
+        skill_key: str,
         nats_servers: str = "nats://localhost:4222",
         version: str = "latest",
         startup_timeout_seconds: float = 20.0,
         log_level: Optional[str] = None
     ) -> "MCPClient":
-        """Create MCPClient with toolset-specific key (recommended).
+        """Create MCPClient with skill-specific key (recommended).
 
         This approach provides granular security by using a key specific to
-        one toolset. Recommended for better security. Requires pre-creating
-        the toolset via UI or API.
+        one skill. Recommended for better security. Requires pre-creating
+        the skill via UI or API.
 
         Args:
-            toolset_key: Toolset-specific key (get from Toolsets page in UI)
+            skill_key: Toolset-specific key (get from Toolsets page in UI)
             nats_servers: NATS connection URL
             version: npm version for @2ly/runtime
             startup_timeout_seconds: Max time to wait for session initialization
             log_level: Optional runtime log level (info, debug, warn)
 
         Returns:
-            MCPClient instance configured with toolset authentication
+            MCPClient instance configured with skill authentication
 
         Example:
-            async with MCPClient.with_toolset_key(
-                toolset_key="TSK_abc456..."
+            async with MCPClient.with_skill_key(
+                skill_key="SKL_abc456..."
             ) as mcp:
                 tools = await mcp.get_langchain_tools()
         """
         return cls(
-            toolset_key=toolset_key,
+            skill_key=skill_key,
             nats_servers=nats_servers,
             version=version,
             startup_timeout_seconds=startup_timeout_seconds,

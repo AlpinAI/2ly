@@ -24,7 +24,7 @@ import { map } from 'rxjs/operators';
 import { createSubscriptionFromQuery } from '../helpers';
 import { INITIAL_ONBOARDING_STEPS } from './onboarding-step-definitions';
 import { INITIAL_FEATURED_SERVERS } from './initial-servers';
-import { QUERY_TOOLSETS_BY_WORKSPACE } from './toolset.operations';
+import { QUERY_SKILLS_BY_WORKSPACE } from './skill.operations';
 import { IdentityRepository } from './identity.repository';
 import { LoggerService } from '@2ly/common';
 import { SystemRepository } from './system.repository';
@@ -332,13 +332,13 @@ export class WorkspaceRepository {
         }>(QUERY_WORKSPACE_WITH_MCP_SERVERS, { workspaceId });
         shouldComplete = (servers.getWorkspace.mcpServers?.length || 0) > 0;
         break; }
-      case 'create-tool-set':
-        { // Check if workspace has at least one ToolSet with at least one tool
-        const toolSets = await this.dgraphService.query<{
-          getWorkspace: { toolSets: dgraphResolversTypes.ToolSet[] } | null;
-        }>(QUERY_TOOLSETS_BY_WORKSPACE, { workspaceId });
+      case 'create-skill':
+        { // Check if workspace has at least one Skill with at least one tool
+        const skills = await this.dgraphService.query<{
+          getWorkspace: { skills: dgraphResolversTypes.Skill[] } | null;
+        }>(QUERY_SKILLS_BY_WORKSPACE, { workspaceId });
         
-        shouldComplete = (toolSets.getWorkspace?.toolSets.some(ts => ts.mcpTools && ts.mcpTools.length > 0) ?? false);
+        shouldComplete = (skills.getWorkspace?.skills.some(ts => ts.mcpTools && ts.mcpTools.length > 0) ?? false);
         break; }
       default:
         return; // Unknown step

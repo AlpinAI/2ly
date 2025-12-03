@@ -17,7 +17,7 @@ export interface SeedData {
   users?: Array<Pick<dgraphResolversTypes.User, 'email' | 'password'>>;
   mcpServers?: Array<MCPServerSeed>;
   registryServers?: Array<RegistryServerSeed>;
-  tools?: Array<OmitGenerated<dgraphResolversTypes.McpTool, 'toolSets' | 'toolCalls' | 'workspace' | 'mcpServer'> & {
+  tools?: Array<OmitGenerated<dgraphResolversTypes.McpTool, 'skills' | 'toolCalls' | 'workspace' | 'mcpServer'> & {
     mcpServerId: string; // ID reference for seeding
   }
   >;
@@ -25,7 +25,7 @@ export interface SeedData {
     workspaceId: string; // ID reference for seeding
   }
   >;
-  toolSets?: Array<OmitGenerated<dgraphResolversTypes.ToolSet, 'mcpTools' | 'toolCalls' | 'workspace'> & {
+  skills?: Array<OmitGenerated<dgraphResolversTypes.Skill, 'mcpTools' | 'toolCalls' | 'workspace'> & {
     toolIds: string[]; // Tool name references
     workspaceId: string; // ID reference for seeding
   }>;

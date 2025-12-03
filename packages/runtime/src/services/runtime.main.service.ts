@@ -63,7 +63,7 @@ export class MainService extends Service {
       return;
     }
 
-    // Connect phase - Only when runtime or toolset is present
+    // Connect phase - Only when runtime or skill is present
     if (this.runtimeMode !== 'STANDALONE_MCP_STREAM') {
       this.logger.debug(`Starting connect phase in ${this.runtimeMode} mode`);
       try {

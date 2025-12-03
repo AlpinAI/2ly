@@ -76,9 +76,9 @@ export type McpTool = {
   lastSeenAt: Scalars['DateTime']['output'];
   mcpServer: McpServer;
   name: Scalars['String']['output'];
+  skills?: Maybe<Array<Skill>>;
   status: ActiveStatus;
   toolCalls?: Maybe<Array<ToolCall>>;
-  toolSets?: Maybe<Array<ToolSet>>;
   workspace: Workspace;
 };
 
@@ -149,6 +149,17 @@ export type Session = {
   userId: Scalars['String']['output'];
 };
 
+export type Skill = {
+  createdAt: Scalars['DateTime']['output'];
+  description?: Maybe<Scalars['String']['output']>;
+  id: Scalars['ID']['output'];
+  mcpTools?: Maybe<Array<McpTool>>;
+  name: Scalars['String']['output'];
+  toolCalls?: Maybe<Array<ToolCall>>;
+  updatedAt?: Maybe<Scalars['DateTime']['output']>;
+  workspace: Workspace;
+};
+
 export type System = {
   admins?: Maybe<Array<User>>;
   createdAt: Scalars['DateTime']['output'];
@@ -163,7 +174,7 @@ export type System = {
 
 export type ToolCall = {
   calledAt: Scalars['DateTime']['output'];
-  calledBy?: Maybe<ToolSet>;
+  calledBy?: Maybe<Skill>;
   completedAt?: Maybe<Scalars['DateTime']['output']>;
   error?: Maybe<Scalars['String']['output']>;
   executedBy?: Maybe<Runtime>;
@@ -181,17 +192,6 @@ export enum ToolCallStatus {
   Failed = 'FAILED',
   Pending = 'PENDING'
 }
-
-export type ToolSet = {
-  createdAt: Scalars['DateTime']['output'];
-  description?: Maybe<Scalars['String']['output']>;
-  id: Scalars['ID']['output'];
-  mcpTools?: Maybe<Array<McpTool>>;
-  name: Scalars['String']['output'];
-  toolCalls?: Maybe<Array<ToolCall>>;
-  updatedAt?: Maybe<Scalars['DateTime']['output']>;
-  workspace: Workspace;
-};
 
 export type User = {
   adminOfWorkspaces?: Maybe<Array<Workspace>>;
@@ -217,8 +217,8 @@ export type Workspace = {
   onboardingSteps?: Maybe<Array<OnboardingStep>>;
   registryServers?: Maybe<Array<McpRegistryServer>>;
   runtimes?: Maybe<Array<Runtime>>;
+  skills?: Maybe<Array<Skill>>;
   system: System;
-  toolSets?: Maybe<Array<ToolSet>>;
   users?: Maybe<Array<User>>;
 };
 
@@ -311,11 +311,11 @@ export type ResolversTypes = ResolversObject<{
   Runtime: ResolverTypeWrapper<Runtime>;
   RuntimeType: RuntimeType;
   Session: ResolverTypeWrapper<Session>;
+  Skill: ResolverTypeWrapper<Skill>;
   String: ResolverTypeWrapper<Scalars['String']['output']>;
   System: ResolverTypeWrapper<System>;
   ToolCall: ResolverTypeWrapper<ToolCall>;
   ToolCallStatus: ToolCallStatus;
-  ToolSet: ResolverTypeWrapper<ToolSet>;
   User: ResolverTypeWrapper<User>;
   Workspace: ResolverTypeWrapper<Workspace>;
 }>;
@@ -333,10 +333,10 @@ export type ResolversParentTypes = ResolversObject<{
   OnboardingStep: OnboardingStep;
   Runtime: Runtime;
   Session: Session;
+  Skill: Skill;
   String: Scalars['String']['output'];
   System: System;
   ToolCall: ToolCall;
-  ToolSet: ToolSet;
   User: User;
   Workspace: Workspace;
 }>;
@@ -398,9 +398,9 @@ export type McpToolResolvers<ContextType = any, ParentType extends ResolversPare
   lastSeenAt?: Resolver<ResolversTypes['DateTime'], ParentType, ContextType>;
   mcpServer?: Resolver<ResolversTypes['MCPServer'], ParentType, ContextType>;
   name?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  skills?: Resolver<Maybe<Array<ResolversTypes['Skill']>>, ParentType, ContextType>;
   status?: Resolver<ResolversTypes['ActiveStatus'], ParentType, ContextType>;
   toolCalls?: Resolver<Maybe<Array<ResolversTypes['ToolCall']>>, ParentType, ContextType>;
-  toolSets?: Resolver<Maybe<Array<ResolversTypes['ToolSet']>>, ParentType, ContextType>;
   workspace?: Resolver<ResolversTypes['Workspace'], ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
@@ -452,6 +452,18 @@ export type SessionResolvers<ContextType = any, ParentType extends ResolversPare
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
+export type SkillResolvers<ContextType = any, ParentType extends ResolversParentTypes['Skill'] = ResolversParentTypes['Skill']> = ResolversObject<{
+  createdAt?: Resolver<ResolversTypes['DateTime'], ParentType, ContextType>;
+  description?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
+  mcpTools?: Resolver<Maybe<Array<ResolversTypes['MCPTool']>>, ParentType, ContextType>;
+  name?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  toolCalls?: Resolver<Maybe<Array<ResolversTypes['ToolCall']>>, ParentType, ContextType>;
+  updatedAt?: Resolver<Maybe<ResolversTypes['DateTime']>, ParentType, ContextType>;
+  workspace?: Resolver<ResolversTypes['Workspace'], ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+}>;
+
 export type SystemResolvers<ContextType = any, ParentType extends ResolversParentTypes['System'] = ResolversParentTypes['System']> = ResolversObject<{
   admins?: Resolver<Maybe<Array<ResolversTypes['User']>>, ParentType, ContextType>;
   createdAt?: Resolver<ResolversTypes['DateTime'], ParentType, ContextType>;
@@ -467,7 +479,7 @@ export type SystemResolvers<ContextType = any, ParentType extends ResolversParen
 
 export type ToolCallResolvers<ContextType = any, ParentType extends ResolversParentTypes['ToolCall'] = ResolversParentTypes['ToolCall']> = ResolversObject<{
   calledAt?: Resolver<ResolversTypes['DateTime'], ParentType, ContextType>;
-  calledBy?: Resolver<Maybe<ResolversTypes['ToolSet']>, ParentType, ContextType>;
+  calledBy?: Resolver<Maybe<ResolversTypes['Skill']>, ParentType, ContextType>;
   completedAt?: Resolver<Maybe<ResolversTypes['DateTime']>, ParentType, ContextType>;
   error?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   executedBy?: Resolver<Maybe<ResolversTypes['Runtime']>, ParentType, ContextType>;
@@ -478,18 +490,6 @@ export type ToolCallResolvers<ContextType = any, ParentType extends ResolversPar
   status?: Resolver<ResolversTypes['ToolCallStatus'], ParentType, ContextType>;
   toolInput?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   toolOutput?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
-  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
-}>;
-
-export type ToolSetResolvers<ContextType = any, ParentType extends ResolversParentTypes['ToolSet'] = ResolversParentTypes['ToolSet']> = ResolversObject<{
-  createdAt?: Resolver<ResolversTypes['DateTime'], ParentType, ContextType>;
-  description?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
-  id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
-  mcpTools?: Resolver<Maybe<Array<ResolversTypes['MCPTool']>>, ParentType, ContextType>;
-  name?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
-  toolCalls?: Resolver<Maybe<Array<ResolversTypes['ToolCall']>>, ParentType, ContextType>;
-  updatedAt?: Resolver<Maybe<ResolversTypes['DateTime']>, ParentType, ContextType>;
-  workspace?: Resolver<ResolversTypes['Workspace'], ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
@@ -518,8 +518,8 @@ export type WorkspaceResolvers<ContextType = any, ParentType extends ResolversPa
   onboardingSteps?: Resolver<Maybe<Array<ResolversTypes['OnboardingStep']>>, ParentType, ContextType>;
   registryServers?: Resolver<Maybe<Array<ResolversTypes['MCPRegistryServer']>>, ParentType, ContextType>;
   runtimes?: Resolver<Maybe<Array<ResolversTypes['Runtime']>>, ParentType, ContextType>;
+  skills?: Resolver<Maybe<Array<ResolversTypes['Skill']>>, ParentType, ContextType>;
   system?: Resolver<ResolversTypes['System'], ParentType, ContextType>;
-  toolSets?: Resolver<Maybe<Array<ResolversTypes['ToolSet']>>, ParentType, ContextType>;
   users?: Resolver<Maybe<Array<ResolversTypes['User']>>, ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
@@ -533,9 +533,9 @@ export type Resolvers<ContextType = any> = ResolversObject<{
   OnboardingStep?: OnboardingStepResolvers<ContextType>;
   Runtime?: RuntimeResolvers<ContextType>;
   Session?: SessionResolvers<ContextType>;
+  Skill?: SkillResolvers<ContextType>;
   System?: SystemResolvers<ContextType>;
   ToolCall?: ToolCallResolvers<ContextType>;
-  ToolSet?: ToolSetResolvers<ContextType>;
   User?: UserResolvers<ContextType>;
   Workspace?: WorkspaceResolvers<ContextType>;
 }>;

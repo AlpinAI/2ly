@@ -1,5 +1,5 @@
 # Subscribe to MCP Tools
-# WHY: Real-time monitoring of MCP tools with full details including toolSet relationships
+# WHY: Real-time monitoring of MCP tools with full details including skill relationships
 subscription SubscribeMCPTools($workspaceId: ID!) {
   mcpTools(workspaceId: $workspaceId) {
     id
@@ -17,7 +17,7 @@ subscription SubscribeMCPTools($workspaceId: ID!) {
       repositoryUrl
       runOn
     }
-    toolSets {
+    skills {
       id
       name
       description

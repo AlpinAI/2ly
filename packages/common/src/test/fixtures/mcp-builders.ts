@@ -409,8 +409,8 @@ export const configureFileSystemMCPServer = async (
 };
 
 /**
- * Helper function to create a toolset dynamically via GraphQL
- * This is used in tests that need to create toolsets on the fly
+ * Helper function to create a skill dynamically via GraphQL
+ * This is used in tests that need to create skills on the fly
  *
  * @param authToken - Optional JWT token for authenticated requests
  */
@@ -433,18 +433,18 @@ export const createToolset = async (
   `;
   const toolResult = await graphql<{ mcpTools: Array<{ id: string }> }>(toolQuery, { workspaceId }, authToken);
 
-  // Create a ToolSet
-  const createToolSetMutation = `
-    mutation CreateToolSet($name: String!, $description: String!, $workspaceId: ID!) {
-      createToolSet(name: $name, description: $description, workspaceId: $workspaceId) {
+  // Create a Skill
+  const createSkillMutation = `
+    mutation CreateSkill($name: String!, $description: String!, $workspaceId: ID!) {
+      createSkill(name: $name, description: $description, workspaceId: $workspaceId) {
         id
         name
       }
     }
   `;
 
-  const toolSetResult = await graphql<{ createToolSet: { id: string; name: string } }>(
-    createToolSetMutation,
+  const skillResult = await graphql<{ createSkill: { id: string; name: string } }>(
+    createSkillMutation,
     {
       name,
       description,
@@ -453,10 +453,10 @@ export const createToolset = async (
     authToken
   );
 
-  // Add tools to the toolset
+  // Add tools to the skill
   const addToolMutation = `
-    mutation AddToolToToolSet($mcpToolId: ID!, $toolSetId: ID!) {
-      addMCPToolToToolSet(mcpToolId: $mcpToolId, toolSetId: $toolSetId) {
+    mutation AddToolToSkill($mcpToolId: ID!, $skillId: ID!) {
+      addMCPToolToSkill(mcpToolId: $mcpToolId, skillId: $skillId) {
         id
         mcpTools {
           id
@@ -471,12 +471,12 @@ export const createToolset = async (
   for (let i = 0; i < maxTools; i++) {
     await graphql(addToolMutation, {
       mcpToolId: toolResult.mcpTools[i]!.id,
-      toolSetId: toolSetResult.createToolSet.id,
+      skillId: skillResult.createSkill.id,
     }, authToken);
   }
 
   return {
-    toolsetId: toolSetResult.createToolSet.id,
+    skillId: skillResult.createSkill.id,
   };
 };
 

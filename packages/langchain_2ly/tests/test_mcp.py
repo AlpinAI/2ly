@@ -9,24 +9,24 @@ class TestMCPToolsetInitialization:
 
     def test_init_with_workspace_key(self):
         """Test initialization with workspace key and name."""
-        mcp = MCPToolset(name="test-toolset", workspace_key="WSK_test123")
+        mcp = MCPToolset(name="test-skill", workspace_key="WSK_test123")
 
-        assert mcp.name == "test-toolset"
+        assert mcp.name == "test-skill"
         assert isinstance(mcp.serverParams, StdioServerParameters)
         assert mcp.serverParams.command == "npx"
         assert mcp.serverParams.args == ["@2ly/runtime@latest"]
         assert mcp.serverParams.env["WORKSPACE_KEY"] == "WSK_test123"
-        assert mcp.serverParams.env["TOOLSET_NAME"] == "test-toolset"
+        assert mcp.serverParams.env["SKILL_NAME"] == "test-skill"
         assert mcp.serverParams.env["NATS_SERVERS"] == "nats://localhost:4222"
 
-    def test_init_with_toolset_key(self):
-        """Test initialization with toolset-specific key."""
-        mcp = MCPToolset(toolset_key="TSK_test456")
+    def test_init_with_skill_key(self):
+        """Test initialization with skill-specific key."""
+        mcp = MCPToolset(skill_key="SKL_test456")
 
         assert mcp.name is None
-        assert mcp.serverParams.env["TOOLSET_KEY"] == "TSK_test456"
+        assert mcp.serverParams.env["SKILL_KEY"] == "SKL_test456"
         assert "WORKSPACE_KEY" not in mcp.serverParams.env
-        assert "TOOLSET_NAME" not in mcp.serverParams.env
+        assert "SKILL_NAME" not in mcp.serverParams.env
 
     def test_init_with_custom_options(self):
         """Test initialization with custom NATS and version."""
@@ -48,17 +48,17 @@ class TestMCPToolsetInitialization:
     def test_init_rejects_both_keys(self):
         """Test that both keys cannot be used together."""
         with pytest.raises(ValueError, match="Authentication conflict"):
-            MCPToolset(name="test", workspace_key="WSK_123", toolset_key="TSK_456")
+            MCPToolset(name="test", workspace_key="WSK_123", skill_key="SKL_456")
 
     def test_init_workspace_key_requires_name(self):
         """Test that workspace_key requires a name."""
         with pytest.raises(ValueError, match="must provide a 'name' parameter"):
             MCPToolset(workspace_key="WSK_123")
 
-    def test_init_toolset_key_rejects_name(self):
-        """Test that toolset_key must not have a name."""
+    def test_init_skill_key_rejects_name(self):
+        """Test that skill_key must not have a name."""
         with pytest.raises(ValueError, match="do not provide a 'name' parameter"):
-            MCPToolset(name="test", toolset_key="TSK_123")
+            MCPToolset(name="test", skill_key="SKL_123")
 
 
 class TestMCPToolsetFactoryMethods:
@@ -67,24 +67,24 @@ class TestMCPToolsetFactoryMethods:
     def test_with_workspace_key(self):
         """Test with_workspace_key factory method."""
         mcp = MCPToolset.with_workspace_key(
-            name="my-toolset",
+            name="my-skill",
             workspace_key="WSK_factory",
             nats_servers="nats://factory:4222"
         )
 
-        assert mcp.name == "my-toolset"
+        assert mcp.name == "my-skill"
         assert mcp.serverParams.env["WORKSPACE_KEY"] == "WSK_factory"
-        assert mcp.serverParams.env["TOOLSET_NAME"] == "my-toolset"
+        assert mcp.serverParams.env["SKILL_NAME"] == "my-skill"
         assert mcp.serverParams.env["NATS_SERVERS"] == "nats://factory:4222"
 
-    def test_with_toolset_key(self):
-        """Test with_toolset_key factory method."""
-        mcp = MCPToolset.with_toolset_key(
-            toolset_key="TSK_factory",
+    def test_with_skill_key(self):
+        """Test with_skill_key factory method."""
+        mcp = MCPToolset.with_skill_key(
+            skill_key="SKL_factory",
             version="2.0.0"
         )
 
-        assert mcp.serverParams.env["TOOLSET_KEY"] == "TSK_factory"
+        assert mcp.serverParams.env["SKILL_KEY"] == "SKL_factory"
         assert mcp.serverParams.args == ["@2ly/runtime@2.0.0"]
         assert "WORKSPACE_KEY" not in mcp.serverParams.env
 
@@ -131,7 +131,7 @@ class TestMCPToolsetTools:
             mock_client_session.return_value.__aenter__.return_value = AsyncMock()
             mock_load_tools.return_value = mock_tools
 
-            mcp = MCPToolset.with_toolset_key(toolset_key="TSK_test")
+            mcp = MCPToolset.with_skill_key(skill_key="SKL_test")
             result = await mcp.list_tools()
 
             assert result == mock_tools
@@ -202,7 +202,7 @@ class TestMCPToolsetLifecycle:
             mock_client_session.return_value.__aexit__.return_value = None
             mock_load_tools.return_value = []
 
-            mcp = MCPToolset.with_toolset_key(toolset_key="TSK_test")
+            mcp = MCPToolset.with_skill_key(skill_key="SKL_test")
             await mcp.start()
             await mcp.get_langchain_tools()
             assert mcp._session is not None
@@ -232,7 +232,7 @@ class TestMCPToolsetEnvironmentVariables:
 
     def test_default_version(self):
         """Test default runtime version."""
-        mcp = MCPToolset.with_toolset_key(toolset_key="TSK_test")
+        mcp = MCPToolset.with_skill_key(skill_key="SKL_test")
         assert mcp.serverParams.args == ["@2ly/runtime@latest"]
 
     def test_custom_version(self):
@@ -251,5 +251,5 @@ class TestMCPToolsetEnvironmentVariables:
 
     def test_no_deprecated_workspace_id(self):
         """Test that WORKSPACE_ID is not set (deprecated)."""
-        mcp = MCPToolset.with_toolset_key(toolset_key="TSK_test")
+        mcp = MCPToolset.with_skill_key(skill_key="SKL_test")
         assert "WORKSPACE_ID" not in mcp.serverParams.env

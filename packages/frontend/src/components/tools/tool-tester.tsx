@@ -14,7 +14,7 @@
  *
  * USAGE:
  * ```tsx
- * <ToolTester toolId="tool-123" toolName="search" inputSchema={schema} runOn="TOOLSET" />
+ * <ToolTester toolId="tool-123" toolName="search" inputSchema={schema} runOn="SKILL" />
  * ```
  */
 

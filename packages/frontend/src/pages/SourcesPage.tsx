@@ -11,7 +11,7 @@
  * FEATURES:
  * - Real-time source updates (subscription)
  * - Search by name/description
- * - Filter by transport, runOn, tool set
+ * - Filter by transport, runOn, skill
  * - Click source to view details
  * - Show source configuration with masked secrets
  */
