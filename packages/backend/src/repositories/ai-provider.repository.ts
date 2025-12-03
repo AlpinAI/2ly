@@ -260,7 +260,7 @@ export class AIProviderRepository {
     }
   }
 
-  async setDefaultModel(workspaceId: string, providerModel: string): Promise<dgraphResolversTypes.AiProviderConfig> {
+  async setDefaultModel(workspaceId: string, providerModel: string): Promise<boolean> {
     try {
 
       const [providerId, model] = providerModel.split('/');
@@ -268,21 +268,20 @@ export class AIProviderRepository {
         throw new Error('Invalid model');
       }
 
-      const provider = await this.findByType(workspaceId, providerId as dgraphResolversTypes.AiProviderType);
+      const provider = await this.findByType(workspaceId, providerId.toUpperCase() as dgraphResolversTypes.AiProviderType);
       if (!provider) {
         throw new Error('Provider not found');
       }
 
-      // Activate the specified provider
-      const res = await this.dgraphService.mutation<{
-        updateAIProviderConfig: { aIProviderConfig: dgraphResolversTypes.AiProviderConfig[] };
+      await this.dgraphService.mutation<{
+        updateWorkspace: { workspace: { id: string; defaultAIModel: string }[] };
       }>(SET_DEFAULT_MODEL, {
         workspaceId,
         providerModel,
       });
 
       this.logger.info(`Set default model for workspace ${workspaceId} to ${providerModel}`);
-      return res.updateAIProviderConfig.aIProviderConfig[0];
+      return true;
     } catch (error) {
       this.logger.error(`Failed to set default model for workspace ${workspaceId} to ${providerModel}: ${error}`);
       throw new Error('Failed to set AI provider as active');

@@ -193,7 +193,7 @@ export type Mutation = {
   removeMCPToolFromToolSet: ToolSet;
   removeServerFromRegistry: McpRegistryServer;
   revokeKey: IdentityKey;
-  setDefaultAIModel: AiProviderConfig;
+  setDefaultAIModel: Scalars['Boolean']['output'];
   setGlobalRuntime: Workspace;
   unlinkMCPServerFromRuntime: McpServer;
   unsetGlobalRuntime: Workspace;
@@ -474,8 +474,8 @@ export enum OrderDirection {
 
 export type Query = {
   getAIModels: Array<Scalars['String']['output']>;
+  getAIProvider?: Maybe<AiProviderConfig>;
   getAIProviders: Array<AiProviderConfig>;
-  getAIProvier?: Maybe<AiProviderConfig>;
   getRegistryServers: Array<McpRegistryServer>;
   infra: Infra;
   isMCPAutoConfigEnabled: Scalars['Boolean']['output'];
@@ -499,13 +499,13 @@ export type QueryGetAiModelsArgs = {
 };
 
 
-export type QueryGetAiProvidersArgs = {
+export type QueryGetAiProviderArgs = {
+  provider: AiProviderType;
   workspaceId: Scalars['ID']['input'];
 };
 
 
-export type QueryGetAiProvierArgs = {
-  provider: AiProviderType;
+export type QueryGetAiProvidersArgs = {
   workspaceId: Scalars['ID']['input'];
 };
 
@@ -1053,7 +1053,7 @@ export type MutationResolvers<ContextType = object, ParentType extends Resolvers
   removeMCPToolFromToolSet?: Resolver<ResolversTypes['ToolSet'], ParentType, ContextType, RequireFields<MutationRemoveMcpToolFromToolSetArgs, 'mcpToolId' | 'toolSetId'>>;
   removeServerFromRegistry?: Resolver<ResolversTypes['MCPRegistryServer'], ParentType, ContextType, RequireFields<MutationRemoveServerFromRegistryArgs, 'serverId'>>;
   revokeKey?: Resolver<ResolversTypes['IdentityKey'], ParentType, ContextType, RequireFields<MutationRevokeKeyArgs, 'keyId'>>;
-  setDefaultAIModel?: Resolver<ResolversTypes['AIProviderConfig'], ParentType, ContextType, RequireFields<MutationSetDefaultAiModelArgs, 'defaultModel' | 'workspaceId'>>;
+  setDefaultAIModel?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType, RequireFields<MutationSetDefaultAiModelArgs, 'defaultModel' | 'workspaceId'>>;
   setGlobalRuntime?: Resolver<ResolversTypes['Workspace'], ParentType, ContextType, RequireFields<MutationSetGlobalRuntimeArgs, 'id' | 'runtimeId'>>;
   unlinkMCPServerFromRuntime?: Resolver<ResolversTypes['MCPServer'], ParentType, ContextType, RequireFields<MutationUnlinkMcpServerFromRuntimeArgs, 'mcpServerId'>>;
   unsetGlobalRuntime?: Resolver<ResolversTypes['Workspace'], ParentType, ContextType, RequireFields<MutationUnsetGlobalRuntimeArgs, 'id'>>;
@@ -1079,8 +1079,8 @@ export type OnboardingStepResolvers<ContextType = object, ParentType extends Res
 
 export type QueryResolvers<ContextType = object, ParentType extends ResolversParentTypes['Query'] = ResolversParentTypes['Query']> = {
   getAIModels?: Resolver<Array<ResolversTypes['String']>, ParentType, ContextType, RequireFields<QueryGetAiModelsArgs, 'workspaceId'>>;
+  getAIProvider?: Resolver<Maybe<ResolversTypes['AIProviderConfig']>, ParentType, ContextType, RequireFields<QueryGetAiProviderArgs, 'provider' | 'workspaceId'>>;
   getAIProviders?: Resolver<Array<ResolversTypes['AIProviderConfig']>, ParentType, ContextType, RequireFields<QueryGetAiProvidersArgs, 'workspaceId'>>;
-  getAIProvier?: Resolver<Maybe<ResolversTypes['AIProviderConfig']>, ParentType, ContextType, RequireFields<QueryGetAiProvierArgs, 'provider' | 'workspaceId'>>;
   getRegistryServers?: Resolver<Array<ResolversTypes['MCPRegistryServer']>, ParentType, ContextType, RequireFields<QueryGetRegistryServersArgs, 'workspaceId'>>;
   infra?: Resolver<ResolversTypes['Infra'], ParentType, ContextType>;
   isMCPAutoConfigEnabled?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;

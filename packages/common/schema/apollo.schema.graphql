@@ -399,7 +399,7 @@ type Mutation {
     baseUrl: String
   ): AIProviderValidation!
 
-  setDefaultAIModel(workspaceId: ID!, defaultModel: String!): AIProviderConfig!
+  setDefaultAIModel(workspaceId: ID!, defaultModel: String!): Boolean!
 
   removeAIProvider(providerId: ID!): Boolean!
 

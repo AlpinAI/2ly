@@ -205,7 +205,7 @@ export type Mutation = {
   removeMCPToolFromToolSet: ToolSet;
   removeServerFromRegistry: McpRegistryServer;
   revokeKey: IdentityKey;
-  setDefaultAIModel: AiProviderConfig;
+  setDefaultAIModel: Scalars['Boolean']['output'];
   setGlobalRuntime: Workspace;
   unlinkMCPServerFromRuntime: McpServer;
   unsetGlobalRuntime: Workspace;
@@ -488,8 +488,8 @@ export enum OrderDirection {
 export type Query = {
   __typename: 'Query';
   getAIModels: Array<Scalars['String']['output']>;
+  getAIProvider: Maybe<AiProviderConfig>;
   getAIProviders: Array<AiProviderConfig>;
-  getAIProvier: Maybe<AiProviderConfig>;
   getRegistryServers: Array<McpRegistryServer>;
   infra: Infra;
   isMCPAutoConfigEnabled: Scalars['Boolean']['output'];
@@ -513,13 +513,13 @@ export type QueryGetAiModelsArgs = {
 };
 
 
-export type QueryGetAiProvidersArgs = {
+export type QueryGetAiProviderArgs = {
+  provider: AiProviderType;
   workspaceId: Scalars['ID']['input'];
 };
 
 
-export type QueryGetAiProvierArgs = {
-  provider: AiProviderType;
+export type QueryGetAiProvidersArgs = {
   workspaceId: Scalars['ID']['input'];
 };
 

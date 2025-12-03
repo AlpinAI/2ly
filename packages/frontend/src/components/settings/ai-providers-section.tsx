@@ -55,7 +55,6 @@ export function AIProvidersSection() {
     },
     {} as Record<AiProviderType, AiProviderConfig>
   );
-  console.log(providerConfigMap);
 
   const handleOpenConfigureDialog = (provider: AiProviderType) => {
     setSelectedProvider(provider);
@@ -116,7 +115,6 @@ export function AIProvidersSection() {
           <div className="space-y-3">
             {ALL_PROVIDERS.map((providerType) => {
               const config = providerConfigMap[providerType];
-              console.log(config);
               const info = PROVIDER_INFO[providerType];
               const isConfigured = config !== undefined;
 
