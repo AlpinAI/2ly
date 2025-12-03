@@ -649,8 +649,8 @@ describe('AIProviderService', () => {
         const result = await service.configure('workspace-1', provider);
 
         expect(result.valid).toBe(true);
-        // testConfiguration sets baseUrl to 'http://localhost:11434' (no /api), then '/tags' is appended
-        expect(mockFetch).toHaveBeenCalledWith('http://localhost:11434/tags');
+        // testConfiguration sets baseUrl to 'http://localhost:11434', then '/api/tags' is appended
+        expect(mockFetch).toHaveBeenCalledWith('http://localhost:11434/api/tags');
       });
 
       it('should use custom baseUrl for Ollama if provided', async () => {
@@ -677,7 +677,7 @@ describe('AIProviderService', () => {
 
         await service.configure('workspace-1', provider, undefined, baseUrl);
 
-        expect(mockFetch).toHaveBeenCalledWith(`${baseUrl}/tags`);
+        expect(mockFetch).toHaveBeenCalledWith(`${baseUrl}/api/tags`);
       });
 
       it('should handle Ollama connection error', async () => {
@@ -828,7 +828,7 @@ describe('AIProviderService', () => {
 
         await service.configure('workspace-1', provider);
 
-        expect(mockFetch).toHaveBeenCalledWith('http://localhost:11434/tags');
+        expect(mockFetch).toHaveBeenCalledWith('http://localhost:11434/api/tags');
       });
 
       it('should return validation result with available models on success', async () => {

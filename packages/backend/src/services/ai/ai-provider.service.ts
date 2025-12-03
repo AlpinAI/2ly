@@ -1,5 +1,5 @@
 import { inject, injectable } from 'inversify';
-import { LoggerService, dgraphResolversTypes, EncryptionService } from '@2ly/common';
+import { LoggerService, dgraphResolversTypes, EncryptionService, DEFAULT_OLLAMA_BASE_URL } from '@2ly/common';
 import pino from 'pino';
 import { generateText, streamText, type LanguageModel } from 'ai';
 import { createOpenAI } from '@ai-sdk/openai';
@@ -27,13 +27,6 @@ const PROVIDER_REQUIRES_KEY: Record<AIProviderType, boolean> = {
   anthropic: true,
   google: true,
   ollama: false,
-};
-
-const _STATIC_MODELS: Record<AIProviderType, string[]> = {
-  openai: ['gpt-4o', 'gpt-4o-mini', 'gpt-4-turbo', 'gpt-3.5-turbo'],
-  anthropic: ['claude-sonnet-4-20250514', 'claude-3-5-sonnet-20241022', 'claude-3-haiku-20240307'],
-  google: [],
-  ollama: [],
 };
 
 /**
@@ -103,7 +96,7 @@ export class AIProviderService {
         }
       case 'ollama':
         {
-          const host = config.baseUrl || 'http://localhost:11434/api';
+          const host = config.baseUrl || DEFAULT_OLLAMA_BASE_URL;
           const res = await fetch(`${host}/tags`);
           if (!res.ok) throw new Error(`Ollama error: ${await res.text()}`);
           const data: { models: { name: string }[] } = await res.json();
@@ -149,9 +142,6 @@ export class AIProviderService {
       return { valid: false, error: `${provider} requires an API key` };
     }
 
-    if (provider === 'ollama' && !baseUrl) {
-      baseUrl = 'http://localhost:11434';
-    }
 
     try {
       const availableModels = await this.listProviderModels(provider, { apiKey, baseUrl });

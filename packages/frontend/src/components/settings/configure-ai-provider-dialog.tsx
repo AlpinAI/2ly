@@ -14,6 +14,7 @@ import { useNotification } from '@/contexts/NotificationContext';
 import { X, Eye, EyeOff, AlertCircle, CheckCircle, Loader2 } from 'lucide-react';
 import { AiProviderType, type AiProviderConfig } from '@/graphql/generated/graphql';
 import { PROVIDER_INFO } from '@/hooks/useAIProviders';
+import { DEFAULT_OLLAMA_BASE_URL } from '@2ly/common';
 
 interface ConfigureAIProviderDialogProps {
   provider: AiProviderType;
@@ -53,7 +54,7 @@ export function ConfigureAIProviderDialog({
   useEffect(() => {
     if (open) {
       setApiKey('');
-      setBaseUrl(existingConfig?.baseUrl || (isOllama ? 'http://localhost:11434/api' : ''));
+      setBaseUrl(existingConfig?.baseUrl || (isOllama ? DEFAULT_OLLAMA_BASE_URL : ''));
       setShowApiKey(false);
       setResult(null);
     }
@@ -172,7 +173,7 @@ export function ConfigureAIProviderDialog({
                   <Input
                     id="baseUrl"
                     type="url"
-                    placeholder="http://localhost:11434/api"
+                    placeholder={DEFAULT_OLLAMA_BASE_URL}
                     value={baseUrl}
                     onChange={(e) => setBaseUrl(e.target.value)}
                     disabled={loading}
