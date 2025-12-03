@@ -655,7 +655,7 @@ describe('AIProviderService', () => {
 
       it('should use custom baseUrl for Ollama if provided', async () => {
         const provider: AIProviderType = 'ollama';
-        const baseUrl = 'http://custom-ollama:11434';
+        const baseUrl = 'http://custom-ollama:11434/api';
 
         mockFetch.mockResolvedValueOnce({
           ok: true,
@@ -677,7 +677,7 @@ describe('AIProviderService', () => {
 
         await service.configure('workspace-1', provider, undefined, baseUrl);
 
-        expect(mockFetch).toHaveBeenCalledWith(`${baseUrl}/api/tags`);
+        expect(mockFetch).toHaveBeenCalledWith(`${baseUrl}/tags`);
       });
 
       it('should handle Ollama connection error', async () => {
