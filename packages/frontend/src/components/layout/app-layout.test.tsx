@@ -57,6 +57,10 @@ vi.mock('@/components/skills/connect-skill-dialog-new', () => ({
   ConnectSkillDialogNew: () => null,
 }));
 
+vi.mock('@/components/skills/SkillChatDialog', () => ({
+  SkillChatDialog: () => null,
+}));
+
 const renderWithProviders = (component: React.ReactElement) => {
   return render(
     <BrowserRouter>

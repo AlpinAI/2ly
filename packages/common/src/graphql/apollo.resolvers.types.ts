@@ -70,6 +70,17 @@ export type CallToolResult = {
   success: Scalars['Boolean']['output'];
 };
 
+export type ChatMessageInput = {
+  content: Scalars['String']['input'];
+  role: ChatMessageRole;
+};
+
+export enum ChatMessageRole {
+  Assistant = 'ASSISTANT',
+  System = 'SYSTEM',
+  User = 'USER'
+}
+
 export type IdentityKey = {
   createdAt: Scalars['Date']['output'];
   description?: Maybe<Scalars['String']['output']>;
@@ -170,6 +181,7 @@ export type Mutation = {
   addServerToRegistry: McpRegistryServer;
   callMCPTool: CallToolResult;
   chatWithModel: Scalars['String']['output'];
+  chatWithSkill: Scalars['String']['output'];
   completeOnboardingStep: Scalars['Boolean']['output'];
   configureAIProvider: AiProviderValidation;
   createMCPServer: McpServer;
@@ -233,6 +245,13 @@ export type MutationCallMcpToolArgs = {
 export type MutationChatWithModelArgs = {
   message: Scalars['String']['input'];
   model: Scalars['String']['input'];
+  workspaceId: Scalars['ID']['input'];
+};
+
+
+export type MutationChatWithSkillArgs = {
+  messages: Array<ChatMessageInput>;
+  skillId: Scalars['ID']['input'];
   workspaceId: Scalars['ID']['input'];
 };
 
@@ -819,6 +838,8 @@ export type ResolversTypes = {
   AuthTokens: ResolverTypeWrapper<AuthTokens>;
   Boolean: ResolverTypeWrapper<Scalars['Boolean']['output']>;
   CallToolResult: ResolverTypeWrapper<CallToolResult>;
+  ChatMessageInput: ChatMessageInput;
+  ChatMessageRole: ChatMessageRole;
   Date: ResolverTypeWrapper<Scalars['Date']['output']>;
   Float: ResolverTypeWrapper<Scalars['Float']['output']>;
   ID: ResolverTypeWrapper<Scalars['ID']['output']>;
@@ -869,6 +890,7 @@ export type ResolversParentTypes = {
   AuthTokens: AuthTokens;
   Boolean: Scalars['Boolean']['output'];
   CallToolResult: CallToolResult;
+  ChatMessageInput: ChatMessageInput;
   Date: Scalars['Date']['output'];
   Float: Scalars['Float']['output'];
   ID: Scalars['ID']['output'];
@@ -1029,6 +1051,7 @@ export type MutationResolvers<ContextType = object, ParentType extends Resolvers
   addServerToRegistry?: Resolver<ResolversTypes['MCPRegistryServer'], ParentType, ContextType, RequireFields<MutationAddServerToRegistryArgs, 'description' | 'name' | 'repositoryUrl' | 'title' | 'version' | 'workspaceId'>>;
   callMCPTool?: Resolver<ResolversTypes['CallToolResult'], ParentType, ContextType, RequireFields<MutationCallMcpToolArgs, 'input' | 'toolId'>>;
   chatWithModel?: Resolver<ResolversTypes['String'], ParentType, ContextType, RequireFields<MutationChatWithModelArgs, 'message' | 'model' | 'workspaceId'>>;
+  chatWithSkill?: Resolver<ResolversTypes['String'], ParentType, ContextType, RequireFields<MutationChatWithSkillArgs, 'messages' | 'skillId' | 'workspaceId'>>;
   completeOnboardingStep?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType, RequireFields<MutationCompleteOnboardingStepArgs, 'stepId' | 'workspaceId'>>;
   configureAIProvider?: Resolver<ResolversTypes['AIProviderValidation'], ParentType, ContextType, RequireFields<MutationConfigureAiProviderArgs, 'provider' | 'workspaceId'>>;
   createMCPServer?: Resolver<ResolversTypes['MCPServer'], ParentType, ContextType, RequireFields<MutationCreateMcpServerArgs, 'config' | 'description' | 'name' | 'registryServerId' | 'repositoryUrl' | 'transport' | 'workspaceId'>>;

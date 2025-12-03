@@ -68,8 +68,10 @@ interface UIState {
   setSelectedSkillNameForConnection: (skillName: string | null) => void;
   selectedSkillIdForConnection: string | null;
   setSelectedSkillIdForConnection: (skillId: string | null) => void;
-
-
+  skillChatDialogOpen: boolean;
+  setSkillChatDialogOpen: (open: boolean) => void;
+  selectedSkillForChat: string | null;
+  setSelectedSkillForChat: (skillId: string | null) => void;
 
   // Tool Catalog Filters
   toolCategoryFilter: string;
@@ -168,8 +170,10 @@ export const useUIStore = create<UIState>()(
         setSelectedSkillNameForConnection: (skillName) => set({ selectedSkillNameForConnection: skillName }),
         selectedSkillIdForConnection: null,
         setSelectedSkillIdForConnection: (skillId) => set({ selectedSkillIdForConnection: skillId }),
-
-
+        skillChatDialogOpen: false,
+        setSkillChatDialogOpen: (open) => set({ skillChatDialogOpen: open }),
+        selectedSkillForChat: null,
+        setSelectedSkillForChat: (skillId) => set({ selectedSkillForChat: skillId }),
 
         // Actions
         resetFilters: () =>
@@ -303,6 +307,20 @@ export const useAddServerWorkflow = () => {
     setOpen,
     initialStep,
     setInitialStep,
+  };
+};
+
+export const useSkillChatDialog = () => {
+  const open = useUIStore((state) => state.skillChatDialogOpen);
+  const setOpen = useUIStore((state) => state.setSkillChatDialogOpen);
+  const selectedSkillId = useUIStore((state) => state.selectedSkillForChat);
+  const setSelectedSkillId = useUIStore((state) => state.setSelectedSkillForChat);
+
+  return {
+    open,
+    setOpen,
+    selectedSkillId,
+    setSelectedSkillId,
   };
 };
 

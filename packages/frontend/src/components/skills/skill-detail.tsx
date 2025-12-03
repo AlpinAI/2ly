@@ -11,12 +11,12 @@
  */
 
 import { useState, useEffect } from 'react';
-import { Bot, Wrench, Clock, Settings, Trash2, Cable, Eye, EyeOff, Copy } from 'lucide-react';
+import { Bot, Wrench, Clock, Settings, Trash2, Cable, Eye, EyeOff, Copy, MessageSquare } from 'lucide-react';
 import { Link, useParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { AutoGrowTextarea } from '@/components/ui/autogrow-textarea';
-import { useManageToolsDialog, useConnectSkillDialog } from '@/stores/uiStore';
+import { useManageToolsDialog, useConnectSkillDialog, useSkillChatDialog } from '@/stores/uiStore';
 import { useMutation, useLazyQuery } from '@apollo/client/react';
 import { useNotification } from '@/contexts/NotificationContext';
 import { DeleteSkillDocument, GetSkillKeyDocument, GetKeyValueDocument, UpdateSkillDocument } from '@/graphql/generated/graphql';
@@ -32,6 +32,7 @@ export function SkillDetail({ skill }: SkillDetailProps) {
   const { workspaceId } = useParams<{ workspaceId: string }>();
   const { setOpen, setSelectedSkillId } = useManageToolsDialog();
   const { setOpen: setConnectDialogOpen, setSelectedSkillName, setSelectedSkillId: setConnectSkillId } = useConnectSkillDialog();
+  const { setOpen: setChatDialogOpen, setSelectedSkillId: setChatSkillId } = useSkillChatDialog();
 
   const { confirm, toast } = useNotification();
   const [deleteSkill] = useMutation(DeleteSkillDocument);
@@ -70,6 +71,11 @@ export function SkillDetail({ skill }: SkillDetailProps) {
     setSelectedSkillName(skill.name);
     setConnectSkillId(skill.id);
     setConnectDialogOpen(true);
+  };
+
+  const handleChat = () => {
+    setChatSkillId(skill.id);
+    setChatDialogOpen(true);
   };
 
   // Handle name save on blur
@@ -275,6 +281,16 @@ export function SkillDetail({ skill }: SkillDetailProps) {
         >
           <Settings className="h-4 w-4 mr-2" />
           Manage Tools
+        </Button>
+
+        <Button
+          variant="default"
+          size="sm"
+          onClick={handleChat}
+          className="h-8 px-3 text-sm"
+        >
+          <MessageSquare className="h-4 w-4 mr-2" />
+          Chat
         </Button>
       </div>
 

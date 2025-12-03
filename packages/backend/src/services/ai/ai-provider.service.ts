@@ -170,7 +170,33 @@ export class AIProviderService {
         model,
         messages: [{ role: 'user', content: message }],
       });
-      return result.text;  
+      return result.text;
+    } catch (error) {
+      this.logger.error(`Failed to chat with model ${modelString}: ${error}`);
+      throw error;
+    }
+  }
+
+  /**
+   * Chat with conversation history.
+   * @param modelString - Format: "provider/model-name" (e.g., "openai/gpt-4o")
+   * @param messages - Array of message objects with role and content
+   */
+  async chatWithHistory(
+    workspaceId: string,
+    modelString: string,
+    messages: Array<{ role: 'user' | 'assistant' | 'system'; content: string }>
+  ): Promise<string> {
+    const { provider, modelName } = this.parseModelString(modelString);
+    const config = await this.getDecryptedConfig(workspaceId, provider);
+
+    const model = this.getProviderModel(provider, modelName, config);
+    try {
+      const result = await generateText({
+        model,
+        messages: messages.map(msg => ({ role: msg.role, content: msg.content })),
+      });
+      return result.text;
     } catch (error) {
       this.logger.error(`Failed to chat with model ${modelString}: ${error}`);
       throw error;

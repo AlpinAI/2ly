@@ -1,0 +1,3 @@
+mutation ChatWithSkill($workspaceId: ID!, $skillId: ID!, $messages: [ChatMessageInput!]!) {
+  chatWithSkill(workspaceId: $workspaceId, skillId: $skillId, messages: $messages)
+}

@@ -243,6 +243,18 @@ type AIModel {
   contextWindow: Int
 }
 
+# Chat message types
+input ChatMessageInput {
+  role: ChatMessageRole!
+  content: String!
+}
+
+enum ChatMessageRole {
+  USER
+  ASSISTANT
+  SYSTEM
+}
+
 # Monitoring types for scalable tool call queries
 input ToolCallFilters {
   status: [ToolCallStatus!]
@@ -404,6 +416,9 @@ type Mutation {
 
   # Chat with a specific model (format: "provider/model-name")
   chatWithModel(workspaceId: ID!, model: String!, message: String!): String!
+
+  # Chat about a skill with conversation history
+  chatWithSkill(workspaceId: ID!, skillId: ID!, messages: [ChatMessageInput!]!): String!
 }
 
 # Authentication types

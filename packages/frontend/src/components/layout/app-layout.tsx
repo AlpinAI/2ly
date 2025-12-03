@@ -37,6 +37,7 @@ import { AddServerWorkflow } from '@/components/registry/add-server-workflow';
 import { SkillManagementPanel } from '@/components/skills/skill-management-panel';
 import { CreateSkillDialog } from '@/components/skills/create-skill-dialog';
 import { ConnectSkillDialog } from '@/components/skills/connect-skill-dialog';
+import { SkillChatDialog } from '@/components/skills/SkillChatDialog';
 
 export function AppLayout() {
 
@@ -61,6 +62,7 @@ export function AppLayout() {
       {/* Global dialogs - accessible from any page */}
       <CreateSkillDialog />
       <ConnectSkillDialog />
+      <SkillChatDialog />
     </div>
   );
 }

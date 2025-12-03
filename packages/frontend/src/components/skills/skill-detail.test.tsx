@@ -14,6 +14,7 @@ import { useMutation, useLazyQuery } from '@apollo/client/react';
 vi.mock('@/stores/uiStore', () => ({
   useManageToolsDialog: vi.fn(),
   useConnectSkillDialog: vi.fn(),
+  useSkillChatDialog: vi.fn(),
 }));
 
 vi.mock('@/contexts/NotificationContext', () => ({
@@ -83,6 +84,13 @@ describe('SkillDetail - Inline Editing', () => {
       setSelectedSkillName: mockSetSelectedSkillName,
       selectedSkillId: null,
       setSelectedSkillId: mockSetConnectSkillId,
+    });
+
+    vi.mocked(uiStore.useSkillChatDialog).mockReturnValue({
+      open: false,
+      setOpen: vi.fn(),
+      selectedSkillId: null,
+      setSelectedSkillId: vi.fn(),
     });
 
     vi.mocked(NotificationContext.useNotification).mockReturnValue({
