@@ -178,17 +178,6 @@ services:
       - frontend
       - all
 
-  doc:
-    build:
-      context: ../packages/doc
-      dockerfile: Dockerfile
-    container_name: 2ly-doc
-    ports:
-      - 3010:3000
-    networks:
-      - 2ly-network
-    restart: unless-stopped
-
 volumes:
   2ly-data-dev:
     driver: local

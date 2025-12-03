@@ -151,7 +151,7 @@ describe('OnboardingCard', () => {
       }
     );
 
-    vi.mocked(uiStore.useCreateToolsetDialog).mockReturnValue({
+    vi.mocked(uiStore.useCreateSkillDialog).mockReturnValue({
       open: false,
       callback: null,
       openDialog: mockOpenCreateSkillDialog,
@@ -161,17 +161,17 @@ describe('OnboardingCard', () => {
     vi.mocked(uiStore.useManageToolsDialog).mockReturnValue({
       open: false,
       setOpen: mockSetManageToolsDialogOpen,
-      selectedToolsetId: null,
-      setSelectedToolsetId: mockSetSelectedSkillForManagement,
+      selectedSkillId: null,
+      setSelectedSkillId: mockSetSelectedSkillForManagement,
     });
 
-    vi.mocked(uiStore.useConnectToolsetDialog).mockReturnValue({
+    vi.mocked(uiStore.useConnectSkillDialog).mockReturnValue({
       open: false,
       setOpen: mockSetConnectToolsetDialogOpen,
-      selectedToolsetName: null,
-      setSelectedToolsetName: mockSetSelectedToolsetName,
-      selectedToolsetId: null,
-      setSelectedToolsetId: vi.fn(),
+      selectedSkillName: null,
+      setSelectedSkillName: mockSetSelectedToolsetName,
+      selectedSkillId: null,
+      setSelectedSkillId: vi.fn(),
     });
 
     vi.mocked(runtimeStore.useRuntimeData).mockReturnValue({
@@ -255,7 +255,7 @@ describe('OnboardingCard', () => {
       render(<OnboardingCard step={completedStep} />);
 
       expect(screen.getByText('Completed')).toBeInTheDocument();
-      expect(screen.getByText(/Tool Set connected/)).toBeInTheDocument();
+      expect(screen.getByText(/Skill connected/)).toBeInTheDocument();
     });
 
     it('applies correct styling for current step', () => {
@@ -356,23 +356,23 @@ describe('OnboardingCard', () => {
     });
   });
 
-  describe('Step 2: Create Tool Set', () => {
+  describe('Step 2: Create Skill', () => {
     const step2: OnboardingStep = {
       ...mockStep,
       stepId: 'create-skill',
       priority: 2,
     };
 
-    it('renders Create Tool Set button', () => {
+    it('renders Create Skill button', () => {
       render(<OnboardingCard step={step2} />);
 
-      expect(screen.getByRole('button', { name: /Create Tool Set/i })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /Create Skill/i })).toBeInTheDocument();
     });
 
-    it('opens Create Tool Set dialog when button clicked', () => {
+    it('opens Create Skill dialog when button clicked', () => {
       render(<OnboardingCard step={step2} />);
 
-      const button = screen.getByRole('button', { name: /Create Tool Set/i });
+      const button = screen.getByRole('button', { name: /Create Skill/i });
       fireEvent.click(button);
 
       expect(mockOpenCreateSkillDialog).toHaveBeenCalled();

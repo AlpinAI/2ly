@@ -12,7 +12,7 @@
  *
  * STEP-SPECIFIC CONTENT:
  * - Step 1: "Browse MCP Servers" button (opens Add Source Workflow)
- * - Step 2: "Create Tool Set" button (opens Create Tool Set dialog, then Manage Tools dialog)
+ * - Step 2: "Create Skill" button (opens Create Skill dialog, then Manage Tools dialog)
  * - Step 3: "Connect" button (opens Connect Agent dialog for the first agent with tools)
  */
 
@@ -26,7 +26,7 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { useUIStore, useCreateToolsetDialog, useManageToolsDialog, useConnectToolsetDialog } from '@/stores/uiStore';
+import { useUIStore, useCreateSkillDialog, useManageToolsDialog, useConnectSkillDialog } from '@/stores/uiStore';
 import { STEP_METADATA, ONBOARDING_STEPS } from '@/constants/onboarding-steps';
 import { useMCPServers } from '@/hooks/useMCPServers';
 import { useSkills } from '@/hooks/useSkills';
@@ -42,9 +42,9 @@ interface OnboardingCardProps {
 export function OnboardingCard({ step, isCurrentStep = false }: OnboardingCardProps) {
   const setAddSourceWorkflowOpen = useUIStore((state) => state.setAddSourceWorkflowOpen);
 
-  const { openDialog: openCreateToolsetDialog } = useCreateToolsetDialog();
+  const { openDialog: openCreateSkillDialog } = useCreateSkillDialog();
   const manageToolsDialog = useManageToolsDialog();
-  const { setOpen: setConnectToolsetDialogOpen, setSelectedToolsetName, setSelectedToolsetId } = useConnectToolsetDialog();
+  const { setOpen: setConnectSkillDialogOpen, setSelectedSkillName, setSelectedSkillId } = useConnectSkillDialog();
 
 
   const metadata = STEP_METADATA[step.stepId];
@@ -66,8 +66,8 @@ export function OnboardingCard({ step, isCurrentStep = false }: OnboardingCardPr
   
   // Handle creating skill with callback to open manage tools dialog
   const handleCreateSkill = () => {
-    openCreateToolsetDialog((skillId) => {
-      manageToolsDialog.setSelectedToolsetId(skillId);
+    openCreateSkillDialog((skillId) => {
+      manageToolsDialog.setSelectedSkillId(skillId);
       manageToolsDialog.setOpen(true);
     });
   };
@@ -108,7 +108,7 @@ export function OnboardingCard({ step, isCurrentStep = false }: OnboardingCardPr
         );
       }
         
-      case ONBOARDING_STEPS.CREATE_TOOL_SET: {
+      case ONBOARDING_STEPS.CREATE_SKILL: {
         const { workspaceId } = useParams<{ workspaceId: string }>();
         const { skills } = useSkills(workspaceId || '');
 
@@ -142,7 +142,7 @@ export function OnboardingCard({ step, isCurrentStep = false }: OnboardingCardPr
             variant={isCurrentStep ? "default" : "outline"}
           >
             <Plus className="mr-2 h-4 w-4" />
-            Create Tool Set
+            Create Skill
           </Button>
         );
       }
@@ -169,7 +169,7 @@ export function OnboardingCard({ step, isCurrentStep = false }: OnboardingCardPr
           }
 
           // Fallback to runtime name if no skill name in metadata
-          const displayName = skillName || 'Tool Set';
+          const displayName = skillName || 'Skill';
 
           return (
             <div className="space-y-3">
@@ -203,9 +203,9 @@ export function OnboardingCard({ step, isCurrentStep = false }: OnboardingCardPr
             <Button
               onClick={() => {
                 // Use the first skill name for connection instructions
-                setSelectedToolsetName(firstSkillWithTools.name);
-                setSelectedToolsetId(firstSkillWithTools.id);
-                setConnectToolsetDialogOpen(true);
+                setSelectedSkillName(firstSkillWithTools.name);
+                setSelectedSkillId(firstSkillWithTools.id);
+                setConnectSkillDialogOpen(true);
               }}
               className="flex-1"
               variant={isCurrentStep ? "default" : "outline"}

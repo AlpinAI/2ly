@@ -1,5 +1,5 @@
 /**
- * Create Toolset Dialog Component
+ * Create Skill Dialog Component
  *
  * WHY: Allows users to create new skills with a name and description.
  * Skills are logical groupings of tools (replaces the old "agent" concept).
@@ -12,7 +12,7 @@
  *
  * USAGE:
  * ```tsx
- * const { setOpen } = useCreateToolsetDialog();
+ * const { setOpen } = useCreateSkillDialog();
  *
  * // Open dialog
  * setOpen(true);
@@ -25,14 +25,14 @@ import * as Dialog from '@radix-ui/react-dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { useCreateToolsetDialog } from '@/stores/uiStore';
+import { useCreateSkillDialog } from '@/stores/uiStore';
 import { useParams } from 'react-router-dom';
 import { useMutation } from '@apollo/client/react';
 import { CreateSkillDocument } from '@/graphql/generated/graphql';
 import { useNotification } from '@/contexts/NotificationContext';
 
-export function CreateToolsetDialog() {
-  const { open, close, callback } = useCreateToolsetDialog();
+export function CreateSkillDialog() {
+  const { open, close, callback } = useCreateSkillDialog();
   const { workspaceId } = useParams<{ workspaceId: string }>();
   const { toast } = useNotification();
 
@@ -45,7 +45,7 @@ export function CreateToolsetDialog() {
       const skillId = data.createSkill.id;
 
       toast({
-        title: 'Toolset Created',
+        title: 'Skill Created',
         description: `"${name}" has been created successfully.`,
         variant: 'success',
       });
@@ -59,7 +59,7 @@ export function CreateToolsetDialog() {
     },
     onError: (error) => {
       toast({
-        title: 'Error Creating Toolset',
+        title: 'Error Creating Skill',
         description: error.message,
         variant: 'error',
       });
@@ -112,7 +112,7 @@ export function CreateToolsetDialog() {
             <div className="flex items-center justify-between">
               <div className="flex-1">
                 <Dialog.Title className="text-lg font-semibold text-gray-900 dark:text-white">
-                  Create Toolset
+                  Create Skill
                 </Dialog.Title>
                 <Dialog.Description className="text-sm text-gray-500 dark:text-gray-400 mt-1">
                   Create a new skill to organize your tools
@@ -174,7 +174,7 @@ export function CreateToolsetDialog() {
                 Cancel
               </Button>
               <Button type="submit" disabled={!isValid || loading}>
-                {loading ? 'Creating...' : 'Create Toolset'}
+                {loading ? 'Creating...' : 'Create Skill'}
               </Button>
             </div>
           </form>

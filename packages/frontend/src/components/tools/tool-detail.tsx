@@ -139,7 +139,7 @@ export function ToolDetail({ tool }: ToolDetailProps) {
         <div>
           <div className="flex items-center justify-between mb-2">
             <h4 className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-              Available in Tool Sets ({tool.skills?.length || 0})
+              Available in Skills ({tool.skills?.length || 0})
             </h4>
             <Button
               variant="ghost"

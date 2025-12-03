@@ -103,14 +103,14 @@ test.describe('Onboarding Flow', () => {
       await expect(step1Card.getByText('Test MCP Server', { exact: true })).toBeVisible();
     });
   
-    test('step 2 shows Create Tool Set button when pending', async ({ page }) => {
+    test('step 2 shows Create Skill button when pending', async ({ page }) => {
       // Select the step 1 card containing the step title
       const step2Card = page
-        .getByRole('heading', { name: 'Create Your First Tool Set' })
+        .getByRole('heading', { name: 'Create Your First Skill' })
         .locator('xpath=ancestor::*[contains(@class,"onboarding-card")][1]');    
       
       // Should show Create Tool Set button
-      await expect(step2Card.getByRole('button', { name: /Create Tool Set/i })).toBeVisible();
+      await expect(step2Card.getByRole('button', { name: /Create Skill/i })).toBeVisible();
     });
   
     test('step 2 shows the installed server name', async ({ page }) => {

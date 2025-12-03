@@ -42,19 +42,19 @@ vi.mock('@/components/registry/add-server-workflow', () => ({
 }));
 
 vi.mock('@/components/skills/skill-management-panel', () => ({
-  ToolsetManagementPanel: () => null,
+  SkillManagementPanel: () => null,
 }));
 
 vi.mock('@/components/skills/create-skill-dialog', () => ({
-  CreateToolsetDialog: () => null,
+  CreateSkillDialog: () => null,
 }));
 
 vi.mock('@/components/skills/connect-skill-dialog', () => ({
-  ConnectToolsetDialog: () => null,
+  ConnectSkillDialog: () => null,
 }));
 
 vi.mock('@/components/skills/connect-skill-dialog-new', () => ({
-  ConnectToolsetDialogNew: () => null,
+  ConnectSkillDialogNew: () => null,
 }));
 
 const renderWithProviders = (component: React.ReactElement) => {
@@ -80,7 +80,7 @@ describe('AppLayout', () => {
 
     // Check for nav items from AppNavigation
     expect(screen.getByText('Overview')).toBeDefined();
-    expect(screen.getByText('Tool Sets')).toBeDefined();
+    expect(screen.getByText('Skills')).toBeDefined();
   });
 
   it('renders children via Outlet', () => {

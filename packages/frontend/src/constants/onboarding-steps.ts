@@ -15,7 +15,7 @@
 
 export const ONBOARDING_STEPS = {
   INSTALL_SERVER: 'install-mcp-server',
-  CREATE_TOOL_SET: 'create-skill',
+  CREATE_SKILL: 'create-skill',
   CONNECT_AGENT: 'connect-skill-to-agent',
 } as const;
 
@@ -37,8 +37,8 @@ export const STEP_METADATA: Record<string, StepMetadata> = {
     description: 'Add your first MCP server to start using tools in your agents.',
     icon: 'server',
   },
-  [ONBOARDING_STEPS.CREATE_TOOL_SET]: {
-    title: 'Create Your First Tool Set',
+  [ONBOARDING_STEPS.CREATE_SKILL]: {
+    title: 'Create Your First Skill',
     description: 'Create a skill with at least one tool to start enriching your agents.',
     icon: 'package',
   },

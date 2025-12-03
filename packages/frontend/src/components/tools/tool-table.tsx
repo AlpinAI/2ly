@@ -7,7 +7,7 @@
  * COLUMNS:
  * - Name & Description
  * - Server
- * - # Tool Sets
+ * - # Skills
  * - Status
  *
  * FEATURES:
@@ -95,7 +95,7 @@ export function ToolTable({
           />
 
           <CheckboxDropdown
-            label="Tool Set"
+            label="Skill"
             placeholder="All skills"
             items={availableSkills.map((ts) => ({ id: ts.id, label: ts.name }))}
             selectedIds={skillFilter}
@@ -138,7 +138,7 @@ export function ToolTable({
                       Server
                     </th>
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                      Tool Sets
+                      Skills
                     </th>
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                       Status

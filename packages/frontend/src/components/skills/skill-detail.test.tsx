@@ -1,10 +1,10 @@
 /**
- * Tests for ToolsetDetail inline editing functionality
+ * Tests for SkillDetail inline editing functionality
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import { ToolsetDetail } from './skill-detail';
+import { SkillDetail } from './skill-detail';
 import * as uiStore from '@/stores/uiStore';
 import * as NotificationContext from '@/contexts/NotificationContext';
 import { BrowserRouter } from 'react-router-dom';
@@ -13,7 +13,7 @@ import { useMutation, useLazyQuery } from '@apollo/client/react';
 // Mock dependencies
 vi.mock('@/stores/uiStore', () => ({
   useManageToolsDialog: vi.fn(),
-  useConnectToolsetDialog: vi.fn(),
+  useConnectSkillDialog: vi.fn(),
 }));
 
 vi.mock('@/contexts/NotificationContext', () => ({
@@ -55,7 +55,7 @@ const mockSkill = {
   ],
 };
 
-describe('ToolsetDetail - Inline Editing', () => {
+describe('SkillDetail - Inline Editing', () => {
   const mockUpdateSkill = vi.fn();
   const mockGetToolsetKey = vi.fn();
   const mockSetOpen = vi.fn();
@@ -72,17 +72,17 @@ describe('ToolsetDetail - Inline Editing', () => {
     vi.mocked(uiStore.useManageToolsDialog).mockReturnValue({
       open: false,
       setOpen: mockSetOpen,
-      selectedToolsetId: null,
-      setSelectedToolsetId: mockSetSelectedToolsetId,
+      selectedSkillId: null,
+      setSelectedSkillId: mockSetSelectedToolsetId,
     });
 
-    vi.mocked(uiStore.useConnectToolsetDialog).mockReturnValue({
+    vi.mocked(uiStore.useConnectSkillDialog).mockReturnValue({
       open: false,
       setOpen: mockSetConnectDialogOpen,
-      selectedToolsetName: null,
-      setSelectedToolsetName: mockSetSelectedToolsetName,
-      selectedToolsetId: null,
-      setSelectedToolsetId: mockSetConnectToolsetId,
+      selectedSkillName: null,
+      setSelectedSkillName: mockSetSelectedToolsetName,
+      selectedSkillId: null,
+      setSelectedSkillId: mockSetConnectToolsetId,
     });
 
     vi.mocked(NotificationContext.useNotification).mockReturnValue({
@@ -107,7 +107,7 @@ describe('ToolsetDetail - Inline Editing', () => {
     it('allows editing skill name', () => {
       render(
         <BrowserRouter>
-          <ToolsetDetail skill={mockSkill} />
+          <SkillDetail skill={mockSkill} />
         </BrowserRouter>
       );
 
@@ -123,7 +123,7 @@ describe('ToolsetDetail - Inline Editing', () => {
 
       render(
         <BrowserRouter>
-          <ToolsetDetail skill={mockSkill} />
+          <SkillDetail skill={mockSkill} />
         </BrowserRouter>
       );
 
@@ -145,7 +145,7 @@ describe('ToolsetDetail - Inline Editing', () => {
     it('does not save name if unchanged', async () => {
       render(
         <BrowserRouter>
-          <ToolsetDetail skill={mockSkill} />
+          <SkillDetail skill={mockSkill} />
         </BrowserRouter>
       );
 
@@ -160,7 +160,7 @@ describe('ToolsetDetail - Inline Editing', () => {
     it('validates name length (minimum 3 characters)', async () => {
       render(
         <BrowserRouter>
-          <ToolsetDetail skill={mockSkill} />
+          <SkillDetail skill={mockSkill} />
         </BrowserRouter>
       );
 
@@ -181,7 +181,7 @@ describe('ToolsetDetail - Inline Editing', () => {
       const longName = 'A'.repeat(101);
       render(
         <BrowserRouter>
-          <ToolsetDetail skill={mockSkill} />
+          <SkillDetail skill={mockSkill} />
         </BrowserRouter>
       );
 
@@ -203,7 +203,7 @@ describe('ToolsetDetail - Inline Editing', () => {
 
       render(
         <BrowserRouter>
-          <ToolsetDetail skill={mockSkill} />
+          <SkillDetail skill={mockSkill} />
         </BrowserRouter>
       );
 
@@ -228,7 +228,7 @@ describe('ToolsetDetail - Inline Editing', () => {
 
       render(
         <BrowserRouter>
-          <ToolsetDetail skill={mockSkill} />
+          <SkillDetail skill={mockSkill} />
         </BrowserRouter>
       );
 
@@ -252,7 +252,7 @@ describe('ToolsetDetail - Inline Editing', () => {
     it('allows editing skill description', () => {
       render(
         <BrowserRouter>
-          <ToolsetDetail skill={mockSkill} />
+          <SkillDetail skill={mockSkill} />
         </BrowserRouter>
       );
 
@@ -267,7 +267,7 @@ describe('ToolsetDetail - Inline Editing', () => {
       const skillWithoutDescription = { ...mockSkill, description: null };
       render(
         <BrowserRouter>
-          <ToolsetDetail skill={skillWithoutDescription} />
+          <SkillDetail skill={skillWithoutDescription} />
         </BrowserRouter>
       );
 
@@ -280,7 +280,7 @@ describe('ToolsetDetail - Inline Editing', () => {
 
       render(
         <BrowserRouter>
-          <ToolsetDetail skill={mockSkill} />
+          <SkillDetail skill={mockSkill} />
         </BrowserRouter>
       );
 
@@ -302,7 +302,7 @@ describe('ToolsetDetail - Inline Editing', () => {
     it('does not save description if unchanged', async () => {
       render(
         <BrowserRouter>
-          <ToolsetDetail skill={mockSkill} />
+          <SkillDetail skill={mockSkill} />
         </BrowserRouter>
       );
 
@@ -319,7 +319,7 @@ describe('ToolsetDetail - Inline Editing', () => {
 
       render(
         <BrowserRouter>
-          <ToolsetDetail skill={mockSkill} />
+          <SkillDetail skill={mockSkill} />
         </BrowserRouter>
       );
 
@@ -342,7 +342,7 @@ describe('ToolsetDetail - Inline Editing', () => {
       const longDescription = 'A'.repeat(1001);
       render(
         <BrowserRouter>
-          <ToolsetDetail skill={mockSkill} />
+          <SkillDetail skill={mockSkill} />
         </BrowserRouter>
       );
 
@@ -365,7 +365,7 @@ describe('ToolsetDetail - Inline Editing', () => {
 
       render(
         <BrowserRouter>
-          <ToolsetDetail skill={mockSkill} />
+          <SkillDetail skill={mockSkill} />
         </BrowserRouter>
       );
 
@@ -389,7 +389,7 @@ describe('ToolsetDetail - Inline Editing', () => {
     it('resets local state when skill prop changes', () => {
       const { rerender } = render(
         <BrowserRouter>
-          <ToolsetDetail skill={mockSkill} />
+          <SkillDetail skill={mockSkill} />
         </BrowserRouter>
       );
 
@@ -400,7 +400,7 @@ describe('ToolsetDetail - Inline Editing', () => {
       const updatedSkill = { ...mockSkill, name: 'Updated Toolset' };
       rerender(
         <BrowserRouter>
-          <ToolsetDetail skill={updatedSkill} />
+          <SkillDetail skill={updatedSkill} />
         </BrowserRouter>
       );
 
@@ -412,7 +412,7 @@ describe('ToolsetDetail - Inline Editing', () => {
     it('renders editable fields alongside other UI elements', () => {
       render(
         <BrowserRouter>
-          <ToolsetDetail skill={mockSkill} />
+          <SkillDetail skill={mockSkill} />
         </BrowserRouter>
       );
 
@@ -430,7 +430,7 @@ describe('ToolsetDetail - Inline Editing', () => {
     it('displays tools list correctly', () => {
       render(
         <BrowserRouter>
-          <ToolsetDetail skill={mockSkill} />
+          <SkillDetail skill={mockSkill} />
         </BrowserRouter>
       );
 
@@ -440,7 +440,7 @@ describe('ToolsetDetail - Inline Editing', () => {
   });
 });
 
-describe('ToolsetDetail - Identity Key Copy Functionality', () => {
+describe('SkillDetail - Identity Key Copy Functionality', () => {
   const mockGetToolsetKey = vi.fn();
   const mockGetKeyValue = vi.fn();
   const mockClipboardWriteText = vi.fn();
@@ -453,17 +453,17 @@ describe('ToolsetDetail - Identity Key Copy Functionality', () => {
     vi.mocked(uiStore.useManageToolsDialog).mockReturnValue({
       open: false,
       setOpen: vi.fn(),
-      selectedToolsetId: null,
-      setSelectedToolsetId: vi.fn(),
+      selectedSkillId: null,
+      setSelectedSkillId: vi.fn(),
     });
 
-    vi.mocked(uiStore.useConnectToolsetDialog).mockReturnValue({
+    vi.mocked(uiStore.useConnectSkillDialog).mockReturnValue({
       open: false,
       setOpen: vi.fn(),
-      selectedToolsetName: null,
-      setSelectedToolsetName: vi.fn(),
-      selectedToolsetId: null,
-      setSelectedToolsetId: vi.fn(),
+      selectedSkillName: null,
+      setSelectedSkillName: vi.fn(),
+      selectedSkillId: null,
+      setSelectedSkillId: vi.fn(),
     });
 
     // Mock notification context
@@ -500,7 +500,7 @@ describe('ToolsetDetail - Identity Key Copy Functionality', () => {
   it('renders Copy button always visible (even when key is hidden)', () => {
     render(
       <BrowserRouter>
-        <ToolsetDetail skill={mockSkill} />
+        <SkillDetail skill={mockSkill} />
       </BrowserRouter>
     );
 
@@ -526,7 +526,7 @@ describe('ToolsetDetail - Identity Key Copy Functionality', () => {
 
     render(
       <BrowserRouter>
-        <ToolsetDetail skill={mockSkill} />
+        <SkillDetail skill={mockSkill} />
       </BrowserRouter>
     );
 
@@ -568,7 +568,7 @@ describe('ToolsetDetail - Identity Key Copy Functionality', () => {
 
     render(
       <BrowserRouter>
-        <ToolsetDetail skill={mockSkill} />
+        <SkillDetail skill={mockSkill} />
       </BrowserRouter>
     );
 
@@ -601,7 +601,7 @@ describe('ToolsetDetail - Identity Key Copy Functionality', () => {
 
     render(
       <BrowserRouter>
-        <ToolsetDetail skill={mockSkill} />
+        <SkillDetail skill={mockSkill} />
       </BrowserRouter>
     );
 
@@ -641,7 +641,7 @@ describe('ToolsetDetail - Identity Key Copy Functionality', () => {
 
     render(
       <BrowserRouter>
-        <ToolsetDetail skill={mockSkill} />
+        <SkillDetail skill={mockSkill} />
       </BrowserRouter>
     );
 
@@ -676,7 +676,7 @@ describe('ToolsetDetail - Identity Key Copy Functionality', () => {
 
     render(
       <BrowserRouter>
-        <ToolsetDetail skill={mockSkill} />
+        <SkillDetail skill={mockSkill} />
       </BrowserRouter>
     );
 
@@ -716,7 +716,7 @@ describe('ToolsetDetail - Identity Key Copy Functionality', () => {
 
     render(
       <BrowserRouter>
-        <ToolsetDetail skill={mockSkill} />
+        <SkillDetail skill={mockSkill} />
       </BrowserRouter>
     );
 
@@ -739,7 +739,7 @@ describe('ToolsetDetail - Identity Key Copy Functionality', () => {
 
     render(
       <BrowserRouter>
-        <ToolsetDetail skill={mockSkill} />
+        <SkillDetail skill={mockSkill} />
       </BrowserRouter>
     );
 

@@ -1,5 +1,5 @@
 /**
- * Toolsets Page
+ * Skills Page
  *
  * WHY: Manage and view skills with detailed information.
  * Shows skill list with filters and detail panel.
@@ -19,17 +19,17 @@ import { useMemo, useEffect } from 'react';
 import { Plus } from 'lucide-react';
 import { useParams } from 'react-router-dom';
 import { MasterDetailLayout } from '@/components/layout/master-detail-layout';
-import { ToolsetTable } from '@/components/skills/skill-table';
-import { ToolsetDetail } from '@/components/skills/skill-detail';
+import { SkillTable } from '@/components/skills/skill-table';
+import { SkillDetail } from '@/components/skills/skill-detail';
 import { Button } from '@/components/ui/button';
 import { useSkills } from '@/hooks/useSkills';
-import { useCreateToolsetDialog, useManageToolsDialog } from '@/stores/uiStore';
+import { useCreateSkillDialog, useManageToolsDialog } from '@/stores/uiStore';
 import { useUrlSync } from '@/hooks/useUrlSync';
 
 export default function SkillsPage() {
   const { workspaceId } = useParams<{ workspaceId: string }>();
   const { selectedId, setSelectedId } = useUrlSync();
-  const { openDialog } = useCreateToolsetDialog();
+  const { openDialog } = useCreateSkillDialog();
 
   // Fetch skills via Apollo subscription
   const { filteredSkills, loading, error, filters } = useSkills(workspaceId || '');
@@ -65,7 +65,7 @@ export default function SkillsPage() {
   const handleCreateSkill = () => {
     openDialog((skillId) => {
       setSelectedId(skillId);
-      manageToolsDialog.setSelectedToolsetId(skillId);
+      manageToolsDialog.setSelectedSkillId(skillId);
       manageToolsDialog.setOpen(true);
     });
   };
@@ -75,30 +75,30 @@ export default function SkillsPage() {
       {/* Page Header */}
       <div className="mb-6 flex items-start justify-between">
         <div>
-          <h2 className="text-3xl font-bold text-gray-900 dark:text-white">Toolsets</h2>
+          <h2 className="text-3xl font-bold text-gray-900 dark:text-white">Skills</h2>
           <p className="text-gray-500 dark:text-gray-400 mt-1">
             Manage your skills and organize your tools
           </p>
         </div>
         <Button onClick={handleCreateSkill} className="flex items-center gap-2">
           <Plus className="h-4 w-4" />
-          New Toolset
+          New Skill
         </Button>
       </div>
 
       {/* Master-Detail Layout */}
       <MasterDetailLayout
         table={
-          <ToolsetTable
+          <SkillTable
             skills={filteredSkills}
-            selectedToolsetId={selectedId}
+            selectedSkillId={selectedId}
             onSelectSkill={setSelectedId}
             search={filters.search}
             onSearchChange={filters.setSearch}
             loading={loading}
           />
         }
-        detail={selectedSkill ? <ToolsetDetail skill={selectedSkill} /> : null}
+        detail={selectedSkill ? <SkillDetail skill={selectedSkill} /> : null}
         onCloseDetail={() => setSelectedId(null)}
       />
     </div>

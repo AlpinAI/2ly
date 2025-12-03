@@ -21,7 +21,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useSkills } from '@/hooks/useSkills';
 import { useNotification } from '@/contexts/NotificationContext';
-import { useCreateToolsetDialog } from '@/stores/uiStore';
+import { useCreateSkillDialog } from '@/stores/uiStore';
 import { AddMcpToolToSkillDocument } from '@/graphql/generated/graphql';
 import type { GetMcpToolsQuery } from '@/graphql/generated/graphql';
 
@@ -37,7 +37,7 @@ export function LinkSkillDialog({ open, onOpenChange, tool }: LinkSkillDialogPro
   const { workspaceId } = useParams<{ workspaceId: string }>();
   const { skills } = useSkills(workspaceId!);
   const { toast } = useNotification();
-  const { openDialog: openCreateToolsetDialog } = useCreateToolsetDialog();
+  const { openDialog: openCreateSkillDialog } = useCreateSkillDialog();
   const [searchTerm, setSearchTerm] = useState('');
   const [isLinking, setIsLinking] = useState<string | null>(null);
 
@@ -91,14 +91,14 @@ export function LinkSkillDialog({ open, onOpenChange, tool }: LinkSkillDialogPro
     }
   }, [linkTool, tool.id, toast, onOpenChange]);
 
-  // Handle clicking "+Tool Set" button
+  // Handle clicking "+Skill" button
   const handleCreateSkill = useCallback(() => {
-    // Open the shared CreateToolsetDialog with callback to auto-link
-    openCreateToolsetDialog(async (skillId: string) => {
+    // Open the shared CreateSkillDialog with callback to auto-link
+    openCreateSkillDialog(async (skillId: string) => {
       setSearchTerm('');
       await handleLinkTool(skillId);
     });
-  }, [openCreateToolsetDialog, handleLinkTool]);
+  }, [openCreateSkillDialog, handleLinkTool]);
 
   // Reset state when dialog closes
   const handleOpenChange = useCallback((newOpen: boolean) => {
@@ -119,7 +119,7 @@ export function LinkSkillDialog({ open, onOpenChange, tool }: LinkSkillDialogPro
           <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
             <div>
               <Dialog.Title className="text-lg font-semibold text-gray-900 dark:text-white">
-                Link Tool to Tool Set
+                Link Tool to Skill
               </Dialog.Title>
               <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
                 {tool.name}
@@ -151,7 +151,7 @@ export function LinkSkillDialog({ open, onOpenChange, tool }: LinkSkillDialogPro
                 className="shrink-0"
               >
                 <Plus className="h-4 w-4 mr-1" />
-                Tool Set
+                Skill
               </Button>
             </div>
 

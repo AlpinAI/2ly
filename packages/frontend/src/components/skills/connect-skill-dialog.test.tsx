@@ -1,17 +1,17 @@
 /**
- * Tests for ConnectToolsetDialog
+ * Tests for ConnectSkillDialog
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
-import { ConnectToolsetDialog } from './connect-skill-dialog';
+import { ConnectSkillDialog } from './connect-skill-dialog';
 import * as uiStore from '@/stores/uiStore';
 import * as runtimeStore from '@/stores/runtimeStore';
 import * as useSystemInitHook from '@/hooks/useSystemInit';
 
 // Mock dependencies
 vi.mock('@/stores/uiStore', () => ({
-  useConnectToolsetDialog: vi.fn(),
+  useConnectSkillDialog: vi.fn(),
 }));
 
 vi.mock('@/stores/runtimeStore', () => ({
@@ -26,10 +26,10 @@ vi.mock('@apollo/client/react', () => ({
   useQuery: vi.fn(() => ({ data: null })),
 }));
 
-describe('ConnectToolsetDialog', () => {
+describe('ConnectSkillDialog', () => {
   const mockSetOpen = vi.fn();
-  const mockSetSelectedToolsetName = vi.fn();
-  const mockSetSelectedToolsetId = vi.fn();
+  const mockSetSelectedSkillName = vi.fn();
+  const mockSetSelectedSkillId = vi.fn();
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -51,45 +51,45 @@ describe('ConnectToolsetDialog', () => {
   });
 
   it('does not render when no skill is selected', () => {
-    vi.mocked(uiStore.useConnectToolsetDialog).mockReturnValue({
+    vi.mocked(uiStore.useConnectSkillDialog).mockReturnValue({
       open: true,
       setOpen: mockSetOpen,
-      selectedToolsetName: null,
-      setSelectedToolsetName: mockSetSelectedToolsetName,
-      selectedToolsetId: null,
-      setSelectedToolsetId: mockSetSelectedToolsetId,
+      selectedSkillName: null,
+      setSelectedSkillName: mockSetSelectedSkillName,
+      selectedSkillId: null,
+      setSelectedSkillId: mockSetSelectedSkillId,
     });
 
-    const { container } = render(<ConnectToolsetDialog />);
+    const { container } = render(<ConnectSkillDialog />);
     expect(container.firstChild).toBeNull();
   });
 
   it('renders when dialog is open with skill selected', () => {
-    vi.mocked(uiStore.useConnectToolsetDialog).mockReturnValue({
+    vi.mocked(uiStore.useConnectSkillDialog).mockReturnValue({
       open: true,
       setOpen: mockSetOpen,
-      selectedToolsetName: 'test-skill',
-      setSelectedToolsetName: mockSetSelectedToolsetName,
-      selectedToolsetId: '1',
-      setSelectedToolsetId: mockSetSelectedToolsetId,
+      selectedSkillName: 'test-skill',
+      setSelectedSkillName: mockSetSelectedSkillName,
+      selectedSkillId: '1',
+      setSelectedSkillId: mockSetSelectedSkillId,
     });
 
-    render(<ConnectToolsetDialog />);
+    render(<ConnectSkillDialog />);
     expect(screen.getByText(/Connect:/)).toBeInTheDocument();
     expect(screen.getByText('test-skill')).toBeInTheDocument();
   });
 
   it('shows platform cards', () => {
-    vi.mocked(uiStore.useConnectToolsetDialog).mockReturnValue({
+    vi.mocked(uiStore.useConnectSkillDialog).mockReturnValue({
       open: true,
       setOpen: mockSetOpen,
-      selectedToolsetName: 'test-skill',
-      setSelectedToolsetName: mockSetSelectedToolsetName,
-      selectedToolsetId: '1',
-      setSelectedToolsetId: mockSetSelectedToolsetId,
+      selectedSkillName: 'test-skill',
+      setSelectedSkillName: mockSetSelectedSkillName,
+      selectedSkillId: '1',
+      setSelectedSkillId: mockSetSelectedSkillId,
     });
 
-    render(<ConnectToolsetDialog />);
+    render(<ConnectSkillDialog />);
     expect(screen.getByText('N8N')).toBeInTheDocument();
     expect(screen.getByText('Langflow')).toBeInTheDocument();
     expect(screen.getByText('Manual Configuration')).toBeInTheDocument();
@@ -98,16 +98,16 @@ describe('ConnectToolsetDialog', () => {
   });
 
   it('shows instructions when platform card is clicked', () => {
-    vi.mocked(uiStore.useConnectToolsetDialog).mockReturnValue({
+    vi.mocked(uiStore.useConnectSkillDialog).mockReturnValue({
       open: true,
       setOpen: mockSetOpen,
-      selectedToolsetName: 'test-skill',
-      setSelectedToolsetName: mockSetSelectedToolsetName,
-      selectedToolsetId: '1',
-      setSelectedToolsetId: mockSetSelectedToolsetId,
+      selectedSkillName: 'test-skill',
+      setSelectedSkillName: mockSetSelectedSkillName,
+      selectedSkillId: '1',
+      setSelectedSkillId: mockSetSelectedSkillId,
     });
 
-    render(<ConnectToolsetDialog />);
+    render(<ConnectSkillDialog />);
 
     // Click Langflow card
     const langflowCard = screen.getByText('Langflow');
@@ -118,16 +118,16 @@ describe('ConnectToolsetDialog', () => {
   });
 
   it('shows instructions when platform is selected', () => {
-    vi.mocked(uiStore.useConnectToolsetDialog).mockReturnValue({
+    vi.mocked(uiStore.useConnectSkillDialog).mockReturnValue({
       open: true,
       setOpen: mockSetOpen,
-      selectedToolsetName: 'test-skill',
-      setSelectedToolsetName: mockSetSelectedToolsetName,
-      selectedToolsetId: '1',
-      setSelectedToolsetId: mockSetSelectedToolsetId,
+      selectedSkillName: 'test-skill',
+      setSelectedSkillName: mockSetSelectedSkillName,
+      selectedSkillId: '1',
+      setSelectedSkillId: mockSetSelectedSkillId,
     });
 
-    render(<ConnectToolsetDialog />);
+    render(<ConnectSkillDialog />);
 
     // Click N8N card
     const n8nCard = screen.getByText('N8N');
@@ -137,31 +137,31 @@ describe('ConnectToolsetDialog', () => {
   });
 
   it('shows docs link in footer', () => {
-    vi.mocked(uiStore.useConnectToolsetDialog).mockReturnValue({
+    vi.mocked(uiStore.useConnectSkillDialog).mockReturnValue({
       open: true,
       setOpen: mockSetOpen,
-      selectedToolsetName: 'test-skill',
-      setSelectedToolsetName: mockSetSelectedToolsetName,
-      selectedToolsetId: '1',
-      setSelectedToolsetId: mockSetSelectedToolsetId,
+      selectedSkillName: 'test-skill',
+      setSelectedSkillName: mockSetSelectedSkillName,
+      selectedSkillId: '1',
+      setSelectedSkillId: mockSetSelectedSkillId,
     });
 
-    render(<ConnectToolsetDialog />);
+    render(<ConnectSkillDialog />);
     const docsLink = screen.getByText('View full documentation');
     expect(docsLink).toHaveAttribute('href', 'https://docs.2ly.ai/integrations');
   });
 
   it('calls setOpen(false) when close button is clicked', () => {
-    vi.mocked(uiStore.useConnectToolsetDialog).mockReturnValue({
+    vi.mocked(uiStore.useConnectSkillDialog).mockReturnValue({
       open: true,
       setOpen: mockSetOpen,
-      selectedToolsetName: 'test-skill',
-      setSelectedToolsetName: mockSetSelectedToolsetName,
-      selectedToolsetId: '1',
-      setSelectedToolsetId: mockSetSelectedToolsetId,
+      selectedSkillName: 'test-skill',
+      setSelectedSkillName: mockSetSelectedSkillName,
+      selectedSkillId: '1',
+      setSelectedSkillId: mockSetSelectedSkillId,
     });
 
-    render(<ConnectToolsetDialog />);
+    render(<ConnectSkillDialog />);
     const closeButton = screen.getByRole('button', { name: /close/i });
     fireEvent.click(closeButton);
     expect(mockSetOpen).toHaveBeenCalledWith(false);

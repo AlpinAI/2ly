@@ -1,8 +1,8 @@
 /**
- * ToolsetDetail Component
+ * SkillDetail Component
  *
  * WHY: Displays detailed information about a selected skill.
- * Used by Toolsets Page as the detail panel.
+ * Used by Skills Page as the detail panel.
  *
  * DISPLAYS:
  * - Name and description
@@ -16,7 +16,7 @@ import { Link, useParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { AutoGrowTextarea } from '@/components/ui/autogrow-textarea';
-import { useManageToolsDialog, useConnectToolsetDialog } from '@/stores/uiStore';
+import { useManageToolsDialog, useConnectSkillDialog } from '@/stores/uiStore';
 import { useMutation, useLazyQuery } from '@apollo/client/react';
 import { useNotification } from '@/contexts/NotificationContext';
 import { DeleteSkillDocument, GetToolsetKeyDocument, GetKeyValueDocument, UpdateSkillDocument } from '@/graphql/generated/graphql';
@@ -24,14 +24,14 @@ import type { SubscribeSkillsSubscription } from '@/graphql/generated/graphql';
 
 type Skill = NonNullable<SubscribeSkillsSubscription['skills']>[number];
 
-export interface ToolsetDetailProps {
+export interface SkillDetailProps {
   skill: Skill;
 }
 
-export function ToolsetDetail({ skill }: ToolsetDetailProps) {
+export function SkillDetail({ skill }: SkillDetailProps) {
   const { workspaceId } = useParams<{ workspaceId: string }>();
-  const { setOpen, setSelectedToolsetId } = useManageToolsDialog();
-  const { setOpen: setConnectDialogOpen, setSelectedToolsetName, setSelectedToolsetId: setConnectToolsetId } = useConnectToolsetDialog();
+  const { setOpen, setSelectedSkillId } = useManageToolsDialog();
+  const { setOpen: setConnectDialogOpen, setSelectedSkillName, setSelectedSkillId: setConnectSkillId } = useConnectSkillDialog();
 
   const { confirm, toast } = useNotification();
   const [deleteSkill] = useMutation(DeleteSkillDocument);
@@ -60,15 +60,15 @@ export function ToolsetDetail({ skill }: ToolsetDetailProps) {
   };
 
   const handleManageTools = () => {
-    setSelectedToolsetId(skill.id);
+    setSelectedSkillId(skill.id);
     setOpen(true);
   };
 
   const handleConnect = () => {
     // Use the skill name as a pseudo-agent ID for connection instructions
-    // The ConnectToolsetDialog will show instructions for this name
-    setSelectedToolsetName(skill.name);
-    setConnectToolsetId(skill.id);
+    // The ConnectSkillDialog will show instructions for this name
+    setSelectedSkillName(skill.name);
+    setConnectSkillId(skill.id);
     setConnectDialogOpen(true);
   };
 
@@ -139,9 +139,9 @@ export function ToolsetDetail({ skill }: ToolsetDetailProps) {
 
   const handleDelete = async () => {
     const confirmed = await confirm({
-      title: 'Delete Toolset',
+      title: 'Delete Skill',
       description: `Are you sure you want to delete "${skill.name}"? This action cannot be undone.`,
-      confirmLabel: 'Delete Toolset',
+      confirmLabel: 'Delete Skill',
       cancelLabel: 'Cancel',
       variant: 'destructive',
     });
@@ -198,7 +198,7 @@ export function ToolsetDetail({ skill }: ToolsetDetailProps) {
         // First get the key metadata
         const keyResult = await getToolsetKey({ variables: { skillId: skill.id } });
         if (!keyResult.data?.skillKey) {
-          throw new Error('Toolset key not found');
+          throw new Error('Skill key not found');
         }
         // Then get the actual key value
         const valueResult = await getKeyValue({ variables: { keyId: keyResult.data.skillKey.id } });
@@ -377,11 +377,11 @@ export function ToolsetDetail({ skill }: ToolsetDetailProps) {
           )}
         </div>
 
-        {/* Delete Toolset Button */}
+        {/* Delete Skill Button */}
         <div className="pt-4 border-t border-gray-200 dark:border-gray-700 flex justify-end">
           <Button variant="destructive" onClick={handleDelete} size="sm" className="h-7 px-2 text-xs">
             <Trash2 className="h-3 w-3 mr-1" />
-            Delete Toolset
+            Delete Skill
           </Button>
         </div>
       </div>

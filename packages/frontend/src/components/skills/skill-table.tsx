@@ -1,8 +1,8 @@
 /**
- * ToolsetTable Component
+ * SkillTable Component
  *
  * WHY: Displays skills in a table with search and filters.
- * Used by Toolsets Page as the master list.
+ * Used by Skills Page as the master list.
  *
  * COLUMNS:
  * - Name & Description
@@ -24,40 +24,40 @@ import { useScrollToEntity } from '@/hooks/useScrollToEntity';
 
 type Skill = NonNullable<SubscribeSkillsSubscription['skills']>[number];
 
-export interface ToolsetTableProps {
+export interface SkillTableProps {
   skills: Skill[];
-  selectedToolsetId: string | null;
+  selectedSkillId: string | null;
   onSelectSkill: (skillId: string) => void;
   search: string;
   onSearchChange: (search: string) => void;
   loading?: boolean;
 }
 
-export function ToolsetTable({
+export function SkillTable({
   skills,
-  selectedToolsetId,
+  selectedSkillId,
   onSelectSkill,
   search,
   onSearchChange,
   loading,
-}: ToolsetTableProps) {
+}: SkillTableProps) {
   const scrollToEntity = useScrollToEntity();
   const rowRefs = useRef<Map<string, HTMLTableRowElement>>(new Map());
 
   const hasActiveFilters = search.length > 0;
-  const { setOpen: setManageToolsOpen, setSelectedToolsetId } = useManageToolsDialog();
+  const { setOpen: setManageToolsOpen, setSelectedSkillId } = useManageToolsDialog();
 
   // Scroll to selected entity when ID changes and element is ready
   useEffect(() => {
-    if (selectedToolsetId && !loading) {
-      const element = rowRefs.current.get(selectedToolsetId);
+    if (selectedSkillId && !loading) {
+      const element = rowRefs.current.get(selectedSkillId);
       if (element) {
         setTimeout(() => {
           scrollToEntity(element);
         }, 100);
       }
     }
-  }, [selectedToolsetId, loading, scrollToEntity]);
+  }, [selectedSkillId, loading, scrollToEntity]);
 
   const handleClearFilters = () => {
     onSearchChange('');
@@ -65,7 +65,7 @@ export function ToolsetTable({
 
   const handleManageToolsClick = (e: React.MouseEvent, skillId: string) => {
     e.stopPropagation();
-    setSelectedToolsetId(skillId);
+    setSelectedSkillId(skillId);
     setManageToolsOpen(true);
   };
 
@@ -108,7 +108,7 @@ export function ToolsetTable({
             <thead className="bg-gray-50 dark:bg-gray-900 sticky top-0">
               <tr>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  Toolset
+                  Skill
                 </th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                   Tools
@@ -132,12 +132,12 @@ export function ToolsetTable({
                     }}
                     onClick={() => onSelectSkill(skill.id)}
                     className={`cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors ${
-                      selectedToolsetId === skill.id ? 'bg-cyan-50 dark:bg-cyan-900/20' : ''
+                      selectedSkillId === skill.id ? 'bg-cyan-50 dark:bg-cyan-900/20' : ''
                     }`}
                   >
                     <td
                       className={`px-4 py-3 text-sm ${
-                        selectedToolsetId === skill.id ? 'border-l-4 border-cyan-500 pl-3' : ''
+                        selectedSkillId === skill.id ? 'border-l-4 border-cyan-500 pl-3' : ''
                       }`}
                     >
                       <div className="skill-name font-medium text-gray-900 dark:text-white">{skill.name}</div>

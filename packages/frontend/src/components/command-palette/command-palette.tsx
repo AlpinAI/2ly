@@ -26,7 +26,7 @@ import { Search, Layers, Palette, Moon, Sun, Check, Plus, FolderPlus, Database }
 import { Command, CommandInput, CommandList, CommandEmpty, CommandGroup, CommandItem } from '@/components/ui/command';
 import { useWorkspaceId } from '@/stores/workspaceStore';
 import { useTheme } from '@/contexts/ThemeContext';
-import { useUIStore, useCreateToolsetDialog, useManageToolsDialog } from '@/stores/uiStore';
+import { useUIStore, useCreateSkillDialog, useManageToolsDialog } from '@/stores/uiStore';
 import { GetWorkspacesDocument, type GetWorkspacesQuery } from '@/graphql/generated/graphql';
 
 type CommandMode = 'main' | 'search' | 'workspace' | 'theme';
@@ -40,7 +40,7 @@ export function CommandPalette() {
   const { theme, setTheme } = useTheme();
   const setAddSourceWorkflowOpen = useUIStore((state) => state.setAddSourceWorkflowOpen);
   const setAddServerWorkflowOpen = useUIStore((state) => state.setAddServerWorkflowOpen);
-  const { openDialog: openCreateToolsetDialog } = useCreateToolsetDialog();
+  const { openDialog: openCreateSkillDialog } = useCreateSkillDialog();
 
   const { data, loading } = useQuery(GetWorkspacesDocument);
 
@@ -87,8 +87,8 @@ export function CommandPalette() {
 
   const manageToolsDialog = useManageToolsDialog();
   const handleCreateSkill = () => {
-    openCreateToolsetDialog((skillId: string) => {
-      manageToolsDialog.setSelectedToolsetId(skillId);
+    openCreateSkillDialog((skillId: string) => {
+      manageToolsDialog.setSelectedSkillId(skillId);
       manageToolsDialog.setOpen(true);
     });
     setOpen(false);
@@ -203,7 +203,7 @@ export function CommandPalette() {
                   >
                     <FolderPlus className="h-4 w-4" />
                     <div className="flex flex-1 items-center justify-between">
-                      <span className="font-medium">New Tool Set</span>
+                      <span className="font-medium">New Skill</span>
                       <span className="text-xs text-gray-500 dark:text-gray-400">Create a new skill</span>
                     </div>
                   </CommandItem>

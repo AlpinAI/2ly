@@ -27,7 +27,7 @@ describe('AppNavigation', () => {
     );
 
     expect(screen.getByText('Overview')).toBeDefined();
-    expect(screen.getByText('Tool Sets')).toBeDefined();
+    expect(screen.getByText('Skills')).toBeDefined();
     expect(screen.getByText('Tools')).toBeDefined();
     expect(screen.getByText('Sources')).toBeDefined();
     expect(screen.getByText('Settings')).toBeDefined();
@@ -52,7 +52,7 @@ describe('AppNavigation', () => {
       </MemoryRouter>
     );
 
-    const skillsLink = screen.getByText('Tool Sets').closest('a');
+    const skillsLink = screen.getByText('Skills').closest('a');
     expect(skillsLink?.getAttribute('aria-current')).toBeNull();
   });
 
@@ -91,7 +91,7 @@ describe('AppNavigation', () => {
     );
 
     const overviewLink = screen.getByText('Overview').closest('a');
-    const skillsLink = screen.getByText('Tool Sets').closest('a');
+    const skillsLink = screen.getByText('Skills').closest('a');
     const toolsLink = screen.getByText('Tools').closest('a');
     const sourcesLink = screen.getByText('Sources').closest('a');
     const settingsLink = screen.getByText('Settings').closest('a');

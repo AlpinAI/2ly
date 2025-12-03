@@ -68,7 +68,7 @@ describe('ToolDetail', () => {
       {
         __typename: 'Skill',
         id: 'skill-1',
-        name: 'Test Tool Set',
+        name: 'Test Skill',
         description: 'Test skill description',
       },
     ],
@@ -83,7 +83,7 @@ describe('ToolDetail', () => {
         {
           __typename: 'Skill',
           id: 'skill-1',
-          name: 'Test Tool Set',
+          name: 'Test Skill',
           description: 'Test skill description',
           createdAt: new Date('2025-01-01'),
           updatedAt: null,
@@ -94,7 +94,7 @@ describe('ToolDetail', () => {
         {
           __typename: 'Skill',
           id: 'skill-1',
-          name: 'Test Tool Set',
+          name: 'Test Skill',
           description: 'Test skill description',
           createdAt: new Date('2025-01-01'),
           updatedAt: null,
@@ -173,8 +173,8 @@ describe('ToolDetail', () => {
   it('renders linked skills', () => {
     renderComponent(mockTool);
 
-    expect(screen.getByText(/Available in Tool Sets \(1\)/)).toBeInTheDocument();
-    expect(screen.getByText('Test Tool Set')).toBeInTheDocument();
+    expect(screen.getByText(/Available in Skills \(1\)/)).toBeInTheDocument();
+    expect(screen.getByText('Test Skill')).toBeInTheDocument();
   });
 
   it('renders ToolTester component', () => {

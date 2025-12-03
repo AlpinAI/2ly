@@ -1,5 +1,5 @@
 /**
- * Connect Toolset Dialog (New Design)
+ * Connect Skill Dialog (New Design)
  *
  * WHY: Redesigned connect dialog with improved UX featuring:
  * - Header with skill name + close button (no status labels)
@@ -14,7 +14,7 @@ import { X, ExternalLink } from 'lucide-react';
 import * as Dialog from '@radix-ui/react-dialog';
 import { useQuery } from '@apollo/client/react';
 import { Button } from '@/components/ui/button';
-import { useConnectToolsetDialog } from '@/stores/uiStore';
+import { useConnectSkillDialog } from '@/stores/uiStore';
 import { useRuntimeData } from '@/stores/runtimeStore';
 import { useSystemInit } from '@/hooks/useSystemInit';
 import { GetToolsetKeyDocument, GetKeyValueDocument } from '@/graphql/generated/graphql';
@@ -24,8 +24,8 @@ import { LangflowInstructions } from './instructions/langflow-instructions';
 import { LangchainInstructions } from './instructions/langchain-instructions';
 import { ManualConnectionInstructions } from './instructions/manual-connection-instructions';
 
-export function ConnectToolsetDialog() {
-  const { open, setOpen, selectedToolsetName, selectedToolsetId } = useConnectToolsetDialog();
+export function ConnectSkillDialog() {
+  const { open, setOpen, selectedSkillName, selectedSkillId } = useConnectSkillDialog();
   const { runtimes } = useRuntimeData();
   const { infra } = useSystemInit();
 
@@ -33,8 +33,8 @@ export function ConnectToolsetDialog() {
 
   // Fetch skill key metadata
   const { data: keyData } = useQuery(GetToolsetKeyDocument, {
-    variables: { skillId: selectedToolsetId ?? '' },
-    skip: !selectedToolsetId || !open,
+    variables: { skillId: selectedSkillId ?? '' },
+    skip: !selectedSkillId || !open,
   });
 
   // Fetch actual key value once we have the ID
@@ -47,20 +47,20 @@ export function ConnectToolsetDialog() {
   const skillKey = valueData?.keyValue || '';
 
   // Get selected skill from runtime store, or create a mock one for new skills
-  const selectedToolset = useMemo(() => {
-    const existingRuntime = runtimes.find((runtime) => runtime.name === selectedToolsetName);
+  const selectedSkill = useMemo(() => {
+    const existingRuntime = runtimes.find((runtime) => runtime.name === selectedSkillName);
     if (existingRuntime) return existingRuntime;
 
-    if (selectedToolsetName) {
+    if (selectedSkillName) {
       return {
-        id: `new-${selectedToolsetName}`,
-        name: selectedToolsetName,
+        id: `new-${selectedSkillName}`,
+        name: selectedSkillName,
         status: 'INACTIVE' as const,
       };
     }
 
     return null;
-  }, [runtimes, selectedToolsetName]);
+  }, [runtimes, selectedSkillName]);
 
   const remoteMCPServer = useMemo(() => {
     return infra?.remoteMCP || `${window.location.protocol}//${window.location.hostname}:3001`;
@@ -92,7 +92,7 @@ export function ConnectToolsetDialog() {
     [handleClose]
   );
 
-  if (!selectedToolset) return null;
+  if (!selectedSkill) return null;
 
   return (
     <Dialog.Root open={open} onOpenChange={handleOpenChange}>
@@ -103,7 +103,7 @@ export function ConnectToolsetDialog() {
           <div className="p-6 border-b border-gray-200 dark:border-gray-700 flex-shrink-0">
             <div className="flex items-center justify-between">
               <Dialog.Title className="text-lg font-semibold text-gray-900 dark:text-white">
-                Connect: <span className="font-mono">{selectedToolset.name}</span>
+                Connect: <span className="font-mono">{selectedSkill.name}</span>
               </Dialog.Title>
               <Dialog.Close asChild>
                 <Button variant="ghost" size="icon" className="rounded-full" aria-label="Close">
@@ -152,7 +152,7 @@ export function ConnectToolsetDialog() {
               {selectedPlatform ? (
                 <>
                   {selectedPlatform === 'n8n' && <N8NInstructions streamUrl={streamUrl} />}
-                  {selectedPlatform === 'langflow' && <LangflowInstructions sseUrl={sseUrl} skillName={selectedToolset.name} />}
+                  {selectedPlatform === 'langflow' && <LangflowInstructions sseUrl={sseUrl} skillName={selectedSkill.name} />}
                   {selectedPlatform === 'langchain' && <LangchainInstructions skillKey={skillKey} />}
                   {selectedPlatform === 'json' && (
                     <ManualConnectionInstructions

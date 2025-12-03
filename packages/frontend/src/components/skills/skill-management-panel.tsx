@@ -1,5 +1,5 @@
 /**
- * ToolsetManagementPanel Component
+ * SkillManagementPanel Component
  *
  * WHY: Full-screen bottom panel for managing which tools belong to a skill (runtime).
  * Provides search, filtering, and selection interface for linking/unlinking tools.
@@ -25,7 +25,7 @@ import { CheckboxDropdown } from '@/components/ui/checkbox-dropdown';
 import { Switch } from '@/components/ui/switch';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { BottomPanel } from '@/components/ui/bottom-panel';
-import { ToolsetSelectionTable } from './skill-selection-table';
+import { SkillSelectionTable } from './skill-selection-table';
 import { useManageToolsDialog } from '@/stores/uiStore';
 import { useSkills } from '@/hooks/useSkills';
 import { useMCPServers } from '@/hooks/useMCPServers';
@@ -48,8 +48,8 @@ interface GroupedServer {
   tools: McpTool[];
 }
 
-export function ToolsetManagementPanel() {
-  const { open, setOpen, selectedToolsetId, setSelectedToolsetId } = useManageToolsDialog();
+export function SkillManagementPanel() {
+  const { open, setOpen, selectedSkillId, setSelectedSkillId } = useManageToolsDialog();
   const workspaceId = useWorkspaceFromUrl();
   const { skills } = useSkills(workspaceId || '');
   const { servers } = useMCPServers();
@@ -72,18 +72,18 @@ export function ToolsetManagementPanel() {
   // Close handler with cleanup
   const handleClose = useCallback(() => {
     setOpen(false);
-    setSelectedToolsetId(null);
+    setSelectedSkillId(null);
     // Note: other state resets happen in the useEffect below
-  }, [setOpen, setSelectedToolsetId]);
+  }, [setOpen, setSelectedSkillId]);
 
   // Auto-close on navigation
   useCloseOnNavigation(handleClose);
 
   // Get selected skill
   const selectedSkill = useMemo(() => {
-    if (!selectedToolsetId) return null;
-    return skills.find((ts) => ts.id === selectedToolsetId) || null;
-  }, [selectedToolsetId, skills]);
+    if (!selectedSkillId) return null;
+    return skills.find((ts) => ts.id === selectedSkillId) || null;
+  }, [selectedSkillId, skills]);
 
   // Group tools by server
   const groupedServers = useMemo((): GroupedServer[] => {
@@ -352,7 +352,7 @@ export function ToolsetManagementPanel() {
 
           {/* Tools List - grows to fill space */}
           <div className="flex-1 overflow-auto p-4">
-            <ToolsetSelectionTable
+            <SkillSelectionTable
               servers={groupedServers}
               selectedToolIds={selectedToolIds}
               onToolToggle={handleToolToggle}
