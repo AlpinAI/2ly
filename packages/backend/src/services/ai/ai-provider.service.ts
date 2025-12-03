@@ -142,7 +142,7 @@ export class AIProviderService {
     apiKey?: string,
     baseUrl?: string
   ): Promise<AIProviderValidationResult> {
-    this.logger.info({ provider }, 'Testing AI provider configuration');
+    this.logger.info(`Testing AI provider configuration for provider ${provider}`);
 
     // Validate required fields
     if (PROVIDER_REQUIRES_KEY[provider] && !apiKey) {
@@ -155,14 +155,13 @@ export class AIProviderService {
 
     try {
       const availableModels = await this.listProviderModels(provider, { apiKey, baseUrl });
-      this.logger.info({ availableModels }, 'Available models');
       if (availableModels.length === 0) {
         return { valid: false, error: 'No models available' };
       }
       return { valid: true, availableModels };
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Unknown error';
-      this.logger.error({ error, provider }, 'AI provider test failed');
+      this.logger.error(`Failed to test AI provider ${provider}: ${message}`);
       return { valid: false, error: message };
     }
   }
@@ -216,7 +215,7 @@ export class AIProviderService {
     apiKey?: string,
     baseUrl?: string
   ): Promise<AIProviderValidationResult> {
-    this.logger.info({ workspaceId, provider }, 'Configuring AI provider');
+    this.logger.info(`Configuring AI provider for workspace ${workspaceId} with provider ${provider}`);
 
     // Test configuration first
     const test = await this.testConfiguration(provider, apiKey, baseUrl);
@@ -235,7 +234,7 @@ export class AIProviderService {
       availableModels: test.availableModels || null,
     });
 
-    this.logger.info({ workspaceId, provider }, 'AI provider configured');
+    this.logger.info(`AI provider configured for workspace ${workspaceId} with provider ${provider}`);
     return test;
   }
 

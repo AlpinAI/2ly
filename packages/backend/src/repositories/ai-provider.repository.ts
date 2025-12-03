@@ -174,7 +174,8 @@ export class AIProviderRepository {
   }
 
   async setDefaultModel(workspaceId: string, providerModel: string): Promise<boolean> {
-    const [providerId, model] = providerModel.split('/');
+    const [providerId, ...modelParts] = providerModel.split('/');
+    const model = modelParts.join('/');
     if (!providerId || !model) {
       this.logger.error(`Invalid model format: ${providerModel}`);
       throw new Error(`Invalid model format: expected "provider/model", got "${providerModel}"`);
@@ -185,6 +186,11 @@ export class AIProviderRepository {
     if (!provider) {
       this.logger.error(`Provider ${providerType} not found for workspace ${workspaceId}`);
       throw new Error(`Provider "${providerId}" is not configured for this workspace`);
+    }
+
+    if (!provider.availableModels?.includes(model)) {
+      this.logger.error(`Model ${model} not available for provider ${providerId}`);
+      throw new Error(`Model "${model}" is not available for provider "${providerId}"`);
     }
 
     try {
