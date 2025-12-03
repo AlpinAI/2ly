@@ -20,46 +20,54 @@ describe('Password Helper', () => {
   describe('encryption key validation', () => {
     it('should throw error when ENCRYPTION_KEY is missing', async () => {
       const originalKey = process.env.ENCRYPTION_KEY;
-      delete process.env.ENCRYPTION_KEY;
+      try {
+        delete process.env.ENCRYPTION_KEY;
 
-      await expect(hashPassword('testPassword')).rejects.toThrow(
-        'ENCRYPTION_KEY environment variable is required for password security'
-      );
-
-      process.env.ENCRYPTION_KEY = originalKey;
+        await expect(hashPassword('testPassword')).rejects.toThrow(
+          'ENCRYPTION_KEY environment variable is required'
+        );
+      } finally {
+        process.env.ENCRYPTION_KEY = originalKey;
+      }
     });
 
     it('should throw error when ENCRYPTION_KEY is too short', async () => {
       const originalKey = process.env.ENCRYPTION_KEY;
-      process.env.ENCRYPTION_KEY = 'short-key'; // Only 9 characters
+      try {
+        process.env.ENCRYPTION_KEY = 'short-key'; // Only 9 characters
 
-      await expect(hashPassword('testPassword')).rejects.toThrow(
-        'ENCRYPTION_KEY must be at least 32 characters long for adequate security'
-      );
-
-      process.env.ENCRYPTION_KEY = originalKey;
+        await expect(hashPassword('testPassword')).rejects.toThrow(
+          'ENCRYPTION_KEY must be at least 32 characters long for adequate security'
+        );
+      } finally {
+        process.env.ENCRYPTION_KEY = originalKey;
+      }
     });
 
     it('should accept ENCRYPTION_KEY with exactly 32 characters', async () => {
       const originalKey = process.env.ENCRYPTION_KEY;
-      process.env.ENCRYPTION_KEY = '12345678901234567890123456789012'; // Exactly 32 characters
+      try {
+        process.env.ENCRYPTION_KEY = '12345678901234567890123456789012'; // Exactly 32 characters
 
-      const hashedPassword = await hashPassword('testPassword');
-      expect(hashedPassword).toBeDefined();
-      expect(hashedPassword.startsWith('$scrypt$')).toBe(true);
-
-      process.env.ENCRYPTION_KEY = originalKey;
+        const hashedPassword = await hashPassword('testPassword');
+        expect(hashedPassword).toBeDefined();
+        expect(hashedPassword.startsWith('$scrypt$')).toBe(true);
+      } finally {
+        process.env.ENCRYPTION_KEY = originalKey;
+      }
     });
 
     it('should accept ENCRYPTION_KEY with more than 32 characters', async () => {
       const originalKey = process.env.ENCRYPTION_KEY;
-      process.env.ENCRYPTION_KEY = 'this-is-a-very-long-encryption-key-with-more-than-32-characters'; // 66 characters
+      try {
+        process.env.ENCRYPTION_KEY = 'this-is-a-very-long-encryption-key-with-more-than-32-characters'; // 66 characters
 
-      const hashedPassword = await hashPassword('testPassword');
-      expect(hashedPassword).toBeDefined();
-      expect(hashedPassword.startsWith('$scrypt$')).toBe(true);
-
-      process.env.ENCRYPTION_KEY = originalKey;
+        const hashedPassword = await hashPassword('testPassword');
+        expect(hashedPassword).toBeDefined();
+        expect(hashedPassword.startsWith('$scrypt$')).toBe(true);
+      } finally {
+        process.env.ENCRYPTION_KEY = originalKey;
+      }
     });
   });
 
@@ -86,20 +94,22 @@ describe('Password Helper', () => {
 
     it('should include pepper in the hash computation', async () => {
       const plainPassword = 'testPassword123';
+      const originalKey = process.env.ENCRYPTION_KEY;
 
-      // Hash with one key (32+ characters required)
-      process.env.ENCRYPTION_KEY = 'key1-with-enough-chars-to-be-valid32';
-      const hash1 = await hashPassword(plainPassword);
+      try {
+        // Hash with one key (32+ characters required)
+        process.env.ENCRYPTION_KEY = 'key1-with-enough-chars-to-be-valid32';
+        const hash1 = await hashPassword(plainPassword);
 
-      // Hash with different key
-      process.env.ENCRYPTION_KEY = 'key2-with-enough-chars-to-be-valid32';
-      const hash2 = await hashPassword(plainPassword);
+        // Hash with different key
+        process.env.ENCRYPTION_KEY = 'key2-with-enough-chars-to-be-valid32';
+        const hash2 = await hashPassword(plainPassword);
 
-      // Even though same password, different pepper should give different hashes
-      expect(hash1).not.toBe(hash2);
-
-      // Restore test key
-      process.env.ENCRYPTION_KEY = 'test-encryption-key-for-pepper-32chars';
+        // Even though same password, different pepper should give different hashes
+        expect(hash1).not.toBe(hash2);
+      } finally {
+        process.env.ENCRYPTION_KEY = originalKey;
+      }
     });
 
     it('should handle empty passwords', async () => {
@@ -156,22 +166,24 @@ describe('Password Helper', () => {
 
     it('should use the same pepper for verification', async () => {
       const plainPassword = 'testPassword123';
+      const originalKey = process.env.ENCRYPTION_KEY;
 
-      // Hash with one pepper (32+ characters required)
-      process.env.ENCRYPTION_KEY = 'pepper1-with-enough-chars-to-be-valid';
-      const hashedPassword = await hashPassword(plainPassword);
+      try {
+        // Hash with one pepper (32+ characters required)
+        process.env.ENCRYPTION_KEY = 'pepper1-with-enough-chars-to-be-valid';
+        const hashedPassword = await hashPassword(plainPassword);
 
-      // Verify with same pepper
-      const isValid1 = await verifyPassword(plainPassword, hashedPassword);
-      expect(isValid1).toBe(true);
+        // Verify with same pepper
+        const isValid1 = await verifyPassword(plainPassword, hashedPassword);
+        expect(isValid1).toBe(true);
 
-      // Verify with different pepper
-      process.env.ENCRYPTION_KEY = 'pepper2-with-enough-chars-to-be-valid';
-      const isValid2 = await verifyPassword(plainPassword, hashedPassword);
-      expect(isValid2).toBe(false);
-
-      // Restore test key
-      process.env.ENCRYPTION_KEY = 'test-encryption-key-for-pepper-32chars';
+        // Verify with different pepper
+        process.env.ENCRYPTION_KEY = 'pepper2-with-enough-chars-to-be-valid';
+        const isValid2 = await verifyPassword(plainPassword, hashedPassword);
+        expect(isValid2).toBe(false);
+      } finally {
+        process.env.ENCRYPTION_KEY = originalKey;
+      }
     });
 
     it('should return false for malformed hash', async () => {

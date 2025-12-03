@@ -11,6 +11,7 @@ import {
   DEFAULT_HEARTBAT_TTL,
   EPHEMERAL_TTL,
   DEFAULT_EPHEMERAL_TTL,
+  EncryptionService,
 } from '@2ly/common';
 import { DGraphService, DGRAPH_URL } from '../services/dgraph.service';
 import { ApolloService } from '../services/apollo.service';
@@ -39,7 +40,7 @@ import { IdentityService } from '../services/identity.service';
 import { KeyRateLimiterService } from '../services/key-rate-limiter.service';
 import pino from 'pino';
 import { MonitoringService } from '../services/monitoring.service';
-import { EncryptionService, AIProviderService } from '../services/ai';
+import { AIProviderService } from '../services/ai';
 
 const container = new Container();
 const start = () => {

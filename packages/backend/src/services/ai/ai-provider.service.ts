@@ -1,12 +1,11 @@
 import { inject, injectable } from 'inversify';
-import { LoggerService, dgraphResolversTypes } from '@2ly/common';
+import { LoggerService, dgraphResolversTypes, EncryptionService } from '@2ly/common';
 import pino from 'pino';
 import { generateText, streamText, type LanguageModel } from 'ai';
 import { createOpenAI } from '@ai-sdk/openai';
 import { createAnthropic } from '@ai-sdk/anthropic';
 import { createGoogleGenerativeAI } from '@ai-sdk/google';
 import { createOllama, ollama } from 'ollama-ai-provider-v2';
-import { EncryptionService } from './encryption.service';
 import { AIProviderRepository } from '../../repositories/ai-provider.repository';
 
 export type AIProviderType = 'openai' | 'anthropic' | 'google' | 'ollama';

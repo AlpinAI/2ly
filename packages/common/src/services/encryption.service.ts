@@ -1,5 +1,6 @@
 import { injectable } from 'inversify';
 import { createCipheriv, createDecipheriv, randomBytes, createHash } from 'crypto';
+import { getValidatedEncryptionKey } from '../node-helpers/encryption-key';
 
 const ALGORITHM = 'aes-256-gcm';
 const IV_LENGTH = 16;
@@ -17,17 +18,7 @@ export class EncryptionService {
   }
 
   private deriveKey(): Buffer {
-    const encryptionKey = process.env.ENCRYPTION_KEY;
-    if (!encryptionKey) {
-      throw new Error(
-        'ENCRYPTION_KEY environment variable is required for API key encryption. Please set a strong, unique encryption key.'
-      );
-    }
-
-    if (encryptionKey.length < 32) {
-      throw new Error('ENCRYPTION_KEY must be at least 32 characters long for adequate security.');
-    }
-
+    const encryptionKey = getValidatedEncryptionKey();
     // Derive a 256-bit key from the encryption key
     return createHash('sha256').update(encryptionKey).digest();
   }
