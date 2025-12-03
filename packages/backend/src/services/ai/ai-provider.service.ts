@@ -32,8 +32,8 @@ const PROVIDER_REQUIRES_KEY: Record<AIProviderType, boolean> = {
 const STATIC_MODELS: Record<AIProviderType, string[]> = {
   openai: ['gpt-4o', 'gpt-4o-mini', 'gpt-4-turbo', 'gpt-3.5-turbo'],
   anthropic: ['claude-sonnet-4-20250514', 'claude-3-5-sonnet-20241022', 'claude-3-haiku-20240307'],
-  google: ['gemini-1.5-pro', 'gemini-1.5-flash', 'gemini-2.0-flash-exp'],
-  ollama: ['llama3.2', 'llama3.1', 'mistral', 'codellama'],
+  google: [],
+  ollama: [],
 };
 
 /**
@@ -54,10 +54,41 @@ export class AIProviderService {
 
   private async listProviderModels(provider: AIProviderType, config: ProviderConfig): Promise<string[]> {
     switch (provider) {
-      case 'openai':
-        return STATIC_MODELS.openai;
+      case 'openai': {
+          if (!config.apiKey) {
+            throw new Error('OpenAI API key is required');
+          }
+          const res = await fetch("https://api.openai.com/v1/models", {
+            headers: {
+              "Authorization": `Bearer ${config.apiKey}`,
+            },
+          });
+        
+          if (!res.ok) throw new Error(`OpenAI error: ${await res.text()}`);
+        
+          const data: { data: { id: string }[] } = await res.json();
+          const TEXT_MODEL_PREFIXES = ['gpt-', 'o1', 'o3', 'chatgpt'];
+          return data.data
+            .map(m => m.id)
+            .filter(id => TEXT_MODEL_PREFIXES.some(prefix => id.startsWith(prefix)));
+        }
       case 'anthropic':
-        return STATIC_MODELS.anthropic;
+        {
+          if (!config.apiKey) {
+            throw new Error('Anthropic API key is required');
+          }
+          const res = await fetch("https://api.anthropic.com/v1/models", {
+            headers: {
+              "x-api-key": config.apiKey,
+              "anthropic-version": "2023-06-01", // required
+            },
+          });
+        
+          if (!res.ok) throw new Error(`Anthropic error: ${await res.text()}`);
+        
+          const data: { data: { id: string }[] } = await res.json();
+          return data.data.map(m => m.id);
+        }
       case 'google':
         {
           if (!config.apiKey) {
