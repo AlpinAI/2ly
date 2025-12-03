@@ -105,8 +105,8 @@ export async function request(path: string, options: RequestInit = {}): Promise<
  */
 export async function loginAndGetToken(email: string, password: string): Promise<string> {
   const loginMutation = `
-    mutation Login($email: String!, $password: String!) {
-      login(email: $email, password: $password) {
+    mutation Login($input: LoginInput!) {
+      login(input: $input) {
         accessToken
         refreshToken
         user {
@@ -123,7 +123,7 @@ export async function loginAndGetToken(email: string, password: string): Promise
       refreshToken: string;
       user: { id: string; email: string };
     };
-  }>(loginMutation, { email, password });
+  }>(loginMutation, { input: { email, password } });
 
   return result.login.accessToken;
 }

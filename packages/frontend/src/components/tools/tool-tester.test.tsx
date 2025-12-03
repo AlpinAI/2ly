@@ -499,4 +499,115 @@ describe('ToolTester', () => {
     expect(screen.queryByText('Error')).not.toBeInTheDocument();
     expect(screen.queryByText('Testing tool...')).not.toBeInTheDocument();
   });
+
+  it('displays error UI when GraphQL success is true but output contains isError: true', async () => {
+    mockCallTool.mockResolvedValue({
+      data: {
+        callMCPTool: {
+          success: true,
+          result: '{"isError": true, "message": "Tool execution failed"}',
+        },
+      },
+    });
+
+    render(
+      <ToolTester
+        toolId="tool-1"
+        toolName="test-tool"
+        inputSchema="{}"
+      />
+    );
+
+    const testButton = screen.getByRole('button', { name: /test/i });
+    fireEvent.click(testButton);
+
+    await waitFor(() => {
+      expect(screen.getByText('Error')).toBeInTheDocument();
+    });
+
+    // Should display the error result
+    expect(screen.getByText(/"isError": true/)).toBeInTheDocument();
+  });
+
+  it('displays success UI when GraphQL success is true and output has isError: false', async () => {
+    mockCallTool.mockResolvedValue({
+      data: {
+        callMCPTool: {
+          success: true,
+          result: '{"isError": false, "data": "success result"}',
+        },
+      },
+    });
+
+    render(
+      <ToolTester
+        toolId="tool-1"
+        toolName="test-tool"
+        inputSchema="{}"
+      />
+    );
+
+    const testButton = screen.getByRole('button', { name: /test/i });
+    fireEvent.click(testButton);
+
+    await waitFor(() => {
+      expect(screen.getByText('Success')).toBeInTheDocument();
+    });
+
+    // Should display the success result
+    expect(screen.getByText(/"data": "success result"/)).toBeInTheDocument();
+  });
+
+  it('displays success UI when output does not contain isError field', async () => {
+    mockCallTool.mockResolvedValue({
+      data: {
+        callMCPTool: {
+          success: true,
+          result: '{"data": "success result"}',
+        },
+      },
+    });
+
+    render(
+      <ToolTester
+        toolId="tool-1"
+        toolName="test-tool"
+        inputSchema="{}"
+      />
+    );
+
+    const testButton = screen.getByRole('button', { name: /test/i });
+    fireEvent.click(testButton);
+
+    await waitFor(() => {
+      expect(screen.getByText('Success')).toBeInTheDocument();
+    });
+  });
+
+  it('handles non-JSON output gracefully and falls back to GraphQL success field', async () => {
+    mockCallTool.mockResolvedValue({
+      data: {
+        callMCPTool: {
+          success: true,
+          result: 'Plain text output that is not JSON',
+        },
+      },
+    });
+
+    render(
+      <ToolTester
+        toolId="tool-1"
+        toolName="test-tool"
+        inputSchema="{}"
+      />
+    );
+
+    const testButton = screen.getByRole('button', { name: /test/i });
+    fireEvent.click(testButton);
+
+    await waitFor(() => {
+      expect(screen.getByText('Success')).toBeInTheDocument();
+      expect(screen.getByText('Plain text output that is not JSON')).toBeInTheDocument();
+    });
+  });
 });

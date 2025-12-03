@@ -43,11 +43,6 @@ interface FakeFastifyService {
   };
 }
 
-interface FakeMCPServerAutoConfigService {
-  start: () => Promise<void>;
-  stop: () => Promise<void>;
-}
-
 interface FakeSystemRepository {
   getSystem: () => Promise<{ instanceId: string; defaultWorkspace?: { name: string } | null; admins?: { id: string }[] } | null>;
   createSystem: () => Promise<{ instanceId: string; admins?: { id: string }[] }>;
@@ -120,11 +115,6 @@ function createService(dropAllData: boolean = false) {
     },
   };
 
-  const mcpServerAutoConfigService: FakeMCPServerAutoConfigService = {
-    start: vi.fn(async () => {}),
-    stop: vi.fn(async () => {}),
-  };
-
   const systemRepository: FakeSystemRepository = {
     getSystem: vi.fn(async () => null),
     createSystem: vi.fn(async () => ({ instanceId: 'sys-1', admins: [{ id: 'admin-1' }] })),
@@ -153,7 +143,6 @@ function createService(dropAllData: boolean = false) {
     runtimeService as unknown as import('./runtime.service').RuntimeService,
     toolSetService as unknown as import('./toolset.service').ToolSetService,
     fastifyService as unknown as import('./fastify.service').FastifyService,
-    mcpServerAutoConfigService as unknown as import('./mcp-auto-config.service').MCPServerAutoConfigService,
     systemRepository as unknown as import('../repositories').SystemRepository,
     workspaceRepository as unknown as import('../repositories').WorkspaceRepository,
     monitoringService as unknown as import('./monitoring.service').MonitoringService,
@@ -170,7 +159,6 @@ function createService(dropAllData: boolean = false) {
     runtimeService,
     toolSetService,
     fastifyService,
-    mcpServerAutoConfigService,
     systemRepository,
     workspaceRepository,
     monitoringService,
@@ -197,7 +185,7 @@ describe('MainService', () => {
     });
 
     it('starts all services in correct order', async () => {
-      const { service, dgraphService, identityService, runtimeService, toolSetService, apolloService, mcpServerAutoConfigService, monitoringService } = createService();
+      const { service, dgraphService, identityService, runtimeService, toolSetService, apolloService, monitoringService } = createService();
       const callOrder: string[] = [];
 
       dgraphService.start = vi.fn(async () => { callOrder.push('dgraph'); });
@@ -205,12 +193,11 @@ describe('MainService', () => {
       runtimeService.start = vi.fn(async () => { callOrder.push('runtime'); });
       toolSetService.start = vi.fn(async () => { callOrder.push('toolset'); });
       apolloService.start = vi.fn(async () => { callOrder.push('apollo'); });
-      mcpServerAutoConfigService.start = vi.fn(async () => { callOrder.push('mcp'); });
       monitoringService.start = vi.fn(async () => { callOrder.push('monitoring'); });
 
       await service.start('test');
 
-      expect(callOrder).toEqual(['dgraph', 'identity', 'runtime', 'toolset', 'apollo', 'mcp', 'monitoring']);
+      expect(callOrder).toEqual(['dgraph', 'identity', 'runtime', 'toolset', 'apollo', 'monitoring']);
       await service.stop('test');
     });
 
@@ -379,13 +366,12 @@ describe('MainService', () => {
 
   describe('shutdown', () => {
     it('stops all services in correct order', async () => {
-      const { service, identityService, runtimeService, apolloService, mcpServerAutoConfigService, monitoringService, dgraphService, toolSetService } = createService();
+      const { service, identityService, runtimeService, apolloService, monitoringService, dgraphService, toolSetService } = createService();
       const callOrder: string[] = [];
 
       identityService.stop = vi.fn(async () => { callOrder.push('identity'); });
       runtimeService.stop = vi.fn(async () => { callOrder.push('runtime'); });
       apolloService.stop = vi.fn(async () => { callOrder.push('apollo'); });
-      mcpServerAutoConfigService.stop = vi.fn(async () => { callOrder.push('mcp'); });
       monitoringService.stop = vi.fn(async () => { callOrder.push('monitoring'); });
       dgraphService.stop = vi.fn(async () => { callOrder.push('dgraph'); });
       toolSetService.stop = vi.fn(async () => { callOrder.push('toolset'); });
@@ -393,7 +379,7 @@ describe('MainService', () => {
       await service.start('test');
       await service.stop('test');
 
-      expect(callOrder).toEqual(['identity', 'runtime', 'apollo', 'mcp', 'monitoring', 'dgraph', 'toolset']);
+      expect(callOrder).toEqual(['identity', 'runtime', 'apollo', 'monitoring', 'dgraph', 'toolset']);
     });
   });
 });

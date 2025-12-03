@@ -39,8 +39,9 @@ export interface DatabaseFixture {
 
   /**
    * Execute a GraphQL query against the backend
+   * @param authToken - Optional JWT token for authenticated requests
    */
-  graphql: <T = any>(query: string, variables?: Record<string, any>) => Promise<T>;
+  graphql: <T = any>(query: string, variables?: Record<string, any>, authToken?: string) => Promise<T>;
 
   /**
    * Get current database state for debugging/assertions

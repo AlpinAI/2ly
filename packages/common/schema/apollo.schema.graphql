@@ -250,7 +250,6 @@ type Query {
   system: System
   infra: Infra!
   workspaceMCPTools(workspaceId: ID!): Workspace
-  isMCPAutoConfigEnabled: Boolean!
   getRegistryServers(workspaceId: ID!): [MCPRegistryServer!]!
   # Monitoring query with filtering and pagination
   toolCalls(

@@ -417,7 +417,6 @@ export enum OrderDirection {
 export type Query = {
   getRegistryServers: Array<McpRegistryServer>;
   infra: Infra;
-  isMCPAutoConfigEnabled: Scalars['Boolean']['output'];
   keyValue: Scalars['String']['output'];
   mcpServers?: Maybe<Array<McpServer>>;
   mcpTools?: Maybe<Array<McpTool>>;
@@ -966,7 +965,6 @@ export type OnboardingStepResolvers<ContextType = object, ParentType extends Res
 export type QueryResolvers<ContextType = object, ParentType extends ResolversParentTypes['Query'] = ResolversParentTypes['Query']> = {
   getRegistryServers?: Resolver<Array<ResolversTypes['MCPRegistryServer']>, ParentType, ContextType, RequireFields<QueryGetRegistryServersArgs, 'workspaceId'>>;
   infra?: Resolver<ResolversTypes['Infra'], ParentType, ContextType>;
-  isMCPAutoConfigEnabled?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
   keyValue?: Resolver<ResolversTypes['String'], ParentType, ContextType, RequireFields<QueryKeyValueArgs, 'keyId'>>;
   mcpServers?: Resolver<Maybe<Array<ResolversTypes['MCPServer']>>, ParentType, ContextType, RequireFields<QueryMcpServersArgs, 'workspaceId'>>;
   mcpTools?: Resolver<Maybe<Array<ResolversTypes['MCPTool']>>, ParentType, ContextType, RequireFields<QueryMcpToolsArgs, 'workspaceId'>>;

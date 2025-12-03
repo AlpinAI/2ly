@@ -114,6 +114,17 @@ export const GET_MCPSERVER = gql`
   }
 `;
 
+export const GET_MCPSERVER_WITH_WORKSPACE = gql`
+  query getMCPServerWithWorkspace($id: ID!) {
+    getMCPServer(id: $id) {
+      id
+      workspace {
+        id
+      }
+    }
+  }
+`;
+
 export const LINK_RUNTIME = gql`
   mutation linkRuntime($mcpServerId: ID!, $runtimeId: ID!) {
     updateMCPServer(input: { filter: { id: [$mcpServerId] }, set: { runtime: { id: $runtimeId } } }) {
@@ -228,6 +239,31 @@ export const QUERY_MCPSERVERS = gql`
       workspace {
         id
         name
+      }
+    }
+  }
+`;
+
+export const QUERY_MCPSERVERS_BY_WORKSPACE = gql`
+  query queryMCPServersByWorkspace($workspaceId: ID!) {
+    queryMCPServer(filter: { has: workspace }) @cascade {
+      id
+      name
+      description
+      repositoryUrl
+      transport
+      config
+      runOn
+      tools {
+        id
+        name
+      }
+      runtime {
+        id
+        name
+      }
+      workspace(filter: { id: [$workspaceId] }) {
+        id
       }
     }
   }
