@@ -29,7 +29,7 @@ const PROVIDER_REQUIRES_KEY: Record<AIProviderType, boolean> = {
   ollama: false,
 };
 
-const STATIC_MODELS: Record<AIProviderType, string[]> = {
+const _STATIC_MODELS: Record<AIProviderType, string[]> = {
   openai: ['gpt-4o', 'gpt-4o-mini', 'gpt-4-turbo', 'gpt-3.5-turbo'],
   anthropic: ['claude-sonnet-4-20250514', 'claude-3-5-sonnet-20241022', 'claude-3-haiku-20240307'],
   google: [],
