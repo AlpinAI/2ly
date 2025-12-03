@@ -2,137 +2,15 @@ import { injectable, inject } from 'inversify';
 import { DGraphService } from '../services/dgraph.service';
 import { dgraphResolversTypes, LoggerService } from '@2ly/common';
 import pino from 'pino';
-
-// GraphQL Operations - Inline for simplicity
-const GET_AI_PROVIDERS_BY_WORKSPACE = `
-  query GetAIProvidersByWorkspace($workspaceId: ID!) {
-    getWorkspace(id: $workspaceId) {
-      aiProviders {
-        id
-        provider
-        encryptedApiKey
-        baseUrl
-        availableModels
-        createdAt
-        updatedAt
-      }
-    }
-  }
-`;
-
-const FIND_AI_PROVIDER_BY_TYPE = `
-  query FindAIProviderByType($workspaceId: ID!, $provider: AIProviderType!) {
-    getWorkspace(id: $workspaceId) {
-      aiProviders(filter: { provider: { eq: $provider } }) {
-        id
-        provider
-        encryptedApiKey
-        baseUrl
-        availableModels
-        createdAt
-        updatedAt
-      }
-    }
-  }
-`;
-
-const CREATE_AI_PROVIDER = `
-  mutation CreateAIProvider(
-    $workspaceId: ID!
-    $provider: AIProviderType!
-    $encryptedApiKey: String
-    $baseUrl: String
-    $availableModels: [String!]
-    $now: DateTime!
-  ) {
-    addAIProviderConfig(
-      input: [{
-        workspace: { id: $workspaceId }
-        provider: $provider
-        encryptedApiKey: $encryptedApiKey
-        baseUrl: $baseUrl
-        availableModels: $availableModels
-        createdAt: $now
-        updatedAt: $now
-      }]
-    ) {
-      aIProviderConfig {
-        id
-        provider
-        encryptedApiKey
-        baseUrl
-        availableModels
-        createdAt
-        updatedAt
-      }
-    }
-  }
-`;
-
-const UPDATE_AI_PROVIDER = `
-  mutation UpdateAIProvider(
-    $id: ID!
-    $encryptedApiKey: String
-    $baseUrl: String
-    $availableModels: [String!]
-    $now: DateTime!
-  ) {
-    updateAIProviderConfig(
-      input: {
-        filter: { id: [$id] }
-        set: {
-          encryptedApiKey: $encryptedApiKey
-          baseUrl: $baseUrl
-          availableModels: $availableModels
-          updatedAt: $now
-        }
-      }
-    ) {
-      aIProviderConfig {
-        id
-        provider
-        encryptedApiKey
-        baseUrl
-        availableModels
-        createdAt
-        updatedAt
-      }
-    }
-  }
-`;
-
-const DELETE_AI_PROVIDER = `
-  mutation DeleteAIProvider($id: ID!) {
-    deleteAIProviderConfig(filter: { id: [$id] }) {
-      aIProviderConfig {
-        id
-      }
-    }
-  }
-`;
-
-const GET_AI_PROVIDER_BY_ID = `
-  query GetAIProviderById($id: ID!) {
-    getAIProviderConfig(id: $id) {
-      id
-      provider
-      workspace {
-        id
-      }
-    }
-  }
-`;
-
-const SET_DEFAULT_MODEL = `
-  mutation SetDefaultModel($workspaceId: ID!, $providerModel: String!) {
-    updateWorkspace(input: { filter: { id: [$workspaceId] }, set: { defaultAIModel: $providerModel } }) {
-      workspace {
-        id
-        defaultAIModel
-      }
-    }
-  }
-`;
+import {
+  GET_AI_PROVIDERS_BY_WORKSPACE,
+  FIND_AI_PROVIDER_BY_TYPE,
+  CREATE_AI_PROVIDER,
+  UPDATE_AI_PROVIDER,
+  DELETE_AI_PROVIDER,
+  GET_AI_PROVIDER_BY_ID,
+  SET_DEFAULT_MODEL,
+} from './ai-provider.operations';
 
 export interface AIProviderConfigData {
   provider: dgraphResolversTypes.AiProviderType;
