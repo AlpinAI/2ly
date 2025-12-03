@@ -75,6 +75,8 @@ describe('OnboardingCard', () => {
       onboardingSteps: [],
       runtimes: [],
       toolSets: [],
+      aiProviders: [],
+      defaultAIModel: null,
     },
     system: null,
     toolResponses: [],
@@ -115,6 +117,7 @@ describe('OnboardingCard', () => {
       onboardingSteps: [],
       runtimes: [],
       toolSets: [],
+      aiProviders: [],
     },
   };
 

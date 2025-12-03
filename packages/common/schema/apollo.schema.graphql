@@ -45,6 +45,8 @@ type Workspace {
   toolSets: [ToolSet!]
   registryServers: [MCPRegistryServer!]
   onboardingSteps: [OnboardingStep!]
+  aiProviders: [AIProviderConfig!]
+  defaultAIModel: String
 }
 
 type MCPServer {
@@ -210,6 +212,37 @@ type MCPRegistryServer {
   configurations: [MCPServer!]
 }
 
+# AI Provider Configuration - BYOK (Bring Your Own Key) support
+enum AIProviderType {
+  OPENAI
+  ANTHROPIC
+  GOOGLE
+  OLLAMA
+}
+
+type AIProviderConfig {
+  id: ID!
+  provider: AIProviderType!
+  # Custom base URL - for Ollama or custom endpoints
+  baseUrl: String
+  # Cached list of available models
+  availableModels: [String!]
+  createdAt: Date!
+  updatedAt: Date!
+}
+
+type AIProviderValidation {
+  valid: Boolean!
+  error: String
+  availableModels: [String!]
+}
+
+type AIModel {
+  id: String!
+  name: String!
+  contextWindow: Int
+}
+
 # Monitoring types for scalable tool call queries
 input ToolCallFilters {
   status: [ToolCallStatus!]
@@ -266,6 +299,11 @@ type Query {
   keyValue(keyId: ID!): String!
   # Authentication queries
   me: User
+  # AI Provider queries
+  getAIProviders(workspaceId: ID!): [AIProviderConfig!]!
+  getAIProvider(workspaceId: ID!, provider: AIProviderType!): AIProviderConfig
+  # Get all available models from all configured providers (format: "provider/model")
+  getAIModels(workspaceId: ID!): [String!]!
 }
 
 type CallToolResult {
@@ -353,6 +391,20 @@ type Mutation {
   refreshToken(input: RefreshTokenInput!): RefreshTokenPayload!
   logout(input: LogoutInput!): Boolean!
   logoutUser(input: LogoutUserInput!): LogoutPayload!
+
+  configureAIProvider(
+    workspaceId: ID!
+    provider: AIProviderType!
+    apiKey: String
+    baseUrl: String
+  ): AIProviderValidation!
+
+  setDefaultAIModel(workspaceId: ID!, defaultModel: String!): AIProviderConfig!
+
+  removeAIProvider(providerId: ID!): Boolean!
+
+  # Chat with a specific model (format: "provider/model-name")
+  chatWithModel(workspaceId: ID!, model: String!, message: String!): String!
 }
 
 # Authentication types
