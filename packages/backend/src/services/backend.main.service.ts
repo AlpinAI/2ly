@@ -7,7 +7,6 @@ import { LoggerService, Service } from '@2ly/common';
 import { DGraphService } from './dgraph.service';
 import { container } from '../di/container';
 import { WorkspaceRepository, SystemRepository } from '../repositories';
-import { MCPServerAutoConfigService } from './mcp-auto-config.service';
 import { MonitoringService } from './monitoring.service';
 import packageJson from '../../package.json';
 import { ToolSetService } from './toolset.service';
@@ -30,7 +29,6 @@ export class MainService extends Service {
     @inject(RuntimeService) private runtimeService: RuntimeService,
     @inject(ToolSetService) private toolSetService: ToolSetService,
     @inject(FastifyService) private fastifyService: FastifyService,
-    @inject(MCPServerAutoConfigService) private mcpServerAutoConfigService: MCPServerAutoConfigService,
     @inject(SystemRepository) private systemRepository: SystemRepository,
     @inject(WorkspaceRepository) private workspaceRepository: WorkspaceRepository,
     @inject(MonitoringService) private monitoringService: MonitoringService,
@@ -51,7 +49,6 @@ export class MainService extends Service {
     this.registerUtilityEndpoints();
     await this.startService(this.apolloService);
     await this.initInstance();
-    await this.startService(this.mcpServerAutoConfigService);
     await this.startService(this.monitoringService);
     this.registerGracefulShutdown();
   }
@@ -62,7 +59,6 @@ export class MainService extends Service {
       this.stopService(this.identityService),
       this.stopService(this.runtimeService),
       this.stopService(this.apolloService),
-      this.stopService(this.mcpServerAutoConfigService),
       this.stopService(this.monitoringService),
       this.stopService(this.dgraphService),
       this.stopService(this.toolSetService),

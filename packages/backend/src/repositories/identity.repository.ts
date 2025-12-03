@@ -20,7 +20,7 @@ export interface CreateIdentityKeyData {
   permissions?: string;
 }
 
-const KEY_NATURE_PREFIX = {
+export const KEY_NATURE_PREFIX = {
   system: 'SYK',
   workspace: 'WSK',
   runtime: 'RTK',
