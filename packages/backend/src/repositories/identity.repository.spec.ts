@@ -289,7 +289,7 @@ describe('IdentityRepository', () => {
     it('should find and return a valid skill key', async () => {
       const mockKey: dgraphResolversTypes.IdentityKey = {
         id: 'key-id',
-        key: 'SKLabcdefghijklmnopqrstuvwxyz1234567890abcde',
+        key: 'SKKabcdefghijklmnopqrstuvwxyz1234567890abcde',
         relatedId: 'skill-id',
         createdAt: new Date().toISOString(),
         expiresAt: new Date(Date.now() + 1000000).toISOString(),
