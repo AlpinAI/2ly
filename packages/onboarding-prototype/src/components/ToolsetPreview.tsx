@@ -1,6 +1,7 @@
 import { useState } from 'react';
-import { Plus, X, Bot, BookOpen, ClipboardList, Wrench, GraduationCap, Upload, Link as LinkIcon, Pencil, Trash2 } from 'lucide-react';
+import { Plus, X, Bot, BookOpen, ClipboardList, Wrench, GraduationCap, Upload, Link as LinkIcon, Pencil, Trash2, MessageSquare } from 'lucide-react';
 import { Button } from './ui/button';
+import { SkillTryChat } from './SkillTryChat';
 import type { MockMCPTool, Capability } from '@/mocks/types';
 import { allAvailableTools } from '@/mocks/tools';
 
@@ -23,6 +24,7 @@ export function ToolsetPreview({ capability, onNext, onBack }: ToolsetPreviewPro
   const [currentSubStep, setCurrentSubStep] = useState<SubStep>('instructions');
   const [selectedTools, setSelectedTools] = useState<MockMCPTool[]>(skill.tools);
   const [showToolPicker, setShowToolPicker] = useState(false);
+  const [showTryChat, setShowTryChat] = useState(false);
 
   // Instructions state
   const [scope, setScope] = useState(skill.instructions.scope);
@@ -173,6 +175,19 @@ export function ToolsetPreview({ capability, onNext, onBack }: ToolsetPreviewPro
             <ClipboardList className="h-5 w-5 text-purple-600 mt-0.5 flex-shrink-0" />
             <div className="flex-1 space-y-3">
               <h3 className="font-semibold text-foreground">Instructions</h3>
+
+              {/* Taxonomy */}
+              {skill.instructions.taxonomy && (
+                <div className="flex items-center gap-2 text-xs text-muted-foreground bg-purple-500/10 rounded px-3 py-2">
+                  <span className="font-medium text-purple-600">Role:</span>
+                  <span>{skill.instructions.taxonomy.industry}</span>
+                  <span>→</span>
+                  <span>{skill.instructions.taxonomy.department}</span>
+                  <span>→</span>
+                  <span className="font-medium">{skill.instructions.taxonomy.role}</span>
+                </div>
+              )}
+
               <div className="space-y-3">
                 <div>
                   <div className="flex items-center justify-between mb-1.5">
@@ -453,6 +468,15 @@ export function ToolsetPreview({ capability, onNext, onBack }: ToolsetPreviewPro
           Back
         </Button>
         <Button
+          onClick={() => setShowTryChat(true)}
+          variant="secondary"
+          size="lg"
+          className="flex-1 gap-2"
+        >
+          <MessageSquare className="h-4 w-4" />
+          Try Skill
+        </Button>
+        <Button
           onClick={handleSubStepNext}
           size="lg"
           disabled={currentSubStep === 'tools' && selectedTools.length === 0}
@@ -461,6 +485,13 @@ export function ToolsetPreview({ capability, onNext, onBack }: ToolsetPreviewPro
           {currentSubStep === 'tools' ? 'Activate Skill' : 'Continue'}
         </Button>
       </div>
+
+      {/* Try Skill Chat Dialog */}
+      <SkillTryChat
+        open={showTryChat}
+        onOpenChange={setShowTryChat}
+        capability={capability}
+      />
     </div>
   );
 }

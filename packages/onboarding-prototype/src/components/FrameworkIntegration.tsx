@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Code, Copy, Check, Terminal, FileCode, Sparkles, Bot, Zap, Box, ChevronDown, ChevronRight } from 'lucide-react';
+import { Code, Copy, Check, Terminal, FileCode, Sparkles, Bot, Zap, Box, ChevronDown, ChevronRight, MessageSquare, Workflow, GitBranch } from 'lucide-react';
 import { Button } from './ui/button';
 import type { Capability } from '@/mocks/types';
 
@@ -17,13 +17,18 @@ type Framework =
   | 'langchain'
   | 'crewai'
   | 'autogen'
+  | 'n8n'
+  | 'langflow'
+  | 'copilot'
+  | 'chatgpt'
+  | 'mistral'
   | 'custom';
 
 interface IntegrationGuide {
   id: Framework;
   name: string;
   icon: typeof Terminal;
-  category: 'ide' | 'agent';
+  category: 'ide' | 'agent' | 'conversational';
   description: string;
   code: string;
   steps: string[];
@@ -118,7 +123,7 @@ export function FrameworkIntegration({ capability, onBack, onComplete }: Framewo
       id: 'claude-desktop',
       name: 'Claude Desktop',
       icon: Sparkles,
-      category: 'agent',
+      category: 'conversational',
       description: 'Connect via MCP to Claude Desktop app',
       code: `{
   "mcpServers": {
@@ -276,6 +281,292 @@ user_proxy.initiate_chat(
       ],
     },
     {
+      id: 'n8n',
+      name: 'n8n',
+      icon: Workflow,
+      category: 'agent',
+      description: 'Low-code workflow automation with AI agents',
+      code: `// n8n Workflow Integration
+
+// 1. Add AI Agent node
+{
+  "type": "n8n-nodes-langchain.agent",
+  "parameters": {
+    "agent": "conversationalAgent",
+    "systemMessage": "${skill.instructions.scope}\\n\\nGuardrails:\\n${skill.instructions.guardrails.map(g => `- ${g}`).join('\\n')}",
+    "memory": {
+      "type": "bufferMemory"
+    }
+  }
+}
+
+// 2. Add MCP Tool nodes for each skill tool
+${skill.tools.slice(0, 3).map((tool) => `{
+  "type": "n8n-nodes-base.httpRequest",
+  "name": "${tool.name}",
+  "parameters": {
+    "url": "https://your-domain.com/mcp/${tool.name}",
+    "method": "POST",
+    "authentication": "genericCredentialType",
+    "options": {
+      "tool": {
+        "name": "${tool.name}",
+        "description": "${tool.description}"
+      }
+    }
+  }
+}`).join(',\n\n')}
+
+// 3. Connect tools to agent
+// Agent will automatically use tools based on user input
+
+// 4. Add knowledge retrieval (optional)
+{
+  "type": "n8n-nodes-langchain.vectorStore",
+  "parameters": {
+    "mode": "retrieve",
+    "vectorStore": "pinecone",
+    "query": "={{$json.query}}"
+  }
+}`,
+      steps: [
+        'Install n8n: npm install n8n -g',
+        'Start n8n and create new workflow',
+        'Add AI Agent node and configure with skill instructions',
+        'Add HTTP Request nodes for each MCP tool',
+        'Configure tool descriptions and parameters',
+        'Optionally add Vector Store for knowledge retrieval',
+        'Connect nodes and test workflow',
+        'Deploy workflow and get webhook URL',
+      ],
+    },
+    {
+      id: 'langflow',
+      name: 'Langflow',
+      icon: GitBranch,
+      category: 'agent',
+      description: 'Visual AI workflow builder powered by LangChain',
+      code: `# Langflow Component Configuration
+
+# 1. Create Agent Component
+{
+  "type": "Agent",
+  "name": "${skill.name} Agent",
+  "parameters": {
+    "agent_type": "zero-shot-react-description",
+    "system_message": """
+${skill.instructions.scope}
+
+Guardrails:
+${skill.instructions.guardrails.map(g => `- ${g}`).join('\n')}
+
+Knowledge: ${skill.knowledge.description}
+    """,
+    "memory_type": "ConversationBufferMemory"
+  }
+}
+
+# 2. Add Tool Components
+${skill.tools.slice(0, 3).map(tool => `{
+  "type": "Tool",
+  "name": "${tool.name}",
+  "parameters": {
+    "name": "${tool.name}",
+    "description": "${tool.description}",
+    "endpoint": "https://your-domain.com/mcp/${tool.name}",
+    "method": "POST",
+    "return_direct": false
+  }
+}`).join(',\n\n')}
+
+# 3. Add Vector Store (for knowledge)
+{
+  "type": "VectorStoreRetriever",
+  "parameters": {
+    "vector_store_type": "Chroma",
+    "collection_name": "${skill.id}_knowledge",
+    "embedding_model": "text-embedding-ada-002"
+  }
+}
+
+# Connect: Tools -> Agent -> LLM -> Output`,
+      steps: [
+        'Install Langflow: pip install langflow',
+        'Run Langflow: langflow run',
+        'Create new flow in UI',
+        'Add Agent component with skill instructions',
+        'Add Tool components for each MCP tool endpoint',
+        'Add Vector Store component for knowledge retrieval',
+        'Connect components: Tools → Agent → LLM',
+        'Test flow and export as Python or JSON',
+        'Deploy via Langflow Cloud or self-hosted',
+      ],
+    },
+    {
+      id: 'copilot',
+      name: 'Microsoft Copilot',
+      icon: MessageSquare,
+      category: 'conversational',
+      description: 'Connect your skill to Microsoft 365 Copilot',
+      code: `// Microsoft Copilot Plugin Configuration
+{
+  "schema_version": "v2",
+  "name_for_human": "${skill.name}",
+  "name_for_model": "${skill.name.toLowerCase().replace(/\s+/g, '_')}",
+  "description_for_human": "${skill.description}",
+  "description_for_model": "${skill.instructions.scope}",
+  "auth": {
+    "type": "service_http",
+    "authorization_type": "bearer",
+    "verification_tokens": {
+      "openai": "$COPILOT_VERIFICATION_TOKEN"
+    }
+  },
+  "api": {
+    "type": "openapi",
+    "url": "https://your-domain.com/openapi.json"
+  },
+  "functions": ${JSON.stringify(
+    skill.tools.slice(0, 3).map(tool => ({
+      name: tool.name,
+      description: tool.description,
+    }))
+  )}
+}`,
+      steps: [
+        'Register your app in Microsoft Teams Developer Portal',
+        'Configure the plugin manifest with your skill details',
+        'Deploy your MCP tools as REST API endpoints',
+        'Upload manifest to Copilot admin center',
+        'Enable the plugin for your organization',
+        'Users can invoke your skill from Microsoft 365 Copilot',
+      ],
+    },
+    {
+      id: 'chatgpt',
+      name: 'ChatGPT',
+      icon: MessageSquare,
+      category: 'conversational',
+      description: 'Create a custom GPT with your skill',
+      code: `# ChatGPT Custom GPT Configuration
+
+**Name:** ${skill.name}
+
+**Description:** ${skill.description}
+
+**Instructions:**
+You are a specialized assistant for ${skill.name.toLowerCase()}.
+
+${skill.instructions.scope}
+
+**Guardrails:**
+${skill.instructions.guardrails.map(g => `- ${g}`).join('\n')}
+
+**Knowledge:**
+${skill.knowledge.description}
+
+**Actions (OpenAPI Schema):**
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "${skill.name} API",
+    "version": "1.0.0"
+  },
+  "servers": [
+    { "url": "https://your-domain.com/api" }
+  ],
+  "paths": {
+${skill.tools.slice(0, 2).map(tool => `    "/${tool.name}": {
+      "post": {
+        "summary": "${tool.description}",
+        "operationId": "${tool.name}",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "type": "object" }
+            }
+          }
+        }
+      }
+    }`).join(',\n')}
+  }
+}`,
+      steps: [
+        'Go to ChatGPT and click "Explore GPTs"',
+        'Click "Create a GPT" and choose "Configure"',
+        'Paste the name, description, and instructions above',
+        'Upload knowledge files in the Knowledge section',
+        'Add Actions by pasting the OpenAPI schema',
+        'Configure authentication (API key or OAuth)',
+        'Test your GPT and publish',
+      ],
+    },
+    {
+      id: 'mistral',
+      name: 'Mistral AI',
+      icon: MessageSquare,
+      category: 'conversational',
+      description: 'Deploy your skill as a Mistral Le Chat agent',
+      code: `# Mistral Agent Configuration
+
+from mistralai.client import MistralClient
+from mistralai.models.chat_completion import ChatMessage
+
+# Initialize Mistral client
+client = MistralClient(api_key="your_api_key")
+
+# Define your skill as a function
+tools = [
+${skill.tools.slice(0, 3).map(tool => `    {
+        "type": "function",
+        "function": {
+            "name": "${tool.name}",
+            "description": "${tool.description}",
+            "parameters": {
+                "type": "object",
+                "properties": {},
+                "required": []
+            }
+        }
+    }`).join(',\n')}
+]
+
+# System prompt with your skill configuration
+system_prompt = f"""
+You are a ${skill.name} specialist.
+
+${skill.instructions.scope}
+
+Guardrails:
+${skill.instructions.guardrails.map(g => `- ${g}`).join('\n')}
+
+Knowledge: ${skill.knowledge.description}
+"""
+
+# Chat with function calling
+messages = [
+    ChatMessage(role="system", content=system_prompt),
+    ChatMessage(role="user", content="Help me with ${skill.name.toLowerCase()}")
+]
+
+response = client.chat(
+    model="mistral-large-latest",
+    messages=messages,
+    tools=tools,
+    tool_choice="auto"
+)`,
+      steps: [
+        'Sign up for Mistral AI API access',
+        'Install the Mistral Python SDK: pip install mistralai',
+        'Configure your skill as Mistral function tools',
+        'Add instructions and guardrails to system prompt',
+        'Deploy your MCP tools as HTTP endpoints',
+        'Use function calling to execute skill actions',
+        'Optionally deploy as Le Chat custom agent',
+      ],
+    },
+    {
       id: 'custom',
       name: 'Custom Integration',
       icon: Box,
@@ -329,6 +620,7 @@ const skill = await loadSkill();
   ];
 
   const ideFrameworks = frameworks.filter(f => f.category === 'ide');
+  const conversationalFrameworks = frameworks.filter(f => f.category === 'conversational');
   const agentFrameworks = frameworks.filter(f => f.category === 'agent');
 
   const handleCopyCode = (code: string) => {
@@ -364,6 +656,91 @@ const skill = await loadSkill();
               const Icon = framework.icon;
               const isExpanded = expandedFramework === framework.id;
               const fileExtension = ['cline', 'cursor', 'continue'].includes(framework.id) ? 'json' : 'py';
+
+              return (
+                <div key={framework.id} className="rounded-lg border bg-card overflow-hidden">
+                  <button
+                    onClick={() => toggleFramework(framework.id)}
+                    className="w-full flex items-center justify-between p-4 hover:bg-accent transition-colors text-left"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-8 w-8 items-center justify-center rounded bg-muted">
+                        <Icon className="h-4 w-4 text-foreground" />
+                      </div>
+                      <div>
+                        <h4 className="font-semibold text-sm text-foreground">{framework.name}</h4>
+                        <p className="text-xs text-muted-foreground">{framework.description}</p>
+                      </div>
+                    </div>
+                    {isExpanded ? (
+                      <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                    ) : (
+                      <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                    )}
+                  </button>
+
+                  {isExpanded && (
+                    <div className="border-t p-4 space-y-4 bg-muted/20">
+                      {/* Code Block */}
+                      <div className="relative rounded-lg bg-muted/50 border">
+                        <div className="flex items-center justify-between border-b px-3 py-2 bg-muted/30">
+                          <span className="text-xs font-mono text-muted-foreground">
+                            config.{fileExtension}
+                          </span>
+                          <button
+                            onClick={() => handleCopyCode(framework.code)}
+                            className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
+                          >
+                            {copiedCode ? (
+                              <>
+                                <Check className="h-3 w-3" />
+                                Copied
+                              </>
+                            ) : (
+                              <>
+                                <Copy className="h-3 w-3" />
+                                Copy
+                              </>
+                            )}
+                          </button>
+                        </div>
+                        <pre className="p-3 overflow-x-auto text-xs">
+                          <code className="font-mono text-foreground">{framework.code}</code>
+                        </pre>
+                      </div>
+
+                      {/* Steps */}
+                      <div>
+                        <h5 className="text-xs font-semibold text-foreground mb-2">Setup Steps</h5>
+                        <ol className="space-y-1.5">
+                          {framework.steps.map((step, idx) => (
+                            <li key={idx} className="flex items-start gap-2 text-xs text-muted-foreground">
+                              <span className="flex h-4 w-4 items-center justify-center rounded-full bg-primary/10 text-primary font-semibold text-[10px] flex-shrink-0 mt-0.5">
+                                {idx + 1}
+                              </span>
+                              <span>{step}</span>
+                            </li>
+                          ))}
+                        </ol>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Conversational AI Section */}
+        <div>
+          <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-3 px-2">
+            Conversational AI
+          </h3>
+          <div className="space-y-2">
+            {conversationalFrameworks.map((framework) => {
+              const Icon = framework.icon;
+              const isExpanded = expandedFramework === framework.id;
+              const fileExtension = framework.id === 'copilot' ? 'json' : framework.id === 'chatgpt' ? 'txt' : 'py';
 
               return (
                 <div key={framework.id} className="rounded-lg border bg-card overflow-hidden">

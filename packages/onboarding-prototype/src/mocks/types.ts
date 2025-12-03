@@ -25,6 +25,11 @@ export interface SkillKnowledge {
 export interface SkillInstructions {
   scope: string;
   guardrails: string[];
+  taxonomy?: {
+    industry: string;
+    department: string;
+    role: string;
+  };
 }
 
 export interface Skill {

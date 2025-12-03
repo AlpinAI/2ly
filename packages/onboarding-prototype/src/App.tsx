@@ -2,8 +2,11 @@ import { useState, useEffect } from 'react';
 import { CapabilitySelector } from './components/CapabilitySelector';
 import { ToolsetPreview } from './components/ToolsetPreview';
 import { FrameworkIntegration } from './components/FrameworkIntegration';
+import { SuccessModal } from './components/SuccessModal';
+import { SimplifiedOnboarding } from './components/SimplifiedOnboarding';
 import { capabilities } from './mocks/capabilities';
 import type { Capability } from './mocks/types';
+import { Sparkles, LayoutGrid } from 'lucide-react';
 
 type WizardStep = 'capability' | 'toolset' | 'integration';
 
@@ -15,6 +18,8 @@ interface WizardState {
 }
 
 function App() {
+  const [useSimplified, setUseSimplified] = useState(true);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [state, setState] = useState<WizardState>(() => {
     // Load state from localStorage on mount
     const saved = localStorage.getItem(STORAGE_KEY);
@@ -64,9 +69,8 @@ function App() {
   };
 
   const handleComplete = () => {
-    // Reset wizard or show completion message
-    alert('Skill setup complete! Your skill is ready to integrate.');
-    resetWizard();
+    // Show success modal instead of alert
+    setShowSuccessModal(true);
   };
 
   const resetWizard = () => {
@@ -96,14 +100,35 @@ function App() {
                 </p>
               </div>
             </div>
-            {state.currentStep !== 'capability' && (
+            <div className="flex items-center gap-3">
+              {/* Design Toggle */}
               <button
-                onClick={resetWizard}
-                className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+                onClick={() => setUseSimplified(!useSimplified)}
+                className="flex items-center gap-2 px-3 py-1.5 rounded-lg border bg-card hover:bg-accent transition-colors text-sm"
+                title={useSimplified ? 'Switch to Original Design' : 'Switch to Simplified Design'}
               >
-                Start Over
+                {useSimplified ? (
+                  <>
+                    <LayoutGrid className="h-4 w-4" />
+                    <span className="hidden sm:inline">Original</span>
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="h-4 w-4" />
+                    <span className="hidden sm:inline">Simplified</span>
+                  </>
+                )}
               </button>
-            )}
+
+              {state.currentStep !== 'capability' && !useSimplified && (
+                <button
+                  onClick={resetWizard}
+                  className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  Start Over
+                </button>
+              )}
+            </div>
           </div>
         </div>
       </header>
@@ -161,29 +186,35 @@ function App() {
 
       {/* Main Content */}
       <main className="container mx-auto px-4 py-12">
-        {state.currentStep === 'capability' && (
-          <CapabilitySelector
-            capabilities={capabilities}
-            selectedCapability={state.selectedCapability}
-            onSelect={handleCapabilitySelect}
-            onNext={handleCapabilityNext}
-          />
-        )}
+        {useSimplified ? (
+          <SimplifiedOnboarding />
+        ) : (
+          <>
+            {state.currentStep === 'capability' && (
+              <CapabilitySelector
+                capabilities={capabilities}
+                selectedCapability={state.selectedCapability}
+                onSelect={handleCapabilitySelect}
+                onNext={handleCapabilityNext}
+              />
+            )}
 
-        {state.currentStep === 'toolset' && state.selectedCapability && (
-          <ToolsetPreview
-            capability={state.selectedCapability}
-            onNext={handleToolsetNext}
-            onBack={handleToolsetBack}
-          />
-        )}
+            {state.currentStep === 'toolset' && state.selectedCapability && (
+              <ToolsetPreview
+                capability={state.selectedCapability}
+                onNext={handleToolsetNext}
+                onBack={handleToolsetBack}
+              />
+            )}
 
-        {state.currentStep === 'integration' && state.selectedCapability && (
-          <FrameworkIntegration
-            capability={state.selectedCapability}
-            onBack={handleIntegrationBack}
-            onComplete={handleComplete}
-          />
+            {state.currentStep === 'integration' && state.selectedCapability && (
+              <FrameworkIntegration
+                capability={state.selectedCapability}
+                onBack={handleIntegrationBack}
+                onComplete={handleComplete}
+              />
+            )}
+          </>
         )}
       </main>
 
@@ -195,6 +226,19 @@ function App() {
           </p>
         </div>
       </footer>
+
+      {/* Success Modal */}
+      {state.selectedCapability && (
+        <SuccessModal
+          open={showSuccessModal}
+          onOpenChange={setShowSuccessModal}
+          capability={state.selectedCapability}
+          onCreateAnother={() => {
+            setShowSuccessModal(false);
+            resetWizard();
+          }}
+        />
+      )}
     </div>
   );
 }
