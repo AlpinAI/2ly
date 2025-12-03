@@ -61,6 +61,9 @@ export class AIProviderService {
         return STATIC_MODELS.anthropic;
       case 'google':
         {
+          if (!config.apiKey) {
+            throw new Error('Google API key is required');
+          }
           const host = config.baseUrl || 'https://generativelanguage.googleapis.com/v1';
           const res = await fetch(`${host}/models?key=${config.apiKey}`);
           if (!res.ok) throw new Error(`Google Gemini error: ${await res.text()}`);
