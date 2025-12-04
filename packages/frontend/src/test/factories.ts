@@ -39,6 +39,7 @@ export const createMockWorkspace = (overrides: Partial<Workspace> = {}): Workspa
   aiProviders: null,
   defaultAIModel: null,
   skills: null,
+  agents: null,
   ...overrides,
 });
 
@@ -139,6 +140,7 @@ export const createMockSkillRef = (overrides: Partial<Skill> = {}): Skill => ({
   updatedAt: null,
   mcpTools: null,
   toolCalls: null,
+  agents: null,
   workspace: null as never,
   ...overrides,
 });

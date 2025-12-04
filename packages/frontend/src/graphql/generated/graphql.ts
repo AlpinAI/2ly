@@ -52,6 +52,21 @@ export enum ActiveStatus {
   Inactive = 'INACTIVE'
 }
 
+export type Agent = {
+  __typename: 'Agent';
+  createdAt: Scalars['Date']['output'];
+  description: Maybe<Scalars['String']['output']>;
+  id: Scalars['ID']['output'];
+  maxTokens: Scalars['Int']['output'];
+  model: Scalars['String']['output'];
+  name: Scalars['String']['output'];
+  skills: Maybe<Array<Skill>>;
+  systemPrompt: Scalars['String']['output'];
+  temperature: Scalars['Float']['output'];
+  updatedAt: Maybe<Scalars['Date']['output']>;
+  workspace: Workspace;
+};
+
 export type AuthPayload = {
   __typename: 'AuthPayload';
   accessToken: Scalars['String']['output'];
@@ -73,6 +88,16 @@ export type CallToolResult = {
   __typename: 'CallToolResult';
   result: Scalars['String']['output'];
   success: Scalars['Boolean']['output'];
+};
+
+export type CreateAgentInput = {
+  description?: InputMaybe<Scalars['String']['input']>;
+  maxTokens?: InputMaybe<Scalars['Int']['input']>;
+  model: Scalars['String']['input'];
+  name: Scalars['String']['input'];
+  systemPrompt: Scalars['String']['input'];
+  temperature?: InputMaybe<Scalars['Float']['input']>;
+  workspaceId: Scalars['ID']['input'];
 };
 
 export type IdentityKey = {
@@ -180,14 +205,17 @@ export type Mutation = {
   __typename: 'Mutation';
   addMCPToolToSkill: Skill;
   addServerToRegistry: McpRegistryServer;
+  callAgent: Scalars['String']['output'];
   callMCPTool: CallToolResult;
   chatWithModel: Scalars['String']['output'];
   completeOnboardingStep: Scalars['Boolean']['output'];
   configureAIProvider: AiProviderValidation;
+  createAgent: Agent;
   createMCPServer: McpServer;
   createRuntime: Runtime;
   createSkill: Skill;
   createWorkspaceKey: IdentityKey;
+  deleteAgent: Agent;
   deleteMCPServer: McpServer;
   deleteMCPTool: McpTool;
   deleteRuntime: Runtime;
@@ -209,6 +237,7 @@ export type Mutation = {
   setGlobalRuntime: Workspace;
   unlinkMCPServerFromRuntime: McpServer;
   unsetGlobalRuntime: Workspace;
+  updateAgent: Agent;
   updateMCPServer: McpServer;
   updateMCPServerRunOn: McpServer;
   updateRuntime: Runtime;
@@ -236,6 +265,12 @@ export type MutationAddServerToRegistryArgs = {
 };
 
 
+export type MutationCallAgentArgs = {
+  agentId: Scalars['ID']['input'];
+  userMessages: Array<Scalars['String']['input']>;
+};
+
+
 export type MutationCallMcpToolArgs = {
   input: Scalars['String']['input'];
   toolId: Scalars['ID']['input'];
@@ -260,6 +295,11 @@ export type MutationConfigureAiProviderArgs = {
   baseUrl?: InputMaybe<Scalars['String']['input']>;
   provider: AiProviderType;
   workspaceId: Scalars['ID']['input'];
+};
+
+
+export type MutationCreateAgentArgs = {
+  input: CreateAgentInput;
 };
 
 
@@ -293,6 +333,11 @@ export type MutationCreateSkillArgs = {
 export type MutationCreateWorkspaceKeyArgs = {
   description: Scalars['String']['input'];
   workspaceId: Scalars['ID']['input'];
+};
+
+
+export type MutationDeleteAgentArgs = {
+  id: Scalars['ID']['input'];
 };
 
 
@@ -407,6 +452,11 @@ export type MutationUnsetGlobalRuntimeArgs = {
 };
 
 
+export type MutationUpdateAgentArgs = {
+  input: UpdateAgentInput;
+};
+
+
 export type MutationUpdateMcpServerArgs = {
   config: Scalars['String']['input'];
   description: Scalars['String']['input'];
@@ -490,6 +540,8 @@ export type Query = {
   getAIModels: Array<Scalars['String']['output']>;
   getAIProvider: Maybe<AiProviderConfig>;
   getAIProviders: Array<AiProviderConfig>;
+  getAgent: Maybe<Agent>;
+  getAgentsByWorkspace: Array<Agent>;
   getRegistryServers: Array<McpRegistryServer>;
   infra: Infra;
   keyValue: Scalars['String']['output'];
@@ -519,6 +571,16 @@ export type QueryGetAiProviderArgs = {
 
 
 export type QueryGetAiProvidersArgs = {
+  workspaceId: Scalars['ID']['input'];
+};
+
+
+export type QueryGetAgentArgs = {
+  id: Scalars['ID']['input'];
+};
+
+
+export type QueryGetAgentsByWorkspaceArgs = {
   workspaceId: Scalars['ID']['input'];
 };
 
@@ -628,6 +690,7 @@ export enum RuntimeType {
 
 export type Skill = {
   __typename: 'Skill';
+  agents: Maybe<Array<Agent>>;
   createdAt: Scalars['Date']['output'];
   description: Maybe<Scalars['String']['output']>;
   id: Scalars['ID']['output'];
@@ -738,6 +801,16 @@ export type ToolCallsResult = {
   totalCount: Scalars['Int']['output'];
 };
 
+export type UpdateAgentInput = {
+  description?: InputMaybe<Scalars['String']['input']>;
+  id: Scalars['ID']['input'];
+  maxTokens?: InputMaybe<Scalars['Int']['input']>;
+  model?: InputMaybe<Scalars['String']['input']>;
+  name?: InputMaybe<Scalars['String']['input']>;
+  systemPrompt?: InputMaybe<Scalars['String']['input']>;
+  temperature?: InputMaybe<Scalars['Float']['input']>;
+};
+
 export type User = {
   __typename: 'User';
   adminOfWorkspaces: Maybe<Array<Workspace>>;
@@ -751,6 +824,7 @@ export type User = {
 
 export type Workspace = {
   __typename: 'Workspace';
+  agents: Maybe<Array<Agent>>;
   aiProviders: Maybe<Array<AiProviderConfig>>;
   createdAt: Scalars['Date']['output'];
   defaultAIModel: Maybe<Scalars['String']['output']>;

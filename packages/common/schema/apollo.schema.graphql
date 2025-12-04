@@ -43,6 +43,7 @@ type Workspace {
   mcpTools: [MCPTool!]
   runtimes: [Runtime!]
   skills: [Skill!]
+  agents: [Agent!]
   registryServers: [MCPRegistryServer!]
   onboardingSteps: [OnboardingStep!]
   aiProviders: [AIProviderConfig!]
@@ -84,8 +85,23 @@ type Skill {
   createdAt: Date!
   updatedAt: Date
   mcpTools: [MCPTool!]
+  agents: [Agent!]
   workspace: Workspace!
   toolCalls: [ToolCall!]
+}
+
+type Agent {
+  id: ID!
+  name: String!
+  description: String
+  createdAt: Date!
+  updatedAt: Date
+  systemPrompt: String!
+  model: String!
+  temperature: Float!
+  maxTokens: Int!
+  skills: [Skill!]
+  workspace: Workspace!
 }
 
 type IdentityKey {
@@ -303,6 +319,9 @@ type Query {
   getAIProvider(workspaceId: ID!, provider: AIProviderType!): AIProviderConfig
   # Get all available models from all configured providers (format: "provider/model")
   getAIModels(workspaceId: ID!): [String!]!
+  # Agent queries
+  getAgent(id: ID!): Agent
+  getAgentsByWorkspace(workspaceId: ID!): [Agent!]!
 }
 
 type CallToolResult {
@@ -404,6 +423,32 @@ type Mutation {
 
   # Chat with a specific model (format: "provider/model-name")
   chatWithModel(workspaceId: ID!, model: String!, message: String!): String!
+
+  # Agent mutations
+  createAgent(input: CreateAgentInput!): Agent!
+  updateAgent(input: UpdateAgentInput!): Agent!
+  deleteAgent(id: ID!): Agent!
+  callAgent(agentId: ID!, userMessages: [String!]!): String!
+}
+
+input CreateAgentInput {
+  name: String!
+  description: String
+  systemPrompt: String!
+  model: String!
+  temperature: Float
+  maxTokens: Int
+  workspaceId: ID!
+}
+
+input UpdateAgentInput {
+  id: ID!
+  name: String
+  description: String
+  systemPrompt: String
+  model: String
+  temperature: Float
+  maxTokens: Int
 }
 
 # Authentication types

@@ -33,6 +33,7 @@ import {
   SkillRepository,
   IdentityRepository,
   AIProviderRepository,
+  AgentRepository,
 } from '../repositories';
 import { JwtService, AuthenticationService, AccountSecurityService, PasswordPolicyService } from '../services/auth';
 import { SecurityMiddleware, RateLimitMiddleware, GraphQLAuthMiddleware } from '../middleware';
@@ -41,6 +42,7 @@ import { KeyRateLimiterService } from '../services/key-rate-limiter.service';
 import pino from 'pino';
 import { MonitoringService } from '../services/monitoring.service';
 import { AIProviderService } from '../services/ai';
+import { AgentService } from '../services/agent.service';
 
 const container = new Container();
 const start = () => {
@@ -94,6 +96,7 @@ const start = () => {
   container.bind(SkillRepository).toSelf().inSingletonScope();
   container.bind(IdentityRepository).toSelf().inSingletonScope();
   container.bind(AIProviderRepository).toSelf().inSingletonScope();
+  container.bind(AgentRepository).toSelf().inSingletonScope();
 
   // Init authentication services
   container.bind(JwtService).toSelf().inSingletonScope();
@@ -108,6 +111,9 @@ const start = () => {
   // Init AI provider services
   container.bind(EncryptionService).toSelf().inSingletonScope();
   container.bind(AIProviderService).toSelf().inSingletonScope();
+
+  // Init agent service
+  container.bind(AgentService).toSelf().inSingletonScope();
 
   // Init security services
   container.bind(AccountSecurityService).toSelf().inSingletonScope();
