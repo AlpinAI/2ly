@@ -7,6 +7,7 @@ export class SkillListToolsPublish extends NatsPublish<{
   workspaceId: string;
   skillId: string;
   mcpTools: dgraphResolversTypes.McpTool[];
+  description?: string;
 }> {
   static type = type;
   type = type;
