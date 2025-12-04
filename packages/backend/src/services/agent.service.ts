@@ -1,8 +1,8 @@
 import { inject, injectable } from 'inversify';
-import { LoggerService } from '@2ly/common';
+import { LoggerService, AIProviderCoreService } from '@2ly/common';
 import pino from 'pino';
 import { AgentRepository } from '../repositories/agent.repository';
-import { AIProviderService } from './ai/ai-provider.service';
+import { AIProviderRepository } from '../repositories/ai-provider.repository';
 
 @injectable()
 export class AgentService {
@@ -11,7 +11,8 @@ export class AgentService {
   constructor(
     @inject(LoggerService) private loggerService: LoggerService,
     @inject(AgentRepository) private agentRepository: AgentRepository,
-    @inject(AIProviderService) private aiProviderService: AIProviderService,
+    @inject(AIProviderRepository) private aiProviderRepository: AIProviderRepository,
+    @inject(AIProviderCoreService) private aiProviderCoreService: AIProviderCoreService,
   ) {
     this.logger = this.loggerService.getLogger('agent-service');
   }
@@ -48,12 +49,12 @@ export class AgentService {
     this.logger.debug(`Calling AI provider with model ${agent.model}`);
 
     try {
+      // Parse model string and get decrypted config
+      const { provider, modelName } = this.aiProviderCoreService.parseModelString(agent.model);
+      const config = await this.aiProviderRepository.getDecryptedConfig(agent.workspace.id, provider);
+
       // Call the AI provider with the agent's configuration
-      const response = await this.aiProviderService.chat(
-        agent.workspace.id,
-        agent.model,
-        fullMessage,
-      );
+      const response = await this.aiProviderCoreService.chat(config, provider, modelName, fullMessage);
 
       this.logger.info(`Agent ${agentId} call completed successfully`);
       return response;

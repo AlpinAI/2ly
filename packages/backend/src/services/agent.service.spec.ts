@@ -1,24 +1,26 @@
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 import { AgentService } from './agent.service';
 import { AgentRepository } from '../repositories/agent.repository';
-import { AIProviderService } from './ai/ai-provider.service';
-import { LoggerService, dgraphResolversTypes } from '@2ly/common';
+import { AIProviderRepository } from '../repositories/ai-provider.repository';
+import { LoggerService, AIProviderCoreService, dgraphResolversTypes } from '@2ly/common';
 
 // Mock dependencies
 vi.mock('../repositories/agent.repository');
-vi.mock('./ai/ai-provider.service');
+vi.mock('../repositories/ai-provider.repository');
 vi.mock('@2ly/common', async () => {
   const actual = await vi.importActual('@2ly/common');
   return {
     ...actual,
     LoggerService: vi.fn(),
+    AIProviderCoreService: vi.fn(),
   };
 });
 
 describe('AgentService', () => {
   let service: AgentService;
   let mockAgentRepository: AgentRepository;
-  let mockAIProviderService: AIProviderService;
+  let mockAIProviderRepository: AIProviderRepository;
+  let mockAIProviderCoreService: AIProviderCoreService;
   let mockLoggerService: LoggerService;
   let mockLogger: ReturnType<LoggerService['getLogger']>;
 
@@ -51,6 +53,8 @@ describe('AgentService', () => {
     workspace: mockWorkspace,
   };
 
+  const mockConfig = { apiKey: 'test-api-key', baseUrl: undefined };
+
   beforeEach(() => {
     // Silence console errors in tests
     vi.spyOn(console, 'error').mockImplementation(() => {});
@@ -70,14 +74,20 @@ describe('AgentService', () => {
       findById: vi.fn(),
     } as unknown as AgentRepository;
 
-    mockAIProviderService = {
+    mockAIProviderRepository = {
+      getDecryptedConfig: vi.fn().mockResolvedValue(mockConfig),
+    } as unknown as AIProviderRepository;
+
+    mockAIProviderCoreService = {
+      parseModelString: vi.fn().mockReturnValue({ provider: 'openai', modelName: 'gpt-4' }),
       chat: vi.fn(),
-    } as unknown as AIProviderService;
+    } as unknown as AIProviderCoreService;
 
     service = new AgentService(
       mockLoggerService,
       mockAgentRepository,
-      mockAIProviderService,
+      mockAIProviderRepository,
+      mockAIProviderCoreService,
     );
   });
 
@@ -91,25 +101,32 @@ describe('AgentService', () => {
       const expectedResponse = 'I am doing well! I can help you with many tasks.';
 
       vi.spyOn(mockAgentRepository, 'findById').mockResolvedValue(mockAgent);
-      vi.spyOn(mockAIProviderService, 'chat').mockResolvedValue(expectedResponse);
+      vi.spyOn(mockAIProviderCoreService, 'chat').mockResolvedValue(expectedResponse);
 
       const result = await service.call('agent-456', userMessages);
 
       // Verify agent was fetched
       expect(mockAgentRepository.findById).toHaveBeenCalledWith('agent-456');
 
+      // Verify model string was parsed
+      expect(mockAIProviderCoreService.parseModelString).toHaveBeenCalledWith('openai/gpt-4');
+
+      // Verify config was fetched
+      expect(mockAIProviderRepository.getDecryptedConfig).toHaveBeenCalledWith('workspace-123', 'openai');
+
       // Verify AI provider was called with correct parameters
-      expect(mockAIProviderService.chat).toHaveBeenCalledWith(
-        'workspace-123',
-        'openai/gpt-4',
+      expect(mockAIProviderCoreService.chat).toHaveBeenCalledWith(
+        mockConfig,
+        'openai',
+        'gpt-4',
         expect.stringContaining('You are a helpful AI assistant.')
       );
 
       // Verify the full message includes both system prompt and user messages
-      const callArgs = vi.mocked(mockAIProviderService.chat).mock.calls[0];
-      expect(callArgs[2]).toContain('You are a helpful AI assistant.');
-      expect(callArgs[2]).toContain('Hello, how are you?');
-      expect(callArgs[2]).toContain('What can you help me with?');
+      const callArgs = vi.mocked(mockAIProviderCoreService.chat).mock.calls[0];
+      expect(callArgs[3]).toContain('You are a helpful AI assistant.');
+      expect(callArgs[3]).toContain('Hello, how are you?');
+      expect(callArgs[3]).toContain('What can you help me with?');
 
       expect(result).toBe(expectedResponse);
     });
@@ -122,7 +139,7 @@ describe('AgentService', () => {
         .toThrow('Agent with ID nonexistent-agent not found');
 
       // Verify AI provider was not called
-      expect(mockAIProviderService.chat).not.toHaveBeenCalled();
+      expect(mockAIProviderCoreService.chat).not.toHaveBeenCalled();
     });
 
     it('should throw error when agent has no workspace', async () => {
@@ -138,7 +155,7 @@ describe('AgentService', () => {
         .toThrow('Agent agent-456 has no associated workspace');
 
       // Verify AI provider was not called
-      expect(mockAIProviderService.chat).not.toHaveBeenCalled();
+      expect(mockAIProviderCoreService.chat).not.toHaveBeenCalled();
     });
 
     it('should construct message correctly with multiple user messages', async () => {
@@ -146,12 +163,12 @@ describe('AgentService', () => {
       const expectedResponse = 'Here are answers to your questions.';
 
       vi.spyOn(mockAgentRepository, 'findById').mockResolvedValue(mockAgent);
-      vi.spyOn(mockAIProviderService, 'chat').mockResolvedValue(expectedResponse);
+      vi.spyOn(mockAIProviderCoreService, 'chat').mockResolvedValue(expectedResponse);
 
       await service.call('agent-456', userMessages);
 
-      const callArgs = vi.mocked(mockAIProviderService.chat).mock.calls[0];
-      const fullMessage = callArgs[2];
+      const callArgs = vi.mocked(mockAIProviderCoreService.chat).mock.calls[0];
+      const fullMessage = callArgs[3];
 
       // Verify all user messages are included with proper separation
       expect(fullMessage).toContain('First question');
@@ -164,7 +181,7 @@ describe('AgentService', () => {
       const aiError = new Error('AI provider connection failed');
 
       vi.spyOn(mockAgentRepository, 'findById').mockResolvedValue(mockAgent);
-      vi.spyOn(mockAIProviderService, 'chat').mockRejectedValue(aiError);
+      vi.spyOn(mockAIProviderCoreService, 'chat').mockRejectedValue(aiError);
 
       await expect(service.call('agent-456', ['Test message']))
         .rejects
@@ -179,13 +196,14 @@ describe('AgentService', () => {
       const expectedResponse = 'Response to single message';
 
       vi.spyOn(mockAgentRepository, 'findById').mockResolvedValue(mockAgent);
-      vi.spyOn(mockAIProviderService, 'chat').mockResolvedValue(expectedResponse);
+      vi.spyOn(mockAIProviderCoreService, 'chat').mockResolvedValue(expectedResponse);
 
       const result = await service.call('agent-456', userMessages);
 
-      expect(mockAIProviderService.chat).toHaveBeenCalledWith(
-        'workspace-123',
-        'openai/gpt-4',
+      expect(mockAIProviderCoreService.chat).toHaveBeenCalledWith(
+        mockConfig,
+        'openai',
+        'gpt-4',
         expect.stringContaining('Single message')
       );
 
@@ -199,20 +217,27 @@ describe('AgentService', () => {
       };
 
       vi.spyOn(mockAgentRepository, 'findById').mockResolvedValue(anthropicAgent);
-      vi.spyOn(mockAIProviderService, 'chat').mockResolvedValue('Response');
+      vi.spyOn(mockAIProviderCoreService, 'parseModelString').mockReturnValue({
+        provider: 'anthropic' as const,
+        modelName: 'claude-3-5-sonnet',
+      });
+      vi.spyOn(mockAIProviderCoreService, 'chat').mockResolvedValue('Response');
 
       await service.call('agent-456', ['Test']);
 
-      expect(mockAIProviderService.chat).toHaveBeenCalledWith(
-        'workspace-123',
-        'anthropic/claude-3-5-sonnet',
+      expect(mockAIProviderCoreService.parseModelString).toHaveBeenCalledWith('anthropic/claude-3-5-sonnet');
+      expect(mockAIProviderRepository.getDecryptedConfig).toHaveBeenCalledWith('workspace-123', 'anthropic');
+      expect(mockAIProviderCoreService.chat).toHaveBeenCalledWith(
+        mockConfig,
+        'anthropic',
+        'claude-3-5-sonnet',
         expect.any(String)
       );
     });
 
     it('should log appropriate info messages during execution', async () => {
       vi.spyOn(mockAgentRepository, 'findById').mockResolvedValue(mockAgent);
-      vi.spyOn(mockAIProviderService, 'chat').mockResolvedValue('Response');
+      vi.spyOn(mockAIProviderCoreService, 'chat').mockResolvedValue('Response');
 
       await service.call('agent-456', ['Test message']);
 

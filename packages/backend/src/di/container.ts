@@ -12,6 +12,7 @@ import {
   EPHEMERAL_TTL,
   DEFAULT_EPHEMERAL_TTL,
   EncryptionService,
+  AIProviderCoreService,
 } from '@2ly/common';
 import { DGraphService, DGRAPH_URL } from '../services/dgraph.service';
 import { ApolloService } from '../services/apollo.service';
@@ -41,7 +42,6 @@ import { IdentityService } from '../services/identity.service';
 import { KeyRateLimiterService } from '../services/key-rate-limiter.service';
 import pino from 'pino';
 import { MonitoringService } from '../services/monitoring.service';
-import { AIProviderService } from '../services/ai';
 import { AgentService } from '../services/agent.service';
 
 const container = new Container();
@@ -108,9 +108,9 @@ const start = () => {
   // Init key rate limiter service
   container.bind(KeyRateLimiterService).toSelf().inSingletonScope();
 
-  // Init AI provider services
+  // Init AI provider core service (from @2ly/common)
   container.bind(EncryptionService).toSelf().inSingletonScope();
-  container.bind(AIProviderService).toSelf().inSingletonScope();
+  container.bind(AIProviderCoreService).toSelf().inSingletonScope();
 
   // Init agent service
   container.bind(AgentService).toSelf().inSingletonScope();
@@ -140,8 +140,8 @@ const start = () => {
   loggerService.setLogLevel('identity', (process.env.IDENTITY_LOG_LEVEL || 'info') as pino.Level);
   loggerService.setLogLevel('skill', (process.env.SKILL_LOG_LEVEL || 'info') as pino.Level);
   loggerService.setLogLevel('runtime.instance', (process.env.RUNTIME_INSTANCE_LOG_LEVEL || 'info') as pino.Level);
-  loggerService.setLogLevel('ai-provider-service', (process.env.AI_PROVIDER_LOG_LEVEL || 'info') as pino.Level);
   loggerService.setLogLevel('ai-provider-repository', (process.env.AI_PROVIDER_LOG_LEVEL || 'info') as pino.Level);
+  loggerService.setLogLevel('ai-provider-core', (process.env.AI_PROVIDER_LOG_LEVEL || 'info') as pino.Level);
 
   // Init Runtime Instance Factory
   container.bind<RuntimeInstanceFactory>(RuntimeInstance).toFactory((context) => {
