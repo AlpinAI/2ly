@@ -20,6 +20,27 @@ export interface SkillIdentity {
 }
 
 /**
+ * Static init_skill tool definition that gets injected when Skills are consumed as MCP Servers.
+ * This tool provides skill-specific instructions at the beginning of every conversation.
+ */
+const INIT_SKILL_TOOL = {
+  name: 'init_skill',
+  title: 'init_skill',
+  description: 'call this tool at the beginning of every conversation',
+  inputSchema: {
+    type: 'object',
+    properties: {
+      original_prompt: {
+        type: 'string',
+        description: 'Original user message'
+      }
+    },
+    required: ['original_prompt']
+  },
+  annotations: {}
+};
+
+/**
  * SkillService manages the skill subscriptions and tool management.
  * This service can be instantiated per-session in remote mode or as a singleton in stdio mode.
  */
@@ -28,6 +49,7 @@ export class SkillService extends Service {
   name = 'skill';
   private logger: pino.Logger;
   private tools = new BehaviorSubject<dgraphResolversTypes.McpTool[] | null>(null);
+  private skillDescription: string | null = null;
   private subscriptions: { unsubscribe: () => void; drain: () => Promise<void>; isClosed?: () => boolean }[] = [];
 
   constructor(
@@ -71,6 +93,7 @@ export class SkillService extends Service {
     (async () => {
       for await (const message of subscription) {
         if (message instanceof SkillListToolsPublish) {
+          this.skillDescription = message.data.description || null;
           this.tools.next(message.data.mcpTools);
           this.logger.debug(`Received ${message.data.mcpTools.length} mcp tools for skill ${this.identity.skillId}`);
         } else if (message instanceof ErrorResponse) {
@@ -111,10 +134,26 @@ export class SkillService extends Service {
 
   public async getToolsForMCP() {
     const tools = await this.waitForTools();
-    return tools.map((tool) => this.parseToolProperties(tool));
+    const parsedTools = tools.map((tool) => this.parseToolProperties(tool));
+
+    // Prepend init_skill as first tool
+    return [INIT_SKILL_TOOL, ...parsedTools];
   }
 
   public async callTool(name: string, args: Record<string, unknown>) {
+    // Handle static init_skill tool
+    if (name === 'init_skill') {
+      this.logger.debug(`Handling init_skill call for skill ${this.identity.skillId}`);
+      return {
+        content: [{
+          type: 'text',
+          text: JSON.stringify({
+            skill_instructions: this.skillDescription || ''
+          })
+        }]
+      };
+    }
+
     const tools = await this.waitForTools();
     const tool = tools.find((tool) => tool.name === name);
     if (!tool) {

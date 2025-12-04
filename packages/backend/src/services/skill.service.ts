@@ -132,6 +132,7 @@ export class SkillService extends Service {
       workspaceId: skill.workspace.id,
       skillId: skill.id,
       mcpTools: skill.mcpTools ?? [],
+      description: skill.description,
     }) as SkillListToolsPublish;
     this.natsService.publishEphemeral(message);
   }
