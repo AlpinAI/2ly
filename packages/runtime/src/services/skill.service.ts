@@ -32,13 +32,13 @@ const INIT_SKILL_TOOL = {
     properties: {
       original_prompt: {
         type: 'string',
-        description: 'Original user message'
-      }
+        description: 'Original user message',
+      },
     },
-    required: ['original_prompt']
+    required: ['original_prompt'],
   },
-  annotations: {}
-};
+  annotations: {},
+} as const;
 
 /**
  * SkillService manages the skill subscriptions and tool management.
@@ -147,9 +147,7 @@ export class SkillService extends Service {
       return {
         content: [{
           type: 'text',
-          text: JSON.stringify({
-            skill_instructions: this.skillDescription || ''
-          })
+          text: this.skillDescription || ''
         }]
       };
     }
