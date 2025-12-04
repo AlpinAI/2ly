@@ -12,6 +12,16 @@ type MockSubscription = {
   isClosed?: () => boolean;
 };
 
+// Test helpers
+const SUBSCRIPTION_WAIT_MS = 50;
+
+/**
+ * Wait for async subscription to process after initialization
+ */
+const waitForSubscription = (): Promise<void> => {
+  return new Promise(resolve => setTimeout(resolve, SUBSCRIPTION_WAIT_MS));
+};
+
 describe('SkillService - init_skill tool', () => {
   let skillService: SkillService;
   let mockLoggerService: LoggerService;
@@ -82,8 +92,8 @@ describe('SkillService - init_skill tool', () => {
       // Initialize the service
       await skillService['initialize']();
 
-      // Wait a bit for async subscription to process
-      await new Promise(resolve => setTimeout(resolve, 50));
+      // Wait for async subscription to process
+      await waitForSubscription();
 
       // Get tools
       const tools = await skillService.getToolsForMCP();
@@ -130,8 +140,8 @@ describe('SkillService - init_skill tool', () => {
       // Initialize the service
       await skillService['initialize']();
 
-      // Wait a bit for async subscription to process
-      await new Promise(resolve => setTimeout(resolve, 50));
+      // Wait for async subscription to process
+      await waitForSubscription();
 
       // Get tools
       const tools = await skillService.getToolsForMCP();
@@ -168,8 +178,8 @@ describe('SkillService - init_skill tool', () => {
       // Initialize the service
       await skillService['initialize']();
 
-      // Wait a bit for async subscription to process
-      await new Promise(resolve => setTimeout(resolve, 50));
+      // Wait for async subscription to process
+      await waitForSubscription();
 
       // Call init_skill
       const result = await skillService.callTool('init_skill', {
@@ -180,9 +190,7 @@ describe('SkillService - init_skill tool', () => {
       expect(result).toEqual({
         content: [{
           type: 'text',
-          text: JSON.stringify({
-            skill_instructions: skillDescription
-          })
+          text: skillDescription
         }]
       });
     });
@@ -209,8 +217,8 @@ describe('SkillService - init_skill tool', () => {
       // Initialize the service
       await skillService['initialize']();
 
-      // Wait a bit for async subscription to process
-      await new Promise(resolve => setTimeout(resolve, 50));
+      // Wait for async subscription to process
+      await waitForSubscription();
 
       // Call init_skill
       const result = await skillService.callTool('init_skill', {
@@ -221,9 +229,7 @@ describe('SkillService - init_skill tool', () => {
       expect(result).toEqual({
         content: [{
           type: 'text',
-          text: JSON.stringify({
-            skill_instructions: ''
-          })
+          text: ''
         }]
       });
     });
@@ -273,8 +279,8 @@ describe('SkillService - init_skill tool', () => {
       // Initialize the service
       await skillService['initialize']();
 
-      // Wait a bit for async subscription to process
-      await new Promise(resolve => setTimeout(resolve, 50));
+      // Wait for async subscription to process
+      await waitForSubscription();
 
       // Call regular tool (should delegate to NATS, not short-circuit)
       await skillService.callTool('regular_tool', { arg: 'value' });
