@@ -68,6 +68,10 @@ interface UIState {
   setSelectedSkillNameForConnection: (skillName: string | null) => void;
   selectedSkillIdForConnection: string | null;
   setSelectedSkillIdForConnection: (skillId: string | null) => void;
+  aiSkillBuilderDialogOpen: boolean;
+  aiSkillBuilderDialogCallback: ((skillId: string) => void) | null;
+  openAISkillBuilderDialog: (onSuccess?: (skillId: string) => void) => void;
+  closeAISkillBuilderDialog: () => void;
 
 
 
@@ -168,6 +172,20 @@ export const useUIStore = create<UIState>()(
         setSelectedSkillNameForConnection: (skillName) => set({ selectedSkillNameForConnection: skillName }),
         selectedSkillIdForConnection: null,
         setSelectedSkillIdForConnection: (skillId) => set({ selectedSkillIdForConnection: skillId }),
+
+        // Initial State - AI Skill Builder Dialog
+        aiSkillBuilderDialogOpen: false,
+        aiSkillBuilderDialogCallback: null,
+        openAISkillBuilderDialog: (onSuccess) =>
+          set({
+            aiSkillBuilderDialogOpen: true,
+            aiSkillBuilderDialogCallback: onSuccess || null,
+          }),
+        closeAISkillBuilderDialog: () =>
+          set({
+            aiSkillBuilderDialogOpen: false,
+            aiSkillBuilderDialogCallback: null,
+          }),
 
 
 
@@ -303,6 +321,20 @@ export const useAddServerWorkflow = () => {
     setOpen,
     initialStep,
     setInitialStep,
+  };
+};
+
+export const useAISkillBuilderDialog = () => {
+  const open = useUIStore((state) => state.aiSkillBuilderDialogOpen);
+  const callback = useUIStore((state) => state.aiSkillBuilderDialogCallback);
+  const openDialog = useUIStore((state) => state.openAISkillBuilderDialog);
+  const close = useUIStore((state) => state.closeAISkillBuilderDialog);
+
+  return {
+    open,
+    callback,
+    openDialog,
+    close,
   };
 };
 
