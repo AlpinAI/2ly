@@ -32,7 +32,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useAISkillBuilderDialog } from '@/stores/uiStore';
 import { useParams } from 'react-router-dom';
-import { useMutation, useQuery, useLazyQuery } from '@apollo/client/react';
+import { useMutation, useQuery } from '@apollo/client/react';
 import {
   CreateSkillDocument,
   AddMcpToolToSkillDocument,
@@ -93,9 +93,7 @@ export function AISkillBuilderDialog() {
   });
 
   // Chat with AI mutation
-  const [chatWithModel] = useLazyQuery(ChatWithModelDocument, {
-    fetchPolicy: 'no-cache',
-  });
+  const [chatWithModel] = useMutation(ChatWithModelDocument);
 
   // Create skill mutation
   const [createSkill] = useMutation(CreateSkillDocument, {

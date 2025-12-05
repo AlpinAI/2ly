@@ -18,7 +18,6 @@ import { MemoryRouter } from 'react-router-dom';
 // Mock Apollo Client hooks
 vi.mock('@apollo/client/react', () => ({
   useQuery: vi.fn(),
-  useLazyQuery: vi.fn(),
   useMutation: vi.fn(),
 }));
 
@@ -164,12 +163,6 @@ const renderComponent = (options: RenderOptions = {}) => {
     mockChatWithModel.mockRejectedValue(chatError);
   }
 
-  vi.mocked(apolloClient.useLazyQuery).mockReturnValue([
-    mockChatWithModel,
-    { loading: false, error: undefined, data: undefined },
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  ] as any);
-
   const mockCreateSkill = vi.fn();
   const mockAddToolToSkill = vi.fn();
 
@@ -195,19 +188,27 @@ const renderComponent = (options: RenderOptions = {}) => {
     },
   });
 
-  // Mock useMutation - return different mocks for CreateSkill and AddToolToSkill
+  // Mock useMutation - return different mocks for ChatWithModel, CreateSkill, and AddToolToSkill
+  // Component calls useMutation 3 times in order: ChatWithModel, CreateSkill, AddToolToSkill
   let mutationCallIndex = 0;
   vi.mocked(apolloClient.useMutation).mockImplementation(() => {
     const currentIndex = mutationCallIndex++;
-    if (currentIndex % 2 === 0) {
-      // Even calls (0, 2, 4...) are for CreateSkill
+    if (currentIndex % 3 === 0) {
+      // First call (0, 3, 6...) is for ChatWithModel
+      return [
+        mockChatWithModel,
+        { loading: false, error: undefined, data: undefined },
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      ] as any;
+    } else if (currentIndex % 3 === 1) {
+      // Second call (1, 4, 7...) is for CreateSkill
       return [
         mockCreateSkill,
         { loading: false, error: undefined, data: undefined },
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
       ] as any;
     } else {
-      // Odd calls (1, 3, 5...) are for AddToolToSkill
+      // Third call (2, 5, 8...) is for AddToolToSkill
       return [
         mockAddToolToSkill,
         { loading: false, error: undefined, data: undefined },
