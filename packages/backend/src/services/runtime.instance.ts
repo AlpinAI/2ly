@@ -196,6 +196,7 @@ export class RuntimeInstance extends Service {
                 temperature: skill.temperature ?? 1.0,
                 maxTokens: skill.maxTokens ?? 4096,
                 providerConfig,
+                executionTarget: skill.executionTarget ?? 'EDGE',
                 workspaceId: skill.workspace.id,
               };
             } catch (error) {

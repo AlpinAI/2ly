@@ -50,23 +50,6 @@ export enum ActiveStatus {
   Inactive = 'INACTIVE'
 }
 
-export type Agent = {
-  createdAt: Scalars['Date']['output'];
-  description?: Maybe<Scalars['String']['output']>;
-  executionTarget?: Maybe<ExecutionTarget>;
-  id: Scalars['ID']['output'];
-  maxTokens: Scalars['Int']['output'];
-  model: Scalars['String']['output'];
-  name: Scalars['String']['output'];
-  runtime?: Maybe<Runtime>;
-  skills?: Maybe<Array<Skill>>;
-  systemPrompt: Scalars['String']['output'];
-  temperature: Scalars['Float']['output'];
-  tools?: Maybe<Array<Skill>>;
-  updatedAt?: Maybe<Scalars['Date']['output']>;
-  workspace: Workspace;
-};
-
 export type AuthPayload = {
   accessToken: Scalars['String']['output'];
   errors?: Maybe<Array<Scalars['String']['output']>>;
@@ -85,17 +68,6 @@ export type AuthTokens = {
 export type CallToolResult = {
   result: Scalars['String']['output'];
   success: Scalars['Boolean']['output'];
-};
-
-export type CreateAgentInput = {
-  description?: InputMaybe<Scalars['String']['input']>;
-  executionTarget?: InputMaybe<ExecutionTarget>;
-  maxTokens?: InputMaybe<Scalars['Int']['input']>;
-  model: Scalars['String']['input'];
-  name: Scalars['String']['input'];
-  systemPrompt: Scalars['String']['input'];
-  temperature?: InputMaybe<Scalars['Float']['input']>;
-  workspaceId: Scalars['ID']['input'];
 };
 
 export enum ExecutionTarget {
@@ -196,17 +168,14 @@ export enum McpTransportType {
 export type Mutation = {
   addMCPToolToSkill: Skill;
   addServerToRegistry: McpRegistryServer;
-  callAgent: Scalars['String']['output'];
   callMCPTool: CallToolResult;
   chatWithModel: Scalars['String']['output'];
   completeOnboardingStep: Scalars['Boolean']['output'];
   configureAIProvider: AiProviderValidation;
-  createAgent: Agent;
   createMCPServer: McpServer;
   createRuntime: Runtime;
   createSkill: Skill;
   createWorkspaceKey: IdentityKey;
-  deleteAgent: Agent;
   deleteMCPServer: McpServer;
   deleteMCPTool: McpTool;
   deleteRuntime: Runtime;
@@ -230,8 +199,6 @@ export type Mutation = {
   unlinkMCPServerFromRuntime: McpServer;
   unlinkSkillFromRuntime: Skill;
   unsetGlobalRuntime: Workspace;
-  updateAgent: Agent;
-  updateAgentExecutionTarget: Agent;
   updateMCPServer: McpServer;
   updateMCPServerExecutionTarget: McpServer;
   updateRuntime: Runtime;
@@ -261,12 +228,6 @@ export type MutationAddServerToRegistryArgs = {
 };
 
 
-export type MutationCallAgentArgs = {
-  agentId: Scalars['ID']['input'];
-  userMessages: Array<Scalars['String']['input']>;
-};
-
-
 export type MutationCallMcpToolArgs = {
   input: Scalars['String']['input'];
   toolId: Scalars['ID']['input'];
@@ -291,11 +252,6 @@ export type MutationConfigureAiProviderArgs = {
   baseUrl?: InputMaybe<Scalars['String']['input']>;
   provider: AiProviderType;
   workspaceId: Scalars['ID']['input'];
-};
-
-
-export type MutationCreateAgentArgs = {
-  input: CreateAgentInput;
 };
 
 
@@ -329,11 +285,6 @@ export type MutationCreateSkillArgs = {
 export type MutationCreateWorkspaceKeyArgs = {
   description: Scalars['String']['input'];
   workspaceId: Scalars['ID']['input'];
-};
-
-
-export type MutationDeleteAgentArgs = {
-  id: Scalars['ID']['input'];
 };
 
 
@@ -459,18 +410,6 @@ export type MutationUnsetGlobalRuntimeArgs = {
 };
 
 
-export type MutationUpdateAgentArgs = {
-  input: UpdateAgentInput;
-};
-
-
-export type MutationUpdateAgentExecutionTargetArgs = {
-  agentId: Scalars['ID']['input'];
-  executionTarget: ExecutionTarget;
-  runtimeId?: InputMaybe<Scalars['ID']['input']>;
-};
-
-
 export type MutationUpdateMcpServerArgs = {
   config: Scalars['String']['input'];
   description: Scalars['String']['input'];
@@ -563,8 +502,6 @@ export type Query = {
   getAIModels: Array<Scalars['String']['output']>;
   getAIProvider?: Maybe<AiProviderConfig>;
   getAIProviders: Array<AiProviderConfig>;
-  getAgent?: Maybe<Agent>;
-  getAgentsByWorkspace: Array<Agent>;
   getRegistryServers: Array<McpRegistryServer>;
   infra: Infra;
   keyValue: Scalars['String']['output'];
@@ -594,16 +531,6 @@ export type QueryGetAiProviderArgs = {
 
 
 export type QueryGetAiProvidersArgs = {
-  workspaceId: Scalars['ID']['input'];
-};
-
-
-export type QueryGetAgentArgs = {
-  id: Scalars['ID']['input'];
-};
-
-
-export type QueryGetAgentsByWorkspaceArgs = {
   workspaceId: Scalars['ID']['input'];
 };
 
@@ -830,18 +757,6 @@ export type ToolCallsResult = {
   totalCount: Scalars['Int']['output'];
 };
 
-export type UpdateAgentInput = {
-  description?: InputMaybe<Scalars['String']['input']>;
-  executionTarget?: InputMaybe<ExecutionTarget>;
-  id: Scalars['ID']['input'];
-  maxTokens?: InputMaybe<Scalars['Int']['input']>;
-  model?: InputMaybe<Scalars['String']['input']>;
-  name?: InputMaybe<Scalars['String']['input']>;
-  runtimeId?: InputMaybe<Scalars['ID']['input']>;
-  systemPrompt?: InputMaybe<Scalars['String']['input']>;
-  temperature?: InputMaybe<Scalars['Float']['input']>;
-};
-
 export type UpdateSkillSmartConfigInput = {
   executionTarget?: InputMaybe<ExecutionTarget>;
   id: Scalars['ID']['input'];
@@ -863,7 +778,6 @@ export type User = {
 };
 
 export type Workspace = {
-  agents?: Maybe<Array<Agent>>;
   aiProviders?: Maybe<Array<AiProviderConfig>>;
   createdAt: Scalars['Date']['output'];
   defaultAIModel?: Maybe<Scalars['String']['output']>;
@@ -953,12 +867,10 @@ export type ResolversTypes = {
   AIProviderType: AiProviderType;
   AIProviderValidation: ResolverTypeWrapper<AiProviderValidation>;
   ActiveStatus: ActiveStatus;
-  Agent: ResolverTypeWrapper<Agent>;
   AuthPayload: ResolverTypeWrapper<AuthPayload>;
   AuthTokens: ResolverTypeWrapper<AuthTokens>;
   Boolean: ResolverTypeWrapper<Scalars['Boolean']['output']>;
   CallToolResult: ResolverTypeWrapper<CallToolResult>;
-  CreateAgentInput: CreateAgentInput;
   Date: ResolverTypeWrapper<Scalars['Date']['output']>;
   ExecutionTarget: ExecutionTarget;
   Float: ResolverTypeWrapper<Scalars['Float']['output']>;
@@ -997,7 +909,6 @@ export type ResolversTypes = {
   ToolCallStats: ResolverTypeWrapper<ToolCallStats>;
   ToolCallStatus: ToolCallStatus;
   ToolCallsResult: ResolverTypeWrapper<ToolCallsResult>;
-  UpdateAgentInput: UpdateAgentInput;
   UpdateSkillSmartConfigInput: UpdateSkillSmartConfigInput;
   User: ResolverTypeWrapper<User>;
   Workspace: ResolverTypeWrapper<Workspace>;
@@ -1008,12 +919,10 @@ export type ResolversParentTypes = {
   AIModel: AiModel;
   AIProviderConfig: AiProviderConfig;
   AIProviderValidation: AiProviderValidation;
-  Agent: Agent;
   AuthPayload: AuthPayload;
   AuthTokens: AuthTokens;
   Boolean: Scalars['Boolean']['output'];
   CallToolResult: CallToolResult;
-  CreateAgentInput: CreateAgentInput;
   Date: Scalars['Date']['output'];
   Float: Scalars['Float']['output'];
   ID: Scalars['ID']['output'];
@@ -1044,7 +953,6 @@ export type ResolversParentTypes = {
   ToolCallFilters: ToolCallFilters;
   ToolCallStats: ToolCallStats;
   ToolCallsResult: ToolCallsResult;
-  UpdateAgentInput: UpdateAgentInput;
   UpdateSkillSmartConfigInput: UpdateSkillSmartConfigInput;
   User: User;
   Workspace: Workspace;
@@ -1071,24 +979,6 @@ export type AiProviderValidationResolvers<ContextType = object, ParentType exten
   availableModels?: Resolver<Maybe<Array<ResolversTypes['String']>>, ParentType, ContextType>;
   error?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   valid?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
-  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
-};
-
-export type AgentResolvers<ContextType = object, ParentType extends ResolversParentTypes['Agent'] = ResolversParentTypes['Agent']> = {
-  createdAt?: Resolver<ResolversTypes['Date'], ParentType, ContextType>;
-  description?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
-  executionTarget?: Resolver<Maybe<ResolversTypes['ExecutionTarget']>, ParentType, ContextType>;
-  id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
-  maxTokens?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
-  model?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
-  name?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
-  runtime?: Resolver<Maybe<ResolversTypes['Runtime']>, ParentType, ContextType>;
-  skills?: Resolver<Maybe<Array<ResolversTypes['Skill']>>, ParentType, ContextType>;
-  systemPrompt?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
-  temperature?: Resolver<ResolversTypes['Float'], ParentType, ContextType>;
-  tools?: Resolver<Maybe<Array<ResolversTypes['Skill']>>, ParentType, ContextType>;
-  updatedAt?: Resolver<Maybe<ResolversTypes['Date']>, ParentType, ContextType>;
-  workspace?: Resolver<ResolversTypes['Workspace'], ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 };
 
@@ -1192,17 +1082,14 @@ export type McpToolResolvers<ContextType = object, ParentType extends ResolversP
 export type MutationResolvers<ContextType = object, ParentType extends ResolversParentTypes['Mutation'] = ResolversParentTypes['Mutation']> = {
   addMCPToolToSkill?: Resolver<ResolversTypes['Skill'], ParentType, ContextType, RequireFields<MutationAddMcpToolToSkillArgs, 'mcpToolId' | 'skillId'>>;
   addServerToRegistry?: Resolver<ResolversTypes['MCPRegistryServer'], ParentType, ContextType, RequireFields<MutationAddServerToRegistryArgs, 'description' | 'name' | 'repositoryUrl' | 'title' | 'version' | 'workspaceId'>>;
-  callAgent?: Resolver<ResolversTypes['String'], ParentType, ContextType, RequireFields<MutationCallAgentArgs, 'agentId' | 'userMessages'>>;
   callMCPTool?: Resolver<ResolversTypes['CallToolResult'], ParentType, ContextType, RequireFields<MutationCallMcpToolArgs, 'input' | 'toolId'>>;
   chatWithModel?: Resolver<ResolversTypes['String'], ParentType, ContextType, RequireFields<MutationChatWithModelArgs, 'message' | 'model' | 'workspaceId'>>;
   completeOnboardingStep?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType, RequireFields<MutationCompleteOnboardingStepArgs, 'stepId' | 'workspaceId'>>;
   configureAIProvider?: Resolver<ResolversTypes['AIProviderValidation'], ParentType, ContextType, RequireFields<MutationConfigureAiProviderArgs, 'provider' | 'workspaceId'>>;
-  createAgent?: Resolver<ResolversTypes['Agent'], ParentType, ContextType, RequireFields<MutationCreateAgentArgs, 'input'>>;
   createMCPServer?: Resolver<ResolversTypes['MCPServer'], ParentType, ContextType, RequireFields<MutationCreateMcpServerArgs, 'config' | 'description' | 'name' | 'registryServerId' | 'repositoryUrl' | 'transport' | 'workspaceId'>>;
   createRuntime?: Resolver<ResolversTypes['Runtime'], ParentType, ContextType, RequireFields<MutationCreateRuntimeArgs, 'description' | 'name' | 'type' | 'workspaceId'>>;
   createSkill?: Resolver<ResolversTypes['Skill'], ParentType, ContextType, RequireFields<MutationCreateSkillArgs, 'description' | 'name' | 'workspaceId'>>;
   createWorkspaceKey?: Resolver<ResolversTypes['IdentityKey'], ParentType, ContextType, RequireFields<MutationCreateWorkspaceKeyArgs, 'description' | 'workspaceId'>>;
-  deleteAgent?: Resolver<ResolversTypes['Agent'], ParentType, ContextType, RequireFields<MutationDeleteAgentArgs, 'id'>>;
   deleteMCPServer?: Resolver<ResolversTypes['MCPServer'], ParentType, ContextType, RequireFields<MutationDeleteMcpServerArgs, 'id'>>;
   deleteMCPTool?: Resolver<ResolversTypes['MCPTool'], ParentType, ContextType, RequireFields<MutationDeleteMcpToolArgs, 'id'>>;
   deleteRuntime?: Resolver<ResolversTypes['Runtime'], ParentType, ContextType, RequireFields<MutationDeleteRuntimeArgs, 'id'>>;
@@ -1226,8 +1113,6 @@ export type MutationResolvers<ContextType = object, ParentType extends Resolvers
   unlinkMCPServerFromRuntime?: Resolver<ResolversTypes['MCPServer'], ParentType, ContextType, RequireFields<MutationUnlinkMcpServerFromRuntimeArgs, 'mcpServerId'>>;
   unlinkSkillFromRuntime?: Resolver<ResolversTypes['Skill'], ParentType, ContextType, RequireFields<MutationUnlinkSkillFromRuntimeArgs, 'skillId'>>;
   unsetGlobalRuntime?: Resolver<ResolversTypes['Workspace'], ParentType, ContextType, RequireFields<MutationUnsetGlobalRuntimeArgs, 'id'>>;
-  updateAgent?: Resolver<ResolversTypes['Agent'], ParentType, ContextType, RequireFields<MutationUpdateAgentArgs, 'input'>>;
-  updateAgentExecutionTarget?: Resolver<ResolversTypes['Agent'], ParentType, ContextType, RequireFields<MutationUpdateAgentExecutionTargetArgs, 'agentId' | 'executionTarget'>>;
   updateMCPServer?: Resolver<ResolversTypes['MCPServer'], ParentType, ContextType, RequireFields<MutationUpdateMcpServerArgs, 'config' | 'description' | 'id' | 'name' | 'repositoryUrl' | 'transport'>>;
   updateMCPServerExecutionTarget?: Resolver<ResolversTypes['MCPServer'], ParentType, ContextType, RequireFields<MutationUpdateMcpServerExecutionTargetArgs, 'executionTarget' | 'mcpServerId'>>;
   updateRuntime?: Resolver<ResolversTypes['Runtime'], ParentType, ContextType, RequireFields<MutationUpdateRuntimeArgs, 'description' | 'id' | 'name'>>;
@@ -1254,8 +1139,6 @@ export type QueryResolvers<ContextType = object, ParentType extends ResolversPar
   getAIModels?: Resolver<Array<ResolversTypes['String']>, ParentType, ContextType, RequireFields<QueryGetAiModelsArgs, 'workspaceId'>>;
   getAIProvider?: Resolver<Maybe<ResolversTypes['AIProviderConfig']>, ParentType, ContextType, RequireFields<QueryGetAiProviderArgs, 'provider' | 'workspaceId'>>;
   getAIProviders?: Resolver<Array<ResolversTypes['AIProviderConfig']>, ParentType, ContextType, RequireFields<QueryGetAiProvidersArgs, 'workspaceId'>>;
-  getAgent?: Resolver<Maybe<ResolversTypes['Agent']>, ParentType, ContextType, RequireFields<QueryGetAgentArgs, 'id'>>;
-  getAgentsByWorkspace?: Resolver<Array<ResolversTypes['Agent']>, ParentType, ContextType, RequireFields<QueryGetAgentsByWorkspaceArgs, 'workspaceId'>>;
   getRegistryServers?: Resolver<Array<ResolversTypes['MCPRegistryServer']>, ParentType, ContextType, RequireFields<QueryGetRegistryServersArgs, 'workspaceId'>>;
   infra?: Resolver<ResolversTypes['Infra'], ParentType, ContextType>;
   keyValue?: Resolver<ResolversTypes['String'], ParentType, ContextType, RequireFields<QueryKeyValueArgs, 'keyId'>>;
@@ -1394,7 +1277,6 @@ export type UserResolvers<ContextType = object, ParentType extends ResolversPare
 };
 
 export type WorkspaceResolvers<ContextType = object, ParentType extends ResolversParentTypes['Workspace'] = ResolversParentTypes['Workspace']> = {
-  agents?: Resolver<Maybe<Array<ResolversTypes['Agent']>>, ParentType, ContextType>;
   aiProviders?: Resolver<Maybe<Array<ResolversTypes['AIProviderConfig']>>, ParentType, ContextType>;
   createdAt?: Resolver<ResolversTypes['Date'], ParentType, ContextType>;
   defaultAIModel?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
@@ -1413,7 +1295,6 @@ export type Resolvers<ContextType = object> = {
   AIModel?: AiModelResolvers<ContextType>;
   AIProviderConfig?: AiProviderConfigResolvers<ContextType>;
   AIProviderValidation?: AiProviderValidationResolvers<ContextType>;
-  Agent?: AgentResolvers<ContextType>;
   AuthPayload?: AuthPayloadResolvers<ContextType>;
   AuthTokens?: AuthTokensResolvers<ContextType>;
   CallToolResult?: CallToolResultResolvers<ContextType>;

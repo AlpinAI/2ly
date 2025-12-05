@@ -49,7 +49,6 @@ type Workspace {
   mcpTools: [MCPTool!]
   runtimes: [Runtime!]
   skills: [Skill!]
-  agents: [Agent!]
   registryServers: [MCPRegistryServer!]
   onboardingSteps: [OnboardingStep!]
   aiProviders: [AIProviderConfig!]
@@ -103,23 +102,6 @@ type Skill {
   systemPrompt: String
   executionTarget: ExecutionTarget
   runtime: Runtime
-}
-
-type Agent {
-  id: ID!
-  name: String!
-  description: String
-  createdAt: Date!
-  updatedAt: Date
-  systemPrompt: String!
-  model: String!
-  temperature: Float!
-  maxTokens: Int!
-  skills: [Skill!]
-  tools: [Skill!]
-  executionTarget: ExecutionTarget
-  runtime: Runtime
-  workspace: Workspace!
 }
 
 type IdentityKey {
@@ -339,9 +321,6 @@ type Query {
   getAIProvider(workspaceId: ID!, provider: AIProviderType!): AIProviderConfig
   # Get all available models from all configured providers (format: "provider/model")
   getAIModels(workspaceId: ID!): [String!]!
-  # Agent queries
-  getAgent(id: ID!): Agent
-  getAgentsByWorkspace(workspaceId: ID!): [Agent!]!
 }
 
 type CallToolResult {
@@ -448,36 +427,6 @@ type Mutation {
 
   # Chat with a specific model (format: "provider/model-name")
   chatWithModel(workspaceId: ID!, model: String!, message: String!): String!
-
-  # Agent mutations
-  createAgent(input: CreateAgentInput!): Agent!
-  updateAgent(input: UpdateAgentInput!): Agent!
-  deleteAgent(id: ID!): Agent!
-  callAgent(agentId: ID!, userMessages: [String!]!): String!
-  updateAgentExecutionTarget(agentId: ID!, executionTarget: ExecutionTarget!, runtimeId: ID): Agent!
-}
-
-input CreateAgentInput {
-  name: String!
-  description: String
-  systemPrompt: String!
-  model: String!
-  temperature: Float
-  maxTokens: Int
-  executionTarget: ExecutionTarget
-  workspaceId: ID!
-}
-
-input UpdateAgentInput {
-  id: ID!
-  name: String
-  description: String
-  systemPrompt: String
-  model: String
-  temperature: Float
-  maxTokens: Int
-  executionTarget: ExecutionTarget
-  runtimeId: ID
 }
 
 input UpdateSkillSmartConfigInput {

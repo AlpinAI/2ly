@@ -66,7 +66,6 @@ describe('ToolService', () => {
       mockHealthService,
       mockToolServerServiceFactory,
       mockToolAgentServiceFactory,
-      vi.fn(),
       undefined,
     );
   });

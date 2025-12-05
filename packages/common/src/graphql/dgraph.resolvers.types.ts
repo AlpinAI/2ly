@@ -39,23 +39,6 @@ export enum ActiveStatus {
   Inactive = 'INACTIVE'
 }
 
-export type Agent = {
-  createdAt: Scalars['DateTime']['output'];
-  description?: Maybe<Scalars['String']['output']>;
-  executionTarget?: Maybe<ExecutionTarget>;
-  id: Scalars['ID']['output'];
-  maxTokens: Scalars['Int']['output'];
-  model: Scalars['String']['output'];
-  name: Scalars['String']['output'];
-  runtime?: Maybe<Runtime>;
-  skills?: Maybe<Array<Skill>>;
-  systemPrompt: Scalars['String']['output'];
-  temperature: Scalars['Float']['output'];
-  tools?: Maybe<Array<Skill>>;
-  updatedAt?: Maybe<Scalars['DateTime']['output']>;
-  workspace: Workspace;
-};
-
 export enum ExecutionTarget {
   Agent = 'AGENT',
   Edge = 'EDGE'
@@ -147,7 +130,6 @@ export enum OnboardingStepType {
 }
 
 export type Runtime = {
-  agents?: Maybe<Array<Agent>>;
   createdAt: Scalars['DateTime']['output'];
   description?: Maybe<Scalars['String']['output']>;
   hostIP?: Maybe<Scalars['String']['output']>;
@@ -187,7 +169,6 @@ export type Session = {
 };
 
 export type Skill = {
-  agentTools?: Maybe<Array<Agent>>;
   createdAt: Scalars['DateTime']['output'];
   description?: Maybe<Scalars['String']['output']>;
   executionTarget?: Maybe<ExecutionTarget>;
@@ -203,7 +184,6 @@ export type Skill = {
   temperature?: Maybe<Scalars['Float']['output']>;
   toolCalls?: Maybe<Array<ToolCall>>;
   updatedAt?: Maybe<Scalars['DateTime']['output']>;
-  usedByAgents?: Maybe<Array<Agent>>;
   workspace: Workspace;
 };
 
@@ -263,7 +243,6 @@ export type User = {
 
 export type Workspace = {
   admins?: Maybe<Array<User>>;
-  agents?: Maybe<Array<Agent>>;
   aiProviders?: Maybe<Array<AiProviderConfig>>;
   createdAt: Scalars['DateTime']['output'];
   defaultAIModel?: Maybe<Scalars['String']['output']>;
@@ -354,7 +333,6 @@ export type ResolversTypes = ResolversObject<{
   AIProviderConfig: ResolverTypeWrapper<AiProviderConfig>;
   AIProviderType: AiProviderType;
   ActiveStatus: ActiveStatus;
-  Agent: ResolverTypeWrapper<Agent>;
   Boolean: ResolverTypeWrapper<Scalars['Boolean']['output']>;
   DateTime: ResolverTypeWrapper<Scalars['DateTime']['output']>;
   ExecutionTarget: ExecutionTarget;
@@ -385,7 +363,6 @@ export type ResolversTypes = ResolversObject<{
 /** Mapping between all available schema types and the resolvers parents */
 export type ResolversParentTypes = ResolversObject<{
   AIProviderConfig: AiProviderConfig;
-  Agent: Agent;
   Boolean: Scalars['Boolean']['output'];
   DateTime: Scalars['DateTime']['output'];
   Float: Scalars['Float']['output'];
@@ -414,24 +391,6 @@ export type AiProviderConfigResolvers<ContextType = any, ParentType extends Reso
   id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
   provider?: Resolver<ResolversTypes['AIProviderType'], ParentType, ContextType>;
   updatedAt?: Resolver<ResolversTypes['DateTime'], ParentType, ContextType>;
-  workspace?: Resolver<ResolversTypes['Workspace'], ParentType, ContextType>;
-  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
-}>;
-
-export type AgentResolvers<ContextType = any, ParentType extends ResolversParentTypes['Agent'] = ResolversParentTypes['Agent']> = ResolversObject<{
-  createdAt?: Resolver<ResolversTypes['DateTime'], ParentType, ContextType>;
-  description?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
-  executionTarget?: Resolver<Maybe<ResolversTypes['ExecutionTarget']>, ParentType, ContextType>;
-  id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
-  maxTokens?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
-  model?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
-  name?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
-  runtime?: Resolver<Maybe<ResolversTypes['Runtime']>, ParentType, ContextType>;
-  skills?: Resolver<Maybe<Array<ResolversTypes['Skill']>>, ParentType, ContextType>;
-  systemPrompt?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
-  temperature?: Resolver<ResolversTypes['Float'], ParentType, ContextType>;
-  tools?: Resolver<Maybe<Array<ResolversTypes['Skill']>>, ParentType, ContextType>;
-  updatedAt?: Resolver<Maybe<ResolversTypes['DateTime']>, ParentType, ContextType>;
   workspace?: Resolver<ResolversTypes['Workspace'], ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
@@ -513,7 +472,6 @@ export type OnboardingStepResolvers<ContextType = any, ParentType extends Resolv
 }>;
 
 export type RuntimeResolvers<ContextType = any, ParentType extends ResolversParentTypes['Runtime'] = ResolversParentTypes['Runtime']> = ResolversObject<{
-  agents?: Resolver<Maybe<Array<ResolversTypes['Agent']>>, ParentType, ContextType>;
   createdAt?: Resolver<ResolversTypes['DateTime'], ParentType, ContextType>;
   description?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   hostIP?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
@@ -550,7 +508,6 @@ export type SessionResolvers<ContextType = any, ParentType extends ResolversPare
 }>;
 
 export type SkillResolvers<ContextType = any, ParentType extends ResolversParentTypes['Skill'] = ResolversParentTypes['Skill']> = ResolversObject<{
-  agentTools?: Resolver<Maybe<Array<ResolversTypes['Agent']>>, ParentType, ContextType>;
   createdAt?: Resolver<ResolversTypes['DateTime'], ParentType, ContextType>;
   description?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   executionTarget?: Resolver<Maybe<ResolversTypes['ExecutionTarget']>, ParentType, ContextType>;
@@ -566,7 +523,6 @@ export type SkillResolvers<ContextType = any, ParentType extends ResolversParent
   temperature?: Resolver<Maybe<ResolversTypes['Float']>, ParentType, ContextType>;
   toolCalls?: Resolver<Maybe<Array<ResolversTypes['ToolCall']>>, ParentType, ContextType>;
   updatedAt?: Resolver<Maybe<ResolversTypes['DateTime']>, ParentType, ContextType>;
-  usedByAgents?: Resolver<Maybe<Array<ResolversTypes['Agent']>>, ParentType, ContextType>;
   workspace?: Resolver<ResolversTypes['Workspace'], ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
@@ -618,7 +574,6 @@ export type UserResolvers<ContextType = any, ParentType extends ResolversParentT
 
 export type WorkspaceResolvers<ContextType = any, ParentType extends ResolversParentTypes['Workspace'] = ResolversParentTypes['Workspace']> = ResolversObject<{
   admins?: Resolver<Maybe<Array<ResolversTypes['User']>>, ParentType, ContextType>;
-  agents?: Resolver<Maybe<Array<ResolversTypes['Agent']>>, ParentType, ContextType>;
   aiProviders?: Resolver<Maybe<Array<ResolversTypes['AIProviderConfig']>>, ParentType, ContextType>;
   createdAt?: Resolver<ResolversTypes['DateTime'], ParentType, ContextType>;
   defaultAIModel?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
@@ -637,7 +592,6 @@ export type WorkspaceResolvers<ContextType = any, ParentType extends ResolversPa
 
 export type Resolvers<ContextType = any> = ResolversObject<{
   AIProviderConfig?: AiProviderConfigResolvers<ContextType>;
-  Agent?: AgentResolvers<ContextType>;
   DateTime?: GraphQLScalarType;
   IdentityKey?: IdentityKeyResolvers<ContextType>;
   MCPRegistryServer?: McpRegistryServerResolvers<ContextType>;
