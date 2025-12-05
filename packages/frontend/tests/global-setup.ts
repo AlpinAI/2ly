@@ -40,7 +40,7 @@ async function globalSetup(_config: FullConfig) {
 
   // Initialize test environment with minimal logging
   const testEnv = new TestEnvironment({
-    logging: true,
+    logging: false,
   });
 
   try {

@@ -42,11 +42,11 @@ export enum ActiveStatus {
 export type Agent = {
   createdAt: Scalars['DateTime']['output'];
   description?: Maybe<Scalars['String']['output']>;
+  executionTarget?: Maybe<ExecutionTarget>;
   id: Scalars['ID']['output'];
   maxTokens: Scalars['Int']['output'];
   model: Scalars['String']['output'];
   name: Scalars['String']['output'];
-  runOn?: Maybe<ExecutionTarget>;
   runtime?: Maybe<Runtime>;
   skills?: Maybe<Array<Skill>>;
   systemPrompt: Scalars['String']['output'];
@@ -90,11 +90,11 @@ export type McpRegistryServer = {
 export type McpServer = {
   config: Scalars['String']['output'];
   description: Scalars['String']['output'];
+  executionTarget?: Maybe<ExecutionTarget>;
   id: Scalars['ID']['output'];
   name: Scalars['String']['output'];
   registryServer: McpRegistryServer;
   repositoryUrl: Scalars['String']['output'];
-  runOn?: Maybe<ExecutionTarget>;
   runtime?: Maybe<Runtime>;
   tools?: Maybe<Array<McpTool>>;
   transport: McpTransportType;
@@ -402,11 +402,11 @@ export type AiProviderConfigResolvers<ContextType = any, ParentType extends Reso
 export type AgentResolvers<ContextType = any, ParentType extends ResolversParentTypes['Agent'] = ResolversParentTypes['Agent']> = ResolversObject<{
   createdAt?: Resolver<ResolversTypes['DateTime'], ParentType, ContextType>;
   description?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  executionTarget?: Resolver<Maybe<ResolversTypes['ExecutionTarget']>, ParentType, ContextType>;
   id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
   maxTokens?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
   model?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   name?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
-  runOn?: Resolver<Maybe<ResolversTypes['ExecutionTarget']>, ParentType, ContextType>;
   runtime?: Resolver<Maybe<ResolversTypes['Runtime']>, ParentType, ContextType>;
   skills?: Resolver<Maybe<Array<ResolversTypes['Skill']>>, ParentType, ContextType>;
   systemPrompt?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
@@ -452,11 +452,11 @@ export type McpRegistryServerResolvers<ContextType = any, ParentType extends Res
 export type McpServerResolvers<ContextType = any, ParentType extends ResolversParentTypes['MCPServer'] = ResolversParentTypes['MCPServer']> = ResolversObject<{
   config?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   description?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  executionTarget?: Resolver<Maybe<ResolversTypes['ExecutionTarget']>, ParentType, ContextType>;
   id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
   name?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   registryServer?: Resolver<ResolversTypes['MCPRegistryServer'], ParentType, ContextType>;
   repositoryUrl?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
-  runOn?: Resolver<Maybe<ResolversTypes['ExecutionTarget']>, ParentType, ContextType>;
   runtime?: Resolver<Maybe<ResolversTypes['Runtime']>, ParentType, ContextType>;
   tools?: Resolver<Maybe<Array<ResolversTypes['MCPTool']>>, ParentType, ContextType>;
   transport?: Resolver<ResolversTypes['MCPTransportType'], ParentType, ContextType>;

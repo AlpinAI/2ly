@@ -193,7 +193,7 @@ export function ToolDetail({ tool }: ToolDetailProps) {
 
         {/* Tool Tester */}
         <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
-          <ToolTester toolId={tool.id} toolName={tool.name} inputSchema={tool.inputSchema} runOn={tool.mcpServer.runOn} />
+          <ToolTester toolId={tool.id} toolName={tool.name} inputSchema={tool.inputSchema} executionTarget={tool.mcpServer.executionTarget} />
         </div>
       </div>
 

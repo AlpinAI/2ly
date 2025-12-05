@@ -9,7 +9,7 @@ export const ADD_MCPSERVER = gql`
     $config: String!
     $workspaceId: ID!
     $registryServerId: ID!
-    $runOn: ExecutionTarget
+    $executionTarget: ExecutionTarget
   ) {
     addMCPServer(
       input: {
@@ -18,7 +18,7 @@ export const ADD_MCPSERVER = gql`
         repositoryUrl: $repositoryUrl
         transport: $transport
         config: $config
-        runOn: $runOn
+        executionTarget: $executionTarget
         workspace: { id: $workspaceId }
         registryServer: { id: $registryServerId }
       }
@@ -30,7 +30,7 @@ export const ADD_MCPSERVER = gql`
         repositoryUrl
         transport
         config
-        runOn
+        executionTarget
         workspace {
           id
           name
@@ -52,7 +52,7 @@ export const UPDATE_MCPSERVER = gql`
     $repositoryUrl: String!
     $transport: MCPTransportType!
     $config: String!
-    $runOn: ExecutionTarget
+    $executionTarget: ExecutionTarget
   ) {
     updateMCPServer(
       input: {
@@ -63,7 +63,7 @@ export const UPDATE_MCPSERVER = gql`
           repositoryUrl: $repositoryUrl
           transport: $transport
           config: $config
-          runOn: $runOn
+          executionTarget: $executionTarget
         }
       }
     ) {
@@ -74,7 +74,7 @@ export const UPDATE_MCPSERVER = gql`
         repositoryUrl
         transport
         config
-        runOn
+        executionTarget
         workspace {
           id
           name
@@ -84,12 +84,12 @@ export const UPDATE_MCPSERVER = gql`
   }
 `;
 
-export const UPDATE_MCPSERVER_RUN_ON = gql`
-  mutation updateExecutionTarget($id: ID!, $runOn: ExecutionTarget) {
-    updateMCPServer(input: { filter: { id: [$id] }, set: { runOn: $runOn } }) {
+export const UPDATE_MCPSERVER_EXECUTION_TARGET = gql`
+  mutation updateExecutionTarget($id: ID!, $executionTarget: ExecutionTarget) {
+    updateMCPServer(input: { filter: { id: [$id] }, set: { executionTarget: $executionTarget } }) {
       mCPServer {
         id
-        runOn
+        executionTarget
         runtime {
           id
           name
@@ -106,7 +106,7 @@ export const GET_MCPSERVER = gql`
   query getMCPServer($id: ID!) {
     getMCPServer(id: $id) {
       id
-      runOn
+      executionTarget
       runtime {
         id
       }
@@ -132,7 +132,7 @@ export const LINK_RUNTIME = gql`
         id
         name
         description
-        runOn
+        executionTarget
         runtime {
           id
           name
@@ -152,7 +152,7 @@ export const UNLINK_RUNTIME = gql`
         id
         name
         description
-        runOn
+        executionTarget
         runtime {
           id
         }
@@ -181,7 +181,7 @@ export const DELETE_MCPSERVER = gql`
         repositoryUrl
         transport
         config
-        runOn
+        executionTarget
         workspace {
           id
           name
@@ -218,7 +218,7 @@ export const QUERY_MCPSERVERS = gql`
       repositoryUrl
       transport
       config
-      runOn
+      executionTarget
       tools {
         id
         name
@@ -253,7 +253,7 @@ export const QUERY_MCPSERVERS_BY_WORKSPACE = gql`
       repositoryUrl
       transport
       config
-      runOn
+      executionTarget
       tools {
         id
         name

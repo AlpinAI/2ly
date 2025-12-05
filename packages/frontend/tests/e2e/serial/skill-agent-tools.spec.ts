@@ -2,7 +2,7 @@
  * Skill AGENT Runtime Tool Call Tests
  *
  * Tests MCP server tools configured to run on AGENT side (embedded in skill runtime).
- * Uses a real MCP SDK client to connect and call tools on an AGENT runOn MCP server.
+ * Uses a real MCP SDK client to connect and call tools on an AGENT executionTarget MCP server.
  *
  * Key differences from EDGE tests:
  * - MCP servers run in the skill's own runtime process (not a separate edge runtime)
@@ -11,9 +11,9 @@
  * - Each skill has its own isolated MCP server instances
  *
  * This validates:
- * - AGENT runOn configuration works with MCP clients
+ * - AGENT executionTarget configuration works with MCP clients
  * - Tools can be discovered and called without edge runtime
- * - MCP server has no runtime link (runOn: AGENT, runtime: null)
+ * - MCP server has no runtime link (executionTarget: AGENT, runtime: null)
  */
 
 import { test, expect, seedPresets, dgraphQL, loginAndGetToken } from '@2ly/common/test/fixtures/playwright';
@@ -42,7 +42,7 @@ test.describe('MCP Client with AGENT RunOn Configuration', () => {
     await resetDatabase(true);
 
     // Seed database with single MCP server (filesystem - STDIO transport)
-    // By default, seeded MCP servers use AGENT runOn
+    // By default, seeded MCP servers use AGENT executionTarget
     const entityIds = await seedDatabase(seedPresets.withSingleMCPServer);
     workspaceId = entityIds['default-workspace'];
     mcpServerId = entityIds['server-file-system'];
@@ -51,18 +51,18 @@ test.describe('MCP Client with AGENT RunOn Configuration', () => {
     authToken = await loginAndGetToken('user1@2ly.ai', 'password123');
 
     // IMPORTANT: FIRST configure the MCP Server on the EDGE for tool discovery
-    // and then configure it to AGENT runOn for tool execution
+    // and then configure it to AGENT executionTarget for tool execution
     await updateMCPServerToEdgeRuntime(graphql, mcpServerId, workspaceId, authToken);
 
     // Wait 15s for tool discovery to complete
     await new Promise((resolve) => setTimeout(resolve, 15000));
 
-    // Explicitly ensure MCP server is set to AGENT runOn with no runtime
+    // Explicitly ensure MCP server is set to AGENT executionTarget with no runtime
     const updateMutation = `
-      mutation UpdateMCPServerRunOn($mcpServerId: ID!, $runOn: ExecutionTarget!) {
-        updateMCPServerRunOn(mcpServerId: $mcpServerId, runOn: $runOn) {
+      mutation UpdateMCPServerRunOn($mcpServerId: ID!, $executionTarget: ExecutionTarget!) {
+        updateMCPServerExecutionTarget(mcpServerId: $mcpServerId, executionTarget: $executionTarget) {
           id
-          runOn
+          executionTarget
           runtime {
             id
           }
@@ -71,15 +71,15 @@ test.describe('MCP Client with AGENT RunOn Configuration', () => {
     `;
 
     const updateResult = await graphql<{
-      updateMCPServerRunOn: { id: string; runOn: string; runtime: { id: string } | null };
+      updateMCPServerExecutionTarget: { id: string; executionTarget: string; runtime: { id: string } | null };
     }>(updateMutation, {
       mcpServerId,
-      runOn: 'AGENT',
+      executionTarget: 'AGENT',
     }, authToken);
 
     // Verify the MCP server is configured correctly
-    expect(updateResult.updateMCPServerRunOn.runOn).toBe('AGENT');
-    expect(updateResult.updateMCPServerRunOn.runtime).toBeNull();
+    expect(updateResult.updateMCPServerExecutionTarget.executionTarget).toBe('AGENT');
+    expect(updateResult.updateMCPServerExecutionTarget.runtime).toBeNull();
 
     // Get the workspace key
     const result = await dgraphQL<{
@@ -96,10 +96,10 @@ test.describe('MCP Client with AGENT RunOn Configuration', () => {
    * STDIO Transport Tests with AGENT RunOn
    *
    * Tests that MCP clients can connect via STDIO transport and call tools
-   * on an AGENT runOn MCP server.
+   * on an AGENT executionTarget MCP server.
    */
   test.describe('STDIO Transport with AGENT RunOn', () => {
-    test('should connect and call tool on AGENT runOn MCP server via STDIO', async () => {
+    test('should connect and call tool on AGENT executionTarget MCP server via STDIO', async () => {
       const mcpClient = createMCPClient();
 
       try {
@@ -163,7 +163,7 @@ test.describe('MCP Client with AGENT RunOn Configuration', () => {
    * STREAM Transport Tests with AGENT RunOn
    *
    * Tests that MCP clients can connect via STREAM transport and call tools
-   * on an AGENT runOn MCP server (no edge runtime required).
+   * on an AGENT executionTarget MCP server (no edge runtime required).
    */
   test.describe('STREAM Transport with AGENT RunOn', () => {
     test('should connect but tools on AGENT side should not be part of the list tools', async () => {
@@ -175,7 +175,7 @@ test.describe('MCP Client with AGENT RunOn Configuration', () => {
    * SSE Transport Tests with AGENT RunOn
    *
    * Tests that MCP clients can connect via SSE transport and call tools
-   * on an AGENT runOn MCP server.
+   * on an AGENT executionTarget MCP server.
    */
   test.describe('SSE Transport with AGENT RunOn', () => {
     test('should connect but tools on AGENT side should not be part of the list tools', async () => {

@@ -165,7 +165,7 @@ export class ToolClientService extends Service {
 
         // Even though we skip spawning, ensure tools are subscribed
         const tools = mcpServer.tools ?? [];
-        this.ensureToolsSubscribed(mcpServer.id, tools, mcpServer.runOn!);
+        this.ensureToolsSubscribed(mcpServer.id, tools, mcpServer.executionTarget!);
 
         return;
       }
@@ -197,7 +197,7 @@ export class ToolClientService extends Service {
 
     const tools = mcpServer.tools ?? [];
     // Ensure all tools are subscribed
-    this.ensureToolsSubscribed(mcpServer.id, tools, mcpServer.runOn!);
+    this.ensureToolsSubscribed(mcpServer.id, tools, mcpServer.executionTarget!);
 
     // When the MCP Server is stopped, we need to unsubscribe from the capabilities and clear the subscriptions
     mcpServerService.onShutdown(async () => {});
@@ -205,14 +205,14 @@ export class ToolClientService extends Service {
   }
 
   // Subscribe to a capability and return the subscription
-  private subscribeToTool(toolId: string, runOn: EXECUTION_TARGET) {
+  private subscribeToTool(toolId: string, executionTarget: EXECUTION_TARGET) {
     const runtimeId = this.authService.getIdentity()!.id;
     const workspaceId = this.authService.getIdentity()!.workspaceId;
-    if (!runtimeId || (runOn === 'AGENT' && !workspaceId)) {
+    if (!runtimeId || (executionTarget === 'AGENT' && !workspaceId)) {
       throw new Error('Cannot subscribe to tool: missing runtimeId or workspaceId');
     }
     const subject =
-      runOn === 'AGENT'
+      executionTarget === 'AGENT'
         ? SkillCallToolRequest.subscribeToToolOnOneRuntime(toolId, workspaceId!, runtimeId)
         : SkillCallToolRequest.subscribeToTool(toolId);
 
@@ -308,7 +308,7 @@ export class ToolClientService extends Service {
    * Ensure all tools for an MCP server are subscribed.
    * This method is idempotent - it only subscribes to tools that don't have subscriptions yet.
    */
-  private ensureToolsSubscribed(mcpServerId: string, tools: dgraphResolversTypes.McpTool[], runOn: EXECUTION_TARGET) {
+  private ensureToolsSubscribed(mcpServerId: string, tools: dgraphResolversTypes.McpTool[], executionTarget: EXECUTION_TARGET) {
 
     this.mcpTools.set(
       mcpServerId,
@@ -325,7 +325,7 @@ export class ToolClientService extends Service {
     for (const tool of tools) {
       if (tool && !serverToolSubs.has(tool.id)) {
         this.logger.debug(`Subscribing to tool ${tool.name} (${tool.id})`);
-        const subscription = this.subscribeToTool(tool.id, runOn);
+        const subscription = this.subscribeToTool(tool.id, executionTarget);
         serverToolSubs.set(tool.id, subscription);
       } else if (tool) {
         this.logger.debug(`Tool ${tool.name} (${tool.id}) already subscribed -> skipping`);

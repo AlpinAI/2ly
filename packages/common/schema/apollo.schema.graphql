@@ -58,7 +58,7 @@ type MCPServer {
   transport: MCPTransportType!
   config: String!
   tools: [MCPTool!]
-  runOn: ExecutionTarget
+  executionTarget: ExecutionTarget
   runtime: Runtime
   registryServer: MCPRegistryServer!
   workspace: Workspace!
@@ -101,7 +101,7 @@ type Agent {
   temperature: Float!
   maxTokens: Int!
   skills: [Skill!]
-  runOn: ExecutionTarget
+  executionTarget: ExecutionTarget
   runtime: Runtime
   workspace: Workspace!
 }
@@ -339,7 +339,7 @@ type Mutation {
     repositoryUrl: String!
     transport: MCPTransportType!
     config: String!
-    runOn: ExecutionTarget
+    executionTarget: ExecutionTarget
     workspaceId: ID!
     registryServerId: ID!
   ): MCPServer!
@@ -350,7 +350,7 @@ type Mutation {
     repositoryUrl: String!
     transport: MCPTransportType!
     config: String!
-    runOn: ExecutionTarget
+    executionTarget: ExecutionTarget
   ): MCPServer!
   linkMCPServerToRuntime(mcpServerId: ID!, runtimeId: ID!): MCPServer!
   unlinkMCPServerFromRuntime(mcpServerId: ID!): MCPServer!
@@ -369,7 +369,7 @@ type Mutation {
   updateWorkspace(id: ID!, name: String!): Workspace!
   setGlobalRuntime(id: ID!, runtimeId: ID!): Workspace!
   unsetGlobalRuntime(id: ID!): Workspace!
-  updateMCPServerRunOn(mcpServerId: ID!, runOn: ExecutionTarget!, runtimeId: ID): MCPServer!
+  updateMCPServerExecutionTarget(mcpServerId: ID!, executionTarget: ExecutionTarget!, runtimeId: ID): MCPServer!
 
   # Registry server mutations
   addServerToRegistry(
@@ -432,7 +432,7 @@ type Mutation {
   updateAgent(input: UpdateAgentInput!): Agent!
   deleteAgent(id: ID!): Agent!
   callAgent(agentId: ID!, userMessages: [String!]!): String!
-  updateAgentRunOn(agentId: ID!, runOn: ExecutionTarget!, runtimeId: ID): Agent!
+  updateAgentExecutionTarget(agentId: ID!, executionTarget: ExecutionTarget!, runtimeId: ID): Agent!
 }
 
 input CreateAgentInput {
@@ -442,7 +442,7 @@ input CreateAgentInput {
   model: String!
   temperature: Float
   maxTokens: Int
-  runOn: ExecutionTarget
+  executionTarget: ExecutionTarget
   workspaceId: ID!
 }
 
@@ -454,7 +454,7 @@ input UpdateAgentInput {
   model: String
   temperature: Float
   maxTokens: Int
-  runOn: ExecutionTarget
+  executionTarget: ExecutionTarget
   runtimeId: ID
 }
 

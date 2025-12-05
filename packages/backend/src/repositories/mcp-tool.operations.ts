@@ -11,7 +11,7 @@ export const GET_MCP_TOOL_WITH_WORKSPACE = gql`
       }
       mcpServer {
         id
-        runOn
+        executionTarget
       }
     }
   }

@@ -22,6 +22,7 @@ import { createAgentResolvers } from '../resolvers/agent.resolver';
 import { AuthenticationService, JwtService, PasswordPolicyService } from '../services/auth';
 import { Container } from 'inversify';
 import { requireAuth, requireWorkspaceAccess, requireAuthAndWorkspaceAccess, withPeriodicValidation } from './authorization.helpers';
+import { validateRuntimeForWorkspace, updateExecutionTargetWithRuntime } from './execution-target.helpers';
 import { GraphQLContext } from '../types';
 
 const observableToAsyncGenerator = <T, K extends string>(
@@ -210,9 +211,9 @@ export const resolvers = (container: Container = defaultContainer): apolloResolv
         return result;
       },
 
-      updateMCPServerRunOn: async (
+      updateMCPServerExecutionTarget: async (
         _parent: unknown,
-        { mcpServerId, runOn, runtimeId }: { mcpServerId: string; runOn: EXECUTION_TARGET; runtimeId?: string | null },
+        { mcpServerId, executionTarget, runtimeId }: { mcpServerId: string; executionTarget: EXECUTION_TARGET; runtimeId?: string | null },
         context: GraphQLContext,
       ) => {
         const userId = requireAuth(context);
@@ -220,28 +221,11 @@ export const resolvers = (container: Container = defaultContainer): apolloResolv
         if (!mcpServer?.workspace?.id) {
           throw new GraphQLError('MCP Server not found', { extensions: { code: 'NOT_FOUND' } });
         }
-        // If runtimeId provided, verify it belongs to the same workspace
-        // or that it's a system runtime
         if (runtimeId) {
-          const runtime = await runtimeRepository.getRuntime(runtimeId);
-          if (!runtime?.workspace?.id && !runtime?.system?.id) {
-            throw new GraphQLError('Runtime not found', { extensions: { code: 'NOT_FOUND' } });
-          }
-          if (runtime.workspace?.id && mcpServer.workspace.id !== runtime.workspace.id) {
-            throw new GraphQLError('MCP Server and Runtime must belong to the same workspace', {
-              extensions: { code: 'BAD_REQUEST' },
-            });
-          }
+          await validateRuntimeForWorkspace(runtimeRepository, runtimeId, mcpServer.workspace.id, 'MCP Server');
         }
         await requireWorkspaceAccess(workspaceRepository, userId, mcpServer.workspace.id);
-        await mcpServerRepository.updateRunOn(mcpServerId, runOn);
-        if (runOn !== 'EDGE') {
-          return mcpServerRepository.unlinkRuntime(mcpServerId);
-        }
-        if (runtimeId) {
-          return mcpServerRepository.linkRuntime(mcpServerId, runtimeId);
-        }
-        return mcpServerRepository.unlinkRuntime(mcpServerId);
+        return updateExecutionTargetWithRuntime(mcpServerRepository, mcpServerId, executionTarget, runtimeId);
       },
       createMCPServer: async (
         _parent: unknown,
@@ -251,7 +235,7 @@ export const resolvers = (container: Container = defaultContainer): apolloResolv
           repositoryUrl,
           transport,
           config,
-          runOn,
+          executionTarget,
           workspaceId,
           registryServerId,
         }: {
@@ -260,7 +244,7 @@ export const resolvers = (container: Container = defaultContainer): apolloResolv
           repositoryUrl: string;
           transport: 'STREAM' | 'STDIO' | 'SSE';
           config: string;
-          runOn?: EXECUTION_TARGET | null;
+          executionTarget?: EXECUTION_TARGET | null;
           workspaceId: string;
           registryServerId: string;
         },
@@ -273,7 +257,7 @@ export const resolvers = (container: Container = defaultContainer): apolloResolv
           repositoryUrl,
           transport,
           config,
-          runOn ?? null,
+          executionTarget ?? null,
           workspaceId,
           registryServerId,
         );
@@ -380,7 +364,7 @@ export const resolvers = (container: Container = defaultContainer): apolloResolv
           repositoryUrl,
           transport,
           config,
-          runOn,
+          executionTarget,
         }: {
           id: string;
           name: string;
@@ -388,7 +372,7 @@ export const resolvers = (container: Container = defaultContainer): apolloResolv
           repositoryUrl: string;
           transport: 'STREAM' | 'STDIO' | 'SSE';
           config: string;
-          runOn?: EXECUTION_TARGET | null;
+          executionTarget?: EXECUTION_TARGET | null;
         },
         context: GraphQLContext,
       ) => {
@@ -398,7 +382,7 @@ export const resolvers = (container: Container = defaultContainer): apolloResolv
           throw new GraphQLError('MCP Server not found', { extensions: { code: 'NOT_FOUND' } });
         }
         await requireWorkspaceAccess(workspaceRepository, userId, mcpServer.workspace.id);
-        return mcpServerRepository.update(id, name, description, repositoryUrl, transport, config, runOn ?? null);
+        return mcpServerRepository.update(id, name, description, repositoryUrl, transport, config, executionTarget ?? null);
       },
       deleteMCPServer: async (_parent: unknown, { id }: { id: string }, context: GraphQLContext) => {
         const userId = requireAuth(context);

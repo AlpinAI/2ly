@@ -101,7 +101,7 @@ export const GET_SKILL = gql`
         mcpServer {
           id
           name
-          runOn
+          executionTarget
         }
       }
       workspace {
@@ -170,7 +170,7 @@ export const ADD_MCP_TOOL_TO_SKILL = gql`
           mcpServer {
             id
             name
-            runOn
+            executionTarget
           }
         }
         workspace {
@@ -217,7 +217,7 @@ export const REMOVE_MCP_TOOL_FROM_SKILL = gql`
           mcpServer {
             id
             name
-            runOn
+            executionTarget
           }
         }
         workspace {
@@ -247,7 +247,7 @@ export const OBSERVE_SKILLS = (type: 'query' | 'subscription' = 'query') => gql`
           mcpServer {
             id
             name
-            runOn
+            executionTarget
           }
         }
       }
@@ -275,7 +275,7 @@ export const QUERY_ALL_SKILLS = gql`
         mcpServer {
           id
           name
-          runOn
+          executionTarget
         }
       }
       workspace {
@@ -308,7 +308,7 @@ export const QUERY_SKILL_BY_NAME = gql`
           mcpServer {
             id
             name
-            runOn
+            executionTarget
           }
         }
         workspace {
@@ -330,7 +330,7 @@ export const GET_SKILL_AGENT_MCP_SERVERS = gql`
           description
           transport
           config
-          runOn
+          executionTarget
           tools {
             id
             name

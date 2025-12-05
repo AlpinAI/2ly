@@ -62,7 +62,7 @@ describe('ToolDetail', () => {
       name: 'Test Server',
       description: 'Test server description',
       repositoryUrl: 'https://github.com/test/server',
-      runOn: null,
+      executionTarget: null,
     },
     skills: [
       {

@@ -47,7 +47,7 @@ test.describe('MCP Client Transports', () => {
     // Get auth token for authenticated API calls (needed for mutations)
     const authToken = await loginAndGetToken('user1@2ly.ai', 'password123');
 
-    // Update MCP server to use EDGE runtime (GLOBAL runOn has been removed)
+    // Update MCP server to use EDGE runtime (GLOBAL executionTarget has been removed)
     await updateMCPServerToEdgeRuntime(graphql, mcpServerId, workspaceId, authToken);
 
     // Get the workspace key

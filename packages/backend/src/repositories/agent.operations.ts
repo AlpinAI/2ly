@@ -8,7 +8,7 @@ export const ADD_AGENT = gql`
     $model: String!
     $temperature: Float!
     $maxTokens: Int!
-    $runOn: ExecutionTarget
+    $executionTarget: ExecutionTarget
     $workspaceId: ID!
     $createdAt: DateTime!
   ) {
@@ -20,7 +20,7 @@ export const ADD_AGENT = gql`
         model: $model
         temperature: $temperature
         maxTokens: $maxTokens
-        runOn: $runOn
+        executionTarget: $executionTarget
         workspace: { id: $workspaceId }
         createdAt: $createdAt
         updatedAt: $createdAt
@@ -34,7 +34,7 @@ export const ADD_AGENT = gql`
         model
         temperature
         maxTokens
-        runOn
+        executionTarget
         createdAt
         updatedAt
         runtime {
@@ -62,7 +62,7 @@ export const UPDATE_AGENT = gql`
     $model: String
     $temperature: Float
     $maxTokens: Int
-    $runOn: ExecutionTarget
+    $executionTarget: ExecutionTarget
     $updatedAt: DateTime!
   ) {
     updateAgent(
@@ -75,7 +75,7 @@ export const UPDATE_AGENT = gql`
           model: $model
           temperature: $temperature
           maxTokens: $maxTokens
-          runOn: $runOn
+          executionTarget: $executionTarget
           updatedAt: $updatedAt
         }
       }
@@ -88,7 +88,7 @@ export const UPDATE_AGENT = gql`
         model
         temperature
         maxTokens
-        runOn
+        executionTarget
         createdAt
         updatedAt
         runtime {
@@ -118,7 +118,7 @@ export const DELETE_AGENT = gql`
         model
         temperature
         maxTokens
-        runOn
+        executionTarget
         createdAt
         updatedAt
         workspace {
@@ -140,7 +140,7 @@ export const GET_AGENT = gql`
       model
       temperature
       maxTokens
-      runOn
+      executionTarget
       createdAt
       updatedAt
       skills {
@@ -175,7 +175,7 @@ export const GET_AGENTS_BY_WORKSPACE = gql`
         model
         temperature
         maxTokens
-        runOn
+        executionTarget
         createdAt
         updatedAt
         skills {
@@ -195,12 +195,12 @@ export const GET_AGENTS_BY_WORKSPACE = gql`
   }
 `;
 
-export const UPDATE_AGENT_RUN_ON = gql`
-  mutation updateAgentRunOn($id: ID!, $runOn: ExecutionTarget) {
-    updateAgent(input: { filter: { id: [$id] }, set: { runOn: $runOn } }) {
+export const UPDATE_AGENT_EXECUTION_TARGET = gql`
+  mutation updateAgentRunOn($id: ID!, $executionTarget: ExecutionTarget) {
+    updateAgent(input: { filter: { id: [$id] }, set: { executionTarget: $executionTarget } }) {
       agent {
         id
-        runOn
+        executionTarget
         runtime {
           id
           name
@@ -220,7 +220,7 @@ export const AGENT_LINK_RUNTIME = gql`
         id
         name
         description
-        runOn
+        executionTarget
         runtime {
           id
           name
@@ -240,7 +240,7 @@ export const AGENT_UNLINK_RUNTIME = gql`
         id
         name
         description
-        runOn
+        executionTarget
         runtime {
           id
         }

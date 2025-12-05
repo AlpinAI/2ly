@@ -13,7 +13,7 @@
  *
  * FEATURES:
  * - Search by name/description
- * - Filter by type, transport, runOn, agent
+ * - Filter by type, transport, executionTarget, agent
  * - Click row to select
  * - Highlight selected row
  * - Conditional columns based on source type
@@ -37,8 +37,8 @@ export interface SourceTableProps {
   onTypeFilterChange: (types: string[]) => void;
   transportFilter: string[];
   onTransportFilterChange: (transports: string[]) => void;
-  runOnFilter: string[];
-  onRunOnFilterChange: (runOns: string[]) => void;
+  executionTargetFilter: string[];
+  onRunOnFilterChange: (executionTargets: string[]) => void;
   agentFilter: string[];
   onAgentFilterChange: (agentIds: string[]) => void;
   availableAgents: Array<{ id: string; name: string }>;
@@ -66,7 +66,7 @@ export function SourceTable({
   onTypeFilterChange,
   transportFilter,
   onTransportFilterChange,
-  runOnFilter,
+  executionTargetFilter,
   onRunOnFilterChange,
   agentFilter,
   onAgentFilterChange,
@@ -80,7 +80,7 @@ export function SourceTable({
     search.length > 0 ||
     typeFilter.length > 0 ||
     transportFilter.length > 0 ||
-    runOnFilter.length > 0 ||
+    executionTargetFilter.length > 0 ||
     agentFilter.length > 0;
 
   // Scroll to selected entity when ID changes and element is ready
@@ -134,7 +134,7 @@ export function SourceTable({
             label="Run On"
             placeholder="All locations"
             items={RUN_ON_OPTIONS}
-            selectedIds={runOnFilter}
+            selectedIds={executionTargetFilter}
             onChange={onRunOnFilterChange}
           />
 
@@ -244,10 +244,10 @@ export function SourceTable({
                         )}
                       </td>
                       <td className="px-4 py-3 text-sm text-gray-700 dark:text-gray-300">
-                        {source.type === SourceType.MCP_SERVER && 'runOn' in source ? (
-                          source.runOn ? (
+                        {source.type === SourceType.MCP_SERVER && 'executionTarget' in source ? (
+                          source.executionTarget ? (
                             <span className="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-purple-100 dark:bg-purple-900/30 text-purple-800 dark:text-purple-300">
-                              {source.runOn}
+                              {source.executionTarget}
                             </span>
                           ) : (
                             <span className="text-gray-400 dark:text-gray-500">-</span>

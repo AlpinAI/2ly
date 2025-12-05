@@ -23,7 +23,7 @@ test.describe('Skill API', () => {
     await resetDatabase(true);
     const entityIds = await seedDatabase(seedPresets.withSingleMCPServer);
 
-    // Update MCP server to use EDGE runtime (GLOBAL runOn has been removed)
+    // Update MCP server to use EDGE runtime (GLOBAL executionTarget has been removed)
     const workspaceId = entityIds['default-workspace'];
     const mcpServerId = entityIds['server-file-system'];
     authToken = await loginAndGetToken('user1@2ly.ai', 'password123');

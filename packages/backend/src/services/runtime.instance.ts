@@ -105,7 +105,7 @@ export class RuntimeInstance extends Service {
 
   /**
    * Observe the list of MCP servers that a runtime should run. This list is composed of:
-   * - MCP Servers running "on the edge" with a direct link to the runtime (Runtime - (mcpServers) -> MCP Server(filter runOn: EDGE))
+   * - MCP Servers running "on the edge" with a direct link to the runtime (Runtime - (mcpServers) -> MCP Server(filter executionTarget: EDGE))
    *
    * Publish an UpdateConfiguredMCPServerMessage in the nats KV ephemeral store
    * - the message will stay in the KV ephemeral long enough to be observed by the runtime

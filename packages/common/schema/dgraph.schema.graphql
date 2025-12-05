@@ -89,7 +89,7 @@ type MCPServer @withSubscription {
   # or MCPRegistryServer.remotes during the server configuration workflow.
   config: String!
   tools: [MCPTool!] @hasInverse(field: mcpServer)
-  runOn: ExecutionTarget @search
+  executionTarget: ExecutionTarget @search
   # an MCP server can run either on a specific runtime - or if no value is provided it will be launch on the agent runtime which requires the capability
   runtime: Runtime @hasInverse(field: mcpServers)
   registryServer: MCPRegistryServer! @hasInverse(field: configurations)
@@ -146,8 +146,8 @@ type Agent @withSubscription {
   # The skills available to this agent
   skills: [Skill!] @hasInverse(field: agents)
   # Where this agent runs - AGENT (on the agent runtime) or EDGE (on a specific edge runtime)
-  runOn: ExecutionTarget @search
-  # The runtime this agent runs on (only applicable when runOn = EDGE)
+  executionTarget: ExecutionTarget @search
+  # The runtime this agent runs on (only applicable when executionTarget = EDGE)
   runtime: Runtime @hasInverse(field: agents)
   workspace: Workspace! @hasInverse(field: agents)
 }

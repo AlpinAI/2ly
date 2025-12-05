@@ -5,6 +5,7 @@ import { AgentService } from '../services/agent.service';
 import { AgentRepository, WorkspaceRepository, RuntimeRepository } from '../repositories';
 import { GraphQLContext } from '../types';
 import { requireAuth, requireWorkspaceAccess, requireAuthAndWorkspaceAccess } from '../database/authorization.helpers';
+import { validateRuntimeForWorkspace, updateExecutionTargetWithRuntime } from '../database/execution-target.helpers';
 
 /**
  * Factory function to create agent resolver functions for GraphQL schema.
@@ -61,7 +62,7 @@ export function createAgentResolvers(container: Container) {
           temperature,
           maxTokens,
           input.workspaceId,
-          input.runOn as EXECUTION_TARGET | null | undefined,
+          input.executionTarget as EXECUTION_TARGET | null | undefined,
         );
       },
 
@@ -85,7 +86,7 @@ export function createAgentResolvers(container: Container) {
           input.model ?? undefined,
           input.temperature ?? undefined,
           input.maxTokens ?? undefined,
-          input.runOn as EXECUTION_TARGET | null | undefined,
+          input.executionTarget as EXECUTION_TARGET | null | undefined,
         );
       },
 
@@ -117,9 +118,9 @@ export function createAgentResolvers(container: Container) {
         return agentService.call(agentId, userMessages);
       },
 
-      updateAgentRunOn: async (
+      updateAgentExecutionTarget: async (
         _: unknown,
-        { agentId, runOn, runtimeId }: { agentId: string; runOn: EXECUTION_TARGET; runtimeId?: string | null },
+        { agentId, executionTarget, runtimeId }: { agentId: string; executionTarget: EXECUTION_TARGET; runtimeId?: string | null },
         context: GraphQLContext
       ) => {
         const userId = requireAuth(context);
@@ -127,28 +128,11 @@ export function createAgentResolvers(container: Container) {
         if (!agent?.workspace?.id) {
           throw new GraphQLError('Agent not found', { extensions: { code: 'NOT_FOUND' } });
         }
-        // If runtimeId provided, verify it belongs to the same workspace
-        // or that it's a system runtime
         if (runtimeId) {
-          const runtime = await runtimeRepository.getRuntime(runtimeId);
-          if (!runtime?.workspace?.id && !runtime?.system?.id) {
-            throw new GraphQLError('Runtime not found', { extensions: { code: 'NOT_FOUND' } });
-          }
-          if (runtime.workspace?.id && agent.workspace.id !== runtime.workspace.id) {
-            throw new GraphQLError('Agent and Runtime must belong to the same workspace', {
-              extensions: { code: 'BAD_REQUEST' },
-            });
-          }
+          await validateRuntimeForWorkspace(runtimeRepository, runtimeId, agent.workspace.id, 'Agent');
         }
         await requireWorkspaceAccess(workspaceRepository, userId, agent.workspace.id);
-        await agentRepository.updateRunOn(agentId, runOn);
-        if (runOn !== 'EDGE') {
-          return agentRepository.unlinkRuntime(agentId);
-        }
-        if (runtimeId) {
-          return agentRepository.linkRuntime(agentId, runtimeId);
-        }
-        return agentRepository.unlinkRuntime(agentId);
+        return updateExecutionTargetWithRuntime(agentRepository, agentId, executionTarget, runtimeId);
       },
     },
   };

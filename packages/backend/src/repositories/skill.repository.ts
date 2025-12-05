@@ -188,7 +188,7 @@ export class SkillRepository {
     );
     return response.getSkill?.mcpTools
       ?.map((mcpTool) => mcpTool.mcpServer)
-      .filter((mcpServer) => mcpServer.runOn === 'AGENT') ?? [];
+      .filter((mcpServer) => mcpServer.executionTarget === 'AGENT') ?? [];
   }
 
   observeMCPServersOnAgent(skillId: string): Observable<dgraphResolversTypes.McpServer[]> {
@@ -202,7 +202,7 @@ export class SkillRepository {
       map((skill) =>
         skill?.mcpTools
           ?.map((mcpTool) => mcpTool.mcpServer)
-          .filter((mcpServer) => mcpServer.runOn === 'AGENT') ?? []
+          .filter((mcpServer) => mcpServer.executionTarget === 'AGENT') ?? []
       ),
     );
   }

@@ -14,7 +14,7 @@
  *
  * USAGE:
  * ```tsx
- * <ToolTester toolId="tool-123" toolName="search" inputSchema={schema} runOn="SKILL" />
+ * <ToolTester toolId="tool-123" toolName="search" inputSchema={schema} executionTarget="SKILL" />
  * ```
  */
 
@@ -31,14 +31,14 @@ export interface ToolTesterProps {
   toolId: string;
   toolName: string;
   inputSchema: string;
-  runOn?: ExecutionTarget | null;
+  executionTarget?: ExecutionTarget | null;
 }
 
 interface ToolInput {
   [key: string]: unknown;
 }
 
-export function ToolTester({ toolId, inputSchema, runOn }: ToolTesterProps) {
+export function ToolTester({ toolId, inputSchema, executionTarget }: ToolTesterProps) {
   const [inputValues, setInputValues] = useState<ToolInput>({});
   const [executionResult, setExecutionResult] = useState<{
     success: boolean;
@@ -48,7 +48,7 @@ export function ToolTester({ toolId, inputSchema, runOn }: ToolTesterProps) {
   const resultSectionRef = useRef<HTMLDivElement>(null);
 
   // Check if tool runs on AGENT (testing not supported)
-  const isAgentTool = runOn === ExecutionTarget.Agent;
+  const isAgentTool = executionTarget === ExecutionTarget.Agent;
 
   const [callTool, { loading: isExecuting }] = useMutation(CallMcpToolDocument);
 

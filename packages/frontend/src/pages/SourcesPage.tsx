@@ -11,7 +11,7 @@
  * FEATURES:
  * - Real-time source updates (subscription)
  * - Search by name/description
- * - Filter by transport, runOn, skill
+ * - Filter by transport, executionTarget, skill
  * - Click source to view details
  * - Show source configuration with masked secrets
  */
@@ -32,7 +32,7 @@ export default function SourcesPage() {
   const [search, setSearch] = useState('');
   const [typeFilter, setTypeFilter] = useState<string[]>([]);
   const [transportFilter, setTransportFilter] = useState<string[]>([]);
-  const [runOnFilter, setRunOnFilter] = useState<string[]>([]);
+  const [executionTargetFilter, setRunOnFilter] = useState<string[]>([]);
 
   // Fetch servers
   const { servers, loading, error } = useMCPServers();
@@ -49,7 +49,7 @@ export default function SourcesPage() {
     }));
   }, [servers]);
 
-  // Apply filters (search, type, transport, runOn)
+  // Apply filters (search, type, transport, executionTarget)
   const filteredSources = useMemo(() => {
     return sourcesWithType.filter(source => {
       // Search filter
@@ -79,19 +79,19 @@ export default function SourcesPage() {
       }
 
       // RunOn filter (only applies to MCP Servers)
-      if (runOnFilter.length > 0) {
-        if (source.type === SourceType.MCP_SERVER && 'runOn' in source) {
-          // source.runOn is nullable (Maybe<McpServerRunOn>)
-          if (!source.runOn || !runOnFilter.includes(source.runOn)) {
+      if (executionTargetFilter.length > 0) {
+        if (source.type === SourceType.MCP_SERVER && 'executionTarget' in source) {
+          // source.executionTarget is nullable (Maybe<McpServerRunOn>)
+          if (!source.executionTarget || !executionTargetFilter.includes(source.executionTarget)) {
             return false;
           }
         }
-        // Note: REST APIs don't have runOn, so they pass this filter
+        // Note: REST APIs don't have executionTarget, so they pass this filter
       }
 
       return true;
     });
-  }, [sourcesWithType, search, typeFilter, transportFilter, runOnFilter]);
+  }, [sourcesWithType, search, typeFilter, transportFilter, executionTargetFilter]);
 
   // Get selected source from URL
   const selectedSource = useMemo(() => {
@@ -155,7 +155,7 @@ export default function SourcesPage() {
             onTypeFilterChange={setTypeFilter}
             transportFilter={transportFilter}
             onTransportFilterChange={setTransportFilter}
-            runOnFilter={runOnFilter}
+            executionTargetFilter={executionTargetFilter}
             onRunOnFilterChange={setRunOnFilter}
             agentFilter={[]}
             onAgentFilterChange={() => {}}

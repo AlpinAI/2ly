@@ -7,7 +7,7 @@ import {
   DELETE_AGENT,
   GET_AGENT,
   GET_AGENTS_BY_WORKSPACE,
-  UPDATE_AGENT_RUN_ON,
+  UPDATE_AGENT_EXECUTION_TARGET,
   AGENT_LINK_RUNTIME,
   AGENT_UNLINK_RUNTIME,
 } from './agent.operations';
@@ -32,7 +32,7 @@ export class AgentRepository {
     temperature: number,
     maxTokens: number,
     workspaceId: string,
-    runOn?: EXECUTION_TARGET | null,
+    executionTarget?: EXECUTION_TARGET | null,
   ): Promise<dgraphResolversTypes.Agent> {
     const now = new Date().toISOString();
 
@@ -45,7 +45,7 @@ export class AgentRepository {
       model,
       temperature,
       maxTokens,
-      runOn: runOn ?? null,
+      executionTarget: executionTarget ?? null,
       workspaceId,
       createdAt: now,
     });
@@ -64,7 +64,7 @@ export class AgentRepository {
     model?: string,
     temperature?: number,
     maxTokens?: number,
-    runOn?: EXECUTION_TARGET | null,
+    executionTarget?: EXECUTION_TARGET | null,
   ): Promise<dgraphResolversTypes.Agent> {
     const now = new Date().toISOString();
 
@@ -79,7 +79,7 @@ export class AgentRepository {
     if (model !== undefined) updateFields.model = model;
     if (temperature !== undefined) updateFields.temperature = temperature;
     if (maxTokens !== undefined) updateFields.maxTokens = maxTokens;
-    if (runOn !== undefined) updateFields.runOn = runOn;
+    if (executionTarget !== undefined) updateFields.executionTarget = executionTarget;
 
     const res = await this.dgraphService.mutation<{
       updateAgent: { agent: dgraphResolversTypes.Agent[] };
@@ -118,12 +118,12 @@ export class AgentRepository {
     return response.getWorkspace?.agents ?? [];
   }
 
-  async updateRunOn(id: string, runOn: EXECUTION_TARGET): Promise<dgraphResolversTypes.Agent> {
+  async updateExecutionTarget(id: string, executionTarget: EXECUTION_TARGET): Promise<dgraphResolversTypes.Agent> {
     const res = await this.dgraphService.mutation<{
       updateAgent: { agent: dgraphResolversTypes.Agent[] };
-    }>(UPDATE_AGENT_RUN_ON, {
+    }>(UPDATE_AGENT_EXECUTION_TARGET, {
       id,
-      runOn,
+      executionTarget,
     });
     return res.updateAgent.agent[0];
   }

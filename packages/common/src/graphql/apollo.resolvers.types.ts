@@ -53,11 +53,11 @@ export enum ActiveStatus {
 export type Agent = {
   createdAt: Scalars['Date']['output'];
   description?: Maybe<Scalars['String']['output']>;
+  executionTarget?: Maybe<ExecutionTarget>;
   id: Scalars['ID']['output'];
   maxTokens: Scalars['Int']['output'];
   model: Scalars['String']['output'];
   name: Scalars['String']['output'];
-  runOn?: Maybe<ExecutionTarget>;
   runtime?: Maybe<Runtime>;
   skills?: Maybe<Array<Skill>>;
   systemPrompt: Scalars['String']['output'];
@@ -88,10 +88,10 @@ export type CallToolResult = {
 
 export type CreateAgentInput = {
   description?: InputMaybe<Scalars['String']['input']>;
+  executionTarget?: InputMaybe<ExecutionTarget>;
   maxTokens?: InputMaybe<Scalars['Int']['input']>;
   model: Scalars['String']['input'];
   name: Scalars['String']['input'];
-  runOn?: InputMaybe<ExecutionTarget>;
   systemPrompt: Scalars['String']['input'];
   temperature?: InputMaybe<Scalars['Float']['input']>;
   workspaceId: Scalars['ID']['input'];
@@ -161,11 +161,11 @@ export type McpRegistryServer = {
 export type McpServer = {
   config: Scalars['String']['output'];
   description: Scalars['String']['output'];
+  executionTarget?: Maybe<ExecutionTarget>;
   id: Scalars['ID']['output'];
   name: Scalars['String']['output'];
   registryServer: McpRegistryServer;
   repositoryUrl: Scalars['String']['output'];
-  runOn?: Maybe<ExecutionTarget>;
   runtime?: Maybe<Runtime>;
   tools?: Maybe<Array<McpTool>>;
   transport: McpTransportType;
@@ -228,9 +228,9 @@ export type Mutation = {
   unlinkMCPServerFromRuntime: McpServer;
   unsetGlobalRuntime: Workspace;
   updateAgent: Agent;
-  updateAgentRunOn: Agent;
+  updateAgentExecutionTarget: Agent;
   updateMCPServer: McpServer;
-  updateMCPServerRunOn: McpServer;
+  updateMCPServerExecutionTarget: McpServer;
   updateRuntime: Runtime;
   updateServerInRegistry: McpRegistryServer;
   updateSkill: Skill;
@@ -297,10 +297,10 @@ export type MutationCreateAgentArgs = {
 export type MutationCreateMcpServerArgs = {
   config: Scalars['String']['input'];
   description: Scalars['String']['input'];
+  executionTarget?: InputMaybe<ExecutionTarget>;
   name: Scalars['String']['input'];
   registryServerId: Scalars['ID']['input'];
   repositoryUrl: Scalars['String']['input'];
-  runOn?: InputMaybe<ExecutionTarget>;
   transport: McpTransportType;
   workspaceId: Scalars['ID']['input'];
 };
@@ -448,9 +448,9 @@ export type MutationUpdateAgentArgs = {
 };
 
 
-export type MutationUpdateAgentRunOnArgs = {
+export type MutationUpdateAgentExecutionTargetArgs = {
   agentId: Scalars['ID']['input'];
-  runOn: ExecutionTarget;
+  executionTarget: ExecutionTarget;
   runtimeId?: InputMaybe<Scalars['ID']['input']>;
 };
 
@@ -458,17 +458,17 @@ export type MutationUpdateAgentRunOnArgs = {
 export type MutationUpdateMcpServerArgs = {
   config: Scalars['String']['input'];
   description: Scalars['String']['input'];
+  executionTarget?: InputMaybe<ExecutionTarget>;
   id: Scalars['ID']['input'];
   name: Scalars['String']['input'];
   repositoryUrl: Scalars['String']['input'];
-  runOn?: InputMaybe<ExecutionTarget>;
   transport: McpTransportType;
 };
 
 
-export type MutationUpdateMcpServerRunOnArgs = {
+export type MutationUpdateMcpServerExecutionTargetArgs = {
+  executionTarget: ExecutionTarget;
   mcpServerId: Scalars['ID']['input'];
-  runOn: ExecutionTarget;
   runtimeId?: InputMaybe<Scalars['ID']['input']>;
 };
 
@@ -791,11 +791,11 @@ export type ToolCallsResult = {
 
 export type UpdateAgentInput = {
   description?: InputMaybe<Scalars['String']['input']>;
+  executionTarget?: InputMaybe<ExecutionTarget>;
   id: Scalars['ID']['input'];
   maxTokens?: InputMaybe<Scalars['Int']['input']>;
   model?: InputMaybe<Scalars['String']['input']>;
   name?: InputMaybe<Scalars['String']['input']>;
-  runOn?: InputMaybe<ExecutionTarget>;
   runtimeId?: InputMaybe<Scalars['ID']['input']>;
   systemPrompt?: InputMaybe<Scalars['String']['input']>;
   temperature?: InputMaybe<Scalars['Float']['input']>;
@@ -1023,11 +1023,11 @@ export type AiProviderValidationResolvers<ContextType = object, ParentType exten
 export type AgentResolvers<ContextType = object, ParentType extends ResolversParentTypes['Agent'] = ResolversParentTypes['Agent']> = {
   createdAt?: Resolver<ResolversTypes['Date'], ParentType, ContextType>;
   description?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  executionTarget?: Resolver<Maybe<ResolversTypes['ExecutionTarget']>, ParentType, ContextType>;
   id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
   maxTokens?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
   model?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   name?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
-  runOn?: Resolver<Maybe<ResolversTypes['ExecutionTarget']>, ParentType, ContextType>;
   runtime?: Resolver<Maybe<ResolversTypes['Runtime']>, ParentType, ContextType>;
   skills?: Resolver<Maybe<Array<ResolversTypes['Skill']>>, ParentType, ContextType>;
   systemPrompt?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
@@ -1107,11 +1107,11 @@ export type McpRegistryServerResolvers<ContextType = object, ParentType extends 
 export type McpServerResolvers<ContextType = object, ParentType extends ResolversParentTypes['MCPServer'] = ResolversParentTypes['MCPServer']> = {
   config?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   description?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  executionTarget?: Resolver<Maybe<ResolversTypes['ExecutionTarget']>, ParentType, ContextType>;
   id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
   name?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   registryServer?: Resolver<ResolversTypes['MCPRegistryServer'], ParentType, ContextType>;
   repositoryUrl?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
-  runOn?: Resolver<Maybe<ResolversTypes['ExecutionTarget']>, ParentType, ContextType>;
   runtime?: Resolver<Maybe<ResolversTypes['Runtime']>, ParentType, ContextType>;
   tools?: Resolver<Maybe<Array<ResolversTypes['MCPTool']>>, ParentType, ContextType>;
   transport?: Resolver<ResolversTypes['MCPTransportType'], ParentType, ContextType>;
@@ -1170,9 +1170,9 @@ export type MutationResolvers<ContextType = object, ParentType extends Resolvers
   unlinkMCPServerFromRuntime?: Resolver<ResolversTypes['MCPServer'], ParentType, ContextType, RequireFields<MutationUnlinkMcpServerFromRuntimeArgs, 'mcpServerId'>>;
   unsetGlobalRuntime?: Resolver<ResolversTypes['Workspace'], ParentType, ContextType, RequireFields<MutationUnsetGlobalRuntimeArgs, 'id'>>;
   updateAgent?: Resolver<ResolversTypes['Agent'], ParentType, ContextType, RequireFields<MutationUpdateAgentArgs, 'input'>>;
-  updateAgentRunOn?: Resolver<ResolversTypes['Agent'], ParentType, ContextType, RequireFields<MutationUpdateAgentRunOnArgs, 'agentId' | 'runOn'>>;
+  updateAgentExecutionTarget?: Resolver<ResolversTypes['Agent'], ParentType, ContextType, RequireFields<MutationUpdateAgentExecutionTargetArgs, 'agentId' | 'executionTarget'>>;
   updateMCPServer?: Resolver<ResolversTypes['MCPServer'], ParentType, ContextType, RequireFields<MutationUpdateMcpServerArgs, 'config' | 'description' | 'id' | 'name' | 'repositoryUrl' | 'transport'>>;
-  updateMCPServerRunOn?: Resolver<ResolversTypes['MCPServer'], ParentType, ContextType, RequireFields<MutationUpdateMcpServerRunOnArgs, 'mcpServerId' | 'runOn'>>;
+  updateMCPServerExecutionTarget?: Resolver<ResolversTypes['MCPServer'], ParentType, ContextType, RequireFields<MutationUpdateMcpServerExecutionTargetArgs, 'executionTarget' | 'mcpServerId'>>;
   updateRuntime?: Resolver<ResolversTypes['Runtime'], ParentType, ContextType, RequireFields<MutationUpdateRuntimeArgs, 'description' | 'id' | 'name'>>;
   updateServerInRegistry?: Resolver<ResolversTypes['MCPRegistryServer'], ParentType, ContextType, RequireFields<MutationUpdateServerInRegistryArgs, 'serverId'>>;
   updateSkill?: Resolver<ResolversTypes['Skill'], ParentType, ContextType, RequireFields<MutationUpdateSkillArgs, 'description' | 'id' | 'name'>>;

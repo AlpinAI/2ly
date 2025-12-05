@@ -207,7 +207,7 @@ describe('ToolClientService', () => {
   });
 
   describe('subscribeToTool - subject routing', () => {
-    it('should use workspace-specific subject when runOn is AGENT', () => {
+    it('should use workspace-specific subject when executionTarget is AGENT', () => {
       const toolId = '0x101';
       const workspaceId = '0x2';
       const runtimeId = '0x1';
@@ -230,7 +230,7 @@ describe('ToolClientService', () => {
       );
     });
 
-    it('should use global subject when runOn is CLOUD', () => {
+    it('should use global subject when executionTarget is CLOUD', () => {
       const toolId = '0x101';
       const runtimeId = '0x1';
 
@@ -265,7 +265,7 @@ describe('ToolClientService', () => {
       }).toThrow('Cannot subscribe to tool: missing runtimeId or workspaceId');
     });
 
-    it('should throw error when workspaceId is missing for AGENT runOn', () => {
+    it('should throw error when workspaceId is missing for AGENT executionTarget', () => {
       vi.mocked(mockAuthService.getIdentity).mockReturnValue({
         nature: 'runtime',
         id: '0x1',
