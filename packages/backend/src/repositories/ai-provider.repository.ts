@@ -38,7 +38,7 @@ export class AIProviderRepository {
     @inject(EncryptionService) private readonly encryption: EncryptionService,
     @inject(AIProviderCoreService) private readonly aiProviderCore: AIProviderCoreService
   ) {
-    this.logger = this.loggerService.getLogger('ai-provider-repository');
+    this.logger = this.loggerService.getLogger('ai.provider.repository');
   }
 
   async getByWorkspace(workspaceId: string): Promise<dgraphResolversTypes.AiProviderConfig[]> {

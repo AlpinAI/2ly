@@ -4,7 +4,7 @@ import { Container } from 'inversify';
 import '../../mocks/subscriptions-transport-ws.mock';
 import '../../mocks/urql.mock';
 
-import { LoggerService, LOG_LEVEL, MAIN_LOGGER_NAME, FORWARD_STDERR } from '../../../common/src/services/logger.service';
+import { LoggerService, LOG_LEVEL, LOG_LEVELS, MAIN_LOGGER_NAME, FORWARD_STDERR } from '../../../common/src/services/logger.service';
 import { DGRAPH_URL, DGraphService } from './dgraph.service';
 
 type AnyRecord = Record<string, unknown>;
@@ -15,6 +15,7 @@ describe('DGraphService', () => {
         container.bind(MAIN_LOGGER_NAME).toConstantValue('test');
         container.bind(FORWARD_STDERR).toConstantValue(false);
         container.bind(LOG_LEVEL).toConstantValue('silent');
+        container.bind(LOG_LEVELS).toConstantValue(undefined);
         container.bind(LoggerService).toSelf().inSingletonScope();
         container.bind(DGRAPH_URL).toConstantValue('dgraph:8080');
         container.bind(DGraphService).toSelf().inSingletonScope();

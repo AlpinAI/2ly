@@ -4,6 +4,7 @@ import {
   NATS_CONNECTION_OPTIONS,
   LoggerService,
   LOG_LEVEL,
+  LOG_LEVELS,
   MAIN_LOGGER_NAME,
   dgraphResolversTypes,
   FORWARD_STDERR,
@@ -27,7 +28,6 @@ import { McpSseService } from '../services/mcp.sse.service';
 import { McpStreamableService } from '../services/mcp.streamable.service';
 import { FastifyManagerService } from '../services/fastify.manager.service';
 import { type RuntimeMode, RUNTIME_MODE } from './symbols';
-import pino from 'pino';
 import { v4 as uuidv4 } from 'uuid';
 
 const container = new Container();
@@ -172,31 +172,18 @@ const start = () => {
   container.bind(MainService).toSelf().inSingletonScope();
 
   // Init logger service
-  const defaultLevel = 'info';
+  // LOG_LEVEL: Default level for all loggers (e.g., 'info', 'debug', 'warn')
+  // LOG_LEVELS: Pattern-based configuration (e.g., 'mcp.*=debug,tool.*=trace')
   container.bind(MAIN_LOGGER_NAME).toConstantValue(runtimeId);
   container.bind(FORWARD_STDERR).toConstantValue(process.env.FORWARD_STDERR === 'false' ? false : true);
-  container.bind(LOG_LEVEL).toConstantValue(process.env.LOG_LEVEL || defaultLevel);
+  container.bind(LOG_LEVEL).toConstantValue(process.env.LOG_LEVEL || 'info');
+  container.bind(LOG_LEVELS).toConstantValue(process.env.LOG_LEVELS);
   container.bind(LoggerService).toSelf().inSingletonScope();
-
-  // Set child log levels
-  const loggerService = container.get(LoggerService);
-  loggerService.setLogLevel('main', (process.env.LOG_LEVEL_MAIN || 'info') as pino.Level);
-  loggerService.setLogLevel('auth', (process.env.LOG_LEVEL_AUTH || 'info') as pino.Level);
-  loggerService.setLogLevel('health', (process.env.LOG_LEVEL_HEALTH || 'info') as pino.Level);
-  loggerService.setLogLevel('nats', (process.env.NATS_LOG_LEVEL || 'info') as pino.Level);
-  loggerService.setLogLevel('mcp-server', (process.env.LOG_LEVEL_MCP_SERVER || 'info') as pino.Level);
-  loggerService.setLogLevel('mcp-stdio', (process.env.LOG_LEVEL_MCP_STDIO || 'info') as pino.Level);
-  loggerService.setLogLevel('fastify-manager', (process.env.LOG_LEVEL_FASTIFY_MANAGER || 'info') as pino.Level);
-  loggerService.setLogLevel('mcp-sse', (process.env.LOG_LEVEL_MCP_SSE || 'info') as pino.Level);
-  loggerService.setLogLevel('mcp-streamable', (process.env.LOG_LEVEL_MCP_STREAMABLE || 'info') as pino.Level);
-  loggerService.setLogLevel('tool', (process.env.LOG_LEVEL_TOOL || 'info') as pino.Level);
-  loggerService.setLogLevel('skill', (process.env.LOG_LEVEL_SKILL || 'info') as pino.Level);
 
   // Init MCP server service factory
   container.bind<ToolServerServiceFactory>(ToolServerService).toFactory((context) => {
     return (config: dgraphResolversTypes.McpServer, roots: { name: string; uri: string }[]) => {
       const logger = context.get(LoggerService).getLogger(`tool.server.${config.name}`);
-      logger.level = process.env.LOG_LEVEL_TOOL_SERVER || 'silent';
       return new ToolServerService(logger, config, roots);
     };
   });

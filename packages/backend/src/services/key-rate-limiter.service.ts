@@ -33,7 +33,7 @@ export class KeyRateLimiterService {
   private cleanupInterval?: NodeJS.Timeout;
 
   constructor(@inject(LoggerService) private readonly loggerService: LoggerService) {
-    this.logger = this.loggerService.getLogger('key-rate-limiter');
+    this.logger = this.loggerService.getLogger('key.rate.limiter');
 
     // Start periodic cleanup (every 10 minutes)
     this.cleanupInterval = setInterval(() => {

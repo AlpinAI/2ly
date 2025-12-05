@@ -36,7 +36,7 @@ export class SkillRepository {
     @inject(WorkspaceRepository) private readonly workspaceRepository: WorkspaceRepository,
     @inject(IdentityRepository) private readonly identityRepository: IdentityRepository,
   ) {
-    this.logger = this.loggerService.getLogger('skill-repository');
+    this.logger = this.loggerService.getLogger('skill.repository');
   }
 
   async create(

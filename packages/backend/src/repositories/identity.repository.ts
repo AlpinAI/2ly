@@ -37,7 +37,7 @@ export class IdentityRepository {
   private logger: pino.Logger;
 
   constructor(@inject(DGraphService) private readonly dgraphService: DGraphService, @inject(LoggerService) private readonly loggerService: LoggerService) {
-    this.logger = this.loggerService.getLogger('identity-repository');
+    this.logger = this.loggerService.getLogger('identity.repository');
   }
 
   /**
