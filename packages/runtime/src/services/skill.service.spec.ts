@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { SkillService, SkillIdentity } from './skill.service';
-import { LoggerService, NatsService, SkillListToolsPublish, RuntimeCallToolResponse, dgraphResolversTypes } from '@2ly/common';
+import { LoggerService, NatsService, SkillListToolsPublish, RuntimeCallToolResponse, dgraphResolversTypes, SmartSkillTool } from '@2ly/common';
 import pino from 'pino';
 import { BehaviorSubject } from 'rxjs';
 
@@ -287,6 +287,175 @@ describe('SkillService - init_skill tool', () => {
 
       // Verify NATS request was called (delegated properly)
       expect(mockNatsService.request).toHaveBeenCalled();
+    });
+  });
+});
+
+describe('SkillService - smart skill mode', () => {
+  let skillService: SkillService;
+  let mockLoggerService: LoggerService;
+  let mockNatsService: NatsService;
+  let mockLogger: pino.Logger;
+  let identity: SkillIdentity;
+
+  beforeEach(() => {
+    mockLogger = pino({ level: 'silent' });
+    mockLoggerService = {
+      getLogger: vi.fn(() => mockLogger),
+    } as unknown as LoggerService;
+
+    mockNatsService = {
+      observeEphemeral: vi.fn(),
+      request: vi.fn(),
+    } as unknown as NatsService;
+
+    identity = {
+      workspaceId: 'workspace-1',
+      skillId: 'skill-1',
+      skillName: 'Smart Test Skill',
+    };
+
+    skillService = new SkillService(mockLoggerService, mockNatsService, identity);
+  });
+
+  describe('getToolsForMCP with smartSkillTool', () => {
+    it('should return smart skill tool when smartSkillTool is provided', async () => {
+      const smartSkillTool: SmartSkillTool = {
+        id: 'skill-1',
+        name: 'Smart Skill',
+        description: 'A smart skill that processes messages',
+      };
+
+      // Mock the subscription with smartSkillTool (SMART mode)
+      vi.mocked(mockNatsService.observeEphemeral).mockResolvedValue({
+        [Symbol.asyncIterator]: async function* () {
+          yield new SkillListToolsPublish({
+            workspaceId: 'workspace-1',
+            skillId: 'skill-1',
+            mcpTools: [],
+            smartSkillTool,
+            description: 'Smart skill description',
+          });
+        },
+        unsubscribe: vi.fn(),
+        drain: vi.fn().mockResolvedValue(undefined),
+      } as MockSubscription);
+
+      await skillService['initialize']();
+      await new Promise(resolve => setTimeout(resolve, 50));
+
+      const tools = await skillService.getToolsForMCP();
+
+      // Should have init_skill + smart skill tool
+      expect(tools.length).toBe(2);
+      expect(tools[0].name).toBe('init_skill');
+      expect(tools[1].name).toBe('Smart Skill');
+      expect(tools[1].description).toBe('A smart skill that processes messages');
+      expect(tools[1].inputSchema).toEqual({
+        type: 'object',
+        properties: {
+          message: {
+            type: 'string',
+            description: 'Message to send to the smart skill',
+          },
+        },
+        required: ['message'],
+      });
+    });
+
+    it('should not include regular mcpTools when smartSkillTool is provided', async () => {
+      const smartSkillTool: SmartSkillTool = {
+        id: 'skill-1',
+        name: 'Smart Skill',
+        description: 'A smart skill',
+      };
+
+      const mockTools: dgraphResolversTypes.McpTool[] = [
+        {
+          id: 'tool-1',
+          name: 'hidden_tool',
+          description: 'This tool should not appear',
+          inputSchema: '{"type":"object"}',
+          annotations: '{}',
+          status: 'active' as dgraphResolversTypes.ActiveStatus,
+          createdAt: '2024-01-01',
+          lastSeenAt: '2024-01-01',
+        } as dgraphResolversTypes.McpTool,
+      ];
+
+      // Mock with both smartSkillTool and mcpTools
+      vi.mocked(mockNatsService.observeEphemeral).mockResolvedValue({
+        [Symbol.asyncIterator]: async function* () {
+          yield new SkillListToolsPublish({
+            workspaceId: 'workspace-1',
+            skillId: 'skill-1',
+            mcpTools: mockTools,
+            smartSkillTool,
+            description: 'Smart skill',
+          });
+        },
+        unsubscribe: vi.fn(),
+        drain: vi.fn().mockResolvedValue(undefined),
+      } as MockSubscription);
+
+      await skillService['initialize']();
+      await new Promise(resolve => setTimeout(resolve, 50));
+
+      const tools = await skillService.getToolsForMCP();
+
+      // Should only have init_skill + smart skill tool, not the hidden_tool
+      expect(tools.length).toBe(2);
+      expect(tools.find(t => t.name === 'hidden_tool')).toBeUndefined();
+      expect(tools.find(t => t.name === 'Smart Skill')).toBeDefined();
+    });
+  });
+
+  describe('callTool with smart skill', () => {
+    it('should send smart-skill type request when calling smart skill tool', async () => {
+      const smartSkillTool: SmartSkillTool = {
+        id: 'smart-skill-123',
+        name: 'My Smart Skill',
+        description: 'A smart skill',
+      };
+
+      vi.mocked(mockNatsService.observeEphemeral).mockResolvedValue({
+        [Symbol.asyncIterator]: async function* () {
+          yield new SkillListToolsPublish({
+            workspaceId: 'workspace-1',
+            skillId: 'skill-1',
+            mcpTools: [],
+            smartSkillTool,
+            description: 'Smart skill',
+          });
+        },
+        unsubscribe: vi.fn(),
+        drain: vi.fn().mockResolvedValue(undefined),
+      } as MockSubscription);
+
+      const mockResponse = new RuntimeCallToolResponse({
+        result: {
+          content: [{ type: 'text', text: 'Smart skill response' }],
+          isError: false,
+        },
+        executedByIdOrAgent: 'runtime-1',
+      });
+      vi.mocked(mockNatsService.request).mockResolvedValue(mockResponse);
+
+      await skillService['initialize']();
+      await new Promise(resolve => setTimeout(resolve, 50));
+
+      await skillService.callTool('My Smart Skill', { message: 'Hello smart skill' });
+
+      // Verify the request was made with smart-skill type
+      expect(mockNatsService.request).toHaveBeenCalled();
+      const requestArg = vi.mocked(mockNatsService.request).mock.calls[0][0];
+      expect(requestArg.data).toMatchObject({
+        type: 'smart-skill',
+        workspaceId: 'workspace-1',
+        from: 'skill-1',
+        skillId: 'smart-skill-123',
+        arguments: { message: 'Hello smart skill' },
+      });
     });
   });
 });

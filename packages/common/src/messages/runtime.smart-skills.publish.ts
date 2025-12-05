@@ -1,5 +1,6 @@
 import { NatsMessage, NatsPublish } from '../services/nats.message';
 import type { ProviderConfig } from '../services/ai/ai-provider.types';
+import { EXECUTION_TARGET } from '../types/execution-target';
 
 const type = 'smart-skills';
 
@@ -11,6 +12,7 @@ export interface RuntimeSmartSkill {
   temperature: number;
   maxTokens: number;
   providerConfig: ProviderConfig; // Decrypted apiKey + baseUrl
+  executionTarget: EXECUTION_TARGET;
   workspaceId: string; // Skills are always workspace-scoped
 }
 

@@ -352,6 +352,7 @@ export class RuntimeRepository {
     }
 
     const message = new SkillCallToolRequest({
+      type: 'mcp-tool',
       workspaceId: tool.workspace.id,
       isTest: true,
       toolId,

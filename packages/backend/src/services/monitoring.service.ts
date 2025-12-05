@@ -1,5 +1,5 @@
 import { inject, injectable } from 'inversify';
-import { LoggerService, Service, NatsService, SkillCallToolRequest, RuntimeCallToolResponse, dgraphResolversTypes, MCP_CALL_TOOL_TIMEOUT } from '@2ly/common';
+import { LoggerService, Service, NatsService, SkillCallToolRequest, RuntimeCallToolResponse, dgraphResolversTypes, MCP_CALL_TOOL_TIMEOUT, isSmartSkillCall, isMCPToolCall } from '@2ly/common';
 import { DGraphService } from './dgraph.service';
 import pino from 'pino';
 import { MonitoringRepository } from '../repositories/monitoring.repository';
@@ -71,10 +71,15 @@ export class MonitoringService extends Service {
                             }
                         })()
                     }
+                    // Get the tool/skill ID based on the request type
+                    const mcpToolId = isMCPToolCall(message.data) ? message.data.toolId : undefined;
+                    const skillId = isSmartSkillCall(message.data) ? message.data.skillId : undefined;
+
                     this.monitoringRepository.createToolCall({
                         toolInput: JSON.stringify(message.data.arguments),
                         calledById: message.data.from,
-                        mcpToolId: message.data.toolId,
+                        mcpToolId,
+                        skillId,
                         isTest: message.data.isTest,
                     }).then((result) => {
                         toolCall = result;

@@ -137,6 +137,7 @@ type Skill @withSubscription {
   usedByAgents: [Agent!] @hasInverse(field: tools)
   workspace: Workspace! @hasInverse(field: skills)
   toolCalls: [ToolCall!] @hasInverse(field: calledBy)
+  skillToolCalls: [ToolCall!] @hasInverse(field: skill)
   # Skill mode - determines how tools are exposed to consuming agents
   mode: SkillMode @search
   # Smart mode configuration fields (only used when mode = SMART)
@@ -259,7 +260,8 @@ type ToolCall {
   error: String
   isTest: Boolean!
   executedByAgent: Boolean
-  mcpTool: MCPTool! @hasInverse(field: toolCalls)
+  mcpTool: MCPTool @hasInverse(field: toolCalls)
+  skill: Skill @hasInverse(field: skillToolCalls)
   calledBy: Skill @hasInverse(field: toolCalls)
   executedBy: Runtime @hasInverse(field: toolResponses)
 }

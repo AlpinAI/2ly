@@ -720,6 +720,7 @@ export type Skill = {
   model?: Maybe<Scalars['String']['output']>;
   name: Scalars['String']['output'];
   runtime?: Maybe<Runtime>;
+  skillToolCalls?: Maybe<Array<ToolCall>>;
   systemPrompt?: Maybe<Scalars['String']['output']>;
   temperature?: Maybe<Scalars['Float']['output']>;
   toolCalls?: Maybe<Array<ToolCall>>;
@@ -791,7 +792,8 @@ export type ToolCall = {
   executedByAgent?: Maybe<Scalars['Boolean']['output']>;
   id: Scalars['ID']['output'];
   isTest: Scalars['Boolean']['output'];
-  mcpTool: McpTool;
+  mcpTool?: Maybe<McpTool>;
+  skill?: Maybe<Skill>;
   status: ToolCallStatus;
   toolInput: Scalars['String']['output'];
   toolOutput?: Maybe<Scalars['String']['output']>;
@@ -1317,6 +1319,7 @@ export type SkillResolvers<ContextType = object, ParentType extends ResolversPar
   model?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   name?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   runtime?: Resolver<Maybe<ResolversTypes['Runtime']>, ParentType, ContextType>;
+  skillToolCalls?: Resolver<Maybe<Array<ResolversTypes['ToolCall']>>, ParentType, ContextType>;
   systemPrompt?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   temperature?: Resolver<Maybe<ResolversTypes['Float']>, ParentType, ContextType>;
   toolCalls?: Resolver<Maybe<Array<ResolversTypes['ToolCall']>>, ParentType, ContextType>;
@@ -1354,7 +1357,8 @@ export type ToolCallResolvers<ContextType = object, ParentType extends Resolvers
   executedByAgent?: Resolver<Maybe<ResolversTypes['Boolean']>, ParentType, ContextType>;
   id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
   isTest?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
-  mcpTool?: Resolver<ResolversTypes['MCPTool'], ParentType, ContextType>;
+  mcpTool?: Resolver<Maybe<ResolversTypes['MCPTool']>, ParentType, ContextType>;
+  skill?: Resolver<Maybe<ResolversTypes['Skill']>, ParentType, ContextType>;
   status?: Resolver<ResolversTypes['ToolCallStatus'], ParentType, ContextType>;
   toolInput?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   toolOutput?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;

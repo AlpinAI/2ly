@@ -147,6 +147,7 @@ export enum OnboardingStepType {
 }
 
 export type Runtime = {
+  agents?: Maybe<Array<Agent>>;
   createdAt: Scalars['DateTime']['output'];
   description?: Maybe<Scalars['String']['output']>;
   hostIP?: Maybe<Scalars['String']['output']>;
@@ -186,6 +187,7 @@ export type Session = {
 };
 
 export type Skill = {
+  agentTools?: Maybe<Array<Agent>>;
   createdAt: Scalars['DateTime']['output'];
   description?: Maybe<Scalars['String']['output']>;
   executionTarget?: Maybe<ExecutionTarget>;
@@ -196,10 +198,12 @@ export type Skill = {
   model?: Maybe<Scalars['String']['output']>;
   name: Scalars['String']['output'];
   runtime?: Maybe<Runtime>;
+  skillToolCalls?: Maybe<Array<ToolCall>>;
   systemPrompt?: Maybe<Scalars['String']['output']>;
   temperature?: Maybe<Scalars['Float']['output']>;
   toolCalls?: Maybe<Array<ToolCall>>;
   updatedAt?: Maybe<Scalars['DateTime']['output']>;
+  usedByAgents?: Maybe<Array<Agent>>;
   workspace: Workspace;
 };
 
@@ -230,7 +234,8 @@ export type ToolCall = {
   executedByAgent?: Maybe<Scalars['Boolean']['output']>;
   id: Scalars['ID']['output'];
   isTest: Scalars['Boolean']['output'];
-  mcpTool: McpTool;
+  mcpTool?: Maybe<McpTool>;
+  skill?: Maybe<Skill>;
   status: ToolCallStatus;
   toolInput: Scalars['String']['output'];
   toolOutput?: Maybe<Scalars['String']['output']>;
@@ -508,6 +513,7 @@ export type OnboardingStepResolvers<ContextType = any, ParentType extends Resolv
 }>;
 
 export type RuntimeResolvers<ContextType = any, ParentType extends ResolversParentTypes['Runtime'] = ResolversParentTypes['Runtime']> = ResolversObject<{
+  agents?: Resolver<Maybe<Array<ResolversTypes['Agent']>>, ParentType, ContextType>;
   createdAt?: Resolver<ResolversTypes['DateTime'], ParentType, ContextType>;
   description?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   hostIP?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
@@ -544,6 +550,7 @@ export type SessionResolvers<ContextType = any, ParentType extends ResolversPare
 }>;
 
 export type SkillResolvers<ContextType = any, ParentType extends ResolversParentTypes['Skill'] = ResolversParentTypes['Skill']> = ResolversObject<{
+  agentTools?: Resolver<Maybe<Array<ResolversTypes['Agent']>>, ParentType, ContextType>;
   createdAt?: Resolver<ResolversTypes['DateTime'], ParentType, ContextType>;
   description?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   executionTarget?: Resolver<Maybe<ResolversTypes['ExecutionTarget']>, ParentType, ContextType>;
@@ -554,10 +561,12 @@ export type SkillResolvers<ContextType = any, ParentType extends ResolversParent
   model?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   name?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   runtime?: Resolver<Maybe<ResolversTypes['Runtime']>, ParentType, ContextType>;
+  skillToolCalls?: Resolver<Maybe<Array<ResolversTypes['ToolCall']>>, ParentType, ContextType>;
   systemPrompt?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   temperature?: Resolver<Maybe<ResolversTypes['Float']>, ParentType, ContextType>;
   toolCalls?: Resolver<Maybe<Array<ResolversTypes['ToolCall']>>, ParentType, ContextType>;
   updatedAt?: Resolver<Maybe<ResolversTypes['DateTime']>, ParentType, ContextType>;
+  usedByAgents?: Resolver<Maybe<Array<ResolversTypes['Agent']>>, ParentType, ContextType>;
   workspace?: Resolver<ResolversTypes['Workspace'], ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
@@ -584,7 +593,8 @@ export type ToolCallResolvers<ContextType = any, ParentType extends ResolversPar
   executedByAgent?: Resolver<Maybe<ResolversTypes['Boolean']>, ParentType, ContextType>;
   id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
   isTest?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
-  mcpTool?: Resolver<ResolversTypes['MCPTool'], ParentType, ContextType>;
+  mcpTool?: Resolver<Maybe<ResolversTypes['MCPTool']>, ParentType, ContextType>;
+  skill?: Resolver<Maybe<ResolversTypes['Skill']>, ParentType, ContextType>;
   status?: Resolver<ResolversTypes['ToolCallStatus'], ParentType, ContextType>;
   toolInput?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   toolOutput?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;

@@ -93,6 +93,7 @@ type Skill {
   mcpTools: [MCPTool!]
   workspace: Workspace!
   toolCalls: [ToolCall!]
+  skillToolCalls: [ToolCall!]
   # Skill mode - determines how tools are exposed to consuming agents
   mode: SkillMode
   # Smart mode configuration fields (only used when mode = SMART)
@@ -189,7 +190,8 @@ type ToolCall {
   error: String
   isTest: Boolean!
   executedByAgent: Boolean
-  mcpTool: MCPTool!
+  mcpTool: MCPTool
+  skill: Skill
   calledBy: Skill
   executedBy: Runtime
 }

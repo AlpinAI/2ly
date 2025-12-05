@@ -89,6 +89,16 @@ export const GET_SKILL = gql`
       description
       createdAt
       updatedAt
+      mode
+      model
+      temperature
+      maxTokens
+      systemPrompt
+      executionTarget
+      runtime {
+        id
+        name
+      }
       mcpTools {
         id
         name
@@ -297,6 +307,16 @@ export const QUERY_ALL_SKILLS = gql`
       description
       createdAt
       updatedAt
+      mode
+      model
+      temperature
+      maxTokens
+      systemPrompt
+      executionTarget
+      runtime {
+        id
+        name
+      }
       mcpTools {
         id
         name

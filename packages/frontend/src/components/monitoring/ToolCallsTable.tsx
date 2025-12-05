@@ -7,6 +7,7 @@
 import { ChevronLeft, ChevronRight, AlertCircle, CheckCircle, Clock, ArrowUpDown, X } from 'lucide-react';
 import { useQuery } from '@apollo/client/react';
 import { useEffect, useRef } from 'react';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { CheckboxDropdown } from '@/components/ui/checkbox-dropdown';
 import { Search } from '@/components/ui/search';
@@ -298,8 +299,23 @@ export function ToolCallsTable({
                 >
                   <td className="px-4 py-3">{getStatusIcon(call.status)}</td>
                   <td className="px-4 py-3">
-                    <div className="text-sm font-medium text-gray-900 dark:text-white">{call.mcpTool.name}</div>
-                    <div className="text-xs text-gray-500 dark:text-gray-400">{call.mcpTool.mcpServer.name}</div>
+                    {call.mcpTool ? (
+                      <>
+                        <div className="text-sm font-medium text-gray-900 dark:text-white">{call.mcpTool.name}</div>
+                        <div className="text-xs text-gray-500 dark:text-gray-400">{call.mcpTool.mcpServer.name}</div>
+                      </>
+                    ) : call.skill ? (
+                      <>
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm font-medium text-gray-900 dark:text-white">{call.skill.name}</span>
+                          <Badge className="bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400">
+                            Smart Skill
+                          </Badge>
+                        </div>
+                      </>
+                    ) : (
+                      <div className="text-sm text-gray-500 dark:text-gray-400">Unknown</div>
+                    )}
                   </td>
                   <td className="px-4 py-3 text-sm text-gray-700 dark:text-gray-300">{call.isTest ? 'Test' : ''} {call.calledBy?.name}</td>
                   <td className="px-4 py-3 text-xs text-gray-500 dark:text-gray-400">
