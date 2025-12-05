@@ -12,7 +12,7 @@ import cors from '@fastify/cors';
  */
 @injectable()
 export class FastifyManagerService extends Service {
-  name = 'fastify-manager';
+  name = 'fastify.manager';
   private logger: pino.Logger;
   private fastifyInstance: FastifyInstance | undefined;
   private server: Server | undefined;

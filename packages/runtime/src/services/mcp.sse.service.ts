@@ -48,7 +48,7 @@ import {
  */
 @injectable()
 export class McpSseService extends Service {
-  name = 'mcp-sse';
+  name = 'mcp.sse';
   private logger!: pino.Logger;
   private server: Server | undefined;
   private sessions: Map<string, SessionContext> = new Map();

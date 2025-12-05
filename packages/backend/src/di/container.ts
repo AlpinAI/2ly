@@ -4,6 +4,7 @@ import {
   NATS_CONNECTION_OPTIONS,
   LoggerService,
   LOG_LEVEL,
+  LOG_LEVELS,
   MAIN_LOGGER_NAME,
   FORWARD_STDERR,
   dgraphResolversTypes,
@@ -38,7 +39,6 @@ import { JwtService, AuthenticationService, AccountSecurityService, PasswordPoli
 import { SecurityMiddleware, RateLimitMiddleware, GraphQLAuthMiddleware } from '../middleware';
 import { IdentityService } from '../services/identity.service';
 import { KeyRateLimiterService } from '../services/key-rate-limiter.service';
-import pino from 'pino';
 import { MonitoringService } from '../services/monitoring.service';
 import { AIProviderService } from '../services/ai';
 
@@ -119,23 +119,13 @@ const start = () => {
   container.bind(GraphQLAuthMiddleware).toSelf().inSingletonScope();
 
   // Init logger service
+  // LOG_LEVEL: Default level for all loggers (e.g., 'info', 'debug', 'warn')
+  // LOG_LEVELS: Pattern-based configuration (e.g., 'mcp.*=debug,dgraph=trace')
   container.bind(MAIN_LOGGER_NAME).toConstantValue('2ly-backend');
   container.bind(FORWARD_STDERR).toConstantValue(false);
   container.bind(LOG_LEVEL).toConstantValue(process.env.LOG_LEVEL || 'info');
+  container.bind(LOG_LEVELS).toConstantValue(process.env.LOG_LEVELS);
   container.bind(LoggerService).toSelf().inSingletonScope();
-
-  // Set child log levels
-  const loggerService = container.get(LoggerService);
-  loggerService.setLogLevel('dgraph', (process.env.DGRAPH_LOG_LEVEL || 'info') as pino.Level);
-  loggerService.setLogLevel('nats', (process.env.NATS_LOG_LEVEL || 'info') as pino.Level);
-  loggerService.setLogLevel('fastify', (process.env.FASTIFY_LOG_LEVEL || 'info') as pino.Level);
-  loggerService.setLogLevel('apollo', (process.env.APOLLO_LOG_LEVEL || 'info') as pino.Level);
-  loggerService.setLogLevel('runtime', (process.env.RUNTIME_LOG_LEVEL || 'info') as pino.Level);
-  loggerService.setLogLevel('identity', (process.env.IDENTITY_LOG_LEVEL || 'info') as pino.Level);
-  loggerService.setLogLevel('skill', (process.env.SKILL_LOG_LEVEL || 'info') as pino.Level);
-  loggerService.setLogLevel('runtime.instance', (process.env.RUNTIME_INSTANCE_LOG_LEVEL || 'info') as pino.Level);
-  loggerService.setLogLevel('ai-provider-service', (process.env.AI_PROVIDER_LOG_LEVEL || 'info') as pino.Level);
-  loggerService.setLogLevel('ai-provider-repository', (process.env.AI_PROVIDER_LOG_LEVEL || 'info') as pino.Level);
 
   // Init Runtime Instance Factory
   container.bind<RuntimeInstanceFactory>(RuntimeInstance).toFactory((context) => {
@@ -144,8 +134,7 @@ const start = () => {
       metadata: ConnectionMetadata,
       onReady: () => void,
       onDisconnect: () => void) => {
-      const logger = context.get(LoggerService).getLogger(`runtime.instance`);
-      logger.level = process.env.RUNTIME_INSTANCE_LOG_LEVEL || 'info';
+      const logger = context.get(LoggerService).getLogger('runtime.instance');
       const runtimeInstance = new RuntimeInstance(
         logger,
         context.get(NatsService),

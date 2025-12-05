@@ -42,7 +42,7 @@ export class AIProviderService {
     @inject(EncryptionService) private readonly encryption: EncryptionService,
     @inject(AIProviderRepository) private readonly repository: AIProviderRepository
   ) {
-    this.logger = loggerService.getLogger('ai-provider-service');
+    this.logger = loggerService.getLogger('ai.provider.service');
   }
 
   private async listProviderModels(provider: AIProviderType, config: ProviderConfig): Promise<string[]> {

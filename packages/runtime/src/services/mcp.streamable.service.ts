@@ -36,7 +36,7 @@ import pino from 'pino';
  */
 @injectable()
 export class McpStreamableService extends Service {
-  name = 'mcp-streamable';
+  name = 'mcp.streamable';
   private logger!: pino.Logger;
   private sessions: Map<string, SessionContext> = new Map();
 

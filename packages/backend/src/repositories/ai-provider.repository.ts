@@ -27,7 +27,7 @@ export class AIProviderRepository {
     @inject(DGraphService) private readonly dgraphService: DGraphService,
     @inject(LoggerService) private readonly loggerService: LoggerService
   ) {
-    this.logger = this.loggerService.getLogger('ai-provider-repository');
+    this.logger = this.loggerService.getLogger('ai.provider.repository');
   }
 
   async getByWorkspace(workspaceId: string): Promise<dgraphResolversTypes.AiProviderConfig[]> {
