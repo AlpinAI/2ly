@@ -25,7 +25,7 @@ import { SkillService } from './skill.service';
  */
 @injectable()
 export class McpStdioService extends Service {
-  name = 'mcp-stdio';
+  name = 'mcp.stdio';
   private logger: pino.Logger;
   private server: Server | undefined;
   private transport: StdioServerTransport | undefined;

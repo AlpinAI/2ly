@@ -38,7 +38,7 @@ export class RuntimeRepository {
     @inject(NatsService) private readonly natsService: NatsService,
     @inject(IdentityRepository) private readonly identityRepository: IdentityRepository,
   ) {
-    this.logger = this.loggerService.getLogger('runtime-repository');
+    this.logger = this.loggerService.getLogger('runtime.repository');
   }
 
   async create(
