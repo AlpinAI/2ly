@@ -51,7 +51,7 @@ export function MCPServerDetail({ server }: MCPServerDetailProps) {
   // Inline edit state
   const [serverName, setServerName] = useState(server.name);
   const [serverDescription, setServerDescription] = useState(server.description || '');
-  const [executionTarget, setRunOn] = useState<ExecutionTarget | null>(server.executionTarget);
+  const [executionTarget, setExecutionTarget] = useState<ExecutionTarget | null>(server.executionTarget);
   const [runtimeId, setRuntimeId] = useState<string | null>(server.runtime?.id || null);
 
   // Configuration fields state
@@ -100,7 +100,7 @@ export function MCPServerDetail({ server }: MCPServerDetailProps) {
   useEffect(() => {
     setServerName(server.name);
     setServerDescription(server.description || '');
-    setRunOn(server.executionTarget);
+    setExecutionTarget(server.executionTarget);
     setRuntimeId(server.runtime?.id || null);
   }, [server]);
 
@@ -204,7 +204,7 @@ export function MCPServerDetail({ server }: MCPServerDetailProps) {
     }
 
     // Update local state immediately
-    setRunOn(newRunOn);
+    setExecutionTarget(newRunOn);
     setRuntimeId(newRuntimeId);
 
     // Save to server
@@ -219,7 +219,7 @@ export function MCPServerDetail({ server }: MCPServerDetailProps) {
     } catch (error) {
       console.error('Failed to save executionTarget:', error);
       // Revert on error
-      setRunOn(server.executionTarget);
+      setExecutionTarget(server.executionTarget);
       setRuntimeId(server.runtime?.id || null);
     }
   };

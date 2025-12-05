@@ -42,7 +42,7 @@ export function isSmartSkillCall(data: SkillCallToolRequestData): data is SmartS
  * Type guard for MCP tool call data
  */
 export function isMCPToolCall(data: SkillCallToolRequestData): data is MCPToolCallData {
-  return data.type === 'mcp-tool' || data.type === undefined;
+  return data.type === 'mcp-tool';
 }
 
 export class SkillCallToolRequest extends NatsRequest<SkillCallToolRequestData> {

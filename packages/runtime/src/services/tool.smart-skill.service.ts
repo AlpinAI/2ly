@@ -1,6 +1,15 @@
 import { injectable } from 'inversify';
 import pino from 'pino';
-import { Service, AIProviderCoreService, type RuntimeSmartSkill } from '@2ly/common';
+import {
+  Service,
+  AIProviderCoreService,
+  AIProviderError,
+  InvalidAPIKeyError,
+  RateLimitError,
+  TokenLimitError,
+  ModelNotFoundError,
+  type RuntimeSmartSkill,
+} from '@2ly/common';
 
 @injectable()
 export class ToolSmartSkillService extends Service {
@@ -51,7 +60,72 @@ export class ToolSmartSkillService extends Service {
       this.logger.info(`Smart skill ${this.config.name} chat completed successfully`);
       return response;
     } catch (error) {
-      this.logger.error(`Failed to call smart skill ${this.config.name}: ${error}`);
+      // Log structured error information with skill context
+      if (error instanceof InvalidAPIKeyError) {
+        this.logger.error({
+          error: 'InvalidAPIKey',
+          skill: this.config.name,
+          model: this.config.model,
+          provider: error.provider,
+          message: error.message,
+        });
+        throw new Error(`Smart skill '${this.config.name}' failed: Invalid API key for ${error.provider}`);
+      }
+
+      if (error instanceof RateLimitError) {
+        this.logger.error({
+          error: 'RateLimit',
+          skill: this.config.name,
+          model: this.config.model,
+          provider: error.provider,
+          retryAfter: error.retryAfter,
+          message: error.message,
+        });
+        throw new Error(`Smart skill '${this.config.name}' failed: Rate limit exceeded for ${error.provider}`);
+      }
+
+      if (error instanceof TokenLimitError) {
+        this.logger.error({
+          error: 'TokenLimit',
+          skill: this.config.name,
+          model: this.config.model,
+          provider: error.provider,
+          maxTokens: error.maxTokens,
+          message: error.message,
+        });
+        throw new Error(`Smart skill '${this.config.name}' failed: Token limit exceeded for ${error.provider}`);
+      }
+
+      if (error instanceof ModelNotFoundError) {
+        this.logger.error({
+          error: 'ModelNotFound',
+          skill: this.config.name,
+          model: this.config.model,
+          provider: error.provider,
+          modelName: error.modelName,
+          message: error.message,
+        });
+        throw new Error(`Smart skill '${this.config.name}' failed: Model '${error.modelName}' not found`);
+      }
+
+      if (error instanceof AIProviderError) {
+        this.logger.error({
+          error: 'AIProvider',
+          skill: this.config.name,
+          model: this.config.model,
+          provider: error.provider,
+          message: error.message,
+        });
+        throw new Error(`Smart skill '${this.config.name}' failed: ${error.message}`);
+      }
+
+      // Generic error handling
+      this.logger.error({
+        error: 'Unknown',
+        skill: this.config.name,
+        model: this.config.model,
+        message: error instanceof Error ? error.message : String(error),
+      });
       throw error;
     }
   }

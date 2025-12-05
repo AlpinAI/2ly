@@ -4,7 +4,7 @@ import {
   dgraphResolversTypes,
   LoggerService,
   EncryptionService,
-  DEFAULT_OLLAMA_BASE_URL,
+  AIProviderCoreService,
   type AIProviderType,
   type ProviderConfig,
   type AIProviderValidationResult,
@@ -35,7 +35,8 @@ export class AIProviderRepository {
   constructor(
     @inject(DGraphService) private readonly dgraphService: DGraphService,
     @inject(LoggerService) private readonly loggerService: LoggerService,
-    @inject(EncryptionService) private readonly encryption: EncryptionService
+    @inject(EncryptionService) private readonly encryption: EncryptionService,
+    @inject(AIProviderCoreService) private readonly aiProviderCore: AIProviderCoreService
   ) {
     this.logger = this.loggerService.getLogger('ai-provider-repository');
   }
@@ -230,67 +231,6 @@ export class AIProviderRepository {
   }
 
   /**
-   * List available models from a provider via API call.
-   * This makes external HTTP requests to the provider's API.
-   */
-  private async listProviderModels(provider: AIProviderType, config: ProviderConfig): Promise<string[]> {
-    switch (provider) {
-      case 'openai': {
-        if (!config.apiKey) {
-          throw new Error('OpenAI API key is required');
-        }
-        const res = await fetch('https://api.openai.com/v1/models', {
-          headers: {
-            Authorization: `Bearer ${config.apiKey}`,
-          },
-        });
-
-        if (!res.ok) throw new Error(`OpenAI error: ${await res.text()}`);
-
-        const data: { data: { id: string }[] } = await res.json();
-        const TEXT_MODEL_PREFIXES = ['gpt-', 'o1', 'o3', 'chatgpt'];
-        return data.data.map((m) => m.id).filter((id) => TEXT_MODEL_PREFIXES.some((prefix) => id.startsWith(prefix)));
-      }
-      case 'anthropic': {
-        if (!config.apiKey) {
-          throw new Error('Anthropic API key is required');
-        }
-        const res = await fetch('https://api.anthropic.com/v1/models', {
-          headers: {
-            'x-api-key': config.apiKey,
-            'anthropic-version': '2023-06-01',
-          },
-        });
-
-        if (!res.ok) throw new Error(`Anthropic error: ${await res.text()}`);
-
-        const data: { data: { id: string }[] } = await res.json();
-        return data.data.map((m) => m.id);
-      }
-      case 'google': {
-        if (!config.apiKey) {
-          throw new Error('Google API key is required');
-        }
-        const host = config.baseUrl || 'https://generativelanguage.googleapis.com/v1';
-        const res = await fetch(`${host}/models?key=${config.apiKey}`);
-        if (!res.ok) throw new Error(`Google Gemini error: ${await res.text()}`);
-        const data: { models: { name: string }[] } = await res.json();
-        const result: string[] = data.models.map((m) => m.name);
-        return result.filter((m) => m.includes('gemini')).map((m) => m.replace('models/', ''));
-      }
-      case 'ollama': {
-        const host = config.baseUrl || DEFAULT_OLLAMA_BASE_URL;
-        const res = await fetch(`${host}/tags`);
-        if (!res.ok) throw new Error(`Ollama error: ${await res.text()}`);
-        const data: { models: { name: string }[] } = await res.json();
-        return data.models.map((m) => m.name);
-      }
-      default:
-        throw new Error(`Unknown provider: ${provider}`);
-    }
-  }
-
-  /**
    * Test configuration WITHOUT persisting to database.
    * For frontend validation before saving.
    */
@@ -306,7 +246,7 @@ export class AIProviderRepository {
     }
 
     try {
-      const availableModels = await this.listProviderModels(provider, { apiKey, baseUrl });
+      const availableModels = await this.aiProviderCore.listProviderModels(provider, { apiKey, baseUrl });
       if (availableModels.length === 0) {
         return { valid: false, error: 'No models available' };
       }
