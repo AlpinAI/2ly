@@ -408,6 +408,18 @@ export const resolvers = (container: Container = defaultContainer): apolloResolv
         await requireAuthAndWorkspaceAccess(workspaceRepository, context, id);
         return workspaceRepository.update(id, name);
       },
+      updateWorkspacePrompts: async (_parent: unknown, { workspaceId, customPrompts }: { workspaceId: string; customPrompts: string }, context: GraphQLContext) => {
+        await requireAuthAndWorkspaceAccess(workspaceRepository, context, workspaceId);
+
+        // Validate JSON format
+        try {
+          JSON.parse(customPrompts);
+        } catch (error) {
+          throw new GraphQLError('Invalid JSON format for customPrompts', { extensions: { code: 'BAD_REQUEST' } });
+        }
+
+        return workspaceRepository.updatePrompts(workspaceId, customPrompts);
+      },
       initSystem: async (_parent: unknown, { adminPassword, email }: { adminPassword: string; email: string }) => {
         return systemRepository.initSystem(adminPassword, email);
       },

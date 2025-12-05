@@ -192,6 +192,19 @@ export const UPDATE_WORKSPACE = gql`
   }
 `;
 
+export const UPDATE_WORKSPACE_PROMPTS = gql`
+  mutation updateWorkspacePrompts($id: ID!, $customPrompts: String!) {
+    updateWorkspace(input: { filter: { id: [$id] }, set: { customPrompts: $customPrompts } }) {
+      workspace {
+        id
+        name
+        customPrompts
+        createdAt
+      }
+    }
+  }
+`;
+
 export const CREATE_ONBOARDING_STEP = gql`
   mutation createOnboardingStep($stepId: String!, $type: OnboardingStepType!, $priority: Int!, $now: DateTime!) {
     addOnboardingStep(input: {

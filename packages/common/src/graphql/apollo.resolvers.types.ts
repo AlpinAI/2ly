@@ -203,6 +203,7 @@ export type Mutation = {
   updateServerInRegistry: McpRegistryServer;
   updateSkill: Skill;
   updateWorkspace: Workspace;
+  updateWorkspacePrompts: Workspace;
 };
 
 
@@ -442,6 +443,12 @@ export type MutationUpdateSkillArgs = {
 export type MutationUpdateWorkspaceArgs = {
   id: Scalars['ID']['input'];
   name: Scalars['String']['input'];
+};
+
+
+export type MutationUpdateWorkspacePromptsArgs = {
+  customPrompts: Scalars['String']['input'];
+  workspaceId: Scalars['ID']['input'];
 };
 
 export type OnboardingStep = {
@@ -728,6 +735,7 @@ export type User = {
 export type Workspace = {
   aiProviders?: Maybe<Array<AiProviderConfig>>;
   createdAt: Scalars['Date']['output'];
+  customPrompts?: Maybe<Scalars['String']['output']>;
   defaultAIModel?: Maybe<Scalars['String']['output']>;
   id: Scalars['ID']['output'];
   mcpServers?: Maybe<Array<McpServer>>;
@@ -1062,6 +1070,7 @@ export type MutationResolvers<ContextType = object, ParentType extends Resolvers
   updateServerInRegistry?: Resolver<ResolversTypes['MCPRegistryServer'], ParentType, ContextType, RequireFields<MutationUpdateServerInRegistryArgs, 'serverId'>>;
   updateSkill?: Resolver<ResolversTypes['Skill'], ParentType, ContextType, RequireFields<MutationUpdateSkillArgs, 'description' | 'id' | 'name'>>;
   updateWorkspace?: Resolver<ResolversTypes['Workspace'], ParentType, ContextType, RequireFields<MutationUpdateWorkspaceArgs, 'id' | 'name'>>;
+  updateWorkspacePrompts?: Resolver<ResolversTypes['Workspace'], ParentType, ContextType, RequireFields<MutationUpdateWorkspacePromptsArgs, 'customPrompts' | 'workspaceId'>>;
 };
 
 export type OnboardingStepResolvers<ContextType = object, ParentType extends ResolversParentTypes['OnboardingStep'] = ResolversParentTypes['OnboardingStep']> = {
@@ -1210,6 +1219,7 @@ export type UserResolvers<ContextType = object, ParentType extends ResolversPare
 export type WorkspaceResolvers<ContextType = object, ParentType extends ResolversParentTypes['Workspace'] = ResolversParentTypes['Workspace']> = {
   aiProviders?: Resolver<Maybe<Array<ResolversTypes['AIProviderConfig']>>, ParentType, ContextType>;
   createdAt?: Resolver<ResolversTypes['Date'], ParentType, ContextType>;
+  customPrompts?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   defaultAIModel?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
   mcpServers?: Resolver<Maybe<Array<ResolversTypes['MCPServer']>>, ParentType, ContextType>;
