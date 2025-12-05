@@ -1,0 +1,6 @@
+mutation UpdateWorkspacePrompts($workspaceId: ID!, $customPrompts: String!) {
+  updateWorkspacePrompts(workspaceId: $workspaceId, customPrompts: $customPrompts) {
+    id
+    customPrompts
+  }
+}

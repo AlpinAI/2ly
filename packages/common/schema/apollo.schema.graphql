@@ -47,6 +47,7 @@ type Workspace {
   onboardingSteps: [OnboardingStep!]
   aiProviders: [AIProviderConfig!]
   defaultAIModel: String
+  customPrompts: String
 }
 
 type MCPServer {
@@ -404,6 +405,9 @@ type Mutation {
 
   # Chat with a specific model (format: "provider/model-name")
   chatWithModel(workspaceId: ID!, model: String!, message: String!): String!
+
+  # Custom prompts management
+  updateWorkspacePrompts(workspaceId: ID!, customPrompts: String!): Workspace!
 }
 
 # Authentication types

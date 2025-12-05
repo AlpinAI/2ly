@@ -41,6 +41,12 @@ import {
   GetDefaultAiModelDocument,
 } from '@/graphql/generated/graphql';
 import { useNotification } from '@/contexts/NotificationContext';
+import {
+  parseCustomPrompts,
+  getSkillGenerationPrompt,
+  replaceVariables,
+  type PromptVariables,
+} from '@/lib/promptTemplates';
 
 // Character limits based on issue requirements
 const CHAR_LIMITS = {
@@ -105,6 +111,7 @@ export function AISkillBuilderDialog() {
 
   const defaultAIModel = aiModelData?.workspace?.defaultAIModel;
   const availableTools = toolsData?.mcpTools || [];
+  const customPrompts = parseCustomPrompts(aiModelData?.workspace?.customPrompts);
 
   // Reset form state when dialog closes
   useEffect(() => {
@@ -139,39 +146,25 @@ export function AISkillBuilderDialog() {
     [handleClose]
   );
 
-  // Build AI prompt
+  // Build AI prompt using custom or default template
   const buildAIPrompt = (userIntent: string): string => {
     const toolsList =
       availableTools.length > 0
         ? availableTools.map((t: { id: string; name: string; description: string }) => `- ${t.id}: ${t.name} - ${t.description}`).join('\n')
         : 'No tools available';
 
-    return `The user wants to build a skill with this intent:
-"${userIntent}"
+    // Get the prompt template (custom or default)
+    const template = getSkillGenerationPrompt(customPrompts);
 
-Available tools in the workspace:
-${toolsList}
+    // Prepare variables for replacement
+    const variables: PromptVariables = {
+      intent: userIntent,
+      tools: toolsList,
+      workspace: aiModelData?.workspace?.name,
+    };
 
-Generate a skill configuration with:
-1. NAME (3-100 characters): A concise name for this skill
-2. SCOPE (max 300 characters): What this skill does
-3. GUARDRAILS (max 10000 characters): How to use it safely, limitations, constraints
-4. KNOWLEDGE (max 10000 characters): Relevant background, policies, best practices
-5. SUGGESTED_TOOLS (array of tool IDs): Which tools from the available list are relevant
-
-Respond ONLY with valid JSON in this exact format:
-{
-  "name": "...",
-  "scope": "...",
-  "guardrails": "...",
-  "knowledge": "...",
-  "toolIds": ["tool-id-1", "tool-id-2"]
-}
-
-Important:
-- Do not exceed character limits
-- Only suggest tool IDs that exist in the available tools list
-- Return valid JSON only, no markdown or additional text`;
+    // Replace variables in template
+    return replaceVariables(template, variables);
   };
 
   // Parse AI response
