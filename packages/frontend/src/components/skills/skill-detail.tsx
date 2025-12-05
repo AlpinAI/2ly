@@ -346,11 +346,11 @@ export function SkillDetail({ skill }: SkillDetailProps) {
         <div>
           <h4 className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider flex items-center gap-1 mb-2">
             <Wrench className="h-3 w-3" />
-            Tools ({skill.mcpTools?.length || 0})
+            Tools ({(skill.mcpTools?.length || 0) + (skill.agentTools?.length || 0)})
           </h4>
-          {skill.mcpTools && skill.mcpTools.length > 0 ? (
+          {(skill.mcpTools && skill.mcpTools.length > 0) || (skill.agentTools && skill.agentTools.length > 0) ? (
             <ul className="space-y-1 max-h-64 overflow-auto">
-              {skill.mcpTools.map((tool) => (
+              {skill.mcpTools?.map((tool) => (
                 <li
                   key={tool.id}
                   className="flex items-center gap-2 bg-white dark:bg-gray-800 px-3 py-2 rounded border border-gray-200 dark:border-gray-700"
@@ -371,9 +371,33 @@ export function SkillDetail({ skill }: SkillDetailProps) {
                   </div>
                 </li>
               ))}
+              {skill.agentTools?.map((agent) => (
+                <li
+                  key={agent.id}
+                  className="flex items-center gap-2 bg-white dark:bg-gray-800 px-3 py-2 rounded border border-gray-200 dark:border-gray-700"
+                >
+                  <Bot className="h-4 w-4 text-purple-500 flex-shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <Link
+                      to={`/w/${workspaceId}/tools?id=${agent.id}`}
+                      className="text-sm text-gray-900 dark:text-white hover:text-cyan-600 dark:hover:text-cyan-400 hover:underline truncate block"
+                    >
+                      {agent.name}
+                    </Link>
+                    {agent.description && (
+                      <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                        {agent.description}
+                      </p>
+                    )}
+                    <p className="text-xs text-purple-500 dark:text-purple-400">
+                      {agent.model}
+                    </p>
+                  </div>
+                </li>
+              ))}
             </ul>
           ) : (
-            <p className="text-sm text-gray-400 dark:text-gray-500">No tools in this set</p>
+            <p className="text-sm text-gray-400 dark:text-gray-500">No tools in this skill</p>
           )}
         </div>
 

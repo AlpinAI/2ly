@@ -14,6 +14,7 @@ import {
   MonitoringRepository,
   SkillRepository,
   IdentityRepository,
+  AgentRepository,
   KEY_NATURE_PREFIX,
 } from '../repositories';
 import { createAuthResolvers } from '../resolvers/auth.resolver';
@@ -45,6 +46,7 @@ export const resolvers = (container: Container = defaultContainer): apolloResolv
   const workspaceRepository = container.get(WorkspaceRepository);
   const skillRepository = container.get(SkillRepository);
   const identityRepository = container.get(IdentityRepository);
+  const agentRepository = container.get(AgentRepository);
   const authenticationService = container.get(AuthenticationService);
   const jwtService = container.get(JwtService);
   const monitoringRepository = container.get(MonitoringRepository);
@@ -602,6 +604,52 @@ export const resolvers = (container: Container = defaultContainer): apolloResolv
         }
         await requireWorkspaceAccess(workspaceRepository, userId, tool.workspace.id);
         return skillRepository.removeMCPToolFromSkill(mcpToolId, skillId);
+      },
+
+      addAgentToSkill: async (
+        _parent: unknown,
+        { agentId, skillId }: { agentId: string; skillId: string },
+        context: GraphQLContext,
+      ) => {
+        const userId = requireAuth(context);
+        const agent = await agentRepository.findById(agentId);
+        if (!agent?.workspace?.id) {
+          throw new GraphQLError('Agent not found', { extensions: { code: 'NOT_FOUND' } });
+        }
+        const skill = await skillRepository.findById(skillId);
+        if (!skill?.workspace?.id) {
+          throw new GraphQLError('Skill not found', { extensions: { code: 'NOT_FOUND' } });
+        }
+        if (agent.workspace.id !== skill.workspace.id) {
+          throw new GraphQLError('Agent and Skill must belong to the same workspace', {
+            extensions: { code: 'BAD_REQUEST' },
+          });
+        }
+        await requireWorkspaceAccess(workspaceRepository, userId, agent.workspace.id);
+        return skillRepository.addAgentToSkill(agentId, skillId);
+      },
+
+      removeAgentFromSkill: async (
+        _parent: unknown,
+        { agentId, skillId }: { agentId: string; skillId: string },
+        context: GraphQLContext,
+      ) => {
+        const userId = requireAuth(context);
+        const agent = await agentRepository.findById(agentId);
+        if (!agent?.workspace?.id) {
+          throw new GraphQLError('Agent not found', { extensions: { code: 'NOT_FOUND' } });
+        }
+        const skill = await skillRepository.findById(skillId);
+        if (!skill?.workspace?.id) {
+          throw new GraphQLError('Skill not found', { extensions: { code: 'NOT_FOUND' } });
+        }
+        if (agent.workspace.id !== skill.workspace.id) {
+          throw new GraphQLError('Agent and Skill must belong to the same workspace', {
+            extensions: { code: 'BAD_REQUEST' },
+          });
+        }
+        await requireWorkspaceAccess(workspaceRepository, userId, agent.workspace.id);
+        return skillRepository.removeAgentFromSkill(agentId, skillId);
       },
 
       // AI Provider mutations

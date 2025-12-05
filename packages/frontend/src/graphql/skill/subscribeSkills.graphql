@@ -16,5 +16,11 @@ subscription SubscribeSkills($workspaceId: ID!) {
         name
       }
     }
+    agentTools {
+      id
+      name
+      description
+      model
+    }
   }
 }

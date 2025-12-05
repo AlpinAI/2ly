@@ -21,6 +21,7 @@ vi.mock('@/contexts/NotificationContext');
 // Mock Apollo Client
 vi.mock('@apollo/client/react', () => ({
   useMutation: vi.fn(() => [vi.fn(), { loading: false }]),
+  useQuery: vi.fn(() => ({ data: null, loading: false, error: undefined, refetch: vi.fn() })),
 }));
 
 // Mock react-router-dom to provide useParams
@@ -107,6 +108,7 @@ describe('ToolDetail', () => {
     createdAt: new Date('2025-01-01'),
     updatedAt: null,
     skills: [],
+    tools: [],
   };
 
   beforeEach(() => {
@@ -123,6 +125,7 @@ describe('ToolDetail', () => {
           createdAt: new Date('2025-01-01'),
           updatedAt: null,
           mcpTools: null,
+          agentTools: null,
         },
       ],
       filteredSkills: [
@@ -134,6 +137,7 @@ describe('ToolDetail', () => {
           createdAt: new Date('2025-01-01'),
           updatedAt: null,
           mcpTools: null,
+          agentTools: null,
         },
       ],
       loading: false,

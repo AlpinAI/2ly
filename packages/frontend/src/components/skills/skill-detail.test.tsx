@@ -53,6 +53,7 @@ const mockSkill = {
       },
     },
   ],
+  agentTools: [],
 };
 
 describe('SkillDetail - Inline Editing', () => {
@@ -434,7 +435,7 @@ describe('SkillDetail - Inline Editing', () => {
         </BrowserRouter>
       );
 
-      expect(screen.getByText('Tools (1)')).toBeInTheDocument();
+      expect(screen.getByText('MCP Tools (1)')).toBeInTheDocument();
       expect(screen.getByText('Test Tool')).toBeInTheDocument();
     });
   });

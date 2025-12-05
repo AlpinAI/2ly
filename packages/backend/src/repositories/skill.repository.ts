@@ -9,6 +9,8 @@ import {
   QUERY_SKILLS_BY_WORKSPACE,
   ADD_MCP_TOOL_TO_SKILL,
   REMOVE_MCP_TOOL_FROM_SKILL,
+  ADD_AGENT_TO_SKILL,
+  REMOVE_AGENT_FROM_SKILL,
   OBSERVE_SKILLS,
   QUERY_ALL_SKILLS,
   QUERY_SKILL_BY_NAME,
@@ -154,6 +156,34 @@ export class SkillRepository {
     });
 
     this.logger.info(`Removed MCP tool ${mcpToolId} from skill ${skillId}`);
+    return res.updateSkill.skill[0];
+  }
+
+  async addAgentToSkill(agentId: string, skillId: string): Promise<dgraphResolversTypes.Skill> {
+    const now = new Date().toISOString();
+    const res = await this.dgraphService.mutation<{
+      updateSkill: { skill: dgraphResolversTypes.Skill[] };
+    }>(ADD_AGENT_TO_SKILL, {
+      skillId,
+      agentId,
+      updatedAt: now,
+    });
+
+    this.logger.info(`Added agent ${agentId} to skill ${skillId}`);
+    return res.updateSkill.skill[0];
+  }
+
+  async removeAgentFromSkill(agentId: string, skillId: string): Promise<dgraphResolversTypes.Skill> {
+    const now = new Date().toISOString();
+    const res = await this.dgraphService.mutation<{
+      updateSkill: { skill: dgraphResolversTypes.Skill[] };
+    }>(REMOVE_AGENT_FROM_SKILL, {
+      skillId,
+      agentId,
+      updatedAt: now,
+    });
+
+    this.logger.info(`Removed agent ${agentId} from skill ${skillId}`);
     return res.updateSkill.skill[0];
   }
 

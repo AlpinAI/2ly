@@ -1,11 +1,10 @@
-# Get Skills Query
-# WHY: Fetch all skills for a workspace
-query GetSkills($workspaceId: ID!) {
-  skills(workspaceId: $workspaceId) {
+# Add Agent to Skill Mutation
+# WHY: Add an agent as a tool to a skill
+mutation AddAgentToSkill($agentId: ID!, $skillId: ID!) {
+  addAgentToSkill(agentId: $agentId, skillId: $skillId) {
     id
     name
     description
-    createdAt
     updatedAt
     mcpTools {
       id

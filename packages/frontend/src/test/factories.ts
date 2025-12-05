@@ -139,8 +139,9 @@ export const createMockSkillRef = (overrides: Partial<Skill> = {}): Skill => ({
   createdAt: new Date(),
   updatedAt: null,
   mcpTools: null,
+  agentTools: null,
   toolCalls: null,
-  agents: null,
+  usedByAgents: null,
   workspace: null as never,
   ...overrides,
 });

@@ -22,5 +22,10 @@ query GetAgents($workspaceId: ID!) {
       name
       description
     }
+    tools {
+      id
+      name
+      description
+    }
   }
 }

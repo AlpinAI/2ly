@@ -105,11 +105,11 @@ export function AgentDetail({ agent }: AgentDetailProps) {
     );
   }, [agent, agentName, agentDescription, systemPrompt, model, temperature, maxTokens]);
 
-  // Get skills not yet linked to this agent (for future use when skill linking is implemented)
+  // Get skills not yet accessible by this agent (for future use when skill linking is implemented)
   const unlinkedSkills = useMemo(() => {
-    const linkedSkillIds = new Set(agent.skills?.map((s) => s.id) || []);
+    const linkedSkillIds = new Set(agent.tools?.map((s) => s.id) || []);
     return skills.filter((skill) => !linkedSkillIds.has(skill.id));
-  }, [skills, agent.skills]);
+  }, [skills, agent.tools]);
 
   // Grouped select value for execution target
   const groupedSelectValue = useMemo(() => {
@@ -359,11 +359,11 @@ export function AgentDetail({ agent }: AgentDetailProps) {
           </Select>
         </div>
 
-        {/* Skills */}
+        {/* Can Access Skills (skills this agent can use) */}
         <div>
           <div className="flex items-center justify-between mb-2">
             <h4 className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-              Available in Skills ({agent.skills?.length || 0})
+              Can Access Skills ({agent.tools?.length || 0})
             </h4>
             <Button
               variant="ghost"
@@ -375,14 +375,14 @@ export function AgentDetail({ agent }: AgentDetailProps) {
               <Plus className="h-4 w-4" />
             </Button>
           </div>
-          {agent.skills && agent.skills.length > 0 ? (
+          {agent.tools && agent.tools.length > 0 ? (
             <ul className="space-y-1">
-              {agent.skills.map((skill) => (
+              {agent.tools.map((skill) => (
                 <li
                   key={skill.id}
                   className="flex items-center gap-2 bg-white dark:bg-gray-800 px-3 py-2 rounded border border-gray-200 dark:border-gray-700"
                 >
-                  <Settings className="h-4 w-4 text-gray-400" />
+                  <Settings className="h-4 w-4 text-cyan-500" />
                   <div className="flex-1 min-w-0">
                     <Link
                       to={`/w/${workspaceId}/skills?id=${skill.id}`}
@@ -398,7 +398,39 @@ export function AgentDetail({ agent }: AgentDetailProps) {
               ))}
             </ul>
           ) : (
-            <p className="text-sm text-gray-400 dark:text-gray-500">Not available in any skills yet</p>
+            <p className="text-sm text-gray-400 dark:text-gray-500">No skills linked to this agent</p>
+          )}
+        </div>
+
+        {/* Available in Skills (skills where this agent is a tool) */}
+        <div>
+          <h4 className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">
+          Available in Skills ({agent.skills?.length || 0})
+          </h4>
+          {agent.skills && agent.skills.length > 0 ? (
+            <ul className="space-y-1">
+              {agent.skills.map((skill) => (
+                <li
+                  key={skill.id}
+                  className="flex items-center gap-2 bg-white dark:bg-gray-800 px-3 py-2 rounded border border-gray-200 dark:border-gray-700"
+                >
+                  <Settings className="h-4 w-4 text-purple-500" />
+                  <div className="flex-1 min-w-0">
+                    <Link
+                      to={`/w/${workspaceId}/skills?id=${skill.id}`}
+                      className="text-sm font-medium text-gray-900 dark:text-white hover:text-cyan-600 dark:hover:text-cyan-400 hover:underline truncate block"
+                    >
+                      {skill.name}
+                    </Link>
+                    {skill.description && (
+                      <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{skill.description}</p>
+                    )}
+                  </div>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="text-sm text-gray-400 dark:text-gray-500">Not included as a tool in any skills</p>
           )}
         </div>
 

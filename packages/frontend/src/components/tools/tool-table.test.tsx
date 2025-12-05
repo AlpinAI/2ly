@@ -80,6 +80,7 @@ describe('ToolTable', () => {
       createdAt: new Date('2024-01-01'),
       updatedAt: null,
       skills: [],
+      tools: [],
     },
   ];
 

@@ -104,6 +104,12 @@ export const GET_SKILL = gql`
           executionTarget
         }
       }
+      agentTools {
+        id
+        name
+        description
+        model
+      }
       workspace {
         id
         name
@@ -131,6 +137,12 @@ export const QUERY_SKILLS_BY_WORKSPACE = gql`
           status
           createdAt
           lastSeenAt
+        }
+        agentTools {
+          id
+          name
+          description
+          model
         }
       }
     }
@@ -172,6 +184,12 @@ export const ADD_MCP_TOOL_TO_SKILL = gql`
             name
             executionTarget
           }
+        }
+        agentTools {
+          id
+          name
+          description
+          model
         }
         workspace {
           id
@@ -220,6 +238,12 @@ export const REMOVE_MCP_TOOL_FROM_SKILL = gql`
             executionTarget
           }
         }
+        agentTools {
+          id
+          name
+          description
+          model
+        }
         workspace {
           id
           name
@@ -250,6 +274,12 @@ export const OBSERVE_SKILLS = (type: 'query' | 'subscription' = 'query') => gql`
             executionTarget
           }
         }
+        agentTools {
+          id
+          name
+          description
+          model
+        }
       }
     }
   }
@@ -277,6 +307,12 @@ export const QUERY_ALL_SKILLS = gql`
           name
           executionTarget
         }
+      }
+      agentTools {
+        id
+        name
+        description
+        model
       }
       workspace {
         id
@@ -311,6 +347,12 @@ export const QUERY_SKILL_BY_NAME = gql`
             executionTarget
           }
         }
+        agentTools {
+          id
+          name
+          description
+          model
+        }
         workspace {
           id
           name
@@ -338,6 +380,99 @@ export const GET_SKILL_AGENT_MCP_SERVERS = gql`
             inputSchema
             annotations
           }
+        }
+      }
+    }
+  }
+`;
+
+export const ADD_AGENT_TO_SKILL = gql`
+  mutation addAgentToSkill($skillId: ID!, $agentId: ID!, $updatedAt: DateTime!) {
+    updateSkill(
+      input: {
+        filter: { id: [$skillId] }
+        set: { agentTools: [{ id: $agentId }], updatedAt: $updatedAt }
+      }
+    ) {
+      skill {
+        id
+        name
+        description
+        createdAt
+        updatedAt
+        mcpTools {
+          id
+          name
+          description
+          inputSchema
+          annotations
+          status
+          createdAt
+          lastSeenAt
+          mcpServer {
+            id
+            name
+            executionTarget
+          }
+        }
+        agentTools {
+          id
+          name
+          description
+          model
+        }
+        workspace {
+          id
+          name
+        }
+      }
+    }
+  }
+`;
+
+export const REMOVE_AGENT_FROM_SKILL = gql`
+  mutation removeAgentFromSkill(
+    $skillId: ID!
+    $agentId: ID!
+    $updatedAt: DateTime!
+  ) {
+    updateSkill(
+      input: {
+        filter: { id: [$skillId] }
+        remove: { agentTools: [{ id: $agentId }] }
+        set: { updatedAt: $updatedAt }
+      }
+    ) {
+      skill {
+        id
+        name
+        description
+        createdAt
+        updatedAt
+        mcpTools {
+          id
+          name
+          description
+          inputSchema
+          annotations
+          status
+          createdAt
+          lastSeenAt
+          mcpServer {
+            id
+            name
+            executionTarget
+          }
+        }
+        agentTools {
+          id
+          name
+          description
+          model
+        }
+        workspace {
+          id
+          name
         }
       }
     }

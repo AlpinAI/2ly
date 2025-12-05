@@ -108,6 +108,7 @@ describe('OnboardingCard', () => {
         skills: [],
       },
     ],
+    agentTools: [],
     workspace: {
       __typename: 'Workspace',
       id: 'workspace-1',

@@ -148,6 +148,11 @@ export const GET_AGENT = gql`
         name
         description
       }
+      tools {
+        id
+        name
+        description
+      }
       runtime {
         id
         name
@@ -179,6 +184,11 @@ export const GET_AGENTS_BY_WORKSPACE = gql`
         createdAt
         updatedAt
         skills {
+          id
+          name
+          description
+        }
+        tools {
           id
           name
           description
