@@ -1,17 +1,19 @@
 /**
  * ToolTable Component
  *
- * WHY: Displays MCP tools in a table with search and filters.
+ * WHY: Displays MCP tools and Agents in a unified table with search and filters.
  * Used by Tools Page as the master list.
  *
  * COLUMNS:
  * - Name & Description
- * - Server
+ * - Type (MCP Tool / Agent icon + badge)
+ * - Server (MCP Tools only)
  * - # Skills
- * - Status
+ * - Status (MCP Tools only)
  *
  * FEATURES:
  * - Search by name/description
+ * - Filter by type (MCP Tool / Agent)
  * - Filter by server(s), skill(s)
  * - Click row to select
  * - Highlight selected row
@@ -21,18 +23,19 @@ import { useEffect, useRef } from 'react';
 import { Search } from '@/components/ui/search';
 import { CheckboxDropdown } from '@/components/ui/checkbox-dropdown';
 import { Button } from '@/components/ui/button';
-import { X } from 'lucide-react';
-import type { GetMcpToolsQuery } from '@/graphql/generated/graphql';
+import { X, Wrench, Bot } from 'lucide-react';
+import type { ToolItem } from '@/types/tools';
+import { ToolItemType, isMCPTool, TOOL_ITEM_TYPE_OPTIONS } from '@/types/tools';
 import { useScrollToEntity } from '@/hooks/useScrollToEntity';
 
-type McpTool = NonNullable<NonNullable<GetMcpToolsQuery['mcpTools']>[number]>;
-
 export interface ToolTableProps {
-  tools: McpTool[];
-  selectedToolId: string | null;
-  onSelectTool: (toolId: string) => void;
+  items: ToolItem[];
+  selectedItemId: string | null;
+  onSelectItem: (itemId: string) => void;
   search: string;
   onSearchChange: (search: string) => void;
+  typeFilter: ToolItemType[];
+  onTypeFilterChange: (types: ToolItemType[]) => void;
   serverFilter: string[];
   onServerFilterChange: (serverIds: string[]) => void;
   skillFilter: string[];
@@ -43,11 +46,13 @@ export interface ToolTableProps {
 }
 
 export function ToolTable({
-  tools,
-  selectedToolId,
-  onSelectTool,
+  items,
+  selectedItemId,
+  onSelectItem,
   search,
   onSearchChange,
+  typeFilter,
+  onTypeFilterChange,
   serverFilter,
   onServerFilterChange,
   skillFilter,
@@ -59,22 +64,24 @@ export function ToolTable({
   const scrollToEntity = useScrollToEntity();
   const rowRefs = useRef<Map<string, HTMLTableRowElement>>(new Map());
 
-  const hasActiveFilters = search.length > 0 || serverFilter.length > 0 || skillFilter.length > 0;
+  const hasActiveFilters =
+    search.length > 0 || typeFilter.length > 0 || serverFilter.length > 0 || skillFilter.length > 0;
 
   // Scroll to selected entity when ID changes and element is ready
   useEffect(() => {
-    if (selectedToolId && !loading) {
-      const element = rowRefs.current.get(selectedToolId);
+    if (selectedItemId && !loading) {
+      const element = rowRefs.current.get(selectedItemId);
       if (element) {
         setTimeout(() => {
           scrollToEntity(element);
         }, 100);
       }
     }
-  }, [selectedToolId, loading, scrollToEntity]);
+  }, [selectedItemId, loading, scrollToEntity]);
 
   const handleClearFilters = () => {
     onSearchChange('');
+    onTypeFilterChange([]);
     onServerFilterChange([]);
     onSkillFilterChange([]);
   };
@@ -83,9 +90,17 @@ export function ToolTable({
     <div className="flex flex-col h-full">
       {/* Header with Search and Filters */}
       <div className="p-4 border-b border-gray-200 dark:border-gray-700 space-y-3">
-        <Search placeholder="Search tools..." value={search} onChange={(e) => onSearchChange(e.target.value)} />
+        <Search placeholder="Search tools and agents..." value={search} onChange={(e) => onSearchChange(e.target.value)} />
 
         <div className="flex flex-wrap gap-2">
+          <CheckboxDropdown
+            label="Type"
+            placeholder="All types"
+            items={TOOL_ITEM_TYPE_OPTIONS.map((t) => ({ id: t.id as string, label: t.label }))}
+            selectedIds={typeFilter as string[]}
+            onChange={(ids) => onTypeFilterChange(ids as ToolItemType[])}
+          />
+
           <CheckboxDropdown
             label="Server"
             placeholder="All servers"
@@ -117,7 +132,7 @@ export function ToolTable({
           <div className="flex items-center justify-center h-full">
             <p className="text-sm text-muted-foreground">Loading tools...</p>
           </div>
-        ) : tools.length === 0 ? (
+        ) : items.length === 0 ? (
           <div className="flex items-center justify-center h-full">
             <div className="text-center">
               <p className="text-sm text-muted-foreground">
@@ -132,7 +147,10 @@ export function ToolTable({
                 <thead className="bg-gray-50 dark:bg-gray-900 sticky top-0">
                   <tr>
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                      Tool
+                      Name
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                      Type
                     </th>
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                       Server
@@ -146,50 +164,85 @@ export function ToolTable({
                   </tr>
                 </thead>
                 <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                  {tools.map((tool) => (
+                  {items.map((item) => (
                     <tr
-                      key={tool.id}
+                      key={item.id}
                       ref={(el) => {
                         if (el) {
-                          rowRefs.current.set(tool.id, el);
+                          rowRefs.current.set(item.id, el);
                         } else {
-                          rowRefs.current.delete(tool.id);
+                          rowRefs.current.delete(item.id);
                         }
                       }}
-                      onClick={() => onSelectTool(tool.id)}
+                      onClick={() => onSelectItem(item.id)}
                       className={`cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors ${
-                        selectedToolId === tool.id ? 'bg-cyan-50 dark:bg-cyan-900/20' : ''
+                        selectedItemId === item.id ? 'bg-cyan-50 dark:bg-cyan-900/20' : ''
                       }`}
                     >
-                      <td className={`px-4 py-3 text-sm ${
-                        selectedToolId === tool.id ? 'border-l-4 border-cyan-500 pl-3' : ''
-                      }`}>
-                        <div className="font-medium text-gray-900 dark:text-white">{tool.name}</div>
-                        <div className="text-xs text-gray-500 dark:text-gray-400 line-clamp-1 max-w-md">{tool.description}</div>
+                      {/* Name Column */}
+                      <td
+                        className={`px-4 py-3 text-sm ${
+                          selectedItemId === item.id ? 'border-l-4 border-cyan-500 pl-3' : ''
+                        }`}
+                      >
+                        <div className="font-medium text-gray-900 dark:text-white">{item.name}</div>
+                        <div className="text-xs text-gray-500 dark:text-gray-400 line-clamp-1 max-w-md">
+                          {item.description}
+                        </div>
                       </td>
-                      <td className="px-4 py-3 text-sm text-gray-700 dark:text-gray-300">{tool.mcpServer.name}</td>
-                      <td className="px-4 py-3 text-sm text-gray-700 dark:text-gray-300">{tool.skills?.length || 0}</td>
+                      {/* Type Column */}
                       <td className="px-4 py-3 text-sm">
                         <span
-                          className={`inline-flex items-center px-2 py-1 rounded text-xs font-medium ${
-                            tool.status === 'ACTIVE'
-                              ? 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300'
-                              : 'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-300'
+                          className={`inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-medium ${
+                            isMCPTool(item)
+                              ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300'
+                              : 'bg-purple-100 dark:bg-purple-900/30 text-purple-800 dark:text-purple-300'
                           }`}
                         >
-                          {tool.status}
+                          {isMCPTool(item) ? (
+                            <Wrench className="h-3 w-3" />
+                          ) : (
+                            <Bot className="h-3 w-3" />
+                          )}
+                          {isMCPTool(item) ? 'Tool' : 'Agent'}
                         </span>
+                      </td>
+                      {/* Server Column (MCP Tools only) */}
+                      <td className="px-4 py-3 text-sm text-gray-700 dark:text-gray-300">
+                        {isMCPTool(item) ? item.mcpServer.name : '—'}
+                      </td>
+                      {/* Skills Column */}
+                      <td className="px-4 py-3 text-sm text-gray-700 dark:text-gray-300">
+                        {item.skills?.length || 0}
+                      </td>
+                      {/* Status Column (MCP Tools only) */}
+                      <td className="px-4 py-3 text-sm">
+                        {isMCPTool(item) ? (
+                          <span
+                            className={`inline-flex items-center px-2 py-1 rounded text-xs font-medium ${
+                              item.status === 'ACTIVE'
+                                ? 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300'
+                                : 'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-300'
+                            }`}
+                          >
+                            {item.status}
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300">
+                            ACTIVE
+                          </span>
+                        )}
                       </td>
                     </tr>
                   ))}
                 </tbody>
               </table>
             </div>
-            
+
             {/* Footer with count - now at bottom of table panel */}
             <div className="px-4 py-2 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900">
               <p className="text-xs text-gray-500 dark:text-gray-400">
-                Showing {tools.length} {tools.length === 1 ? 'tool' : 'tools'}
+                Showing {items.length} {items.length === 1 ? 'item' : 'items'}
               </p>
             </div>
           </>

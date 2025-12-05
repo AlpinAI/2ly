@@ -1,0 +1,13 @@
+# Update Agent Execution Target Mutation
+# WHY: Change where the agent executes (AGENT side or EDGE runtime)
+mutation UpdateAgentExecutionTarget($agentId: ID!, $executionTarget: ExecutionTarget!, $runtimeId: ID) {
+  updateAgentExecutionTarget(agentId: $agentId, executionTarget: $executionTarget, runtimeId: $runtimeId) {
+    id
+    executionTarget
+    runtime {
+      id
+      name
+      status
+    }
+  }
+}

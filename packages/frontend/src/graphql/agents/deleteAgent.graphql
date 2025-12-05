@@ -1,0 +1,8 @@
+# Delete Agent Mutation
+# WHY: Delete an agent from the workspace
+mutation DeleteAgent($id: ID!) {
+  deleteAgent(id: $id) {
+    id
+    name
+  }
+}

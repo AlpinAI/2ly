@@ -1,0 +1,26 @@
+# Create Agent Mutation
+# WHY: Create a new AI agent with custom configuration
+mutation CreateAgent($input: CreateAgentInput!) {
+  createAgent(input: $input) {
+    id
+    name
+    description
+    systemPrompt
+    model
+    temperature
+    maxTokens
+    executionTarget
+    createdAt
+    updatedAt
+    runtime {
+      id
+      name
+      status
+    }
+    skills {
+      id
+      name
+      description
+    }
+  }
+}

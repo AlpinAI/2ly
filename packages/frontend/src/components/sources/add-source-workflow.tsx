@@ -2,13 +2,14 @@
  * AddSourceWorkflow Component
  *
  * WHY: Multi-step workflow for adding sources with slide animations.
- * Step 1: Select source category (MCP Server, REST API)
+ * Step 1: Select source category (MCP Server, Agent, REST API)
  * Step 2: Browse and configure selected source type
  *
  * ARCHITECTURE:
  * - Sliding panel from bottom
  * - Horizontal carousel for workflow steps (translateX)
  * - Category selection → MCP Browser → Configuration
+ * - Category selection → Agent Configuration
  * - Closes with X button or ESC key
  * - Positioned directly below navigation menu
  * - Self-contained: manages own state via UIStore
@@ -21,6 +22,7 @@ import { Button } from '@/components/ui/button';
 import { BottomPanel } from '@/components/ui/bottom-panel';
 import { MCPServerBrowser } from '@/components/tools/mcp-server-browser';
 import { MCPServerConfigure } from '@/components/tools/mcp-server-configure';
+import { AgentConfigure } from '@/components/agents/agent-configure';
 import { useUIStore } from '@/stores/uiStore';
 import { useCloseOnNavigation } from '@/hooks/useCloseOnNavigation';
 import type { GetRegistryServersQuery } from '@/graphql/generated/graphql';
@@ -29,8 +31,8 @@ import { useMCPRegistries } from '@/hooks/useMCPRegistries';
 // Extract server type
 type MCPRegistryServer = GetRegistryServersQuery['getRegistryServers'][number];
 
-type WorkflowStep = 'selection' | 'mcp-browser' | 'mcp-config';
-type SourceCategory = 'mcp' | 'api';
+type WorkflowStep = 'selection' | 'mcp-browser' | 'mcp-config' | 'agent-config';
+type SourceCategory = 'mcp' | 'agent' | 'api';
 
 interface CategoryOption {
   id: SourceCategory;
@@ -53,10 +55,17 @@ const SOURCE_CATEGORIES: CategoryOption[] = [
     features: ['Browse the official MCP registry', 'Or configure a server manually', 'Fast setup, secure by design'],
   },
   {
+    id: 'agent',
+    title: 'Create Agent',
+    description: 'Configure an AI agent with custom system prompts and model settings.',
+    icon: 'https://cdn-icons-png.flaticon.com/512/4712/4712139.png',
+    features: ['Custom system prompts', 'Choose from configured AI models', 'Set temperature and token limits'],
+  },
+  {
     id: 'api',
     title: 'Connect to an API',
     description: 'Turn any REST API into a tool your agent can call with confidence.',
-    icon: '🌐',
+    icon: 'https://cdn-icons-png.flaticon.com/512/1163/1163624.png',
     features: [
       'Quickly import a Swagger/OpenAPI file',
       'Auto-generate endpoints and parameters',
@@ -82,6 +91,8 @@ export function AddSourceWorkflow() {
   const [currentStep, setCurrentStep] = useState<WorkflowStep>('selection');
   const [selectedCategory, setSelectedCategory] = useState<SourceCategory | null>(null);
   const [selectedServer, setSelectedServer] = useState<MCPRegistryServer | null>(null);
+  // Track when transitioning back from agent to keep MCP hidden during animation
+  const [isTransitioningFromAgent, setIsTransitioningFromAgent] = useState(false);
 
   // Close handler with cleanup
   const handleClose = useCallback(() => {
@@ -92,6 +103,7 @@ export function AddSourceWorkflow() {
     setCurrentStep('selection');
     setSelectedCategory(null);
     setSelectedServer(null);
+    setIsTransitioningFromAgent(false);
   }, [setOpen, setInitialStep, setServerId]);
 
   // Auto-close on navigation
@@ -103,11 +115,11 @@ export function AddSourceWorkflow() {
     if (isOpen) {
       // Set initial step and category based on initialStep from store
       if (initialStep) {
-        setCurrentStep(initialStep);
-        if (initialStep === 'mcp-browser') {
+        setCurrentStep(initialStep as WorkflowStep);
+        if (initialStep === 'mcp-browser' || initialStep === 'mcp-config') {
           setSelectedCategory('mcp');
-        } else if (initialStep === 'mcp-config') {
-          setSelectedCategory('mcp');
+        } else if (initialStep === 'agent-config') {
+          setSelectedCategory('agent');
         }
       } else {
         setCurrentStep('selection');
@@ -118,6 +130,7 @@ export function AddSourceWorkflow() {
       setCurrentStep('selection');
       setSelectedCategory(null);
       setSelectedServer(null);
+      setIsTransitioningFromAgent(false);
     }
   }, [isOpen, initialStep]);
 
@@ -135,13 +148,25 @@ export function AddSourceWorkflow() {
 
   const handleCategorySelect = (category: SourceCategory) => {
     setSelectedCategory(category);
-    setCurrentStep('mcp-browser');
+    if (category === 'mcp') {
+      setCurrentStep('mcp-browser');
+    } else if (category === 'agent') {
+      setCurrentStep('agent-config');
+    }
   };
 
   const handleBack = () => {
     if (currentStep === 'mcp-config') {
       setCurrentStep('mcp-browser');
       setSelectedServer(null);
+    } else if (currentStep === 'agent-config') {
+      // Keep MCP hidden during back animation, then reset after animation completes
+      setIsTransitioningFromAgent(true);
+      setCurrentStep('selection');
+      setTimeout(() => {
+        setSelectedCategory(null);
+        setIsTransitioningFromAgent(false);
+      }, 500); // Match animation duration
     } else if (currentStep === 'mcp-browser') {
       setCurrentStep('selection');
       setSelectedCategory(null);
@@ -156,7 +181,8 @@ export function AddSourceWorkflow() {
   const getStepTitle = (): string => {
     if (currentStep === 'selection') return 'Add Sources';
     if (currentStep === 'mcp-browser') return 'Browse Private Registry';
-    if (currentStep === 'mcp-config') return `Configure MCP Server`;
+    if (currentStep === 'mcp-config') return 'Configure MCP Server';
+    if (currentStep === 'agent-config') return 'Create Agent';
     return 'Add Sources';
   };
 
@@ -164,6 +190,11 @@ export function AddSourceWorkflow() {
     if (currentStep === 'selection') return '0%';
     if (currentStep === 'mcp-browser') return '-100%';
     if (currentStep === 'mcp-config') return '-200%';
+    if (currentStep === 'agent-config') {
+      // When agent path is selected, Agent Config is at position 2 (right after selection)
+      // because MCP steps are not rendered
+      return selectedCategory === 'agent' ? '-100%' : '-300%';
+    }
     return '0%';
   };
 
@@ -209,7 +240,7 @@ export function AddSourceWorkflow() {
                 </p>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 {SOURCE_CATEGORIES.map((option) => (
                   <div
                     key={option.id}
@@ -254,7 +285,7 @@ export function AddSourceWorkflow() {
                       <ul className="text-xs text-gray-500 dark:text-gray-500 space-y-1 text-left">
                         {option.features.map((feature, idx) => (
                           <li key={idx} className="flex items-start">
-                            <span className="mr-2">•</span>
+                            <span className="mr-2">-</span>
                             <span>{feature}</span>
                           </li>
                         ))}
@@ -266,27 +297,36 @@ export function AddSourceWorkflow() {
             </div>
           </div>
 
-          {/* Step 2: MCP Server Browser */}
-          <div className="flex-shrink-0 w-full overflow-y-auto">
-            <MCPServerBrowser onConfigure={handleServerConfigure} />
-          </div>
+          {/* Step 2: MCP Server Browser - hidden on agent path and during back transition */}
+          {selectedCategory !== 'agent' && !isTransitioningFromAgent && (
+            <div className="flex-shrink-0 w-full overflow-y-auto">
+              <MCPServerBrowser onConfigure={handleServerConfigure} />
+            </div>
+          )}
 
-          {/* Step 3: Configuration */}
-          <div className="flex-shrink-0 w-full overflow-y-auto">
-            {selectedServer ? (
-              <MCPServerConfigure selectedServer={selectedServer} onBack={handleBack} onSuccess={handleClose} />
-            ) : (
-              <div className="p-6 max-w-4xl mx-auto">
-                <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-6">
-                  <h4 className="text-lg font-semibold text-yellow-900 dark:text-yellow-100 mb-2">
-                    No Server Selected
-                  </h4>
-                  <p className="text-sm text-yellow-800 dark:text-yellow-200">
-                    Please go back and select a server to configure.
-                  </p>
+          {/* Step 3: MCP Configuration - hidden on agent path and during back transition */}
+          {selectedCategory !== 'agent' && !isTransitioningFromAgent && (
+            <div className="flex-shrink-0 w-full overflow-y-auto">
+              {selectedServer ? (
+                <MCPServerConfigure selectedServer={selectedServer} onBack={handleBack} onSuccess={handleClose} />
+              ) : (
+                <div className="p-6 max-w-4xl mx-auto">
+                  <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-6">
+                    <h4 className="text-lg font-semibold text-yellow-900 dark:text-yellow-100 mb-2">
+                      No Server Selected
+                    </h4>
+                    <p className="text-sm text-yellow-800 dark:text-yellow-200">
+                      Please go back and select a server to configure.
+                    </p>
+                  </div>
                 </div>
-              </div>
-            )}
+              )}
+            </div>
+          )}
+
+          {/* Step 4: Agent Configuration */}
+          <div className="flex-shrink-0 w-full overflow-y-auto">
+            <AgentConfigure onBack={handleBack} onSuccess={handleClose} />
           </div>
         </div>
       </div>

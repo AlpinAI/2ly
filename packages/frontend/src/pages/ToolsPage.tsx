@@ -1,20 +1,21 @@
 /**
  * Tools Page
  *
- * WHY: Manage and test MCP tools with detailed information.
- * Shows tool list with filters, detail panel with testing capability.
+ * WHY: Manage and test MCP tools and Agents with detailed information.
+ * Shows unified tool/agent list with filters, detail panel with testing capability.
  *
  * LAYOUT:
  * - 2/3: Tool table with search and filters
- * - 1/3: Tool detail panel with tester
+ * - 1/3: Tool/Agent detail panel with tester
  *
  * FEATURES:
- * - Real-time tool updates (subscription)
+ * - Real-time tool updates (subscription for tools, polling for agents)
  * - Search by name/description
+ * - Filter by type (MCP Tool / Agent)
  * - Filter by server(s), skill(s)
- * - Click tool to view details and test
- * - Execute tools with input parameters
- * - "Add Tools" button (opens AddToolWorkflow)
+ * - Click item to view details and test
+ * - Execute tools/agents with input parameters
+ * - "Add Tools" button (opens AddSourceWorkflow)
  */
 
 import { useMemo, useEffect } from 'react';
@@ -24,7 +25,7 @@ import { Button } from '@/components/ui/button';
 import { MasterDetailLayout } from '@/components/layout/master-detail-layout';
 import { ToolTable } from '@/components/tools/tool-table';
 import { ToolDetail } from '@/components/tools/tool-detail';
-import { useMCPTools } from '@/hooks/useMCPTools';
+import { useToolItems } from '@/hooks/useToolItems';
 import { useMCPServers } from '@/hooks/useMCPServers';
 import { useSkills } from '@/hooks/useSkills';
 import { useUIStore } from '@/stores/uiStore';
@@ -35,24 +36,23 @@ export default function ToolsPage() {
   const { selectedId, setSelectedId } = useUrlSync();
   const setAddSourceWorkflowOpen = useUIStore((state) => state.setAddSourceWorkflowOpen);
 
-  // Fetch tools, servers, and skills
-  const { filteredTools, loading, error, filters } = useMCPTools();
+  // Fetch unified tool items (MCP Tools + Agents), servers, and skills
+  const { filteredItems, loading, error, filters } = useToolItems();
   const { servers } = useMCPServers();
   const { skills } = useSkills(workspaceId || '');
 
-  // Get selected tool from URL
-  const selectedTool = useMemo(() => {
+  // Get selected item from URL
+  const selectedItem = useMemo(() => {
     if (!selectedId) return null;
-    return filteredTools.find((t) => t?.id === selectedId) || null;
-  }, [selectedId, filteredTools]);
+    return filteredItems.find((item) => item?.id === selectedId) || null;
+  }, [selectedId, filteredItems]);
 
-  // Auto-open detail panel if ID in URL and tool exists
+  // Auto-clear selection if item not found (might have been deleted or invalid ID)
   useEffect(() => {
-    if (selectedId && !selectedTool && !loading) {
-      // Tool not found - might have been deleted or invalid ID
+    if (selectedId && !selectedItem && !loading) {
       setSelectedId(null);
     }
-  }, [selectedId, selectedTool, loading, setSelectedId]);
+  }, [selectedId, selectedItem, loading, setSelectedId]);
 
   // Available servers and skills for filters
   const availableServers = useMemo(() => {
@@ -86,7 +86,7 @@ export default function ToolsPage() {
       <div className="flex items-center justify-between mb-6">
         <div>
           <h2 className="text-3xl font-bold text-gray-900 dark:text-white">Tools</h2>
-          <p className="text-gray-500 dark:text-gray-400 mt-1">Browse, test, and manage your MCP tools</p>
+          <p className="text-gray-500 dark:text-gray-400 mt-1">Browse, test, and manage your MCP tools and agents</p>
         </div>
         <Button onClick={() => setAddSourceWorkflowOpen(true)} className="gap-2">
           <Plus className="h-4 w-4" />
@@ -98,11 +98,13 @@ export default function ToolsPage() {
       <MasterDetailLayout
         table={
           <ToolTable
-            tools={filteredTools}
-            selectedToolId={selectedId}
-            onSelectTool={setSelectedId}
+            items={filteredItems}
+            selectedItemId={selectedId}
+            onSelectItem={setSelectedId}
             search={filters.search}
             onSearchChange={filters.setSearch}
+            typeFilter={filters.types}
+            onTypeFilterChange={filters.setTypes}
             serverFilter={filters.serverIds}
             onServerFilterChange={filters.setServerIds}
             skillFilter={filters.skillIds}
@@ -112,7 +114,7 @@ export default function ToolsPage() {
             loading={loading}
           />
         }
-        detail={selectedTool ? <ToolDetail tool={selectedTool} /> : null}
+        detail={selectedItem ? <ToolDetail item={selectedItem} /> : null}
         onCloseDetail={() => setSelectedId(null)}
       />
     </div>
