@@ -15,12 +15,16 @@ import { Bot, Wrench, Clock, Settings, Trash2, Cable, Eye, EyeOff, Copy } from '
 import { Link, useParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { AutoGrowTextarea } from '@/components/ui/autogrow-textarea';
 import { useManageToolsDialog, useConnectSkillDialog } from '@/stores/uiStore';
 import { useMutation, useLazyQuery } from '@apollo/client/react';
 import { useNotification } from '@/contexts/NotificationContext';
 import { DeleteSkillDocument, GetSkillKeyDocument, GetKeyValueDocument, UpdateSkillDocument } from '@/graphql/generated/graphql';
 import type { SubscribeSkillsSubscription } from '@/graphql/generated/graphql';
+import {
+  StructuredSkillDescription,
+  validateSkillDescription,
+  deserializeSkillDescription,
+} from './structured-skill-description';
 
 type Skill = NonNullable<SubscribeSkillsSubscription['skills']>[number];
 
@@ -109,10 +113,15 @@ export function SkillDetail({ skill }: SkillDetailProps) {
   const handleDescriptionSave = async () => {
     if (skillDescription === (skill.description || '')) return;
 
-    // Validate: max 1000 characters (can be empty)
-    if (skillDescription.length > 1000) {
+    // Validate structured description
+    const sections = deserializeSkillDescription(skillDescription);
+    const errors = validateSkillDescription(sections);
+
+    if (Object.keys(errors).length > 0) {
+      // Show first error
+      const firstError = Object.values(errors)[0];
       toast({
-        description: 'Description must not exceed 1000 characters',
+        description: firstError,
         variant: 'error',
       });
       setSkillDescription(skill.description || ''); // Revert to original
@@ -242,15 +251,6 @@ export function SkillDetail({ skill }: SkillDetailProps) {
               onBlur={handleNameSave}
               className="text-lg font-semibold h-auto p-0 border-none bg-transparent focus:ring-0 focus:border-none"
             />
-            <AutoGrowTextarea
-              value={skillDescription}
-              onChange={(e) => setSkillDescription(e.target.value)}
-              onBlur={handleDescriptionSave}
-              placeholder="Click to add description..."
-              className="text-sm text-gray-500 dark:text-gray-400 mt-1 min-h-0 h-auto p-0 border-none bg-transparent focus:ring-0 focus:border-none"
-              minRows={1}
-              maxRows={5}
-            />
           </div>
         </div>
       </div>
@@ -279,7 +279,30 @@ export function SkillDetail({ skill }: SkillDetailProps) {
       </div>
 
       {/* Content */}
-      <div className="flex-1 p-4 space-y-4">
+      <div className="flex-1 p-4 space-y-4 overflow-y-auto">
+        {/* Description Editor */}
+        <div>
+          <h4 className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3">
+            Description
+          </h4>
+          <StructuredSkillDescription
+            value={skillDescription}
+            onChange={setSkillDescription}
+            disabled={false}
+          />
+          <div className="mt-3 flex justify-end">
+            <Button
+              variant="default"
+              size="sm"
+              onClick={handleDescriptionSave}
+              disabled={skillDescription === (skill.description || '')}
+              className="h-7 px-3 text-xs"
+            >
+              Save Description
+            </Button>
+          </div>
+        </div>
+
         {/* Identity Key */}
         <div>
           <h4 className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">

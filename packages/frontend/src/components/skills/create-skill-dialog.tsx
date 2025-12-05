@@ -24,12 +24,16 @@ import { X } from 'lucide-react';
 import * as Dialog from '@radix-ui/react-dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
 import { useCreateSkillDialog } from '@/stores/uiStore';
 import { useParams } from 'react-router-dom';
 import { useMutation } from '@apollo/client/react';
 import { CreateSkillDocument } from '@/graphql/generated/graphql';
 import { useNotification } from '@/contexts/NotificationContext';
+import {
+  StructuredSkillDescription,
+  validateSkillDescription,
+  deserializeSkillDescription,
+} from './structured-skill-description';
 
 export function CreateSkillDialog() {
   const { open, close, callback } = useCreateSkillDialog();
@@ -91,6 +95,21 @@ export function CreateSkillDialog() {
 
     if (!name.trim() || !workspaceId) return;
 
+    // Validate structured description
+    const sections = deserializeSkillDescription(description);
+    const errors = validateSkillDescription(sections);
+
+    if (Object.keys(errors).length > 0) {
+      // Show first error
+      const firstError = Object.values(errors)[0];
+      toast({
+        title: 'Validation Error',
+        description: firstError,
+        variant: 'error',
+      });
+      return;
+    }
+
     await createSkill({
       variables: {
         workspaceId,
@@ -100,13 +119,21 @@ export function CreateSkillDialog() {
     });
   };
 
-  const isValid = name.trim().length > 0;
+  const isValid = (() => {
+    if (!name.trim()) return false;
+
+    // Check if description has required sections
+    const sections = deserializeSkillDescription(description);
+    const errors = validateSkillDescription(sections);
+
+    return Object.keys(errors).length === 0;
+  })();
 
   return (
     <Dialog.Root open={open} onOpenChange={handleOpenChange}>
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 bg-black/50 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 z-50" />
-        <Dialog.Content className="fixed left-[50%] top-[50%] max-h-[85vh] w-[90vw] max-w-md translate-x-[-50%] translate-y-[-50%] rounded-lg border border-gray-200 bg-white shadow-lg data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%] dark:border-gray-700 dark:bg-gray-800 z-50 flex flex-col overflow-hidden">
+        <Dialog.Content className="fixed left-[50%] top-[50%] max-h-[85vh] w-[90vw] max-w-3xl translate-x-[-50%] translate-y-[-50%] rounded-lg border border-gray-200 bg-white shadow-lg data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%] dark:border-gray-700 dark:bg-gray-800 z-50 flex flex-col overflow-hidden">
           {/* Header */}
           <div className="p-6 border-b border-gray-200 dark:border-gray-700 flex-shrink-0">
             <div className="flex items-center justify-between">
@@ -149,23 +176,12 @@ export function CreateSkillDialog() {
                 />
               </div>
 
-              {/* Description Field */}
-              <div>
-                <label
-                  htmlFor="skill-description"
-                  className="block text-sm font-medium text-gray-900 dark:text-white mb-2"
-                >
-                  Description
-                </label>
-                <Textarea
-                  id="skill-description"
-                  placeholder="Enter skill description (optional)"
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  rows={4}
-                  disabled={loading}
-                />
-              </div>
+              {/* Structured Description Fields */}
+              <StructuredSkillDescription
+                value={description}
+                onChange={setDescription}
+                disabled={loading}
+              />
             </div>
 
             {/* Footer */}
