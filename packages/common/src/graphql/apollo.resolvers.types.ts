@@ -197,6 +197,7 @@ export type Mutation = {
   addAgentToSkill: Skill;
   addMCPToolToSkill: Skill;
   addServerToRegistry: McpRegistryServer;
+  addSkillToAgent: Agent;
   callAgent: Scalars['String']['output'];
   callMCPTool: CallToolResult;
   chatWithModel: Scalars['String']['output'];
@@ -225,6 +226,7 @@ export type Mutation = {
   removeAgentFromSkill: Skill;
   removeMCPToolFromSkill: Skill;
   removeServerFromRegistry: McpRegistryServer;
+  removeSkillFromAgent: Agent;
   revokeKey: IdentityKey;
   setDefaultAIModel: Scalars['Boolean']['output'];
   setGlobalRuntime: Workspace;
@@ -262,6 +264,12 @@ export type MutationAddServerToRegistryArgs = {
   title: Scalars['String']['input'];
   version: Scalars['String']['input'];
   workspaceId: Scalars['ID']['input'];
+};
+
+
+export type MutationAddSkillToAgentArgs = {
+  agentId: Scalars['ID']['input'];
+  skillId: Scalars['ID']['input'];
 };
 
 
@@ -428,6 +436,12 @@ export type MutationRemoveMcpToolFromSkillArgs = {
 
 export type MutationRemoveServerFromRegistryArgs = {
   serverId: Scalars['ID']['input'];
+};
+
+
+export type MutationRemoveSkillFromAgentArgs = {
+  agentId: Scalars['ID']['input'];
+  skillId: Scalars['ID']['input'];
 };
 
 
@@ -1155,6 +1169,7 @@ export type MutationResolvers<ContextType = object, ParentType extends Resolvers
   addAgentToSkill?: Resolver<ResolversTypes['Skill'], ParentType, ContextType, RequireFields<MutationAddAgentToSkillArgs, 'agentId' | 'skillId'>>;
   addMCPToolToSkill?: Resolver<ResolversTypes['Skill'], ParentType, ContextType, RequireFields<MutationAddMcpToolToSkillArgs, 'mcpToolId' | 'skillId'>>;
   addServerToRegistry?: Resolver<ResolversTypes['MCPRegistryServer'], ParentType, ContextType, RequireFields<MutationAddServerToRegistryArgs, 'description' | 'name' | 'repositoryUrl' | 'title' | 'version' | 'workspaceId'>>;
+  addSkillToAgent?: Resolver<ResolversTypes['Agent'], ParentType, ContextType, RequireFields<MutationAddSkillToAgentArgs, 'agentId' | 'skillId'>>;
   callAgent?: Resolver<ResolversTypes['String'], ParentType, ContextType, RequireFields<MutationCallAgentArgs, 'agentId' | 'userMessages'>>;
   callMCPTool?: Resolver<ResolversTypes['CallToolResult'], ParentType, ContextType, RequireFields<MutationCallMcpToolArgs, 'input' | 'toolId'>>;
   chatWithModel?: Resolver<ResolversTypes['String'], ParentType, ContextType, RequireFields<MutationChatWithModelArgs, 'message' | 'model' | 'workspaceId'>>;
@@ -1183,6 +1198,7 @@ export type MutationResolvers<ContextType = object, ParentType extends Resolvers
   removeAgentFromSkill?: Resolver<ResolversTypes['Skill'], ParentType, ContextType, RequireFields<MutationRemoveAgentFromSkillArgs, 'agentId' | 'skillId'>>;
   removeMCPToolFromSkill?: Resolver<ResolversTypes['Skill'], ParentType, ContextType, RequireFields<MutationRemoveMcpToolFromSkillArgs, 'mcpToolId' | 'skillId'>>;
   removeServerFromRegistry?: Resolver<ResolversTypes['MCPRegistryServer'], ParentType, ContextType, RequireFields<MutationRemoveServerFromRegistryArgs, 'serverId'>>;
+  removeSkillFromAgent?: Resolver<ResolversTypes['Agent'], ParentType, ContextType, RequireFields<MutationRemoveSkillFromAgentArgs, 'agentId' | 'skillId'>>;
   revokeKey?: Resolver<ResolversTypes['IdentityKey'], ParentType, ContextType, RequireFields<MutationRevokeKeyArgs, 'keyId'>>;
   setDefaultAIModel?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType, RequireFields<MutationSetDefaultAiModelArgs, 'defaultModel' | 'workspaceId'>>;
   setGlobalRuntime?: Resolver<ResolversTypes['Workspace'], ParentType, ContextType, RequireFields<MutationSetGlobalRuntimeArgs, 'id' | 'runtimeId'>>;

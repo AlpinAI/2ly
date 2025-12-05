@@ -369,6 +369,8 @@ type Mutation {
   removeMCPToolFromSkill(mcpToolId: ID!, skillId: ID!): Skill!
   addAgentToSkill(agentId: ID!, skillId: ID!): Skill!
   removeAgentFromSkill(agentId: ID!, skillId: ID!): Skill!
+  addSkillToAgent(skillId: ID!, agentId: ID!): Agent!
+  removeSkillFromAgent(skillId: ID!, agentId: ID!): Agent!
   initSystem(adminPassword: String!, email: String!): System!
   updateWorkspace(id: ID!, name: String!): Workspace!
   setGlobalRuntime(id: ID!, runtimeId: ID!): Workspace!

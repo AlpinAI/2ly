@@ -1,0 +1,20 @@
+# Remove Skill from Agent Mutation
+# WHY: Remove a skill from an agent's tools (skills the agent can use)
+mutation RemoveSkillFromAgent($skillId: ID!, $agentId: ID!) {
+  removeSkillFromAgent(skillId: $skillId, agentId: $agentId) {
+    id
+    name
+    description
+    updatedAt
+    skills {
+      id
+      name
+      description
+    }
+    tools {
+      id
+      name
+      description
+    }
+  }
+}

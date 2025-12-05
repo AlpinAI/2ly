@@ -258,3 +258,85 @@ export const AGENT_UNLINK_RUNTIME = gql`
     }
   }
 `;
+
+export const ADD_SKILL_TO_AGENT = gql`
+  mutation addSkillToAgent($agentId: ID!, $skillId: ID!, $updatedAt: DateTime!) {
+    updateAgent(input: { filter: { id: [$agentId] }, set: { tools: [{ id: $skillId }], updatedAt: $updatedAt } }) {
+      agent {
+        id
+        name
+        description
+        systemPrompt
+        model
+        temperature
+        maxTokens
+        executionTarget
+        createdAt
+        updatedAt
+        skills {
+          id
+          name
+          description
+        }
+        tools {
+          id
+          name
+          description
+        }
+        runtime {
+          id
+          name
+          description
+          status
+          lastSeenAt
+        }
+        workspace {
+          id
+          name
+        }
+      }
+    }
+  }
+`;
+
+export const REMOVE_SKILL_FROM_AGENT = gql`
+  mutation removeSkillFromAgent($agentId: ID!, $skillId: ID!, $updatedAt: DateTime!) {
+    updateAgent(
+      input: { filter: { id: [$agentId] }, remove: { tools: [{ id: $skillId }] }, set: { updatedAt: $updatedAt } }
+    ) {
+      agent {
+        id
+        name
+        description
+        systemPrompt
+        model
+        temperature
+        maxTokens
+        executionTarget
+        createdAt
+        updatedAt
+        skills {
+          id
+          name
+          description
+        }
+        tools {
+          id
+          name
+          description
+        }
+        runtime {
+          id
+          name
+          description
+          status
+          lastSeenAt
+        }
+        workspace {
+          id
+          name
+        }
+      }
+    }
+  }
+`;

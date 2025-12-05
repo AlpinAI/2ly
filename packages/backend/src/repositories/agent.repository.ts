@@ -10,6 +10,8 @@ import {
   UPDATE_AGENT_EXECUTION_TARGET,
   AGENT_LINK_RUNTIME,
   AGENT_UNLINK_RUNTIME,
+  ADD_SKILL_TO_AGENT,
+  REMOVE_SKILL_FROM_AGENT,
 } from './agent.operations';
 import pino from 'pino';
 
@@ -156,6 +158,34 @@ export class AgentRepository {
       agentId,
       runtimeId: currentRuntime.id,
     });
+    return res.updateAgent.agent[0];
+  }
+
+  async addSkillToAgent(agentId: string, skillId: string): Promise<dgraphResolversTypes.Agent> {
+    const now = new Date().toISOString();
+    const res = await this.dgraphService.mutation<{
+      updateAgent: { agent: dgraphResolversTypes.Agent[] };
+    }>(ADD_SKILL_TO_AGENT, {
+      agentId,
+      skillId,
+      updatedAt: now,
+    });
+
+    this.logger.info(`Added skill ${skillId} to agent ${agentId}`);
+    return res.updateAgent.agent[0];
+  }
+
+  async removeSkillFromAgent(agentId: string, skillId: string): Promise<dgraphResolversTypes.Agent> {
+    const now = new Date().toISOString();
+    const res = await this.dgraphService.mutation<{
+      updateAgent: { agent: dgraphResolversTypes.Agent[] };
+    }>(REMOVE_SKILL_FROM_AGENT, {
+      agentId,
+      skillId,
+      updatedAt: now,
+    });
+
+    this.logger.info(`Removed skill ${skillId} from agent ${agentId}`);
     return res.updateAgent.agent[0];
   }
 }

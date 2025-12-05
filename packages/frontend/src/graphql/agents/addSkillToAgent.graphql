@@ -1,0 +1,20 @@
+# Add Skill to Agent Mutation
+# WHY: Add a skill to an agent's tools (skills the agent can use)
+mutation AddSkillToAgent($skillId: ID!, $agentId: ID!) {
+  addSkillToAgent(skillId: $skillId, agentId: $agentId) {
+    id
+    name
+    description
+    updatedAt
+    skills {
+      id
+      name
+      description
+    }
+    tools {
+      id
+      name
+      description
+    }
+  }
+}

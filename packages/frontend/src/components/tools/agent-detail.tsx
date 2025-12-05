@@ -18,10 +18,10 @@
  * - ExecutionTarget dropdown with runtime selection
  */
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { useMutation } from '@apollo/client/react';
-import { Bot, Settings, Plus, X, Save, Trash2 } from 'lucide-react';
+import { Bot, Settings, Plus, X, Save, Trash2, Loader2 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { AutoGrowTextarea } from '@/components/ui/autogrow-textarea';
@@ -40,11 +40,13 @@ import { useRuntimeData } from '@/stores/runtimeStore';
 import { useSkills } from '@/hooks/useSkills';
 import { useAIProviders } from '@/hooks/useAIProviders';
 import { AgentTester } from './agent-tester';
+import { LinkAgentSkillDialog } from './link-agent-skill-dialog';
 import type { AgentItem } from '@/types/tools';
 import {
   UpdateAgentDocument,
   UpdateAgentExecutionTargetDocument,
   DeleteAgentDocument,
+  RemoveSkillFromAgentDocument,
   ExecutionTarget,
 } from '@/graphql/generated/graphql';
 
@@ -72,11 +74,14 @@ export function AgentDetail({ agent }: AgentDetailProps) {
   // UI state
   const [isDeleting, setIsDeleting] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [linkDialogOpen, setLinkDialogOpen] = useState(false);
+  const [unlinkingSkillIds, setUnlinkingSkillIds] = useState<Record<string, boolean>>({});
 
   // Mutations
   const [updateAgent] = useMutation(UpdateAgentDocument);
   const [updateExecutionTarget] = useMutation(UpdateAgentExecutionTargetDocument);
   const [deleteAgent] = useMutation(DeleteAgentDocument);
+  const [unlinkSkill] = useMutation(RemoveSkillFromAgentDocument);
 
   // Reset form values only when switching to a different agent (by ID)
   // This prevents form state from being overwritten during data refetches
@@ -243,6 +248,39 @@ export function AgentDetail({ agent }: AgentDetailProps) {
     }
   };
 
+  // Handle unlink skill from agent
+  const handleUnlinkSkill = useCallback(
+    async (skillId: string) => {
+      setUnlinkingSkillIds((prev) => ({ ...prev, [skillId]: true }));
+
+      try {
+        await unlinkSkill({
+          variables: {
+            skillId: skillId,
+            agentId: agent.id,
+          },
+          refetchQueries: ['GetAgents'],
+        });
+
+        toast({
+          title: 'Skill unlinked',
+          description: 'Skill has been removed from the agent.',
+          variant: 'success',
+        });
+      } catch (error) {
+        console.error('Error unlinking skill:', error);
+        toast({
+          title: 'Failed to unlink skill',
+          description: error instanceof Error ? error.message : 'An unexpected error occurred',
+          variant: 'error',
+        });
+      } finally {
+        setUnlinkingSkillIds((prev) => ({ ...prev, [skillId]: false }));
+      }
+    },
+    [unlinkSkill, agent.id, toast],
+  );
+
   return (
     <div className="flex flex-col h-full overflow-auto scroll-smooth">
       {/* Header */}
@@ -331,6 +369,64 @@ export function AgentDetail({ agent }: AgentDetailProps) {
           </div>
         </div>
 
+        {/* Skills (skills this agent can use) */}
+        <div>
+          <div className="flex items-center justify-between mb-2">
+            <h4 className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+              Agent Skills ({agent.tools?.length || 0})
+            </h4>
+            <Button
+              variant="ghost"
+              size="sm"
+              disabled={unlinkedSkills.length === 0}
+              className="h-6 w-6 p-0 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+              title={unlinkedSkills.length === 0 ? 'All skills already linked' : 'Link skill to agent'}
+              onClick={() => setLinkDialogOpen(true)}
+            >
+              <Plus className="h-4 w-4" />
+            </Button>
+          </div>
+          {agent.tools && agent.tools.length > 0 ? (
+            <ul className="space-y-1">
+              {agent.tools.map((skill) => (
+                <li
+                  key={skill.id}
+                  className="flex items-center gap-2 bg-white dark:bg-gray-800 px-3 py-2 rounded border border-gray-200 dark:border-gray-700"
+                >
+                  <Settings className="h-4 w-4 text-cyan-500" />
+                  <div className="flex-1 min-w-0">
+                    <Link
+                      to={`/w/${workspaceId}/skills?id=${skill.id}`}
+                      className="text-sm font-medium text-gray-900 dark:text-white hover:text-cyan-600 dark:hover:text-cyan-400 hover:underline truncate block"
+                    >
+                      {skill.name}
+                    </Link>
+                    {skill.description && (
+                      <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{skill.description}</p>
+                    )}
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-6 w-6 p-0 text-gray-400 hover:text-red-600 dark:hover:text-red-400"
+                    onClick={() => handleUnlinkSkill(skill.id)}
+                    disabled={unlinkingSkillIds[skill.id]}
+                    title="Remove skill from agent"
+                  >
+                    {unlinkingSkillIds[skill.id] ? (
+                      <Loader2 className="h-3 w-3 animate-spin" />
+                    ) : (
+                      <X className="h-3 w-3" />
+                    )}
+                  </Button>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="text-sm text-gray-400 dark:text-gray-500">No skills linked to this agent</p>
+          )}
+        </div>
+
         {/* Execution Target */}
         <div>
           <h4 className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">
@@ -357,49 +453,6 @@ export function AgentDetail({ agent }: AgentDetailProps) {
               </SelectGroup>
             </SelectContent>
           </Select>
-        </div>
-
-        {/* Can Access Skills (skills this agent can use) */}
-        <div>
-          <div className="flex items-center justify-between mb-2">
-            <h4 className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-              Can Access Skills ({agent.tools?.length || 0})
-            </h4>
-            <Button
-              variant="ghost"
-              size="sm"
-              disabled={unlinkedSkills.length === 0}
-              className="h-6 w-6 p-0 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
-              title="Link to skill (coming soon)"
-            >
-              <Plus className="h-4 w-4" />
-            </Button>
-          </div>
-          {agent.tools && agent.tools.length > 0 ? (
-            <ul className="space-y-1">
-              {agent.tools.map((skill) => (
-                <li
-                  key={skill.id}
-                  className="flex items-center gap-2 bg-white dark:bg-gray-800 px-3 py-2 rounded border border-gray-200 dark:border-gray-700"
-                >
-                  <Settings className="h-4 w-4 text-cyan-500" />
-                  <div className="flex-1 min-w-0">
-                    <Link
-                      to={`/w/${workspaceId}/skills?id=${skill.id}`}
-                      className="text-sm font-medium text-gray-900 dark:text-white hover:text-cyan-600 dark:hover:text-cyan-400 hover:underline truncate block"
-                    >
-                      {skill.name}
-                    </Link>
-                    {skill.description && (
-                      <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{skill.description}</p>
-                    )}
-                  </div>
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <p className="text-sm text-gray-400 dark:text-gray-500">No skills linked to this agent</p>
-          )}
         </div>
 
         {/* Available in Skills (skills where this agent is a tool) */}
@@ -466,6 +519,9 @@ export function AgentDetail({ agent }: AgentDetailProps) {
           </Button>
         </div>
       </div>
+
+      {/* Link Skill Dialog */}
+      <LinkAgentSkillDialog open={linkDialogOpen} onOpenChange={setLinkDialogOpen} agent={agent} />
     </div>
   );
 }
