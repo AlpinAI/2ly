@@ -17,7 +17,6 @@ import {
   AuthService,
 } from '../services/auth.service';
 import { HealthService, HEARTBEAT_INTERVAL } from '../services/runtime.health.service';
-import { ToolClientService } from '../services/tool.client.service';
 import { ToolServerService, type ToolServerServiceFactory } from '../services/tool.server.service';
 import { ToolService } from '../services/tool.service';
 import { McpStdioService } from '../services/mcp.stdio.service';
@@ -162,9 +161,6 @@ const start = () => {
   container.bind(EPHEMERAL_TTL).toConstantValue(process.env.EPHEMERAL_TTL || DEFAULT_EPHEMERAL_TTL);
   container.bind(NatsService).toSelf().inSingletonScope();
 
-  // Init tool client service
-  container.bind(ToolClientService).toSelf().inSingletonScope();
-
   // Init health service
   container.bind(HEARTBEAT_INTERVAL).toConstantValue(process.env.HEARTBEAT_INTERVAL || '5000');
   container.bind(HealthService).toSelf().inSingletonScope();
@@ -191,7 +187,6 @@ const start = () => {
   loggerService.setLogLevel('mcp-sse', (process.env.LOG_LEVEL_MCP_SSE || 'info') as pino.Level);
   loggerService.setLogLevel('mcp-streamable', (process.env.LOG_LEVEL_MCP_STREAMABLE || 'info') as pino.Level);
   loggerService.setLogLevel('tool', (process.env.LOG_LEVEL_TOOL || 'info') as pino.Level);
-  loggerService.setLogLevel('tool.client', (process.env.LOG_LEVEL_TOOL_CLIENT || 'info') as pino.Level);
   loggerService.setLogLevel('skill', (process.env.LOG_LEVEL_SKILL || 'info') as pino.Level);
 
   // Init MCP server service factory
