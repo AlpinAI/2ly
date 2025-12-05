@@ -9,7 +9,7 @@ export const ADD_MCPSERVER = gql`
     $config: String!
     $workspaceId: ID!
     $registryServerId: ID!
-    $runOn: MCPServerRunOn
+    $runOn: ExecutionTarget
   ) {
     addMCPServer(
       input: {
@@ -52,7 +52,7 @@ export const UPDATE_MCPSERVER = gql`
     $repositoryUrl: String!
     $transport: MCPTransportType!
     $config: String!
-    $runOn: MCPServerRunOn
+    $runOn: ExecutionTarget
   ) {
     updateMCPServer(
       input: {
@@ -85,7 +85,7 @@ export const UPDATE_MCPSERVER = gql`
 `;
 
 export const UPDATE_MCPSERVER_RUN_ON = gql`
-  mutation updateMCPServerRunOn($id: ID!, $runOn: MCPServerRunOn) {
+  mutation updateExecutionTarget($id: ID!, $runOn: ExecutionTarget) {
     updateMCPServer(input: { filter: { id: [$id] }, set: { runOn: $runOn } }) {
       mCPServer {
         id

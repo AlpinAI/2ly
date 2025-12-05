@@ -1,12 +1,15 @@
 import { injectable, inject } from 'inversify';
 import { DGraphService } from '../services/dgraph.service';
-import { dgraphResolversTypes, LoggerService } from '@2ly/common';
+import { dgraphResolversTypes, LoggerService, EXECUTION_TARGET } from '@2ly/common';
 import {
   ADD_AGENT,
   UPDATE_AGENT,
   DELETE_AGENT,
   GET_AGENT,
   GET_AGENTS_BY_WORKSPACE,
+  UPDATE_AGENT_RUN_ON,
+  AGENT_LINK_RUNTIME,
+  AGENT_UNLINK_RUNTIME,
 } from './agent.operations';
 import pino from 'pino';
 
@@ -29,6 +32,7 @@ export class AgentRepository {
     temperature: number,
     maxTokens: number,
     workspaceId: string,
+    runOn?: EXECUTION_TARGET | null,
   ): Promise<dgraphResolversTypes.Agent> {
     const now = new Date().toISOString();
 
@@ -41,6 +45,7 @@ export class AgentRepository {
       model,
       temperature,
       maxTokens,
+      runOn: runOn ?? null,
       workspaceId,
       createdAt: now,
     });
@@ -59,6 +64,7 @@ export class AgentRepository {
     model?: string,
     temperature?: number,
     maxTokens?: number,
+    runOn?: EXECUTION_TARGET | null,
   ): Promise<dgraphResolversTypes.Agent> {
     const now = new Date().toISOString();
 
@@ -73,6 +79,7 @@ export class AgentRepository {
     if (model !== undefined) updateFields.model = model;
     if (temperature !== undefined) updateFields.temperature = temperature;
     if (maxTokens !== undefined) updateFields.maxTokens = maxTokens;
+    if (runOn !== undefined) updateFields.runOn = runOn;
 
     const res = await this.dgraphService.mutation<{
       updateAgent: { agent: dgraphResolversTypes.Agent[] };
@@ -109,5 +116,46 @@ export class AgentRepository {
       getWorkspace: { agents: dgraphResolversTypes.Agent[] } | null;
     }>(GET_AGENTS_BY_WORKSPACE, { workspaceId });
     return response.getWorkspace?.agents ?? [];
+  }
+
+  async updateRunOn(id: string, runOn: EXECUTION_TARGET): Promise<dgraphResolversTypes.Agent> {
+    const res = await this.dgraphService.mutation<{
+      updateAgent: { agent: dgraphResolversTypes.Agent[] };
+    }>(UPDATE_AGENT_RUN_ON, {
+      id,
+      runOn,
+    });
+    return res.updateAgent.agent[0];
+  }
+
+  async linkRuntime(agentId: string, runtimeId: string): Promise<dgraphResolversTypes.Agent> {
+    const res = await this.dgraphService.mutation<{
+      updateAgent: { agent: dgraphResolversTypes.Agent[] };
+    }>(AGENT_LINK_RUNTIME, {
+      agentId,
+      runtimeId,
+    });
+    return res.updateAgent.agent[0];
+  }
+
+  async unlinkRuntime(agentId: string): Promise<dgraphResolversTypes.Agent> {
+    // get the currently linked runtime
+    const agent = await this.findById(agentId);
+    const currentRuntime = agent?.runtime;
+    if (!currentRuntime) {
+      // no runtime linked to agent, early return the agent
+      if (!agent) {
+        throw new Error(`Agent ${agentId} not found`);
+      }
+      return agent;
+    }
+
+    const res = await this.dgraphService.mutation<{
+      updateAgent: { agent: dgraphResolversTypes.Agent[] };
+    }>(AGENT_UNLINK_RUNTIME, {
+      agentId,
+      runtimeId: currentRuntime.id,
+    });
+    return res.updateAgent.agent[0];
   }
 }

@@ -8,7 +8,7 @@ import { MCPServerDetail } from './mcp-server-detail';
 import * as runtimeStore from '@/stores/runtimeStore';
 import * as NotificationContext from '@/contexts/NotificationContext';
 import { BrowserRouter } from 'react-router-dom';
-import { McpTransportType, McpServerRunOn } from '@/graphql/generated/graphql';
+import { McpTransportType, ExecutionTarget } from '@/graphql/generated/graphql';
 import { useMutation } from '@apollo/client/react';
 
 // Mock dependencies
@@ -40,7 +40,7 @@ const mockServer = {
   transport: McpTransportType.Stdio,
   config: '{"command":"test"}',
   repositoryUrl: 'https://github.com/test/repo',
-  runOn: McpServerRunOn.Edge,
+  runOn: ExecutionTarget.Edge,
   runtime: null,
   tools: [],
 };

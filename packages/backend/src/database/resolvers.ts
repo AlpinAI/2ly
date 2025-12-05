@@ -1,7 +1,7 @@
 import { GraphQLDateTime } from 'graphql-scalars';
 import { GraphQLError } from 'graphql';
 import { container as defaultContainer } from '../di/container';
-import { apolloResolversTypes, LoggerService, MCP_SERVER_RUN_ON } from '@2ly/common';
+import { apolloResolversTypes, LoggerService, EXECUTION_TARGET } from '@2ly/common';
 import { Observable } from 'rxjs';
 import { latestValueFrom } from 'rxjs-for-await';
 import {
@@ -212,7 +212,7 @@ export const resolvers = (container: Container = defaultContainer): apolloResolv
 
       updateMCPServerRunOn: async (
         _parent: unknown,
-        { mcpServerId, runOn, runtimeId }: { mcpServerId: string; runOn: MCP_SERVER_RUN_ON; runtimeId?: string | null },
+        { mcpServerId, runOn, runtimeId }: { mcpServerId: string; runOn: EXECUTION_TARGET; runtimeId?: string | null },
         context: GraphQLContext,
       ) => {
         const userId = requireAuth(context);
@@ -260,7 +260,7 @@ export const resolvers = (container: Container = defaultContainer): apolloResolv
           repositoryUrl: string;
           transport: 'STREAM' | 'STDIO' | 'SSE';
           config: string;
-          runOn?: MCP_SERVER_RUN_ON | null;
+          runOn?: EXECUTION_TARGET | null;
           workspaceId: string;
           registryServerId: string;
         },
@@ -388,7 +388,7 @@ export const resolvers = (container: Container = defaultContainer): apolloResolv
           repositoryUrl: string;
           transport: 'STREAM' | 'STDIO' | 'SSE';
           config: string;
-          runOn?: MCP_SERVER_RUN_ON | null;
+          runOn?: EXECUTION_TARGET | null;
         },
         context: GraphQLContext,
       ) => {

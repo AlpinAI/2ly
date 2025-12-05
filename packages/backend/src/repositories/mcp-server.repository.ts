@@ -1,6 +1,6 @@
 import { injectable, inject } from 'inversify';
 import { DGraphService } from '../services/dgraph.service';
-import { dgraphResolversTypes, MCP_SERVER_RUN_ON } from '@2ly/common';
+import { dgraphResolversTypes, EXECUTION_TARGET } from '@2ly/common';
 import {
   ADD_MCPSERVER,
   UPDATE_MCPSERVER,
@@ -51,7 +51,7 @@ export class MCPServerRepository {
     repositoryUrl: string,
     transport: 'STREAM' | 'STDIO' | 'SSE',
     config: string,
-    runOn: MCP_SERVER_RUN_ON | null,
+    runOn: EXECUTION_TARGET | null,
     workspaceId: string,
     registryServerId: string,
   ): Promise<dgraphResolversTypes.McpServer> {
@@ -79,7 +79,7 @@ export class MCPServerRepository {
     repositoryUrl: string,
     transport: 'STREAM' | 'STDIO' | 'SSE',
     config: string,
-    runOn: MCP_SERVER_RUN_ON | null,
+    runOn: EXECUTION_TARGET | null,
   ): Promise<dgraphResolversTypes.McpServer> {
     const res = await this.dgraphService.mutation<{
       updateMCPServer: { mCPServer: dgraphResolversTypes.McpServer[] };
@@ -95,7 +95,7 @@ export class MCPServerRepository {
     return res.updateMCPServer.mCPServer[0];
   }
 
-  async updateRunOn(id: string, runOn: MCP_SERVER_RUN_ON): Promise<dgraphResolversTypes.McpServer> {
+  async updateRunOn(id: string, runOn: EXECUTION_TARGET): Promise<dgraphResolversTypes.McpServer> {
     const res = await this.dgraphService.mutation<{
       updateMCPServer: { mCPServer: dgraphResolversTypes.McpServer[] };
     }>(UPDATE_MCPSERVER_RUN_ON, {

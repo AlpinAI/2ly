@@ -46,12 +46,19 @@ export type Agent = {
   maxTokens: Scalars['Int']['output'];
   model: Scalars['String']['output'];
   name: Scalars['String']['output'];
+  runOn?: Maybe<ExecutionTarget>;
+  runtime?: Maybe<Runtime>;
   skills?: Maybe<Array<Skill>>;
   systemPrompt: Scalars['String']['output'];
   temperature: Scalars['Float']['output'];
   updatedAt?: Maybe<Scalars['DateTime']['output']>;
   workspace: Workspace;
 };
+
+export enum ExecutionTarget {
+  Agent = 'AGENT',
+  Edge = 'EDGE'
+}
 
 export type IdentityKey = {
   createdAt: Scalars['DateTime']['output'];
@@ -87,17 +94,12 @@ export type McpServer = {
   name: Scalars['String']['output'];
   registryServer: McpRegistryServer;
   repositoryUrl: Scalars['String']['output'];
-  runOn?: Maybe<McpServerRunOn>;
+  runOn?: Maybe<ExecutionTarget>;
   runtime?: Maybe<Runtime>;
   tools?: Maybe<Array<McpTool>>;
   transport: McpTransportType;
   workspace: Workspace;
 };
-
-export enum McpServerRunOn {
-  Agent = 'AGENT',
-  Edge = 'EDGE'
-}
 
 export type McpTool = {
   annotations: Scalars['String']['output'];
@@ -144,6 +146,7 @@ export enum OnboardingStepType {
 }
 
 export type Runtime = {
+  agents?: Maybe<Array<Agent>>;
   createdAt: Scalars['DateTime']['output'];
   description?: Maybe<Scalars['String']['output']>;
   hostIP?: Maybe<Scalars['String']['output']>;
@@ -336,13 +339,13 @@ export type ResolversTypes = ResolversObject<{
   Agent: ResolverTypeWrapper<Agent>;
   Boolean: ResolverTypeWrapper<Scalars['Boolean']['output']>;
   DateTime: ResolverTypeWrapper<Scalars['DateTime']['output']>;
+  ExecutionTarget: ExecutionTarget;
   Float: ResolverTypeWrapper<Scalars['Float']['output']>;
   ID: ResolverTypeWrapper<Scalars['ID']['output']>;
   IdentityKey: ResolverTypeWrapper<IdentityKey>;
   Int: ResolverTypeWrapper<Scalars['Int']['output']>;
   MCPRegistryServer: ResolverTypeWrapper<McpRegistryServer>;
   MCPServer: ResolverTypeWrapper<McpServer>;
-  MCPServerRunOn: McpServerRunOn;
   MCPTool: ResolverTypeWrapper<McpTool>;
   MCPTransportType: McpTransportType;
   OnboardingStep: ResolverTypeWrapper<OnboardingStep>;
@@ -403,6 +406,8 @@ export type AgentResolvers<ContextType = any, ParentType extends ResolversParent
   maxTokens?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
   model?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   name?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  runOn?: Resolver<Maybe<ResolversTypes['ExecutionTarget']>, ParentType, ContextType>;
+  runtime?: Resolver<Maybe<ResolversTypes['Runtime']>, ParentType, ContextType>;
   skills?: Resolver<Maybe<Array<ResolversTypes['Skill']>>, ParentType, ContextType>;
   systemPrompt?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   temperature?: Resolver<ResolversTypes['Float'], ParentType, ContextType>;
@@ -451,7 +456,7 @@ export type McpServerResolvers<ContextType = any, ParentType extends ResolversPa
   name?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   registryServer?: Resolver<ResolversTypes['MCPRegistryServer'], ParentType, ContextType>;
   repositoryUrl?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
-  runOn?: Resolver<Maybe<ResolversTypes['MCPServerRunOn']>, ParentType, ContextType>;
+  runOn?: Resolver<Maybe<ResolversTypes['ExecutionTarget']>, ParentType, ContextType>;
   runtime?: Resolver<Maybe<ResolversTypes['Runtime']>, ParentType, ContextType>;
   tools?: Resolver<Maybe<Array<ResolversTypes['MCPTool']>>, ParentType, ContextType>;
   transport?: Resolver<ResolversTypes['MCPTransportType'], ParentType, ContextType>;
@@ -488,6 +493,7 @@ export type OnboardingStepResolvers<ContextType = any, ParentType extends Resolv
 }>;
 
 export type RuntimeResolvers<ContextType = any, ParentType extends ResolversParentTypes['Runtime'] = ResolversParentTypes['Runtime']> = ResolversObject<{
+  agents?: Resolver<Maybe<Array<ResolversTypes['Agent']>>, ParentType, ContextType>;
   createdAt?: Resolver<ResolversTypes['DateTime'], ParentType, ContextType>;
   description?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   hostIP?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;

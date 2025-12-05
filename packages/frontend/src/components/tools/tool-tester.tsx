@@ -22,7 +22,7 @@ import { useState, useMemo, useRef, useEffect } from 'react';
 import { useMutation } from '@apollo/client/react';
 import { Play, Loader2, CheckCircle, AlertCircle, Info } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { CallMcpToolDocument, McpServerRunOn } from '@/graphql/generated/graphql';
+import { CallMcpToolDocument, ExecutionTarget } from '@/graphql/generated/graphql';
 import { SchemaInput } from './schema-input';
 import { parseJSONSchema, convertValueToType, validateSchemaValue } from '@/lib/jsonSchemaHelpers';
 import { hasOutputError } from '@/lib/utils';
@@ -31,7 +31,7 @@ export interface ToolTesterProps {
   toolId: string;
   toolName: string;
   inputSchema: string;
-  runOn?: McpServerRunOn | null;
+  runOn?: ExecutionTarget | null;
 }
 
 interface ToolInput {
@@ -48,7 +48,7 @@ export function ToolTester({ toolId, inputSchema, runOn }: ToolTesterProps) {
   const resultSectionRef = useRef<HTMLDivElement>(null);
 
   // Check if tool runs on AGENT (testing not supported)
-  const isAgentTool = runOn === McpServerRunOn.Agent;
+  const isAgentTool = runOn === ExecutionTarget.Agent;
 
   const [callTool, { loading: isExecuting }] = useMutation(CallMcpToolDocument);
 

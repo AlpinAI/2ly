@@ -59,7 +59,7 @@ test.describe('MCP Client with AGENT RunOn Configuration', () => {
 
     // Explicitly ensure MCP server is set to AGENT runOn with no runtime
     const updateMutation = `
-      mutation UpdateMCPServerRunOn($mcpServerId: ID!, $runOn: MCPServerRunOn!) {
+      mutation UpdateMCPServerRunOn($mcpServerId: ID!, $runOn: ExecutionTarget!) {
         updateMCPServerRunOn(mcpServerId: $mcpServerId, runOn: $runOn) {
           id
           runOn

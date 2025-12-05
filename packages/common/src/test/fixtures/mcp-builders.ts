@@ -14,7 +14,7 @@ import type {
 import { apolloResolversTypes } from '@2ly/common';
 
 type McpTransportType = apolloResolversTypes.McpTransportType;
-type McpServerRunOn = apolloResolversTypes.McpServerRunOn;
+type ExecutionTarget = apolloResolversTypes.ExecutionTarget;
 
 /**
  * Build a FileSystem MCP server configuration
@@ -166,7 +166,7 @@ export function buildMCPServerSeed(options: {
     repositoryUrl: options.repositoryUrl,
     transport: options.transport as McpTransportType,
     config: options.config,
-    runOn: options.runOn as McpServerRunOn,
+    runOn: options.runOn as ExecutionTarget,
     registryServerId: options.registryServerId,
     workspaceId: options.workspaceId,
   };
@@ -360,7 +360,7 @@ export const configureFileSystemMCPServer = async (
   const registryServerId = registryServer.id;
 
   const mutation = `
-      mutation CreateMCPServer($name: String!, $description: String!, $repositoryUrl: String!, $transport: MCPTransportType!, $config: String!, $runOn: MCPServerRunOn!, $workspaceId: ID!, $registryServerId: ID!) {
+      mutation CreateMCPServer($name: String!, $description: String!, $repositoryUrl: String!, $transport: MCPTransportType!, $config: String!, $runOn: ExecutionTarget!, $workspaceId: ID!, $registryServerId: ID!) {
         createMCPServer(name: $name, description: $description, repositoryUrl: $repositoryUrl, transport: $transport, config: $config, runOn: $runOn, workspaceId: $workspaceId, registryServerId: $registryServerId) {
           id
           name
@@ -389,7 +389,7 @@ export const configureFileSystemMCPServer = async (
   // If EDGE and runtimeId provided, link the server to the specific runtime
   if (runOn === 'EDGE' && runtimeId) {
     const updateMutation = `
-      mutation UpdateMCPServerRunOn($mcpServerId: ID!, $runOn: MCPServerRunOn!, $runtimeId: ID) {
+      mutation UpdateExecutionTarget($mcpServerId: ID!, $runOn: ExecutionTarget!, $runtimeId: ID) {
         updateMCPServerRunOn(mcpServerId: $mcpServerId, runOn: $runOn, runtimeId: $runtimeId) {
           id
           runOn
@@ -505,7 +505,7 @@ export const updateMCPServerToEdgeRuntime = async (
 
   // Update MCP server to use EDGE runtime
   const updateMutation = `
-    mutation UpdateMCPServerRunOn($mcpServerId: ID!, $runOn: MCPServerRunOn!, $runtimeId: ID) {
+    mutation UpdateExecutionTarget($mcpServerId: ID!, $runOn: ExecutionTarget!, $runtimeId: ID) {
       updateMCPServerRunOn(mcpServerId: $mcpServerId, runOn: $runOn, runtimeId: $runtimeId) {
         id
         runOn

@@ -11,7 +11,7 @@ import { BrowserRouter } from 'react-router-dom';
 import SourcesPage from './SourcesPage';
 import { SourceType } from '@/types/sources';
 import type { McpServer } from '@/graphql/generated/graphql';
-import { McpTransportType, McpServerRunOn } from '@/graphql/generated/graphql';
+import { McpTransportType, ExecutionTarget } from '@/graphql/generated/graphql';
 import { createMockMcpServer } from '@/test/factories';
 
 // Mock the useMCPServers hook
@@ -146,7 +146,7 @@ describe('SourcesPage', () => {
         name: 'STDIO Server',
         description: 'A stdio server',
         transport: McpTransportType.Stdio,
-        runOn: McpServerRunOn.Agent,
+        runOn: ExecutionTarget.Agent,
       });
 
       const sseServer = createMockMcpServer({
@@ -204,14 +204,14 @@ describe('SourcesPage', () => {
         name: 'Agent Server',
         description: 'An agent server',
         transport: McpTransportType.Stdio,
-        runOn: McpServerRunOn.Agent,
+        runOn: ExecutionTarget.Agent,
       });
 
       const edgeServer = createMockMcpServer({
         id: 'server-2',
         name: 'Edge Server',
         description: 'An edge server',
-        runOn: McpServerRunOn.Edge,
+        runOn: ExecutionTarget.Edge,
       });
 
       mockServers.push(agentServer, edgeServer);
@@ -234,7 +234,7 @@ describe('SourcesPage', () => {
         const filteredCall = mockSourceTableProps.mock.calls[mockSourceTableProps.mock.calls.length - 1][0];
         expect(filteredCall.runOnFilter).toEqual(['AGENT']);
         expect(filteredCall.sources).toHaveLength(1);
-        expect(filteredCall.sources[0].runOn).toBe(McpServerRunOn.Agent);
+        expect(filteredCall.sources[0].runOn).toBe(ExecutionTarget.Agent);
       });
     });
 
@@ -269,7 +269,7 @@ describe('SourcesPage', () => {
         id: 'server-2',
         name: 'Wrong RunOn Server',
         description: 'Matches transport only',
-        runOn: McpServerRunOn.Agent,
+        runOn: ExecutionTarget.Agent,
       });
 
       // Server that matches runOn but not transport (STDIO + EDGE)
@@ -303,7 +303,7 @@ describe('SourcesPage', () => {
         expect(filteredCall.runOnFilter).toEqual(['EDGE']);
         expect(filteredCall.sources).toHaveLength(1);
         expect(filteredCall.sources[0].transport).toBe(McpTransportType.Stream);
-        expect(filteredCall.sources[0].runOn).toBe(McpServerRunOn.Edge);
+        expect(filteredCall.sources[0].runOn).toBe(ExecutionTarget.Edge);
       });
     });
 
@@ -318,7 +318,7 @@ describe('SourcesPage', () => {
         name: 'Server 2',
         description: 'Test server 2',
         transport: McpTransportType.Stdio,
-        runOn: McpServerRunOn.Agent,
+        runOn: ExecutionTarget.Agent,
       });
 
       mockServers.push(server1, server2);
@@ -630,21 +630,21 @@ describe('SourcesPage', () => {
       const githubAgent = createMockMcpServer({
         name: 'GitHub Server',
         description: 'Connect to GitHub',
-        runOn: McpServerRunOn.Agent,
+        runOn: ExecutionTarget.Agent,
       });
 
       const githubEdge = createMockMcpServer({
         id: 'server-2',
         name: 'GitHub Edge',
         description: 'GitHub on Edge',
-        runOn: McpServerRunOn.Edge,
+        runOn: ExecutionTarget.Edge,
       });
 
       const slackAgent = createMockMcpServer({
         id: 'server-3',
         name: 'Slack Server',
         description: 'Connect to Slack',
-        runOn: McpServerRunOn.Agent,
+        runOn: ExecutionTarget.Agent,
       });
 
       mockServers.push(githubAgent, githubEdge, slackAgent);
@@ -669,7 +669,7 @@ describe('SourcesPage', () => {
         // Should only show GitHub Server with AGENT runOn
         expect(filteredCall.sources).toHaveLength(1);
         expect(filteredCall.sources[0].name).toBe('GitHub Server');
-        expect(filteredCall.sources[0].runOn).toBe(McpServerRunOn.Agent);
+        expect(filteredCall.sources[0].runOn).toBe(ExecutionTarget.Agent);
       });
     });
 
@@ -678,7 +678,7 @@ describe('SourcesPage', () => {
         name: 'GitHub Server',
         description: 'Connect to GitHub',
         transport: McpTransportType.Stream,
-        runOn: McpServerRunOn.Edge,
+        runOn: ExecutionTarget.Edge,
       });
 
       const wrongTransport = createMockMcpServer({
@@ -686,7 +686,7 @@ describe('SourcesPage', () => {
         name: 'GitHub STDIO',
         description: 'GitHub via STDIO',
         transport: McpTransportType.Stdio,
-        runOn: McpServerRunOn.Edge,
+        runOn: ExecutionTarget.Edge,
       });
 
       const wrongRunOn = createMockMcpServer({
@@ -694,7 +694,7 @@ describe('SourcesPage', () => {
         name: 'GitHub Agent',
         description: 'GitHub on Agent',
         transport: McpTransportType.Stream,
-        runOn: McpServerRunOn.Agent,
+        runOn: ExecutionTarget.Agent,
       });
 
       const wrongName = createMockMcpServer({
@@ -702,7 +702,7 @@ describe('SourcesPage', () => {
         name: 'Slack Server',
         description: 'Connect to Slack',
         transport: McpTransportType.Stream,
-        runOn: McpServerRunOn.Edge,
+        runOn: ExecutionTarget.Edge,
       });
 
       mockServers.push(matchingServer, wrongTransport, wrongRunOn, wrongName);

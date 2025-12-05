@@ -39,7 +39,7 @@ import {
   UpdateMcpServerRunOnDocument,
   DeleteMcpServerDocument,
   SubscribeMcpServersDocument,
-  McpServerRunOn,
+  ExecutionTarget,
 } from '@/graphql/generated/graphql';
 import type { GetRegistryServersQuery } from '@/graphql/generated/graphql';
 
@@ -207,7 +207,7 @@ export function MCPServerConfigure({ selectedServer, onBack, onSuccess }: MCPSer
       await updateServerRunOn({
         variables: {
           mcpServerId: serverId,
-          runOn: McpServerRunOn.Edge,
+          runOn: ExecutionTarget.Edge,
           runtimeId: selectedRuntimeId,
         },
       });

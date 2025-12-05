@@ -16,7 +16,7 @@ import type {
 } from '@/graphql/generated/graphql';
 import {
   McpTransportType,
-  McpServerRunOn,
+  ExecutionTarget,
   ToolCallStatus,
   ActiveStatus,
   RuntimeType,
@@ -77,7 +77,7 @@ export const createMockMcpServer = (overrides: Partial<McpServer> = {}): McpServ
   name: 'Test Server',
   description: 'A test server',
   transport: McpTransportType.Stream,
-  runOn: McpServerRunOn.Edge,
+  runOn: ExecutionTarget.Edge,
   config: '{}',
   repositoryUrl: '',
   registryServer: createMockRegistryServer(),
@@ -162,6 +162,7 @@ export const createMockRuntimeRef = (overrides: Partial<Runtime> = {}): Runtime 
   lastSeenAt: null,
   createdAt: new Date(),
   mcpServers: null,
+  agents: null,
   toolResponses: null,
   workspace: null as never,
   system: null as never,

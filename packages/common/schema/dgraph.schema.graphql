@@ -11,7 +11,7 @@ enum MCPTransportType {
   STREAM
 }
 
-enum MCPServerRunOn {
+enum ExecutionTarget {
   AGENT
   EDGE
 }
@@ -89,7 +89,7 @@ type MCPServer @withSubscription {
   # or MCPRegistryServer.remotes during the server configuration workflow.
   config: String!
   tools: [MCPTool!] @hasInverse(field: mcpServer)
-  runOn: MCPServerRunOn @search
+  runOn: ExecutionTarget @search
   # an MCP server can run either on a specific runtime - or if no value is provided it will be launch on the agent runtime which requires the capability
   runtime: Runtime @hasInverse(field: mcpServers)
   registryServer: MCPRegistryServer! @hasInverse(field: configurations)
@@ -145,6 +145,10 @@ type Agent @withSubscription {
   maxTokens: Int!
   # The skills available to this agent
   skills: [Skill!] @hasInverse(field: agents)
+  # Where this agent runs - AGENT (on the agent runtime) or EDGE (on a specific edge runtime)
+  runOn: ExecutionTarget @search
+  # The runtime this agent runs on (only applicable when runOn = EDGE)
+  runtime: Runtime @hasInverse(field: agents)
   workspace: Workspace! @hasInverse(field: agents)
 }
 
@@ -162,6 +166,7 @@ type Runtime @withSubscription {
   mcpClientName: String
   lastSeenAt: DateTime
   mcpServers: [MCPServer!] @hasInverse(field: runtime)
+  agents: [Agent!] @hasInverse(field: runtime)
   workspace: Workspace @hasInverse(field: runtimes)
   system: System @hasInverse(field: runtimes)
   toolResponses: [ToolCall!] @hasInverse(field: executedBy)

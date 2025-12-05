@@ -3,7 +3,7 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import { OnboardingCard } from './onboarding-card';
 import * as uiStore from '@/stores/uiStore';
 import * as runtimeStore from '@/stores/runtimeStore';
-import { ActiveStatus, OnboardingStepStatus, type OnboardingStep, type Runtime, OnboardingStepType, McpTransportType, McpServerRunOn, RuntimeType } from '@/graphql/generated/graphql';
+import { ActiveStatus, OnboardingStepStatus, type OnboardingStep, type Runtime, OnboardingStepType, McpTransportType, ExecutionTarget, RuntimeType } from '@/graphql/generated/graphql';
 import { useMCPServers } from '@/hooks/useMCPServers';
 import { useSkills } from '@/hooks/useSkills';
 import { createMockMcpServer, createMockMcpServerRef } from '@/test/factories';
@@ -79,6 +79,7 @@ describe('OnboardingCard', () => {
       skills: [],
       agents: [],
     },
+    agents: [],
     system: null,
     toolResponses: [],
   };
@@ -323,7 +324,7 @@ describe('OnboardingCard', () => {
         description: 'Test server description',
         repositoryUrl: 'https://test.com',
         transport: McpTransportType.Stdio,
-        runOn: McpServerRunOn.Agent,
+        runOn: ExecutionTarget.Agent,
         config: '{}',
         tools: null,
         runtime: null,

@@ -1,1 +1,0 @@
-export type MCP_SERVER_RUN_ON = 'AGENT' | 'EDGE';

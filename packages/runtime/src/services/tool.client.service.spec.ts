@@ -4,7 +4,7 @@ import {
   LoggerService,
   NatsService,
   dgraphResolversTypes,
-  MCP_SERVER_RUN_ON,
+  EXECUTION_TARGET,
 } from '@2ly/common';
 import { AuthService } from './auth.service';
 import { HealthService } from './runtime.health.service';
@@ -104,7 +104,7 @@ describe('ToolClientService', () => {
       };
       vi.mocked(mockNatsService.subscribe).mockReturnValue(mockSubscription as unknown as ReturnType<NatsService['subscribe']>);
 
-      toolClientService['ensureToolsSubscribed'](mcpServerId, tools, 'CLOUD' as MCP_SERVER_RUN_ON);
+      toolClientService['ensureToolsSubscribed'](mcpServerId, tools, 'CLOUD' as EXECUTION_TARGET);
 
       // Should subscribe to both tools
       expect(mockNatsService.subscribe).toHaveBeenCalledTimes(2);
@@ -136,11 +136,11 @@ describe('ToolClientService', () => {
       vi.mocked(mockNatsService.subscribe).mockReturnValue(mockSubscription as unknown as ReturnType<NatsService['subscribe']>);
 
       // First call - should subscribe
-      toolClientService['ensureToolsSubscribed'](mcpServerId, tools, 'CLOUD' as MCP_SERVER_RUN_ON);
+      toolClientService['ensureToolsSubscribed'](mcpServerId, tools, 'CLOUD' as EXECUTION_TARGET);
       expect(mockNatsService.subscribe).toHaveBeenCalledTimes(1);
 
       // Second call with same tools - should not subscribe again
-      toolClientService['ensureToolsSubscribed'](mcpServerId, tools, 'CLOUD' as MCP_SERVER_RUN_ON);
+      toolClientService['ensureToolsSubscribed'](mcpServerId, tools, 'CLOUD' as EXECUTION_TARGET);
       expect(mockNatsService.subscribe).toHaveBeenCalledTimes(1); // Still 1, not 2
     });
 
@@ -197,11 +197,11 @@ describe('ToolClientService', () => {
       vi.mocked(mockNatsService.subscribe).mockReturnValue(mockSubscription as unknown as ReturnType<NatsService['subscribe']>);
 
       // First call with one tool
-      toolClientService['ensureToolsSubscribed'](mcpServerId, initialTools, 'CLOUD' as MCP_SERVER_RUN_ON);
+      toolClientService['ensureToolsSubscribed'](mcpServerId, initialTools, 'CLOUD' as EXECUTION_TARGET);
       expect(mockNatsService.subscribe).toHaveBeenCalledTimes(1);
 
       // Second call with two tools - should only subscribe to the new one
-      toolClientService['ensureToolsSubscribed'](mcpServerId, updatedTools, 'CLOUD' as MCP_SERVER_RUN_ON);
+      toolClientService['ensureToolsSubscribed'](mcpServerId, updatedTools, 'CLOUD' as EXECUTION_TARGET);
       expect(mockNatsService.subscribe).toHaveBeenCalledTimes(2);
     });
   });
@@ -222,7 +222,7 @@ describe('ToolClientService', () => {
       const mockSubscription = { unsubscribe: vi.fn(), [Symbol.asyncIterator]: () => ({ next: async () => ({ done: true, value: undefined }) }) };
       vi.mocked(mockNatsService.subscribe).mockReturnValue(mockSubscription as unknown as ReturnType<NatsService['subscribe']>);
 
-      toolClientService['subscribeToTool'](toolId, 'AGENT' as MCP_SERVER_RUN_ON);
+      toolClientService['subscribeToTool'](toolId, 'AGENT' as EXECUTION_TARGET);
 
       // Verify the subject includes workspace and runtime IDs for AGENT
       expect(mockNatsService.subscribe).toHaveBeenCalledWith(
@@ -244,7 +244,7 @@ describe('ToolClientService', () => {
       const mockSubscription = { unsubscribe: vi.fn(), [Symbol.asyncIterator]: () => ({ next: async () => ({ done: true, value: undefined }) }) };
       vi.mocked(mockNatsService.subscribe).mockReturnValue(mockSubscription as unknown as ReturnType<NatsService['subscribe']>);
 
-      toolClientService['subscribeToTool'](toolId, 'CLOUD' as MCP_SERVER_RUN_ON);
+      toolClientService['subscribeToTool'](toolId, 'CLOUD' as EXECUTION_TARGET);
 
       // Verify the subject is for the tool globally
       expect(mockNatsService.subscribe).toHaveBeenCalledWith(
@@ -261,7 +261,7 @@ describe('ToolClientService', () => {
       });
 
       expect(() => {
-        toolClientService['subscribeToTool']('0x101', 'CLOUD' as MCP_SERVER_RUN_ON);
+        toolClientService['subscribeToTool']('0x101', 'CLOUD' as EXECUTION_TARGET);
       }).toThrow('Cannot subscribe to tool: missing runtimeId or workspaceId');
     });
 
@@ -274,7 +274,7 @@ describe('ToolClientService', () => {
       });
 
       expect(() => {
-        toolClientService['subscribeToTool']('0x101', 'AGENT' as MCP_SERVER_RUN_ON);
+        toolClientService['subscribeToTool']('0x101', 'AGENT' as EXECUTION_TARGET);
       }).toThrow('Cannot subscribe to tool: missing runtimeId or workspaceId');
     });
   });

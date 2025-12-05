@@ -35,7 +35,7 @@ import { useRuntimeData } from '@/stores/runtimeStore';
 import { UpdateMcpServerRunOnDocument, UpdateMcpServerDocument, DeleteMcpServerDocument } from '@/graphql/generated/graphql';
 import { extractConfigurableFields, enrichConfigWithValues, type ConfigField, type ConfigOption } from '@/lib/mcpConfigHelpers';
 import type { SubscribeMcpServersSubscription } from '@/graphql/generated/graphql';
-import { McpServerRunOn } from '@/graphql/generated/graphql';
+import { ExecutionTarget } from '@/graphql/generated/graphql';
 
 type McpServer = NonNullable<SubscribeMcpServersSubscription['mcpServers']>[number];
 
@@ -51,7 +51,7 @@ export function MCPServerDetail({ server }: MCPServerDetailProps) {
   // Inline edit state
   const [serverName, setServerName] = useState(server.name);
   const [serverDescription, setServerDescription] = useState(server.description || '');
-  const [runOn, setRunOn] = useState<McpServerRunOn | null>(server.runOn);
+  const [runOn, setRunOn] = useState<ExecutionTarget | null>(server.runOn);
   const [runtimeId, setRuntimeId] = useState<string | null>(server.runtime?.id || null);
 
   // Configuration fields state
@@ -113,7 +113,7 @@ export function MCPServerDetail({ server }: MCPServerDetailProps) {
 
   // Generate grouped select value
   const groupedSelectValue = useMemo(() => {
-    if (runOn === McpServerRunOn.Edge && runtimeId) {
+    if (runOn === ExecutionTarget.Edge && runtimeId) {
       return `EDGE:${runtimeId}`;
     }
     return runOn || 'AGENT';
@@ -192,14 +192,14 @@ export function MCPServerDetail({ server }: MCPServerDetailProps) {
 
   // Handle runOn change with auto-save
   const handleRunOnChange = async (value: string) => {
-    let newRunOn: McpServerRunOn;
+    let newRunOn: ExecutionTarget;
     let newRuntimeId: string | null = null;
 
     if (value.startsWith('EDGE:')) {
       newRuntimeId = value.replace('EDGE:', '');
-      newRunOn = McpServerRunOn.Edge;
+      newRunOn = ExecutionTarget.Edge;
     } else {
-      newRunOn = value as McpServerRunOn;
+      newRunOn = value as ExecutionTarget;
       newRuntimeId = null;
     }
 
@@ -213,7 +213,7 @@ export function MCPServerDetail({ server }: MCPServerDetailProps) {
         variables: {
           mcpServerId: server.id,
           runOn: newRunOn,
-          runtimeId: newRunOn === McpServerRunOn.Edge ? newRuntimeId : null,
+          runtimeId: newRunOn === ExecutionTarget.Edge ? newRuntimeId : null,
         },
       });
     } catch (error) {

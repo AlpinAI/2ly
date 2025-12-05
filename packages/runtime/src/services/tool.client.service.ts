@@ -9,7 +9,7 @@ import {
   SkillCallToolRequest,
   RuntimeCallToolResponse,
   RuntimeMCPServersPublish,
-  MCP_SERVER_RUN_ON,
+  EXECUTION_TARGET,
   ErrorResponse,
 } from '@2ly/common';
 import { AuthService } from './auth.service';
@@ -205,7 +205,7 @@ export class ToolClientService extends Service {
   }
 
   // Subscribe to a capability and return the subscription
-  private subscribeToTool(toolId: string, runOn: MCP_SERVER_RUN_ON) {
+  private subscribeToTool(toolId: string, runOn: EXECUTION_TARGET) {
     const runtimeId = this.authService.getIdentity()!.id;
     const workspaceId = this.authService.getIdentity()!.workspaceId;
     if (!runtimeId || (runOn === 'AGENT' && !workspaceId)) {
@@ -308,7 +308,7 @@ export class ToolClientService extends Service {
    * Ensure all tools for an MCP server are subscribed.
    * This method is idempotent - it only subscribes to tools that don't have subscriptions yet.
    */
-  private ensureToolsSubscribed(mcpServerId: string, tools: dgraphResolversTypes.McpTool[], runOn: MCP_SERVER_RUN_ON) {
+  private ensureToolsSubscribed(mcpServerId: string, tools: dgraphResolversTypes.McpTool[], runOn: EXECUTION_TARGET) {
 
     this.mcpTools.set(
       mcpServerId,
