@@ -20,11 +20,11 @@ import { LinkSkillDialog } from './link-skill-dialog';
 import { Button } from '@/components/ui/button';
 import { useSkills } from '@/hooks/useSkills';
 import { useNotification } from '@/contexts/NotificationContext';
-import type { MCPToolItem } from '@/types/tools';
+import type { ToolItem } from '@/types/tools';
 import { RemoveMcpToolFromSkillDocument } from '@/graphql/generated/graphql';
 
 export interface MCPToolDetailProps {
-  tool: MCPToolItem;
+  tool: ToolItem;
 }
 
 export function MCPToolDetail({ tool }: MCPToolDetailProps) {

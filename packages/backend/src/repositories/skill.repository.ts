@@ -9,12 +9,15 @@ import {
   QUERY_SKILLS_BY_WORKSPACE,
   ADD_MCP_TOOL_TO_SKILL,
   REMOVE_MCP_TOOL_FROM_SKILL,
-  ADD_AGENT_TO_SKILL,
-  REMOVE_AGENT_FROM_SKILL,
   OBSERVE_SKILLS,
   QUERY_ALL_SKILLS,
   QUERY_SKILL_BY_NAME,
   GET_SKILL_AGENT_MCP_SERVERS,
+  UPDATE_SKILL_MODE,
+  UPDATE_SKILL_SMART_CONFIG,
+  LINK_SKILL_TO_RUNTIME,
+  UNLINK_SKILL_FROM_RUNTIME,
+  QUERY_SMART_SKILLS_BY_RUNTIME,
 } from './skill.operations';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
@@ -159,32 +162,87 @@ export class SkillRepository {
     return res.updateSkill.skill[0];
   }
 
-  async addAgentToSkill(agentId: string, skillId: string): Promise<dgraphResolversTypes.Skill> {
+  async updateMode(id: string, mode: dgraphResolversTypes.SkillMode): Promise<dgraphResolversTypes.Skill> {
     const now = new Date().toISOString();
     const res = await this.dgraphService.mutation<{
       updateSkill: { skill: dgraphResolversTypes.Skill[] };
-    }>(ADD_AGENT_TO_SKILL, {
-      skillId,
-      agentId,
+    }>(UPDATE_SKILL_MODE, {
+      id,
+      mode,
       updatedAt: now,
     });
 
-    this.logger.info(`Added agent ${agentId} to skill ${skillId}`);
+    this.logger.info(`Updated skill ${id} mode to ${mode}`);
     return res.updateSkill.skill[0];
   }
 
-  async removeAgentFromSkill(agentId: string, skillId: string): Promise<dgraphResolversTypes.Skill> {
+  async updateSmartConfig(
+    id: string,
+    config: {
+      model?: string;
+      temperature?: number;
+      maxTokens?: number;
+      systemPrompt?: string;
+      executionTarget?: dgraphResolversTypes.ExecutionTarget;
+    },
+  ): Promise<dgraphResolversTypes.Skill> {
     const now = new Date().toISOString();
     const res = await this.dgraphService.mutation<{
       updateSkill: { skill: dgraphResolversTypes.Skill[] };
-    }>(REMOVE_AGENT_FROM_SKILL, {
-      skillId,
-      agentId,
+    }>(UPDATE_SKILL_SMART_CONFIG, {
+      id,
+      ...config,
       updatedAt: now,
     });
 
-    this.logger.info(`Removed agent ${agentId} from skill ${skillId}`);
+    this.logger.info(`Updated skill ${id} smart config`);
     return res.updateSkill.skill[0];
+  }
+
+  async linkRuntime(skillId: string, runtimeId: string): Promise<dgraphResolversTypes.Skill> {
+    const now = new Date().toISOString();
+    const res = await this.dgraphService.mutation<{
+      updateSkill: { skill: dgraphResolversTypes.Skill[] };
+    }>(LINK_SKILL_TO_RUNTIME, {
+      skillId,
+      runtimeId,
+      updatedAt: now,
+    });
+
+    this.logger.info(`Linked skill ${skillId} to runtime ${runtimeId}`);
+    return res.updateSkill.skill[0];
+  }
+
+  async unlinkRuntime(skillId: string): Promise<dgraphResolversTypes.Skill> {
+    const now = new Date().toISOString();
+    const res = await this.dgraphService.mutation<{
+      updateSkill: { skill: dgraphResolversTypes.Skill[] };
+    }>(UNLINK_SKILL_FROM_RUNTIME, {
+      skillId,
+      updatedAt: now,
+    });
+
+    this.logger.info(`Unlinked skill ${skillId} from runtime`);
+    return res.updateSkill.skill[0];
+  }
+
+  async getSmartSkillsByRuntime(runtimeId: string): Promise<dgraphResolversTypes.Skill[]> {
+    const response = await this.dgraphService.query<{
+      getRuntime: { skills: dgraphResolversTypes.Skill[] } | null;
+    }>(QUERY_SMART_SKILLS_BY_RUNTIME, { runtimeId });
+    return response.getRuntime?.skills ?? [];
+  }
+
+  observeSmartSkillsOnRuntime(runtimeId: string): Observable<dgraphResolversTypes.Skill[]> {
+    const query = createSubscriptionFromQuery(QUERY_SMART_SKILLS_BY_RUNTIME);
+    return this.dgraphService
+      .observe<{ skills: dgraphResolversTypes.Skill[] }>(
+        query,
+        { runtimeId },
+        'getRuntime',
+        true,
+      )
+      .pipe(map((runtime) => runtime?.skills ?? []));
   }
 
   observeSkills(workspaceId: string): Observable<dgraphResolversTypes.Skill[]> {

@@ -1,5 +1,0 @@
-# Call Agent Mutation
-# WHY: Execute an agent with user messages for testing
-mutation CallAgent($agentId: ID!, $userMessages: [String!]!) {
-  callAgent(agentId: $agentId, userMessages: $userMessages)
-}

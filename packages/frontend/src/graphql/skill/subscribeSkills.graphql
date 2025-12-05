@@ -7,6 +7,16 @@ subscription SubscribeSkills($workspaceId: ID!) {
     description
     createdAt
     updatedAt
+    mode
+    model
+    temperature
+    maxTokens
+    systemPrompt
+    executionTarget
+    runtime {
+      id
+      name
+    }
     mcpTools {
       id
       name
@@ -15,12 +25,6 @@ subscription SubscribeSkills($workspaceId: ID!) {
         id
         name
       }
-    }
-    agentTools {
-      id
-      name
-      description
-      model
     }
   }
 }

@@ -11,8 +11,7 @@ import { ToolDetail } from './tool-detail';
 import * as useSkillsHook from '@/hooks/useSkills';
 import * as notificationContext from '@/contexts/NotificationContext';
 import { ActiveStatus } from '@/graphql/generated/graphql';
-import { ToolItemType } from '@/types/tools';
-import type { MCPToolItem, AgentItem } from '@/types/tools';
+import type { ToolItem } from '@/types/tools';
 
 // Mock hooks and contexts
 vi.mock('@/hooks/useSkills');
@@ -42,14 +41,6 @@ vi.mock('./tool-tester', () => ({
   ),
 }));
 
-// Mock AgentTester component
-vi.mock('./agent-tester', () => ({
-  AgentTester: ({ agentId, agentName }: { agentId: string; agentName: string }) => (
-    <div data-testid="agent-tester">
-      Agent Tester for {agentName} ({agentId})
-    </div>
-  ),
-}));
 
 // Mock LinkSkillDialog component
 vi.mock('./link-skill-dialog', () => ({
@@ -64,9 +55,8 @@ vi.mock('@/stores/runtimeStore', () => ({
 }));
 
 describe('ToolDetail', () => {
-  const mockMCPTool: MCPToolItem = {
+  const mockMCPTool: ToolItem = {
     __typename: 'MCPTool',
-    itemType: ToolItemType.MCP_TOOL,
     id: 'tool-1',
     name: 'test-tool',
     description: 'A test tool for testing',
@@ -93,24 +83,6 @@ describe('ToolDetail', () => {
     ],
   };
 
-  const mockAgent: AgentItem = {
-    __typename: 'Agent',
-    itemType: ToolItemType.AGENT,
-    id: 'agent-1',
-    name: 'test-agent',
-    description: 'A test agent for testing',
-    systemPrompt: 'You are a helpful assistant.',
-    model: 'openai/gpt-4',
-    temperature: 1.0,
-    maxTokens: 4096,
-    executionTarget: null,
-    runtime: null,
-    createdAt: new Date('2025-01-01'),
-    updatedAt: null,
-    skills: [],
-    tools: [],
-  };
-
   beforeEach(() => {
     vi.clearAllMocks();
 
@@ -125,7 +97,13 @@ describe('ToolDetail', () => {
           createdAt: new Date('2025-01-01'),
           updatedAt: null,
           mcpTools: null,
-          agentTools: null,
+          mode: null,
+          model: null,
+          temperature: null,
+          maxTokens: null,
+          systemPrompt: null,
+          executionTarget: null,
+          runtime: null,
         },
       ],
       filteredSkills: [
@@ -137,7 +115,13 @@ describe('ToolDetail', () => {
           createdAt: new Date('2025-01-01'),
           updatedAt: null,
           mcpTools: null,
-          agentTools: null,
+          mode: null,
+          model: null,
+          temperature: null,
+          maxTokens: null,
+          systemPrompt: null,
+          executionTarget: null,
+          runtime: null,
         },
       ],
       loading: false,
@@ -157,7 +141,7 @@ describe('ToolDetail', () => {
     });
   });
 
-  const renderComponent = (item: MCPToolItem | AgentItem) => {
+  const renderComponent = (item: ToolItem) => {
     return render(
       <MemoryRouter initialEntries={['/w/test-workspace/tools']}>
         <ToolDetail item={item} />
@@ -172,15 +156,6 @@ describe('ToolDetail', () => {
     expect(screen.getByText('A test tool for testing')).toBeInTheDocument();
     expect(screen.getByText('MCP Server')).toBeInTheDocument();
     expect(screen.getByTestId('tool-tester')).toBeInTheDocument();
-  });
-
-  it('renders AgentDetail for Agent items', () => {
-    renderComponent(mockAgent);
-
-    // Agent detail should show the agent name in an input
-    const nameInput = screen.getByDisplayValue('test-agent');
-    expect(nameInput).toBeInTheDocument();
-    expect(screen.getByTestId('agent-tester')).toBeInTheDocument();
   });
 
   it('renders MCP tool with scroll-smooth class', () => {
@@ -224,13 +199,5 @@ describe('ToolDetail', () => {
     const toolTester = screen.getByTestId('tool-tester');
     expect(toolTester).toBeInTheDocument();
     expect(toolTester).toHaveTextContent('Tool Tester for test-tool (tool-1)');
-  });
-
-  it('renders AgentTester component for Agents', () => {
-    renderComponent(mockAgent);
-
-    const agentTester = screen.getByTestId('agent-tester');
-    expect(agentTester).toBeInTheDocument();
-    expect(agentTester).toHaveTextContent('Agent Tester for test-agent (agent-1)');
   });
 });

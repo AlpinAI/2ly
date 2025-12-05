@@ -7,6 +7,16 @@ query GetSkills($workspaceId: ID!) {
     description
     createdAt
     updatedAt
+    mode
+    model
+    temperature
+    maxTokens
+    systemPrompt
+    executionTarget
+    runtime {
+      id
+      name
+    }
     mcpTools {
       id
       name
@@ -15,12 +25,6 @@ query GetSkills($workspaceId: ID!) {
         id
         name
       }
-    }
-    agentTools {
-      id
-      name
-      description
-      model
     }
   }
 }

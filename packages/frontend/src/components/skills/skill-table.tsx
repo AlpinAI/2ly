@@ -148,7 +148,7 @@ export function SkillTable({
                       )}
                     </td>
                     <td className="px-4 py-3 text-sm text-gray-700 dark:text-gray-300">
-                      {(skill.mcpTools?.length || 0) + (skill.agentTools?.length || 0)}
+                      {skill.mcpTools?.length || 0}
                     </td>
                     <td className="px-4 py-3 text-sm text-right">
                       <div className="flex items-center justify-end gap-1">

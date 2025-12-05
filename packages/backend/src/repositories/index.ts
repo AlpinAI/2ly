@@ -11,4 +11,3 @@ export * from './monitoring.repository';
 export * from './skill.repository';
 export * from './identity.repository';
 export * from './ai-provider.repository';
-export * from './agent.repository';

@@ -21,6 +21,12 @@ enum RuntimeType {
   MCP
 }
 
+enum SkillMode {
+  LIST
+  OPTIMIZED
+  SMART
+}
+
 type Infra {
   nats: String
   remoteMCP: String
@@ -85,10 +91,17 @@ type Skill {
   createdAt: Date!
   updatedAt: Date
   mcpTools: [MCPTool!]
-  agentTools: [Agent!]
-  usedByAgents: [Agent!]
   workspace: Workspace!
   toolCalls: [ToolCall!]
+  # Skill mode - determines how tools are exposed to consuming agents
+  mode: SkillMode
+  # Smart mode configuration fields (only used when mode = SMART)
+  model: String
+  temperature: Float
+  maxTokens: Int
+  systemPrompt: String
+  executionTarget: ExecutionTarget
+  runtime: Runtime
 }
 
 type Agent {
@@ -128,7 +141,7 @@ type Runtime {
   lastSeenAt: Date
   roots: String
   mcpServers: [MCPServer!]
-  agents: [Agent!]
+  skills: [Skill!]
   workspace: Workspace
   system: System
   hostIP: String
@@ -367,10 +380,11 @@ type Mutation {
   deleteSkill(id: ID!): Skill!
   addMCPToolToSkill(mcpToolId: ID!, skillId: ID!): Skill!
   removeMCPToolFromSkill(mcpToolId: ID!, skillId: ID!): Skill!
-  addAgentToSkill(agentId: ID!, skillId: ID!): Skill!
-  removeAgentFromSkill(agentId: ID!, skillId: ID!): Skill!
-  addSkillToAgent(skillId: ID!, agentId: ID!): Agent!
-  removeSkillFromAgent(skillId: ID!, agentId: ID!): Agent!
+  # Skill mode and smart configuration mutations
+  updateSkillMode(id: ID!, mode: SkillMode!): Skill!
+  updateSkillSmartConfig(input: UpdateSkillSmartConfigInput!): Skill!
+  linkSkillToRuntime(skillId: ID!, runtimeId: ID!): Skill!
+  unlinkSkillFromRuntime(skillId: ID!): Skill!
   initSystem(adminPassword: String!, email: String!): System!
   updateWorkspace(id: ID!, name: String!): Workspace!
   setGlobalRuntime(id: ID!, runtimeId: ID!): Workspace!
@@ -460,6 +474,16 @@ input UpdateAgentInput {
   model: String
   temperature: Float
   maxTokens: Int
+  executionTarget: ExecutionTarget
+  runtimeId: ID
+}
+
+input UpdateSkillSmartConfigInput {
+  id: ID!
+  model: String
+  temperature: Float
+  maxTokens: Int
+  systemPrompt: String
   executionTarget: ExecutionTarget
   runtimeId: ID
 }

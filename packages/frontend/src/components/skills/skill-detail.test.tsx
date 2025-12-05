@@ -25,6 +25,26 @@ vi.mock('@apollo/client/react', () => ({
   useLazyQuery: vi.fn(),
 }));
 
+vi.mock('@/hooks/useAIProviders', () => ({
+  useAIProviders: vi.fn(() => ({
+    allModels: ['openai/gpt-4o', 'anthropic/claude-3-5-sonnet'],
+    providers: [],
+    defaultModel: null,
+    loading: false,
+    error: null,
+  })),
+}));
+
+vi.mock('@/stores/runtimeStore', () => ({
+  useRuntimeData: vi.fn(() => ({
+    runtimes: [
+      { id: 'runtime-1', name: 'Test Runtime', status: 'ACTIVE' },
+      { id: 'runtime-2', name: 'Offline Runtime', status: 'INACTIVE' },
+    ],
+    loading: false,
+  })),
+}));
+
 vi.mock('react-router-dom', async () => {
   const actual = await vi.importActual('react-router-dom');
   return {
@@ -53,7 +73,13 @@ const mockSkill = {
       },
     },
   ],
-  agentTools: [],
+  mode: null,
+  model: null,
+  temperature: null,
+  maxTokens: null,
+  systemPrompt: null,
+  executionTarget: null,
+  runtime: null,
 };
 
 describe('SkillDetail - Inline Editing', () => {
@@ -435,7 +461,7 @@ describe('SkillDetail - Inline Editing', () => {
         </BrowserRouter>
       );
 
-      expect(screen.getByText('MCP Tools (1)')).toBeInTheDocument();
+      expect(screen.getByText('Tools (1)')).toBeInTheDocument();
       expect(screen.getByText('Test Tool')).toBeInTheDocument();
     });
   });

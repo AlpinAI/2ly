@@ -1,20 +1,19 @@
 /**
  * Tools Page
  *
- * WHY: Manage and test MCP tools and Agents with detailed information.
- * Shows unified tool/agent list with filters, detail panel with testing capability.
+ * WHY: Manage and test MCP tools with detailed information.
+ * Shows tool list with filters, detail panel with testing capability.
  *
  * LAYOUT:
  * - 2/3: Tool table with search and filters
- * - 1/3: Tool/Agent detail panel with tester
+ * - 1/3: Tool detail panel with tester
  *
  * FEATURES:
- * - Real-time tool updates (subscription for tools, polling for agents)
+ * - Real-time tool updates (subscription)
  * - Search by name/description
- * - Filter by type (MCP Tool / Agent)
  * - Filter by server(s), skill(s)
  * - Click item to view details and test
- * - Execute tools/agents with input parameters
+ * - Execute tools with input parameters
  * - "Add Tools" button (opens AddSourceWorkflow)
  */
 
@@ -36,7 +35,7 @@ export default function ToolsPage() {
   const { selectedId, setSelectedId } = useUrlSync();
   const setAddSourceWorkflowOpen = useUIStore((state) => state.setAddSourceWorkflowOpen);
 
-  // Fetch unified tool items (MCP Tools + Agents), servers, and skills
+  // Fetch tool items, servers, and skills
   const { filteredItems, loading, error, filters } = useToolItems();
   const { servers } = useMCPServers();
   const { skills } = useSkills(workspaceId || '');
@@ -86,7 +85,7 @@ export default function ToolsPage() {
       <div className="flex items-center justify-between mb-6">
         <div>
           <h2 className="text-3xl font-bold text-gray-900 dark:text-white">Tools</h2>
-          <p className="text-gray-500 dark:text-gray-400 mt-1">Browse, test, and manage your MCP tools and agents</p>
+          <p className="text-gray-500 dark:text-gray-400 mt-1">Browse, test, and manage your MCP tools</p>
         </div>
         <Button onClick={() => setAddSourceWorkflowOpen(true)} className="gap-2">
           <Plus className="h-4 w-4" />
@@ -103,8 +102,6 @@ export default function ToolsPage() {
             onSelectItem={setSelectedId}
             search={filters.search}
             onSearchChange={filters.setSearch}
-            typeFilter={filters.types}
-            onTypeFilterChange={filters.setTypes}
             serverFilter={filters.serverIds}
             onServerFilterChange={filters.setServerIds}
             skillFilter={filters.skillIds}

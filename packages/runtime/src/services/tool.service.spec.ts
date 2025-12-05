@@ -56,12 +56,17 @@ describe('ToolService', () => {
     // Mock ToolServerServiceFactory
     mockToolServerServiceFactory = vi.fn();
 
+    // Mock ToolAgentServiceFactory
+    const mockToolAgentServiceFactory = vi.fn();
+
     toolService = new ToolService(
       mockLoggerService,
       mockNatsService,
       mockAuthService,
       mockHealthService,
       mockToolServerServiceFactory,
+      mockToolAgentServiceFactory,
+      vi.fn(),
       undefined,
     );
   });

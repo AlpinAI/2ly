@@ -194,10 +194,8 @@ export enum McpTransportType {
 }
 
 export type Mutation = {
-  addAgentToSkill: Skill;
   addMCPToolToSkill: Skill;
   addServerToRegistry: McpRegistryServer;
-  addSkillToAgent: Agent;
   callAgent: Scalars['String']['output'];
   callMCPTool: CallToolResult;
   chatWithModel: Scalars['String']['output'];
@@ -216,6 +214,7 @@ export type Mutation = {
   dismissOnboardingStep: Scalars['Boolean']['output'];
   initSystem: System;
   linkMCPServerToRuntime: McpServer;
+  linkSkillToRuntime: Skill;
   login: AuthPayload;
   loginUser: AuthPayload;
   logout: Scalars['Boolean']['output'];
@@ -223,14 +222,13 @@ export type Mutation = {
   refreshToken: RefreshTokenPayload;
   registerUser: RegisterUserPayload;
   removeAIProvider: Scalars['Boolean']['output'];
-  removeAgentFromSkill: Skill;
   removeMCPToolFromSkill: Skill;
   removeServerFromRegistry: McpRegistryServer;
-  removeSkillFromAgent: Agent;
   revokeKey: IdentityKey;
   setDefaultAIModel: Scalars['Boolean']['output'];
   setGlobalRuntime: Workspace;
   unlinkMCPServerFromRuntime: McpServer;
+  unlinkSkillFromRuntime: Skill;
   unsetGlobalRuntime: Workspace;
   updateAgent: Agent;
   updateAgentExecutionTarget: Agent;
@@ -239,13 +237,9 @@ export type Mutation = {
   updateRuntime: Runtime;
   updateServerInRegistry: McpRegistryServer;
   updateSkill: Skill;
+  updateSkillMode: Skill;
+  updateSkillSmartConfig: Skill;
   updateWorkspace: Workspace;
-};
-
-
-export type MutationAddAgentToSkillArgs = {
-  agentId: Scalars['ID']['input'];
-  skillId: Scalars['ID']['input'];
 };
 
 
@@ -264,12 +258,6 @@ export type MutationAddServerToRegistryArgs = {
   title: Scalars['String']['input'];
   version: Scalars['String']['input'];
   workspaceId: Scalars['ID']['input'];
-};
-
-
-export type MutationAddSkillToAgentArgs = {
-  agentId: Scalars['ID']['input'];
-  skillId: Scalars['ID']['input'];
 };
 
 
@@ -387,6 +375,12 @@ export type MutationLinkMcpServerToRuntimeArgs = {
 };
 
 
+export type MutationLinkSkillToRuntimeArgs = {
+  runtimeId: Scalars['ID']['input'];
+  skillId: Scalars['ID']['input'];
+};
+
+
 export type MutationLoginArgs = {
   input: LoginInput;
 };
@@ -422,12 +416,6 @@ export type MutationRemoveAiProviderArgs = {
 };
 
 
-export type MutationRemoveAgentFromSkillArgs = {
-  agentId: Scalars['ID']['input'];
-  skillId: Scalars['ID']['input'];
-};
-
-
 export type MutationRemoveMcpToolFromSkillArgs = {
   mcpToolId: Scalars['ID']['input'];
   skillId: Scalars['ID']['input'];
@@ -436,12 +424,6 @@ export type MutationRemoveMcpToolFromSkillArgs = {
 
 export type MutationRemoveServerFromRegistryArgs = {
   serverId: Scalars['ID']['input'];
-};
-
-
-export type MutationRemoveSkillFromAgentArgs = {
-  agentId: Scalars['ID']['input'];
-  skillId: Scalars['ID']['input'];
 };
 
 
@@ -464,6 +446,11 @@ export type MutationSetGlobalRuntimeArgs = {
 
 export type MutationUnlinkMcpServerFromRuntimeArgs = {
   mcpServerId: Scalars['ID']['input'];
+};
+
+
+export type MutationUnlinkSkillFromRuntimeArgs = {
+  skillId: Scalars['ID']['input'];
 };
 
 
@@ -525,6 +512,17 @@ export type MutationUpdateSkillArgs = {
   description: Scalars['String']['input'];
   id: Scalars['ID']['input'];
   name: Scalars['String']['input'];
+};
+
+
+export type MutationUpdateSkillModeArgs = {
+  id: Scalars['ID']['input'];
+  mode: SkillMode;
+};
+
+
+export type MutationUpdateSkillSmartConfigArgs = {
+  input: UpdateSkillSmartConfigInput;
 };
 
 
@@ -688,7 +686,6 @@ export type RegisterUserPayload = {
 };
 
 export type Runtime = {
-  agents?: Maybe<Array<Agent>>;
   createdAt: Scalars['Date']['output'];
   description?: Maybe<Scalars['String']['output']>;
   hostIP?: Maybe<Scalars['String']['output']>;
@@ -699,6 +696,7 @@ export type Runtime = {
   mcpServers?: Maybe<Array<McpServer>>;
   name: Scalars['String']['output'];
   roots?: Maybe<Scalars['String']['output']>;
+  skills?: Maybe<Array<Skill>>;
   status: ActiveStatus;
   system?: Maybe<System>;
   toolResponses?: Maybe<Array<ToolCall>>;
@@ -712,17 +710,28 @@ export enum RuntimeType {
 }
 
 export type Skill = {
-  agentTools?: Maybe<Array<Agent>>;
   createdAt: Scalars['Date']['output'];
   description?: Maybe<Scalars['String']['output']>;
+  executionTarget?: Maybe<ExecutionTarget>;
   id: Scalars['ID']['output'];
+  maxTokens?: Maybe<Scalars['Int']['output']>;
   mcpTools?: Maybe<Array<McpTool>>;
+  mode?: Maybe<SkillMode>;
+  model?: Maybe<Scalars['String']['output']>;
   name: Scalars['String']['output'];
+  runtime?: Maybe<Runtime>;
+  systemPrompt?: Maybe<Scalars['String']['output']>;
+  temperature?: Maybe<Scalars['Float']['output']>;
   toolCalls?: Maybe<Array<ToolCall>>;
   updatedAt?: Maybe<Scalars['Date']['output']>;
-  usedByAgents?: Maybe<Array<Agent>>;
   workspace: Workspace;
 };
+
+export enum SkillMode {
+  List = 'LIST',
+  Optimized = 'OPTIMIZED',
+  Smart = 'SMART'
+}
 
 export type Subscription = {
   mcpServers?: Maybe<Array<McpServer>>;
@@ -826,6 +835,16 @@ export type UpdateAgentInput = {
   maxTokens?: InputMaybe<Scalars['Int']['input']>;
   model?: InputMaybe<Scalars['String']['input']>;
   name?: InputMaybe<Scalars['String']['input']>;
+  runtimeId?: InputMaybe<Scalars['ID']['input']>;
+  systemPrompt?: InputMaybe<Scalars['String']['input']>;
+  temperature?: InputMaybe<Scalars['Float']['input']>;
+};
+
+export type UpdateSkillSmartConfigInput = {
+  executionTarget?: InputMaybe<ExecutionTarget>;
+  id: Scalars['ID']['input'];
+  maxTokens?: InputMaybe<Scalars['Int']['input']>;
+  model?: InputMaybe<Scalars['String']['input']>;
   runtimeId?: InputMaybe<Scalars['ID']['input']>;
   systemPrompt?: InputMaybe<Scalars['String']['input']>;
   temperature?: InputMaybe<Scalars['Float']['input']>;
@@ -967,6 +986,7 @@ export type ResolversTypes = {
   Runtime: ResolverTypeWrapper<Runtime>;
   RuntimeType: RuntimeType;
   Skill: ResolverTypeWrapper<Skill>;
+  SkillMode: SkillMode;
   String: ResolverTypeWrapper<Scalars['String']['output']>;
   Subscription: ResolverTypeWrapper<{}>;
   System: ResolverTypeWrapper<System>;
@@ -976,6 +996,7 @@ export type ResolversTypes = {
   ToolCallStatus: ToolCallStatus;
   ToolCallsResult: ResolverTypeWrapper<ToolCallsResult>;
   UpdateAgentInput: UpdateAgentInput;
+  UpdateSkillSmartConfigInput: UpdateSkillSmartConfigInput;
   User: ResolverTypeWrapper<User>;
   Workspace: ResolverTypeWrapper<Workspace>;
 };
@@ -1022,6 +1043,7 @@ export type ResolversParentTypes = {
   ToolCallStats: ToolCallStats;
   ToolCallsResult: ToolCallsResult;
   UpdateAgentInput: UpdateAgentInput;
+  UpdateSkillSmartConfigInput: UpdateSkillSmartConfigInput;
   User: User;
   Workspace: Workspace;
 };
@@ -1166,10 +1188,8 @@ export type McpToolResolvers<ContextType = object, ParentType extends ResolversP
 };
 
 export type MutationResolvers<ContextType = object, ParentType extends ResolversParentTypes['Mutation'] = ResolversParentTypes['Mutation']> = {
-  addAgentToSkill?: Resolver<ResolversTypes['Skill'], ParentType, ContextType, RequireFields<MutationAddAgentToSkillArgs, 'agentId' | 'skillId'>>;
   addMCPToolToSkill?: Resolver<ResolversTypes['Skill'], ParentType, ContextType, RequireFields<MutationAddMcpToolToSkillArgs, 'mcpToolId' | 'skillId'>>;
   addServerToRegistry?: Resolver<ResolversTypes['MCPRegistryServer'], ParentType, ContextType, RequireFields<MutationAddServerToRegistryArgs, 'description' | 'name' | 'repositoryUrl' | 'title' | 'version' | 'workspaceId'>>;
-  addSkillToAgent?: Resolver<ResolversTypes['Agent'], ParentType, ContextType, RequireFields<MutationAddSkillToAgentArgs, 'agentId' | 'skillId'>>;
   callAgent?: Resolver<ResolversTypes['String'], ParentType, ContextType, RequireFields<MutationCallAgentArgs, 'agentId' | 'userMessages'>>;
   callMCPTool?: Resolver<ResolversTypes['CallToolResult'], ParentType, ContextType, RequireFields<MutationCallMcpToolArgs, 'input' | 'toolId'>>;
   chatWithModel?: Resolver<ResolversTypes['String'], ParentType, ContextType, RequireFields<MutationChatWithModelArgs, 'message' | 'model' | 'workspaceId'>>;
@@ -1188,6 +1208,7 @@ export type MutationResolvers<ContextType = object, ParentType extends Resolvers
   dismissOnboardingStep?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType, RequireFields<MutationDismissOnboardingStepArgs, 'stepId' | 'workspaceId'>>;
   initSystem?: Resolver<ResolversTypes['System'], ParentType, ContextType, RequireFields<MutationInitSystemArgs, 'adminPassword' | 'email'>>;
   linkMCPServerToRuntime?: Resolver<ResolversTypes['MCPServer'], ParentType, ContextType, RequireFields<MutationLinkMcpServerToRuntimeArgs, 'mcpServerId' | 'runtimeId'>>;
+  linkSkillToRuntime?: Resolver<ResolversTypes['Skill'], ParentType, ContextType, RequireFields<MutationLinkSkillToRuntimeArgs, 'runtimeId' | 'skillId'>>;
   login?: Resolver<ResolversTypes['AuthPayload'], ParentType, ContextType, RequireFields<MutationLoginArgs, 'input'>>;
   loginUser?: Resolver<ResolversTypes['AuthPayload'], ParentType, ContextType, RequireFields<MutationLoginUserArgs, 'input'>>;
   logout?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType, RequireFields<MutationLogoutArgs, 'input'>>;
@@ -1195,14 +1216,13 @@ export type MutationResolvers<ContextType = object, ParentType extends Resolvers
   refreshToken?: Resolver<ResolversTypes['RefreshTokenPayload'], ParentType, ContextType, RequireFields<MutationRefreshTokenArgs, 'input'>>;
   registerUser?: Resolver<ResolversTypes['RegisterUserPayload'], ParentType, ContextType, RequireFields<MutationRegisterUserArgs, 'input'>>;
   removeAIProvider?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType, RequireFields<MutationRemoveAiProviderArgs, 'providerId'>>;
-  removeAgentFromSkill?: Resolver<ResolversTypes['Skill'], ParentType, ContextType, RequireFields<MutationRemoveAgentFromSkillArgs, 'agentId' | 'skillId'>>;
   removeMCPToolFromSkill?: Resolver<ResolversTypes['Skill'], ParentType, ContextType, RequireFields<MutationRemoveMcpToolFromSkillArgs, 'mcpToolId' | 'skillId'>>;
   removeServerFromRegistry?: Resolver<ResolversTypes['MCPRegistryServer'], ParentType, ContextType, RequireFields<MutationRemoveServerFromRegistryArgs, 'serverId'>>;
-  removeSkillFromAgent?: Resolver<ResolversTypes['Agent'], ParentType, ContextType, RequireFields<MutationRemoveSkillFromAgentArgs, 'agentId' | 'skillId'>>;
   revokeKey?: Resolver<ResolversTypes['IdentityKey'], ParentType, ContextType, RequireFields<MutationRevokeKeyArgs, 'keyId'>>;
   setDefaultAIModel?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType, RequireFields<MutationSetDefaultAiModelArgs, 'defaultModel' | 'workspaceId'>>;
   setGlobalRuntime?: Resolver<ResolversTypes['Workspace'], ParentType, ContextType, RequireFields<MutationSetGlobalRuntimeArgs, 'id' | 'runtimeId'>>;
   unlinkMCPServerFromRuntime?: Resolver<ResolversTypes['MCPServer'], ParentType, ContextType, RequireFields<MutationUnlinkMcpServerFromRuntimeArgs, 'mcpServerId'>>;
+  unlinkSkillFromRuntime?: Resolver<ResolversTypes['Skill'], ParentType, ContextType, RequireFields<MutationUnlinkSkillFromRuntimeArgs, 'skillId'>>;
   unsetGlobalRuntime?: Resolver<ResolversTypes['Workspace'], ParentType, ContextType, RequireFields<MutationUnsetGlobalRuntimeArgs, 'id'>>;
   updateAgent?: Resolver<ResolversTypes['Agent'], ParentType, ContextType, RequireFields<MutationUpdateAgentArgs, 'input'>>;
   updateAgentExecutionTarget?: Resolver<ResolversTypes['Agent'], ParentType, ContextType, RequireFields<MutationUpdateAgentExecutionTargetArgs, 'agentId' | 'executionTarget'>>;
@@ -1211,6 +1231,8 @@ export type MutationResolvers<ContextType = object, ParentType extends Resolvers
   updateRuntime?: Resolver<ResolversTypes['Runtime'], ParentType, ContextType, RequireFields<MutationUpdateRuntimeArgs, 'description' | 'id' | 'name'>>;
   updateServerInRegistry?: Resolver<ResolversTypes['MCPRegistryServer'], ParentType, ContextType, RequireFields<MutationUpdateServerInRegistryArgs, 'serverId'>>;
   updateSkill?: Resolver<ResolversTypes['Skill'], ParentType, ContextType, RequireFields<MutationUpdateSkillArgs, 'description' | 'id' | 'name'>>;
+  updateSkillMode?: Resolver<ResolversTypes['Skill'], ParentType, ContextType, RequireFields<MutationUpdateSkillModeArgs, 'id' | 'mode'>>;
+  updateSkillSmartConfig?: Resolver<ResolversTypes['Skill'], ParentType, ContextType, RequireFields<MutationUpdateSkillSmartConfigArgs, 'input'>>;
   updateWorkspace?: Resolver<ResolversTypes['Workspace'], ParentType, ContextType, RequireFields<MutationUpdateWorkspaceArgs, 'id' | 'name'>>;
 };
 
@@ -1265,7 +1287,6 @@ export type RegisterUserPayloadResolvers<ContextType = object, ParentType extend
 };
 
 export type RuntimeResolvers<ContextType = object, ParentType extends ResolversParentTypes['Runtime'] = ResolversParentTypes['Runtime']> = {
-  agents?: Resolver<Maybe<Array<ResolversTypes['Agent']>>, ParentType, ContextType>;
   createdAt?: Resolver<ResolversTypes['Date'], ParentType, ContextType>;
   description?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   hostIP?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
@@ -1276,6 +1297,7 @@ export type RuntimeResolvers<ContextType = object, ParentType extends ResolversP
   mcpServers?: Resolver<Maybe<Array<ResolversTypes['MCPServer']>>, ParentType, ContextType>;
   name?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   roots?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  skills?: Resolver<Maybe<Array<ResolversTypes['Skill']>>, ParentType, ContextType>;
   status?: Resolver<ResolversTypes['ActiveStatus'], ParentType, ContextType>;
   system?: Resolver<Maybe<ResolversTypes['System']>, ParentType, ContextType>;
   toolResponses?: Resolver<Maybe<Array<ResolversTypes['ToolCall']>>, ParentType, ContextType>;
@@ -1285,15 +1307,20 @@ export type RuntimeResolvers<ContextType = object, ParentType extends ResolversP
 };
 
 export type SkillResolvers<ContextType = object, ParentType extends ResolversParentTypes['Skill'] = ResolversParentTypes['Skill']> = {
-  agentTools?: Resolver<Maybe<Array<ResolversTypes['Agent']>>, ParentType, ContextType>;
   createdAt?: Resolver<ResolversTypes['Date'], ParentType, ContextType>;
   description?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  executionTarget?: Resolver<Maybe<ResolversTypes['ExecutionTarget']>, ParentType, ContextType>;
   id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
+  maxTokens?: Resolver<Maybe<ResolversTypes['Int']>, ParentType, ContextType>;
   mcpTools?: Resolver<Maybe<Array<ResolversTypes['MCPTool']>>, ParentType, ContextType>;
+  mode?: Resolver<Maybe<ResolversTypes['SkillMode']>, ParentType, ContextType>;
+  model?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   name?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  runtime?: Resolver<Maybe<ResolversTypes['Runtime']>, ParentType, ContextType>;
+  systemPrompt?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  temperature?: Resolver<Maybe<ResolversTypes['Float']>, ParentType, ContextType>;
   toolCalls?: Resolver<Maybe<Array<ResolversTypes['ToolCall']>>, ParentType, ContextType>;
   updatedAt?: Resolver<Maybe<ResolversTypes['Date']>, ParentType, ContextType>;
-  usedByAgents?: Resolver<Maybe<Array<ResolversTypes['Agent']>>, ParentType, ContextType>;
   workspace?: Resolver<ResolversTypes['Workspace'], ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 };

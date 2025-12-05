@@ -11,6 +11,9 @@ import {
   DEFAULT_HEARTBAT_TTL,
   EPHEMERAL_TTL,
   DEFAULT_EPHEMERAL_TTL,
+  AIProviderCoreService,
+  type RuntimeAgent,
+  type RuntimeSmartSkill,
 } from '@2ly/common';
 import { MainService } from '../services/runtime.main.service';
 import {
@@ -18,6 +21,8 @@ import {
 } from '../services/auth.service';
 import { HealthService, HEARTBEAT_INTERVAL } from '../services/runtime.health.service';
 import { ToolServerService, type ToolServerServiceFactory } from '../services/tool.mcp.server.service';
+import { ToolAgentService, type ToolAgentServiceFactory } from '../services/tool.agent.service';
+import { ToolSmartSkillService, type ToolSmartSkillServiceFactory } from '../services/tool.smart-skill.service';
 import { ToolService } from '../services/tool.service';
 import { McpStdioService } from '../services/mcp.stdio.service';
 import { McpSseService } from '../services/mcp.sse.service';
@@ -195,6 +200,29 @@ const start = () => {
       const logger = context.get(LoggerService).getLogger(`tool.server.${config.name}`);
       logger.level = process.env.LOG_LEVEL_TOOL_SERVER || 'silent';
       return new ToolServerService(logger, config, roots);
+    };
+  });
+
+  // Init AI provider service
+  container.bind(AIProviderCoreService).toSelf().inSingletonScope();
+
+  // Init agent service factory
+  container.bind<ToolAgentServiceFactory>(ToolAgentService).toFactory((context) => {
+    return (config: RuntimeAgent) => {
+      const logger = context.get(LoggerService).getLogger(`tool.agent.${config.name}`);
+      logger.level = process.env.LOG_LEVEL_TOOL_AGENT || 'info';
+      const aiProviderCoreService = context.get(AIProviderCoreService);
+      return new ToolAgentService(logger, config, aiProviderCoreService);
+    };
+  });
+
+  // Init smart skill service factory
+  container.bind<ToolSmartSkillServiceFactory>(ToolSmartSkillService).toFactory((context) => {
+    return (config: RuntimeSmartSkill) => {
+      const logger = context.get(LoggerService).getLogger(`tool.smart-skill.${config.name}`);
+      logger.level = process.env.LOG_LEVEL_TOOL_SMART_SKILL || 'info';
+      const aiProviderCoreService = context.get(AIProviderCoreService);
+      return new ToolSmartSkillService(logger, config, aiProviderCoreService);
     };
   });
 };

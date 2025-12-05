@@ -21,6 +21,12 @@ enum RuntimeType {
   MCP
 }
 
+enum SkillMode {
+  LIST
+  OPTIMIZED
+  SMART
+}
+
 type System @withSubscription {
   id: ID!
   initialized: Boolean!
@@ -112,11 +118,11 @@ type MCPTool @withSubscription {
   toolCalls: [ToolCall!] @hasInverse(field: mcpTool)
 }
 
-# Skill: A logical collection of tools for organization purposes
-# This type separates the concept of tool GROUPING from tool EXECUTION.
-# - Skills are about organizing tools into meaningful collections (e.g., "Data Analysis Tools")
-# - Runtimes are about execution environments that can run tools
-# This separation allows tools to be grouped logically while maintaining flexible execution models.
+# Skill: A logical collection of tools with configurable execution modes.
+# Skills can operate in three modes:
+# - LIST: Make each tool available to the consuming agent (default)
+# - OPTIMIZED: Provide Search Tool and Call Tool to reduce token usage
+# - SMART: Orchestrate tools using a sub-agent with configurable AI settings
 type Skill @withSubscription {
   id: ID!
   name: String! @search(by: [hash])
@@ -125,12 +131,21 @@ type Skill @withSubscription {
   updatedAt: DateTime
   # The MCP tools that belong to this collection
   mcpTools: [MCPTool!] @hasInverse(field: skills)
-  # Agents included as tools in this collection (can be called as tools)
+  # Agents included as tools in this skill (inverse for Agent.skills)
   agentTools: [Agent!] @hasInverse(field: skills)
-  # The agents that can USE this skill (have access to tools in this collection)
+  # Agents that use this skill (inverse for Agent.tools)
   usedByAgents: [Agent!] @hasInverse(field: tools)
   workspace: Workspace! @hasInverse(field: skills)
   toolCalls: [ToolCall!] @hasInverse(field: calledBy)
+  # Skill mode - determines how tools are exposed to consuming agents
+  mode: SkillMode @search
+  # Smart mode configuration fields (only used when mode = SMART)
+  model: String
+  temperature: Float
+  maxTokens: Int
+  systemPrompt: String
+  executionTarget: ExecutionTarget @search
+  runtime: Runtime @hasInverse(field: skills)
 }
 
 # Agent: An AI agent with configurable parameters that can execute tasks
@@ -170,6 +185,7 @@ type Runtime @withSubscription {
   mcpClientName: String
   lastSeenAt: DateTime
   mcpServers: [MCPServer!] @hasInverse(field: runtime)
+  skills: [Skill!] @hasInverse(field: runtime)
   agents: [Agent!] @hasInverse(field: runtime)
   workspace: Workspace @hasInverse(field: runtimes)
   system: System @hasInverse(field: runtimes)

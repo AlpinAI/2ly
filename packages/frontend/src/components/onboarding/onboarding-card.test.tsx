@@ -79,9 +79,9 @@ describe('OnboardingCard', () => {
       skills: [],
       agents: [],
     },
-    agents: [],
     system: null,
     toolResponses: [],
+    skills: [],
   };
 
   const mockSkill = {
@@ -108,7 +108,13 @@ describe('OnboardingCard', () => {
         skills: [],
       },
     ],
-    agentTools: [],
+    mode: null,
+    model: null,
+    temperature: null,
+    maxTokens: null,
+    systemPrompt: null,
+    executionTarget: null,
+    runtime: null,
     workspace: {
       __typename: 'Workspace',
       id: 'workspace-1',
