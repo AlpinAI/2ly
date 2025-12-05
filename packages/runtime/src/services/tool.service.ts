@@ -14,7 +14,7 @@ import {
 } from '@2ly/common';
 import { AuthService } from './auth.service';
 import { HealthService } from './runtime.health.service';
-import { ToolServerService, type ToolServerServiceFactory } from './tool.server.service';
+import { ToolServerService, type ToolServerServiceFactory } from './tool.mcp.server.service';
 import { CallToolResult } from '@modelcontextprotocol/sdk/types.js';
 import { McpStdioService } from './mcp.stdio.service';
 import { Subscription } from 'rxjs';

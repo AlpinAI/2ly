@@ -17,7 +17,7 @@ import {
   AuthService,
 } from '../services/auth.service';
 import { HealthService, HEARTBEAT_INTERVAL } from '../services/runtime.health.service';
-import { ToolServerService, type ToolServerServiceFactory } from '../services/tool.server.service';
+import { ToolServerService, type ToolServerServiceFactory } from '../services/tool.mcp.server.service';
 import { ToolService } from '../services/tool.service';
 import { McpStdioService } from '../services/mcp.stdio.service';
 import { McpSseService } from '../services/mcp.sse.service';

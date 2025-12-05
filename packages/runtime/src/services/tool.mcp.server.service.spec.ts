@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { ToolServerService } from './tool.server.service';
+import { ToolServerService } from './tool.mcp.server.service';
 import { dgraphResolversTypes } from '@2ly/common';
 import pino from 'pino';
 
