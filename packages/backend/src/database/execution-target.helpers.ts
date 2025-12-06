@@ -5,7 +5,7 @@ import { RuntimeRepository } from '../repositories';
 /**
  * Interface for repositories that support execution target management.
  */
-export interface ExecutionTargetRepository<T> {
+interface ExecutionTargetRepository<T> {
   updateExecutionTarget(id: string, executionTarget: EXECUTION_TARGET): Promise<T>;
   linkRuntime(id: string, runtimeId: string): Promise<T>;
   unlinkRuntime(id: string): Promise<T>;
