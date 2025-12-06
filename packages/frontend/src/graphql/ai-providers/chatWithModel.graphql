@@ -1,3 +1,3 @@
-mutation ChatWithModel($workspaceId: ID!, $model: String!, $message: String!) {
-  chatWithModel(workspaceId: $workspaceId, model: $model, message: $message)
+mutation ChatWithModel($workspaceId: ID!, $model: String!, $message: String!, $systemPrompt: String) {
+  chatWithModel(workspaceId: $workspaceId, model: $model, message: $message, systemPrompt: $systemPrompt)
 }

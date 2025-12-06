@@ -16,14 +16,14 @@
  */
 
 import { useMemo, useEffect } from 'react';
-import { Plus } from 'lucide-react';
+import { Plus, Sparkles } from 'lucide-react';
 import { useParams } from 'react-router-dom';
 import { MasterDetailLayout } from '@/components/layout/master-detail-layout';
 import { SkillTable } from '@/components/skills/skill-table';
 import { SkillDetail } from '@/components/skills/skill-detail';
 import { Button } from '@/components/ui/button';
 import { useSkills } from '@/hooks/useSkills';
-import { useCreateSkillDialog, useManageToolsDialog } from '@/stores/uiStore';
+import { useCreateSkillDialog, useManageToolsDialog, useAISkillBuilderDialog } from '@/stores/uiStore';
 import { useUrlSync } from '@/hooks/useUrlSync';
 
 export default function SkillsPage() {
@@ -62,11 +62,19 @@ export default function SkillsPage() {
   }
 
   const manageToolsDialog = useManageToolsDialog();
+  const { openDialog: openAIDialog } = useAISkillBuilderDialog();
+
   const handleCreateSkill = () => {
     openDialog((skillId) => {
       setSelectedId(skillId);
       manageToolsDialog.setSelectedSkillId(skillId);
       manageToolsDialog.setOpen(true);
+    });
+  };
+
+  const handleCreateWithAI = () => {
+    openAIDialog((skillId) => {
+      setSelectedId(skillId);
     });
   };
 
@@ -80,10 +88,16 @@ export default function SkillsPage() {
             Manage your skills and organize your tools
           </p>
         </div>
-        <Button onClick={handleCreateSkill} className="flex items-center gap-2">
-          <Plus className="h-4 w-4" />
-          New Skill
-        </Button>
+        <div className="flex gap-2">
+          <Button onClick={handleCreateWithAI} variant="secondary" className="flex items-center gap-2">
+            <Sparkles className="h-4 w-4" />
+            Create with AI
+          </Button>
+          <Button onClick={handleCreateSkill} className="flex items-center gap-2">
+            <Plus className="h-4 w-4" />
+            New Skill
+          </Button>
+        </div>
       </div>
 
       {/* Master-Detail Layout */}

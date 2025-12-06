@@ -89,11 +89,11 @@ export function createAIProviderResolvers(container: Container) {
 
       chatWithModel: async (
         _: unknown,
-        { workspaceId, model, message }: { workspaceId: string; model: string; message: string },
+        { workspaceId, model, message, systemPrompt }: { workspaceId: string; model: string; message: string; systemPrompt?: string | null },
         context: GraphQLContext
       ) => {
         await requireAuthAndWorkspaceAccess(workspaceRepository, context, workspaceId);
-        return aiProviderService.chat(workspaceId, model, message);
+        return aiProviderService.chat(workspaceId, model, message, systemPrompt ?? undefined);
       },
     },
   };

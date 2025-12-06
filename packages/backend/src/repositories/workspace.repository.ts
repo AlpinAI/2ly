@@ -172,6 +172,14 @@ export class WorkspaceRepository {
     return res.updateWorkspace.workspace[0];
   }
 
+  async updatePrompts(id: string, customPrompts: string): Promise<apolloResolversTypes.Workspace> {
+    const { UPDATE_WORKSPACE_PROMPTS } = await import('./workspace.operations');
+    const res = await this.dgraphService.mutation<{
+      updateWorkspace: { workspace: apolloResolversTypes.Workspace[] };
+    }>(UPDATE_WORKSPACE_PROMPTS, { id, customPrompts });
+    return res.updateWorkspace.workspace[0];
+  }
+
   observeRuntimes(workspaceId: string): Observable<apolloResolversTypes.Runtime[]> {
     const query = createSubscriptionFromQuery(QUERY_WORKSPACE_WITH_RUNTIMES);
     return this.dgraphService

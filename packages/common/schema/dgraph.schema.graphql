@@ -48,6 +48,7 @@ type Workspace @withSubscription {
   onboardingSteps: [OnboardingStep!]
   aiProviders: [AIProviderConfig!] @hasInverse(field: workspace)
   defaultAIModel: String
+  customPrompts: String
 }
 
 type MCPRegistryServer @withSubscription {

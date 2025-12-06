@@ -1,8 +1,10 @@
 # Get Default AI Model Query
-# WHY: Fetch the workspace's current default AI model setting
+# WHY: Fetch the workspace's current default AI model setting and custom prompts
 query GetDefaultAIModel($workspaceId: ID!) {
   workspace(workspaceId: $workspaceId) {
     id
+    name
     defaultAIModel
+    customPrompts
   }
 }

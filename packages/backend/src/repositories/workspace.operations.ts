@@ -83,6 +83,7 @@ export const QUERY_WORKSPACE_WITH_RUNTIMES = gql`
       id
       name
       defaultAIModel
+      customPrompts
       runtimes {
         id
         name
@@ -186,6 +187,19 @@ export const UPDATE_WORKSPACE = gql`
       workspace {
         id
         name
+        createdAt
+      }
+    }
+  }
+`;
+
+export const UPDATE_WORKSPACE_PROMPTS = gql`
+  mutation updateWorkspacePrompts($id: ID!, $customPrompts: String!) {
+    updateWorkspace(input: { filter: { id: [$id] }, set: { customPrompts: $customPrompts } }) {
+      workspace {
+        id
+        name
+        customPrompts
         createdAt
       }
     }

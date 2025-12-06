@@ -229,6 +229,7 @@ export type Workspace = {
   admins?: Maybe<Array<User>>;
   aiProviders?: Maybe<Array<AiProviderConfig>>;
   createdAt: Scalars['DateTime']['output'];
+  customPrompts?: Maybe<Scalars['String']['output']>;
   defaultAIModel?: Maybe<Scalars['String']['output']>;
   id: Scalars['ID']['output'];
   mcpServers?: Maybe<Array<McpServer>>;
@@ -547,6 +548,7 @@ export type WorkspaceResolvers<ContextType = any, ParentType extends ResolversPa
   admins?: Resolver<Maybe<Array<ResolversTypes['User']>>, ParentType, ContextType>;
   aiProviders?: Resolver<Maybe<Array<ResolversTypes['AIProviderConfig']>>, ParentType, ContextType>;
   createdAt?: Resolver<ResolversTypes['DateTime'], ParentType, ContextType>;
+  customPrompts?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   defaultAIModel?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
   mcpServers?: Resolver<Maybe<Array<ResolversTypes['MCPServer']>>, ParentType, ContextType>;

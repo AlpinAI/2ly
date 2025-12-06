@@ -76,6 +76,7 @@ describe('OnboardingCard', () => {
       runtimes: [],
       aiProviders: [],
       defaultAIModel: null,
+      customPrompts: null,
       skills: [],
     },
     system: null,
