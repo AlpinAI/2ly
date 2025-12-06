@@ -30,7 +30,7 @@ import { useMCPRegistries } from '@/hooks/useMCPRegistries';
 type MCPRegistryServer = GetRegistryServersQuery['getRegistryServers'][number];
 
 type WorkflowStep = 'selection' | 'mcp-browser' | 'mcp-config';
-type SourceCategory = 'mcp';
+type SourceCategory = 'mcp' | 'api';
 
 interface CategoryOption {
   id: SourceCategory;
@@ -51,6 +51,18 @@ const SOURCE_CATEGORIES: CategoryOption[] = [
     description: 'Plug a Model Context Protocol (MCP) server to give your agent superpowers.',
     icon: 'https://avatars.githubusercontent.com/u/182288589',
     features: ['Browse the official MCP registry', 'Or configure a server manually', 'Fast setup, secure by design'],
+  },
+  {
+    id: 'api',
+    title: 'Connect to an API',
+    description: 'Turn any REST API into a tool your agent can call with confidence.',
+    icon: '🌐',
+    features: [
+      'Quickly import a Swagger/OpenAPI file',
+      'Auto-generate endpoints and parameters',
+      'Auth helpers and validation',
+    ],
+    comingSoon: true,
   },
 ];
 
@@ -91,8 +103,10 @@ export function AddSourceWorkflow() {
     if (isOpen) {
       // Set initial step and category based on initialStep from store
       if (initialStep) {
-        setCurrentStep(initialStep as WorkflowStep);
-        if (initialStep === 'mcp-browser' || initialStep === 'mcp-config') {
+        setCurrentStep(initialStep);
+        if (initialStep === 'mcp-browser') {
+          setSelectedCategory('mcp');
+        } else if (initialStep === 'mcp-config') {
           setSelectedCategory('mcp');
         }
       } else {
@@ -121,9 +135,7 @@ export function AddSourceWorkflow() {
 
   const handleCategorySelect = (category: SourceCategory) => {
     setSelectedCategory(category);
-    if (category === 'mcp') {
-      setCurrentStep('mcp-browser');
-    }
+    setCurrentStep('mcp-browser');
   };
 
   const handleBack = () => {
@@ -144,7 +156,7 @@ export function AddSourceWorkflow() {
   const getStepTitle = (): string => {
     if (currentStep === 'selection') return 'Add Sources';
     if (currentStep === 'mcp-browser') return 'Browse Private Registry';
-    if (currentStep === 'mcp-config') return 'Configure MCP Server';
+    if (currentStep === 'mcp-config') return `Configure MCP Server`;
     return 'Add Sources';
   };
 
@@ -197,7 +209,7 @@ export function AddSourceWorkflow() {
                 </p>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {SOURCE_CATEGORIES.map((option) => (
                   <div
                     key={option.id}
@@ -242,7 +254,7 @@ export function AddSourceWorkflow() {
                       <ul className="text-xs text-gray-500 dark:text-gray-500 space-y-1 text-left">
                         {option.features.map((feature, idx) => (
                           <li key={idx} className="flex items-start">
-                            <span className="mr-2">-</span>
+                            <span className="mr-2">•</span>
                             <span>{feature}</span>
                           </li>
                         ))}
@@ -259,7 +271,7 @@ export function AddSourceWorkflow() {
             <MCPServerBrowser onConfigure={handleServerConfigure} />
           </div>
 
-          {/* Step 3: MCP Configuration */}
+          {/* Step 3: Configuration */}
           <div className="flex-shrink-0 w-full overflow-y-auto">
             {selectedServer ? (
               <MCPServerConfigure selectedServer={selectedServer} onBack={handleBack} onSuccess={handleClose} />

@@ -1,7 +1,7 @@
 /**
  * SkillManagementPanel Component
  *
- * WHY: Full-screen bottom panel for managing which tools belong to a skill.
+ * WHY: Full-screen bottom panel for managing which tools belong to a skill (runtime).
  * Provides search, filtering, and selection interface for linking/unlinking tools.
  *
  * FEATURES:
@@ -55,18 +55,17 @@ export function SkillManagementPanel() {
   const { servers } = useMCPServers();
   const { filteredTools, loading: toolsLoading } = useMCPTools();
 
-  // Local state for MCP tools
+  // Local state
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedServerIds, setSelectedServerIds] = useState<string[]>([]);
   const [showSelectedOnly, setShowSelectedOnly] = useState(false);
   const [selectedToolIds, setSelectedToolIds] = useState<Set<string>>(new Set());
   const [baselineToolIds, setBaselineToolIds] = useState<Set<string>>(new Set());
-
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [confirmRemoveToolId, setConfirmRemoveToolId] = useState<string | null>(null);
 
-  // Mutations for MCP tools
+  // Mutations
   const [addTool] = useMutation(AddMcpToolToSkillDocument);
   const [removeTool] = useMutation(RemoveMcpToolFromSkillDocument);
 
@@ -237,10 +236,10 @@ export function SkillManagementPanel() {
     setSaveError(null);
 
     try {
-      // Handle MCP tool changes
       const toolsToAdd = Array.from(selectedToolIds).filter((id) => !baselineToolIds.has(id));
       const toolsToRemove = Array.from(baselineToolIds).filter((id) => !selectedToolIds.has(id));
 
+      // Add new tools
       for (const toolId of toolsToAdd) {
         await addTool({
           variables: {
@@ -250,6 +249,7 @@ export function SkillManagementPanel() {
         });
       }
 
+      // Remove tools
       for (const toolId of toolsToRemove) {
         await removeTool({
           variables: {
@@ -262,7 +262,7 @@ export function SkillManagementPanel() {
       setBaselineToolIds(new Set(selectedToolIds));
       setOpen(false);
     } catch (error) {
-      console.error('Error saving changes:', error);
+      console.error('Error saving tool changes:', error);
       setSaveError(error instanceof Error ? error.message : 'Failed to save changes');
     } finally {
       setIsSaving(false);
@@ -275,10 +275,8 @@ export function SkillManagementPanel() {
   }, [baselineToolIds, handleClose]);
 
   const hasChanges = useMemo(() => {
-    // Check tool changes
     if (selectedToolIds.size !== baselineToolIds.size) return true;
-    if (!Array.from(selectedToolIds).every((id) => baselineToolIds.has(id))) return true;
-    return false;
+    return !Array.from(selectedToolIds).every((id) => baselineToolIds.has(id));
   }, [selectedToolIds, baselineToolIds]);
 
   const availableServers = useMemo(() => {
@@ -352,7 +350,7 @@ export function SkillManagementPanel() {
             </div>
           </div>
 
-          {/* Tools List */}
+          {/* Tools List - grows to fill space */}
           <div className="flex-1 overflow-auto p-4">
             <SkillSelectionTable
               servers={groupedServers}
@@ -389,39 +387,36 @@ export function SkillManagementPanel() {
           </div>
 
           <div className="flex-1 p-4 overflow-auto">
-            <div className="space-y-6">
-              {/* Selected Tools */}
-              <div className="space-y-3">
-                <h4 className="text-sm font-medium text-gray-900 dark:text-white">Selected Tools</h4>
-                {selectedToolIds.size === 0 ? (
-                  <p className="text-sm text-gray-500 dark:text-gray-400">No tools selected</p>
-                ) : (
-                  <div className="space-y-2">
-                    {Array.from(selectedToolIds).map((toolId) => {
-                      const tool = filteredTools.find((t) => t.id === toolId);
-                      if (!tool) return null;
-                      return (
-                        <div
-                          key={toolId}
-                          className="group flex items-center gap-2 p-2 bg-gray-50 dark:bg-gray-800 rounded text-sm transition-colors hover:bg-gray-100 dark:hover:bg-gray-700"
+            <div className="space-y-3">
+              <h4 className="text-sm font-medium text-gray-900 dark:text-white">Selected Tools</h4>
+              {selectedToolIds.size === 0 ? (
+                <p className="text-sm text-gray-500 dark:text-gray-400">No tools selected</p>
+              ) : (
+                <div className="space-y-2">
+                  {Array.from(selectedToolIds).map((toolId) => {
+                    const tool = filteredTools.find((t) => t.id === toolId);
+                    if (!tool) return null;
+                    return (
+                      <div
+                        key={toolId}
+                        className="group flex items-center gap-2 p-2 bg-gray-50 dark:bg-gray-800 rounded text-sm transition-colors hover:bg-gray-100 dark:hover:bg-gray-700"
+                      >
+                        <CheckCircle className="h-3 w-3 text-green-600 dark:text-green-400 flex-shrink-0" />
+                        <span className="text-gray-900 dark:text-white truncate flex-1">{tool.name}</span>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleRemoveToolClick(toolId)}
+                          className="h-5 w-5 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-gray-200 dark:hover:bg-gray-600"
+                          aria-label={`Remove ${tool.name}`}
                         >
-                          <CheckCircle className="h-3 w-3 text-green-600 dark:text-green-400 flex-shrink-0" />
-                          <span className="text-gray-900 dark:text-white truncate flex-1">{tool.name}</span>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => handleRemoveToolClick(toolId)}
-                            className="h-5 w-5 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-gray-200 dark:hover:bg-gray-600"
-                            aria-label={`Remove ${tool.name}`}
-                          >
-                            <X className="h-3 w-3" />
-                          </Button>
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
+                          <X className="h-3 w-3" />
+                        </Button>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             </div>
           </div>
         </div>

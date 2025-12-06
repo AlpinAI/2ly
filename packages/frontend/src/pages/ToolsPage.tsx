@@ -12,9 +12,9 @@
  * - Real-time tool updates (subscription)
  * - Search by name/description
  * - Filter by server(s), skill(s)
- * - Click item to view details and test
+ * - Click tool to view details and test
  * - Execute tools with input parameters
- * - "Add Tools" button (opens AddSourceWorkflow)
+ * - "Add Tools" button (opens AddToolWorkflow)
  */
 
 import { useMemo, useEffect } from 'react';
@@ -24,7 +24,7 @@ import { Button } from '@/components/ui/button';
 import { MasterDetailLayout } from '@/components/layout/master-detail-layout';
 import { ToolTable } from '@/components/tools/tool-table';
 import { ToolDetail } from '@/components/tools/tool-detail';
-import { useToolItems } from '@/hooks/useToolItems';
+import { useMCPTools } from '@/hooks/useMCPTools';
 import { useMCPServers } from '@/hooks/useMCPServers';
 import { useSkills } from '@/hooks/useSkills';
 import { useUIStore } from '@/stores/uiStore';
@@ -35,23 +35,24 @@ export default function ToolsPage() {
   const { selectedId, setSelectedId } = useUrlSync();
   const setAddSourceWorkflowOpen = useUIStore((state) => state.setAddSourceWorkflowOpen);
 
-  // Fetch tool items, servers, and skills
-  const { filteredItems, loading, error, filters } = useToolItems();
+  // Fetch tools, servers, and skills
+  const { filteredTools, loading, error, filters } = useMCPTools();
   const { servers } = useMCPServers();
   const { skills } = useSkills(workspaceId || '');
 
-  // Get selected item from URL
-  const selectedItem = useMemo(() => {
+  // Get selected tool from URL
+  const selectedTool = useMemo(() => {
     if (!selectedId) return null;
-    return filteredItems.find((item) => item?.id === selectedId) || null;
-  }, [selectedId, filteredItems]);
+    return filteredTools.find((t) => t?.id === selectedId) || null;
+  }, [selectedId, filteredTools]);
 
-  // Auto-clear selection if item not found (might have been deleted or invalid ID)
+  // Auto-open detail panel if ID in URL and tool exists
   useEffect(() => {
-    if (selectedId && !selectedItem && !loading) {
+    if (selectedId && !selectedTool && !loading) {
+      // Tool not found - might have been deleted or invalid ID
       setSelectedId(null);
     }
-  }, [selectedId, selectedItem, loading, setSelectedId]);
+  }, [selectedId, selectedTool, loading, setSelectedId]);
 
   // Available servers and skills for filters
   const availableServers = useMemo(() => {
@@ -97,9 +98,9 @@ export default function ToolsPage() {
       <MasterDetailLayout
         table={
           <ToolTable
-            items={filteredItems}
-            selectedItemId={selectedId}
-            onSelectItem={setSelectedId}
+            tools={filteredTools}
+            selectedToolId={selectedId}
+            onSelectTool={setSelectedId}
             search={filters.search}
             onSearchChange={filters.setSearch}
             serverFilter={filters.serverIds}
@@ -111,7 +112,7 @@ export default function ToolsPage() {
             loading={loading}
           />
         }
-        detail={selectedItem ? <ToolDetail item={selectedItem} /> : null}
+        detail={selectedTool ? <ToolDetail tool={selectedTool} /> : null}
         onCloseDetail={() => setSelectedId(null)}
       />
     </div>

@@ -46,8 +46,8 @@ interface UIState {
   setDeployModalOpen: (open: boolean) => void;
   addSourceWorkflowOpen: boolean;
   setAddSourceWorkflowOpen: (open: boolean) => void;
-  addSourceWorkflowInitialStep: 'selection' | 'mcp-browser' | 'mcp-config' | 'agent-config' | null;
-  setAddSourceWorkflowInitialStep: (step: 'selection' | 'mcp-browser' | 'mcp-config' | 'agent-config' | null) => void;
+  addSourceWorkflowInitialStep: 'selection' | 'mcp-browser' | 'mcp-config' | null;
+  setAddSourceWorkflowInitialStep: (step: 'selection' | 'mcp-browser' | 'mcp-config' | null) => void;
   addSourceWorkflowServerId: string | null;
   setAddSourceWorkflowServerId: (serverId: string | null) => void;
   addServerWorkflowOpen: boolean;
