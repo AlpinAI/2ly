@@ -29,11 +29,9 @@ export interface ValidationResult {
 
 /**
  * Default prompt template for skill generation
+ * Note: {{intent}} is passed separately as the user message, not part of system prompt
  */
-export const DEFAULT_SKILL_GENERATION_PROMPT = `The user wants to build a skill with this intent:
-"{{intent}}"
-
-Available tools in the workspace:
+export const DEFAULT_SKILL_GENERATION_PROMPT = `Available tools in the workspace:
 {{tools}}
 
 Generate a skill configuration with:
@@ -100,10 +98,7 @@ export function validatePromptTemplate(template: string): ValidationResult {
   }
 
   // Check for required variables
-  if (!template.includes('{{intent}}')) {
-    errors.push('Template must contain {{intent}} variable');
-  }
-
+  // Note: {{intent}} is optional as it goes in the user message, not system prompt
   if (!template.includes('{{tools}}')) {
     errors.push('Template must contain {{tools}} variable');
   }

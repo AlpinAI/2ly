@@ -642,4 +642,188 @@ test.describe('AI Skill Builder', () => {
       await expect(detailPanel.getByText('GitHub Power Tools')).toBeVisible();
     });
   });
+
+  test.describe('Custom Prompt Templates', () => {
+    test('should use custom prompt template when configured in Settings', async ({
+      page,
+      workspaceId,
+      graphql,
+    }) => {
+      await performLogin(page, 'user1@2ly.ai', 'testpassword123');
+
+      // Step 1: Configure custom prompt template in Settings
+      await page.goto(`/w/${workspaceId}/settings`);
+      await page.waitForLoadState('networkidle');
+
+      // Navigate to Prompt Settings section
+      const promptsTab = page.getByRole('button', { name: /Prompts/i });
+      if (await promptsTab.isVisible()) {
+        await promptsTab.click();
+      }
+
+      // Define custom prompt template
+      const customTemplate = `You are an expert skill configuration assistant.
+
+Available tools in the workspace:
+{{tools}}
+
+Based on the user's intent, create a skill configuration following these rules:
+- Name should be creative and descriptive (3-100 characters)
+- Scope should explain the skill's purpose (max 300 characters)
+- Guardrails should list safety considerations (max 10000 characters)
+- Knowledge should include best practices (max 10000 characters)
+- Only suggest tools from the available list
+
+Return valid JSON with fields: name, scope, guardrails, knowledge, toolIds
+No markdown, just pure JSON.`;
+
+      // Find and fill the prompt template textarea
+      const templateTextarea = page.getByLabel(/Skill Generation Prompt/i);
+      await expect(templateTextarea).toBeVisible({ timeout: 10000 });
+      await templateTextarea.fill(customTemplate);
+
+      // Save the custom prompt
+      const saveButton = page.getByRole('button', { name: /Save Prompt/i });
+      await expect(saveButton).toBeEnabled();
+      await saveButton.click();
+
+      // Wait for success notification
+      await expect(page.getByText(/Prompt Saved/i)).toBeVisible({ timeout: 5000 });
+
+      // Step 2: Navigate to Skills page and open AI Skill Builder
+      await page.goto(`/w/${workspaceId}/skills`);
+      await page.waitForLoadState('networkidle');
+
+      const createWithAIButton = page.getByRole('button', { name: /Create with AI/i });
+      await expect(createWithAIButton).toBeVisible({ timeout: 5000 });
+      await createWithAIButton.click();
+
+      // Step 3: Fill in intent
+      const intentTextarea = page.getByLabel(/What skill do you want to build?/i);
+      await expect(intentTextarea).toBeVisible();
+      await intentTextarea.fill('Create a skill for managing Slack channels and messages');
+
+      // Step 4: Intercept GraphQL chatWithModel request to verify custom template
+      let chatRequest: any = null;
+      page.on('request', (request) => {
+        if (request.url().includes('/graphql') && request.postData()?.includes('chatWithModel')) {
+          try {
+            const postData = JSON.parse(request.postData() || '{}');
+            if (postData.query?.includes('chatWithModel')) {
+              chatRequest = postData;
+            }
+          } catch (e) {
+            // Ignore parse errors
+          }
+        }
+      });
+
+      // Step 5: Click Generate
+      const generateButton = page.getByRole('button', { name: /Generate with AI/i });
+      await generateButton.click();
+
+      // Step 6: Wait for AI generation to complete
+      await expect(page.getByLabel(/Name/i)).toBeVisible({ timeout: 15000 });
+
+      // Step 7: Verify custom template was used
+      expect(chatRequest).toBeTruthy();
+      expect(chatRequest.variables).toHaveProperty('systemPrompt');
+      expect(chatRequest.variables.systemPrompt).toContain(
+        'You are an expert skill configuration assistant'
+      );
+      expect(chatRequest.variables.systemPrompt).toContain('create a skill configuration');
+
+      // Verify it doesn't contain default template phrases
+      expect(chatRequest.variables.systemPrompt).not.toContain(
+        'Generate a skill configuration with:'
+      );
+
+      // Verify user message is separate
+      expect(chatRequest.variables).toHaveProperty('message');
+      expect(chatRequest.variables.message).toContain('Slack channels and messages');
+
+      // Step 8: Verify generated skill can be created (basic validation)
+      const nameInput = page.getByLabel(/Name/i);
+      await expect(nameInput).not.toHaveValue('');
+
+      // Cleanup: Close dialog
+      const cancelButton = page.getByRole('button', { name: /Cancel/i });
+      await cancelButton.click();
+    });
+
+    test('should fallback to default template when custom template is removed', async ({
+      page,
+      workspaceId,
+      graphql,
+    }) => {
+      await performLogin(page, 'user1@2ly.ai', 'testpassword123');
+
+      // Step 1: Ensure custom template is configured first
+      await page.goto(`/w/${workspaceId}/settings`);
+      await page.waitForLoadState('networkidle');
+
+      const promptsTab = page.getByRole('button', { name: /Prompts/i });
+      if (await promptsTab.isVisible()) {
+        await promptsTab.click();
+      }
+
+      // Reset to default template
+      const resetButton = page.getByRole('button', { name: /Reset to Default/i });
+      if (await resetButton.isVisible()) {
+        await resetButton.click();
+
+        // Save default template
+        const saveButton = page.getByRole('button', { name: /Save Prompt/i });
+        if (await saveButton.isEnabled()) {
+          await saveButton.click();
+          await expect(page.getByText(/Prompt Saved/i)).toBeVisible({ timeout: 5000 });
+        }
+      }
+
+      // Step 2: Navigate to Skills page and open AI Skill Builder
+      await page.goto(`/w/${workspaceId}/skills`);
+      await page.waitForLoadState('networkidle');
+
+      const createWithAIButton = page.getByRole('button', { name: /Create with AI/i });
+      await createWithAIButton.click();
+
+      // Step 3: Fill in intent
+      const intentTextarea = page.getByLabel(/What skill do you want to build?/i);
+      await intentTextarea.fill('Test skill for default template');
+
+      // Step 4: Intercept GraphQL request
+      let chatRequest: any = null;
+      page.on('request', (request) => {
+        if (request.url().includes('/graphql') && request.postData()?.includes('chatWithModel')) {
+          try {
+            const postData = JSON.parse(request.postData() || '{}');
+            if (postData.query?.includes('chatWithModel')) {
+              chatRequest = postData;
+            }
+          } catch (e) {
+            // Ignore
+          }
+        }
+      });
+
+      // Step 5: Click Generate
+      const generateButton = page.getByRole('button', { name: /Generate with AI/i });
+      await generateButton.click();
+
+      // Step 6: Wait for generation
+      await expect(page.getByLabel(/Name/i)).toBeVisible({ timeout: 15000 });
+
+      // Step 7: Verify default template was used
+      expect(chatRequest).toBeTruthy();
+      expect(chatRequest.variables).toHaveProperty('systemPrompt');
+      expect(chatRequest.variables.systemPrompt).toContain(
+        'Generate a skill configuration with:'
+      );
+      expect(chatRequest.variables.systemPrompt).toContain('Available tools in the workspace:');
+
+      // Cleanup
+      const cancelButton = page.getByRole('button', { name: /Cancel/i });
+      await cancelButton.click();
+    });
+  });
 });

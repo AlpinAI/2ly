@@ -159,18 +159,29 @@ export class AIProviderService {
   /**
    * Chat with a specific model (sync).
    * @param modelString - Format: "provider/model-name" (e.g., "openai/gpt-4o")
+   * @param systemPrompt - Optional system prompt for instruction/context
    */
-  async chat(workspaceId: string, modelString: string, message: string): Promise<string> {
+  async chat(workspaceId: string, modelString: string, message: string, systemPrompt?: string): Promise<string> {
     const { provider, modelName } = this.parseModelString(modelString);
     const config = await this.getDecryptedConfig(workspaceId, provider);
 
     const model = this.getProviderModel(provider, modelName, config);
     try {
+      const messages: Array<{ role: 'system' | 'user'; content: string }> = [];
+
+      // Add system prompt if provided
+      if (systemPrompt) {
+        messages.push({ role: 'system', content: systemPrompt });
+      }
+
+      // Add user message
+      messages.push({ role: 'user', content: message });
+
       const result = await generateText({
         model,
-        messages: [{ role: 'user', content: message }],
+        messages,
       });
-      return result.text;  
+      return result.text;
     } catch (error) {
       this.logger.error(`Failed to chat with model ${modelString}: ${error}`);
       throw error;

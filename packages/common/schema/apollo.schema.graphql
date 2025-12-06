@@ -343,6 +343,7 @@ type Mutation {
   updateSkill(id: ID!, name: String!, description: String!): Skill!
   deleteSkill(id: ID!): Skill!
   addMCPToolToSkill(mcpToolId: ID!, skillId: ID!): Skill!
+  addMCPToolsToSkill(mcpToolIds: [ID!]!, skillId: ID!): Skill!
   removeMCPToolFromSkill(mcpToolId: ID!, skillId: ID!): Skill!
   initSystem(adminPassword: String!, email: String!): System!
   updateWorkspace(id: ID!, name: String!): Workspace!
@@ -404,7 +405,7 @@ type Mutation {
   removeAIProvider(providerId: ID!): Boolean!
 
   # Chat with a specific model (format: "provider/model-name")
-  chatWithModel(workspaceId: ID!, model: String!, message: String!): String!
+  chatWithModel(workspaceId: ID!, model: String!, message: String!, systemPrompt: String): String!
 
   # Custom prompts management
   updateWorkspacePrompts(workspaceId: ID!, customPrompts: String!): Workspace!

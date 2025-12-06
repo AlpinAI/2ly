@@ -140,14 +140,14 @@ export const QUERY_SKILLS_BY_WORKSPACE = gql`
 export const ADD_MCP_TOOL_TO_SKILL = gql`
   mutation addMCPToolToSkill(
     $skillId: ID!
-    $mcpToolId: ID!
+    $mcpToolIds: [MCPToolRef!]!
     $updatedAt: DateTime!
   ) {
     updateSkill(
       input: {
         filter: { id: [$skillId] }
         set: {
-          mcpTools: [{ id: $mcpToolId }]
+          mcpTools: $mcpToolIds
           updatedAt: $updatedAt
         }
       }

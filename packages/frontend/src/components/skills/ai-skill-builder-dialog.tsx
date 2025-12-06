@@ -147,7 +147,8 @@ export function AISkillBuilderDialog() {
   );
 
   // Build AI prompt using custom or default template
-  const buildAIPrompt = (userIntent: string): string => {
+  // Returns { systemPrompt, userMessage } for proper role separation
+  const buildAIPrompt = (userIntent: string): { systemPrompt: string; userMessage: string } => {
     const toolsList =
       availableTools.length > 0
         ? availableTools.map((t: { id: string; name: string; description: string }) => `- ${t.id}: ${t.name} - ${t.description}`).join('\n')
@@ -158,13 +159,18 @@ export function AISkillBuilderDialog() {
 
     // Prepare variables for replacement
     const variables: PromptVariables = {
-      intent: userIntent,
+      intent: userIntent, // Not actually used in template anymore, but kept for compatibility
       tools: toolsList,
       workspace: aiModelData?.workspace?.name,
     };
 
-    // Replace variables in template
-    return replaceVariables(template, variables);
+    // Replace variables in template to create system prompt
+    const systemPrompt = replaceVariables(template, variables);
+
+    return {
+      systemPrompt,
+      userMessage: `I want to build a skill with this intent: "${userIntent}"`,
+    };
   };
 
   // Parse AI response
@@ -219,13 +225,14 @@ export function AISkillBuilderDialog() {
     setIsGenerating(true);
 
     try {
-      const prompt = buildAIPrompt(intent.trim());
+      const { systemPrompt, userMessage } = buildAIPrompt(intent.trim());
 
       const { data, error } = await chatWithModel({
         variables: {
           workspaceId: workspaceId || '',
           model: defaultAIModel,
-          message: prompt,
+          message: userMessage,
+          systemPrompt,
         },
       });
 
@@ -310,17 +317,17 @@ export function AISkillBuilderDialog() {
         throw new Error('Failed to create skill');
       }
 
-      // Add selected tools to skill
-      const toolPromises = Array.from(selectedToolIds).map((toolId) =>
-        addToolToSkill({
+      // Add selected tools to skill sequentially to avoid transaction conflicts
+      // Running mutations in parallel causes Dgraph transaction aborts because
+      // addMCPToolToSkill does read-modify-write (reads current tools, appends new one, writes all)
+      for (const toolId of Array.from(selectedToolIds)) {
+        await addToolToSkill({
           variables: {
             skillId,
             mcpToolId: toolId,
           },
-        })
-      );
-
-      await Promise.all(toolPromises);
+        });
+      }
 
       toast({
         title: 'Skill Created',

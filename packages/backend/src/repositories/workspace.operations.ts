@@ -83,6 +83,7 @@ export const QUERY_WORKSPACE_WITH_RUNTIMES = gql`
       id
       name
       defaultAIModel
+      customPrompts
       runtimes {
         id
         name

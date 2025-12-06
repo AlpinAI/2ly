@@ -149,12 +149,6 @@ export function PromptSettingsSection() {
             <ul className="text-sm text-blue-800 dark:text-blue-400 space-y-1">
               <li>
                 <code className="bg-blue-100 dark:bg-blue-900/40 px-1.5 py-0.5 rounded">
-                  {'{{intent}}'}
-                </code>{' '}
-                - User's natural language description of what they want to build (required)
-              </li>
-              <li>
-                <code className="bg-blue-100 dark:bg-blue-900/40 px-1.5 py-0.5 rounded">
                   {'{{tools}}'}
                 </code>{' '}
                 - List of available tools in the workspace (required)
@@ -166,6 +160,9 @@ export function PromptSettingsSection() {
                 - Workspace name (optional)
               </li>
             </ul>
+            <p className="text-sm text-blue-700 dark:text-blue-300 mt-2">
+              <strong>Note:</strong> The user's intent is automatically sent as a separate user message, not included in the system prompt template.
+            </p>
           </div>
 
           {/* Template Editor */}

@@ -117,12 +117,33 @@ export class SkillRepository {
     mcpToolId: string,
     skillId: string,
   ): Promise<dgraphResolversTypes.Skill> {
+    // First, get the current skill with its existing tools
+    const currentSkill = await this.findById(skillId);
+    if (!currentSkill) {
+      throw new Error(`Skill ${skillId} not found`);
+    }
+
+    // Get existing tool IDs
+    const existingToolIds = currentSkill.mcpTools?.map(tool => tool.id) || [];
+
+    // Check if tool is already added (avoid duplicates)
+    if (existingToolIds.includes(mcpToolId)) {
+      this.logger.info(`MCP tool ${mcpToolId} already exists in skill ${skillId}`);
+      return currentSkill;
+    }
+
+    // Add the new tool to the list
+    const allToolIds = [...existingToolIds, mcpToolId];
+
+    // Convert IDs to the format Dgraph expects: [{ id: "tool1" }, { id: "tool2" }]
+    const mcpToolRefs = allToolIds.map(id => ({ id }));
+
     const now = new Date().toISOString();
     const res = await this.dgraphService.mutation<{
       updateSkill: { skill: dgraphResolversTypes.Skill[] };
     }>(ADD_MCP_TOOL_TO_SKILL, {
       skillId,
-      mcpToolId,
+      mcpToolIds: mcpToolRefs,
       updatedAt: now,
     });
 

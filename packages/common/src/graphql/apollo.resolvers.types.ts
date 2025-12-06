@@ -234,6 +234,7 @@ export type MutationCallMcpToolArgs = {
 export type MutationChatWithModelArgs = {
   message: Scalars['String']['input'];
   model: Scalars['String']['input'];
+  systemPrompt?: InputMaybe<Scalars['String']['input']>;
   workspaceId: Scalars['ID']['input'];
 };
 

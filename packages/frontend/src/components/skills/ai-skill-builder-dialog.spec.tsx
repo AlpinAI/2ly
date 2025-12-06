@@ -97,6 +97,7 @@ interface RenderOptions {
     updatedAt: string;
   } | null;
   createSkillError?: Error | null;
+  customPrompts?: string | null;
 }
 
 const renderComponent = (options: RenderOptions = {}) => {
@@ -108,6 +109,7 @@ const renderComponent = (options: RenderOptions = {}) => {
     chatError = null,
     createSkillResponse = null,
     createSkillError = null,
+    customPrompts = null,
   } = options;
 
   // Mock the store hook
@@ -130,7 +132,9 @@ const renderComponent = (options: RenderOptions = {}) => {
         data: {
           workspace: {
             id: mockWorkspaceId,
+            name: 'Test Workspace',
             defaultAIModel: aiModel,
+            customPrompts,
           },
         },
         loading: false,
@@ -614,6 +618,222 @@ describe('AISkillBuilderDialog', () => {
       expect(
         screen.getByText(/No tools available in this workspace/i)
       ).toBeInTheDocument();
+    });
+  });
+
+  describe('Custom Prompt Templates', () => {
+    it('uses default prompt template when no custom prompts are configured', async () => {
+      const user = userEvent.setup();
+      const { mockChatWithModel } = renderComponent({
+        customPrompts: null,
+        chatResponse: mockAIResponse,
+      });
+
+      const textarea = screen.getByLabelText(/What skill do you want to build?/i);
+      await user.type(textarea, 'GitHub manager');
+
+      const generateButton = screen.getByRole('button', { name: /Generate with AI/i });
+      await user.click(generateButton);
+
+      await waitFor(() => {
+        expect(mockChatWithModel).toHaveBeenCalled();
+      });
+
+      // Verify systemPrompt parameter was passed
+      const callArgs = mockChatWithModel.mock.calls[0][0];
+      expect(callArgs.variables.systemPrompt).toBeDefined();
+      expect(callArgs.variables.systemPrompt).toContain('Generate a skill configuration with:');
+      expect(callArgs.variables.systemPrompt).toContain('Available tools in the workspace:');
+
+      // Verify user message is separate
+      expect(callArgs.variables.message).toBe('I want to build a skill with this intent: "GitHub manager"');
+    });
+
+    it('uses custom prompt template when configured in workspace settings', async () => {
+      const user = userEvent.setup();
+
+      const customTemplate = `You are a helpful assistant that creates skill configurations.
+
+{{tools}}
+
+Based on the user's request, generate a JSON response with these fields:
+- name: A short title (max 100 chars)
+- scope: What the skill does (max 300 chars)
+- guardrails: Safety constraints (max 10000 chars)
+- knowledge: Background info (max 10000 chars)
+- toolIds: Array of relevant tool IDs
+
+Return ONLY valid JSON, no explanations.`;
+
+      const customPromptsJson = JSON.stringify({
+        skillGeneration: customTemplate,
+      });
+
+      const { mockChatWithModel } = renderComponent({
+        customPrompts: customPromptsJson,
+        chatResponse: mockAIResponse,
+      });
+
+      const textarea = screen.getByLabelText(/What skill do you want to build?/i);
+      await user.type(textarea, 'GitHub manager');
+
+      const generateButton = screen.getByRole('button', { name: /Generate with AI/i });
+      await user.click(generateButton);
+
+      await waitFor(() => {
+        expect(mockChatWithModel).toHaveBeenCalled();
+      });
+
+      // Verify custom systemPrompt was used
+      const callArgs = mockChatWithModel.mock.calls[0][0];
+      expect(callArgs.variables.systemPrompt).toBeDefined();
+      expect(callArgs.variables.systemPrompt).toContain('You are a helpful assistant that creates skill configurations');
+      expect(callArgs.variables.systemPrompt).toContain('Based on the user\'s request, generate a JSON response');
+
+      // Verify default template phrases are NOT present
+      expect(callArgs.variables.systemPrompt).not.toContain('Generate a skill configuration with:');
+
+      // Verify user message is still separate and doesn't contain template
+      expect(callArgs.variables.message).toBe('I want to build a skill with this intent: "GitHub manager"');
+      expect(callArgs.variables.message).not.toContain('You are a helpful assistant');
+    });
+
+    it('passes systemPrompt and message as separate parameters to mutation', async () => {
+      const user = userEvent.setup();
+      const { mockChatWithModel } = renderComponent({
+        chatResponse: mockAIResponse,
+      });
+
+      const textarea = screen.getByLabelText(/What skill do you want to build?/i);
+      await user.type(textarea, 'Test intent');
+
+      const generateButton = screen.getByRole('button', { name: /Generate with AI/i });
+      await user.click(generateButton);
+
+      await waitFor(() => {
+        expect(mockChatWithModel).toHaveBeenCalled();
+      });
+
+      const callArgs = mockChatWithModel.mock.calls[0][0];
+
+      // Verify both parameters are present and separate
+      expect(callArgs.variables).toHaveProperty('systemPrompt');
+      expect(callArgs.variables).toHaveProperty('message');
+      expect(callArgs.variables.systemPrompt).not.toBe(callArgs.variables.message);
+
+      // Verify systemPrompt contains template instructions
+      expect(callArgs.variables.systemPrompt).toContain('Generate a skill configuration');
+
+      // Verify message contains only user intent
+      expect(callArgs.variables.message).toContain('Test intent');
+      expect(callArgs.variables.message).not.toContain('Generate a skill configuration');
+    });
+
+    it('replaces {{tools}} variable in custom template', async () => {
+      const user = userEvent.setup();
+
+      const customTemplate = `Tools available in workspace: {{tools}}
+
+Create a skill configuration based on the user's request. Include name, scope, guardrails, knowledge, and suggested tool IDs in JSON format.`;
+
+      const customPromptsJson = JSON.stringify({
+        skillGeneration: customTemplate,
+      });
+
+      const { mockChatWithModel } = renderComponent({
+        customPrompts: customPromptsJson,
+        chatResponse: mockAIResponse,
+      });
+
+      const textarea = screen.getByLabelText(/What skill do you want to build?/i);
+      await user.type(textarea, 'Test');
+
+      const generateButton = screen.getByRole('button', { name: /Generate with AI/i });
+      await user.click(generateButton);
+
+      await waitFor(() => {
+        expect(mockChatWithModel).toHaveBeenCalled();
+      });
+
+      const callArgs = mockChatWithModel.mock.calls[0][0];
+
+      // Verify {{tools}} was replaced with actual tools list
+      expect(callArgs.variables.systemPrompt).not.toContain('{{tools}}');
+      expect(callArgs.variables.systemPrompt).toContain('create_issue');
+      expect(callArgs.variables.systemPrompt).toContain('list_issues');
+    });
+
+    it('system prompt and user message are properly separated', async () => {
+      const user = userEvent.setup();
+
+      const customTemplate = `Available tools in workspace: {{tools}}
+
+You should generate a comprehensive skill configuration based on the user's requirements. Include all required fields.`;
+
+      const customPromptsJson = JSON.stringify({
+        skillGeneration: customTemplate,
+      });
+
+      const { mockChatWithModel } = renderComponent({
+        customPrompts: customPromptsJson,
+        chatResponse: mockAIResponse,
+      });
+
+      const textarea = screen.getByLabelText(/What skill do you want to build?/i);
+      await user.type(textarea, 'My test intent');
+
+      const generateButton = screen.getByRole('button', { name: /Generate with AI/i });
+      await user.click(generateButton);
+
+      await waitFor(() => {
+        expect(mockChatWithModel).toHaveBeenCalled();
+      });
+
+      const callArgs = mockChatWithModel.mock.calls[0][0];
+
+      // System prompt should contain template instructions
+      expect(callArgs.variables.systemPrompt).toContain('generate a comprehensive skill');
+      expect(callArgs.variables.systemPrompt).toContain('Available tools in workspace:');
+
+      // User message should only contain intent
+      expect(callArgs.variables.message).toContain('My test intent');
+      expect(callArgs.variables.message).not.toContain('generate a comprehensive skill');
+    });
+
+    it('falls back to default template if custom template is invalid', async () => {
+      const user = userEvent.setup();
+
+      // Invalid template: too short and missing required variables
+      const invalidTemplate = 'Generate skill';
+
+      const customPromptsJson = JSON.stringify({
+        skillGeneration: invalidTemplate,
+      });
+
+      const { mockChatWithModel } = renderComponent({
+        customPrompts: customPromptsJson,
+        chatResponse: mockAIResponse,
+      });
+
+      // Silence expected console warnings about invalid template
+      const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+      const textarea = screen.getByLabelText(/What skill do you want to build?/i);
+      await user.type(textarea, 'Test');
+
+      const generateButton = screen.getByRole('button', { name: /Generate with AI/i });
+      await user.click(generateButton);
+
+      await waitFor(() => {
+        expect(mockChatWithModel).toHaveBeenCalled();
+      });
+
+      const callArgs = mockChatWithModel.mock.calls[0][0];
+
+      // Should use default template instead
+      expect(callArgs.variables.systemPrompt).toContain('Generate a skill configuration with:');
+
+      warnSpy.mockRestore();
     });
   });
 });
