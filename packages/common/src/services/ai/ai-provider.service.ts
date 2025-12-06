@@ -17,16 +17,16 @@ import {
 } from './ai-provider.types';
 
 /**
- * AIProviderCoreService - Stateless core service for AI provider operations.
+ * AIProviderService - Stateless core service for AI provider operations.
  * Accepts configuration directly - no workspace awareness.
  * Can be used by both backend and runtime.
  */
 @injectable()
-export class AIProviderCoreService {
+export class AIProviderService {
   private readonly logger: pino.Logger;
 
   constructor(@inject(LoggerService) loggerService: LoggerService) {
-    this.logger = loggerService.getLogger('ai-provider-core');
+    this.logger = loggerService.getLogger('ai.provider');
   }
 
   /**

@@ -4,7 +4,7 @@ import {
   dgraphResolversTypes,
   LoggerService,
   EncryptionService,
-  AIProviderCoreService,
+  AIProviderService,
   type AIProviderType,
   type ProviderConfig,
   type AIProviderValidationResult,
@@ -36,7 +36,7 @@ export class AIProviderRepository {
     @inject(DGraphService) private readonly dgraphService: DGraphService,
     @inject(LoggerService) private readonly loggerService: LoggerService,
     @inject(EncryptionService) private readonly encryption: EncryptionService,
-    @inject(AIProviderCoreService) private readonly aiProviderCore: AIProviderCoreService
+    @inject(AIProviderService) private readonly aiProviderCore: AIProviderService
   ) {
     this.logger = this.loggerService.getLogger('ai.provider.repository');
   }

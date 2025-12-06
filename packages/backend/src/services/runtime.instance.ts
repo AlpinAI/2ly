@@ -7,7 +7,7 @@ import {
   RuntimeMCPServersPublish,
   RuntimeSmartSkillsPublish,
   RUNTIME_SUBJECT,
-  AIProviderCoreService,
+  AIProviderService,
   type RuntimeSmartSkill,
 } from '@2ly/common';
 import { RuntimeRepository } from '../repositories';
@@ -31,7 +31,7 @@ export class RuntimeInstance extends Service {
     private runtimeRepository: RuntimeRepository,
     private skillRepository: SkillRepository,
     private aiProviderRepository: AIProviderRepository,
-    private aiProviderCoreService: AIProviderCoreService,
+    private aiProviderService: AIProviderService,
     private instance: dgraphResolversTypes.Runtime,
     private metadata: ConnectionMetadata,
     private onReady: () => void,
@@ -183,7 +183,7 @@ export class RuntimeInstance extends Service {
                 this.logger.warn(`Smart skill ${skill.name} has no model configured, skipping`);
                 return null;
               }
-              const { provider } = this.aiProviderCoreService.parseModelString(skill.model);
+              const { provider } = this.aiProviderService.parseModelString(skill.model);
               const providerConfig = await this.aiProviderRepository.getDecryptedConfig(
                 skill.workspace.id,
                 provider,

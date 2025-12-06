@@ -2,7 +2,7 @@ import { injectable } from 'inversify';
 import pino from 'pino';
 import {
   Service,
-  AIProviderCoreService,
+  AIProviderService,
   AIProviderError,
   InvalidAPIKeyError,
   RateLimitError,
@@ -18,7 +18,7 @@ export class ToolSmartSkillService extends Service {
   constructor(
     private logger: pino.Logger,
     private config: RuntimeSmartSkill,
-    private aiProviderCoreService: AIProviderCoreService,
+    private aiProviderService: AIProviderService,
   ) {
     super();
     this.logger.info(`Initializing smart skill service for ${this.config.name}`);
@@ -47,10 +47,10 @@ export class ToolSmartSkillService extends Service {
 
     try {
       // Parse model string (format: "provider/model-name")
-      const { provider, modelName } = this.aiProviderCoreService.parseModelString(this.config.model);
+      const { provider, modelName } = this.aiProviderService.parseModelString(this.config.model);
 
       // Call the AI provider with the smart skill's configuration
-      const response = await this.aiProviderCoreService.chat(
+      const response = await this.aiProviderService.chat(
         this.config.providerConfig,
         provider,
         modelName,

@@ -13,7 +13,7 @@ import {
   EPHEMERAL_TTL,
   DEFAULT_EPHEMERAL_TTL,
   EncryptionService,
-  AIProviderCoreService,
+  AIProviderService,
 } from '@2ly/common';
 import { DGraphService, DGRAPH_URL } from '../services/dgraph.service';
 import { ApolloService } from '../services/apollo.service';
@@ -107,7 +107,7 @@ const start = () => {
 
   // Init AI provider core service (from @2ly/common)
   container.bind(EncryptionService).toSelf().inSingletonScope();
-  container.bind(AIProviderCoreService).toSelf().inSingletonScope();
+  container.bind(AIProviderService).toSelf().inSingletonScope();
 
   // Init security services
   container.bind(AccountSecurityService).toSelf().inSingletonScope();
@@ -141,7 +141,7 @@ const start = () => {
         context.get(RuntimeRepository),
         context.get(SkillRepository),
         context.get(AIProviderRepository),
-        context.get(AIProviderCoreService),
+        context.get(AIProviderService),
         instance,
         metadata,
         onReady,

@@ -1,4 +1,4 @@
-import { apolloResolversTypes, dgraphResolversTypes, AIProviderCoreService, type AIProviderType } from '@2ly/common';
+import { apolloResolversTypes, dgraphResolversTypes, AIProviderService, type AIProviderType } from '@2ly/common';
 import { Container } from 'inversify';
 import { GraphQLError } from 'graphql';
 import { AIProviderRepository, WorkspaceRepository } from '../repositories';
@@ -10,7 +10,7 @@ import { requireAuth, requireWorkspaceAccess, requireAuthAndWorkspaceAccess } fr
  */
 export function createAIProviderResolvers(container: Container) {
   const aiProviderRepository = container.get(AIProviderRepository);
-  const aiProviderCoreService = container.get(AIProviderCoreService);
+  const aiProviderService = container.get(AIProviderService);
   const workspaceRepository = container.get(WorkspaceRepository);
 
   return {
@@ -91,9 +91,9 @@ export function createAIProviderResolvers(container: Container) {
         context: GraphQLContext
       ) => {
         await requireAuthAndWorkspaceAccess(workspaceRepository, context, workspaceId);
-        const { provider, modelName } = aiProviderCoreService.parseModelString(model);
+        const { provider, modelName } = aiProviderService.parseModelString(model);
         const config = await aiProviderRepository.getDecryptedConfig(workspaceId, provider);
-        return aiProviderCoreService.chat(config, provider, modelName, message);
+        return aiProviderService.chat(config, provider, modelName, message);
       },
     },
   };

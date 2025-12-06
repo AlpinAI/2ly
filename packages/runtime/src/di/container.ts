@@ -12,7 +12,7 @@ import {
   DEFAULT_HEARTBAT_TTL,
   EPHEMERAL_TTL,
   DEFAULT_EPHEMERAL_TTL,
-  AIProviderCoreService,
+  AIProviderService,
   type RuntimeSmartSkill,
 } from '@2ly/common';
 import { MainService } from '../services/runtime.main.service';
@@ -189,15 +189,15 @@ const start = () => {
   });
 
   // Init AI provider service
-  container.bind(AIProviderCoreService).toSelf().inSingletonScope();
+  container.bind(AIProviderService).toSelf().inSingletonScope();
 
   // Init smart skill service factory
   container.bind<ToolSmartSkillServiceFactory>(ToolSmartSkillService).toFactory((context) => {
     return (config: RuntimeSmartSkill) => {
       const logger = context.get(LoggerService).getLogger(`tool.smart-skill.${config.name}`);
       logger.level = process.env.LOG_LEVEL_TOOL_SMART_SKILL || 'info';
-      const aiProviderCoreService = context.get(AIProviderCoreService);
-      return new ToolSmartSkillService(logger, config, aiProviderCoreService);
+      const aiProviderService = context.get(AIProviderService);
+      return new ToolSmartSkillService(logger, config, aiProviderService);
     };
   });
 };

@@ -1,9 +1,9 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { AIProviderCoreService } from './ai-provider.service';
+import { AIProviderService } from './ai-provider.service';
 import { LoggerService } from '../logger.service';
 
-describe('AIProviderCoreService', () => {
-  let service: AIProviderCoreService;
+describe('AIProviderService', () => {
+  let service: AIProviderService;
   let mockLoggerService: LoggerService;
 
   beforeEach(() => {
@@ -16,7 +16,7 @@ describe('AIProviderCoreService', () => {
       })),
     } as unknown as LoggerService;
 
-    service = new AIProviderCoreService(mockLoggerService);
+    service = new AIProviderService(mockLoggerService);
   });
 
   describe('parseModelString()', () => {

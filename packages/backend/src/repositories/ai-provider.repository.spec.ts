@@ -1,14 +1,14 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { AIProviderRepository, type AIProviderConfigData } from './ai-provider.repository';
 import { DGraphService } from '../services/dgraph.service';
-import { LoggerService, EncryptionService, AIProviderCoreService, dgraphResolversTypes } from '@2ly/common';
+import { LoggerService, EncryptionService, AIProviderService, dgraphResolversTypes } from '@2ly/common';
 
 describe('AIProviderRepository', () => {
   let repository: AIProviderRepository;
   let mockDGraphService: DGraphService;
   let mockLoggerService: LoggerService;
   let mockEncryptionService: EncryptionService;
-  let mockAIProviderCoreService: AIProviderCoreService;
+  let mockAIProviderService: AIProviderService;
 
   beforeEach(() => {
     // Mock DGraphService
@@ -34,20 +34,20 @@ describe('AIProviderRepository', () => {
       decrypt: vi.fn((val: string) => val.replace('encrypted_', '')),
     } as unknown as EncryptionService;
 
-    // Mock AIProviderCoreService
-    mockAIProviderCoreService = {
+    // Mock AIProviderService
+    mockAIProviderService = {
       listProviderModels: vi.fn(),
       chat: vi.fn(),
       stream: vi.fn(),
       getProviderModel: vi.fn(),
       parseModelString: vi.fn(),
-    } as unknown as AIProviderCoreService;
+    } as unknown as AIProviderService;
 
     repository = new AIProviderRepository(
       mockDGraphService,
       mockLoggerService,
       mockEncryptionService,
-      mockAIProviderCoreService
+      mockAIProviderService
     );
   });
 
