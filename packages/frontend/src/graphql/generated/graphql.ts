@@ -195,7 +195,6 @@ export type Mutation = {
   dismissOnboardingStep: Scalars['Boolean']['output'];
   initSystem: System;
   linkMCPServerToRuntime: McpServer;
-  linkSkillToRuntime: Skill;
   login: AuthPayload;
   loginUser: AuthPayload;
   logout: Scalars['Boolean']['output'];
@@ -209,7 +208,6 @@ export type Mutation = {
   setDefaultAIModel: Scalars['Boolean']['output'];
   setGlobalRuntime: Workspace;
   unlinkMCPServerFromRuntime: McpServer;
-  unlinkSkillFromRuntime: Skill;
   unsetGlobalRuntime: Workspace;
   updateMCPServer: McpServer;
   updateMCPServerExecutionTarget: McpServer;
@@ -338,12 +336,6 @@ export type MutationLinkMcpServerToRuntimeArgs = {
 };
 
 
-export type MutationLinkSkillToRuntimeArgs = {
-  runtimeId: Scalars['ID']['input'];
-  skillId: Scalars['ID']['input'];
-};
-
-
 export type MutationLoginArgs = {
   input: LoginInput;
 };
@@ -409,11 +401,6 @@ export type MutationSetGlobalRuntimeArgs = {
 
 export type MutationUnlinkMcpServerFromRuntimeArgs = {
   mcpServerId: Scalars['ID']['input'];
-};
-
-
-export type MutationUnlinkSkillFromRuntimeArgs = {
-  skillId: Scalars['ID']['input'];
 };
 
 

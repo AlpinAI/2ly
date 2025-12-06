@@ -183,7 +183,6 @@ export type Mutation = {
   dismissOnboardingStep: Scalars['Boolean']['output'];
   initSystem: System;
   linkMCPServerToRuntime: McpServer;
-  linkSkillToRuntime: Skill;
   login: AuthPayload;
   loginUser: AuthPayload;
   logout: Scalars['Boolean']['output'];
@@ -197,7 +196,6 @@ export type Mutation = {
   setDefaultAIModel: Scalars['Boolean']['output'];
   setGlobalRuntime: Workspace;
   unlinkMCPServerFromRuntime: McpServer;
-  unlinkSkillFromRuntime: Skill;
   unsetGlobalRuntime: Workspace;
   updateMCPServer: McpServer;
   updateMCPServerExecutionTarget: McpServer;
@@ -326,12 +324,6 @@ export type MutationLinkMcpServerToRuntimeArgs = {
 };
 
 
-export type MutationLinkSkillToRuntimeArgs = {
-  runtimeId: Scalars['ID']['input'];
-  skillId: Scalars['ID']['input'];
-};
-
-
 export type MutationLoginArgs = {
   input: LoginInput;
 };
@@ -397,11 +389,6 @@ export type MutationSetGlobalRuntimeArgs = {
 
 export type MutationUnlinkMcpServerFromRuntimeArgs = {
   mcpServerId: Scalars['ID']['input'];
-};
-
-
-export type MutationUnlinkSkillFromRuntimeArgs = {
-  skillId: Scalars['ID']['input'];
 };
 
 
@@ -1097,7 +1084,6 @@ export type MutationResolvers<ContextType = object, ParentType extends Resolvers
   dismissOnboardingStep?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType, RequireFields<MutationDismissOnboardingStepArgs, 'stepId' | 'workspaceId'>>;
   initSystem?: Resolver<ResolversTypes['System'], ParentType, ContextType, RequireFields<MutationInitSystemArgs, 'adminPassword' | 'email'>>;
   linkMCPServerToRuntime?: Resolver<ResolversTypes['MCPServer'], ParentType, ContextType, RequireFields<MutationLinkMcpServerToRuntimeArgs, 'mcpServerId' | 'runtimeId'>>;
-  linkSkillToRuntime?: Resolver<ResolversTypes['Skill'], ParentType, ContextType, RequireFields<MutationLinkSkillToRuntimeArgs, 'runtimeId' | 'skillId'>>;
   login?: Resolver<ResolversTypes['AuthPayload'], ParentType, ContextType, RequireFields<MutationLoginArgs, 'input'>>;
   loginUser?: Resolver<ResolversTypes['AuthPayload'], ParentType, ContextType, RequireFields<MutationLoginUserArgs, 'input'>>;
   logout?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType, RequireFields<MutationLogoutArgs, 'input'>>;
@@ -1111,7 +1097,6 @@ export type MutationResolvers<ContextType = object, ParentType extends Resolvers
   setDefaultAIModel?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType, RequireFields<MutationSetDefaultAiModelArgs, 'defaultModel' | 'workspaceId'>>;
   setGlobalRuntime?: Resolver<ResolversTypes['Workspace'], ParentType, ContextType, RequireFields<MutationSetGlobalRuntimeArgs, 'id' | 'runtimeId'>>;
   unlinkMCPServerFromRuntime?: Resolver<ResolversTypes['MCPServer'], ParentType, ContextType, RequireFields<MutationUnlinkMcpServerFromRuntimeArgs, 'mcpServerId'>>;
-  unlinkSkillFromRuntime?: Resolver<ResolversTypes['Skill'], ParentType, ContextType, RequireFields<MutationUnlinkSkillFromRuntimeArgs, 'skillId'>>;
   unsetGlobalRuntime?: Resolver<ResolversTypes['Workspace'], ParentType, ContextType, RequireFields<MutationUnsetGlobalRuntimeArgs, 'id'>>;
   updateMCPServer?: Resolver<ResolversTypes['MCPServer'], ParentType, ContextType, RequireFields<MutationUpdateMcpServerArgs, 'config' | 'description' | 'id' | 'name' | 'repositoryUrl' | 'transport'>>;
   updateMCPServerExecutionTarget?: Resolver<ResolversTypes['MCPServer'], ParentType, ContextType, RequireFields<MutationUpdateMcpServerExecutionTargetArgs, 'executionTarget' | 'mcpServerId'>>;

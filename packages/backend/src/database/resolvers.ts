@@ -653,35 +653,6 @@ export const resolvers = (container: Container = defaultContainer): apolloResolv
         return updatedSkill;
       },
 
-      linkSkillToRuntime: async (
-        _parent: unknown,
-        { skillId, runtimeId }: { skillId: string; runtimeId: string },
-        context: GraphQLContext,
-      ) => {
-        const userId = requireAuth(context);
-        const skill = await skillRepository.findById(skillId);
-        if (!skill?.workspace?.id) {
-          throw new GraphQLError('Skill not found', { extensions: { code: 'NOT_FOUND' } });
-        }
-        await validateRuntimeForWorkspace(runtimeRepository, runtimeId, skill.workspace.id, 'Skill');
-        await requireWorkspaceAccess(workspaceRepository, userId, skill.workspace.id);
-        return skillRepository.linkRuntime(skillId, runtimeId);
-      },
-
-      unlinkSkillFromRuntime: async (
-        _parent: unknown,
-        { skillId }: { skillId: string },
-        context: GraphQLContext,
-      ) => {
-        const userId = requireAuth(context);
-        const skill = await skillRepository.findById(skillId);
-        if (!skill?.workspace?.id) {
-          throw new GraphQLError('Skill not found', { extensions: { code: 'NOT_FOUND' } });
-        }
-        await requireWorkspaceAccess(workspaceRepository, userId, skill.workspace.id);
-        return skillRepository.unlinkRuntime(skillId);
-      },
-
       // AI Provider mutations
       ...aiProviderResolvers.Mutation,
     },

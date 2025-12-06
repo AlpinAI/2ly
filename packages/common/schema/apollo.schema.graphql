@@ -364,8 +364,6 @@ type Mutation {
   # Skill mode and smart configuration mutations
   updateSkillMode(id: ID!, mode: SkillMode!): Skill!
   updateSkillSmartConfig(input: UpdateSkillSmartConfigInput!): Skill!
-  linkSkillToRuntime(skillId: ID!, runtimeId: ID!): Skill!
-  unlinkSkillFromRuntime(skillId: ID!): Skill!
   initSystem(adminPassword: String!, email: String!): System!
   updateWorkspace(id: ID!, name: String!): Workspace!
   setGlobalRuntime(id: ID!, runtimeId: ID!): Workspace!
