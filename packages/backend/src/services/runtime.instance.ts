@@ -9,6 +9,8 @@ import {
   RUNTIME_SUBJECT,
   AIProviderService,
   type RuntimeSmartSkill,
+  DEFAULT_TEMPERATURE,
+  DEFAULT_MAX_TOKENS,
 } from '@2ly/common';
 import { RuntimeRepository } from '../repositories';
 import { SkillRepository } from '../repositories/skill.repository';
@@ -193,8 +195,8 @@ export class RuntimeInstance extends Service {
                 name: skill.name,
                 systemPrompt: skill.systemPrompt ?? '',
                 model: skill.model,
-                temperature: skill.temperature ?? 1.0,
-                maxTokens: skill.maxTokens ?? 4096,
+                temperature: skill.temperature ?? DEFAULT_TEMPERATURE,
+                maxTokens: skill.maxTokens ?? DEFAULT_MAX_TOKENS,
                 providerConfig,
                 executionTarget: skill.executionTarget ?? 'EDGE',
                 workspaceId: skill.workspace.id,

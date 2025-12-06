@@ -3,12 +3,18 @@ import { EXECUTION_TARGET } from '@2ly/common';
 import { RuntimeRepository } from '../repositories';
 
 /**
- * Interface for repositories that support execution target management.
+ * Minimal interface for repositories that support runtime linking.
  */
-interface ExecutionTargetRepository<T> {
-  updateExecutionTarget(id: string, executionTarget: EXECUTION_TARGET): Promise<T>;
+interface RuntimeLinkingRepository<T> {
   linkRuntime(id: string, runtimeId: string): Promise<T>;
   unlinkRuntime(id: string): Promise<T>;
+}
+
+/**
+ * Interface for repositories that support execution target management.
+ */
+interface ExecutionTargetRepository<T> extends RuntimeLinkingRepository<T> {
+  updateExecutionTarget(id: string, executionTarget: EXECUTION_TARGET): Promise<T>;
 }
 
 /**
@@ -37,6 +43,32 @@ export async function validateRuntimeForWorkspace(
 }
 
 /**
+ * Applies runtime linking/unlinking based on execution target.
+ * Use this when executionTarget has already been updated separately.
+ *
+ * Logic:
+ * - If executionTarget is not EDGE, unlink any existing runtime
+ * - If executionTarget is EDGE and runtimeId is provided, link to that runtime
+ * - If executionTarget is EDGE and no runtimeId, unlink any existing runtime
+ */
+export async function applyRuntimeLinking<T>(
+  repository: RuntimeLinkingRepository<T>,
+  id: string,
+  executionTarget: EXECUTION_TARGET,
+  runtimeId?: string | null,
+): Promise<T> {
+  if (executionTarget !== 'EDGE') {
+    return repository.unlinkRuntime(id);
+  }
+
+  if (runtimeId) {
+    return repository.linkRuntime(id, runtimeId);
+  }
+
+  return repository.unlinkRuntime(id);
+}
+
+/**
  * Updates the execution target for an entity and handles runtime linking/unlinking.
  *
  * Logic:
@@ -51,14 +83,5 @@ export async function updateExecutionTargetWithRuntime<T>(
   runtimeId?: string | null,
 ): Promise<T> {
   await repository.updateExecutionTarget(id, executionTarget);
-
-  if (executionTarget !== 'EDGE') {
-    return repository.unlinkRuntime(id);
-  }
-
-  if (runtimeId) {
-    return repository.linkRuntime(id, runtimeId);
-  }
-
-  return repository.unlinkRuntime(id);
+  return applyRuntimeLinking(repository, id, executionTarget, runtimeId);
 }

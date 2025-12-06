@@ -43,6 +43,7 @@ import {
   ExecutionTarget,
 } from '@/graphql/generated/graphql';
 import type { SubscribeSkillsSubscription } from '@/graphql/generated/graphql';
+import { DEFAULT_TEMPERATURE, DEFAULT_MAX_TOKENS } from '@2ly/common';
 
 type Skill = NonNullable<SubscribeSkillsSubscription['skills']>[number];
 
@@ -63,6 +64,9 @@ const MODE_INFO = {
       'This skill will orchestrate the tools and call them directly using a sub-agent. Configure the model, prompt, and execution settings below.',
   },
 };
+
+// Maximum tokens limit for smart mode configuration
+const MAX_TOKENS_LIMIT = 128000;
 
 export interface SkillDetailProps {
   skill: Skill;
@@ -94,8 +98,8 @@ export function SkillDetail({ skill }: SkillDetailProps) {
 
   // Smart mode configuration state (edited values)
   const [model, setModel] = useState<string | null>(skill.model);
-  const [temperature, setTemperature] = useState<number>(skill.temperature ?? 1);
-  const [maxTokens, setMaxTokens] = useState<number>(skill.maxTokens ?? 4096);
+  const [temperature, setTemperature] = useState<number>(skill.temperature ?? DEFAULT_TEMPERATURE);
+  const [maxTokens, setMaxTokens] = useState<number>(skill.maxTokens ?? DEFAULT_MAX_TOKENS);
   const [systemPrompt, setSystemPrompt] = useState<string>(skill.systemPrompt || '');
   const [executionTarget, setExecutionTarget] = useState<ExecutionTarget | null>(skill.executionTarget);
   const [runtimeId, setRuntimeId] = useState<string | null>(skill.runtime?.id || null);
@@ -114,8 +118,8 @@ export function SkillDetail({ skill }: SkillDetailProps) {
     setSkillDescription(skill.description || '');
     // Smart config resets
     setModel(skill.model);
-    setTemperature(skill.temperature ?? 1);
-    setMaxTokens(skill.maxTokens ?? 4096);
+    setTemperature(skill.temperature ?? DEFAULT_TEMPERATURE);
+    setMaxTokens(skill.maxTokens ?? DEFAULT_MAX_TOKENS);
     setSystemPrompt(skill.systemPrompt || '');
     setExecutionTarget(skill.executionTarget);
     setRuntimeId(skill.runtime?.id || null);
@@ -140,8 +144,8 @@ export function SkillDetail({ skill }: SkillDetailProps) {
   // Detect changes by comparing to original skill values
   useEffect(() => {
     const modelChanged = model !== skill.model;
-    const tempChanged = temperature !== (skill.temperature ?? 1);
-    const tokensChanged = maxTokens !== (skill.maxTokens ?? 4096);
+    const tempChanged = temperature !== (skill.temperature ?? DEFAULT_TEMPERATURE);
+    const tokensChanged = maxTokens !== (skill.maxTokens ?? DEFAULT_MAX_TOKENS);
     const promptChanged = systemPrompt !== (skill.systemPrompt || '');
     const targetChanged = executionTarget !== skill.executionTarget;
     const runtimeChanged = runtimeId !== (skill.runtime?.id || null);
@@ -300,8 +304,8 @@ export function SkillDetail({ skill }: SkillDetailProps) {
 
   const handleSmartConfigCancel = () => {
     setModel(skill.model);
-    setTemperature(skill.temperature ?? 1);
-    setMaxTokens(skill.maxTokens ?? 4096);
+    setTemperature(skill.temperature ?? DEFAULT_TEMPERATURE);
+    setMaxTokens(skill.maxTokens ?? DEFAULT_MAX_TOKENS);
     setSystemPrompt(skill.systemPrompt || '');
     setExecutionTarget(skill.executionTarget);
     setRuntimeId(skill.runtime?.id || null);
@@ -519,7 +523,7 @@ export function SkillDetail({ skill }: SkillDetailProps) {
                   <Input
                     type="number"
                     min={1}
-                    max={128000}
+                    max={MAX_TOKENS_LIMIT}
                     step={256}
                     value={maxTokens}
                     onChange={(e) => setMaxTokens(parseInt(e.target.value) || 4096)}
