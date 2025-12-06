@@ -30,7 +30,7 @@ describe('ToolTable', () => {
         name: 'Test Server 1',
         description: '',
         repositoryUrl: '',
-        runOn: null,
+        executionTarget: null,
       },
       skills: [
         {
@@ -57,7 +57,7 @@ describe('ToolTable', () => {
         name: 'Test Server 2',
         description: '',
         repositoryUrl: '',
-        runOn: null,
+        executionTarget: null,
       },
       skills: null,
     },

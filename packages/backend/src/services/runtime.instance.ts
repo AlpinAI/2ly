@@ -5,10 +5,15 @@ import {
   NatsService,
   Service,
   RuntimeMCPServersPublish,
+  RuntimeSmartSkillsPublish,
   RUNTIME_SUBJECT,
+  AIProviderService,
+  type RuntimeSmartSkill,
 } from '@2ly/common';
 import { RuntimeRepository } from '../repositories';
-import { BehaviorSubject, combineLatest, debounceTime, Subscription, tap } from 'rxjs';
+import { SkillRepository } from '../repositories/skill.repository';
+import { AIProviderRepository } from '../repositories/ai-provider.repository';
+import { BehaviorSubject, combineLatest, debounceTime, Subscription, tap, switchMap, from, of, catchError } from 'rxjs';
 import type { ConnectionMetadata } from '../types';
 
 export const CHECK_HEARTBEAT_INTERVAL = 'check.heartbeat.interval';
@@ -24,6 +29,9 @@ export class RuntimeInstance extends Service {
     private logger: pino.Logger,
     private natsService: NatsService,
     private runtimeRepository: RuntimeRepository,
+    private skillRepository: SkillRepository,
+    private aiProviderRepository: AIProviderRepository,
+    private aiProviderService: AIProviderService,
     private instance: dgraphResolversTypes.Runtime,
     private metadata: ConnectionMetadata,
     private onReady: () => void,
@@ -42,6 +50,7 @@ export class RuntimeInstance extends Service {
       this.observeHeartbeat();
       this.handleRuntimeMessages();
       this.observeMCPServers();
+      this.observeSmartSkills();
       this.onReady();
     } catch (error) {
       this.logger.error(`Error setting runtime active: ${error}`);
@@ -105,7 +114,7 @@ export class RuntimeInstance extends Service {
 
   /**
    * Observe the list of MCP servers that a runtime should run. This list is composed of:
-   * - MCP Servers running "on the edge" with a direct link to the runtime (Runtime - (mcpServers) -> MCP Server(filter runOn: EDGE))
+   * - MCP Servers running "on the edge" with a direct link to the runtime (Runtime - (mcpServers) -> MCP Server(filter executionTarget: EDGE))
    *
    * Publish an UpdateConfiguredMCPServerMessage in the nats KV ephemeral store
    * - the message will stay in the KV ephemeral long enough to be observed by the runtime
@@ -136,6 +145,84 @@ export class RuntimeInstance extends Service {
             mcpServers,
           }) as RuntimeMCPServersPublish;
           this.natsService.publishEphemeral(mcpServersMessage);
+        }),
+      )
+      .subscribe();
+
+    this.rxjsSubscriptions.push(subscription);
+  }
+
+  /**
+   * Observe the list of smart skills that a runtime should run.
+   * Smart skills are skills with mode='SMART' and executionTarget='EDGE'.
+   * For each smart skill, fetch decrypted AI provider credentials and publish to the runtime.
+   */
+  private async observeSmartSkills() {
+    if (!this.instance) {
+      throw new Error('Instance not initialized');
+    }
+    this.logger.info(`Observing Smart Skills for runtime ${this.instance.id}`);
+    const runtime = await this.runtimeRepository.getRuntime(this.instance.id);
+    const smartSkills = this.skillRepository.observeSmartSkillsOnRuntime(this.instance.id);
+
+    const subscription = smartSkills
+      .pipe(
+        debounceTime(100),
+        switchMap((skills) => {
+          if (!this.instance || skills.length === 0) {
+            return of([] as RuntimeSmartSkill[]);
+          }
+          // For each smart skill, fetch decrypted credentials
+          const skillPromises = skills.map(async (skill): Promise<RuntimeSmartSkill | null> => {
+            try {
+              if (!skill.workspace?.id) {
+                this.logger.warn(`Smart skill ${skill.name} has no workspace, skipping`);
+                return null;
+              }
+              if (!skill.model) {
+                this.logger.warn(`Smart skill ${skill.name} has no model configured, skipping`);
+                return null;
+              }
+              const { provider } = this.aiProviderService.parseModelString(skill.model);
+              const providerConfig = await this.aiProviderRepository.getDecryptedConfig(
+                skill.workspace.id,
+                provider,
+              );
+              return {
+                id: skill.id,
+                name: skill.name,
+                systemPrompt: skill.systemPrompt ?? '',
+                model: skill.model,
+                temperature: skill.temperature ?? 1.0,
+                maxTokens: skill.maxTokens ?? 4096,
+                providerConfig,
+                executionTarget: skill.executionTarget ?? 'EDGE',
+                workspaceId: skill.workspace.id,
+              };
+            } catch (error) {
+              this.logger.error(`Failed to get provider config for smart skill ${skill.name}: ${error}`);
+              return null;
+            }
+          });
+          return from(Promise.all(skillPromises));
+        }),
+        catchError((error) => {
+          this.logger.error(`Error in smart skill observation: ${error}`);
+          return of([] as (RuntimeSmartSkill | null)[]);
+        }),
+        tap((runtimeSmartSkills) => {
+          if (!this.instance) {
+            return;
+          }
+          // Filter out null skills (ones that failed to get credentials)
+          const validSkills = runtimeSmartSkills.filter((s): s is RuntimeSmartSkill => s !== null);
+          this.logger.debug(`Update with ${validSkills.length} Smart Skills for runtime ${this.instance.id}`);
+          const smartSkillsMessage = RuntimeSmartSkillsPublish.create({
+            workspaceId: runtime.workspace?.id ?? null,
+            runtimeId: this.instance.id,
+            smartSkills: validSkills,
+          }) as RuntimeSmartSkillsPublish;
+          this.natsService.publishEphemeral(smartSkillsMessage);
         }),
       )
       .subscribe();

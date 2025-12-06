@@ -10,6 +10,7 @@ import {
   SkillCallToolRequest,
   MCP_CALL_TOOL_TIMEOUT,
   RuntimeCallToolResponse,
+  SmartSkillTool,
 } from '@2ly/common';
 import { BehaviorSubject, filter, firstValueFrom, map } from 'rxjs';
 
@@ -41,6 +42,21 @@ const INIT_SKILL_TOOL = {
 } as const;
 
 /**
+ * Implicit input schema for smart skill tools.
+ * Smart skills accept a single message string.
+ */
+const SMART_SKILL_INPUT_SCHEMA = {
+  type: 'object',
+  properties: {
+    message: {
+      type: 'string',
+      description: 'Message to send to the smart skill',
+    },
+  },
+  required: ['message'],
+} as const;
+
+/**
  * SkillService manages the skill subscriptions and tool management.
  * This service can be instantiated per-session in remote mode or as a singleton in stdio mode.
  */
@@ -50,6 +66,7 @@ export class SkillService extends Service {
   private logger: pino.Logger;
   private tools = new BehaviorSubject<dgraphResolversTypes.McpTool[] | null>(null);
   private skillDescription: string | null = null;
+  private smartSkillTool: SmartSkillTool | null = null;
   private subscriptions: { unsubscribe: () => void; drain: () => Promise<void>; isClosed?: () => boolean }[] = [];
 
   constructor(
@@ -94,8 +111,17 @@ export class SkillService extends Service {
       for await (const message of subscription) {
         if (message instanceof SkillListToolsPublish) {
           this.skillDescription = message.data.description || null;
-          this.tools.next(message.data.mcpTools);
-          this.logger.debug(`Received ${message.data.mcpTools.length} mcp tools for skill ${this.identity.skillId}`);
+
+          // Handle smart skill tool (SMART mode)
+          if (message.data.smartSkillTool) {
+            this.smartSkillTool = message.data.smartSkillTool;
+            this.tools.next([]);  // No regular tools in SMART mode
+            this.logger.debug(`Received smart skill tool for skill ${this.identity.skillId}: ${this.smartSkillTool.name}`);
+          } else {
+            this.smartSkillTool = null;
+            this.tools.next(message.data.mcpTools);
+            this.logger.debug(`Received ${message.data.mcpTools.length} mcp tools for skill ${this.identity.skillId}`);
+          }
         } else if (message instanceof ErrorResponse) {
           this.logger.error(`Error subscribing to tools: ${message.data.error}`);
         }
@@ -133,6 +159,20 @@ export class SkillService extends Service {
   }
 
   public async getToolsForMCP() {
+    // If in SMART mode, return only init_skill and the smart skill tool
+    if (this.smartSkillTool) {
+      return [
+        INIT_SKILL_TOOL,
+        {
+          name: this.smartSkillTool.name,
+          title: this.smartSkillTool.name,
+          description: this.smartSkillTool.description,
+          inputSchema: SMART_SKILL_INPUT_SCHEMA,
+          annotations: {},
+        },
+      ];
+    }
+
     const tools = await this.waitForTools();
     const parsedTools = tools.map((tool) => this.parseToolProperties(tool));
 
@@ -152,6 +192,34 @@ export class SkillService extends Service {
       };
     }
 
+    // Check if this is a smart skill tool call
+    if (this.smartSkillTool && name === this.smartSkillTool.name) {
+      this.logger.debug(`Calling smart skill: ${name} (${this.smartSkillTool.id}), arguments: ${JSON.stringify(args)}`);
+
+      console.log('creating smart skill call request for skill: ', this.smartSkillTool.id, 'on runtime: ', this.identity.skillId);
+
+      const message = SkillCallToolRequest.create({
+        type: 'smart-skill',
+        workspaceId: this.identity.workspaceId,
+        from: this.identity.skillId,
+        skillId: this.smartSkillTool.id,
+        arguments: args,
+      }) as SkillCallToolRequest;
+
+      this.logger.debug(`Sending smart skill call request to subject: ${message.getSubject()}`);
+
+      const response = await this.natsService.request(message, { timeout: MCP_CALL_TOOL_TIMEOUT, retryOnTimeout: true });
+
+      if (response instanceof ErrorResponse) {
+        throw new Error(`Smart skill call (${name}) failed: ${response.data.error}`);
+      } else if (response instanceof RuntimeCallToolResponse) {
+        return response.data.result;
+      } else {
+        throw new Error(`Invalid response: ${JSON.stringify(response)}`);
+      }
+    }
+
+    // Regular MCP tool call
     const tools = await this.waitForTools();
     const tool = tools.find((tool) => tool.name === name);
     if (!tool) {
@@ -163,6 +231,7 @@ export class SkillService extends Service {
     );
 
     const message = SkillCallToolRequest.create({
+      type: 'mcp-tool',
       workspaceId: this.identity.workspaceId,
       from: this.identity.skillId,
       toolId: tool.id,

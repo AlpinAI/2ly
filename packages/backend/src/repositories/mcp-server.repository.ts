@@ -1,10 +1,10 @@
 import { injectable, inject } from 'inversify';
 import { DGraphService } from '../services/dgraph.service';
-import { dgraphResolversTypes, MCP_SERVER_RUN_ON } from '@2ly/common';
+import { dgraphResolversTypes, EXECUTION_TARGET } from '@2ly/common';
 import {
   ADD_MCPSERVER,
   UPDATE_MCPSERVER,
-  UPDATE_MCPSERVER_RUN_ON,
+  UPDATE_MCPSERVER_EXECUTION_TARGET,
   DELETE_MCP_TOOLS,
   DELETE_MCPSERVER,
   QUERY_MCP_SERVER_CAPABILITIES,
@@ -51,7 +51,7 @@ export class MCPServerRepository {
     repositoryUrl: string,
     transport: 'STREAM' | 'STDIO' | 'SSE',
     config: string,
-    runOn: MCP_SERVER_RUN_ON | null,
+    executionTarget: EXECUTION_TARGET | null,
     workspaceId: string,
     registryServerId: string,
   ): Promise<dgraphResolversTypes.McpServer> {
@@ -65,7 +65,7 @@ export class MCPServerRepository {
       config,
       workspaceId,
       registryServerId,
-      runOn,
+      executionTarget,
     });
     const created = res.addMCPServer.mCPServer[0];
     await this.workspaceRepository.checkAndCompleteStep(workspaceId, 'install-mcp-server');
@@ -79,7 +79,7 @@ export class MCPServerRepository {
     repositoryUrl: string,
     transport: 'STREAM' | 'STDIO' | 'SSE',
     config: string,
-    runOn: MCP_SERVER_RUN_ON | null,
+    executionTarget: EXECUTION_TARGET | null,
   ): Promise<dgraphResolversTypes.McpServer> {
     const res = await this.dgraphService.mutation<{
       updateMCPServer: { mCPServer: dgraphResolversTypes.McpServer[] };
@@ -90,17 +90,17 @@ export class MCPServerRepository {
       repositoryUrl,
       transport,
       config,
-      runOn,
+      executionTarget,
     });
     return res.updateMCPServer.mCPServer[0];
   }
 
-  async updateRunOn(id: string, runOn: MCP_SERVER_RUN_ON): Promise<dgraphResolversTypes.McpServer> {
+  async updateExecutionTarget(id: string, executionTarget: EXECUTION_TARGET): Promise<dgraphResolversTypes.McpServer> {
     const res = await this.dgraphService.mutation<{
       updateMCPServer: { mCPServer: dgraphResolversTypes.McpServer[] };
-    }>(UPDATE_MCPSERVER_RUN_ON, {
+    }>(UPDATE_MCPSERVER_EXECUTION_TARGET, {
       id,
-      runOn,
+      executionTarget,
     });
     return res.updateMCPServer.mCPServer[0];
   }

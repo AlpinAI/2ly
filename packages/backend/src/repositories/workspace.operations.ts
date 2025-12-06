@@ -100,7 +100,7 @@ export const QUERY_WORKSPACE_WITH_RUNTIMES = gql`
           id
           name
           description
-          runOn
+          executionTarget
         }
       }
     }
@@ -118,7 +118,7 @@ export const QUERY_WORKSPACE_WITH_MCP_SERVERS = gql`
         repositoryUrl
         transport
         config
-        runOn
+        executionTarget
         tools {
           id
           name
@@ -130,7 +130,7 @@ export const QUERY_WORKSPACE_WITH_MCP_SERVERS = gql`
             id
             name
             description
-            runOn
+            executionTarget
           }
         }
         runtime {
@@ -168,7 +168,7 @@ export const QUERY_WORKSPACE_WITH_MCP_TOOLS = gql`
           name
           description
           repositoryUrl
-          runOn
+          executionTarget
         }
         skills {
           id

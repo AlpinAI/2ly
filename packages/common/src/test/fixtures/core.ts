@@ -282,7 +282,7 @@ export async function seedDatabase(data: SeedData): Promise<Record<string, strin
               repositoryUrl: "${server.repositoryUrl}"
               transport: ${server.transport}
               config: "${configStr}"
-              runOn: ${server.runOn}
+              executionTarget: ${server.executionTarget}
               workspace: { id: $workspaceId }
               registryServer: { id: $registryServerId }
             }) {

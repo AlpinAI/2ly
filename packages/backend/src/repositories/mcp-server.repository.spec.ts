@@ -74,7 +74,7 @@ describe('MCPServerRepository', () => {
       config,
       workspaceId: 'w1',
       registryServerId: 'reg1',
-      runOn: 'EDGE',
+      executionTarget: 'EDGE',
     });
     expect(result.id).toBe('s1');
     expect((workspaceRepository.checkAndCompleteStep as unknown as ReturnType<typeof vi.fn>)).toHaveBeenCalledWith('w1', 'install-mcp-server');
@@ -114,18 +114,18 @@ describe('MCPServerRepository', () => {
       repositoryUrl: 'https://github.com/updated',
       transport: 'STREAM',
       config,
-      runOn: 'AGENT',
+      executionTarget: 'AGENT',
     });
     expect(result.id).toBe('s1');
   });
 
-  it('updateRunOn updates only runOn field', async () => {
-    const server = { id: 's1', runOn: 'EDGE' } as unknown as dgraphResolversTypes.McpServer;
+  it('updateExecutionTarget updates only executionTarget field', async () => {
+    const server = { id: 's1', executionTarget: 'EDGE' } as unknown as dgraphResolversTypes.McpServer;
     dgraphService.mutation.mockResolvedValue({ updateMCPServer: { mCPServer: [server] } });
 
-    const result = await mcpServerRepository.updateRunOn('s1', 'EDGE');
+    const result = await mcpServerRepository.updateExecutionTarget('s1', 'EDGE');
 
-    expect(dgraphService.mutation).toHaveBeenCalledWith(expect.any(Object), { id: 's1', runOn: 'EDGE' });
+    expect(dgraphService.mutation).toHaveBeenCalledWith(expect.any(Object), { id: 's1', executionTarget: 'EDGE' });
     expect(result.id).toBe('s1');
   });
 

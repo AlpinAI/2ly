@@ -66,7 +66,12 @@
     "test": "vitest --run"
   },
   "dependencies": {
-    "bcryptjs": "^3.0.2"
+    "@ai-sdk/anthropic": "^2.0.50",
+    "@ai-sdk/google": "^2.0.44",
+    "@ai-sdk/openai": "^2.0.74",
+    "ai": "^5.0.104",
+    "bcryptjs": "^3.0.2",
+    "ollama-ai-provider-v2": "^1.5.5"
   },
   "devDependencies": {
     "@testcontainers/nats": "^11.7.1",

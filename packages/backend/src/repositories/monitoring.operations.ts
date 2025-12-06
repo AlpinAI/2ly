@@ -5,7 +5,6 @@ export const ADD_TOOL_CALL = gql`
     $toolInput: String!
     $calledAt: DateTime!
     $isTest: Boolean!
-    $mcpToolId: ID!
   ) {
     addToolCall(
       input: {
@@ -13,18 +12,14 @@ export const ADD_TOOL_CALL = gql`
         calledAt: $calledAt
         status: PENDING
         isTest: $isTest
-        mcpTool: { id: $mcpToolId }
       }
     ) {
       toolCall {
         id
         toolInput
         calledAt
-        completedAt
         status
         isTest
-        mcpTool { id name }
-        calledBy { id name }
       }
     }
   }
@@ -38,6 +33,32 @@ export const SET_CALLED_BY = gql`
       toolCall {
         id
         calledBy { id name }
+      }
+    }
+  }
+`;
+
+export const SET_MCP_TOOL = gql`
+  mutation setMcpTool($id: ID!, $mcpToolId: ID!) {
+    updateToolCall(
+      input: { filter: { id: [$id] }, set: { mcpTool: { id: $mcpToolId } } }
+    ) {
+      toolCall {
+        id
+        mcpTool { id name }
+      }
+    }
+  }
+`;
+
+export const SET_SKILL = gql`
+  mutation setSkill($id: ID!, $skillId: ID!) {
+    updateToolCall(
+      input: { filter: { id: [$id] }, set: { skill: { id: $skillId } } }
+    ) {
+      toolCall {
+        id
+        skill { id name mode }
       }
     }
   }
@@ -119,7 +140,7 @@ export const QUERY_TOOL_CALLS = gql`
 `;
 
 // New scalable query with filtering and pagination
-// WHY: Query through Workspace -> MCPTools -> ToolCalls (follows schema structure)
+// WHY: Query through Workspace -> MCPTools -> ToolCalls AND Skills -> skillToolCalls
 export const QUERY_TOOL_CALLS_FILTERED = gql`
   query queryToolCallsFiltered(
     $workspaceId: ID!
@@ -134,6 +155,31 @@ export const QUERY_TOOL_CALLS_FILTERED = gql`
           name
         }
         toolCalls(order: { desc: calledAt }) {
+          id
+          toolInput
+          toolOutput
+          error
+          calledAt
+          completedAt
+          status
+          isTest
+          executedByAgent
+          calledBy {
+            id
+            name
+          }
+          executedBy {
+            id
+            name
+            hostname
+          }
+        }
+      }
+      skills {
+        id
+        name
+        mode
+        skillToolCalls(order: { desc: calledAt }) {
           id
           toolInput
           toolOutput

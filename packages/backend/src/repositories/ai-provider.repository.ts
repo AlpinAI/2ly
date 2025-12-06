@@ -1,6 +1,15 @@
 import { injectable, inject } from 'inversify';
 import { DGraphService } from '../services/dgraph.service';
-import { dgraphResolversTypes, LoggerService } from '@2ly/common';
+import {
+  dgraphResolversTypes,
+  LoggerService,
+  EncryptionService,
+  AIProviderService,
+  type AIProviderType,
+  type ProviderConfig,
+  type AIProviderValidationResult,
+  PROVIDER_REQUIRES_KEY,
+} from '@2ly/common';
 import pino from 'pino';
 import {
   GET_AI_PROVIDERS_BY_WORKSPACE,
@@ -25,7 +34,9 @@ export class AIProviderRepository {
 
   constructor(
     @inject(DGraphService) private readonly dgraphService: DGraphService,
-    @inject(LoggerService) private readonly loggerService: LoggerService
+    @inject(LoggerService) private readonly loggerService: LoggerService,
+    @inject(EncryptionService) private readonly encryption: EncryptionService,
+    @inject(AIProviderService) private readonly aiProviderCore: AIProviderService
   ) {
     this.logger = this.loggerService.getLogger('ai.provider.repository');
   }
@@ -217,5 +228,83 @@ export class AIProviderRepository {
     }
 
     return this.delete(existing.id);
+  }
+
+  /**
+   * Test configuration WITHOUT persisting to database.
+   * For frontend validation before saving.
+   */
+  async testConfiguration(
+    provider: AIProviderType,
+    apiKey?: string,
+    baseUrl?: string
+  ): Promise<AIProviderValidationResult> {
+    this.logger.info(`Testing AI provider configuration for provider ${provider}`);
+
+    if (PROVIDER_REQUIRES_KEY[provider] && !apiKey) {
+      return { valid: false, error: `${provider} requires an API key` };
+    }
+
+    try {
+      const availableModels = await this.aiProviderCore.listProviderModels(provider, { apiKey, baseUrl });
+      if (availableModels.length === 0) {
+        return { valid: false, error: 'No models available' };
+      }
+      return { valid: true, availableModels };
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Unknown error';
+      this.logger.error(`Failed to test AI provider ${provider}: ${message}`);
+      return { valid: false, error: message };
+    }
+  }
+
+  /**
+   * Configure an AI provider for a workspace.
+   * Validates credentials before saving.
+   */
+  async configure(
+    workspaceId: string,
+    provider: AIProviderType,
+    apiKey?: string,
+    baseUrl?: string
+  ): Promise<AIProviderValidationResult> {
+    this.logger.info(`Configuring AI provider for workspace ${workspaceId} with provider ${provider}`);
+
+    // Test configuration first
+    const test = await this.testConfiguration(provider, apiKey, baseUrl);
+    if (!test.valid) {
+      return test;
+    }
+
+    // Encrypt API key
+    const encryptedKey = apiKey ? this.encryption.encrypt(apiKey) : null;
+
+    // Upsert configuration
+    await this.upsert(workspaceId, {
+      provider: provider.toUpperCase() as dgraphResolversTypes.AiProviderType,
+      encryptedApiKey: encryptedKey,
+      baseUrl: baseUrl || null,
+      availableModels: test.availableModels || null,
+    });
+
+    this.logger.info(`AI provider configured for workspace ${workspaceId} with provider ${provider}`);
+    return test;
+  }
+
+  /**
+   * Get decrypted configuration for a provider.
+   */
+  async getDecryptedConfig(workspaceId: string, provider: AIProviderType): Promise<ProviderConfig> {
+    const providerUpper = provider.toUpperCase() as dgraphResolversTypes.AiProviderType;
+    const config = await this.findByType(workspaceId, providerUpper);
+
+    if (!config) {
+      throw new Error(`Provider ${provider} is not configured`);
+    }
+
+    return {
+      apiKey: config.encryptedApiKey ? this.encryption.decrypt(config.encryptedApiKey) : undefined,
+      baseUrl: config.baseUrl || undefined,
+    };
   }
 }

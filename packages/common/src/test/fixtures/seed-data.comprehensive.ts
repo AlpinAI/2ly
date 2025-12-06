@@ -262,7 +262,7 @@ export const comprehensiveSeededData: SeedData = {
     },
   ],
   mcpServers: [
-    buildMinimalFilesystemServer({ name: 'Filesystem Server', runOn: 'AGENT' }),
+    buildMinimalFilesystemServer({ name: 'Filesystem Server', executionTarget: 'AGENT' }),
     buildWebFetchServer(),
     buildDevelopmentToolsServer(),
     buildDatabaseServer(),

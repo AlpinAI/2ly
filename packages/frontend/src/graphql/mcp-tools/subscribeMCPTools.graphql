@@ -15,7 +15,7 @@ subscription SubscribeMCPTools($workspaceId: ID!) {
       name
       description
       repositoryUrl
-      runOn
+      executionTarget
     }
     skills {
       id

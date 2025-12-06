@@ -70,6 +70,11 @@ export type CallToolResult = {
   success: Scalars['Boolean']['output'];
 };
 
+export enum ExecutionTarget {
+  Agent = 'AGENT',
+  Edge = 'EDGE'
+}
+
 export type IdentityKey = {
   createdAt: Scalars['Date']['output'];
   description?: Maybe<Scalars['String']['output']>;
@@ -129,21 +134,16 @@ export type McpRegistryServer = {
 export type McpServer = {
   config: Scalars['String']['output'];
   description: Scalars['String']['output'];
+  executionTarget?: Maybe<ExecutionTarget>;
   id: Scalars['ID']['output'];
   name: Scalars['String']['output'];
   registryServer: McpRegistryServer;
   repositoryUrl: Scalars['String']['output'];
-  runOn?: Maybe<McpServerRunOn>;
   runtime?: Maybe<Runtime>;
   tools?: Maybe<Array<McpTool>>;
   transport: McpTransportType;
   workspace: Workspace;
 };
-
-export enum McpServerRunOn {
-  Agent = 'AGENT',
-  Edge = 'EDGE'
-}
 
 export type McpTool = {
   annotations: Scalars['String']['output'];
@@ -198,10 +198,12 @@ export type Mutation = {
   unlinkMCPServerFromRuntime: McpServer;
   unsetGlobalRuntime: Workspace;
   updateMCPServer: McpServer;
-  updateMCPServerRunOn: McpServer;
+  updateMCPServerExecutionTarget: McpServer;
   updateRuntime: Runtime;
   updateServerInRegistry: McpRegistryServer;
   updateSkill: Skill;
+  updateSkillMode: Skill;
+  updateSkillSmartConfig: Skill;
   updateWorkspace: Workspace;
 };
 
@@ -254,10 +256,10 @@ export type MutationConfigureAiProviderArgs = {
 export type MutationCreateMcpServerArgs = {
   config: Scalars['String']['input'];
   description: Scalars['String']['input'];
+  executionTarget?: InputMaybe<ExecutionTarget>;
   name: Scalars['String']['input'];
   registryServerId: Scalars['ID']['input'];
   repositoryUrl: Scalars['String']['input'];
-  runOn?: InputMaybe<McpServerRunOn>;
   transport: McpTransportType;
   workspaceId: Scalars['ID']['input'];
 };
@@ -398,17 +400,17 @@ export type MutationUnsetGlobalRuntimeArgs = {
 export type MutationUpdateMcpServerArgs = {
   config: Scalars['String']['input'];
   description: Scalars['String']['input'];
+  executionTarget?: InputMaybe<ExecutionTarget>;
   id: Scalars['ID']['input'];
   name: Scalars['String']['input'];
   repositoryUrl: Scalars['String']['input'];
-  runOn?: InputMaybe<McpServerRunOn>;
   transport: McpTransportType;
 };
 
 
-export type MutationUpdateMcpServerRunOnArgs = {
+export type MutationUpdateMcpServerExecutionTargetArgs = {
+  executionTarget: ExecutionTarget;
   mcpServerId: Scalars['ID']['input'];
-  runOn: McpServerRunOn;
   runtimeId?: InputMaybe<Scalars['ID']['input']>;
 };
 
@@ -436,6 +438,17 @@ export type MutationUpdateSkillArgs = {
   description: Scalars['String']['input'];
   id: Scalars['ID']['input'];
   name: Scalars['String']['input'];
+};
+
+
+export type MutationUpdateSkillModeArgs = {
+  id: Scalars['ID']['input'];
+  mode: SkillMode;
+};
+
+
+export type MutationUpdateSkillSmartConfigArgs = {
+  input: UpdateSkillSmartConfigInput;
 };
 
 
@@ -597,6 +610,7 @@ export type Runtime = {
   mcpServers?: Maybe<Array<McpServer>>;
   name: Scalars['String']['output'];
   roots?: Maybe<Scalars['String']['output']>;
+  skills?: Maybe<Array<Skill>>;
   status: ActiveStatus;
   system?: Maybe<System>;
   toolResponses?: Maybe<Array<ToolCall>>;
@@ -612,13 +626,27 @@ export enum RuntimeType {
 export type Skill = {
   createdAt: Scalars['Date']['output'];
   description?: Maybe<Scalars['String']['output']>;
+  executionTarget?: Maybe<ExecutionTarget>;
   id: Scalars['ID']['output'];
+  maxTokens?: Maybe<Scalars['Int']['output']>;
   mcpTools?: Maybe<Array<McpTool>>;
+  mode?: Maybe<SkillMode>;
+  model?: Maybe<Scalars['String']['output']>;
   name: Scalars['String']['output'];
+  runtime?: Maybe<Runtime>;
+  skillToolCalls?: Maybe<Array<ToolCall>>;
+  systemPrompt?: Maybe<Scalars['String']['output']>;
+  temperature?: Maybe<Scalars['Float']['output']>;
   toolCalls?: Maybe<Array<ToolCall>>;
   updatedAt?: Maybe<Scalars['Date']['output']>;
   workspace: Workspace;
 };
+
+export enum SkillMode {
+  List = 'LIST',
+  Optimized = 'OPTIMIZED',
+  Smart = 'SMART'
+}
 
 export type Subscription = {
   mcpServers?: Maybe<Array<McpServer>>;
@@ -678,7 +706,8 @@ export type ToolCall = {
   executedByAgent?: Maybe<Scalars['Boolean']['output']>;
   id: Scalars['ID']['output'];
   isTest: Scalars['Boolean']['output'];
-  mcpTool: McpTool;
+  mcpTool?: Maybe<McpTool>;
+  skill?: Maybe<Skill>;
   status: ToolCallStatus;
   toolInput: Scalars['String']['output'];
   toolOutput?: Maybe<Scalars['String']['output']>;
@@ -713,6 +742,16 @@ export type ToolCallsResult = {
   stats: ToolCallStats;
   toolCalls: Array<ToolCall>;
   totalCount: Scalars['Int']['output'];
+};
+
+export type UpdateSkillSmartConfigInput = {
+  executionTarget?: InputMaybe<ExecutionTarget>;
+  id: Scalars['ID']['input'];
+  maxTokens?: InputMaybe<Scalars['Int']['input']>;
+  model?: InputMaybe<Scalars['String']['input']>;
+  runtimeId?: InputMaybe<Scalars['ID']['input']>;
+  systemPrompt?: InputMaybe<Scalars['String']['input']>;
+  temperature?: InputMaybe<Scalars['Float']['input']>;
 };
 
 export type User = {
@@ -820,6 +859,7 @@ export type ResolversTypes = {
   Boolean: ResolverTypeWrapper<Scalars['Boolean']['output']>;
   CallToolResult: ResolverTypeWrapper<CallToolResult>;
   Date: ResolverTypeWrapper<Scalars['Date']['output']>;
+  ExecutionTarget: ExecutionTarget;
   Float: ResolverTypeWrapper<Scalars['Float']['output']>;
   ID: ResolverTypeWrapper<Scalars['ID']['output']>;
   IdentityKey: ResolverTypeWrapper<IdentityKey>;
@@ -832,7 +872,6 @@ export type ResolversTypes = {
   LogoutUserInput: LogoutUserInput;
   MCPRegistryServer: ResolverTypeWrapper<McpRegistryServer>;
   MCPServer: ResolverTypeWrapper<McpServer>;
-  MCPServerRunOn: McpServerRunOn;
   MCPTool: ResolverTypeWrapper<McpTool>;
   MCPTransportType: McpTransportType;
   Mutation: ResolverTypeWrapper<{}>;
@@ -848,6 +887,7 @@ export type ResolversTypes = {
   Runtime: ResolverTypeWrapper<Runtime>;
   RuntimeType: RuntimeType;
   Skill: ResolverTypeWrapper<Skill>;
+  SkillMode: SkillMode;
   String: ResolverTypeWrapper<Scalars['String']['output']>;
   Subscription: ResolverTypeWrapper<{}>;
   System: ResolverTypeWrapper<System>;
@@ -856,6 +896,7 @@ export type ResolversTypes = {
   ToolCallStats: ResolverTypeWrapper<ToolCallStats>;
   ToolCallStatus: ToolCallStatus;
   ToolCallsResult: ResolverTypeWrapper<ToolCallsResult>;
+  UpdateSkillSmartConfigInput: UpdateSkillSmartConfigInput;
   User: ResolverTypeWrapper<User>;
   Workspace: ResolverTypeWrapper<Workspace>;
 };
@@ -899,6 +940,7 @@ export type ResolversParentTypes = {
   ToolCallFilters: ToolCallFilters;
   ToolCallStats: ToolCallStats;
   ToolCallsResult: ToolCallsResult;
+  UpdateSkillSmartConfigInput: UpdateSkillSmartConfigInput;
   User: User;
   Workspace: Workspace;
 };
@@ -997,11 +1039,11 @@ export type McpRegistryServerResolvers<ContextType = object, ParentType extends 
 export type McpServerResolvers<ContextType = object, ParentType extends ResolversParentTypes['MCPServer'] = ResolversParentTypes['MCPServer']> = {
   config?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   description?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  executionTarget?: Resolver<Maybe<ResolversTypes['ExecutionTarget']>, ParentType, ContextType>;
   id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
   name?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   registryServer?: Resolver<ResolversTypes['MCPRegistryServer'], ParentType, ContextType>;
   repositoryUrl?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
-  runOn?: Resolver<Maybe<ResolversTypes['MCPServerRunOn']>, ParentType, ContextType>;
   runtime?: Resolver<Maybe<ResolversTypes['Runtime']>, ParentType, ContextType>;
   tools?: Resolver<Maybe<Array<ResolversTypes['MCPTool']>>, ParentType, ContextType>;
   transport?: Resolver<ResolversTypes['MCPTransportType'], ParentType, ContextType>;
@@ -1057,10 +1099,12 @@ export type MutationResolvers<ContextType = object, ParentType extends Resolvers
   unlinkMCPServerFromRuntime?: Resolver<ResolversTypes['MCPServer'], ParentType, ContextType, RequireFields<MutationUnlinkMcpServerFromRuntimeArgs, 'mcpServerId'>>;
   unsetGlobalRuntime?: Resolver<ResolversTypes['Workspace'], ParentType, ContextType, RequireFields<MutationUnsetGlobalRuntimeArgs, 'id'>>;
   updateMCPServer?: Resolver<ResolversTypes['MCPServer'], ParentType, ContextType, RequireFields<MutationUpdateMcpServerArgs, 'config' | 'description' | 'id' | 'name' | 'repositoryUrl' | 'transport'>>;
-  updateMCPServerRunOn?: Resolver<ResolversTypes['MCPServer'], ParentType, ContextType, RequireFields<MutationUpdateMcpServerRunOnArgs, 'mcpServerId' | 'runOn'>>;
+  updateMCPServerExecutionTarget?: Resolver<ResolversTypes['MCPServer'], ParentType, ContextType, RequireFields<MutationUpdateMcpServerExecutionTargetArgs, 'executionTarget' | 'mcpServerId'>>;
   updateRuntime?: Resolver<ResolversTypes['Runtime'], ParentType, ContextType, RequireFields<MutationUpdateRuntimeArgs, 'description' | 'id' | 'name'>>;
   updateServerInRegistry?: Resolver<ResolversTypes['MCPRegistryServer'], ParentType, ContextType, RequireFields<MutationUpdateServerInRegistryArgs, 'serverId'>>;
   updateSkill?: Resolver<ResolversTypes['Skill'], ParentType, ContextType, RequireFields<MutationUpdateSkillArgs, 'description' | 'id' | 'name'>>;
+  updateSkillMode?: Resolver<ResolversTypes['Skill'], ParentType, ContextType, RequireFields<MutationUpdateSkillModeArgs, 'id' | 'mode'>>;
+  updateSkillSmartConfig?: Resolver<ResolversTypes['Skill'], ParentType, ContextType, RequireFields<MutationUpdateSkillSmartConfigArgs, 'input'>>;
   updateWorkspace?: Resolver<ResolversTypes['Workspace'], ParentType, ContextType, RequireFields<MutationUpdateWorkspaceArgs, 'id' | 'name'>>;
 };
 
@@ -1123,6 +1167,7 @@ export type RuntimeResolvers<ContextType = object, ParentType extends ResolversP
   mcpServers?: Resolver<Maybe<Array<ResolversTypes['MCPServer']>>, ParentType, ContextType>;
   name?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   roots?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  skills?: Resolver<Maybe<Array<ResolversTypes['Skill']>>, ParentType, ContextType>;
   status?: Resolver<ResolversTypes['ActiveStatus'], ParentType, ContextType>;
   system?: Resolver<Maybe<ResolversTypes['System']>, ParentType, ContextType>;
   toolResponses?: Resolver<Maybe<Array<ResolversTypes['ToolCall']>>, ParentType, ContextType>;
@@ -1134,9 +1179,17 @@ export type RuntimeResolvers<ContextType = object, ParentType extends ResolversP
 export type SkillResolvers<ContextType = object, ParentType extends ResolversParentTypes['Skill'] = ResolversParentTypes['Skill']> = {
   createdAt?: Resolver<ResolversTypes['Date'], ParentType, ContextType>;
   description?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  executionTarget?: Resolver<Maybe<ResolversTypes['ExecutionTarget']>, ParentType, ContextType>;
   id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
+  maxTokens?: Resolver<Maybe<ResolversTypes['Int']>, ParentType, ContextType>;
   mcpTools?: Resolver<Maybe<Array<ResolversTypes['MCPTool']>>, ParentType, ContextType>;
+  mode?: Resolver<Maybe<ResolversTypes['SkillMode']>, ParentType, ContextType>;
+  model?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   name?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  runtime?: Resolver<Maybe<ResolversTypes['Runtime']>, ParentType, ContextType>;
+  skillToolCalls?: Resolver<Maybe<Array<ResolversTypes['ToolCall']>>, ParentType, ContextType>;
+  systemPrompt?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  temperature?: Resolver<Maybe<ResolversTypes['Float']>, ParentType, ContextType>;
   toolCalls?: Resolver<Maybe<Array<ResolversTypes['ToolCall']>>, ParentType, ContextType>;
   updatedAt?: Resolver<Maybe<ResolversTypes['Date']>, ParentType, ContextType>;
   workspace?: Resolver<ResolversTypes['Workspace'], ParentType, ContextType>;
@@ -1172,7 +1225,8 @@ export type ToolCallResolvers<ContextType = object, ParentType extends Resolvers
   executedByAgent?: Resolver<Maybe<ResolversTypes['Boolean']>, ParentType, ContextType>;
   id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
   isTest?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
-  mcpTool?: Resolver<ResolversTypes['MCPTool'], ParentType, ContextType>;
+  mcpTool?: Resolver<Maybe<ResolversTypes['MCPTool']>, ParentType, ContextType>;
+  skill?: Resolver<Maybe<ResolversTypes['Skill']>, ParentType, ContextType>;
   status?: Resolver<ResolversTypes['ToolCallStatus'], ParentType, ContextType>;
   toolInput?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   toolOutput?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;

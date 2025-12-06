@@ -1,7 +1,6 @@
-import { apolloResolversTypes, dgraphResolversTypes } from '@2ly/common';
+import { apolloResolversTypes, dgraphResolversTypes, AIProviderService, type AIProviderType } from '@2ly/common';
 import { Container } from 'inversify';
 import { GraphQLError } from 'graphql';
-import { AIProviderService, AIProviderType } from '../services/ai/ai-provider.service';
 import { AIProviderRepository, WorkspaceRepository } from '../repositories';
 import { GraphQLContext } from '../types';
 import { requireAuth, requireWorkspaceAccess, requireAuthAndWorkspaceAccess } from '../database/authorization.helpers';
@@ -10,9 +9,8 @@ import { requireAuth, requireWorkspaceAccess, requireAuthAndWorkspaceAccess } fr
  * Factory function to create resolver functions for GraphQL schema.
  */
 export function createAIProviderResolvers(container: Container) {
-
-  const aiProviderService = container.get(AIProviderService);
   const aiProviderRepository = container.get(AIProviderRepository);
+  const aiProviderService = container.get(AIProviderService);
   const workspaceRepository = container.get(WorkspaceRepository);
 
   return {
@@ -61,7 +59,7 @@ export function createAIProviderResolvers(container: Container) {
         context: GraphQLContext
       ) => {
         await requireAuthAndWorkspaceAccess(workspaceRepository, context, workspaceId);
-        return aiProviderService.configure(workspaceId, provider.toLowerCase() as AIProviderType, apiKey ?? undefined, baseUrl ?? undefined);
+        return aiProviderRepository.configure(workspaceId, provider.toLowerCase() as AIProviderType, apiKey ?? undefined, baseUrl ?? undefined);
       },
 
       removeAIProvider: async (
@@ -93,7 +91,9 @@ export function createAIProviderResolvers(container: Container) {
         context: GraphQLContext
       ) => {
         await requireAuthAndWorkspaceAccess(workspaceRepository, context, workspaceId);
-        return aiProviderService.chat(workspaceId, model, message);
+        const { provider, modelName } = aiProviderService.parseModelString(model);
+        const config = await aiProviderRepository.getDecryptedConfig(workspaceId, provider);
+        return aiProviderService.chat(config, provider, modelName, message);
       },
     },
   };

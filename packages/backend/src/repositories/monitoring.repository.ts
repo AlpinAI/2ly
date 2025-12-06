@@ -4,6 +4,8 @@ import { apolloResolversTypes, dgraphResolversTypes } from '@2ly/common';
 import {
     ADD_TOOL_CALL,
     SET_CALLED_BY,
+    SET_MCP_TOOL,
+    SET_SKILL,
     COMPLETE_TOOL_CALL_ERROR,
     COMPLETE_TOOL_CALL_SUCCESS,
     QUERY_TOOL_CALLS,
@@ -22,23 +24,42 @@ export class MonitoringRepository {
         isTest?: boolean;
         calledById?: string;
         toolInput: string;
-        mcpToolId: string;
+        mcpToolId?: string;  // Optional - for MCP tool calls
+        skillId?: string;    // Optional - for smart skill calls
     }): Promise<dgraphResolversTypes.ToolCall> {
         const now = new Date().toISOString();
 
-        // Step 1: Create ToolCall (without calledBy)
+        // Step 1: Create basic ToolCall (without mcpTool, skill, or calledBy)
         const res = await this.dgraphService.mutation<{
             addToolCall: { toolCall: dgraphResolversTypes.ToolCall[] };
         }>(ADD_TOOL_CALL, {
             toolInput: params.toolInput,
             calledAt: now,
             isTest: params.isTest ?? false,
-            mcpToolId: params.mcpToolId
         });
 
-        const toolCall = res.addToolCall.toolCall[0];
+        let toolCall = res.addToolCall.toolCall[0];
 
-        // Step 2: If calledById provided, link the caller
+        // Step 2: Link mcpTool OR skill (mutually exclusive)
+        if (params.mcpToolId) {
+            const updateRes = await this.dgraphService.mutation<{
+                updateToolCall: { toolCall: dgraphResolversTypes.ToolCall[] };
+            }>(SET_MCP_TOOL, {
+                id: toolCall.id,
+                mcpToolId: params.mcpToolId
+            });
+            toolCall = updateRes.updateToolCall.toolCall[0];
+        } else if (params.skillId) {
+            const updateRes = await this.dgraphService.mutation<{
+                updateToolCall: { toolCall: dgraphResolversTypes.ToolCall[] };
+            }>(SET_SKILL, {
+                id: toolCall.id,
+                skillId: params.skillId
+            });
+            toolCall = updateRes.updateToolCall.toolCall[0];
+        }
+
+        // Step 3: If calledById provided, link the caller
         if (params.calledById) {
             const updateRes = await this.dgraphService.mutation<{
                 updateToolCall: { toolCall: dgraphResolversTypes.ToolCall[] };
@@ -101,7 +122,7 @@ export class MonitoringRepository {
         filters?: apolloResolversTypes.ToolCallFilters;
         orderDirection?: apolloResolversTypes.OrderDirection;
     }): Promise<apolloResolversTypes.ToolCallsResult> {
-        // Fetch all tool calls for workspace (through mcpTools)
+        // Fetch all tool calls for workspace (through mcpTools AND skills)
         const result = await this.dgraphService.query<{
             getWorkspace: {
                 mcpTools: Array<{
@@ -111,13 +132,21 @@ export class MonitoringRepository {
                     mcpServer: { id: string; name: string };
                     toolCalls: dgraphResolversTypes.ToolCall[];
                 }>;
+                skills: Array<{
+                    id: string;
+                    name: string;
+                    mode: string;
+                    skillToolCalls: dgraphResolversTypes.ToolCall[];
+                }>;
             };
         }>(QUERY_TOOL_CALLS_FILTERED, {
             workspaceId: params.workspaceId,
         });
 
-        // Flatten tool calls from all tools and add mcpTool reference
+        // Flatten tool calls from all tools and skills
         const allToolCalls: apolloResolversTypes.ToolCall[] = [];
+
+        // Add MCP tool calls with mcpTool reference
         if (result.getWorkspace?.mcpTools) {
             result.getWorkspace.mcpTools.forEach((mcpTool) => {
                 if (mcpTool.toolCalls) {
@@ -138,6 +167,24 @@ export class MonitoringRepository {
             });
         }
 
+        // Add skill tool calls with skill reference
+        if (result.getWorkspace?.skills) {
+            result.getWorkspace.skills.forEach((skill) => {
+                if (skill.skillToolCalls) {
+                    skill.skillToolCalls.forEach((call) => {
+                        allToolCalls.push({
+                            ...call,
+                            skill: {
+                                id: skill.id,
+                                name: skill.name,
+                                mode: skill.mode,
+                            },
+                        } as unknown as apolloResolversTypes.ToolCall);
+                    });
+                }
+            });
+        }
+
         // Apply filters
         let filteredCalls = allToolCalls;
 
@@ -149,7 +196,7 @@ export class MonitoringRepository {
 
         if (params.filters?.mcpToolIds && params.filters.mcpToolIds.length > 0) {
             filteredCalls = filteredCalls.filter((call) =>
-                params.filters!.mcpToolIds!.includes(call.mcpTool.id)
+                call.mcpTool && params.filters!.mcpToolIds!.includes(call.mcpTool.id)
             );
         }
 
@@ -164,8 +211,8 @@ export class MonitoringRepository {
         if (params.filters?.search && params.filters.search.trim()) {
             const searchLower = params.filters.search.toLowerCase().trim();
             filteredCalls = filteredCalls.filter((call) => {
-                const toolName = call.mcpTool.name?.toLowerCase() || '';
-                const toolDescription = call.mcpTool.description?.toLowerCase() || '';
+                const toolName = call.mcpTool?.name?.toLowerCase() || call.skill?.name?.toLowerCase() || '';
+                const toolDescription = call.mcpTool?.description?.toLowerCase() || '';
                 const toolInput = call.toolInput?.toLowerCase() || '';
                 const toolOutput = call.toolOutput?.toLowerCase() || '';
                 const error = call.error?.toLowerCase() || '';

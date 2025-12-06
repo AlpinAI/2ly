@@ -91,6 +91,12 @@ export const cache = new InMemoryCache({
             return incoming;
           },
         },
+
+        skills: {
+          merge(_existing = [], incoming) {
+            return incoming;
+          },
+        },
       },
     },
 
@@ -113,6 +119,10 @@ export const cache = new InMemoryCache({
     },
 
     Workspace: {
+      keyFields: ['id'],
+    },
+
+    Skill: {
       keyFields: ['id'],
     },
   },

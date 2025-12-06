@@ -89,6 +89,16 @@ export const GET_SKILL = gql`
       description
       createdAt
       updatedAt
+      mode
+      model
+      temperature
+      maxTokens
+      systemPrompt
+      executionTarget
+      runtime {
+        id
+        name
+      }
       mcpTools {
         id
         name
@@ -101,7 +111,7 @@ export const GET_SKILL = gql`
         mcpServer {
           id
           name
-          runOn
+          executionTarget
         }
       }
       workspace {
@@ -170,7 +180,7 @@ export const ADD_MCP_TOOL_TO_SKILL = gql`
           mcpServer {
             id
             name
-            runOn
+            executionTarget
           }
         }
         workspace {
@@ -217,7 +227,7 @@ export const REMOVE_MCP_TOOL_FROM_SKILL = gql`
           mcpServer {
             id
             name
-            runOn
+            executionTarget
           }
         }
         workspace {
@@ -239,6 +249,16 @@ export const OBSERVE_SKILLS = (type: 'query' | 'subscription' = 'query') => gql`
         description
         createdAt
         updatedAt
+        mode
+        model
+        temperature
+        maxTokens
+        systemPrompt
+        executionTarget
+        runtime {
+          id
+          name
+        }
         mcpTools {
           id
           name
@@ -247,7 +267,7 @@ export const OBSERVE_SKILLS = (type: 'query' | 'subscription' = 'query') => gql`
           mcpServer {
             id
             name
-            runOn
+            executionTarget
           }
         }
       }
@@ -263,6 +283,16 @@ export const QUERY_ALL_SKILLS = gql`
       description
       createdAt
       updatedAt
+      mode
+      model
+      temperature
+      maxTokens
+      systemPrompt
+      executionTarget
+      runtime {
+        id
+        name
+      }
       mcpTools {
         id
         name
@@ -275,7 +305,7 @@ export const QUERY_ALL_SKILLS = gql`
         mcpServer {
           id
           name
-          runOn
+          executionTarget
         }
       }
       workspace {
@@ -308,7 +338,7 @@ export const QUERY_SKILL_BY_NAME = gql`
           mcpServer {
             id
             name
-            runOn
+            executionTarget
           }
         }
         workspace {
@@ -330,7 +360,7 @@ export const GET_SKILL_AGENT_MCP_SERVERS = gql`
           description
           transport
           config
-          runOn
+          executionTarget
           tools {
             id
             name
@@ -338,6 +368,185 @@ export const GET_SKILL_AGENT_MCP_SERVERS = gql`
             inputSchema
             annotations
           }
+        }
+      }
+    }
+  }
+`;
+
+export const UPDATE_SKILL_MODE = gql`
+  mutation updateSkillMode($id: ID!, $mode: SkillMode!, $updatedAt: DateTime!) {
+    updateSkill(
+      input: {
+        filter: { id: [$id] }
+        set: { mode: $mode, updatedAt: $updatedAt }
+      }
+    ) {
+      skill {
+        id
+        name
+        description
+        createdAt
+        updatedAt
+        mode
+        model
+        temperature
+        maxTokens
+        systemPrompt
+        executionTarget
+        runtime {
+          id
+          name
+        }
+        mcpTools {
+          id
+          name
+        }
+        workspace {
+          id
+          name
+        }
+      }
+    }
+  }
+`;
+
+export const UPDATE_SKILL_SMART_CONFIG = gql`
+  mutation updateSkillSmartConfig(
+    $id: ID!
+    $model: String
+    $temperature: Float
+    $maxTokens: Int
+    $systemPrompt: String
+    $executionTarget: ExecutionTarget
+    $updatedAt: DateTime!
+  ) {
+    updateSkill(
+      input: {
+        filter: { id: [$id] }
+        set: {
+          model: $model
+          temperature: $temperature
+          maxTokens: $maxTokens
+          systemPrompt: $systemPrompt
+          executionTarget: $executionTarget
+          updatedAt: $updatedAt
+        }
+      }
+    ) {
+      skill {
+        id
+        name
+        description
+        createdAt
+        updatedAt
+        mode
+        model
+        temperature
+        maxTokens
+        systemPrompt
+        executionTarget
+        runtime {
+          id
+          name
+        }
+        mcpTools {
+          id
+          name
+        }
+        workspace {
+          id
+          name
+        }
+      }
+    }
+  }
+`;
+
+export const LINK_SKILL_TO_RUNTIME = gql`
+  mutation linkSkillToRuntime($skillId: ID!, $runtimeId: ID!, $updatedAt: DateTime!) {
+    updateSkill(
+      input: {
+        filter: { id: [$skillId] }
+        set: { runtime: { id: $runtimeId }, updatedAt: $updatedAt }
+      }
+    ) {
+      skill {
+        id
+        name
+        description
+        createdAt
+        updatedAt
+        mode
+        model
+        temperature
+        maxTokens
+        systemPrompt
+        executionTarget
+        runtime {
+          id
+          name
+        }
+        workspace {
+          id
+          name
+        }
+      }
+    }
+  }
+`;
+
+export const UNLINK_SKILL_FROM_RUNTIME = gql`
+  mutation unlinkSkillFromRuntime($skillId: ID!, $updatedAt: DateTime!) {
+    updateSkill(
+      input: {
+        filter: { id: [$skillId] }
+        remove: { runtime: {} }
+        set: { updatedAt: $updatedAt }
+      }
+    ) {
+      skill {
+        id
+        name
+        description
+        createdAt
+        updatedAt
+        mode
+        model
+        temperature
+        maxTokens
+        systemPrompt
+        executionTarget
+        runtime {
+          id
+          name
+        }
+        workspace {
+          id
+          name
+        }
+      }
+    }
+  }
+`;
+
+export const QUERY_SMART_SKILLS_BY_RUNTIME = gql`
+  query querySmartSkillsByRuntime($runtimeId: ID!) {
+    getRuntime(id: $runtimeId) {
+      id
+      skills(filter: { mode: { eq: SMART }, executionTarget: { eq: EDGE } }) {
+        id
+        name
+        description
+        mode
+        model
+        temperature
+        maxTokens
+        systemPrompt
+        executionTarget
+        workspace {
+          id
+          name
         }
       }
     }

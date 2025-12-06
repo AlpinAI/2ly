@@ -5,6 +5,7 @@ import {
   RuntimeMCPServersPublish,
   Service,
   SkillListToolsPublish,
+  SmartSkillTool,
   dgraphResolversTypes,
 } from '@2ly/common';
 import { DGraphService } from './dgraph.service';
@@ -127,11 +128,27 @@ export class SkillService extends Service {
   }
 
   private publishSkillTools(skill: dgraphResolversTypes.Skill) {
-    this.logger.debug(`Publishing ${skill.mcpTools?.length ?? 0} tools for skill ${skill.id} in workspace ${skill.workspace.id}`);
+    let smartSkillTool: SmartSkillTool | undefined;
+    let mcpTools = skill.mcpTools ?? [];
+
+    // In SMART mode, expose the skill itself as a single tool
+    if (skill.mode === dgraphResolversTypes.SkillMode.Smart) {
+      smartSkillTool = {
+        id: skill.id,
+        name: skill.name,
+        description: skill.description ?? `Smart skill: ${skill.name}`,
+      };
+      mcpTools = [];  // Don't expose underlying tools in SMART mode
+      this.logger.debug(`Publishing smart skill tool for skill ${skill.id} (${skill.name}) in workspace ${skill.workspace.id}`);
+    } else {
+      this.logger.debug(`Publishing ${mcpTools.length} tools for skill ${skill.id} in workspace ${skill.workspace.id}`);
+    }
+
     const message = SkillListToolsPublish.create({
       workspaceId: skill.workspace.id,
       skillId: skill.id,
-      mcpTools: skill.mcpTools ?? [],
+      mcpTools,
+      smartSkillTool,
       description: skill.description,
     }) as SkillListToolsPublish;
     this.natsService.publishEphemeral(message);

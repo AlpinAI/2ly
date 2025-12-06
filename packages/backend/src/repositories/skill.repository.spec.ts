@@ -544,7 +544,7 @@ describe('SkillRepository', () => {
         description: '',
         repositoryUrl: '',
         transport: dgraphResolversTypes.McpTransportType.Stdio,
-        runOn: dgraphResolversTypes.McpServerRunOn.Agent,
+        executionTarget: dgraphResolversTypes.ExecutionTarget.Agent,
         registryServer: mockRegistryServer1,
         workspace: mockWorkspace,
       };
@@ -556,7 +556,7 @@ describe('SkillRepository', () => {
         description: '',
         repositoryUrl: '',
         transport: dgraphResolversTypes.McpTransportType.Stdio,
-        runOn: dgraphResolversTypes.McpServerRunOn.Agent,
+        executionTarget: dgraphResolversTypes.ExecutionTarget.Agent,
         registryServer: mockRegistryServer2,
         workspace: mockWorkspace,
       };
@@ -655,7 +655,7 @@ describe('SkillRepository', () => {
         description: '',
         repositoryUrl: '',
         transport: dgraphResolversTypes.McpTransportType.Stdio,
-        runOn: dgraphResolversTypes.McpServerRunOn.Agent,
+        executionTarget: dgraphResolversTypes.ExecutionTarget.Agent,
         registryServer: mockRegistryServer,
         workspace: mockWorkspace,
       };

@@ -166,13 +166,13 @@ export const GET_RUNTIME_EDGE_MCP_SERVERS = gql`
   query getRuntime($id: ID!) {
     getRuntime(id: $id) {
       id
-      mcpServers(filter: { runOn: { eq: EDGE } }) {
+      mcpServers(filter: { executionTarget: { eq: EDGE } }) {
         id
         name
         description
         transport
         config
-        runOn
+        executionTarget
         tools {
           id
           name

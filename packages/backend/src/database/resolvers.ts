@@ -1,7 +1,7 @@
 import { GraphQLDateTime } from 'graphql-scalars';
 import { GraphQLError } from 'graphql';
 import { container as defaultContainer } from '../di/container';
-import { apolloResolversTypes, LoggerService, MCP_SERVER_RUN_ON } from '@2ly/common';
+import { apolloResolversTypes, LoggerService, EXECUTION_TARGET } from '@2ly/common';
 import { Observable } from 'rxjs';
 import { latestValueFrom } from 'rxjs-for-await';
 import {
@@ -21,6 +21,7 @@ import { createAIProviderResolvers } from '../resolvers/ai-provider.resolver';
 import { AuthenticationService, JwtService, PasswordPolicyService } from '../services/auth';
 import { Container } from 'inversify';
 import { requireAuth, requireWorkspaceAccess, requireAuthAndWorkspaceAccess, withPeriodicValidation } from './authorization.helpers';
+import { validateRuntimeForWorkspace, updateExecutionTargetWithRuntime } from './execution-target.helpers';
 import { GraphQLContext } from '../types';
 
 const observableToAsyncGenerator = <T, K extends string>(
@@ -204,9 +205,9 @@ export const resolvers = (container: Container = defaultContainer): apolloResolv
         return result;
       },
 
-      updateMCPServerRunOn: async (
+      updateMCPServerExecutionTarget: async (
         _parent: unknown,
-        { mcpServerId, runOn, runtimeId }: { mcpServerId: string; runOn: MCP_SERVER_RUN_ON; runtimeId?: string | null },
+        { mcpServerId, executionTarget, runtimeId }: { mcpServerId: string; executionTarget: EXECUTION_TARGET; runtimeId?: string | null },
         context: GraphQLContext,
       ) => {
         const userId = requireAuth(context);
@@ -214,28 +215,11 @@ export const resolvers = (container: Container = defaultContainer): apolloResolv
         if (!mcpServer?.workspace?.id) {
           throw new GraphQLError('MCP Server not found', { extensions: { code: 'NOT_FOUND' } });
         }
-        // If runtimeId provided, verify it belongs to the same workspace
-        // or that it's a system runtime
         if (runtimeId) {
-          const runtime = await runtimeRepository.getRuntime(runtimeId);
-          if (!runtime?.workspace?.id && !runtime?.system?.id) {
-            throw new GraphQLError('Runtime not found', { extensions: { code: 'NOT_FOUND' } });
-          }
-          if (runtime.workspace?.id && mcpServer.workspace.id !== runtime.workspace.id) {
-            throw new GraphQLError('MCP Server and Runtime must belong to the same workspace', {
-              extensions: { code: 'BAD_REQUEST' },
-            });
-          }
+          await validateRuntimeForWorkspace(runtimeRepository, runtimeId, mcpServer.workspace.id, 'MCP Server');
         }
         await requireWorkspaceAccess(workspaceRepository, userId, mcpServer.workspace.id);
-        await mcpServerRepository.updateRunOn(mcpServerId, runOn);
-        if (runOn !== 'EDGE') {
-          return mcpServerRepository.unlinkRuntime(mcpServerId);
-        }
-        if (runtimeId) {
-          return mcpServerRepository.linkRuntime(mcpServerId, runtimeId);
-        }
-        return mcpServerRepository.unlinkRuntime(mcpServerId);
+        return updateExecutionTargetWithRuntime(mcpServerRepository, mcpServerId, executionTarget, runtimeId);
       },
       createMCPServer: async (
         _parent: unknown,
@@ -245,7 +229,7 @@ export const resolvers = (container: Container = defaultContainer): apolloResolv
           repositoryUrl,
           transport,
           config,
-          runOn,
+          executionTarget,
           workspaceId,
           registryServerId,
         }: {
@@ -254,7 +238,7 @@ export const resolvers = (container: Container = defaultContainer): apolloResolv
           repositoryUrl: string;
           transport: 'STREAM' | 'STDIO' | 'SSE';
           config: string;
-          runOn?: MCP_SERVER_RUN_ON | null;
+          executionTarget?: EXECUTION_TARGET | null;
           workspaceId: string;
           registryServerId: string;
         },
@@ -267,7 +251,7 @@ export const resolvers = (container: Container = defaultContainer): apolloResolv
           repositoryUrl,
           transport,
           config,
-          runOn ?? null,
+          executionTarget ?? null,
           workspaceId,
           registryServerId,
         );
@@ -374,7 +358,7 @@ export const resolvers = (container: Container = defaultContainer): apolloResolv
           repositoryUrl,
           transport,
           config,
-          runOn,
+          executionTarget,
         }: {
           id: string;
           name: string;
@@ -382,7 +366,7 @@ export const resolvers = (container: Container = defaultContainer): apolloResolv
           repositoryUrl: string;
           transport: 'STREAM' | 'STDIO' | 'SSE';
           config: string;
-          runOn?: MCP_SERVER_RUN_ON | null;
+          executionTarget?: EXECUTION_TARGET | null;
         },
         context: GraphQLContext,
       ) => {
@@ -392,7 +376,7 @@ export const resolvers = (container: Container = defaultContainer): apolloResolv
           throw new GraphQLError('MCP Server not found', { extensions: { code: 'NOT_FOUND' } });
         }
         await requireWorkspaceAccess(workspaceRepository, userId, mcpServer.workspace.id);
-        return mcpServerRepository.update(id, name, description, repositoryUrl, transport, config, runOn ?? null);
+        return mcpServerRepository.update(id, name, description, repositoryUrl, transport, config, executionTarget ?? null);
       },
       deleteMCPServer: async (_parent: unknown, { id }: { id: string }, context: GraphQLContext) => {
         const userId = requireAuth(context);
@@ -612,6 +596,61 @@ export const resolvers = (container: Container = defaultContainer): apolloResolv
         }
         await requireWorkspaceAccess(workspaceRepository, userId, tool.workspace.id);
         return skillRepository.removeMCPToolFromSkill(mcpToolId, skillId);
+      },
+
+      updateSkillMode: async (
+        _parent: unknown,
+        { id, mode }: apolloResolversTypes.MutationUpdateSkillModeArgs,
+        context: GraphQLContext,
+      ) => {
+        const userId = requireAuth(context);
+        const skill = await skillRepository.findById(id);
+        if (!skill?.workspace?.id) {
+          throw new GraphQLError('Skill not found', { extensions: { code: 'NOT_FOUND' } });
+        }
+        await requireWorkspaceAccess(workspaceRepository, userId, skill.workspace.id);
+        return skillRepository.updateMode(id, mode);
+      },
+
+      updateSkillSmartConfig: async (
+        _parent: unknown,
+        { input }: apolloResolversTypes.MutationUpdateSkillSmartConfigArgs,
+        context: GraphQLContext,
+      ) => {
+        const userId = requireAuth(context);
+        const skill = await skillRepository.findById(input.id);
+        if (!skill?.workspace?.id) {
+          throw new GraphQLError('Skill not found', { extensions: { code: 'NOT_FOUND' } });
+        }
+        if (input.runtimeId) {
+          await validateRuntimeForWorkspace(runtimeRepository, input.runtimeId, skill.workspace.id, 'Skill');
+        }
+        await requireWorkspaceAccess(workspaceRepository, userId, skill.workspace.id);
+
+        // Update the smart config fields
+        await skillRepository.updateSmartConfig(input.id, {
+          model: input.model ?? undefined,
+          temperature: input.temperature ?? undefined,
+          maxTokens: input.maxTokens ?? undefined,
+          systemPrompt: input.systemPrompt ?? undefined,
+          executionTarget: input.executionTarget ?? undefined,
+        });
+
+        // Handle runtime linking/unlinking based on executionTarget
+        if (input.executionTarget === 'EDGE' && input.runtimeId) {
+          // Link to the specified runtime for edge execution
+          return skillRepository.linkRuntime(input.id, input.runtimeId);
+        } else if (input.executionTarget === 'AGENT' && skill.runtime?.id) {
+          // Unlink runtime when switching to agent-side execution
+          return skillRepository.unlinkRuntime(input.id);
+        }
+
+        // Return the updated skill
+        const updatedSkill = await skillRepository.findById(input.id);
+        if (!updatedSkill) {
+          throw new GraphQLError('Skill not found after update', { extensions: { code: 'NOT_FOUND' } });
+        }
+        return updatedSkill;
       },
 
       // AI Provider mutations

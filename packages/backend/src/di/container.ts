@@ -13,6 +13,7 @@ import {
   EPHEMERAL_TTL,
   DEFAULT_EPHEMERAL_TTL,
   EncryptionService,
+  AIProviderService,
 } from '@2ly/common';
 import { DGraphService, DGRAPH_URL } from '../services/dgraph.service';
 import { ApolloService } from '../services/apollo.service';
@@ -40,7 +41,6 @@ import { SecurityMiddleware, RateLimitMiddleware, GraphQLAuthMiddleware } from '
 import { IdentityService } from '../services/identity.service';
 import { KeyRateLimiterService } from '../services/key-rate-limiter.service';
 import { MonitoringService } from '../services/monitoring.service';
-import { AIProviderService } from '../services/ai';
 
 const container = new Container();
 const start = () => {
@@ -105,7 +105,7 @@ const start = () => {
   // Init key rate limiter service
   container.bind(KeyRateLimiterService).toSelf().inSingletonScope();
 
-  // Init AI provider services
+  // Init AI provider core service (from @2ly/common)
   container.bind(EncryptionService).toSelf().inSingletonScope();
   container.bind(AIProviderService).toSelf().inSingletonScope();
 
@@ -139,6 +139,9 @@ const start = () => {
         logger,
         context.get(NatsService),
         context.get(RuntimeRepository),
+        context.get(SkillRepository),
+        context.get(AIProviderRepository),
+        context.get(AIProviderService),
         instance,
         metadata,
         onReady,

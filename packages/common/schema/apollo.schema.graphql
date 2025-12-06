@@ -11,7 +11,7 @@ enum MCPTransportType {
   STDIO
 }
 
-enum MCPServerRunOn {
+enum ExecutionTarget {
   AGENT
   EDGE
 }
@@ -19,6 +19,12 @@ enum MCPServerRunOn {
 enum RuntimeType {
   EDGE
   MCP
+}
+
+enum SkillMode {
+  LIST
+  OPTIMIZED
+  SMART
 }
 
 type Infra {
@@ -57,7 +63,7 @@ type MCPServer {
   transport: MCPTransportType!
   config: String!
   tools: [MCPTool!]
-  runOn: MCPServerRunOn
+  executionTarget: ExecutionTarget
   runtime: Runtime
   registryServer: MCPRegistryServer!
   workspace: Workspace!
@@ -86,6 +92,16 @@ type Skill {
   mcpTools: [MCPTool!]
   workspace: Workspace!
   toolCalls: [ToolCall!]
+  skillToolCalls: [ToolCall!]
+  # Skill mode - determines how tools are exposed to consuming agents
+  mode: SkillMode
+  # Smart mode configuration fields (only used when mode = SMART)
+  model: String
+  temperature: Float
+  maxTokens: Int
+  systemPrompt: String
+  executionTarget: ExecutionTarget
+  runtime: Runtime
 }
 
 type IdentityKey {
@@ -108,6 +124,7 @@ type Runtime {
   lastSeenAt: Date
   roots: String
   mcpServers: [MCPServer!]
+  skills: [Skill!]
   workspace: Workspace
   system: System
   hostIP: String
@@ -155,7 +172,8 @@ type ToolCall {
   error: String
   isTest: Boolean!
   executedByAgent: Boolean
-  mcpTool: MCPTool!
+  mcpTool: MCPTool
+  skill: Skill
   calledBy: Skill
   executedBy: Runtime
 }
@@ -317,7 +335,7 @@ type Mutation {
     repositoryUrl: String!
     transport: MCPTransportType!
     config: String!
-    runOn: MCPServerRunOn
+    executionTarget: ExecutionTarget
     workspaceId: ID!
     registryServerId: ID!
   ): MCPServer!
@@ -328,7 +346,7 @@ type Mutation {
     repositoryUrl: String!
     transport: MCPTransportType!
     config: String!
-    runOn: MCPServerRunOn
+    executionTarget: ExecutionTarget
   ): MCPServer!
   linkMCPServerToRuntime(mcpServerId: ID!, runtimeId: ID!): MCPServer!
   unlinkMCPServerFromRuntime(mcpServerId: ID!): MCPServer!
@@ -343,11 +361,14 @@ type Mutation {
   deleteSkill(id: ID!): Skill!
   addMCPToolToSkill(mcpToolId: ID!, skillId: ID!): Skill!
   removeMCPToolFromSkill(mcpToolId: ID!, skillId: ID!): Skill!
+  # Skill mode and smart configuration mutations
+  updateSkillMode(id: ID!, mode: SkillMode!): Skill!
+  updateSkillSmartConfig(input: UpdateSkillSmartConfigInput!): Skill!
   initSystem(adminPassword: String!, email: String!): System!
   updateWorkspace(id: ID!, name: String!): Workspace!
   setGlobalRuntime(id: ID!, runtimeId: ID!): Workspace!
   unsetGlobalRuntime(id: ID!): Workspace!
-  updateMCPServerRunOn(mcpServerId: ID!, runOn: MCPServerRunOn!, runtimeId: ID): MCPServer!
+  updateMCPServerExecutionTarget(mcpServerId: ID!, executionTarget: ExecutionTarget!, runtimeId: ID): MCPServer!
 
   # Registry server mutations
   addServerToRegistry(
@@ -404,6 +425,16 @@ type Mutation {
 
   # Chat with a specific model (format: "provider/model-name")
   chatWithModel(workspaceId: ID!, model: String!, message: String!): String!
+}
+
+input UpdateSkillSmartConfigInput {
+  id: ID!
+  model: String
+  temperature: Float
+  maxTokens: Int
+  systemPrompt: String
+  executionTarget: ExecutionTarget
+  runtimeId: ID
 }
 
 # Authentication types

@@ -12,14 +12,16 @@ import {
   DEFAULT_HEARTBAT_TTL,
   EPHEMERAL_TTL,
   DEFAULT_EPHEMERAL_TTL,
+  AIProviderService,
+  type RuntimeSmartSkill,
 } from '@2ly/common';
 import { MainService } from '../services/runtime.main.service';
 import {
   AuthService,
 } from '../services/auth.service';
 import { HealthService, HEARTBEAT_INTERVAL } from '../services/runtime.health.service';
-import { ToolClientService } from '../services/tool.client.service';
-import { ToolServerService, type ToolServerServiceFactory } from '../services/tool.server.service';
+import { ToolServerService, type ToolServerServiceFactory } from '../services/tool.mcp.server.service';
+import { ToolSmartSkillService, type ToolSmartSkillServiceFactory } from '../services/tool.smart-skill.service';
 import { ToolService } from '../services/tool.service';
 import { McpStdioService } from '../services/mcp.stdio.service';
 import { McpSseService } from '../services/mcp.sse.service';
@@ -162,9 +164,6 @@ const start = () => {
   container.bind(EPHEMERAL_TTL).toConstantValue(process.env.EPHEMERAL_TTL || DEFAULT_EPHEMERAL_TTL);
   container.bind(NatsService).toSelf().inSingletonScope();
 
-  // Init tool client service
-  container.bind(ToolClientService).toSelf().inSingletonScope();
-
   // Init health service
   container.bind(HEARTBEAT_INTERVAL).toConstantValue(process.env.HEARTBEAT_INTERVAL || '5000');
   container.bind(HealthService).toSelf().inSingletonScope();
@@ -186,6 +185,19 @@ const start = () => {
     return (config: dgraphResolversTypes.McpServer, roots: { name: string; uri: string }[]) => {
       const logger = context.get(LoggerService).getLogger(`tool.server.${config.name}`);
       return new ToolServerService(logger, config, roots);
+    };
+  });
+
+  // Init AI provider service
+  container.bind(AIProviderService).toSelf().inSingletonScope();
+
+  // Init smart skill service factory
+  container.bind<ToolSmartSkillServiceFactory>(ToolSmartSkillService).toFactory((context) => {
+    return (config: RuntimeSmartSkill) => {
+      const logger = context.get(LoggerService).getLogger(`tool.smart-skill.${config.name}`);
+      logger.level = process.env.LOG_LEVEL_TOOL_SMART_SKILL || 'info';
+      const aiProviderService = context.get(AIProviderService);
+      return new ToolSmartSkillService(logger, config, aiProviderService);
     };
   });
 };

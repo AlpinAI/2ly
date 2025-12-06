@@ -336,8 +336,8 @@ export class RuntimeRepository {
     }
 
     // Validate runtime selection for AGENT tools
-    const runOn = tool.mcpServer?.runOn || 'AGENT';
-    if (runOn === 'AGENT') {
+    const executionTarget = tool.mcpServer?.executionTarget || 'AGENT';
+    if (executionTarget === 'AGENT') {
       throw new Error(`Testing call tool is currently not supported for tools that run on AGENT mode.`);
     }
 
@@ -352,6 +352,7 @@ export class RuntimeRepository {
     }
 
     const message = new SkillCallToolRequest({
+      type: 'mcp-tool',
       workspaceId: tool.workspace.id,
       isTest: true,
       toolId,

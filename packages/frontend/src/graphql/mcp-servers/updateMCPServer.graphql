@@ -7,7 +7,7 @@ mutation UpdateMCPServer(
   $repositoryUrl: String!
   $transport: MCPTransportType!
   $config: String!
-  $runOn: MCPServerRunOn
+  $executionTarget: ExecutionTarget
 ) {
   updateMCPServer(
     id: $id
@@ -16,14 +16,14 @@ mutation UpdateMCPServer(
     repositoryUrl: $repositoryUrl
     transport: $transport
     config: $config
-    runOn: $runOn
+    executionTarget: $executionTarget
   ) {
     id
     name
     description
     repositoryUrl
     transport
-    runOn
+    executionTarget
     config
     runtime {
       id

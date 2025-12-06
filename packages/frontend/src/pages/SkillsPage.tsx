@@ -34,8 +34,6 @@ export default function SkillsPage() {
   // Fetch skills via Apollo subscription
   const { filteredSkills, loading, error, filters } = useSkills(workspaceId || '');
 
-  console.log('filteredSkills', filteredSkills);
-
   // Get selected skill from URL
   const selectedSkill = useMemo(() => {
     if (!selectedId) return null;

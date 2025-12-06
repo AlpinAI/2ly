@@ -43,7 +43,7 @@ test.describe('MCP Integration with Containerized Runtime', () => {
     // Get auth token for authenticated API calls (needed for mutations)
     authToken = await loginAndGetToken('user1@2ly.ai', 'password123');
 
-    // Update MCP server to use EDGE runtime (GLOBAL runOn has been removed)
+    // Update MCP server to use EDGE runtime (GLOBAL executionTarget has been removed)
     const workspaceId = entityIds['default-workspace'];
     const mcpServerId = entityIds['server-file-system'];
     await updateMCPServerToEdgeRuntime(graphql, mcpServerId, workspaceId, authToken);

@@ -6,6 +6,7 @@
 
 import { AlertCircle, CheckCircle, Clock } from 'lucide-react';
 import { Link, useParams } from 'react-router-dom';
+import { Badge } from '@/components/ui/badge';
 import { ToolCallStatus, GetToolCallsQuery } from '@/graphql/generated/graphql';
 import { cn, hasOutputError } from '@/lib/utils';
 import { estimateTokens, formatTokenCountExact } from '@/utils/tokenEstimation';
@@ -64,23 +65,50 @@ export function ToolCallDetail({ toolCall }: ToolCallDetailProps) {
 
       {/* Tool Info */}
       <div>
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-          <Link
-            to={`/w/${workspaceId}/tools?id=${toolCall.mcpTool.id}`}
-            className="hover:text-cyan-600 dark:hover:text-cyan-400 hover:underline"
-          >
-            {toolCall.mcpTool.name}
-          </Link>
-        </h3>
-        <p className="text-xs text-gray-500 dark:text-gray-500">
-          Server:{' '}
-          <Link
-            to={`/w/${workspaceId}/sources?id=${toolCall.mcpTool.mcpServer.id}`}
-            className="hover:text-cyan-600 dark:hover:text-cyan-400 hover:underline"
-          >
-            {toolCall.mcpTool.mcpServer.name}
-          </Link>
-        </p>
+        {toolCall.mcpTool ? (
+          <>
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+              <Link
+                to={`/w/${workspaceId}/tools?id=${toolCall.mcpTool.id}`}
+                className="hover:text-cyan-600 dark:hover:text-cyan-400 hover:underline"
+              >
+                {toolCall.mcpTool.name}
+              </Link>
+            </h3>
+            <p className="text-xs text-gray-500 dark:text-gray-500">
+              Server:{' '}
+              <Link
+                to={`/w/${workspaceId}/sources?id=${toolCall.mcpTool.mcpServer.id}`}
+                className="hover:text-cyan-600 dark:hover:text-cyan-400 hover:underline"
+              >
+                {toolCall.mcpTool.mcpServer.name}
+              </Link>
+            </p>
+          </>
+        ) : toolCall.skill ? (
+          <>
+            <div className="flex items-center gap-2 mb-2">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                <Link
+                  to={`/w/${workspaceId}/skills?id=${toolCall.skill.id}`}
+                  className="hover:text-cyan-600 dark:hover:text-cyan-400 hover:underline"
+                >
+                  {toolCall.skill.name}
+                </Link>
+              </h3>
+              <Badge className="bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400">
+                Smart Skill
+              </Badge>
+            </div>
+            <p className="text-xs text-gray-500 dark:text-gray-500">
+              Mode: {toolCall.skill.mode}
+            </p>
+          </>
+        ) : (
+          <h3 className="text-lg font-semibold text-gray-500 dark:text-gray-400 mb-2">
+            Unknown Tool
+          </h3>
+        )}
       </div>
 
       {/* Runtime Info */}

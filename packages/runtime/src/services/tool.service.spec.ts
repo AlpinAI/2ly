@@ -1,18 +1,18 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { ToolClientService } from './tool.client.service';
+import { ToolService } from './tool.service';
 import {
   LoggerService,
   NatsService,
   dgraphResolversTypes,
-  MCP_SERVER_RUN_ON,
+  EXECUTION_TARGET,
 } from '@2ly/common';
 import { AuthService } from './auth.service';
 import { HealthService } from './runtime.health.service';
-import { type ToolServerServiceFactory } from './tool.server.service';
+import { type ToolServerServiceFactory } from './tool.mcp.server.service';
 import pino from 'pino';
 
-describe('ToolClientService', () => {
-  let toolClientService: ToolClientService;
+describe('ToolService', () => {
+  let toolService: ToolService;
   let mockLoggerService: LoggerService;
   let mockNatsService: NatsService;
   let mockAuthService: AuthService;
@@ -56,12 +56,16 @@ describe('ToolClientService', () => {
     // Mock ToolServerServiceFactory
     mockToolServerServiceFactory = vi.fn();
 
-    toolClientService = new ToolClientService(
+    // Mock ToolAgentServiceFactory
+    const mockToolAgentServiceFactory = vi.fn();
+
+    toolService = new ToolService(
       mockLoggerService,
       mockNatsService,
       mockAuthService,
       mockHealthService,
       mockToolServerServiceFactory,
+      mockToolAgentServiceFactory,
       undefined,
     );
   });
@@ -104,7 +108,7 @@ describe('ToolClientService', () => {
       };
       vi.mocked(mockNatsService.subscribe).mockReturnValue(mockSubscription as unknown as ReturnType<NatsService['subscribe']>);
 
-      toolClientService['ensureToolsSubscribed'](mcpServerId, tools, 'CLOUD' as MCP_SERVER_RUN_ON);
+      toolService['ensureToolsSubscribed'](mcpServerId, tools, 'CLOUD' as EXECUTION_TARGET);
 
       // Should subscribe to both tools
       expect(mockNatsService.subscribe).toHaveBeenCalledTimes(2);
@@ -136,11 +140,11 @@ describe('ToolClientService', () => {
       vi.mocked(mockNatsService.subscribe).mockReturnValue(mockSubscription as unknown as ReturnType<NatsService['subscribe']>);
 
       // First call - should subscribe
-      toolClientService['ensureToolsSubscribed'](mcpServerId, tools, 'CLOUD' as MCP_SERVER_RUN_ON);
+      toolService['ensureToolsSubscribed'](mcpServerId, tools, 'CLOUD' as EXECUTION_TARGET);
       expect(mockNatsService.subscribe).toHaveBeenCalledTimes(1);
 
       // Second call with same tools - should not subscribe again
-      toolClientService['ensureToolsSubscribed'](mcpServerId, tools, 'CLOUD' as MCP_SERVER_RUN_ON);
+      toolService['ensureToolsSubscribed'](mcpServerId, tools, 'CLOUD' as EXECUTION_TARGET);
       expect(mockNatsService.subscribe).toHaveBeenCalledTimes(1); // Still 1, not 2
     });
 
@@ -197,17 +201,17 @@ describe('ToolClientService', () => {
       vi.mocked(mockNatsService.subscribe).mockReturnValue(mockSubscription as unknown as ReturnType<NatsService['subscribe']>);
 
       // First call with one tool
-      toolClientService['ensureToolsSubscribed'](mcpServerId, initialTools, 'CLOUD' as MCP_SERVER_RUN_ON);
+      toolService['ensureToolsSubscribed'](mcpServerId, initialTools, 'CLOUD' as EXECUTION_TARGET);
       expect(mockNatsService.subscribe).toHaveBeenCalledTimes(1);
 
       // Second call with two tools - should only subscribe to the new one
-      toolClientService['ensureToolsSubscribed'](mcpServerId, updatedTools, 'CLOUD' as MCP_SERVER_RUN_ON);
+      toolService['ensureToolsSubscribed'](mcpServerId, updatedTools, 'CLOUD' as EXECUTION_TARGET);
       expect(mockNatsService.subscribe).toHaveBeenCalledTimes(2);
     });
   });
 
   describe('subscribeToTool - subject routing', () => {
-    it('should use workspace-specific subject when runOn is AGENT', () => {
+    it('should use workspace-specific subject when executionTarget is AGENT', () => {
       const toolId = '0x101';
       const workspaceId = '0x2';
       const runtimeId = '0x1';
@@ -222,7 +226,7 @@ describe('ToolClientService', () => {
       const mockSubscription = { unsubscribe: vi.fn(), [Symbol.asyncIterator]: () => ({ next: async () => ({ done: true, value: undefined }) }) };
       vi.mocked(mockNatsService.subscribe).mockReturnValue(mockSubscription as unknown as ReturnType<NatsService['subscribe']>);
 
-      toolClientService['subscribeToTool'](toolId, 'AGENT' as MCP_SERVER_RUN_ON);
+      toolService['subscribeToTool'](toolId, 'AGENT' as EXECUTION_TARGET);
 
       // Verify the subject includes workspace and runtime IDs for AGENT
       expect(mockNatsService.subscribe).toHaveBeenCalledWith(
@@ -230,7 +234,7 @@ describe('ToolClientService', () => {
       );
     });
 
-    it('should use global subject when runOn is CLOUD', () => {
+    it('should use global subject when executionTarget is CLOUD', () => {
       const toolId = '0x101';
       const runtimeId = '0x1';
 
@@ -244,7 +248,7 @@ describe('ToolClientService', () => {
       const mockSubscription = { unsubscribe: vi.fn(), [Symbol.asyncIterator]: () => ({ next: async () => ({ done: true, value: undefined }) }) };
       vi.mocked(mockNatsService.subscribe).mockReturnValue(mockSubscription as unknown as ReturnType<NatsService['subscribe']>);
 
-      toolClientService['subscribeToTool'](toolId, 'CLOUD' as MCP_SERVER_RUN_ON);
+      toolService['subscribeToTool'](toolId, 'CLOUD' as EXECUTION_TARGET);
 
       // Verify the subject is for the tool globally
       expect(mockNatsService.subscribe).toHaveBeenCalledWith(
@@ -261,11 +265,11 @@ describe('ToolClientService', () => {
       });
 
       expect(() => {
-        toolClientService['subscribeToTool']('0x101', 'CLOUD' as MCP_SERVER_RUN_ON);
+        toolService['subscribeToTool']('0x101', 'CLOUD' as EXECUTION_TARGET);
       }).toThrow('Cannot subscribe to tool: missing runtimeId or workspaceId');
     });
 
-    it('should throw error when workspaceId is missing for AGENT runOn', () => {
+    it('should throw error when workspaceId is missing for AGENT executionTarget', () => {
       vi.mocked(mockAuthService.getIdentity).mockReturnValue({
         nature: 'runtime',
         id: '0x1',
@@ -274,7 +278,7 @@ describe('ToolClientService', () => {
       });
 
       expect(() => {
-        toolClientService['subscribeToTool']('0x101', 'AGENT' as MCP_SERVER_RUN_ON);
+        toolService['subscribeToTool']('0x101', 'AGENT' as EXECUTION_TARGET);
       }).toThrow('Cannot subscribe to tool: missing runtimeId or workspaceId');
     });
   });
@@ -322,7 +326,7 @@ describe('ToolClientService', () => {
       const mockSubscription2 = { unsubscribe: vi.fn() };
 
       // Setup subscriptions
-      toolClientService['toolSubscriptions'].set(mcpServerId, new Map([
+      toolService['toolSubscriptions'].set(mcpServerId, new Map([
         ['0x101', mockSubscription1 as unknown as ReturnType<NatsService['subscribe']>],
         ['0x102', mockSubscription2 as unknown as ReturnType<NatsService['subscribe']>],
       ]));
@@ -331,19 +335,19 @@ describe('ToolClientService', () => {
       const mockMcpServer = {
         getName: () => mcpServerName,
       };
-      toolClientService['mcpServers'].set(mcpServerId, mockMcpServer as unknown as ReturnType<ToolServerServiceFactory>);
+      toolService['mcpServers'].set(mcpServerId, mockMcpServer as unknown as ReturnType<ToolServerServiceFactory>);
 
       // Mock stopService
-      const _stopServiceSpy = vi.spyOn(toolClientService as unknown as { stopService: (mcpServer: unknown) => Promise<void> }, 'stopService').mockResolvedValue(undefined);
+      const _stopServiceSpy = vi.spyOn(toolService as unknown as { stopService: (mcpServer: unknown) => Promise<void> }, 'stopService').mockResolvedValue(undefined);
 
-      await toolClientService['stopMCPServer']({ id: mcpServerId, name: mcpServerName });
+      await toolService['stopMCPServer']({ id: mcpServerId, name: mcpServerName });
 
       // Verify all subscriptions were unsubscribed
       expect(mockSubscription1.unsubscribe).toHaveBeenCalled();
       expect(mockSubscription2.unsubscribe).toHaveBeenCalled();
 
       // Verify subscriptions map was cleaned up
-      expect(toolClientService['toolSubscriptions'].has(mcpServerId)).toBe(false);
+      expect(toolService['toolSubscriptions'].has(mcpServerId)).toBe(false);
     });
 
     it('should handle unsubscribe errors gracefully', async () => {
@@ -359,7 +363,7 @@ describe('ToolClientService', () => {
       const warnSpy = vi.spyOn(mockLogger, 'warn').mockImplementation(() => {});
 
       // Setup subscriptions
-      toolClientService['toolSubscriptions'].set(mcpServerId, new Map([
+      toolService['toolSubscriptions'].set(mcpServerId, new Map([
         ['0x101', mockSubscription1 as unknown as ReturnType<NatsService['subscribe']>],
         ['0x102', mockSubscription2 as unknown as ReturnType<NatsService['subscribe']>],
       ]));
@@ -368,19 +372,19 @@ describe('ToolClientService', () => {
       const mockMcpServer = {
         getName: () => mcpServerName,
       };
-      toolClientService['mcpServers'].set(mcpServerId, mockMcpServer as unknown as ReturnType<ToolServerServiceFactory>);
+      toolService['mcpServers'].set(mcpServerId, mockMcpServer as unknown as ReturnType<ToolServerServiceFactory>);
 
       // Mock stopService
-      const _stopServiceSpy = vi.spyOn(toolClientService as unknown as { stopService: (mcpServer: unknown) => Promise<void> }, 'stopService').mockResolvedValue(undefined);
+      const _stopServiceSpy = vi.spyOn(toolService as unknown as { stopService: (mcpServer: unknown) => Promise<void> }, 'stopService').mockResolvedValue(undefined);
 
-      await toolClientService['stopMCPServer']({ id: mcpServerId, name: mcpServerName });
+      await toolService['stopMCPServer']({ id: mcpServerId, name: mcpServerName });
 
       // Verify both unsubscribe attempts were made despite first one failing
       expect(mockSubscription1.unsubscribe).toHaveBeenCalled();
       expect(mockSubscription2.unsubscribe).toHaveBeenCalled();
 
       // Verify subscriptions map was still cleaned up
-      expect(toolClientService['toolSubscriptions'].has(mcpServerId)).toBe(false);
+      expect(toolService['toolSubscriptions'].has(mcpServerId)).toBe(false);
 
       warnSpy.mockRestore();
     });
@@ -404,21 +408,21 @@ describe('ToolClientService', () => {
         },
       ];
 
-      toolClientService['mcpTools'].set(mcpServerId, mockTools);
+      toolService['mcpTools'].set(mcpServerId, mockTools);
 
       // Setup MCP server
       const mockMcpServer = {
         getName: () => mcpServerName,
       };
-      toolClientService['mcpServers'].set(mcpServerId, mockMcpServer as unknown as ReturnType<ToolServerServiceFactory>);
+      toolService['mcpServers'].set(mcpServerId, mockMcpServer as unknown as ReturnType<ToolServerServiceFactory>);
 
       // Mock stopService
-      const _stopServiceSpy = vi.spyOn(toolClientService as unknown as { stopService: (mcpServer: unknown) => Promise<void> }, 'stopService').mockResolvedValue(undefined);
+      const _stopServiceSpy = vi.spyOn(toolService as unknown as { stopService: (mcpServer: unknown) => Promise<void> }, 'stopService').mockResolvedValue(undefined);
 
-      await toolClientService['stopMCPServer']({ id: mcpServerId, name: mcpServerName });
+      await toolService['stopMCPServer']({ id: mcpServerId, name: mcpServerName });
 
       // Verify mcpTools was cleared
-      expect(toolClientService['mcpTools'].has(mcpServerId)).toBe(false);
+      expect(toolService['mcpTools'].has(mcpServerId)).toBe(false);
     });
 
     it('should do nothing when MCP server is not running', async () => {
@@ -426,9 +430,9 @@ describe('ToolClientService', () => {
       const mcpServerName = 'nonexistent-server';
 
       // Mock stopService to verify it's not called
-      const _stopServiceSpy = vi.spyOn(toolClientService as unknown as { stopService: (mcpServer: unknown) => Promise<void> }, 'stopService').mockResolvedValue(undefined);
+      const _stopServiceSpy = vi.spyOn(toolService as unknown as { stopService: (mcpServer: unknown) => Promise<void> }, 'stopService').mockResolvedValue(undefined);
 
-      await toolClientService['stopMCPServer']({ id: mcpServerId, name: mcpServerName });
+      await toolService['stopMCPServer']({ id: mcpServerId, name: mcpServerName });
 
       // Verify stopService was not called
       expect(_stopServiceSpy).not.toHaveBeenCalled();
