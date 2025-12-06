@@ -7,7 +7,6 @@ import {
   InvalidAPIKeyError,
   RateLimitError,
   TokenLimitError,
-  ModelNotFoundError,
   type RuntimeSmartSkill,
 } from '@2ly/common';
 
@@ -69,7 +68,7 @@ export class ToolSmartSkillService extends Service {
           provider: error.provider,
           message: error.message,
         });
-        throw new Error(`Smart skill '${this.config.name}' failed: Invalid API key for ${error.provider}`);
+        throw new Error(`Smart skill '${this.config.name}' failed: Invalid API key for ${error.provider}`, { cause: error });
       }
 
       if (error instanceof RateLimitError) {
@@ -81,7 +80,7 @@ export class ToolSmartSkillService extends Service {
           retryAfter: error.retryAfter,
           message: error.message,
         });
-        throw new Error(`Smart skill '${this.config.name}' failed: Rate limit exceeded for ${error.provider}`);
+        throw new Error(`Smart skill '${this.config.name}' failed: Rate limit exceeded for ${error.provider}`, { cause: error });
       }
 
       if (error instanceof TokenLimitError) {
@@ -93,19 +92,7 @@ export class ToolSmartSkillService extends Service {
           maxTokens: error.maxTokens,
           message: error.message,
         });
-        throw new Error(`Smart skill '${this.config.name}' failed: Token limit exceeded for ${error.provider}`);
-      }
-
-      if (error instanceof ModelNotFoundError) {
-        this.logger.error({
-          error: 'ModelNotFound',
-          skill: this.config.name,
-          model: this.config.model,
-          provider: error.provider,
-          modelName: error.modelName,
-          message: error.message,
-        });
-        throw new Error(`Smart skill '${this.config.name}' failed: Model '${error.modelName}' not found`);
+        throw new Error(`Smart skill '${this.config.name}' failed: Token limit exceeded for ${error.provider}`, { cause: error });
       }
 
       if (error instanceof AIProviderError) {
@@ -116,7 +103,7 @@ export class ToolSmartSkillService extends Service {
           provider: error.provider,
           message: error.message,
         });
-        throw new Error(`Smart skill '${this.config.name}' failed: ${error.message}`);
+        throw new Error(`Smart skill '${this.config.name}' failed: ${error.message}`, { cause: error });
       }
 
       // Generic error handling

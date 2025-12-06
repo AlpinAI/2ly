@@ -21,7 +21,7 @@ import { createAIProviderResolvers } from '../resolvers/ai-provider.resolver';
 import { AuthenticationService, JwtService, PasswordPolicyService } from '../services/auth';
 import { Container } from 'inversify';
 import { requireAuth, requireWorkspaceAccess, requireAuthAndWorkspaceAccess, withPeriodicValidation } from './authorization.helpers';
-import { validateRuntimeForWorkspace, updateExecutionTargetWithRuntime } from './execution-target.helpers';
+import { validateRuntimeForWorkspace, updateExecutionTargetWithRuntime, applyRuntimeLinking } from './execution-target.helpers';
 import { GraphQLContext } from '../types';
 
 const observableToAsyncGenerator = <T, K extends string>(
@@ -637,12 +637,8 @@ export const resolvers = (container: Container = defaultContainer): apolloResolv
         });
 
         // Handle runtime linking/unlinking based on executionTarget
-        if (input.executionTarget === 'EDGE' && input.runtimeId) {
-          // Link to the specified runtime for edge execution
-          return skillRepository.linkRuntime(input.id, input.runtimeId);
-        } else if (input.executionTarget === 'AGENT' && skill.runtime?.id) {
-          // Unlink runtime when switching to agent-side execution
-          return skillRepository.unlinkRuntime(input.id);
+        if (input.executionTarget) {
+          return applyRuntimeLinking(skillRepository, input.id, input.executionTarget, input.runtimeId);
         }
 
         // Return the updated skill
