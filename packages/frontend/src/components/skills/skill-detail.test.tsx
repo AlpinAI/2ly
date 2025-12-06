@@ -37,7 +37,7 @@ const mockSkill = {
   __typename: 'Skill' as const,
   id: 'skill-1',
   name: 'Test Skill',
-  description: 'Test skill description',
+  description: '# Scope\nTest skill scope\n\n# Guardrails\nTest skill guardrails',
   createdAt: new Date('2024-01-01'),
   updatedAt: new Date('2024-01-02'),
   mcpTools: [
@@ -136,7 +136,7 @@ describe('SkillDetail - Inline Editing', () => {
           variables: {
             id: 'skill-1',
             name: 'New Skill Name',
-            description: 'Test skill description',
+            description: '# Scope\nTest skill scope\n\n# Guardrails\nTest skill guardrails',
           },
         });
       });
@@ -216,7 +216,7 @@ describe('SkillDetail - Inline Editing', () => {
           variables: {
             id: 'skill-1',
             name: 'Valid Name',
-            description: 'Test skill description',
+            description: '# Scope\nTest skill scope\n\n# Guardrails\nTest skill guardrails',
           },
         });
       });
@@ -249,33 +249,60 @@ describe('SkillDetail - Inline Editing', () => {
   });
 
   describe('Description Editing', () => {
-    it('allows editing skill description', () => {
+    it('renders structured description fields', () => {
       render(
         <BrowserRouter>
           <SkillDetail skill={mockSkill} />
         </BrowserRouter>
       );
 
-      const descriptionTextarea = screen.getByDisplayValue('Test skill description');
-      expect(descriptionTextarea).toBeInTheDocument();
-
-      fireEvent.change(descriptionTextarea, { target: { value: 'New description' } });
-      expect(descriptionTextarea).toHaveValue('New description');
+      expect(screen.getByText('Description')).toBeInTheDocument();
+      expect(screen.getByText('Scope *')).toBeInTheDocument();
+      expect(screen.getByText('Guardrails *')).toBeInTheDocument();
+      expect(screen.getByText('Knowledge')).toBeInTheDocument();
     });
 
-    it('shows placeholder when description is empty', () => {
-      const skillWithoutDescription = { ...mockSkill, description: null };
+    it('deserializes and displays description sections', () => {
       render(
         <BrowserRouter>
-          <SkillDetail skill={skillWithoutDescription} />
+          <SkillDetail skill={mockSkill} />
         </BrowserRouter>
       );
 
-      const descriptionTextarea = screen.getByPlaceholderText('Click to add description...');
-      expect(descriptionTextarea).toBeInTheDocument();
+      expect(screen.getByDisplayValue('Test skill scope')).toBeInTheDocument();
+      expect(screen.getByDisplayValue('Test skill guardrails')).toBeInTheDocument();
     });
 
-    it('saves description on blur when changed', async () => {
+    it('handles backward compatibility for plain text description', () => {
+      const skillWithPlainDescription = {
+        ...mockSkill,
+        description: 'Plain text description',
+      };
+
+      render(
+        <BrowserRouter>
+          <SkillDetail skill={skillWithPlainDescription} />
+        </BrowserRouter>
+      );
+
+      // Plain text should appear in Scope field
+      expect(screen.getByDisplayValue('Plain text description')).toBeInTheDocument();
+    });
+
+    it('allows editing description sections', () => {
+      render(
+        <BrowserRouter>
+          <SkillDetail skill={mockSkill} />
+        </BrowserRouter>
+      );
+
+      const scopeTextarea = screen.getByDisplayValue('Test skill scope');
+      fireEvent.change(scopeTextarea, { target: { value: 'Updated scope' } });
+
+      expect(scopeTextarea).toHaveValue('Updated scope');
+    });
+
+    it('saves structured description on Save button click', async () => {
       mockUpdateSkill.mockResolvedValue({ data: {} });
 
       render(
@@ -284,16 +311,18 @@ describe('SkillDetail - Inline Editing', () => {
         </BrowserRouter>
       );
 
-      const descriptionTextarea = screen.getByDisplayValue('Test skill description');
-      fireEvent.change(descriptionTextarea, { target: { value: 'Updated description' } });
-      fireEvent.blur(descriptionTextarea);
+      const scopeTextarea = screen.getByDisplayValue('Test skill scope');
+      fireEvent.change(scopeTextarea, { target: { value: 'Updated scope' } });
+
+      const saveButton = screen.getByRole('button', { name: /Save Description/i });
+      fireEvent.click(saveButton);
 
       await waitFor(() => {
         expect(mockUpdateSkill).toHaveBeenCalledWith({
           variables: {
             id: 'skill-1',
             name: 'Test Skill',
-            description: 'Updated description',
+            description: '# Scope\nUpdated scope\n\n# Guardrails\nTest skill guardrails',
           },
         });
       });
@@ -306,53 +335,98 @@ describe('SkillDetail - Inline Editing', () => {
         </BrowserRouter>
       );
 
-      const descriptionTextarea = screen.getByDisplayValue('Test skill description');
-      fireEvent.blur(descriptionTextarea);
+      const saveButton = screen.getByRole('button', { name: /Save Description/i });
+      expect(saveButton).toBeDisabled();
+
+      fireEvent.click(saveButton);
 
       await waitFor(() => {
         expect(mockUpdateSkill).not.toHaveBeenCalled();
       });
     });
 
-    it('allows empty description', async () => {
-      mockUpdateSkill.mockResolvedValue({ data: {} });
-
+    it('validates required scope field', async () => {
       render(
         <BrowserRouter>
           <SkillDetail skill={mockSkill} />
         </BrowserRouter>
       );
 
-      const descriptionTextarea = screen.getByDisplayValue('Test skill description');
-      fireEvent.change(descriptionTextarea, { target: { value: '' } });
-      fireEvent.blur(descriptionTextarea);
+      const scopeTextarea = screen.getByDisplayValue('Test skill scope');
+      fireEvent.change(scopeTextarea, { target: { value: '' } });
 
-      await waitFor(() => {
-        expect(mockUpdateSkill).toHaveBeenCalledWith({
-          variables: {
-            id: 'skill-1',
-            name: 'Test Skill',
-            description: '',
-          },
-        });
-      });
-    });
-
-    it('validates description length (maximum 1000 characters)', async () => {
-      const longDescription = 'A'.repeat(1001);
-      render(
-        <BrowserRouter>
-          <SkillDetail skill={mockSkill} />
-        </BrowserRouter>
-      );
-
-      const descriptionTextarea = screen.getByDisplayValue('Test skill description');
-      fireEvent.change(descriptionTextarea, { target: { value: longDescription } });
-      fireEvent.blur(descriptionTextarea);
+      const saveButton = screen.getByRole('button', { name: /Save Description/i });
+      fireEvent.click(saveButton);
 
       await waitFor(() => {
         expect(mockToast).toHaveBeenCalledWith({
-          description: 'Description must not exceed 1000 characters',
+          description: 'Scope is required',
+          variant: 'error',
+        });
+        expect(mockUpdateSkill).not.toHaveBeenCalled();
+      });
+    });
+
+    it('validates required guardrails field', async () => {
+      render(
+        <BrowserRouter>
+          <SkillDetail skill={mockSkill} />
+        </BrowserRouter>
+      );
+
+      const guardrailsTextarea = screen.getByDisplayValue('Test skill guardrails');
+      fireEvent.change(guardrailsTextarea, { target: { value: '' } });
+
+      const saveButton = screen.getByRole('button', { name: /Save Description/i });
+      fireEvent.click(saveButton);
+
+      await waitFor(() => {
+        expect(mockToast).toHaveBeenCalledWith({
+          description: 'Guardrails is required',
+          variant: 'error',
+        });
+        expect(mockUpdateSkill).not.toHaveBeenCalled();
+      });
+    });
+
+    it('validates scope length (maximum 300 characters)', async () => {
+      render(
+        <BrowserRouter>
+          <SkillDetail skill={mockSkill} />
+        </BrowserRouter>
+      );
+
+      const scopeTextarea = screen.getByDisplayValue('Test skill scope');
+      fireEvent.change(scopeTextarea, { target: { value: 'A'.repeat(301) } });
+
+      const saveButton = screen.getByRole('button', { name: /Save Description/i });
+      fireEvent.click(saveButton);
+
+      await waitFor(() => {
+        expect(mockToast).toHaveBeenCalledWith({
+          description: 'Scope must not exceed 300 characters',
+          variant: 'error',
+        });
+        expect(mockUpdateSkill).not.toHaveBeenCalled();
+      });
+    });
+
+    it('validates guardrails length (maximum 10,000 characters)', async () => {
+      render(
+        <BrowserRouter>
+          <SkillDetail skill={mockSkill} />
+        </BrowserRouter>
+      );
+
+      const guardrailsTextarea = screen.getByDisplayValue('Test skill guardrails');
+      fireEvent.change(guardrailsTextarea, { target: { value: 'A'.repeat(10001) } });
+
+      const saveButton = screen.getByRole('button', { name: /Save Description/i });
+      fireEvent.click(saveButton);
+
+      await waitFor(() => {
+        expect(mockToast).toHaveBeenCalledWith({
+          description: 'Guardrails must not exceed 10000 characters',
           variant: 'error',
         });
         expect(mockUpdateSkill).not.toHaveBeenCalled();
@@ -369,16 +443,19 @@ describe('SkillDetail - Inline Editing', () => {
         </BrowserRouter>
       );
 
-      const descriptionTextarea = screen.getByDisplayValue('Test skill description');
-      fireEvent.change(descriptionTextarea, { target: { value: 'New description' } });
-      fireEvent.blur(descriptionTextarea);
+      const scopeTextarea = screen.getByDisplayValue('Test skill scope');
+      fireEvent.change(scopeTextarea, { target: { value: 'Updated scope' } });
+
+      const saveButton = screen.getByRole('button', { name: /Save Description/i });
+      fireEvent.click(saveButton);
 
       await waitFor(() => {
         expect(mockToast).toHaveBeenCalledWith({
           description: 'Failed to save description',
           variant: 'error',
         });
-        expect(descriptionTextarea).toHaveValue('Test skill description');
+        // Should revert to original
+        expect(screen.getByDisplayValue('Test skill scope')).toBeInTheDocument();
       });
 
       consoleErrorSpy.mockRestore();
@@ -418,7 +495,8 @@ describe('SkillDetail - Inline Editing', () => {
 
       // Verify editable fields exist
       expect(screen.getByDisplayValue('Test Skill')).toBeInTheDocument();
-      expect(screen.getByDisplayValue('Test skill description')).toBeInTheDocument();
+      expect(screen.getByDisplayValue('Test skill scope')).toBeInTheDocument();
+      expect(screen.getByDisplayValue('Test skill guardrails')).toBeInTheDocument();
 
       // Verify other UI elements still render
       expect(screen.getByText('Connect')).toBeInTheDocument();
