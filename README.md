@@ -153,7 +153,7 @@ See [Runtime Documentation](https://docs.skilder.ai/core-concepts/runtime) for d
 Unlike traditional gateways that proxy HTTP requests to fixed endpoints, Skilder uses message-based pub-sub where runtimes register dynamically from anywhere. Agents publish requests to topics; the broker routes to available runtimes regardless of location (cloud, edge, behind NAT). Message persistence and async communication enable fan-out queries, automatic failover, and zero-downtime deployments without orchestration code.
 
 <p align="center">
-<img width="784" height="242" alt="Skilder Architecture" src="https://github.com/user-attachments/assets/4a7810b1-51f8-4bc0-ad73-cff62db420c7" style="border-radius: 15px;" />
+<img width="784" height="242" alt="Skilder Architecture" src="https://github.com/user-attachments/assets/f257c6f8-4cf0-4222-ba2c-16ed67f8b02c" style="border-radius: 15px;" />
 </p>
 
 ### Key Components
