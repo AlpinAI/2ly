@@ -11,6 +11,9 @@ COPY packages/common/ ./packages/common/
 # Install dependencies
 RUN npm install
 
+# Rebuild rollup to get correct platform-specific binaries (npm optional deps bug workaround)
+RUN npm rebuild rollup
+
 # Build the frontend
 ARG BUILD_MODE=production
 
