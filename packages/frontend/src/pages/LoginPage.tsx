@@ -75,7 +75,7 @@ export default function LoginPage() {
           <div className="text-center mb-8">
             <div className="flex justify-center mb-4">
               <img
-                src={theme === 'dark' ? '/logo-skilder-dark2.png' : '/logo-skilder2.png'}
+                src={theme === 'dark' ? '/logo-skilder-dark.png' : '/logo-skilder.png'}
                 alt="Skilder"
                 className="h-16 w-auto"
               />

@@ -14,7 +14,7 @@ export function baseOptions(): BaseLayoutProps {
       title: (
         <>
           <Image
-            src="/logo-skilder2.png"
+            src="/logo-skilder.png"
             alt="Skilder Logo"
             width={60}
             height={40}

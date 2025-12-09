@@ -152,7 +152,7 @@ export default function InitPage() {
               </div>
             </div>
             <div className="flex justify-center mb-2">
-              <img src={theme === 'dark' ? '/logo-skilder-dark2.png' : '/logo-skilder2.png'} alt="Skilder" className="h-12 w-auto" />
+              <img src={theme === 'dark' ? '/logo-skilder-dark.png' : '/logo-skilder.png'} alt="Skilder" className="h-12 w-auto" />
             </div>
             <p className="text-gray-600 dark:text-gray-400">AI Tool Management Platform</p>
           </div>

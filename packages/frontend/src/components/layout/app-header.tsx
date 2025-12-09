@@ -58,7 +58,7 @@ export function AppHeader() {
             <div className="flex items-center gap-4 min-w-0">
               <Link to="/app/overview" className="flex items-center gap-2 flex-shrink-0">
                 <img
-                  src={theme === 'dark' ? '/logo-skilder-dark2.png' : '/logo-skilder2.png'}
+                  src={theme === 'dark' ? '/logo-skilder-dark.png' : '/logo-skilder.png'}
                   alt="Skilder"
                   className="h-12 w-auto"
                 />
