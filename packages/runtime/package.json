@@ -1,6 +1,6 @@
 {
   "name": "@skilder-ai/runtime",
-  "version": "0.2.5",
+  "version": "0.3.0",
   "description": "Skilder Runtime - NodeJS processes for edge execution connected to backend orchestrator via NATS",
   "author": "Skilder AI",
   "license": "See license in LICENSE",
