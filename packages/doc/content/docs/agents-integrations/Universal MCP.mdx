@@ -4,7 +4,7 @@ description: "Build custom agent adapters"
 draft: false
 ---
 
-Build custom adapters to integrate specialized AI frameworks or proprietary models with 2LY.
+Build custom adapters to integrate specialized AI frameworks or proprietary models with Skilder.
 
 ## Use Cases
 
@@ -16,7 +16,7 @@ Build custom adapters to integrate specialized AI frameworks or proprietary mode
 
 ## MCP Protocol
 
-Any agent that implements MCP protocol can connect to 2LY:
+Any agent that implements MCP protocol can connect to Skilder:
 
 **MCP Client Requirements:**
 - Implement `initialize` handshake
@@ -38,9 +38,9 @@ Configure in Claude Desktop or similar:
 ```json
 {
   "mcpServers": {
-    "2ly": {
+    "Skilder": {
       "command": "npx",
-      "args": ["@2ly/runtime"],
+      "args": ["@skilder-ai/runtime"],
       "env": {
         "RUNTIME_NAME": "my-agent",
         "WORKSPACE_ID": "my-workspace"
@@ -58,10 +58,10 @@ Use Python SDK for custom implementation:
 from mcp import ClientSession, StdioServerParameters
 from mcp.client.stdio import stdio_client
 
-async def connect_to_2ly():
+async def connect_to_Skilder():
     server_params = StdioServerParameters(
         command="npx",
-        args=["@2ly/runtime"],
+        args=["@skilder-ai/runtime"],
         env={"RUNTIME_NAME": "my-agent"}
     )
 
@@ -118,7 +118,7 @@ class CustomFrameworkAdapter {
 
 ### Runtime Environment Variables
 
-Set when starting `@2ly/runtime`:
+Set when starting `@skilder-ai/runtime`:
 
 | Variable | Required | Description |
 |----------|----------|-------------|
@@ -133,9 +133,9 @@ Set when starting `@2ly/runtime`:
 ```json
 {
   "mcpServers": {
-    "2ly": {
+    "Skilder": {
       "command": "npx",
-      "args": ["@2ly/runtime"],
+      "args": ["@skilder-ai/runtime"],
       "env": {
         "RUNTIME_NAME": "claude-desktop",
         "WORKSPACE_ID": "team-workspace"
@@ -150,14 +150,14 @@ Set when starting `@2ly/runtime`:
 RUNTIME_NAME=my-agent \
 WORKSPACE_ID=my-workspace \
 NATS_SERVERS=nats://prod:4222 \
-npx @2ly/runtime
+npx @skilder-ai/runtime
 ```
 
 ## Testing Your Integration
 
 ### 1. Verify Connection
 
-Check runtime appears in 2LY dashboard at http://localhost:8888
+Check runtime appears in Skilder dashboard at http://localhost:8888
 
 ### 2. Test Tool Discovery
 
@@ -180,7 +180,7 @@ print(result)
 
 **Runtime won't start:**
 - Verify Node.js installed: `node --version`
-- Test runtime manually: `npx @2ly/runtime`
+- Test runtime manually: `npx @skilder-ai/runtime`
 
 **No tools available:**
 - Check tools configured in workspace

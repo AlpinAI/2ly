@@ -13,7 +13,7 @@ describe('N8NInstructions', () => {
 
   it('renders the title', () => {
     render(<N8NInstructions {...defaultProps} />);
-    expect(screen.getByText('Connect N8N to 2LY')).toBeInTheDocument();
+    expect(screen.getByText('Connect N8N to Skilder')).toBeInTheDocument();
   });
 
   it('renders the image', () => {

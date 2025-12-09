@@ -98,18 +98,18 @@ jobs:
           $COMMITS
 
           ### Packages Updated
-          - @2ly/backend
-          - @2ly/frontend
-          - @2ly/runtime
-          - @2ly/common
-          - @2ly/doc
+          - @skilder-ai/backend
+          - @skilder-ai/frontend
+          - @skilder-ai/runtime
+          - @skilder-ai/common
+          - @skilder-ai/doc
 
           ---
 
           When this PR is merged to main, the following will happen automatically:
           1. A git tag \`v$VERSION\` will be created
           2. Docker images will be built and pushed with the \`v$VERSION\` tag
-          3. The NPM package \`@2ly/runtime@$VERSION\` will be published
+          3. The NPM package \`@skilder-ai/runtime@$VERSION\` will be published
           4. A GitHub release will be created with release notes
           EOF
 

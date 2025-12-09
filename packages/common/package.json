@@ -1,5 +1,5 @@
 {
-  "name": "@2ly/common",
+  "name": "@skilder-ai/common",
   "version": "0.2.5",
   "type": "module",
   "exports": {

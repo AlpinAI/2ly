@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import { MCPToolRepository } from './mcp-tool.repository';
 import type { DGraphService } from '../services/dgraph.service';
 import { DgraphServiceMock } from '../services/dgraph.service.mock';
-import { dgraphResolversTypes } from '@2ly/common';
+import { dgraphResolversTypes } from '@skilder-ai/common';
 
 describe('MCPToolRepository', () => {
     let dgraphService: DgraphServiceMock;

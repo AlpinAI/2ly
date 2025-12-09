@@ -15,7 +15,7 @@
  * USAGE:
  * ```tsx
  * <CodeBlock
- *   code="npm install @2ly/runtime"
+ *   code="npm install @skilder-ai/runtime"
  *   language="bash"
  *   size="small"
  * />

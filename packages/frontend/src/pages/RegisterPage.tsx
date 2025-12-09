@@ -90,8 +90,8 @@ export default function RegisterPage() {
           <div className="text-center mb-8">
             <div className="flex justify-center mb-4">
               <img
-                src={theme === 'dark' ? '/logo-2ly-dark.png' : '/logo-2ly.png'}
-                alt="2LY"
+                src={theme === 'dark' ? '/logo-skilder-dark2.png' : '/logo-skilder2.png'}
+                alt="Skilder"
                 className="h-16 w-auto"
               />
             </div>
@@ -194,7 +194,7 @@ export default function RegisterPage() {
                   <span className="text-sm text-gray-700 dark:text-gray-300">
                     I agree to the{' '}
                     <a
-                      href="https://www.2ly.ai/terms-of-service"
+                      href="https://www.skilder.ai/terms-of-service"
                       target="_blank"
                       rel="noopener noreferrer"
                       className="text-cyan-600 hover:text-cyan-500 underline"
@@ -203,7 +203,7 @@ export default function RegisterPage() {
                     </a>
                     {' '}and{' '}
                     <a
-                      href="https://www.2ly.ai/privacy-policy"
+                      href="https://www.skilder.ai/privacy-policy"
                       target="_blank"
                       rel="noopener noreferrer"
                       className="text-cyan-600 hover:text-cyan-500 underline"

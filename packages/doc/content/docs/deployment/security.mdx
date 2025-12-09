@@ -1,10 +1,10 @@
 ---
 title: "Security"
-description: "Security architecture for 2LY deployments"
+description: "Security architecture for Skilder deployments"
 draft: true
 ---
 
-2LY implements security across network, application, and data layers.
+Skilder implements security across network, application, and data layers.
 
 ## Security Overview
 
@@ -32,7 +32,7 @@ NATS_SERVERS=nats://localhost:4222 \
 NATS_TLS_CERT=/path/to/cert.pem \
 NATS_TLS_KEY=/path/to/key.pem \
 NATS_TLS_CA=/path/to/ca.pem \
-npx @2ly/runtime
+npx @skilder-ai/runtime
 ```
 
 **GraphQL API with TLS:**
@@ -84,11 +84,11 @@ Restrict access:
 **Example with Vault:**
 ```bash
 # Store secret
-vault kv put secret/2ly/github token=ghp_xxx
+vault kv put secret/Skilder/github token=ghp_xxx
 
 # Retrieve in runtime
-GITHUB_TOKEN=$(vault kv get -field=token secret/2ly/github) \
-npx @2ly/runtime
+GITHUB_TOKEN=$(vault kv get -field=token secret/Skilder/github) \
+npx @skilder-ai/runtime
 ```
 
 ### Environment Variables
@@ -136,7 +136,7 @@ docker run \
   --security-opt=no-new-privileges \
   --cap-drop=ALL \
   -e RUNTIME_NAME=secure-runtime \
-  @2ly/runtime
+  @skilder-ai/runtime
 ```
 
 **Kubernetes:**
@@ -149,7 +149,7 @@ spec:
     runAsUser: 1000
   containers:
   - name: runtime
-    image: 2ly/runtime
+    image: Skilder/runtime
     securityContext:
       allowPrivilegeEscalation: false
       readOnlyRootFilesystem: true
@@ -180,7 +180,7 @@ Limit filesystem access with ROOTS:
 # Only allow access to /data and /tmp
 ROOTS=DATA:/data,TMP:/tmp \
 RUNTIME_NAME=restricted-runtime \
-npx @2ly/runtime
+npx @skilder-ai/runtime
 ```
 
 ## Access Control (Planned)
@@ -234,7 +234,7 @@ Rotate credentials regularly:
 ```bash
 # Automated rotation script
 #!/bin/bash
-vault kv put secret/2ly/github token=$(generate_new_token)
+vault kv put secret/Skilder/github token=$(generate_new_token)
 kubectl rollout restart deployment/runtime
 ```
 
@@ -246,7 +246,7 @@ Log security events:
 
 ```bash
 # Enable verbose logging
-LOG_LEVEL=debug npx @2ly/runtime
+LOG_LEVEL=debug npx @skilder-ai/runtime
 ```
 
 Monitor:
@@ -273,7 +273,7 @@ Control where data is processed:
 # EU runtime
 NATS_SERVERS=nats://eu-prod:4222 \
 REGION=eu-west-1 \
-npx @2ly/runtime
+npx @skilder-ai/runtime
 ```
 
 ### Audit Trail

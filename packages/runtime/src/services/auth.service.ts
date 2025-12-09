@@ -1,7 +1,7 @@
 import { inject, injectable } from 'inversify';
 import { getHostIP } from '../utils';
 import os from 'os';
-import { LoggerService, NatsService, RootIdentity, Service, HandshakeRequest, HandshakeResponse, ErrorResponse } from '@2ly/common';
+import { LoggerService, NatsService, RootIdentity, Service, HandshakeRequest, HandshakeResponse, ErrorResponse } from '@skilder-ai/common';
 import { v4 as uuidv4 } from 'uuid';
 import pino from 'pino';
 import fs from 'fs';

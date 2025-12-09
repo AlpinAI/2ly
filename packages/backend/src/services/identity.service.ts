@@ -1,7 +1,7 @@
 import { injectable, inject } from 'inversify';
 import { IdentityRepository } from '../repositories/identity.repository';
 import { KeyRateLimiterService } from './key-rate-limiter.service';
-import { LoggerService, NatsService, Service, HandshakeRequest, HandshakeResponse, ErrorResponse, dgraphResolversTypes } from '@2ly/common';
+import { LoggerService, NatsService, Service, HandshakeRequest, HandshakeResponse, ErrorResponse, dgraphResolversTypes } from '@skilder-ai/common';
 import pino from 'pino';
 import { WorkspaceRepository } from '../repositories/workspace.repository';
 import { RuntimeRepository } from '../repositories/runtime.repository';

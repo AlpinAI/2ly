@@ -5,7 +5,7 @@ import {
   Service,
   RuntimeDiscoveredToolsPublish,
   RuntimeReconnectPublish,
-} from '@2ly/common';
+} from '@skilder-ai/common';
 import { DGraphService } from './dgraph.service';
 import pino from 'pino';
 import { IdentityService } from './identity.service';

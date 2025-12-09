@@ -5,7 +5,7 @@ import { AuthenticationService, LoginResult } from '../services/auth/auth.servic
 import { JwtService, TokenPair } from '../services/auth/jwt.service';
 import { UserRepository } from '../repositories/user.repository';
 import { PasswordPolicyService } from '../services/auth/password-policy.service';
-import { apolloResolversTypes, dgraphResolversTypes } from '@2ly/common';
+import { apolloResolversTypes, dgraphResolversTypes } from '@skilder-ai/common';
 
 describe('AuthResolver', () => {
   let resolver: AuthResolver;

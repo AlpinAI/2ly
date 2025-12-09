@@ -18,7 +18,7 @@ allowed-tools: Bash(npm run:*), Bash(docker:*), TodoWrite
 3. Work on one task-list at a time, with a cycle of coding and review
     3.a. Use the **typescript-architect** sub-agent to accomplish the given task-list
         - Do not forget to validate the tests `npm run test``
-        - Do not forget to validate the code quality `npm run lint`, you can scope the linter by the package with `npm run lint -w @2ly/backend` for the backend package for example.
+        - Do not forget to validate the code quality `npm run lint`, you can scope the linter by the package with `npm run lint -w @skilder-ai/backend` for the backend package for example.
     3.b. Use the **typescript-code-reviewer** sub-agent to review the work of the coding agent above
         - When the code-reviewer is OK with the changes, consider this task list finished and tick it on the task-list
         - You can only move to the next task-list when the current one is finished and validated

@@ -1,6 +1,6 @@
 import { inject, injectable } from 'inversify';
 import { DGraphService } from '../services/dgraph.service';
-import { apolloResolversTypes, dgraphResolversTypes } from '@2ly/common';
+import { apolloResolversTypes, dgraphResolversTypes } from '@skilder-ai/common';
 import {
   ADD_WORKSPACE,
   QUERY_WORKSPACE,
@@ -26,7 +26,7 @@ import { INITIAL_ONBOARDING_STEPS } from './onboarding-step-definitions';
 import { INITIAL_FEATURED_SERVERS } from './initial-servers';
 import { QUERY_SKILLS_BY_WORKSPACE } from './skill.operations';
 import { IdentityRepository } from './identity.repository';
-import { LoggerService } from '@2ly/common';
+import { LoggerService } from '@skilder-ai/common';
 import { SystemRepository } from './system.repository';
 import { UserRepository } from './user.repository';
 import pino from 'pino';

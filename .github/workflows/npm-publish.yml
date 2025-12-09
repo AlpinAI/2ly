@@ -10,7 +10,7 @@ on:
 
 jobs:
   publish-runtime:
-    name: Publish @2ly/runtime to NPM
+    name: Publish @skilder-ai/runtime to NPM
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -61,7 +61,7 @@ jobs:
           echo "npm_tag=$NPM_TAG" >> $GITHUB_OUTPUT
           echo "release_type=$RELEASE_TYPE" >> $GITHUB_OUTPUT
 
-          echo "📦 Publishing @2ly/runtime@$VERSION"
+          echo "📦 Publishing @skilder-ai/runtime@$VERSION"
           echo "   NPM tag: $NPM_TAG"
           echo "   Release type: $RELEASE_TYPE"
 
@@ -69,16 +69,16 @@ jobs:
         run: npm ci --cache .npm --prefer-offline=false
 
       - name: Run linter
-        run: npm run lint -w @2ly/runtime
+        run: npm run lint -w @skilder-ai/runtime
 
       - name: Run type checker
-        run: npm run typecheck -w @2ly/runtime
+        run: npm run typecheck -w @skilder-ai/runtime
 
       - name: Run tests
         run: npm run test packages/runtime
 
       - name: Build runtime package
-        run: npm run build -w @2ly/runtime
+        run: npm run build -w @skilder-ai/runtime
 
       - name: Verify build output
         run: |
@@ -98,7 +98,7 @@ jobs:
           ls -lah packages/runtime/dist/
 
       - name: Publish to NPM
-        run: npm publish -w @2ly/runtime --tag ${{ steps.version.outputs.npm_tag }}
+        run: npm publish -w @skilder-ai/runtime --tag ${{ steps.version.outputs.npm_tag }}
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
@@ -109,18 +109,18 @@ jobs:
           RELEASE_TYPE="${{ steps.version.outputs.release_type }}"
 
           echo ""
-          echo "✅ Successfully published @2ly/runtime@$VERSION to NPM"
+          echo "✅ Successfully published @skilder-ai/runtime@$VERSION to NPM"
           echo ""
-          echo "Package URL: https://www.npmjs.com/package/@2ly/runtime/v/$VERSION"
+          echo "Package URL: https://www.npmjs.com/package/@skilder-ai/runtime/v/$VERSION"
           echo "NPM tag: $NPM_TAG"
           echo ""
 
           if [ "$RELEASE_TYPE" == "stable" ]; then
             echo "Install with:"
-            echo "  npm install @2ly/runtime@$VERSION"
-            echo "  npm install @2ly/runtime  # (latest)"
+            echo "  npm install @skilder-ai/runtime@$VERSION"
+            echo "  npm install @skilder-ai/runtime  # (latest)"
           else
             echo "Install beta with:"
-            echo "  npm install @2ly/runtime@$VERSION"
-            echo "  npm install @2ly/runtime@beta  # (latest beta)"
+            echo "  npm install @skilder-ai/runtime@$VERSION"
+            echo "  npm install @skilder-ai/runtime@beta  # (latest beta)"
           fi

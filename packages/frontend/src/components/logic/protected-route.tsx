@@ -17,7 +17,7 @@ interface ProtectedRouteProps {
   children: ReactNode;
 }
 
-const INTENT_STORAGE_KEY = '2ly_redirect_intent';
+const INTENT_STORAGE_KEY = 'skilder_redirect_intent';
 
 export function ProtectedRoute({
   children,

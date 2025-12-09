@@ -9,7 +9,7 @@
  */
 
 import { chromium, FullConfig } from '@playwright/test';
-import { TestEnvironment, TEST_ENCRYPTION_KEY } from '@2ly/common/test/test.containers';
+import { TestEnvironment, TEST_ENCRYPTION_KEY } from '@skilder-ai/common/test/test.containers';
 import { exec } from 'child_process';
 // import { promisify } from 'util';
 import * as fs from 'fs';

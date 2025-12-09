@@ -42,7 +42,7 @@ function generateJwtKeys(): void {
   console.log('');
   console.log(`JWT_PRIVATE_KEY_PATH=${privateKeyPath}`);
   console.log(`JWT_PUBLIC_KEY_PATH=${publicKeyPath}`);
-  console.log('JWT_ISSUER=2ly-platform');
+  console.log('JWT_ISSUER=skilder-platform');
   console.log('JWT_ACCESS_TOKEN_TTL=900');
   console.log('JWT_REFRESH_TOKEN_TTL=604800');
 }

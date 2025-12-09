@@ -23,7 +23,7 @@ import { cn } from '@/lib/utils';
 import { useMCPRegistries } from '@/hooks/useMCPRegistries';
 import { useAddServerWorkflow } from '@/stores/uiStore';
 import { MCPServerCard } from './mcp-server-card';
-import { mcpRegistry } from '@2ly/common';
+import { mcpRegistry } from '@skilder-ai/common';
 import { GetRegistryServersQuery } from '@/graphql/generated/graphql';
 
 // Use official MCP Registry schema types

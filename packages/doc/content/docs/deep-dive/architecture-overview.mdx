@@ -1,10 +1,10 @@
 ---
 title: "Architecture Overview"
-description: "High-level overview of 2LY's distributed architecture"
+description: "High-level overview of Skilder's distributed architecture"
 draft: true
 ---
 
-2LY is a distributed platform that connects AI agents to tools via the MCP (Model Context Protocol). It uses NATS for messaging, DGraph for data storage, and distributed runtimes for tool execution.
+Skilder is a distributed platform that connects AI agents to tools via the MCP (Model Context Protocol). It uses NATS for messaging, DGraph for data storage, and distributed runtimes for tool execution.
 
 ## Quick Architecture
 
@@ -12,7 +12,7 @@ draft: true
 graph TB
     Agent[AI Agent<br/>Claude, LangChain, etc.]
 
-    subgraph "2LY Platform"
+    subgraph "Skilder Platform"
         Runtime[Runtime<br/>MCP Server + Client]
         Backend[Backend<br/>GraphQL API]
         NATS[NATS<br/>Message Bus]
@@ -46,7 +46,7 @@ AI systems that connect via MCP protocol:
 **Role:** Request and invoke tools for task execution
 
 ### Runtime
-Distributed execution environment (`@2ly/runtime`):
+Distributed execution environment (`@skilder-ai/runtime`):
 - **Agent Mode**: Acts as MCP server for agents
 - **Tool Mode**: Spawns and manages MCP tool servers
 - **Deployment**: Local, cloud, or edge
@@ -198,13 +198,13 @@ For in-depth information on each component:
 
 ## System Boundaries
 
-**What 2LY Manages:**
+**What Skilder Manages:**
 - Runtime lifecycle and coordination
 - MCP server configuration and spawning
 - Tool discovery and capability assignment
 - Message routing between components
 
-**What 2LY Doesn't Manage:**
+**What Skilder Doesn't Manage:**
 - Agent implementation (bring your own)
 - LLM provider (OpenAI, Anthropic, etc.)
 - MCP tool server implementation (uses community servers)
@@ -230,7 +230,7 @@ For in-depth information on each component:
 ## Next Steps
 
 **Quick Start:**
-- [Installation](/getting-started/installation) - Get 2LY running locally
+- [Installation](/getting-started/installation) - Get Skilder running locally
 - [Your First Toolflow](/your-first-toolflow/overview) - Create your first agent-tool workflow
 
 **Deep Dives:**

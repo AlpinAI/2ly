@@ -4,7 +4,7 @@ import pretty from 'pino-pretty';
 
 export const LOG_LEVEL = 'logLevel';
 export const LOG_LEVELS = 'logLevels';
-export const MAIN_LOGGER_NAME = '2ly';
+export const MAIN_LOGGER_NAME = 'skilder';
 export const FORWARD_STDERR = 'forwardStderr';
 
 /**

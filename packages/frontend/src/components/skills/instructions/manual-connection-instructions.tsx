@@ -20,7 +20,7 @@ export function ManualConnectionInstructions({
   const stdioConfig = JSON.stringify(
     {
       command: 'npx',
-      args: ['-y', '@2ly/runtime'],
+      args: ['-y', '@skilder-ai/runtime'],
       env: { SKILL_KEY: skillKey || '<skill_key>' },
     },
     null,

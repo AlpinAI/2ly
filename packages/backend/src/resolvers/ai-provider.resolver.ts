@@ -1,4 +1,4 @@
-import { apolloResolversTypes, dgraphResolversTypes, AIProviderService, type AIProviderType } from '@2ly/common';
+import { apolloResolversTypes, dgraphResolversTypes, AIProviderService, type AIProviderType } from '@skilder-ai/common';
 import { Container } from 'inversify';
 import { GraphQLError } from 'graphql';
 import { AIProviderRepository, WorkspaceRepository } from '../repositories';

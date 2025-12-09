@@ -1,6 +1,6 @@
 import { injectable, inject } from 'inversify';
 import { DGraphService } from '../services/dgraph.service';
-import { dgraphResolversTypes } from '@2ly/common';
+import { dgraphResolversTypes } from '@skilder-ai/common';
 import { GET_MCP_TOOL_WITH_WORKSPACE, SET_MCP_TOOL_STATUS } from './mcp-tool.operations';
 
 @injectable()

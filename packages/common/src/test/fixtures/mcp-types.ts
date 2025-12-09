@@ -5,7 +5,7 @@
  * configurations in test fixtures, ensuring type safety and consistency.
  */
 
-import { mcpRegistry, dgraphResolversTypes } from '@2ly/common';
+import { mcpRegistry, dgraphResolversTypes } from '@skilder-ai/common';
 
 
 /**

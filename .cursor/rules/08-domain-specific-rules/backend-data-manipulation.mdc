@@ -73,7 +73,7 @@ QUERY_{ENTITY}_CAPABILITIES = (type: 'query' | 'subscription') => gql`...`
 ### Resolver Pattern
 
 - **Repository Injection**: Get repositories from DI container in resolver factory
-- **Type Safety**: Use generated types from `@2ly/common`
+- **Type Safety**: Use generated types from `@skilder-ai/common`
 - **Error Handling**: Let repository methods handle errors, resolvers focus on data flow
 
 ### Resolver Structure
@@ -193,7 +193,7 @@ When implementing new backend operations:
 3. **Repository Methods**: Implement standard CRUD + observable methods
 4. **Resolver Integration**: Add to resolver factory with proper typing
 5. **Subscription Support**: Add observable methods for real-time updates
-6. **Type Safety**: Use generated types from `@2ly/common`
+6. **Type Safety**: Use generated types from `@skilder-ai/common`
 7. **Testing**: Ensure all operations work with both query and subscription modes
    description:
    globs:

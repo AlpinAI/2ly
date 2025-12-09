@@ -1,10 +1,10 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { KeyRateLimiterService } from './key-rate-limiter.service';
-import { LoggerService } from '@2ly/common';
+import { LoggerService } from '@skilder-ai/common';
 
 // Mock LoggerService
-vi.mock('@2ly/common', async () => {
-  const actual = await vi.importActual('@2ly/common');
+vi.mock('@skilder-ai/common', async () => {
+  const actual = await vi.importActual('@skilder-ai/common');
   return {
     ...actual,
     LoggerService: vi.fn().mockImplementation(() => ({

@@ -1,5 +1,5 @@
 import { GraphQLError } from 'graphql';
-import { EXECUTION_TARGET } from '@2ly/common';
+import { EXECUTION_TARGET } from '@skilder-ai/common';
 import { RuntimeRepository } from '../repositories';
 
 /**

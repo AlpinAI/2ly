@@ -5,7 +5,7 @@ import {
   HandshakeRequest,
   HandshakeResponse,
   ErrorResponse
-} from '@2ly/common';
+} from '@skilder-ai/common';
 import { getHostIP } from '../utils';
 import os from 'os';
 import { SkillIdentity } from './skill.service';

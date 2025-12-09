@@ -59,11 +59,11 @@ export default defineConfig({
     },
     resolve: {
         alias: {
-            '@2ly/common/test/test.containers': path.resolve(__dirname, 'packages/common/src/test/test.containers.ts'),
-            '@2ly/common/test/vitest': path.resolve(__dirname, 'packages/common/src/test/vitest.ts'),
-            '@2ly/common/test/fixtures': path.resolve(__dirname, 'packages/common/src/test/fixtures/index.ts'),
-            '@2ly/common': path.resolve(__dirname, 'packages/common/src/index.ts'),
-            '@2ly/common/*': path.resolve(__dirname, 'packages/common/src/*')
+            '@skilder-ai/common/test/test.containers': path.resolve(__dirname, 'packages/common/src/test/test.containers.ts'),
+            '@skilder-ai/common/test/vitest': path.resolve(__dirname, 'packages/common/src/test/vitest.ts'),
+            '@skilder-ai/common/test/fixtures': path.resolve(__dirname, 'packages/common/src/test/fixtures/index.ts'),
+            '@skilder-ai/common': path.resolve(__dirname, 'packages/common/src/index.ts'),
+            '@skilder-ai/common/*': path.resolve(__dirname, 'packages/common/src/*')
 
         }
     },

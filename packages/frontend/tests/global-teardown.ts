@@ -8,7 +8,7 @@
  */
 
 import { FullConfig } from '@playwright/test';
-import { TestEnvironment } from '@2ly/common/test/test.containers';
+import { TestEnvironment } from '@skilder-ai/common/test/test.containers';
 import * as fs from 'fs';
 import * as path from 'path';
 import { fileURLToPath } from 'url';

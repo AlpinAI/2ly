@@ -1,7 +1,7 @@
 /**
  * Langflow Instructions (New Design)
  *
- * WHY: Platform-specific instructions for connecting Langflow to 2LY via SSE.
+ * WHY: Platform-specific instructions for connecting Langflow to Skilder via SSE.
  */
 
 import { CodeBlock } from '@/components/ui/code-block';
@@ -22,7 +22,7 @@ export function LangflowInstructions({ sseUrl, skillName }: LangflowInstructions
       />
 
       <h3 className="text-xl font-semibold text-gray-900 dark:text-white">
-        Connect Langflow to 2LY
+        Connect Langflow to Skilder
       </h3>
 
       <ol className="list-decimal list-inside space-y-4 text-base leading-relaxed text-gray-700 dark:text-gray-300 font-sans">

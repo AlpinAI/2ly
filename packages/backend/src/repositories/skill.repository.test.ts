@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { Observable } from 'rxjs';
 import { SkillRepository } from './skill.repository';
 import { DGraphService } from '../services/dgraph.service';
-import { LoggerService } from '@2ly/common';
+import { LoggerService } from '@skilder-ai/common';
 import type { WorkspaceRepository } from './workspace.repository';
 import type { IdentityRepository } from './identity.repository';
 

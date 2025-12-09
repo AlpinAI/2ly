@@ -3,7 +3,7 @@ description:
 globs: 
 alwaysApply: true
 ---
-2ly is an AI tool management application designed to connect MCP Tools to Agent runtimes in an orchestrated and distributed way.
+Skilder is an AI tool management application designed to connect MCP Tools to Agent runtimes in an orchestrated and distributed way.
 
 This project is a monorepo with
 - common package for shared code, schema

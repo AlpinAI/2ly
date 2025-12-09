@@ -1,21 +1,21 @@
 ---
 title: "NATS Messaging"
-description: "Understanding NATS message bus and communication patterns in 2LY"
+description: "Understanding NATS message bus and communication patterns in Skilder"
 draft: true
 ---
 
-2LY uses NATS as its distributed message bus for all communication between components. This enables decoupled, scalable architecture where runtimes, backend, and agents communicate asynchronously.
+Skilder uses NATS as its distributed message bus for all communication between components. This enables decoupled, scalable architecture where runtimes, backend, and agents communicate asynchronously.
 
 ## Why NATS?
 
-NATS provides 2LY with:
+NATS provides Skilder with:
 - **Decoupled Communication**: Services don't need direct connections
 - **Pub/Sub Patterns**: One-to-many messaging for updates
 - **Request/Reply**: Synchronous request-response when needed
 - **Persistence**: JetStream for guaranteed message delivery
 - **Key-Value Store**: Ephemeral data with TTL for config and heartbeat
 
-## NATS Components in 2LY
+## NATS Components in Skilder
 
 ### Core Messaging
 Standard NATS pub/sub for real-time communication between services.
@@ -151,7 +151,7 @@ sequenceDiagram
 
 ## Observable Pattern
 
-2LY uses RxJS observables for reactive message handling:
+Skilder uses RxJS observables for reactive message handling:
 
 ```typescript
 // Subscribe to runtime connections

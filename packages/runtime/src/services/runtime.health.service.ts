@@ -1,6 +1,6 @@
 import { inject, injectable } from 'inversify';
 import pino from 'pino';
-import { LoggerService, NatsService, Service } from '@2ly/common';
+import { LoggerService, NatsService, Service } from '@skilder-ai/common';
 import { AuthService } from './auth.service';
 
 export const HEARTBEAT_INTERVAL = 'heartbeat.interval';

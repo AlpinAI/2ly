@@ -12,8 +12,8 @@
  * - Tests verify both new Skill API and backward compatibility
  */
 
-import { test, expect, performLogin, seedPresets, loginAndGetToken } from '@2ly/common/test/fixtures/playwright';
-import { updateMCPServerToEdgeRuntime } from '@2ly/common/test/fixtures/mcp-builders';
+import { test, expect, performLogin, seedPresets, loginAndGetToken } from '@skilder-ai/common/test/fixtures/playwright';
+import { updateMCPServerToEdgeRuntime } from '@skilder-ai/common/test/fixtures/mcp-builders';
 
 test.describe('Skill API', () => {
   test.describe.configure({ mode: 'serial' });
@@ -26,13 +26,13 @@ test.describe('Skill API', () => {
     // Update MCP server to use EDGE runtime (GLOBAL executionTarget has been removed)
     const workspaceId = entityIds['default-workspace'];
     const mcpServerId = entityIds['server-file-system'];
-    authToken = await loginAndGetToken('user1@2ly.ai', 'password123');
+    authToken = await loginAndGetToken('user1@skilder.ai', 'password123');
     await updateMCPServerToEdgeRuntime(graphql, mcpServerId, workspaceId, authToken);
   });
 
   test('should create a skill via new API', async ({ page, graphql }) => {
     // Login
-    await performLogin(page, 'user1@2ly.ai', 'password123');
+    await performLogin(page, 'user1@skilder.ai', 'password123');
     const workspaceUrl = page.url();
     const workspaceId = workspaceUrl.match(/\/w\/([^/]+)/)?.[1];
     expect(workspaceId).toBeDefined();
@@ -72,7 +72,7 @@ test.describe('Skill API', () => {
 
   test('should query skills via new API', async ({ page, graphql }) => {
     // Login
-    await performLogin(page, 'user1@2ly.ai', 'password123');
+    await performLogin(page, 'user1@skilder.ai', 'password123');
     const workspaceUrl = page.url();
     const workspaceId = workspaceUrl.match(/\/w\/([^/]+)/)?.[1];
     expect(workspaceId).toBeDefined();
@@ -124,7 +124,7 @@ test.describe('Skill API', () => {
 
   test('should add and remove tools from skill directly', async ({ page, graphql }) => {
     // Login
-    await performLogin(page, 'user1@2ly.ai', 'password123');
+    await performLogin(page, 'user1@skilder.ai', 'password123');
     const workspaceUrl = page.url();
     const workspaceId = workspaceUrl.match(/\/w\/([^/]+)/)?.[1];
     expect(workspaceId).toBeDefined();

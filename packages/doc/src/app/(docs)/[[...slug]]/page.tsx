@@ -19,11 +19,11 @@ export default async function Page(props: PageProps<'/[[...slug]]'>) {
     if (!params.slug || params.slug.length === 0) {
         return (
             <DocsPage>
-                <DocsTitle>Welcome to 2LY Docs</DocsTitle>
+                <DocsTitle>Welcome to Skilder Docs</DocsTitle>
                 <DocsDescription>Manage Your AI Tools Across All Agents</DocsDescription>
                 <DocsBody>
                     <p>
-                        2LY solves tool fragmentation in AI development by providing a unified infrastructure for managing tools across any agent framework.
+                        Skilder solves tool fragmentation in AI development by providing a unified infrastructure for managing tools across any agent framework.
                     </p>
 
                     <h2>Key Features</h2>
@@ -52,13 +52,13 @@ export default async function Page(props: PageProps<'/[[...slug]]'>) {
                     <ol>
                         <li>Configure your tools and their secret (setup once, use many times)</li>
                         <li>Prepare skills - curated sets of tools design to solve specific problems</li>
-                        <li>Consume your skills by connect 2LY to your agents</li>
+                        <li>Consume your skills by connect Skilder to your agents</li>
                     </ol>
 
                     <h2>Next Steps</h2>
 
                     <ol>
-                        <li><Link href="/getting-started/installation">Install 2LY</Link></li>
+                        <li><Link href="/getting-started/installation">Install Skilder</Link></li>
                         <li><Link href="/getting-started/quick-start">Quick Start</Link></li>
                         <li><Link href="/your-first-toolflow/overview">Your First Toolflow</Link></li>
                     </ol>
@@ -105,7 +105,7 @@ export async function generateMetadata(
     // Handle root route metadata
     if (!params.slug || params.slug.length === 0) {
         return {
-            title: 'Welcome to 2LY',
+            title: 'Welcome to Skilder',
             description: 'Manage Your AI Tools Across All Agents',
         };
     }

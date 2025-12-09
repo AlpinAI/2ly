@@ -1,8 +1,8 @@
 {
-  "name": "@2ly/runtime",
+  "name": "@skilder-ai/runtime",
   "version": "0.2.5",
-  "description": "2ly Runtime - NodeJS processes for edge execution connected to backend orchestrator via NATS",
-  "author": "Eiger AI",
+  "description": "Skilder Runtime - NodeJS processes for edge execution connected to backend orchestrator via NATS",
+  "author": "Skilder AI",
   "license": "See license in LICENSE",
   "keywords": [
     "mcp",
@@ -10,11 +10,11 @@
     "runtime",
     "edge",
     "nats",
-    "2ly"
+    "skilder"
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/AlpinAI/2ly.git",
+    "url": "https://github.com/skilder-ai/skilder.git",
     "directory": "packages/runtime"
   },
   "exports": {

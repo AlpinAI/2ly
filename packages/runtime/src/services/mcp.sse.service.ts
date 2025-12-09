@@ -1,6 +1,6 @@
 import { inject, injectable } from 'inversify';
 import pino from 'pino';
-import { LoggerService, NatsService, Service } from '@2ly/common';
+import { LoggerService, NatsService, Service } from '@skilder-ai/common';
 import { HealthService } from './runtime.health.service';
 import { FastifyManagerService } from './fastify.manager.service';
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
@@ -87,7 +87,7 @@ export class McpSseService extends Service {
     // Each transport needs its own Server instance to manage its own sessions
     this.server = new Server(
       {
-        name: 'Remote 2LY Server (SSE)',
+        name: 'Remote Skilder Server (SSE)',
         version: '1.0.0',
       },
       {
@@ -249,7 +249,9 @@ export class McpSseService extends Service {
    */
   private validateSecurityHeaders(request: FastifyRequest, reply: FastifyReply): boolean {
     // Validate origin header (DNS rebinding protection)
-    if (!validateOriginHeaderForRequest(request, reply, this.logger, this.preventDnsRebindingAttack, this.allowedOrigins)) {
+    if (
+      !validateOriginHeaderForRequest(request, reply, this.logger, this.preventDnsRebindingAttack, this.allowedOrigins)
+    ) {
       return false;
     }
 

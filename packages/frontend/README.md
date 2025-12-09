@@ -1,6 +1,6 @@
-# 2LY Frontend v2
+# Skilder Frontend v2
 
-Modern, production-ready frontend for the 2LY AI Tool Management Platform built with React 19, TypeScript, and Tailwind CSS.
+Modern, production-ready frontend for the Skilder AI Tool Management Platform built with React 19, TypeScript, and Tailwind CSS.
 
 ## 🏗️ Architecture Overview
 
@@ -510,8 +510,8 @@ The frontend supports runtime configuration for flexible deployment across diffe
 docker run -d \
   -e VITE_GRAPHQL_HOST=api.example.com \
   -p 8080:80 \
-  --name 2ly-frontend \
-  2ly/frontend:latest
+  --name skilder-frontend \
+  skilder/frontend:latest
 ```
 
 **With SSL override:**
@@ -521,8 +521,8 @@ docker run -d \
   -e VITE_GRAPHQL_HOST=api.example.com \
   -e VITE_GRAPHQL_HOST_SSL=false \
   -p 8080:80 \
-  --name 2ly-frontend \
-  2ly/frontend:latest
+  --name skilder-frontend \
+  skilder/frontend:latest
 ```
 
 ### Docker Compose Example
@@ -532,7 +532,7 @@ version: '3.8'
 
 services:
   frontend:
-    image: 2ly/frontend:latest
+    image: skilder/frontend:latest
     ports:
       - '8080:80'
     environment:
@@ -541,7 +541,7 @@ services:
 
   # Multiple environments from same image
   frontend-staging:
-    image: 2ly/frontend:latest
+    image: skilder/frontend:latest
     ports:
       - '8081:80'
     environment:
@@ -553,13 +553,13 @@ services:
 
 ```bash
 # Build the image
-docker build -t 2ly/frontend:latest .
+docker build -t skilder/frontend:latest .
 
 # Or build with specific backend host (for testing)
 docker build \
   --build-arg VITE_GRAPHQL_HOST=api.example.com \
   --build-arg VITE_GRAPHQL_HOST_SSL=true \
-  -t 2ly/frontend:latest .
+  -t skilder/frontend:latest .
 ```
 
 ## 🎯 Pages
@@ -808,4 +808,4 @@ When adding new components or features:
 
 ---
 
-**Built with ❤️ for the 2LY platform**
+**Built with ❤️ for the Skilder platform**

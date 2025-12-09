@@ -14,7 +14,7 @@ import {
   DEFAULT_EPHEMERAL_TTL,
   AIProviderService,
   type RuntimeSmartSkill,
-} from '@2ly/common';
+} from '@skilder-ai/common';
 import { MainService } from '../services/runtime.main.service';
 import {
   AuthService,

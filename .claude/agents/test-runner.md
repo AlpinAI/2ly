@@ -65,7 +65,7 @@ npm run test:e2e:prebuild
 Based on the test files created, determine what needs to run:
 
 **If tests are in a specific package**:
-- Run package-specific commands: `npm run test -w @2ly/frontend`
+- Run package-specific commands: `npm run test -w @skilder-ai/frontend`
 - Run lint/typecheck for that package only
 
 **If tests span multiple packages**:
@@ -87,8 +87,8 @@ npm run lint
 
 **Scope-specific**:
 ```bash
-npm run lint -w @2ly/frontend
-npm run lint -w @2ly/backend
+npm run lint -w @skilder-ai/frontend
+npm run lint -w @skilder-ai/backend
 ```
 
 **Parse output**:
@@ -103,7 +103,7 @@ npm run typecheck
 
 **Scope-specific**:
 ```bash
-npm run typecheck -w @2ly/frontend
+npm run typecheck -w @skilder-ai/frontend
 ```
 
 **Parse output**:
@@ -118,7 +118,7 @@ npm run test
 
 **Scope-specific**:
 ```bash
-npm run test -w @2ly/frontend
+npm run test -w @skilder-ai/frontend
 npm run test -- packages/frontend/src/components/tool-selector.test.tsx
 ```
 
@@ -146,7 +146,7 @@ npm run test:e2e:chromium
 
 **Targeted e2e**:
 ```bash
-npm run test:e2e -w @2ly/frontend -- tests/e2e/serial/feature.spec.ts
+npm run test:e2e -w @skilder-ai/frontend -- tests/e2e/serial/feature.spec.ts
 ```
 
 **Parse output**:
@@ -395,13 +395,13 @@ If tests timeout:
 - `npm run test:e2e:chromium` - Playwright e2e tests (Chromium only)
 
 ### Package-Specific Commands
-- `npm run lint -w @2ly/frontend`
-- `npm run typecheck -w @2ly/backend`
-- `npm run test -w @2ly/runtime`
+- `npm run lint -w @skilder-ai/frontend`
+- `npm run typecheck -w @skilder-ai/backend`
+- `npm run test -w @skilder-ai/runtime`
 
 ### Targeted Test Commands
 - `npm run test -- path/to/test.test.ts`
-- `npm run test:e2e -w @2ly/frontend -- tests/e2e/serial/feature.spec.ts`
+- `npm run test:e2e -w @skilder-ai/frontend -- tests/e2e/serial/feature.spec.ts`
 
 ### Config Files
 - `.eslintrc.js` or `eslint.config.js`

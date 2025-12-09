@@ -1,6 +1,6 @@
 import { inject, injectable } from 'inversify';
 import { FastifyRequest, FastifyReply } from 'fastify';
-import { LoggerService, NatsService, Service } from '@2ly/common';
+import { LoggerService, NatsService, Service } from '@skilder-ai/common';
 import { HealthService } from './runtime.health.service';
 import { FastifyManagerService } from './fastify.manager.service';
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';

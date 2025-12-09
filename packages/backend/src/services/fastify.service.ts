@@ -1,7 +1,7 @@
 import Fastify, { FastifyInstance } from 'fastify';
 import { inject, injectable } from 'inversify';
 import pino from 'pino';
-import { LoggerService, Service } from '@2ly/common';
+import { LoggerService, Service } from '@skilder-ai/common';
 import { SecurityMiddleware } from '../middleware/security.middleware';
 import { RateLimitMiddleware } from '../middleware/rate-limit.middleware';
 

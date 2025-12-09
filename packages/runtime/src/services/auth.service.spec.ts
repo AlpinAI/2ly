@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { AuthService, PermanentAuthenticationError } from './auth.service';
-import { LoggerService, NatsService, HandshakeResponse, ErrorResponse } from '@2ly/common';
+import { LoggerService, NatsService, HandshakeResponse, ErrorResponse } from '@skilder-ai/common';
 import pino from 'pino';
 import fs from 'fs';
 import os from 'os';

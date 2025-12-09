@@ -11,7 +11,7 @@ import {
   type RuntimeSmartSkill,
   DEFAULT_TEMPERATURE,
   DEFAULT_MAX_TOKENS,
-} from '@2ly/common';
+} from '@skilder-ai/common';
 import { RuntimeRepository } from '../repositories';
 import { SkillRepository } from '../repositories/skill.repository';
 import { AIProviderRepository } from '../repositories/ai-provider.repository';

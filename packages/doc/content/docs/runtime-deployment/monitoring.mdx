@@ -1,10 +1,10 @@
 ---
 title: 'Monitoring & Observability'
-description: 'Monitor 2LY platform health and performance'
+description: 'Monitor Skilder platform health and performance'
 draft: true
 ---
 
-Effective monitoring ensures your 2LY deployment runs smoothly. This guide covers key metrics, health checks, and troubleshooting approaches.
+Effective monitoring ensures your Skilder deployment runs smoothly. This guide covers key metrics, health checks, and troubleshooting approaches.
 
 ## Key Metrics
 
@@ -260,17 +260,17 @@ exit 0
 
 ```bash
 # Docker logs
-docker logs 2ly-backend --tail 100 -f
+docker logs Skilder-backend --tail 100 -f
 
 # Look for errors
-docker logs 2ly-backend 2>&1 | grep ERROR
+docker logs Skilder-backend 2>&1 | grep ERROR
 ```
 
 **Runtime Logs:**
 
 ```bash
 # If running in Docker
-docker logs 2ly-main-runtime --tail 100 -f
+docker logs Skilder-main-runtime --tail 100 -f
 
 # If running via npx
 # Check stdout/stderr where runtime was started
@@ -285,7 +285,7 @@ docker logs 2ly-main-runtime --tail 100 -f
 
 ### Prometheus Integration (Future)
 
-2LY does not currently export Prometheus metrics, but planned implementation:
+Skilder does not currently export Prometheus metrics, but planned implementation:
 
 ```typescript
 // Future: Prometheus metrics endpoint
@@ -311,7 +311,7 @@ app.get('/metrics', async (req, res) => {
 1. Is runtime process still running?
 
    ```bash
-   ps aux | grep @2ly/runtime
+   ps aux | grep @skilder-ai/runtime
    ```
 
 2. Check runtime logs for errors
@@ -404,7 +404,7 @@ app.get('/metrics', async (req, res) => {
 2. Check backend error logs:
 
    ```bash
-   docker logs 2ly-backend 2>&1 | grep ERROR
+   docker logs Skilder-backend 2>&1 | grep ERROR
    ```
 
 3. Check runtime error logs

@@ -1,10 +1,10 @@
 ---
 title: "Agents"
-description: "Understanding agents in 2LY"
+description: "Understanding agents in Skilder"
 draft: false
 ---
 
-Agents are AI systems composed of an LLM, prompts, and tools. 2LY decouples tools from agent logic through a gateway runtime, enabling centralized governance and scalable tool management across all agents.
+Agents are AI systems composed of an LLM, prompts, and tools. Skilder decouples tools from agent logic through a gateway runtime, enabling centralized governance and scalable tool management across all agents.
 
 ## What are Agents?
 
@@ -13,7 +13,7 @@ Traditional agents bundle three components:
 - **Prompts**: Instructions defining agent behavior
 - **Tools**: Functions for external actions (APIs, databases, files)
 
-2LY separates the tool layer from agent frameworks. Instead of integrating tools directly into each agent, agents connect as MCP clients to a runtime that manages tool access, authentication, and execution centrally. This architecture allows you to configure tools once and use them across any agent framework.
+Skilder separates the tool layer from agent frameworks. Instead of integrating tools directly into each agent, agents connect as MCP clients to a runtime that manages tool access, authentication, and execution centrally. This architecture allows you to configure tools once and use them across any agent framework.
 
 
 ## How Agents Work

@@ -1,7 +1,7 @@
 import { injectable, inject } from 'inversify';
 import { randomBytes } from 'crypto';
 import { DGraphService } from '../services/dgraph.service';
-import { dgraphResolversTypes, LoggerService } from '@2ly/common';
+import { dgraphResolversTypes, LoggerService } from '@skilder-ai/common';
 import {
   CREATE_IDENTITY_KEY,
   REVOKE_IDENTITY_KEY,

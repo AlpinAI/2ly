@@ -11,7 +11,7 @@ import {
   MCP_CALL_TOOL_TIMEOUT,
   RuntimeCallToolResponse,
   SmartSkillTool,
-} from '@2ly/common';
+} from '@skilder-ai/common';
 import { BehaviorSubject, filter, firstValueFrom, map } from 'rxjs';
 
 export interface SkillIdentity {

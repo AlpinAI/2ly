@@ -203,7 +203,7 @@ export const apolloClient = new ApolloClient({
    * Useful for monitoring and debugging in production.
    */
   clientAwareness: {
-    name: '2LY Frontend',
+    name: 'Skilder Frontend',
     version: '2.0',
   },
 });

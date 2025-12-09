@@ -1,7 +1,7 @@
 /**
  * MCP Client Fixture for E2E Tests
  *
- * Provides a real MCP client implementation to test connectivity to 2ly runtime
+ * Provides a real MCP client implementation to test connectivity to skilder runtime
  * via all three transport types: STDIO, SSE, and STREAM (Streamable HTTP)
  */
 

@@ -25,7 +25,7 @@ line 3`;
 
   it('copies code to clipboard when copy button is clicked', async () => {
     const user = userEvent.setup();
-    const testCode = 'npm install @2ly/runtime';
+    const testCode = 'npm install @skilder-ai/runtime';
 
     // Mock clipboard API for this test
     const mockWriteText = vi.fn(() => Promise.resolve());

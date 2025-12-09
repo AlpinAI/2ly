@@ -4,7 +4,7 @@ description: "Common issues and solutions"
 draft: true
 ---
 
-Common issues and their solutions for 2LY deployments.
+Common issues and their solutions for Skilder deployments.
 
 ## Runtime Issues
 
@@ -18,7 +18,7 @@ Common issues and their solutions for 2LY deployments.
 node --version  # Should be 22+
 
 # Test runtime manually
-npx @2ly/runtime
+npx @skilder-ai/runtime
 
 # Check for port conflicts
 lsof -i :4222  # NATS port
@@ -43,7 +43,7 @@ docker ps | grep nats
 telnet localhost 4222
 
 # Check NATS logs
-docker logs 2ly-nats
+docker logs Skilder-nats
 ```
 
 **Solutions:**
@@ -59,7 +59,7 @@ docker logs 2ly-nats
 **Diagnostic:**
 ```bash
 # Check runtime logs
-npx @2ly/runtime 2>&1 | tee runtime.log
+npx @skilder-ai/runtime 2>&1 | tee runtime.log
 
 # Verify workspace ID
 echo $WORKSPACE_ID
@@ -131,7 +131,7 @@ docker stats
 nats stream info
 
 # Check tool logs
-npx @2ly/runtime --log-level=debug
+npx @skilder-ai/runtime --log-level=debug
 ```
 
 **Solutions:**
@@ -147,7 +147,7 @@ npx @2ly/runtime --log-level=debug
 **Diagnostic:**
 ```bash
 # Enable debug logging
-LOG_LEVEL=debug npx @2ly/runtime
+LOG_LEVEL=debug npx @skilder-ai/runtime
 
 # Check tool arguments
 # Verify input matches tool's schema
@@ -182,7 +182,7 @@ async with TwolyMCP("test-agent") as mcp:
 **Solutions:**
 - Check runtime started
 - Verify RUNTIME_NAME matches
-- Ensure @2ly/runtime installed
+- Ensure @skilder-ai/runtime installed
 - Check network connectivity
 
 ### Agent Gets Wrong Tools
@@ -211,7 +211,7 @@ async with TwolyMCP("test-agent") as mcp:
 curl http://localhost:4000/graphql
 
 # Check backend logs
-docker logs 2ly-backend
+docker logs Skilder-backend
 
 # Verify CORS config
 # Check browser console for CORS errors
@@ -236,7 +236,7 @@ nats server info
 ping nats-server
 
 # Review NATS logs
-docker logs -f 2ly-nats
+docker logs -f Skilder-nats
 ```
 
 **Solutions:**
@@ -260,7 +260,7 @@ docker ps | grep dgraph
 curl http://localhost:8080/health
 
 # Check DGraph logs
-docker logs 2ly-dgraph
+docker logs Skilder-dgraph
 ```
 
 **Solutions:**
@@ -302,7 +302,7 @@ docker stats
 nats rtt
 
 # Profile tool execution
-LOG_LEVEL=debug npx @2ly/runtime
+LOG_LEVEL=debug npx @skilder-ai/runtime
 ```
 
 **Solutions:**
@@ -339,8 +339,8 @@ ps aux | grep runtime
 **Diagnostic:**
 ```bash
 # Check container logs
-docker logs 2ly-backend
-docker logs 2ly-runtime
+docker logs Skilder-backend
+docker logs Skilder-runtime
 
 # Verify Docker running
 docker info
@@ -426,7 +426,7 @@ npm run type-check
 
 ```bash
 # Runtime
-LOG_LEVEL=debug npx @2ly/runtime
+LOG_LEVEL=debug npx @skilder-ai/runtime
 
 # Backend
 LOG_LEVEL=debug npm run start:backend
@@ -439,9 +439,9 @@ docker-compose up --build
 
 ```bash
 # Docker logs
-docker logs -f 2ly-backend
-docker logs -f 2ly-runtime
-docker logs -f 2ly-nats
+docker logs -f Skilder-backend
+docker logs -f Skilder-runtime
+docker logs -f Skilder-nats
 
 # Application logs
 tail -f logs/runtime.log
@@ -461,7 +461,7 @@ tail -f logs/backend.log
 ## Getting Help
 
 1. Check this troubleshooting guide
-2. Review [GitHub Issues](https://github.com/2ly-ai/2ly/issues)
+2. Review [GitHub Issues](https://github.com/skilder-ai/skilder/issues)
 3. Enable debug logging and collect logs
 4. Create issue with:
    - Symptoms and error messages

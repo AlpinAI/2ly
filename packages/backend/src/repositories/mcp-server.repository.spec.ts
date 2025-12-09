@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { MCPServerRepository } from './mcp-server.repository';
 import type { DGraphService } from '../services/dgraph.service';
 import { DgraphServiceMock } from '../services/dgraph.service.mock';
-import { dgraphResolversTypes } from '@2ly/common';
+import { dgraphResolversTypes } from '@skilder-ai/common';
 import type { WorkspaceRepository } from './workspace.repository';
 
 describe('MCPServerRepository', () => {

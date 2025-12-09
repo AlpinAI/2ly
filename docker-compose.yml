@@ -1,18 +1,18 @@
-name: 2ly
+name: skilder
 services:
   # NATS with JetStream for persistence
   nats:
     image: nats:2.10-alpine
-    container_name: 2ly-nats
+    container_name: skilder-nats
     ports:
       - '4222:4222' # Client connections
       - '8222:8222' # HTTP monitoring
-    command: ['--jetstream', '--store_dir=/data/nats', '--http_port=8222', '--server_name=2ly-nats-01']
+    command: ['--jetstream', '--store_dir=/data/nats', '--http_port=8222', '--server_name=skilder-nats-01']
     volumes:
-      - 2ly-data:/data:rw
-      - 2ly-internal:/keys:ro # Internal volume for operator.jwt access (future JWT auth)
+      - skilder-data:/data:rw
+      - skilder-internal:/keys:ro # Internal volume for operator.jwt access (future JWT auth)
     networks:
-      - 2ly-network
+      - skilder-network
     restart: unless-stopped
     healthcheck:
       test: ['CMD', 'curl', '-f', 'http://localhost:8222/healthz']
@@ -24,7 +24,7 @@ services:
   # NATS Dashboard for monitoring
   nats-dashboard:
     image: mdawar/nats-dashboard:latest
-    container_name: 2ly-nats-dashboard
+    container_name: skilder-nats-dashboard
     ports:
       - '8001:80'
     volumes:
@@ -32,7 +32,7 @@ services:
     depends_on:
       - nats
     networks:
-      - 2ly-network
+      - skilder-network
     restart: unless-stopped
     profiles:
       - development
@@ -40,15 +40,15 @@ services:
   # DGraph Zero (cluster coordination)
   dgraph-zero:
     image: dgraph/dgraph:latest
-    container_name: 2ly-dgraph-zero
+    container_name: skilder-dgraph-zero
     ports:
       - '5080:5080' # internal gRPC
       - '6080:6080' # HTTP
     command: dgraph zero --my=dgraph-zero:5080 --wal=/data/dgraph/zero-wal
     volumes:
-      - 2ly-data:/data:rw
+      - skilder-data:/data:rw
     networks:
-      - 2ly-network
+      - skilder-network
     restart: unless-stopped
     healthcheck:
       test: ['CMD', 'curl', '-f', 'http://localhost:6080/health']
@@ -60,19 +60,19 @@ services:
   # DGraph Alpha (data node)
   dgraph-alpha:
     image: dgraph/dgraph:latest
-    container_name: 2ly-dgraph-alpha
+    container_name: skilder-dgraph-alpha
     ports:
       - '7080:7080' # internal gRPC
       - '8080:8080' # HTTP/GraphQL
       - '9080:9080' # external gRPC private
     command: dgraph alpha --my=dgraph-alpha:7080 --zero=dgraph-zero:5080 --security whitelist=172.20.0.0/8,127.0.0.1/32,192.168.0.0/16 --postings=/data/dgraph/postings --wal=/data/dgraph/wal
     volumes:
-      - 2ly-data:/data:rw
+      - skilder-data:/data:rw
     depends_on:
       dgraph-zero:
         condition: service_healthy
     networks:
-      - 2ly-network
+      - skilder-network
     restart: unless-stopped
     healthcheck:
       test: ['CMD', 'curl', '-f', 'http://localhost:8080/health']
@@ -81,14 +81,14 @@ services:
       retries: 5
       start_period: 30s
 
-  # 2LY Backend
+  # Skilder Backend
   backend:
-    image: ghcr.io/alpinai/backend:latest
-    container_name: 2ly-backend
+    image: ghcr.io/skilder-ai/backend:latest
+    container_name: skilder-backend
     environment:
       - NODE_ENV=production
       - AUTOGEN_KEYS=true
-      - CORS_ORIGINS=/.2ly.ai$/,http://localhost:8888,http://localhost:3000
+      - CORS_ORIGINS=/.skilder.ai$/,http://localhost:8888,http://localhost:3000
       - DGRAPH_URL=dgraph-alpha:8080
       - NATS_SERVERS=nats:4222
       - EXPOSED_NATS_SERVERS=localhost:4222
@@ -98,15 +98,15 @@ services:
     ports:
       - 3000:3000
     volumes:
-      - 2ly-data:/data:ro
-      - 2ly-internal:/keys:rw # Internal volume for keys (read-write for generation)
+      - skilder-data:/data:ro
+      - skilder-internal:/keys:rw # Internal volume for keys (read-write for generation)
     depends_on:
       nats:
         condition: service_started
       dgraph-alpha:
         condition: service_healthy
     networks:
-      - 2ly-network
+      - skilder-network
     restart: unless-stopped
     healthcheck:
       test: ['CMD', 'curl', '-f', 'http://localhost:3000/health']
@@ -114,10 +114,10 @@ services:
       timeout: 3s
       retries: 10
 
-  # 2LY Tool Runtime
+  # Skilder Tool Runtime
   main-runtime:
-    image: ghcr.io/alpinai/runtime:latest
-    container_name: 2ly-main-runtime
+    image: ghcr.io/skilder-ai/runtime:latest
+    container_name: skilder-main-runtime
     environment:
       - AUTOGEN_KEYS=true
       - NATS_SERVERS=nats:4222
@@ -129,8 +129,8 @@ services:
     ports:
       - 3001:3001
     volumes:
-      - 2ly-data:/data:ro
-      - 2ly-internal:/keys:ro # Internal volume for keys (read-only)
+      - skilder-data:/data:ro
+      - skilder-internal:/keys:ro # Internal volume for keys (read-only)
     depends_on:
       backend:
         condition: service_healthy
@@ -139,37 +139,37 @@ services:
       dgraph-alpha:
         condition: service_healthy
     networks:
-      - 2ly-network
+      - skilder-network
     restart: unless-stopped
 
-  # 2LY Frontend
+  # Skilder Frontend
   frontend:
-    image: ghcr.io/alpinai/frontend:latest
-    container_name: 2ly-frontend
+    image: ghcr.io/skilder-ai/frontend:latest
+    container_name: skilder-frontend
     ports:
       - 8888:80
     networks:
-      - 2ly-network
+      - skilder-network
     restart: unless-stopped
 
-  # 2LY Doc
+  # Skilder Doc
   doc:
-    image: ghcr.io/alpinai/doc:latest
-    container_name: 2ly-doc
+    image: ghcr.io/skilder-ai/doc:latest
+    container_name: skilder-doc
     ports:
       - 3010:3000
     networks:
-      - 2ly-network
+      - skilder-network
     restart: unless-stopped
 
 volumes:
-  2ly-data:
+  skilder-data:
     driver: local
-  2ly-internal:
+  skilder-internal:
     driver: local
 
 networks:
-  2ly-network:
+  skilder-network:
     driver: bridge
     ipam:
       config:

@@ -1,13 +1,13 @@
 ---
 title: "Connect an Agent"
-description: "Connect your AI agent to 2LY with a workflow"
+description: "Connect your AI agent to Skilder with a workflow"
 draft: false
 ---
 
 import { Accordion, Accordions } from 'fumadocs-ui/components/accordion';
 
 
-Connect your AI agent to 2LY's platform using one of the supported integrations.
+Connect your AI agent to Skilder's platform using one of the supported integrations.
 
 ## Step 1: Create Your Agent Project
 
@@ -19,8 +19,8 @@ Connect your AI agent to 2LY's platform using one of the supported integrations.
 
     ```bash
     # Create new Python project
-    mkdir my-2ly-agent
-    cd my-2ly-agent
+    mkdir my-Skilder-agent
+    cd my-Skilder-agent
     python -m venv venv
     source venv/bin/activate  # On Windows: venv\Scripts\activate
 
@@ -38,7 +38,7 @@ Connect your AI agent to 2LY's platform using one of the supported integrations.
 
     async def create_agent():
         async with TwolyMCP("my-agent") as mcp:
-            # Get tools from 2LY
+            # Get tools from Skilder
             tools = await mcp.get_langchain_tools()
             
             # Create your agent
@@ -58,7 +58,7 @@ Connect your AI agent to 2LY's platform using one of the supported integrations.
        - Copy the webhook URL
     4. **Add HTTP Request Node**:
        - Connect to webhook node
-       - Configure for 2LY API calls
+       - Configure for Skilder API calls
     5. **Add AI Node**: Choose your LLM provider (OpenAI, Claude, etc.)
     6. **Save Workflow**: Give it a descriptive name
   </Accordion>
@@ -68,22 +68,22 @@ Connect your AI agent to 2LY's platform using one of the supported integrations.
     2. **Create New Flow**: Click "New Flow"
     3. **Add Components**:
        - Drag LLM component (OpenAI/Anthropic)
-       - Add HTTP component for 2LY integration
+       - Add HTTP component for Skilder integration
        - Connect components with flow logic
-    4. **Configure 2LY Connection**:
-       - Set API endpoint to your 2LY instance
+    4. **Configure Skilder Connection**:
+       - Set API endpoint to your Skilder instance
        - Configure authentication if needed
     5. **Test and Save**: Verify the flow works correctly
   </Accordion>
 </Accordions>
 
-## Step 2: Connect Agent to 2LY
+## Step 2: Connect Agent to Skilder
 
-Once your agent project is created, connect it to 2LY through the web interface.
+Once your agent project is created, connect it to Skilder through the web interface.
 
-### Access 2LY Dashboard
+### Access Skilder Dashboard
 
-1. **Open 2LY**: Navigate to http://localhost:8888
+1. **Open Skilder**: Navigate to http://localhost:8888
 2. **Go to Agents**: Click on the "Add Agents" section in the navigation
 3. **Select Agents**: Select your framework
 
@@ -93,20 +93,20 @@ The connection process currently involve a one-time code config in your agent. Y
 
 <Accordions type="single">
   <Accordion title="LangChain">
-    - When your Python agent runs with `TwolyMCP("my-agent")`, it automatically appears in the 2LY dashboard
-    - No configuration needed in 2LY - the connection is automatic
+    - When your Python agent runs with `TwolyMCP("my-agent")`, it automatically appears in the Skilder dashboard
+    - No configuration needed in Skilder - the connection is automatic
     - The agent will show up with the name you specified (e.g., "my-agent")
   </Accordion>
   
   <Accordion title="N8N">
-    - Your N8N workflow connects to 2LY via HTTP requests
-    - The workflow appears when it makes its first API call to 2LY
+    - Your N8N workflow connects to Skilder via HTTP requests
+    - The workflow appears when it makes its first API call to Skilder
     - Connection is established through webhook interactions
   </Accordion>
   
   <Accordion title="LangFlow">
     - LangFlow connects through API integration
-    - Agent appears when the flow executes and calls 2LY endpoints
+    - Agent appears when the flow executes and calls Skilder endpoints
     - Connection is managed through the flow configuration
   </Accordion>
 </Accordions>
@@ -128,12 +128,12 @@ Test your agent connection:
 
 If your agent doesn't appear:
 - Ensure your agent code is running
-- Check 2LY is accessible at http://localhost:8888
+- Check Skilder is accessible at http://localhost:8888
 - Review agent logs for connection errors
 
 ## Next Steps
 
-Your agent is now connected to 2LY! Next steps:
+Your agent is now connected to Skilder! Next steps:
 
 1. **[Connect Tools](/your-first-toolflow/connect-tool)** - Add MCP tools for your agent to use
 2. **[Deploy and Run](/your-first-toolflow/deploy-run)** - Link tools to agents and test execution  
@@ -141,9 +141,9 @@ Your agent is now connected to 2LY! Next steps:
 
 ## Key Points to Remember
 
-- **No 2LY Configuration**: Agents connect directly without needing setup in 2LY
+- **No Skilder Configuration**: Agents connect directly without needing setup in Skilder
 - **Automatic Discovery**: Connected agents appear automatically in the dashboard
 - **Framework Agnostic**: LangChain, N8N, and LangFlow all work the same way
 - **Ready for Tools**: Once connected, agents can access any configured tools
 
-Your agent is ready to start using 2LY's tool ecosystem!
+Your agent is ready to start using Skilder's tool ecosystem!

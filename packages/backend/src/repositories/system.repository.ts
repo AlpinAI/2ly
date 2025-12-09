@@ -1,6 +1,6 @@
 import { inject, injectable } from 'inversify';
 import { DGraphService } from '../services/dgraph.service';
-import { dgraphResolversTypes, apolloResolversTypes, LoggerService } from '@2ly/common';
+import { dgraphResolversTypes, apolloResolversTypes, LoggerService } from '@skilder-ai/common';
 import {
   CREATE_SYSTEM,
   QUERY_SYSTEM,
@@ -17,7 +17,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { IdentityRepository } from './identity.repository';
 import pino from 'pino';
 
-const INSTALL_ONBOARDING_URL = 'https://install.2ly.ai/onboarding';
+const INSTALL_ONBOARDING_URL = 'https://install.skilder.ai/onboarding';
 
 @injectable()
 export class SystemRepository {

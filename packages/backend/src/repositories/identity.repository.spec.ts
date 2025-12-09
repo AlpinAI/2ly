@@ -1,13 +1,13 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { IdentityRepository } from './identity.repository';
 import { DGraphService } from '../services/dgraph.service';
-import { LoggerService, dgraphResolversTypes } from '@2ly/common';
+import { LoggerService, dgraphResolversTypes } from '@skilder-ai/common';
 import { randomBytes } from 'crypto';
 
 // Mock dependencies
 vi.mock('../services/dgraph.service');
-vi.mock('@2ly/common', async () => {
-  const actual = await vi.importActual('@2ly/common');
+vi.mock('@skilder-ai/common', async () => {
+  const actual = await vi.importActual('@skilder-ai/common');
   return {
     ...actual,
     LoggerService: vi.fn().mockImplementation(() => ({

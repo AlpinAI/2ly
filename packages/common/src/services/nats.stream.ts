@@ -2,7 +2,7 @@ import { ConsumerConfig, ConsumerCreateOptions, JetStreamClient, JetStreamManage
 import { WithRequired } from "@nats-io/nats-core/internal";
 
 /**
- * This class is a first-attempt to create a stream utility for 2ly. Not yet used.
+ * This class is a first-attempt to create a stream utility for skilder. Not yet used.
  */
 export class NatsStream {
 

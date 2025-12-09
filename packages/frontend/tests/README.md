@@ -1,6 +1,6 @@
 # Integration Tests with Playwright
 
-This directory contains end-to-end integration tests for the 2LY frontend using Playwright and Testcontainers.
+This directory contains end-to-end integration tests for the Skilder frontend using Playwright and Testcontainers.
 
 ## Overview
 
@@ -156,10 +156,10 @@ The test environment exposes these URLs:
 
 ### Using the Test Environment in Backend Tests
 
-The test environment setup is in `@2ly/common/test.containers` and can be used for backend integration tests too:
+The test environment setup is in `@skilder-ai/common/test.containers` and can be used for backend integration tests too:
 
 ```typescript
-import { TestEnvironment } from '@2ly/common/test.containers';
+import { TestEnvironment } from '@skilder-ai/common/test.containers';
 
 let testEnv: TestEnvironment;
 
@@ -243,7 +243,7 @@ workers: 4, // Number of parallel workers
 
 ### Tests timeout on startup
 - Check Docker has enough resources (4GB+ RAM recommended)
-- Check container logs: `docker logs 2ly-backend-test`
+- Check container logs: `docker logs skilder-backend-test`
 - Increase timeout in `playwright.config.ts`
 
 ### Port conflicts
@@ -251,8 +251,8 @@ workers: 4, // Number of parallel workers
 - Or configure different ports in `TestEnvironment` config
 
 ### Containers not cleaning up
-- Manually stop: `docker ps | grep 2ly | awk '{print $1}' | xargs docker stop`
-- Remove: `docker ps -a | grep 2ly | awk '{print $1}' | xargs docker rm`
+- Manually stop: `docker ps | grep skilder | awk '{print $1}' | xargs docker stop`
+- Remove: `docker ps -a | grep skilder | awk '{print $1}' | xargs docker rm`
 
 ## CI/CD Integration
 
@@ -305,4 +305,4 @@ jobs:
 
 - [Playwright Documentation](https://playwright.dev)
 - [Testcontainers Documentation](https://node.testcontainers.org)
-- [2LY Project Documentation](../../README.md)
+- [Skilder Project Documentation](../../README.md)

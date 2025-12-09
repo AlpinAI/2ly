@@ -19,7 +19,7 @@ export interface OnboardingStepDefinition {
 /**
  * Initial onboarding steps for new workspaces
  *
- * WHY: These 3 steps guide users through the core 2LY setup:
+ * WHY: These 3 steps guide users through the core Skilder setup:
  * 1. Install MCP server (add tools to workspace)
  * 2. Create skill with tools (organize and manage tools)
  * 3. Connect skill to an agent (integrate with AI workflows)

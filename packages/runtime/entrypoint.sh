@@ -4,7 +4,7 @@ set -e
 # Configuration
 KEYS_DIR=${KEYS_DIR:-/keys}
 
-echo "🔐 2ly Runtime Entrypoint - Key Management"
+echo "🔐 skilder Runtime Entrypoint - Key Management"
 echo "=========================================="
 echo "Keys directory: $KEYS_DIR"
 echo ""

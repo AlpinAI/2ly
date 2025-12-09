@@ -18,7 +18,7 @@ import {
   buildDevelopmentToolsServer,
   buildDatabaseServer,
 } from './mcp-builders';
-import { dgraphResolversTypes } from '@2ly/common';
+import { dgraphResolversTypes } from '@skilder-ai/common';
 
 // ============================================================================
 // Realistic Input Schemas for Tools
@@ -191,7 +191,7 @@ const GIT_COMMIT_SCHEMA = JSON.stringify({
 export const comprehensiveSeededData: SeedData = {
   users: [
     {
-      email: 'user1@2ly.ai',
+      email: 'user1@skilder.ai',
       password: 'testpassword123'
     },
   ],

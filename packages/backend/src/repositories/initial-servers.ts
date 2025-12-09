@@ -1,4 +1,4 @@
-import { mcpRegistry } from '@2ly/common';
+import { mcpRegistry } from '@skilder-ai/common';
 type Server = mcpRegistry.components['schemas']['ServerJSON'];
 
 /**

@@ -5,7 +5,7 @@ import {
   NatsService,
   dgraphResolversTypes,
   EXECUTION_TARGET,
-} from '@2ly/common';
+} from '@skilder-ai/common';
 import { AuthService } from './auth.service';
 import { HealthService } from './runtime.health.service';
 import { type ToolServerServiceFactory } from './tool.mcp.server.service';

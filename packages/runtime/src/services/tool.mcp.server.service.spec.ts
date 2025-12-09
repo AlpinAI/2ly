@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { ToolServerService } from './tool.mcp.server.service';
-import { dgraphResolversTypes } from '@2ly/common';
+import { dgraphResolversTypes } from '@skilder-ai/common';
 import pino from 'pino';
 
 // Helper to create a mock McpTool (database type with all required fields)

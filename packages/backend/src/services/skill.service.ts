@@ -7,7 +7,7 @@ import {
   SkillListToolsPublish,
   SmartSkillTool,
   dgraphResolversTypes,
-} from '@2ly/common';
+} from '@skilder-ai/common';
 import { DGraphService } from './dgraph.service';
 import pino from 'pino';
 import { Subscription } from 'rxjs';

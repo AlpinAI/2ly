@@ -97,7 +97,7 @@ export class TestEnvironment {
     testLog('Generating JWT keys...');
 
     // Create unique temp directory
-    const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), '2ly-test-keys-'));
+    const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'skilder-test-keys-'));
     testLog(`Created temp key directory: ${tempDir}`);
 
     // Generate RSA key pair with same parameters as production
@@ -244,7 +244,7 @@ export class TestEnvironment {
         '--jetstream',
         '--store_dir=/data',
         '--http_port=8222',
-        '--name=2ly-test-nats',
+        '--name=skilder-test-nats',
       ])
       .withExposedPorts(4222, 8222)
       .withWaitStrategy(Wait.forListeningPorts())
@@ -330,7 +330,7 @@ export class TestEnvironment {
    * Build backend Docker image
    */
   private async buildBackendImage(): Promise<void> {
-    const imageName = '2ly-backend-test:latest';
+    const imageName = 'skilder-backend-test:latest';
     const dockerfilePath = 'packages/backend/Dockerfile';
 
     // Check if rebuild is needed
@@ -351,7 +351,7 @@ export class TestEnvironment {
       const buildPromise = GenericContainer.fromDockerfile(
         this.config.projectRoot,
         dockerfilePath
-      ).build('2ly-backend-test', { deleteOnExit: false });
+      ).build('skilder-backend-test', { deleteOnExit: false });
 
       const timeoutPromise = new Promise((_, reject) => {
         promiseTimeout = setTimeout(
@@ -375,7 +375,7 @@ export class TestEnvironment {
    * Build runtime Docker image
    */
   private async buildRuntimeImage(): Promise<void> {
-    const imageName = '2ly-runtime-test:latest';
+    const imageName = 'skilder-runtime-test:latest';
     const dockerfilePath = 'packages/runtime/Dockerfile';
 
     // Check if rebuild is needed
@@ -396,7 +396,7 @@ export class TestEnvironment {
       const buildPromise = GenericContainer.fromDockerfile(
         this.config.projectRoot,
         dockerfilePath
-      ).build('2ly-runtime-test', { deleteOnExit: false });
+      ).build('skilder-runtime-test', { deleteOnExit: false });
 
       const timeoutPromise = new Promise((_, reject) => {
         promiseTimeout = setTimeout(
@@ -430,7 +430,7 @@ export class TestEnvironment {
     const keyDir = this.generateJWTKeys();
 
     // Use the appropriate image (pre-built or locally built)
-    const imageName = '2ly-backend-test:latest';
+    const imageName = 'skilder-backend-test:latest';
     testLog(`Using backend image: ${imageName}`);
 
     const containerImage = new GenericContainer(imageName);
@@ -505,7 +505,7 @@ export class TestEnvironment {
     const runtimePort = 3001;
 
     // Use the appropriate image (pre-built or locally built)
-    const imageName = '2ly-runtime-test:latest';
+    const imageName = 'skilder-runtime-test:latest';
     if (!this.services?.runtime?.container) {
       const container = new GenericContainer(imageName)
         .withNetwork(this.network!)

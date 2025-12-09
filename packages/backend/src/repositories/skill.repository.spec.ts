@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 import { SkillRepository } from './skill.repository';
 import { DGraphService } from '../services/dgraph.service';
-import { LoggerService, dgraphResolversTypes } from '@2ly/common';
+import { LoggerService, dgraphResolversTypes } from '@skilder-ai/common';
 import { WorkspaceRepository } from './workspace.repository';
 import { IdentityRepository } from './identity.repository';
 import { Subject } from 'rxjs';
@@ -10,8 +10,8 @@ import { Subject } from 'rxjs';
 vi.mock('../services/dgraph.service');
 vi.mock('./workspace.repository');
 vi.mock('./identity.repository');
-vi.mock('@2ly/common', async () => {
-  const actual = await vi.importActual('@2ly/common');
+vi.mock('@skilder-ai/common', async () => {
+  const actual = await vi.importActual('@skilder-ai/common');
   return {
     ...actual,
     LoggerService: vi.fn(),

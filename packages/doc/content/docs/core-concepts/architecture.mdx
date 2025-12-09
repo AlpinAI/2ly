@@ -1,10 +1,10 @@
 ---
 title: 'Architecture'
-description: '2LY under the hood'
+description: 'Skilder under the hood'
 draft: false
 ---
 
-2LY connects AI agents to tools via MCP using NATS messaging, DGraph storage, and distributed runtimes.
+Skilder connects AI agents to tools via MCP using NATS messaging, DGraph storage, and distributed runtimes.
 
 ## Quick Architecture
 
@@ -12,7 +12,7 @@ draft: false
 graph TB
     Agent[AI Agent<br/>Claude, LangChain, etc.]
 
-    subgraph "2LY Platform"
+    subgraph "Skilder Platform"
         Runtime[Runtime<br/>MCP Server + Client]
         Backend[Backend<br/>GraphQL API]
         NATS[NATS<br/>Message Bus]
@@ -49,7 +49,7 @@ AI systems that connect via MCP protocol:
 
 ### Runtime
 
-Distributed execution environment (`@2ly/runtime`):
+Distributed execution environment (`@skilder-ai/runtime`):
 
 - **Agent Mode**: Acts as MCP server for agents
 - **Tool Mode**: Spawns and manages MCP tool servers
@@ -133,13 +133,13 @@ React-based management interface:
 
 **Enterprise-ready:** Audit trails, usage analytics, and debugging tools included. No need for third-party monitoring services for basic observability.
 
-For more details, see the [Why 2LY section in Installation](/getting-started/installation#why-2ly).
+For more details, see the [Why Skilder section in Installation](/getting-started/installation#why-Skilder).
 
 ## Deployment
 
 ### Run locally
 
-Start all 2LY services on localhost via Docker Compose:
+Start all Skilder services on localhost via Docker Compose:
 
 ```bash
 docker compose up -d
@@ -149,7 +149,7 @@ Access at http://localhost:8888. See [Installation](/getting-started/installatio
 
 ### Production
 
-You can deploy 2LY using official container images:
+You can deploy Skilder using official container images:
 
 - **Backend**: [`ghcr.io/alpinai/backend:latest`](https://github.com/orgs/AlpinAI/packages/container/package/backend)
 - **Main Runtime**: [`ghcr.io/alpinai/runtime:latest`](https://github.com/orgs/AlpinAI/packages/container/package/runtime)
@@ -162,7 +162,7 @@ See [`docker-compose.yml`](/docker-compose.yml) for an example.
 
 ## Next Steps
 
-- [Installation](/getting-started/installation) - Set up 2LY in 2 minutes
+- [Installation](/getting-started/installation) - Set up Skilder in 2 minutes
 - [Quick Start](/getting-started/quick-start) - Your first tool workflow
 - [The Stack](/deep-dive/stack) - Deep dive into architecture components
 - [NATS Messaging](/deep-dive/nats-messaging) - Message broker details

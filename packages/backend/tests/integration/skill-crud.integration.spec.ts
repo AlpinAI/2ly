@@ -15,7 +15,7 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { describe, it, expect, beforeEach } from 'vitest';
-import { graphql, resetDatabase } from '@2ly/common/test/fixtures';
+import { graphql, resetDatabase } from '@skilder-ai/common/test/fixtures';
 
 /**
  * Helper function for authenticated GraphQL requests
@@ -68,7 +68,7 @@ describe('Skill CRUD Operations', () => {
       }
     `;
 
-    const uniqueEmail = `skill-test-${Date.now()}@2ly.ai`;
+    const uniqueEmail = `skill-test-${Date.now()}@skilder.ai`;
     const registerResult = await graphql<{
       registerUser: {
         success: boolean;

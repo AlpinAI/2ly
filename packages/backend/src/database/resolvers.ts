@@ -1,7 +1,7 @@
 import { GraphQLDateTime } from 'graphql-scalars';
 import { GraphQLError } from 'graphql';
 import { container as defaultContainer } from '../di/container';
-import { apolloResolversTypes, LoggerService, EXECUTION_TARGET } from '@2ly/common';
+import { apolloResolversTypes, LoggerService, EXECUTION_TARGET } from '@skilder-ai/common';
 import { Observable } from 'rxjs';
 import { latestValueFrom } from 'rxjs-for-await';
 import {

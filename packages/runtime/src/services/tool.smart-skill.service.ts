@@ -8,7 +8,7 @@ import {
   RateLimitError,
   TokenLimitError,
   type RuntimeSmartSkill,
-} from '@2ly/common';
+} from '@skilder-ai/common';
 
 @injectable()
 export class ToolSmartSkillService extends Service {

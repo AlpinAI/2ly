@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { SkillService, SkillIdentity } from './skill.service';
-import { LoggerService, NatsService, SkillListToolsPublish, RuntimeCallToolResponse, dgraphResolversTypes, SmartSkillTool } from '@2ly/common';
+import { LoggerService, NatsService, SkillListToolsPublish, RuntimeCallToolResponse, dgraphResolversTypes, SmartSkillTool } from '@skilder-ai/common';
 import pino from 'pino';
 import { BehaviorSubject } from 'rxjs';
 

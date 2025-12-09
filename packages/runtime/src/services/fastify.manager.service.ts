@@ -1,6 +1,6 @@
 import { inject, injectable } from 'inversify';
 import pino from 'pino';
-import { LoggerService, Service } from '@2ly/common';
+import { LoggerService, Service } from '@skilder-ai/common';
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import fastify, { FastifyInstance } from 'fastify';
 import cors from '@fastify/cors';
@@ -36,7 +36,7 @@ export class FastifyManagerService extends Service {
     // Create MCP Server instance (shared by all transports)
     this.server = new Server(
       {
-        name: 'Remote 2LY Server',
+        name: 'Remote Skilder Server',
         version: '1.0.0',
       },
       {

@@ -1,5 +1,5 @@
 import { injectable, inject } from 'inversify';
-import { LoggerService } from '@2ly/common';
+import { LoggerService } from '@skilder-ai/common';
 import pino from 'pino';
 
 interface RateLimitEntry {
