@@ -1,7 +1,7 @@
 #!/bin/sh
 set -e
 
-# Standalone key generation script for 2ly
+# Standalone key generation script for skilder
 # Can be run manually or invoked by Docker containers
 #
 # Usage:
@@ -28,7 +28,7 @@ mkdir -p "$KEYS_DIR"
 # Set permissions on directory (if we have permission)
 chmod 700 "$KEYS_DIR" 2>/dev/null || true
 
-echo "🔐 2ly Key Generation"
+echo "🔐 Skilder Key Generation"
 echo "===================="
 echo ""
 echo "Keys directory: $KEYS_DIR"

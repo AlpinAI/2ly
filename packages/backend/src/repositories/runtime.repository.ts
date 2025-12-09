@@ -1,6 +1,6 @@
 import { injectable, inject } from 'inversify';
 import { DGraphService } from '../services/dgraph.service';
-import { dgraphResolversTypes, NatsService, LoggerService, SkillCallToolRequest, RuntimeCallToolResponse, ErrorResponse, apolloResolversTypes } from '@2ly/common';
+import { dgraphResolversTypes, NatsService, LoggerService, SkillCallToolRequest, RuntimeCallToolResponse, ErrorResponse, apolloResolversTypes } from '@skilder-ai/common';
 import { ConnectionMetadata } from '../types';
 import {
   QUERY_MCPSERVER_WITH_TOOL,

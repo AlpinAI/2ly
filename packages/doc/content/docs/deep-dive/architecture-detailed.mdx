@@ -4,11 +4,11 @@ description: 'Distributed AI tool orchestration platform with MCP protocol integ
 draft: true
 ---
 
-2LY implements a distributed, message-driven architecture for AI tool orchestration. The platform connects AI agents to MCP (Model Context Protocol) tools through distributed runtimes, using NATS messaging for communication and DGraph for persistence.
+Skilder implements a distributed, message-driven architecture for AI tool orchestration. The platform connects AI agents to MCP (Model Context Protocol) tools through distributed runtimes, using NATS messaging for communication and DGraph for persistence.
 
 ## Core Architecture
 
-2LY follows a layered architecture pattern with distributed components:
+Skilder follows a layered architecture pattern with distributed components:
 
 - **Client Layer**: React web interface and Python SDK for agent integration
 - **Backend Services**: GraphQL API and orchestration logic
@@ -197,7 +197,7 @@ class RuntimeRepository {
 
 ### Agent Integration SDK
 
-Python SDK for connecting AI agents to 2LY:
+Python SDK for connecting AI agents to Skilder:
 
 ```python
 from twoly import TwolyMCP
@@ -312,7 +312,7 @@ Docker-based deployment with service isolation:
 # Production deployment configuration
 services:
   backend:
-    image: 2ly/backend:latest
+    image: Skilder/backend:latest
     environment:
       - NATS_SERVERS=nats://nats-cluster:4222
       - DGRAPH_ENDPOINT=http://dgraph-alpha:8080
@@ -320,14 +320,14 @@ services:
     depends_on: [nats, dgraph]
 
   runtime-global:
-    image: 2ly/runtime:latest
+    image: Skilder/runtime:latest
     environment:
       - MCP_SERVER_AUTO_DISCOVERY=true
     volumes:
       - ./mcp-servers:/app/servers
 
   runtime-edge:
-    image: 2ly/runtime:latest
+    image: Skilder/runtime:latest
     environment:
       - RUNTIME_TYPE=EDGE
       - EDGE_OPTIMIZATION=true
@@ -337,7 +337,7 @@ services:
 
   nats:
     image: nats:jetstream
-    command: ['--jetstream', '--cluster_name', '2ly-cluster', '--store_dir', '/data']
+    command: ['--jetstream', '--cluster_name', 'Skilder-cluster', '--store_dir', '/data']
     volumes:
       - nats-data:/data
 ```
@@ -475,7 +475,7 @@ _Performance Bottlenecks_:
 
 ## Summary
 
-2LY architecture provides:
+Skilder architecture provides:
 
 - **Distributed Execution**: Scalable runtime orchestration with NATS messaging
 - **MCP Integration**: Standard protocol for AI tool interoperability

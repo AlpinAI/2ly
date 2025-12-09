@@ -15,7 +15,7 @@ import {
   seedDatabase as coreSeedDatabase
 } from '../fixtures/core';
 import type { SeedData, DatabaseState } from '../fixtures/seed-data.types';
-import { startRuntime, stopRuntime } from '@2ly/common/test/test.containers';
+import { startRuntime, stopRuntime } from '@skilder-ai/common/test/test.containers';
 import { seedPresets } from '../fixtures/seed-data.presets';
 
 // Worker-scoped storage for runtime port

@@ -25,7 +25,7 @@ npm run test -- packages/backend/tests/integration/api.spec.ts
 
 ## Test Environment
 
-Integration tests use `TestEnvironment` from `@2ly/common` which spins up:
+Integration tests use `TestEnvironment` from `@skilder-ai/common` which spins up:
 - **Dgraph** (Zero + Alpha) for database
 - **NATS** with JetStream for messaging
 - **Backend API** server
@@ -46,11 +46,11 @@ This is a known issue with Dgraph's ACL configuration in Docker networks. The Dg
 
 **Workaround**: Use the frontend Playwright tests which have the same testcontainer setup but work correctly (timing differences in startup).
 
-**To Fix**: Update `TestEnvironment` in `@2ly/common` to configure Dgraph Alpha with proper ACL settings or whitelist the Docker network CIDR.
+**To Fix**: Update `TestEnvironment` in `@skilder-ai/common` to configure Dgraph Alpha with proper ACL settings or whitelist the Docker network CIDR.
 
 ## Test Fixtures
 
-Test fixtures are now shared across the monorepo from `@2ly/common/test/fixtures`:
+Test fixtures are now shared across the monorepo from `@skilder-ai/common/test/fixtures`:
 
 - `graphql(query, variables)` - Execute GraphQL queries
 - `resetDatabase()` - Drop all data and reset to empty state
@@ -63,7 +63,7 @@ Test fixtures are now shared across the monorepo from `@2ly/common/test/fixtures
 
 ```typescript
 import { describe, it, expect, beforeEach } from 'vitest';
-import { graphql, resetDatabase, seedDatabase, seedPresets } from '@2ly/common/test/fixtures';
+import { graphql, resetDatabase, seedDatabase, seedPresets } from '@skilder-ai/common/test/fixtures';
 
 describe('My Feature Tests', () => {
   beforeEach(async () => {

@@ -1,11 +1,11 @@
 /**
  * Connection Options Configuration
  *
- * WHY: Defines available platform/framework options for connecting agents to 2LY.
+ * WHY: Defines available platform/framework options for connecting agents to Skilder.
  * Provides metadata for each platform including display name, description, and icon.
  *
  * PLATFORMS:
- * - Langchain/Langgraph: Python integration via langchain_2ly package
+ * - Langchain/Langgraph: Python integration via langchain_skilder package
  * - Langflow: MCP Server node in Langflow workflows
  * - N8N: MCP Client Tool in N8N workflows
  * - JSON: Generic configuration for custom integrations

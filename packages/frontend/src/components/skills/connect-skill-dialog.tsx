@@ -112,7 +112,7 @@ export function ConnectSkillDialog() {
               </Dialog.Close>
             </div>
             <Dialog.Description className="sr-only">
-              Select a platform and follow the instructions to connect your skill to 2LY
+              Select a platform and follow the instructions to connect your skill to Skilder
             </Dialog.Description>
           </div>
 
@@ -173,7 +173,7 @@ export function ConnectSkillDialog() {
           {/* Footer */}
           <div className="p-4 border-t border-gray-200 dark:border-gray-700 flex-shrink-0">
             <a
-              href="https://docs.2ly.ai/integrations"
+              href="https://docs.skilder.ai/integrations"
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center justify-center gap-2 text-sm text-blue-600 dark:text-blue-400 hover:underline"

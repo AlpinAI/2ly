@@ -2,8 +2,8 @@ import { injectable, inject } from 'inversify';
 import { UserRepository } from '../../repositories/user.repository';
 import { SessionRepository } from '../../repositories/session.repository';
 import { JwtService, JwtPayload, TokenPair } from './jwt.service';
-import { verifyPassword } from '@2ly/common';
-import { dgraphResolversTypes } from '@2ly/common';
+import { verifyPassword } from '@skilder-ai/common';
+import { dgraphResolversTypes } from '@skilder-ai/common';
 
 export interface LoginCredentials {
   email: string;

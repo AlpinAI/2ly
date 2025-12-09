@@ -45,10 +45,10 @@ jobs:
         id: set-namespace
         run: |
           if [ "${{ inputs.branch }}" = "main" ]; then
-            echo "NAMESPACE=main-2ly" >> $GITHUB_ENV
+            echo "NAMESPACE=main-skilder" >> $GITHUB_ENV
             echo "BRANCH=main" >> $GITHUB_ENV
           else
-            echo "NAMESPACE=dev-2ly" >> $GITHUB_ENV
+            echo "NAMESPACE=dev-skilder" >> $GITHUB_ENV
             echo "BRANCH=develop" >> $GITHUB_ENV
           fi
 

@@ -1,4 +1,4 @@
-import { dgraphResolversTypes } from '@2ly/common';
+import { dgraphResolversTypes } from '@skilder-ai/common';
 
 /**
  * Metadata about a connected runtime or skill instance.

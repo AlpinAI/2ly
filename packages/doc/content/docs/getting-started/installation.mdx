@@ -3,20 +3,20 @@ title: Installation
 draft: false
 ---
 
-Installing 2LY takes 2 minutes.
+Installing Skilder takes 2 minutes.
 
 ## Prerequisites
 
 - [Docker](https://docs.docker.com/) and Docker Compose
 
-That's it! 2LY runs entirely in Docker containers, so you don't need Node.js or any other dependencies on your host machine.
+That's it! Skilder runs entirely in Docker containers, so you don't need Node.js or any other dependencies on your host machine.
 
 ## Installation
 
 ```bash
 # Clone the repository
-git clone https://github.com/AlpinAI/2ly.git
-cd 2ly
+git clone https://github.com/skilder-ai/skilder.git
+cd Skilder
 
 # Start all services
 docker compose up -d
@@ -28,9 +28,9 @@ docker compose logs -f
 Access the dashboard at **http://localhost:8888**
 
 <Callout type="info">
-  **Developers & Contributors:** This guide is for using 2LY. If you want to develop or contribute to 2LY itself, see
+  **Developers & Contributors:** This guide is for using Skilder. If you want to develop or contribute to Skilder itself, see
   [Development Setup](/contributing/development-setup) or the
-  [dev/README.md](https://github.com/AlpinAI/2ly/blob/main/dev/README.md) in the repository.
+  [dev/README.md](https://github.com/skilder-ai/skilder/blob/main/dev/README.md) in the repository.
 </Callout>
 
 ## Quick Win: Your First Tool in 2 Minutes
@@ -38,14 +38,14 @@ Access the dashboard at **http://localhost:8888**
 Follow these steps to get your first tool running:
 
 1. **Create your workspace** - Set up your admin account
-2. **Follow the onboarding** - 3 guided steps to understand 2LY's capabilities
+2. **Follow the onboarding** - 3 guided steps to understand Skilder's capabilities
 3. **Connect an MCP server** - Choose from popular servers (Filesystem, GitHub, Weather) or add your own
 4. **Test your tools** - Use the built-in tool tester to verify everything works
 5. **Connect your agent** - Copy the connection details and integrate with your agent framework
 
 See the [Quick Start Guide](/getting-started/quick-start) for a detailed walkthrough.
 
-## Why 2LY?
+## Why Skilder?
 
 ### Ship Faster
 
@@ -55,7 +55,7 @@ See the [Quick Start Guide](/getting-started/quick-start) for a detailed walkthr
 
 ### Your Tools, Your Registry
 
-Unlike platforms that lock you into their tool marketplace, 2LY lets you build and manage your own private catalog. Import existing tools, wrap your internal APIs, or create custom functions—you control what's available to your agents.
+Unlike platforms that lock you into their tool marketplace, Skilder lets you build and manage your own private catalog. Import existing tools, wrap your internal APIs, or create custom functions—you control what's available to your agents.
 
 ### Cost Savings
 
@@ -81,7 +81,7 @@ Connect your LangChain agents to GitHub repositories via MCP. Create issues, rev
 
 ### Multi-Agent Systems with Shared Tools
 
-Deploy multiple specialized agents (research, coding, documentation) that share access to common tools. 2LY handles routing, load balancing, and ensures consistent tool access across all agents.
+Deploy multiple specialized agents (research, coding, documentation) that share access to common tools. Skilder handles routing, load balancing, and ensures consistent tool access across all agents.
 
 ### Edge AI with Distributed Runtimes
 
@@ -93,7 +93,7 @@ Wrap your internal APIs, databases, and services as agent-accessible tools. Crea
 
 ## What's Next?
 
-After completing the onboarding, here's how to get the most out of 2LY:
+After completing the onboarding, here's how to get the most out of Skilder:
 
 ### Add More MCP Servers
 
@@ -104,7 +104,7 @@ After completing the onboarding, here's how to get the most out of 2LY:
 
 ### Connect Your Agents
 
-Integrate 2LY with your preferred agent framework:
+Integrate Skilder with your preferred agent framework:
 
 - **LangChain** - Use the [LangChain MCP Adapters](https://github.com/langchain-ai/langchain-mcp-adapters)
 - **N8N** - Connect an MCP Client Node to your agent and configure with MCP Streamable HTTP

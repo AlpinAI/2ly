@@ -9,7 +9,7 @@ import { LangchainInstructions } from './langchain-instructions';
 describe('LangchainInstructions', () => {
   it('renders the title', () => {
     render(<LangchainInstructions skillKey="test-key" />);
-    expect(screen.getByText('Connect Langchain/Langgraph to 2LY')).toBeInTheDocument();
+    expect(screen.getByText('Connect Langchain/Langgraph to Skilder')).toBeInTheDocument();
   });
 
   it('renders image placeholder', () => {
@@ -19,7 +19,7 @@ describe('LangchainInstructions', () => {
 
   it('renders install command', () => {
     render(<LangchainInstructions skillKey="test-key" />);
-    expect(screen.getByText(/pip install langchain_2ly/)).toBeInTheDocument();
+    expect(screen.getByText(/pip install langchain_skilder/)).toBeInTheDocument();
   });
 
   it('includes skill key in code example', () => {

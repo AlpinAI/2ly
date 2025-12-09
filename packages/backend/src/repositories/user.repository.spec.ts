@@ -2,8 +2,8 @@ import { describe, it, expect, beforeAll, afterAll, beforeEach } from 'vitest';
 import { UserRepository } from './user.repository';
 import type { DGraphService } from '../services/dgraph.service';
 import { DgraphServiceMock } from '../services/dgraph.service.mock';
-import { dgraphResolversTypes, LoggerService } from '@2ly/common';
-import { LoggerServiceMock } from '@2ly/common/test/vitest';
+import { dgraphResolversTypes, LoggerService } from '@skilder-ai/common';
+import { LoggerServiceMock } from '@skilder-ai/common/test/vitest';
 
 describe('UserRepository', () => {
     const originalEnv = process.env;

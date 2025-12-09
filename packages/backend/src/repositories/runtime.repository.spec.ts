@@ -2,11 +2,11 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { RuntimeRepository } from './runtime.repository';
 import type { DGraphService } from '../services/dgraph.service';
 import { DgraphServiceMock } from '../services/dgraph.service.mock';
-import { dgraphResolversTypes } from '@2ly/common';
+import { dgraphResolversTypes } from '@skilder-ai/common';
 import { MCPToolRepository } from './mcp-tool.repository';
-import { LoggerService } from '@2ly/common';
+import { LoggerService } from '@skilder-ai/common';
 import { Subject } from 'rxjs';
-import type { NatsService } from '@2ly/common';
+import type { NatsService } from '@skilder-ai/common';
 import type { IdentityRepository } from './identity.repository';
 
 describe('RuntimeRepository', () => {

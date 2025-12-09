@@ -5,7 +5,7 @@
  * Supports comprehensive seeding for E2E tests and simple seeding for integration tests.
  */
 
-import { dgraphResolversTypes } from '@2ly/common';
+import { dgraphResolversTypes } from '@skilder-ai/common';
 import type { RegistryServerSeed, MCPServerSeed, OmitGenerated } from './mcp-types';
 
 /**

@@ -1,6 +1,6 @@
 import { injectable, inject } from 'inversify';
 import { DGraphService } from '../services/dgraph.service';
-import { dgraphResolversTypes, hashPassword, LoggerService } from '@2ly/common';
+import { dgraphResolversTypes, hashPassword, LoggerService } from '@skilder-ai/common';
 import {
   ADD_USER,
   ADD_ADMIN_TO_WORKSPACE,

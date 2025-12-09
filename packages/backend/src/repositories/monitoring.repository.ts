@@ -1,6 +1,6 @@
 import { inject, injectable } from 'inversify';
 import { DGraphService } from '../services/dgraph.service';
-import { apolloResolversTypes, dgraphResolversTypes } from '@2ly/common';
+import { apolloResolversTypes, dgraphResolversTypes } from '@skilder-ai/common';
 import {
     ADD_TOOL_CALL,
     SET_CALLED_BY,

@@ -14,7 +14,7 @@ describe('LangflowInstructions', () => {
 
   it('renders the title', () => {
     render(<LangflowInstructions {...defaultProps} />);
-    expect(screen.getByText('Connect Langflow to 2LY')).toBeInTheDocument();
+    expect(screen.getByText('Connect Langflow to Skilder')).toBeInTheDocument();
   });
 
   it('renders the image', () => {

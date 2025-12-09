@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { SessionAuthService } from './session.auth.service';
-import { LoggerService, NatsService, HandshakeResponse, ErrorResponse } from '@2ly/common';
+import { LoggerService, NatsService, HandshakeResponse, ErrorResponse } from '@skilder-ai/common';
 import pino from 'pino';
 
 describe('SessionAuthService', () => {

@@ -1,4 +1,4 @@
-# Dockerfile for 2LY Runtime
+# Dockerfile for Skilder Runtime
 # Stage 1: Build
 FROM node:22-alpine AS builder
 
@@ -19,7 +19,7 @@ COPY packages/runtime/ ./packages/runtime/
 COPY packages/common/ ./packages/common/
 
 # Build the runtime
-RUN npm run build -w @2ly/runtime
+RUN npm run build -w @skilder-ai/runtime
 
 # Stage 2: Production
 FROM node:22-alpine

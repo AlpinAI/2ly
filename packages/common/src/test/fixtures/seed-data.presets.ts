@@ -81,7 +81,7 @@ export const seedPresets = {
     ],
     users: [
       {
-        email: 'user1@2ly.ai',
+        email: 'user1@skilder.ai',
         password: 'testpassword123',
       },
     ],
@@ -95,11 +95,11 @@ export const seedPresets = {
   withUsers: {
     users: [
       {
-        email: 'user1@2ly.ai',
+        email: 'user1@skilder.ai',
         password: 'password123',
       },
       {
-        email: 'user2@2ly.ai',
+        email: 'user2@skilder.ai',
         password: 'password456',
       },
     ],
@@ -121,7 +121,7 @@ export const seedPresets = {
   withSingleMCPServer: {
     users: [
       {
-        email: 'user1@2ly.ai',
+        email: 'user1@skilder.ai',
         password: 'password123',
       },
     ],

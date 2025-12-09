@@ -1,12 +1,12 @@
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 import { SessionRepository, CreateSessionData } from './session.repository';
 import { DGraphService } from '../services/dgraph.service';
-import { LoggerService, dgraphResolversTypes } from '@2ly/common';
+import { LoggerService, dgraphResolversTypes } from '@skilder-ai/common';
 
 // Mock dependencies
 vi.mock('../services/dgraph.service');
-vi.mock('@2ly/common', async () => {
-  const actual = await vi.importActual('@2ly/common');
+vi.mock('@skilder-ai/common', async () => {
+  const actual = await vi.importActual('@skilder-ai/common');
   return {
     ...actual,
     LoggerService: vi.fn(),
@@ -22,7 +22,7 @@ describe('SessionRepository', () => {
   // Mock user for sessions
   const mockUser: dgraphResolversTypes.User = {
     id: 'user-456',
-    email: 'user1@2ly.ai',
+    email: 'user1@skilder.ai',
     password: 'hashed-password',
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),

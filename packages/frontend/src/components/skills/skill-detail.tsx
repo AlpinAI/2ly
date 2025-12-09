@@ -43,7 +43,7 @@ import {
   ExecutionTarget,
 } from '@/graphql/generated/graphql';
 import type { SubscribeSkillsSubscription } from '@/graphql/generated/graphql';
-import { DEFAULT_TEMPERATURE, DEFAULT_MAX_TOKENS } from '@2ly/common';
+import { DEFAULT_TEMPERATURE, DEFAULT_MAX_TOKENS } from '@skilder-ai/common';
 
 type Skill = NonNullable<SubscribeSkillsSubscription['skills']>[number];
 

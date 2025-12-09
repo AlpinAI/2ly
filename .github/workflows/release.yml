@@ -104,11 +104,11 @@ jobs:
 
           ## NPM Package
           The runtime package has been published to NPM:
-          - [@2ly/runtime@$VERSION](https://www.npmjs.com/package/@2ly/runtime/v/$VERSION)
+          - [@skilder-ai/runtime@$VERSION](https://www.npmjs.com/package/@skilder-ai/runtime/v/$VERSION)
 
           Install with:
           \`\`\`bash
-          npm install @2ly/runtime@$VERSION
+          npm install @skilder-ai/runtime@$VERSION
           \`\`\`
 
           ## Docker Images

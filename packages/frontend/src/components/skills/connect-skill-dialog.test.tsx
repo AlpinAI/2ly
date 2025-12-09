@@ -114,7 +114,7 @@ describe('ConnectSkillDialog', () => {
     fireEvent.click(langflowCard);
 
     // Verify instructions appear
-    expect(screen.getByText(/Connect Langflow to 2LY/i)).toBeInTheDocument();
+    expect(screen.getByText(/Connect Langflow to Skilder/i)).toBeInTheDocument();
   });
 
   it('shows instructions when platform is selected', () => {
@@ -133,7 +133,7 @@ describe('ConnectSkillDialog', () => {
     const n8nCard = screen.getByText('N8N');
     fireEvent.click(n8nCard);
 
-    expect(screen.getByText('Connect N8N to 2LY')).toBeInTheDocument();
+    expect(screen.getByText('Connect N8N to Skilder')).toBeInTheDocument();
   });
 
   it('shows docs link in footer', () => {
@@ -148,7 +148,7 @@ describe('ConnectSkillDialog', () => {
 
     render(<ConnectSkillDialog />);
     const docsLink = screen.getByText('View full documentation');
-    expect(docsLink).toHaveAttribute('href', 'https://docs.2ly.ai/integrations');
+    expect(docsLink).toHaveAttribute('href', 'https://docs.skilder.ai/integrations');
   });
 
   it('calls setOpen(false) when close button is clicked', () => {

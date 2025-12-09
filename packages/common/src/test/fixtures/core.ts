@@ -14,7 +14,7 @@
 
 import type { SeedData } from './seed-data.types';
 import { dgraphQL } from './dgraph-client';
-import { hashPassword } from '@2ly/common/test/test.containers';
+import { hashPassword } from '@skilder-ai/common/test/test.containers';
 import { testWarn } from '../test.containers.logger';
 
 // ============================================================================

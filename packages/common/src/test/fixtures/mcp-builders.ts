@@ -11,7 +11,7 @@ import type {
   MCPServerSeed,
   AugmentedArgument,
 } from './mcp-types';
-import { apolloResolversTypes } from '@2ly/common';
+import { apolloResolversTypes } from '@skilder-ai/common';
 
 type McpTransportType = apolloResolversTypes.McpTransportType;
 type ExecutionTarget = apolloResolversTypes.ExecutionTarget;

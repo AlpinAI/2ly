@@ -180,7 +180,7 @@ export const useUIStore = create<UIState>()(
           }),
       }),
       {
-        name: '2ly-ui-state', // localStorage key
+        name: 'skilder-ui-state', // localStorage key
         // WHY: Only persist these keys (not modals)
         partialize: (state) => ({
           toolCategoryFilter: state.toolCategoryFilter,
@@ -191,7 +191,7 @@ export const useUIStore = create<UIState>()(
       },
     ),
     {
-      name: '2LY UI Store', // Name in Redux DevTools
+      name: 'Skilder UI Store', // Name in Redux DevTools
     },
   ),
 );

@@ -14,7 +14,7 @@ import {
   DEFAULT_EPHEMERAL_TTL,
   EncryptionService,
   AIProviderService,
-} from '@2ly/common';
+} from '@skilder-ai/common';
 import { DGraphService, DGRAPH_URL } from '../services/dgraph.service';
 import { ApolloService } from '../services/apollo.service';
 import { RuntimeService } from '../services/runtime.service';
@@ -105,7 +105,7 @@ const start = () => {
   // Init key rate limiter service
   container.bind(KeyRateLimiterService).toSelf().inSingletonScope();
 
-  // Init AI provider core service (from @2ly/common)
+  // Init AI provider core service (from @skilder-ai/common)
   container.bind(EncryptionService).toSelf().inSingletonScope();
   container.bind(AIProviderService).toSelf().inSingletonScope();
 
@@ -121,7 +121,7 @@ const start = () => {
   // Init logger service
   // LOG_LEVEL: Default level for all loggers (e.g., 'info', 'debug', 'warn')
   // LOG_LEVELS: Pattern-based configuration (e.g., 'mcp.*=debug,dgraph=trace')
-  container.bind(MAIN_LOGGER_NAME).toConstantValue('2ly-backend');
+  container.bind(MAIN_LOGGER_NAME).toConstantValue('skilder-backend');
   container.bind(FORWARD_STDERR).toConstantValue(false);
   container.bind(LOG_LEVEL).toConstantValue(process.env.LOG_LEVEL || 'info');
   container.bind(LOG_LEVELS).toConstantValue(process.env.LOG_LEVELS);

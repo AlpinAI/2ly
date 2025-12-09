@@ -9,7 +9,7 @@
  * and run serially to maintain database consistency.
  */
 
-import { test, expect, seedPresets, performLogin } from '@2ly/common/test/fixtures/playwright';
+import { test, expect, seedPresets, performLogin } from '@skilder-ai/common/test/fixtures/playwright';
 
 test.describe('Deep Linking with Comprehensive Data', () => {
   // Reset and seed database before all tests
@@ -21,8 +21,8 @@ test.describe('Deep Linking with Comprehensive Data', () => {
   // Log in before each test to ensure authenticated session
   test.beforeEach(async ({ page }) => {
     // Log in with the seeded user credentials
-    // Credentials from comprehensive seed: user1@2ly.ai / testpassword123
-    await performLogin(page, 'user1@2ly.ai', 'testpassword123');
+    // Credentials from comprehensive seed: user1@skilder.ai / testpassword123
+    await performLogin(page, 'user1@skilder.ai', 'testpassword123');
   });
 
   // Configure tests to run serially

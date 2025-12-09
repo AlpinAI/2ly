@@ -2,8 +2,8 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { SystemRepository } from './system.repository';
 import type { DGraphService } from '../services/dgraph.service';
 import { DgraphServiceMock } from '../services/dgraph.service.mock';
-import { dgraphResolversTypes, LoggerService } from '@2ly/common';
-import { LoggerServiceMock } from '@2ly/common/test/vitest';
+import { dgraphResolversTypes, LoggerService } from '@skilder-ai/common';
+import { LoggerServiceMock } from '@skilder-ai/common/test/vitest';
 import { UserRepository } from './user.repository';
 import { Subject } from 'rxjs';
 import { IdentityRepository } from './identity.repository';
@@ -92,8 +92,8 @@ describe('SystemRepository', () => {
         identityRepository.createKey = vi.fn().mockResolvedValue({ id: 'k1', key: 'SK_test123' });
         dgraphService.mutation.mockResolvedValue({ updateSystem: { system: [updatedSystem] } });
 
-        const result = await systemRepository.initSystem('newpassword', 'user1@2ly.ai');
-        expect(userRepository.updateEmail).toHaveBeenCalledWith('admin1', 'user1@2ly.ai');
+        const result = await systemRepository.initSystem('newpassword', 'user1@skilder.ai');
+        expect(userRepository.updateEmail).toHaveBeenCalledWith('admin1', 'user1@skilder.ai');
         expect(userRepository.updatePassword).toHaveBeenCalledWith('admin1', 'newpassword');
         expect(dgraphService.mutation).toHaveBeenCalledWith(
             expect.any(Object),
@@ -112,7 +112,7 @@ describe('SystemRepository', () => {
 
         dgraphService.query.mockResolvedValue({ querySystem: [system] });
 
-        await expect(systemRepository.initSystem('newpassword', 'user1@2ly.ai'))
+        await expect(systemRepository.initSystem('newpassword', 'user1@skilder.ai'))
             .rejects.toThrow('Cannot initialize system');
     });
 
@@ -126,7 +126,7 @@ describe('SystemRepository', () => {
 
         dgraphService.query.mockResolvedValue({ querySystem: [system] });
 
-        await expect(systemRepository.initSystem('newpassword', 'user1@2ly.ai'))
+        await expect(systemRepository.initSystem('newpassword', 'user1@skilder.ai'))
             .rejects.toThrow('Cannot initialize system');
     });
 
@@ -140,7 +140,7 @@ describe('SystemRepository', () => {
 
         dgraphService.query.mockResolvedValue({ querySystem: [system] });
 
-        await expect(systemRepository.initSystem('newpassword', 'user1@2ly.ai'))
+        await expect(systemRepository.initSystem('newpassword', 'user1@skilder.ai'))
             .rejects.toThrow('Cannot initialize system');
     });
 

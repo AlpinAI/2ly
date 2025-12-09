@@ -16,16 +16,16 @@
  * - MCP server has no runtime link (executionTarget: AGENT, runtime: null)
  */
 
-import { test, expect, seedPresets, dgraphQL, loginAndGetToken } from '@2ly/common/test/fixtures/playwright';
-import { createSkill, updateMCPServerToEdgeRuntime } from '@2ly/common/test/fixtures/mcp-builders';
-import { createMCPClient } from '@2ly/common/test/fixtures/playwright';
+import { test, expect, seedPresets, dgraphQL, loginAndGetToken } from '@skilder-ai/common/test/fixtures/playwright';
+import { createSkill, updateMCPServerToEdgeRuntime } from '@skilder-ai/common/test/fixtures/mcp-builders';
+import { createMCPClient } from '@skilder-ai/common/test/fixtures/playwright';
 import {
   assertToolListing,
   assertListAllowedDirectoriesCall,
   assertListDirectoryCall,
   assertDisconnect,
   assertConnectionStatus,
-} from '@2ly/common/test/fixtures/mcp-test-helpers';
+} from '@skilder-ai/common/test/fixtures/mcp-test-helpers';
 
 test.describe('MCP Client with AGENT RunOn Configuration', () => {
   const natsUrl = process.env.TEST_NATS_CLIENT_URL || 'nats://localhost:4222';
@@ -48,7 +48,7 @@ test.describe('MCP Client with AGENT RunOn Configuration', () => {
     mcpServerId = entityIds['server-file-system'];
 
     // Get auth token for authenticated API calls (needed for mutations)
-    authToken = await loginAndGetToken('user1@2ly.ai', 'password123');
+    authToken = await loginAndGetToken('user1@skilder.ai', 'password123');
 
     // IMPORTANT: FIRST configure the MCP Server on the EDGE for tool discovery
     // and then configure it to AGENT executionTarget for tool execution

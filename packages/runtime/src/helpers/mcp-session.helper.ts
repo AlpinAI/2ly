@@ -1,6 +1,6 @@
 import pino from 'pino';
 import { FastifyRequest } from 'fastify';
-import { NatsService, LoggerService } from '@2ly/common';
+import { NatsService, LoggerService } from '@skilder-ai/common';
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
 import { SSEServerTransport } from '@modelcontextprotocol/sdk/server/sse.js';
 import { tap } from 'rxjs';

@@ -2,13 +2,13 @@
 import { describe, it, expect, vi } from 'vitest';
 import { RuntimeService } from './runtime.service';
 import { ControllableAsyncIterator } from '../../../common/src/test/utils';
-import { NatsServiceMock } from '@2ly/common/test/vitest';
+import { NatsServiceMock } from '@skilder-ai/common/test/vitest';
 import {
     RuntimeDiscoveredToolsPublish,
     ErrorResponse,
     type dgraphResolversTypes,
     NatsMessage,
-} from '@2ly/common';
+} from '@skilder-ai/common';
 import { RuntimeHandshakeIdentity } from '../types';
 
 // Minimal fake repositories and runtime instance
@@ -69,7 +69,7 @@ function createService(deps?: Partial<{
 
     const factory = vi.fn((inst: dgraphResolversTypes.Runtime) => new FakeRuntimeInstance(inst) as unknown as import('./runtime.instance').RuntimeInstance);
 
-    const logger = { getLogger: () => ({ info: vi.fn(), error: vi.fn(), debug: vi.fn() }) } as unknown as import('@2ly/common').LoggerService;
+    const logger = { getLogger: () => ({ info: vi.fn(), error: vi.fn(), debug: vi.fn() }) } as unknown as import('@skilder-ai/common').LoggerService;
 
     let runtimeHandshakeCallback: ((identity: RuntimeHandshakeIdentity) => void) | null = null;
     const identityService: FakeIdentityService = {
@@ -91,7 +91,7 @@ function createService(deps?: Partial<{
     const service = new RuntimeService(
         logger,
         dgraph,
-        nats as unknown as import('@2ly/common').NatsService,
+        nats as unknown as import('@skilder-ai/common').NatsService,
         identityService as unknown as import('./identity.service').IdentityService,
         factory as unknown as import('./runtime.instance').RuntimeInstanceFactory,
         mcpRepo as unknown as import('../repositories').MCPServerRepository,

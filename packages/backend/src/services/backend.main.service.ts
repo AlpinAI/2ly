@@ -3,7 +3,7 @@ import { ApolloService } from './apollo.service';
 import pino from 'pino';
 import { RuntimeService } from './runtime.service';
 import { FastifyService } from './fastify.service';
-import { LoggerService, Service } from '@2ly/common';
+import { LoggerService, Service } from '@skilder-ai/common';
 import { DGraphService } from './dgraph.service';
 import { container } from '../di/container';
 import { WorkspaceRepository, SystemRepository } from '../repositories';

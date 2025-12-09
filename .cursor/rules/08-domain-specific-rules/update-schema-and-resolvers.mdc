@@ -39,7 +39,7 @@ alwaysApply: false
 - **Add new Mutation resolvers** for create/update/delete operations
 - **Add new Subscription resolvers** for real-time updates
 - **Use repository pattern** from backend-data-manipulation rule
-- **Maintain type safety** with generated types from `@2ly/common`
+- **Maintain type safety** with generated types from `@skilder-ai/common`
 
 ### Resolver Structure
 
@@ -95,7 +95,7 @@ observeNewEntity(): Observable<NewEntity[]>
 - **Add new queries** in `packages/frontend/src/graphql/queries.ts`
 - **Add new mutations** in `packages/frontend/src/graphql/mutations.ts`
 - **Add new subscriptions** in `packages/frontend/src/graphql/subscriptions.ts`
-- **Use generated types** from `@2ly/common` for type safety
+- **Use generated types** from `@skilder-ai/common` for type safety
 
 ### Component Updates
 

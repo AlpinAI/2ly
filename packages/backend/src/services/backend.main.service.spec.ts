@@ -72,7 +72,7 @@ function createService(dropAllData: boolean = false) {
       debug: vi.fn(),
       warn: vi.fn(),
     }),
-  } as unknown as import('@2ly/common').LoggerService;
+  } as unknown as import('@skilder-ai/common').LoggerService;
 
   const dgraphService: FakeDGraphService = {
     start: vi.fn(async () => {}),

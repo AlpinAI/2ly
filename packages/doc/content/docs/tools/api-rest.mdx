@@ -1,15 +1,15 @@
 ---
 title: "API REST"
-description: "Deploy REST API integrations as tools in 2LY runtimes"
+description: "Deploy REST API integrations as tools in Skilder runtimes"
 draft: true
 ---
 
 
-REST API integrations provide HTTP endpoint access to external services through 2LY's tool runtime. APIs are wrapped with authentication, request/response mapping, and error handling to create standardized tool interfaces for agents.
+REST API integrations provide HTTP endpoint access to external services through Skilder's tool runtime. APIs are wrapped with authentication, request/response mapping, and error handling to create standardized tool interfaces for agents.
 
 ## REST API Integration
 
-2LY transforms HTTP APIs into standardized tools that agents can invoke:
+Skilder transforms HTTP APIs into standardized tools that agents can invoke:
 
 - **HTTP Endpoint Wrapping**: Convert REST APIs to tool interfaces
 - **Authentication Management**: Handle API keys, OAuth, and custom auth
@@ -20,7 +20,7 @@ REST API integrations provide HTTP endpoint access to external services through 
 
 ### Basic API Setup
 
-Configure REST APIs as tools through the 2LY interface:
+Configure REST APIs as tools through the Skilder interface:
 
 ```json
 {
@@ -37,7 +37,7 @@ Configure REST APIs as tools through the 2LY interface:
 
 ### Authentication Types
 
-2LY supports multiple authentication patterns:
+Skilder supports multiple authentication patterns:
 
 #### API Key Authentication
 ```json
@@ -263,7 +263,7 @@ Transform requests before sending to APIs:
   "request_transformation": {
     "headers": {
       "Content-Type": "application/json",
-      "User-Agent": "2LY-Agent/1.0"
+      "User-Agent": "Skilder-Agent/1.0"
     },
     "body_template": {
       "query": "{{parameters.search_term}}",
@@ -299,7 +299,7 @@ Configure error handling and retry policies:
 
 ### Monitoring
 
-2LY provides comprehensive API tool monitoring:
+Skilder provides comprehensive API tool monitoring:
 
 - **Request Metrics**: Success rates, response times, error rates
 - **Authentication Status**: Token validity and renewal tracking
@@ -351,7 +351,7 @@ Configure error handling and retry policies:
 
 ## Summary
 
-REST API tools in 2LY provide:
+REST API tools in Skilder provide:
 - **HTTP API Wrapping**: Transform APIs into standardized tool interfaces
 - **Authentication Management**: Secure credential handling and auth flows
 - **Request/Response Mapping**: Data transformation and error handling

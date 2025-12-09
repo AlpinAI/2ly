@@ -9,7 +9,7 @@ import {
   type ProviderConfig,
   type AIProviderValidationResult,
   PROVIDER_REQUIRES_KEY,
-} from '@2ly/common';
+} from '@skilder-ai/common';
 import pino from 'pino';
 import {
   GET_AI_PROVIDERS_BY_WORKSPACE,

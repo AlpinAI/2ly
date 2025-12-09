@@ -1,6 +1,6 @@
 import { injectable, inject } from 'inversify';
 import { DGraphService } from '../services/dgraph.service';
-import { dgraphResolversTypes, LoggerService } from '@2ly/common';
+import { dgraphResolversTypes, LoggerService } from '@skilder-ai/common';
 import {
   CREATE_SESSION,
   FIND_SESSION_BY_REFRESH_TOKEN,

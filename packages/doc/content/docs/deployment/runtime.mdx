@@ -1,14 +1,14 @@
 ---
 title: "Runtime"
-description: "Distributed execution environments for AI agents and tools in 2LY"
+description: "Distributed execution environments for AI agents and tools in Skilder"
 draft: true
 ---
 
-2LY runtime provides distributed execution environments for deploying AI agents and tools across Local Docker, Remote, and Edge infrastructure. Runtime manages service orchestration, resource allocation, and scaling for production-grade agent workflows.
+Skilder runtime provides distributed execution environments for deploying AI agents and tools across Local Docker, Remote, and Edge infrastructure. Runtime manages service orchestration, resource allocation, and scaling for production-grade agent workflows.
 
 ## Runtime Architecture
 
-2LY runtime orchestrates distributed agent execution:
+Skilder runtime orchestrates distributed agent execution:
 
 - **Execution Isolation**: Containerized agent and tool deployment
 - **Resource Management**: CPU, memory, and storage allocation
@@ -17,7 +17,7 @@ draft: true
 
 ## Runtime Types
 
-2LY supports three runtime deployment patterns:
+Skilder supports three runtime deployment patterns:
 
 ### Local Docker
 
@@ -125,9 +125,9 @@ SCALING_ENABLED=true
 RESOURCE_LIMITS=high
 
 # Service endpoints
-AGENT_REGISTRY_URL=https://agents.2ly.io
-TOOL_REGISTRY_URL=https://tools.2ly.io
-MCP_DISCOVERY_URL=https://mcp.2ly.io
+AGENT_REGISTRY_URL=https://agents.Skilder.io
+TOOL_REGISTRY_URL=https://tools.Skilder.io
+MCP_DISCOVERY_URL=https://mcp.Skilder.io
 
 # Security
 JWT_SECRET=${JWT_SECRET}
@@ -148,7 +148,7 @@ async def create_agent():
         # Runtime automatically provides available tools
         tools = await mcp.get_langchain_tools()
         
-        # Agent-runtime binding managed by 2LY
+        # Agent-runtime binding managed by Skilder
         return create_agent(llm=your_llm, tools=tools)
 ```
 
@@ -315,7 +315,7 @@ app.get('/health', async (req, res) => {
 
 ## Summary
 
-2LY runtime provides:
+Skilder runtime provides:
 - **Distributed Execution**: Multi-environment deployment across Local Docker, Remote, and Edge
 - **Resource Management**: Automated scaling, resource allocation, and load balancing
 - **Service Orchestration**: Agent-tool binding and communication management

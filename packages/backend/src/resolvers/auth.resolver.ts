@@ -1,7 +1,7 @@
 import { GraphQLError } from 'graphql';
 import { AuthenticationService } from '../services/auth/auth.service';
 import { JwtService } from '../services/auth/jwt.service';
-import { apolloResolversTypes } from '@2ly/common';
+import { apolloResolversTypes } from '@skilder-ai/common';
 import { UserRepository } from '../repositories/user.repository';
 import { PasswordPolicyService } from '../services/auth/password-policy.service';
 

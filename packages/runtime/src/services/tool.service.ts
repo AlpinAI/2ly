@@ -13,7 +13,7 @@ import {
   EXECUTION_TARGET,
   ErrorResponse,
   type RuntimeSmartSkill,
-} from '@2ly/common';
+} from '@skilder-ai/common';
 import { AuthService } from './auth.service';
 import { HealthService } from './runtime.health.service';
 import { ToolServerService, type ToolServerServiceFactory } from './tool.mcp.server.service';

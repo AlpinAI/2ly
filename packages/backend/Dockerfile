@@ -1,4 +1,4 @@
-# Dockerfile for 2LY Orchestrator
+# Dockerfile for Skilder Orchestrator
 # Stage 1: Build
 FROM node:22-alpine AS builder
 
@@ -19,7 +19,7 @@ COPY packages/backend/ ./packages/backend/
 COPY packages/common/ ./packages/common/
 
 # Build the backend
-RUN npm run build -w @2ly/backend
+RUN npm run build -w @skilder-ai/backend
 
 # Stage 2: Production
 FROM node:22-alpine

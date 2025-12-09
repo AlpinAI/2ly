@@ -1,7 +1,7 @@
 /**
  * N8N Instructions (New Design)
  *
- * WHY: Platform-specific instructions for connecting N8N to 2LY via STREAM.
+ * WHY: Platform-specific instructions for connecting N8N to Skilder via STREAM.
  */
 
 import { useState } from 'react';
@@ -26,7 +26,7 @@ export function N8NInstructions({ streamUrl }: N8NInstructionsProps) {
       />
 
       <h3 className="text-xl font-semibold text-gray-900 dark:text-white">
-        Connect N8N to 2LY
+        Connect N8N to Skilder
       </h3>
 
       <ol className="font-sans list-decimal list-inside space-y-1 text-base leading-relaxed text-gray-700 dark:text-gray-300">
@@ -45,7 +45,7 @@ export function N8NInstructions({ streamUrl }: N8NInstructionsProps) {
           <AlertTriangle className="h-4 w-4" />
           <AlertTitle>Docker Users</AlertTitle>
           <AlertDescription className="font-sans">
-            If you are running n8n in Docker, you must use <code>host.docker.internal</code> instead of <code>localhost</code> to reach 2LY.
+            If you are running n8n in Docker, you must use <code>host.docker.internal</code> instead of <code>localhost</code> to reach Skilder.
           </AlertDescription>
         </Alert>
       )}

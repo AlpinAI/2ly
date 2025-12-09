@@ -13,7 +13,7 @@ import { ThemeProvider } from '@/contexts/ThemeContext';
 // Mock the auth context
 vi.mock('@/contexts/AuthContext', () => ({
   useAuth: () => ({
-    user: { id: '1', email: 'user1@2ly.ai' },
+    user: { id: '1', email: 'user1@skilder.ai' },
     logout: vi.fn(),
   }),
 }));
@@ -70,9 +70,9 @@ describe('AppLayout', () => {
     renderWithProviders(<AppLayout />);
 
     // Check for logo from AppHeader
-    const logo = screen.getByAltText('2LY') as HTMLImageElement;
+    const logo = screen.getByAltText('Skilder') as HTMLImageElement;
     expect(logo).toBeDefined();
-    expect(logo.src).toContain('/logo-2ly.png');
+    expect(logo.src).toContain('/logo-skilder.png');
   });
 
   it('renders navigation component', () => {

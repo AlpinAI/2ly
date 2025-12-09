@@ -35,7 +35,7 @@ export class JwtService {
 
   constructor() {
     // Load environment configuration
-    this.issuer = process.env.JWT_ISSUER || '2ly-platform';
+    this.issuer = process.env.JWT_ISSUER || 'skilder-platform';
     this.accessTokenTtl = parseInt(process.env.JWT_ACCESS_TOKEN_TTL || '900', 10); // 15 minutes
     this.refreshTokenTtl = parseInt(process.env.JWT_REFRESH_TOKEN_TTL || '604800', 10); // 7 days
 

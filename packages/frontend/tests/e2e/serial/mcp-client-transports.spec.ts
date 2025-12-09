@@ -1,7 +1,7 @@
 /**
  * MCP Client Transport E2E Tests
  *
- * Tests direct MCP client connectivity to 2ly runtime using real MCP SDK client.
+ * Tests direct MCP client connectivity to skilder runtime using real MCP SDK client.
  * Uses a single filesystem MCP server (STDIO transport) deployed on the runtime,
  * then connects to the runtime via STREAM transport to access those tools.
  *
@@ -14,17 +14,17 @@
  * runtime configurations not suitable for the current test setup.
  */
 
-import { test, expect, seedPresets, loginAndGetToken } from '@2ly/common/test/fixtures/playwright';
-import { createSkill, updateMCPServerToEdgeRuntime } from '@2ly/common/test/fixtures/mcp-builders';
-import { createMCPClient } from '@2ly/common/test/fixtures/playwright';
+import { test, expect, seedPresets, loginAndGetToken } from '@skilder-ai/common/test/fixtures/playwright';
+import { createSkill, updateMCPServerToEdgeRuntime } from '@skilder-ai/common/test/fixtures/mcp-builders';
+import { createMCPClient } from '@skilder-ai/common/test/fixtures/playwright';
 import {
   assertToolListing,
   assertListAllowedDirectoriesCall,
   assertListDirectoryCall,
   assertDisconnect,
   assertConnectionStatus,
-} from '@2ly/common/test/fixtures/mcp-test-helpers';
-import { dgraphQL } from '@2ly/common/test/fixtures';
+} from '@skilder-ai/common/test/fixtures/mcp-test-helpers';
+import { dgraphQL } from '@skilder-ai/common/test/fixtures';
 
 test.describe('MCP Client Transports', () => {
   const natsUrl = process.env.TEST_NATS_CLIENT_URL || 'nats://localhost:4222';
@@ -45,7 +45,7 @@ test.describe('MCP Client Transports', () => {
     const mcpServerId = entityIds['server-file-system'];
 
     // Get auth token for authenticated API calls (needed for mutations)
-    const authToken = await loginAndGetToken('user1@2ly.ai', 'password123');
+    const authToken = await loginAndGetToken('user1@skilder.ai', 'password123');
 
     // Update MCP server to use EDGE runtime (GLOBAL executionTarget has been removed)
     await updateMCPServerToEdgeRuntime(graphql, mcpServerId, workspaceId, authToken);

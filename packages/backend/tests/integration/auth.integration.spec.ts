@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { describe, it, expect, beforeEach } from 'vitest';
-import { graphql, resetDatabase } from '@2ly/common/test/fixtures';
+import { graphql, resetDatabase } from '@skilder-ai/common/test/fixtures';
 
 /**
  * Authentication Integration Tests
@@ -72,7 +72,7 @@ describe('Authentication Integration Tests', () => {
         }
       `;
 
-      const uniqueEmail = `newuser-${Date.now()}@2ly.ai`;
+      const uniqueEmail = `newuser-${Date.now()}@skilder.ai`;
       const result = await graphql(mutation, {
         input: {
           email: uniqueEmail,
@@ -98,7 +98,7 @@ describe('Authentication Integration Tests', () => {
 
       const result = await graphql(mutation, {
         input: {
-          email: 'invalid@2ly.ai',
+          email: 'invalid@skilder.ai',
           password: 'weak', // Less than 8 characters
         },
       });
@@ -123,7 +123,7 @@ describe('Authentication Integration Tests', () => {
         }
       `;
 
-      const uniqueEmail = `workspace-test-${Date.now()}@2ly.ai`;
+      const uniqueEmail = `workspace-test-${Date.now()}@skilder.ai`;
       const registerResult = await graphql(registerMutation, {
         input: {
           email: uniqueEmail,
@@ -165,7 +165,7 @@ describe('Authentication Integration Tests', () => {
 
       await graphql(registerMutation, {
         input: {
-          email: 'user1@2ly.ai',
+          email: 'user1@skilder.ai',
           password: 'testpassword123',
         },
       });
@@ -191,13 +191,13 @@ describe('Authentication Integration Tests', () => {
 
       const result = await graphql(mutation, {
         input: {
-          email: 'user1@2ly.ai',
+          email: 'user1@skilder.ai',
           password: 'testpassword123',
         },
       });
 
       expect(result.login.success).toBe(true);
-      expect(result.login.user.email).toBe('user1@2ly.ai');
+      expect(result.login.user.email).toBe('user1@skilder.ai');
       expect(result.login.tokens.accessToken).toBeDefined();
       expect(result.login.tokens.refreshToken).toBeDefined();
     });
@@ -214,7 +214,7 @@ describe('Authentication Integration Tests', () => {
 
       const result = await graphql(mutation, {
         input: {
-          email: 'user1@2ly.ai',
+          email: 'user1@skilder.ai',
           password: 'wrongpassword',
         },
       });
@@ -242,7 +242,7 @@ describe('Authentication Integration Tests', () => {
 
       const result = await graphql(registerMutation, {
         input: {
-          email: 'user1@2ly.ai',
+          email: 'user1@skilder.ai',
           password: 'testpassword123',
         },
       });
@@ -261,7 +261,7 @@ describe('Authentication Integration Tests', () => {
       `;
 
       const result = await authenticatedGraphql(protectedQuery, accessToken);
-      expect(result.me.email).toBe('user1@2ly.ai');
+      expect(result.me.email).toBe('user1@skilder.ai');
     });
 
     it('should reject protected query without token', async () => {
@@ -301,7 +301,7 @@ describe('Authentication Integration Tests', () => {
 
       await graphql(registerMutation, {
         input: {
-          email: 'user1@2ly.ai',
+          email: 'user1@skilder.ai',
           password: 'testpassword123',
         },
       });
@@ -321,7 +321,7 @@ describe('Authentication Integration Tests', () => {
 
       const loginResult = await graphql(loginMutation, {
         input: {
-          email: 'user1@2ly.ai',
+          email: 'user1@skilder.ai',
           password: 'testpassword123',
         },
       });
@@ -361,7 +361,7 @@ describe('Authentication Integration Tests', () => {
 
       await graphql(registerMutation, {
         input: {
-          email: 'user1@2ly.ai',
+          email: 'user1@skilder.ai',
           password: 'testpassword123',
         },
       });
@@ -380,7 +380,7 @@ describe('Authentication Integration Tests', () => {
 
       const loginResult = await graphql(loginMutation, {
         input: {
-          email: 'user1@2ly.ai',
+          email: 'user1@skilder.ai',
           password: 'testpassword123',
         },
       });
@@ -439,7 +439,7 @@ describe('Authentication Integration Tests', () => {
         }
       `;
 
-      const uniqueEmail = `workspace-auth-${Date.now()}@2ly.ai`;
+      const uniqueEmail = `workspace-auth-${Date.now()}@skilder.ai`;
       const registerResult = await graphql(registerMutation, {
         input: {
           email: uniqueEmail,
@@ -490,7 +490,7 @@ describe('Authentication Integration Tests', () => {
       `;
 
       // Register User A
-      const userAEmail = `usera-${Date.now()}@2ly.ai`;
+      const userAEmail = `usera-${Date.now()}@skilder.ai`;
       const userAResult = await graphql(registerMutation, {
         input: {
           email: userAEmail,
@@ -512,7 +512,7 @@ describe('Authentication Integration Tests', () => {
       const userAWorkspaceId = userAWorkspaces.workspaces[0].id;
 
       // Register User B
-      const userBEmail = `userb-${Date.now()}@2ly.ai`;
+      const userBEmail = `userb-${Date.now()}@skilder.ai`;
       const userBResult = await graphql(registerMutation, {
         input: {
           email: userBEmail,
@@ -551,7 +551,7 @@ describe('Authentication Integration Tests', () => {
         }
       `;
 
-      const uniqueEmail = `admin-access-${Date.now()}@2ly.ai`;
+      const uniqueEmail = `admin-access-${Date.now()}@skilder.ai`;
       const result = await graphql(registerMutation, {
         input: {
           email: uniqueEmail,
@@ -600,7 +600,7 @@ describe('Authentication Integration Tests', () => {
         }
       `;
 
-      const uniqueEmail = `mcptools-auth-${Date.now()}@2ly.ai`;
+      const uniqueEmail = `mcptools-auth-${Date.now()}@skilder.ai`;
       const registerResult = await graphql(registerMutation, {
         input: {
           email: uniqueEmail,
@@ -649,7 +649,7 @@ describe('Authentication Integration Tests', () => {
       `;
 
       // Register User A
-      const userAEmail = `usera-tools-${Date.now()}@2ly.ai`;
+      const userAEmail = `usera-tools-${Date.now()}@skilder.ai`;
       const userAResult = await graphql(registerMutation, {
         input: {
           email: userAEmail,
@@ -670,7 +670,7 @@ describe('Authentication Integration Tests', () => {
       const userAWorkspaceId = userAWorkspaces.workspaces[0].id;
 
       // Register User B
-      const userBEmail = `userb-tools-${Date.now()}@2ly.ai`;
+      const userBEmail = `userb-tools-${Date.now()}@skilder.ai`;
       const userBResult = await graphql(registerMutation, {
         input: {
           email: userBEmail,
@@ -710,7 +710,7 @@ describe('Authentication Integration Tests', () => {
       `;
 
       // Register User A
-      const userAEmail = `usera-skills-${Date.now()}@2ly.ai`;
+      const userAEmail = `usera-skills-${Date.now()}@skilder.ai`;
       const userAResult = await graphql(registerMutation, {
         input: {
           email: userAEmail,
@@ -731,7 +731,7 @@ describe('Authentication Integration Tests', () => {
       const userAWorkspaceId = userAWorkspaces.workspaces[0].id;
 
       // Register User B
-      const userBEmail = `userb-skills-${Date.now()}@2ly.ai`;
+      const userBEmail = `userb-skills-${Date.now()}@skilder.ai`;
       const userBResult = await graphql(registerMutation, {
         input: {
           email: userBEmail,
@@ -771,7 +771,7 @@ describe('Authentication Integration Tests', () => {
       `;
 
       // Register User A
-      const userAEmail = `usera-registry-${Date.now()}@2ly.ai`;
+      const userAEmail = `usera-registry-${Date.now()}@skilder.ai`;
       const userAResult = await graphql(registerMutation, {
         input: {
           email: userAEmail,
@@ -792,7 +792,7 @@ describe('Authentication Integration Tests', () => {
       const userAWorkspaceId = userAWorkspaces.workspaces[0].id;
 
       // Register User B
-      const userBEmail = `userb-registry-${Date.now()}@2ly.ai`;
+      const userBEmail = `userb-registry-${Date.now()}@skilder.ai`;
       const userBResult = await graphql(registerMutation, {
         input: {
           email: userBEmail,
@@ -832,7 +832,7 @@ describe('Authentication Integration Tests', () => {
       `;
 
       // Register User A
-      const userAEmail = `usera-toolcalls-${Date.now()}@2ly.ai`;
+      const userAEmail = `usera-toolcalls-${Date.now()}@skilder.ai`;
       const userAResult = await graphql(registerMutation, {
         input: {
           email: userAEmail,
@@ -853,7 +853,7 @@ describe('Authentication Integration Tests', () => {
       const userAWorkspaceId = userAWorkspaces.workspaces[0].id;
 
       // Register User B
-      const userBEmail = `userb-toolcalls-${Date.now()}@2ly.ai`;
+      const userBEmail = `userb-toolcalls-${Date.now()}@skilder.ai`;
       const userBResult = await graphql(registerMutation, {
         input: {
           email: userBEmail,
@@ -894,7 +894,7 @@ describe('Authentication Integration Tests', () => {
       `;
 
       // Register User A
-      const userAEmail = `usera-keys-${Date.now()}@2ly.ai`;
+      const userAEmail = `usera-keys-${Date.now()}@skilder.ai`;
       const userAResult = await graphql(registerMutation, {
         input: {
           email: userAEmail,
@@ -915,7 +915,7 @@ describe('Authentication Integration Tests', () => {
       const userAWorkspaceId = userAWorkspaces.workspaces[0].id;
 
       // Register User B
-      const userBEmail = `userb-keys-${Date.now()}@2ly.ai`;
+      const userBEmail = `userb-keys-${Date.now()}@skilder.ai`;
       const userBResult = await graphql(registerMutation, {
         input: {
           email: userBEmail,
@@ -955,7 +955,7 @@ describe('Authentication Integration Tests', () => {
       `;
 
       // Register User A
-      const userAEmail = `usera-servers-${Date.now()}@2ly.ai`;
+      const userAEmail = `usera-servers-${Date.now()}@skilder.ai`;
       const userAResult = await graphql(registerMutation, {
         input: {
           email: userAEmail,
@@ -976,7 +976,7 @@ describe('Authentication Integration Tests', () => {
       const userAWorkspaceId = userAWorkspaces.workspaces[0].id;
 
       // Register User B
-      const userBEmail = `userb-servers-${Date.now()}@2ly.ai`;
+      const userBEmail = `userb-servers-${Date.now()}@skilder.ai`;
       const userBResult = await graphql(registerMutation, {
         input: {
           email: userBEmail,
@@ -1015,7 +1015,7 @@ describe('Authentication Integration Tests', () => {
         }
       `;
 
-      const uniqueEmail = `mcpservers-auth-${Date.now()}@2ly.ai`;
+      const uniqueEmail = `mcpservers-auth-${Date.now()}@skilder.ai`;
       const registerResult = await graphql(registerMutation, {
         input: {
           email: uniqueEmail,
@@ -1064,7 +1064,7 @@ describe('Authentication Integration Tests', () => {
       `;
 
       // Register User A and create a skill
-      const userAEmail = `usera-skillkey-${Date.now()}@2ly.ai`;
+      const userAEmail = `usera-skillkey-${Date.now()}@skilder.ai`;
       const userAResult = await graphql(registerMutation, {
         input: {
           email: userAEmail,
@@ -1102,7 +1102,7 @@ describe('Authentication Integration Tests', () => {
       const skillId = skillResult.createSkill.id;
 
       // Register User B
-      const userBEmail = `userb-skillkey-${Date.now()}@2ly.ai`;
+      const userBEmail = `userb-skillkey-${Date.now()}@skilder.ai`;
       const userBResult = await graphql(registerMutation, {
         input: {
           email: userBEmail,
@@ -1142,7 +1142,7 @@ describe('Authentication Integration Tests', () => {
       `;
 
       // Register and create a skill
-      const uniqueEmail = `skillkey-auth-${Date.now()}@2ly.ai`;
+      const uniqueEmail = `skillkey-auth-${Date.now()}@skilder.ai`;
       const registerResult = await graphql(registerMutation, {
         input: {
           email: uniqueEmail,
@@ -1213,7 +1213,7 @@ describe('Authentication Integration Tests', () => {
         }
       `;
 
-      const uniqueEmail = `skill-auth-${Date.now()}@2ly.ai`;
+      const uniqueEmail = `skill-auth-${Date.now()}@skilder.ai`;
       const registerResult = await graphql(registerMutation, {
         input: {
           email: uniqueEmail,
@@ -1267,7 +1267,7 @@ describe('Authentication Integration Tests', () => {
       `;
 
       // Register User A
-      const userAEmail = `usera-skill-mut-${Date.now()}@2ly.ai`;
+      const userAEmail = `usera-skill-mut-${Date.now()}@skilder.ai`;
       const userAResult = await graphql(registerMutation, {
         input: {
           email: userAEmail,
@@ -1288,7 +1288,7 @@ describe('Authentication Integration Tests', () => {
       const userAWorkspaceId = userAWorkspaces.workspaces[0].id;
 
       // Register User B
-      const userBEmail = `userb-skill-mut-${Date.now()}@2ly.ai`;
+      const userBEmail = `userb-skill-mut-${Date.now()}@skilder.ai`;
       const userBResult = await graphql(registerMutation, {
         input: {
           email: userBEmail,
@@ -1336,7 +1336,7 @@ describe('Authentication Integration Tests', () => {
       `;
 
       // Register User A
-      const userAEmail = `usera-workspace-mut-${Date.now()}@2ly.ai`;
+      const userAEmail = `usera-workspace-mut-${Date.now()}@skilder.ai`;
       const userAResult = await graphql(registerMutation, {
         input: {
           email: userAEmail,
@@ -1357,7 +1357,7 @@ describe('Authentication Integration Tests', () => {
       const userAWorkspaceId = userAWorkspaces.workspaces[0].id;
 
       // Register User B
-      const userBEmail = `userb-workspace-mut-${Date.now()}@2ly.ai`;
+      const userBEmail = `userb-workspace-mut-${Date.now()}@skilder.ai`;
       const userBResult = await graphql(registerMutation, {
         input: {
           email: userBEmail,
@@ -1404,7 +1404,7 @@ describe('Authentication Integration Tests', () => {
         }
       `;
 
-      const uniqueEmail = `own-workspace-${Date.now()}@2ly.ai`;
+      const uniqueEmail = `own-workspace-${Date.now()}@skilder.ai`;
       const registerResult = await graphql(registerMutation, {
         input: {
           email: uniqueEmail,

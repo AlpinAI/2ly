@@ -9,7 +9,7 @@
  * - Transport: Remote (SSE/HTTP) MCP server configuration
  * - Supporting types: Input, KeyValueInput, Argument
  *
- * These schemas match the types defined in @2ly/common/types/mcp-registry
+ * These schemas match the types defined in @skilder-ai/common/types/mcp-registry
  * and provide detailed validation errors for user input.
  */
 

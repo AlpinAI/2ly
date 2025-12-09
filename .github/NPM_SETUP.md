@@ -1,10 +1,10 @@
 # NPM Publishing Setup
 
-This document explains how to configure NPM publishing for the `@2ly/runtime` package.
+This document explains how to configure NPM publishing for the `@skilder-ai/runtime` package.
 
 ## Prerequisites
 
-1. **NPM Account**: You need an NPM account with publishing permissions for the `@2ly` scope
+1. **NPM Account**: You need an NPM account with publishing permissions for the `@skilder` scope
 2. **GitHub Repository Access**: Admin access to configure repository secrets
 3. **Personal Access Token**: A GitHub PAT to trigger workflows (see [PAT_SETUP.md](./PAT_SETUP.md))
 
@@ -51,7 +51,7 @@ When you merge a PR with a version bump to `main`:
    - Runs quality checks (lint, typecheck, test)
    - Builds the runtime package
    - Verifies package.json version matches git tag
-   - Publishes `@2ly/runtime@{version}` with tag `latest`
+   - Publishes `@skilder-ai/runtime@{version}` with tag `latest`
 
 3. **Docker Build Workflow** (`.github/workflows/docker-build.yml`):
    - Also triggered by the version tag push
@@ -74,8 +74,8 @@ When you push to `develop`:
 
 This allows users to test pre-release versions:
 ```bash
-npm install @2ly/runtime@beta  # Latest beta
-npm install @2ly/runtime@0.1.0-beta.abc1234  # Specific beta
+npm install @skilder-ai/runtime@beta  # Latest beta
+npm install @skilder-ai/runtime@0.1.0-beta.abc1234  # Specific beta
 ```
 
 ### Version Bump Workflow
@@ -105,14 +105,14 @@ git push origin your-branch
 ### After a Stable Release (from main)
 
 1. **GitHub Release**: Check [Releases](../../releases) page
-2. **NPM Package**: Visit https://www.npmjs.com/package/@2ly/runtime
+2. **NPM Package**: Visit https://www.npmjs.com/package/@skilder-ai/runtime
    - Should show the new version under "latest" tag
 3. **Docker Images**: Check [Packages](../../packages) page
    - Images should be tagged with the version number
 
 ### After a Beta Release (from develop)
 
-1. **NPM Package**: Visit https://www.npmjs.com/package/@2ly/runtime
+1. **NPM Package**: Visit https://www.npmjs.com/package/@skilder-ai/runtime
    - Click on "Versions" tab
    - Look for `beta` tag to see the latest beta version
 2. **Docker Images**: Check [Packages](../../packages) page
@@ -150,16 +150,16 @@ git checkout v0.1.0
 npm ci
 
 # Build the runtime package
-npm run build -w @2ly/runtime
+npm run build -w @skilder-ai/runtime
 
 # Run quality checks
-npm run lint -w @2ly/runtime
-npm run typecheck -w @2ly/runtime
+npm run lint -w @skilder-ai/runtime
+npm run typecheck -w @skilder-ai/runtime
 npm run test -- packages/runtime
 
 # Publish to NPM (requires NPM login)
 npm login
-npm publish -w @2ly/runtime
+npm publish -w @skilder-ai/runtime
 ```
 
 ## Required GitHub Secrets
@@ -175,8 +175,8 @@ Both must be configured in **Settings** → **Secrets and variables** → **Acti
 
 ## Package Information
 
-- **Package Name**: `@2ly/runtime`
+- **Package Name**: `@skilder-ai/runtime`
 - **Registry**: https://registry.npmjs.org
-- **Repository**: https://github.com/AlpinAI/2ly
+- **Repository**: https://github.com/skilder-ai/skilder
 - **Access**: Public
 - **License**: See LICENSE in packages/runtime/

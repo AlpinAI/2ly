@@ -1,6 +1,6 @@
-# 2ly - Common
+# skilder - Common
 
-Shared types, schemas, and utilities for the 2ly monorepo.
+Shared types, schemas, and utilities for the skilder monorepo.
 
 ## Code Generation
 
@@ -17,7 +17,7 @@ This fetches the latest schema from `https://registry.modelcontextprotocol.io/op
 
 **Usage:**
 ```typescript
-import { mcpRegistry } from '@2ly/common';
+import { mcpRegistry } from '@skilder-ai/common';
 
 // Access OpenAPI schema types through the mcpRegistry namespace
 type ServerJSON = mcpRegistry.components['schemas']['ServerJSON'];

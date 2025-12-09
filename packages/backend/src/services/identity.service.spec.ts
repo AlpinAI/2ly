@@ -6,7 +6,7 @@ import { SystemRepository } from '../repositories/system.repository';
 import { WorkspaceRepository } from '../repositories/workspace.repository';
 import { RuntimeRepository } from '../repositories/runtime.repository';
 import { SkillRepository } from '../repositories/skill.repository';
-import { LoggerService, NatsService, dgraphResolversTypes } from '@2ly/common';
+import { LoggerService, NatsService, dgraphResolversTypes } from '@skilder-ai/common';
 
 type Workspace = dgraphResolversTypes.Workspace;
 
@@ -17,8 +17,8 @@ vi.mock('../repositories/system.repository');
 vi.mock('../repositories/workspace.repository');
 vi.mock('../repositories/runtime.repository');
 vi.mock('../repositories/skill.repository');
-vi.mock('@2ly/common', async () => {
-  const actual = await vi.importActual('@2ly/common');
+vi.mock('@skilder-ai/common', async () => {
+  const actual = await vi.importActual('@skilder-ai/common');
   return {
     ...actual,
     LoggerService: vi.fn(),

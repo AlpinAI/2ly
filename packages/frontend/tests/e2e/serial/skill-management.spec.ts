@@ -9,7 +9,7 @@
  * - Tests verify the Manage Tools panel opens and displays correctly
  */
 
-import { test, expect, performLogin, seedPresets } from '@2ly/common/test/fixtures/playwright';
+import { test, expect, performLogin, seedPresets } from '@skilder-ai/common/test/fixtures/playwright';
 
 test.describe('Skill Management', () => {
   test.describe.configure({ mode: 'serial' });
@@ -21,7 +21,7 @@ test.describe('Skill Management', () => {
 
   test('should open Manage Tools panel from skill detail view', async ({ page, workspaceId }) => {
     // Step 1: Login
-    await performLogin(page, 'user1@2ly.ai', 'testpassword123');
+    await performLogin(page, 'user1@skilder.ai', 'testpassword123');
 
     // Step 2: Navigate to Skills page
     await page.goto(`/w/${workspaceId}/skills`);
@@ -67,7 +67,7 @@ test.describe('Skill Management', () => {
   });
 
   test('should display correct skill name in panel header', async ({ page, workspaceId }) => {
-    await performLogin(page, 'user1@2ly.ai', 'testpassword123');
+    await performLogin(page, 'user1@skilder.ai', 'testpassword123');
     await page.goto(`/w/${workspaceId}/skills`);
     await page.waitForLoadState('networkidle');
 
@@ -94,7 +94,7 @@ test.describe('Skill Management', () => {
   });
 
   test('should show Selection Summary section', async ({ page, workspaceId }) => {
-    await performLogin(page, 'user1@2ly.ai', 'testpassword123');
+    await performLogin(page, 'user1@skilder.ai', 'testpassword123');
     await page.goto(`/w/${workspaceId}/skills`);
     await page.waitForLoadState('networkidle');
 
@@ -119,7 +119,7 @@ test.describe('Skill Management', () => {
   });
 
   test('should filter tools by search term', async ({ page, workspaceId }) => {
-    await performLogin(page, 'user1@2ly.ai', 'testpassword123');
+    await performLogin(page, 'user1@skilder.ai', 'testpassword123');
     await page.goto(`/w/${workspaceId}/skills`);
     await page.waitForLoadState('networkidle');
 
@@ -153,7 +153,7 @@ test.describe('Skill Management', () => {
   });
 
   test('should close panel when clicking X button', async ({ page, workspaceId }) => {
-    await performLogin(page, 'user1@2ly.ai', 'testpassword123');
+    await performLogin(page, 'user1@skilder.ai', 'testpassword123');
     await page.goto(`/w/${workspaceId}/skills`);
     await page.waitForLoadState('networkidle');
 
@@ -180,7 +180,7 @@ test.describe('Skill Management', () => {
   });
 
   test('should show "Show selected only" toggle', async ({ page, workspaceId }) => {
-    await performLogin(page, 'user1@2ly.ai', 'testpassword123');
+    await performLogin(page, 'user1@skilder.ai', 'testpassword123');
     await page.goto(`/w/${workspaceId}/skills`);
     await page.waitForLoadState('networkidle');
 

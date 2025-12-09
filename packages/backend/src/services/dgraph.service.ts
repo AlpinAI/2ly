@@ -1,5 +1,5 @@
 import { inject, injectable } from 'inversify';
-import { LoggerService, Service } from '@2ly/common';
+import { LoggerService, Service } from '@skilder-ai/common';
 import pino from 'pino';
 import path from 'path';
 import { readFileSync } from 'fs';

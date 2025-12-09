@@ -14,7 +14,7 @@ import { useNotification } from '@/contexts/NotificationContext';
 import { X, Eye, EyeOff, AlertCircle, CheckCircle, Loader2 } from 'lucide-react';
 import { AiProviderType, type AiProviderConfig } from '@/graphql/generated/graphql';
 import { PROVIDER_INFO } from '@/hooks/useAIProviders';
-import { DEFAULT_OLLAMA_BASE_URL } from '@2ly/common';
+import { DEFAULT_OLLAMA_BASE_URL } from '@skilder-ai/common';
 
 interface ConfigureAIProviderDialogProps {
   provider: AiProviderType;

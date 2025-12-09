@@ -5,7 +5,7 @@ import {
   NatsService,
   RuntimeReconnectPublish,
   Service,
-} from '@2ly/common';
+} from '@skilder-ai/common';
 import { HealthService } from './runtime.health.service';
 import { McpStdioService } from './mcp.stdio.service';
 import { FastifyManagerService } from './fastify.manager.service';

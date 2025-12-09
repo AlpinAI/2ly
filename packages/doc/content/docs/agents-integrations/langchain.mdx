@@ -1,34 +1,34 @@
 ---
 title: "LangChain"
-description: "Connect LangChain agents to 2LY"
+description: "Connect LangChain agents to Skilder"
 draft: false
 ---
 
-LangChain agents connect to 2LY through the **MCPAdapter**, providing access to your configured tools via the MCP protocol.
+LangChain agents connect to Skilder through the **MCPAdapter**, providing access to your configured tools via the MCP protocol.
 
 ## Overview
 
-The **langchain_2ly** connector enables LangChain agents to access 2LY's tool ecosystem. This integration:
+The **langchain_Skilder** connector enables LangChain agents to access Skilder's tool ecosystem. This integration:
 
-- Connects LangChain/LangGraph agents to 2LY's MCP runtime
+- Connects LangChain/LangGraph agents to Skilder's MCP runtime
 - Provides tools as standard LangChain tools through `get_langchain_tools()`
 - Handles MCP communication and tool execution automatically
-- Auto-creates agents in 2LY if they don't exist
+- Auto-creates agents in Skilder if they don't exist
 
 ## Quick Start
 
 ### 1. Install Connector
 
 ```bash
-pip install langchain_2ly
+pip install langchain_Skilder
 ```
 
-The connector contains the MCPAdapter to quickly connect to 2LY.
+The connector contains the MCPAdapter to quickly connect to Skilder.
 
 ### 2. Use Tools in LangGraph
 
 ```python
-from langchain_2ly import MCPAdapter
+from langchain_Skilder import MCPAdapter
 from langchain.agents import create_react_agent
 from langchain_openai import ChatOpenAI
 
@@ -51,14 +51,14 @@ async with MCPAdapter("My Agent", options) as mcp:
     })
 ```
 
-When instantiating the MCPAdapter, give it the name of your agent. Agents are automatically created in 2LY if they don't yet exist.
+When instantiating the MCPAdapter, give it the name of your agent. Agents are automatically created in Skilder if they don't yet exist.
 
 ## Configuration
 
 ### Connection Options
 
 ```python
-from langchain_2ly import MCPAdapter
+from langchain_Skilder import MCPAdapter
 
 options = {
     "nats_servers": "nats://localhost:4222",  # NATS connection URL
@@ -81,7 +81,7 @@ export LOG_LEVEL="debug"
 ## Example: List Available Tools
 
 ```python
-from langchain_2ly import MCPAdapter
+from langchain_Skilder import MCPAdapter
 
 async def list_agent_tools():
     options = {"nats_servers": "nats://localhost:4222"}
@@ -98,7 +98,7 @@ async def list_agent_tools():
 
 **NATS Connection Failed**
 ```bash
-# Verify 2LY services are running
+# Verify Skilder services are running
 docker-compose ps
 
 # Check NATS connectivity
@@ -106,7 +106,7 @@ curl http://localhost:8222/varz
 ```
 
 **Tools Not Loading**
-- Verify agent name matches in 2LY dashboard
+- Verify agent name matches in Skilder dashboard
 - Check tools are assigned to the agent
 - Ensure NATS URL is correct
 

@@ -1,10 +1,10 @@
 ---
 title: 'Runtime Implementation'
-description: 'Deep dive into 2LY runtime architecture and services'
+description: 'Deep dive into Skilder runtime architecture and services'
 draft: true
 ---
 
-The 2LY runtime is a distributed execution environment that can act as both an MCP server (agent mode) and MCP client (tool mode). It's published as `@2ly/runtime` on npm.
+The Skilder runtime is a distributed execution environment that can act as both an MCP server (agent mode) and MCP client (tool mode). It's published as `@skilder-ai/runtime` on npm.
 
 ## Runtime Identity
 
@@ -137,7 +137,7 @@ Implements MCP server protocol for agents:
 // Initialize connection
 server.setRequestHandler(InitializeRequestSchema, async () => {
   return {
-    serverInfo: { name: "2ly", version: "1.0.0" },
+    serverInfo: { name: "Skilder", version: "1.0.0" },
     protocolVersion: "2024-11-05",
     capabilities: { tools: { listChanged: true } }
   };
@@ -209,7 +209,7 @@ Manages individual MCP server connection:
 **Tool Discovery:**
 
 ```typescript
-const client = new Client({ name: '2ly', version: '1.0.0' });
+const client = new Client({ name: 'Skilder', version: '1.0.0' });
 await client.connect(transport);
 
 const { tools } = await client.listTools();
@@ -335,9 +335,9 @@ ROOTS=NAME:path,NAME:path              # Filesystem roots
 ```json
 {
   "mcpServers": {
-    "2ly": {
+    "Skilder": {
       "command": "npx",
-      "args": ["@2ly/runtime"],
+      "args": ["@skilder-ai/runtime"],
       "env": {
         "RUNTIME_NAME": "claude-desktop",
         "NATS_SERVERS": "nats://localhost:4222"
@@ -352,8 +352,8 @@ ROOTS=NAME:path,NAME:path              # Filesystem roots
 ```bash
 # User's local machine
 RUNTIME_NAME=alice-edge \
-NATS_SERVERS=nats://company-2ly.com:4222 \
-npx @2ly/runtime
+NATS_SERVERS=nats://company-Skilder.com:4222 \
+npx @skilder-ai/runtime
 ```
 
 ### Global Runtime (Tool Mode)
@@ -361,7 +361,7 @@ npx @2ly/runtime
 ```bash
 # Shared runtime in Docker
 RUNTIME_NAME=global \
-npx @2ly/runtime
+npx @skilder-ai/runtime
 ```
 
 ### Dual Mode Runtime
@@ -371,7 +371,7 @@ npx @2ly/runtime
 RUNTIME_NAME=hybrid \
 AGENT_CAPABILITY=true \
 TOOL_CAPABILITY=true \
-npx @2ly/runtime
+npx @skilder-ai/runtime
 ```
 
 ## Lifecycle States

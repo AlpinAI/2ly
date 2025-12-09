@@ -3,16 +3,16 @@
   <img src="https://img.shields.io/badge/node-%3E%3D18.0.0-brightgreen.svg" alt="Node.js">
   <img src="https://img.shields.io/badge/docker-required-blue.svg" alt="Docker">
   <img src="https://img.shields.io/badge/status-beta-orange.svg" alt="Development Status">
-  <a href="https://github.com/AlpinAI/2ly" style="float: right;"><img src="https://img.shields.io/badge/github-star-yellow?style=flat&logo=github&logoColor=white" alt="Star"></a>
+  <a href="https://github.com/skilder-ai/skilder" style="float: right;"><img src="https://img.shields.io/badge/github-star-yellow?style=flat&logo=github&logoColor=white" alt="Star"></a>
 </div>
 
 <br>
 
 # One Platform. Any Agent. All Tools.
 
-**2LY is the infrastructure layer for AI agent tooling.**
+**Skilder is the infrastructure layer for AI agent tooling.**
 
-Stop rebuilding the same tools for every agent framework. 2LY gives you a private tool registry with embedded runtimes that works across any agent environment—whether you're using LangChain, CrewAI, AutoGPT, or building custom agents.
+Stop rebuilding the same tools for every agent framework. Skilder gives you a private tool registry with embedded runtimes that works across any agent environment—whether you're using LangChain, CrewAI, AutoGPT, or building custom agents.
 
 <div align="center">
     <p><em>2-minute product walkthrough (click to unmute)</em></p>
@@ -23,7 +23,7 @@ Stop rebuilding the same tools for every agent framework. 2LY gives you a privat
   </video>
 </div>
 
-## ✨ Why 2LY?
+## ✨ Why Skilder?
 
 ### ⚡ Ship Faster
 
@@ -33,7 +33,7 @@ Stop rebuilding the same tools for every agent framework. 2LY gives you a privat
 
 ### 🔧 Your Tools, Your Registry
 
-Unlike platforms that lock you into their tool marketplace, 2LY lets you build and manage your own private catalog. Import existing tools, wrap your internal APIs, or create custom functions—you control what's available to your agents.
+Unlike platforms that lock you into their tool marketplace, Skilder lets you build and manage your own private catalog. Import existing tools, wrap your internal APIs, or create custom functions—you control what's available to your agents.
 
 ### 📊 Cost Savings
 
@@ -63,7 +63,7 @@ Connect your LangChain agents to GitHub repositories via MCP. Create issues, rev
 
 ### Multi-Agent Systems with Shared Tools
 
-Deploy multiple specialized agents (research, coding, documentation) that share access to common tools. 2LY handles routing, load balancing, and ensures consistent tool access across all agents.
+Deploy multiple specialized agents (research, coding, documentation) that share access to common tools. Skilder handles routing, load balancing, and ensures consistent tool access across all agents.
 
 ### Edge AI with Distributed Runtimes
 
@@ -87,8 +87,8 @@ Wrap your internal APIs, databases, and services as agent-accessible tools. Crea
 
 ```bash
 # Clone the repository
-git clone https://github.com/AlpinAI/2ly.git
-cd 2ly
+git clone https://github.com/skilder-ai/skilder.git
+cd skilder
 
 # Start all services
 docker compose up -d
@@ -102,14 +102,14 @@ Access the dashboard at **http://localhost:8888**
 ### ⚡ Quick Win: Your First Tool in 2 Minutes
 
 1. **Create your workspace** - Set up your admin account
-2. **Follow the onboarding** - 3 guided steps to understand 2LY's capabilities
+2. **Follow the onboarding** - 3 guided steps to understand Skilder's capabilities
 3. **Connect an MCP server** - Choose from popular servers (Filesystem, GitHub, Weather) or add your own
 4. **Test your tools** - Use the built-in tool tester to verify everything works
 5. **Connect your agent** - Copy the connection details and integrate with your agent framework
 
 ### 🎯 What's Next?
 
-After completing the onboarding, here's how to get the most out of 2LY:
+After completing the onboarding, here's how to get the most out of Skilder:
 
 #### 1. Add More MCP Servers
 
@@ -120,7 +120,7 @@ After completing the onboarding, here's how to get the most out of 2LY:
 
 #### 2. Connect Your Agents
 
-Integrate 2LY with your preferred agent framework:
+Integrate Skilder with your preferred agent framework:
 
 - **LangChain** - Use the [LangChain MCP Adapters](https://github.com/langchain-ai/langchain-mcp-adapters)
 - **N8N** - Connect an MCP Client Node to your agent and configure with MCP Streamable HTTP
@@ -144,16 +144,16 @@ Start with the default runtime, but add more for:
 - **Workload isolation** - Separate production, staging, and development environments
 - **Scalability** - Distribute load across multiple runtime instances
 
-See [Runtime Documentation](https://docs.2ly.ai/core-concepts/runtime) for deployment options (Docker, Kubernetes, bare metal).
+See [Runtime Documentation](https://docs.skilder.ai/core-concepts/runtime) for deployment options (Docker, Kubernetes, bare metal).
 
 ---
 
 ## 🌐 Distributed Architecture
 
-Unlike traditional gateways that proxy HTTP requests to fixed endpoints, 2LY uses message-based pub-sub where runtimes register dynamically from anywhere. Agents publish requests to topics; the broker routes to available runtimes regardless of location (cloud, edge, behind NAT). Message persistence and async communication enable fan-out queries, automatic failover, and zero-downtime deployments without orchestration code.
+Unlike traditional gateways that proxy HTTP requests to fixed endpoints, Skilder uses message-based pub-sub where runtimes register dynamically from anywhere. Agents publish requests to topics; the broker routes to available runtimes regardless of location (cloud, edge, behind NAT). Message persistence and async communication enable fan-out queries, automatic failover, and zero-downtime deployments without orchestration code.
 
 <p align="center">
-<img width="784" height="242" alt="2LY Architecture" src="https://github.com/user-attachments/assets/4a7810b1-51f8-4bc0-ad73-cff62db420c7" style="border-radius: 15px;" />
+<img width="784" height="242" alt="Skilder Architecture" src="https://github.com/user-attachments/assets/4a7810b1-51f8-4bc0-ad73-cff62db420c7" style="border-radius: 15px;" />
 </p>
 
 ### Key Components
@@ -168,7 +168,7 @@ Unlike traditional gateways that proxy HTTP requests to fixed endpoints, 2LY use
 
 ## 🗺️ Roadmap
 
-2LY is evolving rapidly with new features and capabilities being added regularly. Have an idea or need something specific? We'd love to hear from you - [submit a feature request](https://github.com/AlpinAI/2ly/issues/new?template=feature_request.md)!
+Skilder is evolving rapidly with new features and capabilities being added regularly. Have an idea or need something specific? We'd love to hear from you - [submit a feature request](https://github.com/skilder-ai/skilder/issues/new?template=feature_request.md)!
 
 ---
 
@@ -176,8 +176,8 @@ Unlike traditional gateways that proxy HTTP requests to fixed endpoints, 2LY use
 
 ### For Users
 
-- 📖 [Product Documentation](https://docs.2ly.ai/getting-started/installation)
-- 🌐 [Product Website](https://2ly.ai)
+- 📖 [Product Documentation](https://docs.skilder.ai/getting-started/installation)
+- 🌐 [Product Website](https://skilder.ai)
 
 ### For Developers & Contributors
 
@@ -193,4 +193,4 @@ Apache 2.0 License - see the [LICENSE](LICENSE) file for details.
 
 ## 🤝 Ready to Take Control of Your AI Tool Ecosystem?
 
-⭐ [Star this repo](https://github.com/AlpinAI/2ly/stargazers) • 🍴 [Fork for your projects](https://github.com/AlpinAI/2ly/fork) • 💬 [Join our Discord community](https://discord.gg/2ly-ai)
+⭐ [Star this repo](https://github.com/skilder-ai/skilder/stargazers) • 🍴 [Fork for your projects](https://github.com/skilder-ai/skilder/fork) • 💬 [Join our Discord community](https://discord.gg/skilder-ai)

@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { AIProviderRepository, type AIProviderConfigData } from './ai-provider.repository';
 import { DGraphService } from '../services/dgraph.service';
-import { LoggerService, EncryptionService, AIProviderService, dgraphResolversTypes } from '@2ly/common';
+import { LoggerService, EncryptionService, AIProviderService, dgraphResolversTypes } from '@skilder-ai/common';
 
 describe('AIProviderRepository', () => {
   let repository: AIProviderRepository;

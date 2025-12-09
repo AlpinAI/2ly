@@ -1,7 +1,7 @@
 /**
  * Langchain Instructions (New Design)
  *
- * WHY: Platform-specific instructions for connecting Langchain/Langgraph to 2LY via STDIO.
+ * WHY: Platform-specific instructions for connecting Langchain/Langgraph to Skilder via STDIO.
  */
 
 import { CodeBlock } from '@/components/ui/code-block';
@@ -11,9 +11,9 @@ export interface LangchainInstructionsProps {
 }
 
 export function LangchainInstructions({ skillKey }: LangchainInstructionsProps) {
-  const installCommand = 'pip install langchain_2ly';
+  const installCommand = 'pip install langchain_skilder';
 
-  const quickStartCode = `from langchain_2ly import MCPSkill
+  const quickStartCode = `from langchain_skilder import MCPSkill
 
 options = {
     "skill_key": "${skillKey || '<skill_key>'}"
@@ -32,12 +32,12 @@ async with MCPSkill.with_skill_key(options) as mcp:
       </div>
 
       <h3 className="text-xl font-semibold text-gray-900 dark:text-white">
-        Connect Langchain/Langgraph to 2LY
+        Connect Langchain/Langgraph to Skilder
       </h3>
 
       <ol className="list-decimal list-inside space-y-4 text-base leading-relaxed text-gray-700 dark:text-gray-300 font-sans">
         <li>
-          Install the langchain_2ly package:
+          Install the langchain_skilder package:
           <div className="mt-2">
             <CodeBlock code={installCommand} language="bash" size="small" />
           </div>

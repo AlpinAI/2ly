@@ -15,8 +15,8 @@
  * - Tests complete within 2 minutes with proper timeouts
  */
 
-import { test, expect, seedPresets, loginAndGetToken } from '@2ly/common/test/fixtures/playwright';
-import { updateMCPServerToEdgeRuntime } from '@2ly/common/test/fixtures/mcp-builders';
+import { test, expect, seedPresets, loginAndGetToken } from '@skilder-ai/common/test/fixtures/playwright';
+import { updateMCPServerToEdgeRuntime } from '@skilder-ai/common/test/fixtures/mcp-builders';
 
 // Test configuration
 const TEST_FILE_PATH = '/tmp/test.txt';
@@ -41,7 +41,7 @@ test.describe('MCP Integration with Containerized Runtime', () => {
     entityIds = await seedDatabase(seedPresets.withSingleMCPServer);
 
     // Get auth token for authenticated API calls (needed for mutations)
-    authToken = await loginAndGetToken('user1@2ly.ai', 'password123');
+    authToken = await loginAndGetToken('user1@skilder.ai', 'password123');
 
     // Update MCP server to use EDGE runtime (GLOBAL executionTarget has been removed)
     const workspaceId = entityIds['default-workspace'];
@@ -57,7 +57,7 @@ test.describe('MCP Integration with Containerized Runtime', () => {
     // Step 1: Login and navigate to workspace
     // ========================================================================
     await page.goto('/login');
-    await page.fill('input[type="email"]', 'user1@2ly.ai');
+    await page.fill('input[type="email"]', 'user1@skilder.ai');
     await page.fill('input[type="password"]', 'password123');
     await page.click('button[type="submit"]');
     await page.waitForURL(/\/w\/.+\/overview/, { timeout: 5000 });
@@ -317,7 +317,7 @@ test.describe('MCP Integration with Containerized Runtime', () => {
   test('should handle tool call failures gracefully', async ({ page, graphql }) => {
     // Login
     await page.goto('/login');
-    await page.fill('input[type="email"]', 'user1@2ly.ai');
+    await page.fill('input[type="email"]', 'user1@skilder.ai');
     await page.fill('input[type="password"]', 'password123');
     await page.click('button[type="submit"]');
     await page.waitForURL(/\/w\/.+\/overview/, { timeout: 5000 });

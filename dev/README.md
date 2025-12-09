@@ -8,9 +8,9 @@ This project is a monorepo with the following packages:
 
 - **/packages/common**: Shared code and schema
 - **/packages/backend**: Orchestrator for tools and agent runtimes
-- **/packages/runtime**: NodeJS process which execute call tools and provide 2ly MCP Server to agents
+- **/packages/runtime**: NodeJS process which execute call tools and provide skilder MCP Server to agents
 - **/packages/frontend**: Web application to configure, manage and observe tools and their respective agents
-- **/packages/twoly**: Python package with helpers to quickly consume 2ly from langchain projects
+- **/packages/twoly**: Python package with helpers to quickly consume skilder from langchain projects
 - **/packages/doc**: Documentation of the project
 
 ## Tech Stack
@@ -24,7 +24,7 @@ This project is a monorepo with the following packages:
 
 ## Prerequisites
 
-> **Note for production users**: If you just want to run 2LY (not develop it), see the [main README](../README.md) - you only need Docker.
+> **Note for production users**: If you just want to run Skilder (not develop it), see the [main README](../README.md) - you only need Docker.
 
 **For development and contributions:**
 - Node.js v22+ (required for local development)
@@ -37,12 +37,12 @@ This project is a monorepo with the following packages:
 
 ```bash
 # Clone the repository (HTTPS)
-git clone https://github.com/AlpinAI/2ly.git
+git clone https://github.com/skilder-ai/skilder.git
 # Or with SSH (if you have SSH keys configured)
-# git clone git@github.com:AlpinAI/2ly.git
+# git clone git@github.com:AlpinAI/skilder.git
 
 # Enter the project
-cd 2ly
+cd skilder
 
 # Install dependencies
 npm install
@@ -69,7 +69,7 @@ This step is only required if you intend to work on the documentation
 
 ### 2. Start the services you work on locally
 
-When developing 2ly, you can run the backend, frontend or runtime locally in order to test them while coding and benefit from file watching and fast reload. 
+When developing skilder, you can run the backend, frontend or runtime locally in order to test them while coding and benefit from file watching and fast reload. 
 
 **Stop the docker service you want to launch locally**
 
@@ -106,9 +106,9 @@ Each package has its own `npm run build` script. You can also run them from the 
 
 ```
 npm run build # build all packages
-npm run build -w @2ly/backend #build only the backend
-npm run build -w @2ly/frontend #build only the frontend
-npm run build -w @2ly/runtime #build only the runtime
+npm run build -w @skilder-ai/backend #build only the backend
+npm run build -w @skilder-ai/frontend #build only the frontend
+npm run build -w @skilder-ai/runtime #build only the runtime
 ```
 
 ## Contributing

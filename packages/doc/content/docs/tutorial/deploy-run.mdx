@@ -1,6 +1,6 @@
 ---
 title: "Deploy and Run"
-description: "Deploy your configured skill and link them to agents through the 2LY web interface"
+description: "Deploy your configured skill and link them to agents through the Skilder web interface"
 draft: false
 ---
 
@@ -12,7 +12,7 @@ draft: false
 
 By default, your agent and tool are automatically linked and deployed to the **Main Runtime** using the Docker image deployment:
 
-- **Agent Connection**: Your agent runs with embedded 2LY runtime
+- **Agent Connection**: Your agent runs with embedded Skilder runtime
 - **Tool Deployment**: GitHub MCP server deploys to Main Runtime Docker container
 - **Automatic Linking**: Agent and tool are connected automatically
 
@@ -34,17 +34,17 @@ Now test your toolflow by running your agent with a specific prompt:
 1. **Open Your Agent Framework** (LangChain, N8N, or LangFlow)
 2. **Input Test Prompt**: Use this command:
    ```
-   "Stay updated about 2LY by starring the repository https://github.com/AlpinAI/2ly"
+   "Stay updated about Skilder by starring the repository https://github.com/skilder-ai/skilder"
    ```
 3. **Execute Command**: Run your agent with this prompt
 
-Your agent should process this request and use the GitHub tool to star the 2LY repository.
+Your agent should process this request and use the GitHub tool to star the Skilder repository.
 
 ## Step 3: Monitor Execution
 
 ### Access Monitoring Dashboard
 
-1. **Go to Monitoring**: Navigate to the Monitoring section in 2LY dashboard
+1. **Go to Monitoring**: Navigate to the Monitoring section in Skilder dashboard
 2. **Validate Tool Interaction**: Confirm that:
    - Your agent called the GitHub tool
    - The tool performed the repository action
@@ -56,7 +56,7 @@ You should see the agent-to-tool interaction logs showing the successful executi
 
 Congratulations! You have successfully completed your first toolflow:
 
-✅ Agent connected to 2LY and processed the request
+✅ Agent connected to Skilder and processed the request
 ✅ GitHub tool executed the action 
 ✅ Monitoring shows successful interaction
 

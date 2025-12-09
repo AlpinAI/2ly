@@ -1,12 +1,12 @@
 ================================================================================
-2LY DOCUMENTATION IMPROVEMENT ROADMAP
+Skilder DOCUMENTATION IMPROVEMENT ROADMAP
 ================================================================================
 
 Generated: 2025-09-30
 Based on: Comprehensive codebase analysis vs current documentation (30 MDX files)
 Codebase Version: Commit 70e5730
 
-This document provides an exhaustive list of improvements needed for the 2ly
+This document provides an exhaustive list of improvements needed for the skilder
 documentation package based on the current state of the project codebase.
 
 ================================================================================
@@ -38,7 +38,7 @@ STATUS: ✅ COMPLETED (2025-09-30)
 LOCATION: technical-concepts/nats-messaging.mdx
 
 CONTENT NEEDED:
-- NATS role in 2ly architecture
+- NATS role in skilder architecture
 - Subject naming conventions:
   * runtime.connect
   * runtime.{RID}.*
@@ -409,7 +409,7 @@ STATUS: Missing implementation details
 LOCATION: runtime-deployment/runtime.mdx
 
 IMPROVEMENTS NEEDED:
-- Add runtime NPM package usage (@2ly/runtime)
+- Add runtime NPM package usage (@skilder-ai/runtime)
 - Document all environment variables:
   * RUNTIME_NAME (required)
   * WORKSPACE_ID
@@ -771,7 +771,7 @@ LOCATION: Create new: technical-concepts/mcp-protocol.mdx
 
 CONTENT NEEDED:
 - MCP protocol version (2024-11-05)
-- 2ly's implementation (@modelcontextprotocol/sdk 1.12)
+- skilder's implementation (@modelcontextprotocol/sdk 1.12)
 - Server-side implementation (AgentServerService)
 - Client-side implementation (ToolServerService)
 - Protocol messages:
@@ -786,7 +786,7 @@ CONTENT NEEDED:
   * SSE (SSEServerTransport - legacy)
 - Error handling
 - Tool list change notifications
-- Protocol extensions in 2ly
+- Protocol extensions in skilder
 
 CODE REFERENCES:
 - packages/runtime/src/services/agent.server.service.ts
@@ -1067,7 +1067,7 @@ Current examples are minimal. Add:
 7.4 Update Outdated Content
 ────────────────────────────────────────────────────────────────────────────
 Review and update:
-- Package versions (@2ly/runtime 0.0.4)
+- Package versions (@skilder-ai/runtime 0.0.4)
 - API endpoints
 - Configuration options
 - Screenshots of frontend
@@ -1280,4 +1280,4 @@ END OF DOCUMENTATION IMPROVEMENT ROADMAP
 Last Updated: 2025-09-30
 Next Review: After completion of Week 1-4 immediate actions
 
-For questions or suggestions, create an issue in the 2ly repository.
+For questions or suggestions, create an issue in the skilder repository.

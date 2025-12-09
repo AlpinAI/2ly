@@ -4,7 +4,7 @@ import {
   LoggerService,
   NatsService,
   Service,
-} from '@2ly/common';
+} from '@skilder-ai/common';
 import { HealthService } from './runtime.health.service';
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';

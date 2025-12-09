@@ -11,11 +11,14 @@ COPY packages/common/ ./packages/common/
 # Install dependencies
 RUN npm install
 
+# Rebuild rollup to get correct platform-specific binaries (npm optional deps bug workaround)
+RUN npm rebuild rollup
+
 # Build the frontend
 ARG BUILD_MODE=production
 
 # Build without hardcoded environment variables (runtime config will be injected)
-RUN npm run build -w @2ly/frontend -- --mode ${BUILD_MODE}
+RUN npm run build -w @skilder-ai/frontend -- --mode ${BUILD_MODE}
 
 # Remove unnecessary node_modules now that we have a build
 RUN rm -rf node_modules

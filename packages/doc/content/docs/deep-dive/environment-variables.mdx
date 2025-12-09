@@ -1,14 +1,14 @@
 ---
 title: "Environment Variables"
-description: "Complete reference for 2LY environment variables"
+description: "Complete reference for Skilder environment variables"
 draft: true
 ---
 
-Complete reference for configuring 2LY components via environment variables.
+Complete reference for configuring Skilder components via environment variables.
 
 ## Runtime Variables
 
-Configure `@2ly/runtime` behavior:
+Configure `@skilder-ai/runtime` behavior:
 
 | Variable | Required | Default | Description |
 |----------|----------|---------|-------------|
@@ -26,12 +26,12 @@ RUNTIME_NAME=my-agent \
 WORKSPACE_ID=production \
 NATS_SERVERS=nats://prod:4222 \
 LOG_LEVEL=debug \
-npx @2ly/runtime
+npx @skilder-ai/runtime
 ```
 
 ## Backend Variables
 
-Configure `@2ly/backend` API server:
+Configure `@skilder-ai/backend` API server:
 
 | Variable | Required | Default | Description |
 |----------|----------|---------|-------------|
@@ -55,7 +55,7 @@ npm run start:backend
 
 ## Frontend Variables
 
-Configure `@2ly/frontend` React application:
+Configure `@skilder-ai/frontend` React application:
 
 | Variable | Required | Default | Description |
 |----------|----------|---------|-------------|
@@ -66,8 +66,8 @@ Configure `@2ly/frontend` React application:
 ### Usage
 
 ```bash
-VITE_API_URL=https://api.2ly.ai \
-VITE_WS_URL=wss://api.2ly.ai \
+VITE_API_URL=https://api.Skilder.ai \
+VITE_WS_URL=wss://api.Skilder.ai \
 npm run dev:frontend
 ```
 
@@ -121,14 +121,14 @@ NATS_SERVERS=nats://secure.example.com:4222 \
 NATS_TLS_CERT=/certs/client.crt \
 NATS_TLS_KEY=/certs/client.key \
 NATS_TLS_CA=/certs/ca.crt \
-npx @2ly/runtime
+npx @skilder-ai/runtime
 ```
 
 ### Clustered NATS
 
 ```bash
 NATS_SERVERS=nats://nats1:4222,nats://nats2:4222,nats://nats3:4222 \
-npx @2ly/runtime
+npx @skilder-ai/runtime
 ```
 
 ## DGraph Configuration
@@ -170,7 +170,7 @@ NODE_ENV=staging
 LOG_LEVEL=info
 NATS_SERVERS=nats://staging-nats:4222
 DGRAPH_URL=staging-dgraph:9080
-VITE_API_URL=https://staging-api.2ly.ai
+VITE_API_URL=https://staging-api.Skilder.ai
 ```
 
 ### Production
@@ -181,8 +181,8 @@ NODE_ENV=production
 LOG_LEVEL=warn
 NATS_SERVERS=nats://prod-nats-1:4222,nats://prod-nats-2:4222
 DGRAPH_URL=prod-dgraph:9080
-VITE_API_URL=https://api.2ly.ai
-CORS_ORIGIN=https://2ly.ai
+VITE_API_URL=https://api.Skilder.ai
+CORS_ORIGIN=https://Skilder.ai
 ```
 
 ## Docker Compose Example
@@ -215,10 +215,10 @@ services:
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: 2ly-config
+  name: Skilder-config
 data:
-  NATS_SERVERS: "nats://nats.2ly.svc.cluster.local:4222"
-  DGRAPH_URL: "dgraph.2ly.svc.cluster.local:9080"
+  NATS_SERVERS: "nats://nats.Skilder.svc.cluster.local:4222"
+  DGRAPH_URL: "dgraph.Skilder.svc.cluster.local:9080"
   LOG_LEVEL: "info"
 ---
 apiVersion: apps/v1
@@ -230,7 +230,7 @@ spec:
       - name: runtime
         envFrom:
         - configMapRef:
-            name: 2ly-config
+            name: Skilder-config
         env:
         - name: RUNTIME_NAME
           value: "prod-runtime-1"

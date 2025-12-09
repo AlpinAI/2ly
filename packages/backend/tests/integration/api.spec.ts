@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { graphql, resetDatabase, request } from '@2ly/common/test/fixtures';
+import { graphql, resetDatabase, request } from '@skilder-ai/common/test/fixtures';
 
 /**
  * Backend API Integration Tests - Clean Slate Strategy

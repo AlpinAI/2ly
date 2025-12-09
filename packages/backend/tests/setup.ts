@@ -10,7 +10,7 @@
  * It ensures only ONE test environment is created for the entire test suite.
  */
 
-import { TestEnvironment } from '@2ly/common/test/test.containers';
+import { TestEnvironment } from '@skilder-ai/common/test/test.containers';
 
 let testEnv: TestEnvironment;
 
