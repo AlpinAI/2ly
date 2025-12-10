@@ -1,0 +1,3 @@
+mutation DisconnectOAuthProvider($connectionId: ID!) {
+  disconnectOAuthProvider(connectionId: $connectionId)
+}

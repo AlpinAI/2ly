@@ -2,7 +2,7 @@
  * OAuthProvidersSection Component
  *
  * Manage OAuth provider integrations for the workspace.
- * Allows configuring B2B OAuth connections to Google, Microsoft, Notion, and Supabase.
+ * Allows configuring B2B OAuth connections to Google, Microsoft, and Notion.
  */
 
 import { useState } from 'react';
@@ -20,7 +20,6 @@ const ALL_PROVIDERS = [
   OAuthProviderType.Google,
   OAuthProviderType.Microsoft,
   OAuthProviderType.Notion,
-  OAuthProviderType.Supabase,
 ];
 
 export function OAuthProvidersSection() {
@@ -93,7 +92,7 @@ export function OAuthProvidersSection() {
   return (
     <SettingsSection
       title="Integrations"
-      description="Configure OAuth integrations to connect your workspace with external services. Set up B2B connections to Google, Microsoft, Notion, and Supabase."
+      description="Configure OAuth integrations to connect your workspace with external services. Set up B2B connections to Google, Microsoft, and Notion."
       icon={Link2}
     >
       <div className="space-y-4">

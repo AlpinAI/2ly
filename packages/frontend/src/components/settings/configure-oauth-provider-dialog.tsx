@@ -225,6 +225,47 @@ export function ConfigureOAuthProviderDialog({
                 View {providerInfo.name} OAuth documentation
               </a>
 
+              {/* Google Cloud Console configuration help */}
+              {provider === OAuthProviderType.Google && (
+                <div className="rounded-lg bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 p-4 space-y-3">
+                  <div className="flex items-start gap-2">
+                    <ExternalLink className="h-4 w-4 text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0" />
+                    <div className="text-sm">
+                      <a
+                        href="https://console.cloud.google.com/apis/credentials"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="font-medium text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
+                      >
+                        Open Google Cloud Console
+                      </a>
+                      <p className="text-gray-600 dark:text-gray-400 mt-1">
+                        Configure the following in your OAuth 2.0 Client ID settings:
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2 text-sm">
+                    <div>
+                      <span className="font-medium text-gray-700 dark:text-gray-300">
+                        Authorized JavaScript origin:
+                      </span>
+                      <code className="ml-2 px-2 py-0.5 bg-gray-100 dark:bg-gray-700 rounded text-gray-800 dark:text-gray-200">
+                        {window.location.origin}
+                      </code>
+                    </div>
+                    <div>
+                      <span className="font-medium text-gray-700 dark:text-gray-300">
+                        Authorized redirect URI:
+                      </span>
+                      <code className="ml-2 px-2 py-0.5 bg-gray-100 dark:bg-gray-700 rounded text-gray-800 dark:text-gray-200">
+                        {`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000'}/oauth/callback`}
+                      </code>
+                    </div>
+                  </div>
+                </div>
+              )}
+
               {/* Result display */}
               {result && (
                 <div

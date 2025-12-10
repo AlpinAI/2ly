@@ -142,11 +142,4 @@ export const OAUTH_PROVIDER_INFO: Record<
     requiresTenantId: false,
     documentationUrl: 'https://developers.notion.com/docs/authorization',
   },
-  [OAuthProviderType.Supabase]: {
-    name: 'Supabase',
-    description: 'Supabase authentication and database integrations',
-    icon: 'S',
-    requiresTenantId: false,
-    documentationUrl: 'https://supabase.com/docs/guides/auth',
-  },
 };

@@ -55,6 +55,7 @@ type Workspace @withSubscription {
   aiProviders: [AIProviderConfig!] @hasInverse(field: workspace)
   defaultAIModel: String
   oauthProviders: [OAuthProviderConfig!] @hasInverse(field: workspace)
+  userOAuthConnections: [UserOAuthConnection!] @hasInverse(field: workspace)
 }
 
 type MCPRegistryServer @withSubscription {
@@ -177,6 +178,7 @@ type User @withSubscription {
   adminOfWorkspaces: [Workspace!] @hasInverse(field: admins)
   membersOfWorkspaces: [Workspace!] @hasInverse(field: users)
   sessions: [Session!] @hasInverse(field: user)
+  oauthConnections: [UserOAuthConnection!] @hasInverse(field: user)
 }
 
 type Session @withSubscription {
@@ -293,4 +295,28 @@ type OAuthProviderConfig @withSubscription {
   tenantId: String
   createdAt: DateTime!
   updatedAt: DateTime!
+}
+
+# User OAuth Connection - Personal OAuth connections to workspace-enabled providers
+# Used by MCP tools to access external APIs on behalf of users
+type UserOAuthConnection @withSubscription {
+  id: ID!
+  user: User! @hasInverse(field: oauthConnections)
+  workspace: Workspace! @hasInverse(field: userOAuthConnections)
+  provider: OAuthProviderType! @search
+  # Encrypted OAuth tokens - never exposed via Apollo schema
+  encryptedAccessToken: String!
+  encryptedRefreshToken: String
+  tokenExpiresAt: DateTime
+  # OAuth scopes granted by the user
+  scopes: [String!]
+  # Connected account info from OAuth provider
+  accountEmail: String @search(by: [hash])
+  accountName: String
+  accountAvatarUrl: String
+  # Provider-specific account identifier
+  providerAccountId: String @search(by: [hash])
+  createdAt: DateTime!
+  updatedAt: DateTime!
+  lastUsedAt: DateTime
 }

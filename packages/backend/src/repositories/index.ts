@@ -12,3 +12,4 @@ export * from './skill.repository';
 export * from './identity.repository';
 export * from './ai-provider.repository';
 export * from './oauth-provider.repository';
+export * from './user-oauth-connection.repository';

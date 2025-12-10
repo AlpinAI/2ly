@@ -19,6 +19,7 @@ import {
 import { createAuthResolvers } from '../resolvers/auth.resolver';
 import { createAIProviderResolvers } from '../resolvers/ai-provider.resolver';
 import { createOAuthProviderResolvers } from '../resolvers/oauth-provider.resolver';
+import { createUserOAuthConnectionResolvers } from '../resolvers/user-oauth-connection.resolver';
 import { AuthenticationService, JwtService, PasswordPolicyService } from '../services/auth';
 import { Container } from 'inversify';
 import { requireAuth, requireWorkspaceAccess, requireAuthAndWorkspaceAccess, withPeriodicValidation } from './authorization.helpers';
@@ -59,6 +60,9 @@ export const resolvers = (container: Container = defaultContainer): apolloResolv
 
   // Create OAuth provider resolvers
   const oauthProviderResolvers = createOAuthProviderResolvers(container);
+
+  // Create User OAuth connection resolvers
+  const userOAuthConnectionResolvers = createUserOAuthConnectionResolvers(container);
 
   return {
     Date: GraphQLDateTime,
@@ -184,6 +188,8 @@ export const resolvers = (container: Container = defaultContainer): apolloResolv
       ...aiProviderResolvers.Query,
       // OAuth Provider queries
       ...oauthProviderResolvers.Query,
+      // User OAuth Connection queries
+      ...userOAuthConnectionResolvers.Query,
     },
     Mutation: {
       // Authentication mutations
@@ -659,6 +665,8 @@ export const resolvers = (container: Container = defaultContainer): apolloResolv
       ...aiProviderResolvers.Mutation,
       // OAuth Provider mutations
       ...oauthProviderResolvers.Mutation,
+      // User OAuth Connection mutations
+      ...userOAuthConnectionResolvers.Mutation,
     },
     Runtime: {},
     MCPServer: {},

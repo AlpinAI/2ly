@@ -279,6 +279,33 @@ type OAuthProviderValidation {
   error: String
 }
 
+# User OAuth Connection - Personal OAuth connections to workspace-enabled providers
+type UserOAuthConnection {
+  id: ID!
+  provider: OAuthProviderType!
+  accountEmail: String
+  accountName: String
+  accountAvatarUrl: String
+  scopes: [String!]
+  createdAt: Date!
+  updatedAt: Date!
+  lastUsedAt: Date
+  # Note: tokens are NOT exposed via GraphQL
+}
+
+# OAuth authorization URL response for initiating OAuth flow
+type OAuthAuthorizationUrl {
+  url: String!
+  state: String!
+}
+
+# OAuth callback result after successful connection
+type OAuthCallbackResult {
+  success: Boolean!
+  connection: UserOAuthConnection
+  error: String
+}
+
 type AIModel {
   id: String!
   name: String!
@@ -348,6 +375,9 @@ type Query {
   # OAuth Provider queries
   getOAuthProviders(workspaceId: ID!): [OAuthProviderConfig!]!
   getOAuthProvider(workspaceId: ID!, provider: OAuthProviderType!): OAuthProviderConfig
+  # User OAuth Connection queries
+  getUserOAuthConnections(workspaceId: ID!): [UserOAuthConnection!]!
+  hasUserOAuthConnection(workspaceId: ID!, provider: OAuthProviderType!): Boolean!
 }
 
 type CallToolResult {
@@ -465,6 +495,16 @@ type Mutation {
   updateOAuthProviderEnabled(providerId: ID!, enabled: Boolean!): OAuthProviderConfig!
 
   removeOAuthProvider(providerId: ID!): Boolean!
+
+  # User OAuth Connection mutations
+  initiateOAuthConnection(
+    workspaceId: ID!
+    provider: OAuthProviderType!
+    redirectUri: String!
+    scopes: [String!]
+  ): OAuthAuthorizationUrl!
+
+  disconnectOAuthProvider(connectionId: ID!): Boolean!
 }
 
 input UpdateSkillSmartConfigInput {
