@@ -1,0 +1,10 @@
+mutation IncrementFailedLoginAttempts($id: ID!, $attempts: Int!, $lockedUntil: DateTime) {
+  updateUser(input: { filter: { id: [$id] }, set: { failedLoginAttempts: $attempts, lockedUntil: $lockedUntil } }) {
+    user {
+      id
+      email
+      failedLoginAttempts
+      lockedUntil
+    }
+  }
+}

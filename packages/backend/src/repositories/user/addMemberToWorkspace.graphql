@@ -1,0 +1,8 @@
+mutation AddMemberToWorkspace($userId: ID!, $workspaceId: ID!) {
+  updateUser(input: { filter: { id: [$userId] }, set: { membersOfWorkspaces: { id: $workspaceId } } }) {
+    user {
+      id
+      email
+    }
+  }
+}

@@ -1,9 +1,8 @@
 import { injectable, inject } from 'inversify';
-import { UserRepository } from '../../repositories/user.repository';
-import { SessionRepository } from '../../repositories/session.repository';
+import { UserRepository } from '../../repositories/user/user.repository';
+import { SessionRepository } from '../../repositories/session/session.repository';
 import { JwtService, JwtPayload, TokenPair } from './jwt.service';
 import { verifyPassword } from '@skilder-ai/common';
-import { dgraphResolversTypes } from '@skilder-ai/common';
 
 export interface LoginCredentials {
   email: string;
@@ -17,9 +16,20 @@ export interface LoginRequest {
   userAgent?: string;
 }
 
+// User type for login result - includes only fields needed for authentication
+export interface AuthUser {
+  id: string;
+  email: string;
+  password: string;
+  failedLoginAttempts?: number | null;
+  lockedUntil?: string | null;
+  adminOfWorkspaces?: { id: string; name: string }[] | null;
+  membersOfWorkspaces?: { id: string; name: string }[] | null;
+}
+
 export interface LoginResult {
   success: boolean;
-  user?: dgraphResolversTypes.User;
+  user?: AuthUser;
   tokens?: TokenPair;
   error?: string;
   accountLocked?: boolean;

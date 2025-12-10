@@ -1,11 +1,11 @@
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 import { IdentityService } from './identity.service';
-import { IdentityRepository } from '../repositories/identity.repository';
+import { IdentityRepository } from '../repositories/identity/identity.repository';
 import { KeyRateLimiterService } from './key-rate-limiter.service';
-import { SystemRepository } from '../repositories/system.repository';
-import { WorkspaceRepository } from '../repositories/workspace.repository';
-import { RuntimeRepository } from '../repositories/runtime.repository';
-import { SkillRepository } from '../repositories/skill.repository';
+import { SystemRepository } from '../repositories/system/system.repository';
+import { WorkspaceRepository } from '../repositories/workspace/workspace.repository';
+import { RuntimeRepository } from '../repositories/runtime/runtime.repository';
+import { SkillRepository } from '../repositories/skill/skill.repository';
 import { LoggerService, NatsService, dgraphResolversTypes } from '@skilder-ai/common';
 
 type Workspace = dgraphResolversTypes.Workspace;

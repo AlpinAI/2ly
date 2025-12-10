@@ -1,0 +1,9 @@
+mutation AddUser($email: String!, $password: String!, $now: DateTime!) {
+  addUser(input: { email: $email, password: $password, createdAt: $now, updatedAt: $now }) {
+    user {
+      id
+      email
+      createdAt
+    }
+  }
+}

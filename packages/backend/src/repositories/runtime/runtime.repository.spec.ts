@@ -1,0 +1,367 @@
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { RuntimeRepository } from '../runtime/runtime.repository';
+import type { DGraphService } from '../../services/dgraph.service';
+import { DgraphServiceMock } from '../../services/dgraph.service.mock';
+import { dgraphResolversTypes } from '@skilder-ai/common';
+import { MCPToolRepository } from '../mcp-tool/mcp-tool.repository';
+import { LoggerService } from '@skilder-ai/common';
+import { Subject } from 'rxjs';
+import type { NatsService } from '@skilder-ai/common';
+import type { IdentityRepository } from '../identity/identity.repository';
+
+describe('RuntimeRepository', () => {
+    let dgraphService: DgraphServiceMock;
+    let mcpToolRepository: MCPToolRepository;
+    let loggerService: LoggerService;
+    let natsService: NatsService;
+    let identityRepository: IdentityRepository;
+    let runtimeRepository: RuntimeRepository;
+
+    beforeEach(() => {
+        dgraphService = new DgraphServiceMock();
+        mcpToolRepository = {
+            setStatus: vi.fn(),
+        } as unknown as MCPToolRepository;
+        loggerService = {
+            getLogger: vi.fn().mockReturnValue({
+                debug: vi.fn(),
+                info: vi.fn(),
+                warn: vi.fn(),
+                error: vi.fn(),
+            }),
+        } as unknown as LoggerService;
+        natsService = {
+            request: vi.fn(),
+            publishEphemeral: vi.fn(),
+        } as unknown as NatsService;
+        identityRepository = {
+            createKey: vi.fn().mockResolvedValue({ id: 'k1', key: 'RK_test123' }),
+        } as unknown as IdentityRepository;
+        runtimeRepository = new RuntimeRepository(
+            dgraphService as unknown as DGraphService,
+            mcpToolRepository,
+            loggerService,
+            natsService,
+            identityRepository,
+        );
+    });
+
+    it('creates runtime', async () => {
+        const runtime = { id: 'r1', name: 'Test Runtime' } as unknown as dgraphResolversTypes.Runtime;
+
+        dgraphService.mutation.mockResolvedValue({ addRuntime: { runtime: [runtime] } });
+        const result = await runtimeRepository.create('workspace', 'w1', 'Test Runtime', 'Description', 'ACTIVE', 'MCP');
+
+        expect(dgraphService.mutation).toHaveBeenCalledWith(
+            expect.any(Object),
+            expect.objectContaining({
+                name: 'Test Runtime',
+                description: 'Description',
+                status: 'ACTIVE',
+                type: 'MCP',
+                workspaceId: 'w1',
+            })
+        );
+        expect(result.id).toBe('r1');
+    });
+
+    it('creates runtime with automatic identity key generation', async () => {
+        const runtime = { id: 'r1', name: 'Test Runtime' } as unknown as dgraphResolversTypes.Runtime;
+
+        dgraphService.mutation.mockResolvedValue({ addRuntime: { runtime: [runtime] } });
+        const mockKey = { id: 'k1', key: 'RTK_test123' };
+        identityRepository.createKey = vi.fn().mockResolvedValue(mockKey);
+
+        const result = await runtimeRepository.create('workspace', 'w1', 'Test Runtime', 'Description', 'ACTIVE', 'EDGE');
+
+        expect(identityRepository.createKey).toHaveBeenCalledWith('runtime', 'r1', 'Test Runtime Runtime Key', '');
+        expect(result.id).toBe('r1');
+    });
+
+    it('creates system runtime with automatic identity key generation', async () => {
+        const runtime = { id: 'r1', name: 'System Runtime' } as unknown as dgraphResolversTypes.Runtime;
+
+        dgraphService.mutation.mockResolvedValue({ addRuntime: { runtime: [runtime] } });
+        const mockKey = { id: 'k1', key: 'RTK_system123' };
+        identityRepository.createKey = vi.fn().mockResolvedValue(mockKey);
+
+        const result = await runtimeRepository.create('system', 's1', 'System Runtime', 'System Description', 'ACTIVE', 'EDGE');
+
+        expect(dgraphService.mutation).toHaveBeenCalledWith(
+            expect.any(Object),
+            expect.objectContaining({
+                name: 'System Runtime',
+                description: 'System Description',
+                status: 'ACTIVE',
+                type: 'EDGE',
+                systemId: 's1',
+            })
+        );
+        expect(identityRepository.createKey).toHaveBeenCalledWith('runtime', 'r1', 'System Runtime Runtime Key', '');
+        expect(result.id).toBe('r1');
+    });
+
+    it('throws error when runtime creation fails', async () => {
+        dgraphService.mutation.mockResolvedValue({ addRuntime: { runtime: [] } });
+
+        await expect(runtimeRepository.create('workspace', 'w1', 'Test Runtime', 'Description', 'ACTIVE', 'MCP'))
+            .rejects.toThrow('Failed to create runtime for workspace w1 Test Runtime');
+    });
+
+    it('throws error for invalid connectedTo value', async () => {
+        await expect(runtimeRepository.create('invalid' as 'workspace' | 'system', 'w1', 'Test Runtime', 'Description', 'ACTIVE', 'MCP'))
+            .rejects.toThrow('Invalid connectedTo: invalid');
+    });
+
+    it('delete removes runtime', async () => {
+        const runtime = { id: 'r1' } as unknown as dgraphResolversTypes.Runtime;
+        dgraphService.mutation.mockResolvedValue({ deleteRuntime: { runtime: [runtime] } });
+
+        const result = await runtimeRepository.delete('r1');
+
+        expect(dgraphService.mutation).toHaveBeenCalledWith(expect.any(Object), { id: 'r1' });
+        expect(result.id).toBe('r1');
+    });
+
+    it('upserTool creates new tool when none exists', async () => {
+        const mcpServer = { id: 's1', workspace: { id: 'w1' }, tools: [] } as unknown as dgraphResolversTypes.McpServer;
+        const tool = { id: 't1', name: 'test-tool' } as unknown as dgraphResolversTypes.McpTool;
+
+        dgraphService.query.mockResolvedValue({ getMCPServer: mcpServer });
+        dgraphService.mutation.mockResolvedValue({ addMCPTool: { mCPTool: [tool] } });
+
+        const result = await runtimeRepository.upserTool('s1', 'test-tool', 'Description', '{}', '{}');
+
+        expect(dgraphService.query).toHaveBeenCalledWith(expect.any(Object), { id: 's1', toolName: 'test-tool' });
+        expect(dgraphService.mutation).toHaveBeenCalledWith(
+            expect.any(Object),
+            expect.objectContaining({
+                toolName: 'test-tool',
+                toolDescription: 'Description',
+                workspaceId: 'w1',
+                mcpServerId: 's1',
+            })
+        );
+        expect(result.id).toBe('t1');
+    });
+
+    it('upserTool updates existing tool', async () => {
+        const tool = { id: 't1', name: 'test-tool' } as unknown as dgraphResolversTypes.McpTool;
+        const mcpServer = { id: 's1', workspace: { id: 'w1' }, tools: [tool] } as unknown as dgraphResolversTypes.McpServer;
+
+        dgraphService.query.mockResolvedValue({ getMCPServer: mcpServer });
+        dgraphService.mutation.mockResolvedValue({ updateMCPTool: { mCPTool: [tool] } });
+
+        const result = await runtimeRepository.upserTool('s1', 'test-tool', 'Updated Description', '{}', '{}');
+
+        expect(dgraphService.mutation).toHaveBeenCalledWith(
+            expect.any(Object),
+            expect.objectContaining({
+                toolId: 't1',
+                toolDescription: 'Updated Description',
+                status: 'ACTIVE',
+            })
+        );
+        expect(result.id).toBe('t1');
+    });
+
+    it('upserTool throws error when tool name is empty', async () => {
+        await expect(runtimeRepository.upserTool('s1', '', 'Description', '{}', '{}'))
+            .rejects.toThrow('Tool name is required');
+    });
+
+    it('upserTool throws error when MCP server not found', async () => {
+        dgraphService.query.mockResolvedValue({ getMCPServer: null });
+
+        await expect(runtimeRepository.upserTool('s1', 'test-tool', 'Description', '{}', '{}'))
+            .rejects.toThrow('MCP Server s1 not found');
+    });
+
+    it('addMCPServer links MCP server to runtime', async () => {
+        const runtime = { id: 'r1' } as unknown as dgraphResolversTypes.Runtime;
+        dgraphService.mutation.mockResolvedValue({ updateRuntime: { runtime: [runtime] } });
+
+        const result = await runtimeRepository.addMCPServer('r1', 's1');
+
+        expect(dgraphService.mutation).toHaveBeenCalledWith(
+            expect.any(Object),
+            { runtimeId: 'r1', mcpServerId: 's1' }
+        );
+        expect(result.id).toBe('r1');
+    });
+
+    it('getRuntime returns runtime by id', async () => {
+        const runtime = { id: 'r1', name: 'Test Runtime' } as unknown as dgraphResolversTypes.Runtime;
+        dgraphService.query.mockResolvedValue({ getRuntime: runtime });
+
+        const result = await runtimeRepository.getRuntime('r1');
+
+        expect(dgraphService.query).toHaveBeenCalledWith(expect.any(Object), { id: 'r1' });
+        expect(result.id).toBe('r1');
+    });
+
+    it('observeRoots returns roots array from runtime', async () => {
+        const runtime = { id: 'r1', roots: JSON.stringify([{ name: 'root1', uri: 'file:///test' }]) } as unknown as dgraphResolversTypes.Runtime;
+        const subject = new Subject<dgraphResolversTypes.Runtime>();
+        dgraphService.observe.mockReturnValue(subject.asObservable());
+
+        const results: { name: string; uri: string }[][] = [];
+        const subscription = runtimeRepository.observeRoots('r1').subscribe((roots) => results.push(roots));
+
+        subject.next(runtime);
+        expect(results[0]).toEqual([{ name: 'root1', uri: 'file:///test' }]);
+        subscription.unsubscribe();
+    });
+
+    it('observeRoots returns empty array when no roots', async () => {
+        const runtime = { id: 'r1', roots: null } as unknown as dgraphResolversTypes.Runtime;
+        const subject = new Subject<dgraphResolversTypes.Runtime>();
+        dgraphService.observe.mockReturnValue(subject.asObservable());
+
+        const results: { name: string; uri: string }[][] = [];
+        const subscription = runtimeRepository.observeRoots('r1').subscribe((roots) => results.push(roots));
+
+        subject.next(runtime);
+        expect(results[0]).toEqual([]);
+        subscription.unsubscribe();
+    });
+
+    it('observeMCPServersOnEdge returns MCP servers', async () => {
+        const runtime = { id: 'r1', mcpServers: [{ id: 's1' }] } as unknown as dgraphResolversTypes.Runtime;
+        const subject = new Subject<dgraphResolversTypes.Runtime>();
+        dgraphService.observe.mockReturnValue(subject.asObservable());
+
+        const results: dgraphResolversTypes.McpServer[][] = [];
+        const subscription = runtimeRepository.observeMCPServersOnEdge('r1').subscribe((servers) => results.push(servers));
+
+        subject.next(runtime);
+        expect(results[0]).toEqual([{ id: 's1' }]);
+        subscription.unsubscribe();
+    });
+
+    it('setInactive sets runtime inactive and tools inactive', async () => {
+        const tool = { id: 't1' } as unknown as dgraphResolversTypes.McpTool;
+        const mcpServer = { tools: [tool] } as unknown as dgraphResolversTypes.McpServer;
+        const runtime = { id: 'r1', mcpServers: [mcpServer] } as unknown as dgraphResolversTypes.Runtime;
+
+        dgraphService.mutation.mockResolvedValue({ updateRuntime: { runtime: [runtime] } });
+        mcpToolRepository.setStatus = vi.fn().mockResolvedValue(undefined);
+
+        const result = await runtimeRepository.setInactive('r1');
+
+        expect(dgraphService.mutation).toHaveBeenCalledWith(expect.any(Object), { id: 'r1' });
+        expect(mcpToolRepository.setStatus).toHaveBeenCalledWith('t1', 'INACTIVE');
+        expect(result?.id).toBe('r1');
+    });
+
+    it('setInactive handles runtime not found gracefully', async () => {
+        dgraphService.mutation.mockResolvedValue({ updateRuntime: { runtime: [] } });
+
+        const result = await runtimeRepository.setInactive('r1');
+
+        expect(result).toBeUndefined();
+    });
+
+    it('findActive returns active runtimes', async () => {
+        const runtimes = [{ id: 'r1' }, { id: 'r2' }] as unknown as dgraphResolversTypes.Runtime[];
+        dgraphService.query.mockResolvedValue({ queryRuntime: runtimes });
+
+        const result = await runtimeRepository.findActive();
+
+        expect(dgraphService.query).toHaveBeenCalled();
+        expect(result).toEqual(runtimes);
+    });
+
+    it('setActive sets runtime active with process info', async () => {
+        const runtime = { id: 'r1', status: 'ACTIVE' } as unknown as dgraphResolversTypes.Runtime;
+        dgraphService.mutation.mockResolvedValue({ updateRuntime: { runtime: [runtime] } });
+
+        const result = await runtimeRepository.setActive('r1', {
+            pid: 'pid123',
+            hostIP: '192.168.1.1',
+            hostname: 'hostname',
+        });
+
+        expect(dgraphService.mutation).toHaveBeenCalledWith(
+            expect.any(Object),
+            {
+                id: 'r1',
+                processId: 'pid123',
+                hostIP: '192.168.1.1',
+                hostname: 'hostname',
+            }
+        );
+        expect(result.id).toBe('r1');
+    });
+
+    it('updateLastSeen updates runtime last seen timestamp', async () => {
+        const runtime = { id: 'r1', lastSeenAt: '2021-01-01T00:00:00Z' } as unknown as dgraphResolversTypes.Runtime;
+        dgraphService.mutation.mockResolvedValue({ updateRuntime: { runtime: [runtime] } });
+
+        const result = await runtimeRepository.updateLastSeen('r1');
+
+        expect(dgraphService.mutation).toHaveBeenCalledWith(
+            expect.any(Object),
+            expect.objectContaining({ id: 'r1', now: expect.any(String) })
+        );
+        expect(result.id).toBe('r1');
+    });
+
+    it('setRoots validates and sets runtime roots', async () => {
+        const runtime = { id: 'r1' } as unknown as dgraphResolversTypes.Runtime;
+        const roots = [{ name: 'root1', uri: 'file:///test' }];
+        dgraphService.mutation.mockResolvedValue({ updateRuntime: { runtime: [runtime] } });
+
+        const result = await runtimeRepository.setRoots('r1', roots);
+
+        expect(dgraphService.mutation).toHaveBeenCalledWith(
+            expect.any(Object),
+            { id: 'r1', roots: JSON.stringify(roots) }
+        );
+        expect(result.id).toBe('r1');
+    });
+
+    it('setRoots throws error for invalid root', async () => {
+        const invalidRoots = [{ name: '', uri: 'file:///test' }];
+
+        await expect(runtimeRepository.setRoots('r1', invalidRoots))
+            .rejects.toThrow('Invalid root');
+    });
+
+
+    it('findByName returns runtime by name in workspace', async () => {
+        const runtime = { id: 'r1', name: 'test-runtime' } as unknown as dgraphResolversTypes.Runtime;
+        const workspace = { runtimes: [runtime] } as unknown as dgraphResolversTypes.Workspace;
+        dgraphService.query.mockResolvedValue({ getWorkspace: workspace });
+
+        const result = await runtimeRepository.findByName('workspace', 'w1', 'test-runtime');
+
+        expect(dgraphService.query).toHaveBeenCalledWith(
+            expect.any(Object),
+            { workspaceId: 'w1', name: 'test-runtime' }
+        );
+        expect(result?.id).toBe('r1');
+    });
+
+    it('findByName returns undefined when runtime not found', async () => {
+        const workspace = { runtimes: [] } as unknown as dgraphResolversTypes.Workspace;
+        dgraphService.query.mockResolvedValue({ getWorkspace: workspace });
+
+        const result = await runtimeRepository.findByName('workspace', 'w1', 'nonexistent');
+
+        expect(result).toBeUndefined();
+    });
+
+    it('observeCapabilities returns runtime with tools', async () => {
+        const runtime = { id: 'r1', type: 'MCP' } as unknown as dgraphResolversTypes.Runtime;
+        const subject = new Subject<dgraphResolversTypes.Runtime>();
+        dgraphService.observe.mockReturnValue(subject.asObservable());
+
+        const results: dgraphResolversTypes.Runtime[] = [];
+        const subscription = runtimeRepository.observeCapabilities('r1').subscribe((runtime) => results.push(runtime));
+
+        subject.next(runtime);
+        expect(results[0].id).toBe('r1');
+        subscription.unsubscribe();
+    });
+});

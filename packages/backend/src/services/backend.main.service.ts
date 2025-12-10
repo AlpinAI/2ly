@@ -125,6 +125,9 @@ export class MainService extends Service {
       this.logger.info('Resetting all data');
       const dgraphService = container.get(DGraphService) as DGraphService;
       try {
+        // Stop observing BEFORE dropping data to prevent subscription errors
+        this.systemRepository.stopObservingRuntimes();
+
         // Reset all runtime instances and notify them to reconnect
         await this.runtimeService.resetRuntimes();
 
@@ -132,8 +135,6 @@ export class MainService extends Service {
         await dgraphService.dropAll();
         await dgraphService.initSchema(true);
         await this.initInstance();
-        // Reset the observed runtimes in system repository
-        this.systemRepository.stopObservingRuntimes();
 
         res.send({ response: 'OK' });
       } catch (error) {

@@ -1,0 +1,9 @@
+mutation UpdateUserLastLogin($id: ID!, $now: DateTime!) {
+  updateUser(input: { filter: { id: [$id] }, set: { lastLoginAt: $now, failedLoginAttempts: 0 } }) {
+    user {
+      id
+      email
+      lastLoginAt
+    }
+  }
+}
