@@ -1,0 +1,18 @@
+mutation ConfigureOAuthProvider(
+  $workspaceId: ID!
+  $provider: OAuthProviderType!
+  $clientId: String!
+  $clientSecret: String!
+  $tenantId: String
+) {
+  configureOAuthProvider(
+    workspaceId: $workspaceId
+    provider: $provider
+    clientId: $clientId
+    clientSecret: $clientSecret
+    tenantId: $tenantId
+  ) {
+    valid
+    error
+  }
+}

@@ -106,6 +106,25 @@ export enum McpTransportType {
   Stream = 'STREAM'
 }
 
+export type OAuthProviderConfig = {
+  clientId: Scalars['String']['output'];
+  createdAt: Scalars['DateTime']['output'];
+  enabled: Scalars['Boolean']['output'];
+  encryptedClientSecret: Scalars['String']['output'];
+  id: Scalars['ID']['output'];
+  provider: OAuthProviderType;
+  tenantId?: Maybe<Scalars['String']['output']>;
+  updatedAt: Scalars['DateTime']['output'];
+  workspace: Workspace;
+};
+
+export enum OAuthProviderType {
+  Google = 'GOOGLE',
+  Microsoft = 'MICROSOFT',
+  Notion = 'NOTION',
+  Supabase = 'SUPABASE'
+}
+
 export type OnboardingStep = {
   createdAt: Scalars['DateTime']['output'];
   id: Scalars['ID']['output'];
@@ -250,6 +269,7 @@ export type Workspace = {
   mcpServers?: Maybe<Array<McpServer>>;
   mcpTools?: Maybe<Array<McpTool>>;
   name: Scalars['String']['output'];
+  oauthProviders?: Maybe<Array<OAuthProviderConfig>>;
   onboardingSteps?: Maybe<Array<OnboardingStep>>;
   registryServers?: Maybe<Array<McpRegistryServer>>;
   runtimes?: Maybe<Array<Runtime>>;
@@ -344,6 +364,8 @@ export type ResolversTypes = ResolversObject<{
   MCPServer: ResolverTypeWrapper<McpServer>;
   MCPTool: ResolverTypeWrapper<McpTool>;
   MCPTransportType: McpTransportType;
+  OAuthProviderConfig: ResolverTypeWrapper<OAuthProviderConfig>;
+  OAuthProviderType: OAuthProviderType;
   OnboardingStep: ResolverTypeWrapper<OnboardingStep>;
   OnboardingStepStatus: OnboardingStepStatus;
   OnboardingStepType: OnboardingStepType;
@@ -372,6 +394,7 @@ export type ResolversParentTypes = ResolversObject<{
   MCPRegistryServer: McpRegistryServer;
   MCPServer: McpServer;
   MCPTool: McpTool;
+  OAuthProviderConfig: OAuthProviderConfig;
   OnboardingStep: OnboardingStep;
   Runtime: Runtime;
   Session: Session;
@@ -455,6 +478,19 @@ export type McpToolResolvers<ContextType = any, ParentType extends ResolversPare
   skills?: Resolver<Maybe<Array<ResolversTypes['Skill']>>, ParentType, ContextType>;
   status?: Resolver<ResolversTypes['ActiveStatus'], ParentType, ContextType>;
   toolCalls?: Resolver<Maybe<Array<ResolversTypes['ToolCall']>>, ParentType, ContextType>;
+  workspace?: Resolver<ResolversTypes['Workspace'], ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+}>;
+
+export type OAuthProviderConfigResolvers<ContextType = any, ParentType extends ResolversParentTypes['OAuthProviderConfig'] = ResolversParentTypes['OAuthProviderConfig']> = ResolversObject<{
+  clientId?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  createdAt?: Resolver<ResolversTypes['DateTime'], ParentType, ContextType>;
+  enabled?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
+  encryptedClientSecret?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
+  provider?: Resolver<ResolversTypes['OAuthProviderType'], ParentType, ContextType>;
+  tenantId?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  updatedAt?: Resolver<ResolversTypes['DateTime'], ParentType, ContextType>;
   workspace?: Resolver<ResolversTypes['Workspace'], ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
@@ -581,6 +617,7 @@ export type WorkspaceResolvers<ContextType = any, ParentType extends ResolversPa
   mcpServers?: Resolver<Maybe<Array<ResolversTypes['MCPServer']>>, ParentType, ContextType>;
   mcpTools?: Resolver<Maybe<Array<ResolversTypes['MCPTool']>>, ParentType, ContextType>;
   name?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  oauthProviders?: Resolver<Maybe<Array<ResolversTypes['OAuthProviderConfig']>>, ParentType, ContextType>;
   onboardingSteps?: Resolver<Maybe<Array<ResolversTypes['OnboardingStep']>>, ParentType, ContextType>;
   registryServers?: Resolver<Maybe<Array<ResolversTypes['MCPRegistryServer']>>, ParentType, ContextType>;
   runtimes?: Resolver<Maybe<Array<ResolversTypes['Runtime']>>, ParentType, ContextType>;
@@ -597,6 +634,7 @@ export type Resolvers<ContextType = any> = ResolversObject<{
   MCPRegistryServer?: McpRegistryServerResolvers<ContextType>;
   MCPServer?: McpServerResolvers<ContextType>;
   MCPTool?: McpToolResolvers<ContextType>;
+  OAuthProviderConfig?: OAuthProviderConfigResolvers<ContextType>;
   OnboardingStep?: OnboardingStepResolvers<ContextType>;
   Runtime?: RuntimeResolvers<ContextType>;
   Session?: SessionResolvers<ContextType>;

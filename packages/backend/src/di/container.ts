@@ -35,6 +35,7 @@ import {
   SkillRepository,
   IdentityRepository,
   AIProviderRepository,
+  OAuthProviderRepository,
 } from '../repositories';
 import { JwtService, AuthenticationService, AccountSecurityService, PasswordPolicyService } from '../services/auth';
 import { SecurityMiddleware, RateLimitMiddleware, GraphQLAuthMiddleware } from '../middleware';
@@ -94,6 +95,7 @@ const start = () => {
   container.bind(SkillRepository).toSelf().inSingletonScope();
   container.bind(IdentityRepository).toSelf().inSingletonScope();
   container.bind(AIProviderRepository).toSelf().inSingletonScope();
+  container.bind(OAuthProviderRepository).toSelf().inSingletonScope();
 
   // Init authentication services
   container.bind(JwtService).toSelf().inSingletonScope();

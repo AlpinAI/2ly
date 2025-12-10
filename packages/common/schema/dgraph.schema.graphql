@@ -54,6 +54,7 @@ type Workspace @withSubscription {
   onboardingSteps: [OnboardingStep!]
   aiProviders: [AIProviderConfig!] @hasInverse(field: workspace)
   defaultAIModel: String
+  oauthProviders: [OAuthProviderConfig!] @hasInverse(field: workspace)
 }
 
 type MCPRegistryServer @withSubscription {
@@ -269,6 +270,27 @@ type AIProviderConfig @withSubscription {
   baseUrl: String
   # Cached list of available models (refreshed on validation)
   availableModels: [String!]
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
+# OAuth Provider Configuration - B2B OAuth integrations
+enum OAuthProviderType {
+  GOOGLE
+  MICROSOFT
+  NOTION
+}
+
+type OAuthProviderConfig @withSubscription {
+  id: ID!
+  workspace: Workspace! @hasInverse(field: oauthProviders)
+  provider: OAuthProviderType! @search
+  enabled: Boolean! @search
+  clientId: String!
+  # Encrypted client secret - never exposed via Apollo schema
+  encryptedClientSecret: String!
+  # Microsoft-specific: Azure AD tenant ID
+  tenantId: String
   createdAt: DateTime!
   updatedAt: DateTime!
 }

@@ -53,6 +53,7 @@ type Workspace {
   onboardingSteps: [OnboardingStep!]
   aiProviders: [AIProviderConfig!]
   defaultAIModel: String
+  oauthProviders: [OAuthProviderConfig!]
 }
 
 type MCPServer {
@@ -255,6 +256,29 @@ type AIProviderValidation {
   availableModels: [String!]
 }
 
+# OAuth Provider Configuration - B2B OAuth integrations
+enum OAuthProviderType {
+  GOOGLE
+  MICROSOFT
+  NOTION
+}
+
+type OAuthProviderConfig {
+  id: ID!
+  provider: OAuthProviderType!
+  enabled: Boolean!
+  clientId: String!
+  # Note: clientSecret is NOT exposed - only clientId for display
+  tenantId: String
+  createdAt: Date!
+  updatedAt: Date!
+}
+
+type OAuthProviderValidation {
+  valid: Boolean!
+  error: String
+}
+
 type AIModel {
   id: String!
   name: String!
@@ -321,6 +345,9 @@ type Query {
   getAIProvider(workspaceId: ID!, provider: AIProviderType!): AIProviderConfig
   # Get all available models from all configured providers (format: "provider/model")
   getAIModels(workspaceId: ID!): [String!]!
+  # OAuth Provider queries
+  getOAuthProviders(workspaceId: ID!): [OAuthProviderConfig!]!
+  getOAuthProvider(workspaceId: ID!, provider: OAuthProviderType!): OAuthProviderConfig
 }
 
 type CallToolResult {
@@ -425,6 +452,19 @@ type Mutation {
 
   # Chat with a specific model (format: "provider/model-name")
   chatWithModel(workspaceId: ID!, model: String!, message: String!): String!
+
+  # OAuth Provider mutations
+  configureOAuthProvider(
+    workspaceId: ID!
+    provider: OAuthProviderType!
+    clientId: String!
+    clientSecret: String!
+    tenantId: String
+  ): OAuthProviderValidation!
+
+  updateOAuthProviderEnabled(providerId: ID!, enabled: Boolean!): OAuthProviderConfig!
+
+  removeOAuthProvider(providerId: ID!): Boolean!
 }
 
 input UpdateSkillSmartConfigInput {
