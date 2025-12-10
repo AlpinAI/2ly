@@ -1,0 +1,31 @@
+# Identity and key management types
+
+type IdentityKey @withSubscription {
+  id: ID!
+  # Key prefixes:
+  # - WSK_____ (Workspace Key)
+  # - RTK_____ (Runtime Key)
+  # - SKL_____ (Skill Key)
+  key: String! @search(by: [hash]) @id
+  relatedId: String! @search(by: [hash])
+  createdAt: DateTime!
+  expiresAt: DateTime @search
+  revokedAt: DateTime @search
+  description: String
+  #DGRAPH_ONLY_START
+  permissions: String
+  #DGRAPH_ONLY_END
+}
+
+#APOLLO_ONLY_START
+extend type Query {
+  workspaceKeys(workspaceId: ID!): [IdentityKey!]!
+  skillKey(skillId: ID!): IdentityKey
+  keyValue(keyId: ID!): String!
+}
+
+extend type Mutation {
+  createWorkspaceKey(workspaceId: ID!, description: String!): IdentityKey!
+  revokeKey(keyId: ID!): IdentityKey!
+}
+#APOLLO_ONLY_END

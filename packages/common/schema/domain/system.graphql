@@ -1,0 +1,65 @@
+# System and Workspace - core workspace management types
+
+type System @withSubscription {
+  id: ID!
+  initialized: Boolean!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+  #DGRAPH_ONLY_START
+  instanceId: String!
+  workspaces: [Workspace!] @hasInverse(field: system)
+  admins: [User!]
+  #DGRAPH_ONLY_END
+  runtimes: [Runtime!] @hasInverse(field: system)
+  defaultWorkspace: Workspace
+}
+
+type Workspace @withSubscription {
+  id: ID!
+  name: String! @search(by: [hash])
+  createdAt: DateTime!
+  mcpServers: [MCPServer!] @hasInverse(field: workspace)
+  mcpTools: [MCPTool!] @hasInverse(field: workspace)
+  runtimes: [Runtime!] @hasInverse(field: workspace)
+  skills: [Skill!] @hasInverse(field: workspace)
+  registryServers: [MCPRegistryServer!] @hasInverse(field: workspace)
+  onboardingSteps: [OnboardingStep!]
+  aiProviders: [AIProviderConfig!] @hasInverse(field: workspace)
+  defaultAIModel: String
+  oauthProviders: [OAuthProviderConfig!] @hasInverse(field: workspace)
+  #DGRAPH_ONLY_START
+  admins: [User!] @hasInverse(field: adminOfWorkspaces)
+  users: [User!] @hasInverse(field: membersOfWorkspaces)
+  system: System! @hasInverse(field: workspaces)
+  userOAuthConnections: [UserOAuthConnection!] @hasInverse(field: workspace)
+  #DGRAPH_ONLY_END
+}
+
+#APOLLO_ONLY_START
+type Infra {
+  nats: String
+  remoteMCP: String
+}
+
+# Base types for extend
+type Query
+type Mutation
+type Subscription
+
+extend type Query {
+  workspaces: [Workspace!]!
+  workspace(workspaceId: ID!): Workspace
+  system: System
+  infra: Infra!
+}
+
+extend type Mutation {
+  initSystem(adminPassword: String!, email: String!): System!
+  updateWorkspace(id: ID!, name: String!): Workspace!
+}
+
+extend type Subscription {
+  workspaces: [Workspace!]
+  workspace(workspaceId: ID!): Workspace
+}
+#APOLLO_ONLY_END

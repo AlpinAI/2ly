@@ -51,13 +51,13 @@ export enum ActiveStatus {
 }
 
 export type AuthPayload = {
-  accessToken: Scalars['String']['output'];
+  accessToken?: Maybe<Scalars['String']['output']>;
   errors?: Maybe<Array<Scalars['String']['output']>>;
-  expiresIn: Scalars['Int']['output'];
-  refreshToken: Scalars['String']['output'];
-  success: Scalars['Boolean']['output'];
+  expiresIn?: Maybe<Scalars['Int']['output']>;
+  refreshToken?: Maybe<Scalars['String']['output']>;
+  success?: Maybe<Scalars['Boolean']['output']>;
   tokens?: Maybe<AuthTokens>;
-  user: User;
+  user?: Maybe<User>;
 };
 
 export type AuthTokens = {
@@ -676,10 +676,10 @@ export type RefreshTokenInput = {
 };
 
 export type RefreshTokenPayload = {
-  accessToken: Scalars['String']['output'];
+  accessToken?: Maybe<Scalars['String']['output']>;
   errors?: Maybe<Array<Scalars['String']['output']>>;
-  expiresIn: Scalars['Int']['output'];
-  success: Scalars['Boolean']['output'];
+  expiresIn?: Maybe<Scalars['Int']['output']>;
+  success?: Maybe<Scalars['Boolean']['output']>;
 };
 
 export type RegisterUserInput = {
@@ -1090,13 +1090,13 @@ export type AiProviderValidationResolvers<ContextType = object, ParentType exten
 };
 
 export type AuthPayloadResolvers<ContextType = object, ParentType extends ResolversParentTypes['AuthPayload'] = ResolversParentTypes['AuthPayload']> = {
-  accessToken?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  accessToken?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   errors?: Resolver<Maybe<Array<ResolversTypes['String']>>, ParentType, ContextType>;
-  expiresIn?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
-  refreshToken?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
-  success?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
+  expiresIn?: Resolver<Maybe<ResolversTypes['Int']>, ParentType, ContextType>;
+  refreshToken?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  success?: Resolver<Maybe<ResolversTypes['Boolean']>, ParentType, ContextType>;
   tokens?: Resolver<Maybe<ResolversTypes['AuthTokens']>, ParentType, ContextType>;
-  user?: Resolver<ResolversTypes['User'], ParentType, ContextType>;
+  user?: Resolver<Maybe<ResolversTypes['User']>, ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 };
 
@@ -1300,10 +1300,10 @@ export type QueryResolvers<ContextType = object, ParentType extends ResolversPar
 };
 
 export type RefreshTokenPayloadResolvers<ContextType = object, ParentType extends ResolversParentTypes['RefreshTokenPayload'] = ResolversParentTypes['RefreshTokenPayload']> = {
-  accessToken?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  accessToken?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   errors?: Resolver<Maybe<Array<ResolversTypes['String']>>, ParentType, ContextType>;
-  expiresIn?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
-  success?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
+  expiresIn?: Resolver<Maybe<ResolversTypes['Int']>, ParentType, ContextType>;
+  success?: Resolver<Maybe<ResolversTypes['Boolean']>, ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 };
 

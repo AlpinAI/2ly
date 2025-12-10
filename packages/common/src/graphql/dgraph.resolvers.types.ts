@@ -63,7 +63,7 @@ export type McpRegistryServer = {
   id: Scalars['ID']['output'];
   lastSeenAt: Scalars['DateTime']['output'];
   name: Scalars['String']['output'];
-  packages: Scalars['String']['output'];
+  packages?: Maybe<Scalars['String']['output']>;
   remotes?: Maybe<Scalars['String']['output']>;
   repositoryUrl: Scalars['String']['output'];
   title: Scalars['String']['output'];
@@ -463,7 +463,7 @@ export type McpRegistryServerResolvers<ContextType = any, ParentType extends Res
   id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
   lastSeenAt?: Resolver<ResolversTypes['DateTime'], ParentType, ContextType>;
   name?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
-  packages?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  packages?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   remotes?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   repositoryUrl?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   title?: Resolver<ResolversTypes['String'], ParentType, ContextType>;

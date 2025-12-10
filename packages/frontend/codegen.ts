@@ -27,8 +27,8 @@
 import type { CodegenConfig } from '@graphql-codegen/cli';
 
 const config: CodegenConfig = {
-  // WHY: Point to common schema as the source of truth
-  schema: '../common/schema/apollo.schema.graphql',
+  // WHY: Point to common schema build output as the source of truth
+  schema: '../common/schema/build/apollo.schema.graphql',
 
   // WHY: Scan for all GraphQL operations in our source code
   // Operations include queries, mutations, and subscriptions

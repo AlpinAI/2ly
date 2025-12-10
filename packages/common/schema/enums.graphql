@@ -1,0 +1,66 @@
+# Shared enums for Dgraph and Apollo schemas
+
+enum ActiveStatus {
+  ACTIVE
+  INACTIVE
+}
+
+enum ToolCallStatus {
+  PENDING
+  COMPLETED
+  FAILED
+}
+
+enum MCPTransportType {
+  STDIO
+  SSE
+  STREAM
+}
+
+enum ExecutionTarget {
+  AGENT
+  EDGE
+}
+
+enum RuntimeType {
+  EDGE
+  MCP
+}
+
+enum SkillMode {
+  LIST
+  OPTIMIZED
+  SMART
+}
+
+enum OnboardingStepType {
+  ONBOARDING
+  ANNOUNCEMENT
+  LEARNING
+}
+
+enum OnboardingStepStatus {
+  PENDING
+  COMPLETED
+  DISMISSED
+}
+
+enum AIProviderType {
+  OPENAI
+  ANTHROPIC
+  GOOGLE
+  OLLAMA
+}
+
+enum OAuthProviderType {
+  GOOGLE
+  MICROSOFT
+  NOTION
+}
+
+#APOLLO_ONLY_START
+enum OrderDirection {
+  ASC
+  DESC
+}
+#APOLLO_ONLY_END

@@ -54,13 +54,13 @@ export enum ActiveStatus {
 
 export type AuthPayload = {
   __typename: 'AuthPayload';
-  accessToken: Scalars['String']['output'];
+  accessToken: Maybe<Scalars['String']['output']>;
   errors: Maybe<Array<Scalars['String']['output']>>;
-  expiresIn: Scalars['Int']['output'];
-  refreshToken: Scalars['String']['output'];
-  success: Scalars['Boolean']['output'];
+  expiresIn: Maybe<Scalars['Int']['output']>;
+  refreshToken: Maybe<Scalars['String']['output']>;
+  success: Maybe<Scalars['Boolean']['output']>;
   tokens: Maybe<AuthTokens>;
-  user: User;
+  user: Maybe<User>;
 };
 
 export type AuthTokens = {
@@ -695,10 +695,10 @@ export type RefreshTokenInput = {
 
 export type RefreshTokenPayload = {
   __typename: 'RefreshTokenPayload';
-  accessToken: Scalars['String']['output'];
+  accessToken: Maybe<Scalars['String']['output']>;
   errors: Maybe<Array<Scalars['String']['output']>>;
-  expiresIn: Scalars['Int']['output'];
-  success: Scalars['Boolean']['output'];
+  expiresIn: Maybe<Scalars['Int']['output']>;
+  success: Maybe<Scalars['Boolean']['output']>;
 };
 
 export type RegisterUserInput = {
@@ -977,7 +977,7 @@ export type LoginMutationVariables = Exact<{
 }>;
 
 
-export type LoginMutation = { login: { __typename: 'AuthPayload', success: boolean, errors: Array<string> | null, user: { __typename: 'User', id: string, email: string }, tokens: { __typename: 'AuthTokens', accessToken: string, refreshToken: string } | null } };
+export type LoginMutation = { login: { __typename: 'AuthPayload', success: boolean | null, errors: Array<string> | null, user: { __typename: 'User', id: string, email: string } | null, tokens: { __typename: 'AuthTokens', accessToken: string, refreshToken: string } | null } };
 
 export type LogoutMutationVariables = Exact<{
   input: LogoutInput;
@@ -991,7 +991,7 @@ export type RefreshTokenMutationVariables = Exact<{
 }>;
 
 
-export type RefreshTokenMutation = { refreshToken: { __typename: 'RefreshTokenPayload', success: boolean, accessToken: string, errors: Array<string> | null } };
+export type RefreshTokenMutation = { refreshToken: { __typename: 'RefreshTokenPayload', success: boolean | null, accessToken: string | null, errors: Array<string> | null } };
 
 export type RegisterMutationVariables = Exact<{
   input: RegisterUserInput;

@@ -1,0 +1,46 @@
+# AI Provider Configuration - BYOK (Bring Your Own Key) support
+
+type AIProviderConfig @withSubscription {
+  id: ID!
+  #DGRAPH_ONLY_START
+  workspace: Workspace! @hasInverse(field: aiProviders)
+  encryptedApiKey: String
+  #DGRAPH_ONLY_END
+  provider: AIProviderType! @search
+  baseUrl: String
+  availableModels: [String!]
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
+#APOLLO_ONLY_START
+type AIProviderValidation {
+  valid: Boolean!
+  error: String
+  availableModels: [String!]
+}
+
+type AIModel {
+  id: String!
+  name: String!
+  contextWindow: Int
+}
+
+extend type Query {
+  getAIProviders(workspaceId: ID!): [AIProviderConfig!]!
+  getAIProvider(workspaceId: ID!, provider: AIProviderType!): AIProviderConfig
+  getAIModels(workspaceId: ID!): [String!]!
+}
+
+extend type Mutation {
+  configureAIProvider(
+    workspaceId: ID!
+    provider: AIProviderType!
+    apiKey: String
+    baseUrl: String
+  ): AIProviderValidation!
+  setDefaultAIModel(workspaceId: ID!, defaultModel: String!): Boolean!
+  removeAIProvider(providerId: ID!): Boolean!
+  chatWithModel(workspaceId: ID!, model: String!, message: String!): String!
+}
+#APOLLO_ONLY_END
