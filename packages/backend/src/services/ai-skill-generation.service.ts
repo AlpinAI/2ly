@@ -1,5 +1,5 @@
 import { injectable, inject } from 'inversify';
-import { AIProviderService, LoggerService, type AIProviderType } from '@skilder-ai/common';
+import { AIProviderService, LoggerService } from '@skilder-ai/common';
 import pino from 'pino';
 import { AIProviderRepository } from '../repositories/ai-provider/ai-provider.repository';
 import { AIConfigRepository } from '../repositories/ai-config/ai-config.repository';
