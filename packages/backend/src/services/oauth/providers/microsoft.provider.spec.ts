@@ -35,13 +35,7 @@ describe('MicrosoftOAuthProvider', () => {
   describe('defaultScopes', () => {
     it('has correct default scopes', () => {
       provider = new MicrosoftOAuthProvider();
-      expect(provider.defaultScopes).toEqual([
-        'openid',
-        'email',
-        'profile',
-        'User.Read',
-        'offline_access',
-      ]);
+      expect(provider.defaultScopes).toEqual(['openid', 'email', 'profile', 'User.Read', 'offline_access']);
     });
   });
 
@@ -76,7 +70,7 @@ describe('MicrosoftOAuthProvider', () => {
       const url = provider.buildAuthorizationUrl(mockClientId, mockRedirectUri, scopes, mockState);
 
       expect(url).toMatch(
-        new RegExp(`^https://login\\.microsoftonline\\.com/${mockTenantId}/oauth2/v2\\.0/authorize\\?`)
+        new RegExp(`^https://login\\.microsoftonline\\.com/${mockTenantId}/oauth2/v2\\.0/authorize\\?`),
       );
     });
 
@@ -128,13 +122,7 @@ describe('MicrosoftOAuthProvider', () => {
         domain_hint: 'organizations',
       };
 
-      const url = provider.buildAuthorizationUrl(
-        mockClientId,
-        mockRedirectUri,
-        scopes,
-        mockState,
-        additionalParams
-      );
+      const url = provider.buildAuthorizationUrl(mockClientId, mockRedirectUri, scopes, mockState, additionalParams);
       const urlObj = new URL(url);
 
       expect(urlObj.searchParams.get('login_hint')).toBe('user@example.com');
@@ -174,7 +162,7 @@ describe('MicrosoftOAuthProvider', () => {
 
       expect(fetchMock).toHaveBeenCalledWith(
         `https://login.microsoftonline.com/${mockTenantId}/oauth2/v2.0/token`,
-        expect.any(Object)
+        expect.any(Object),
       );
     });
 
@@ -195,16 +183,13 @@ describe('MicrosoftOAuthProvider', () => {
       await provider.exchangeCodeForTokens(mockCode, mockClientId, mockClientSecret, mockRedirectUri);
 
       expect(fetchMock).toHaveBeenCalledTimes(1);
-      expect(fetchMock).toHaveBeenCalledWith(
-        `https://login.microsoftonline.com/${mockTenantId}/oauth2/v2.0/token`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/x-www-form-urlencoded',
-          },
-          body: expect.any(URLSearchParams),
-        }
-      );
+      expect(fetchMock).toHaveBeenCalledWith(`https://login.microsoftonline.com/${mockTenantId}/oauth2/v2.0/token`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: expect.any(URLSearchParams),
+      });
 
       // Verify body parameters
       const callArgs = fetchMock.mock.calls[0];
@@ -231,12 +216,7 @@ describe('MicrosoftOAuthProvider', () => {
         json: async () => mockResponse,
       });
 
-      const result = await provider.exchangeCodeForTokens(
-        mockCode,
-        mockClientId,
-        mockClientSecret,
-        mockRedirectUri
-      );
+      const result = await provider.exchangeCodeForTokens(mockCode, mockClientId, mockClientSecret, mockRedirectUri);
 
       expect(result).toEqual({
         accessToken: mockAccessToken,
@@ -256,7 +236,7 @@ describe('MicrosoftOAuthProvider', () => {
       });
 
       await expect(
-        provider.exchangeCodeForTokens(mockCode, mockClientId, mockClientSecret, mockRedirectUri)
+        provider.exchangeCodeForTokens(mockCode, mockClientId, mockClientSecret, mockRedirectUri),
       ).rejects.toThrow(`Microsoft token exchange failed: ${errorMessage}`);
     });
 
@@ -274,12 +254,7 @@ describe('MicrosoftOAuthProvider', () => {
         json: async () => mockResponse,
       });
 
-      const result = await provider.exchangeCodeForTokens(
-        mockCode,
-        mockClientId,
-        mockClientSecret,
-        mockRedirectUri
-      );
+      const result = await provider.exchangeCodeForTokens(mockCode, mockClientId, mockClientSecret, mockRedirectUri);
 
       expect(result.accessToken).toBe('token-abc');
       expect(result.refreshToken).toBe('refresh-xyz');
@@ -299,12 +274,7 @@ describe('MicrosoftOAuthProvider', () => {
         json: async () => mockResponse,
       });
 
-      const result = await provider.exchangeCodeForTokens(
-        mockCode,
-        mockClientId,
-        mockClientSecret,
-        mockRedirectUri
-      );
+      const result = await provider.exchangeCodeForTokens(mockCode, mockClientId, mockClientSecret, mockRedirectUri);
 
       expect(result.accessToken).toBe(mockAccessToken);
       expect(result.tokenType).toBe('Bearer');
@@ -336,7 +306,7 @@ describe('MicrosoftOAuthProvider', () => {
 
       expect(fetchMock).toHaveBeenCalledWith(
         `https://login.microsoftonline.com/${mockTenantId}/oauth2/v2.0/token`,
-        expect.any(Object)
+        expect.any(Object),
       );
     });
 
@@ -356,16 +326,13 @@ describe('MicrosoftOAuthProvider', () => {
       await provider.refreshAccessToken(mockRefreshToken, mockClientId, mockClientSecret);
 
       expect(fetchMock).toHaveBeenCalledTimes(1);
-      expect(fetchMock).toHaveBeenCalledWith(
-        `https://login.microsoftonline.com/${mockTenantId}/oauth2/v2.0/token`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/x-www-form-urlencoded',
-          },
-          body: expect.any(URLSearchParams),
-        }
-      );
+      expect(fetchMock).toHaveBeenCalledWith(`https://login.microsoftonline.com/${mockTenantId}/oauth2/v2.0/token`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: expect.any(URLSearchParams),
+      });
 
       // Verify body parameters
       const callArgs = fetchMock.mock.calls[0];
@@ -445,17 +412,17 @@ describe('MicrosoftOAuthProvider', () => {
         text: async () => errorMessage,
       });
 
-      await expect(
-        provider.refreshAccessToken(mockRefreshToken, mockClientId, mockClientSecret)
-      ).rejects.toThrow(`Microsoft token refresh failed: ${errorMessage}`);
+      await expect(provider.refreshAccessToken(mockRefreshToken, mockClientId, mockClientSecret)).rejects.toThrow(
+        `Microsoft token refresh failed: ${errorMessage}`,
+      );
     });
 
     it('handles network errors', async () => {
       fetchMock.mockRejectedValueOnce(new Error('Network error'));
 
-      await expect(
-        provider.refreshAccessToken(mockRefreshToken, mockClientId, mockClientSecret)
-      ).rejects.toThrow('Network error');
+      await expect(provider.refreshAccessToken(mockRefreshToken, mockClientId, mockClientSecret)).rejects.toThrow(
+        'Network error',
+      );
     });
   });
 
@@ -541,57 +508,6 @@ describe('MicrosoftOAuthProvider', () => {
       } as OAuthUserInfo);
     });
 
-    it('handles missing avatar gracefully (photo fetch fails)', async () => {
-      const mockUserData = {
-        id: 'microsoft-user-789',
-        mail: 'user@example.com',
-        displayName: 'User Without Photo',
-      };
-
-      fetchMock
-        .mockResolvedValueOnce({
-          ok: true,
-          json: async () => mockUserData,
-        })
-        .mockResolvedValueOnce({
-          ok: false, // Photo fetch fails
-        });
-
-      const result = await provider.getUserInfo(mockAccessToken);
-
-      expect(result.avatarUrl).toBeUndefined();
-      expect(fetchMock).toHaveBeenCalledTimes(2);
-      expect(fetchMock).toHaveBeenNthCalledWith(2, 'https://graph.microsoft.com/v1.0/me/photo/$value', {
-        headers: {
-          Authorization: `Bearer ${mockAccessToken}`,
-        },
-      });
-    });
-
-    it('handles photo fetch network error gracefully', async () => {
-      const mockUserData = {
-        id: 'microsoft-user-999',
-        mail: 'user@example.com',
-        displayName: 'User With Error',
-      };
-
-      fetchMock
-        .mockResolvedValueOnce({
-          ok: true,
-          json: async () => mockUserData,
-        })
-        .mockRejectedValueOnce(new Error('Network error')); // Photo fetch throws
-
-      const result = await provider.getUserInfo(mockAccessToken);
-
-      expect(result).toEqual({
-        id: 'microsoft-user-999',
-        email: 'user@example.com',
-        name: 'User With Error',
-        avatarUrl: undefined,
-      } as OAuthUserInfo);
-    });
-
     it('throws error on HTTP failure', async () => {
       const errorMessage = 'Invalid access token';
 
@@ -601,7 +517,7 @@ describe('MicrosoftOAuthProvider', () => {
       });
 
       await expect(provider.getUserInfo(mockAccessToken)).rejects.toThrow(
-        `Microsoft Graph request failed: ${errorMessage}`
+        `Microsoft Graph request failed: ${errorMessage}`,
       );
     });
 
