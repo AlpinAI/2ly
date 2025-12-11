@@ -3,8 +3,7 @@ import { OAuthService } from './oauth.service';
 import { LoggerService, EncryptionService, dgraphResolversTypes } from '@skilder-ai/common';
 import { LoggerServiceMock } from '@skilder-ai/common/test/vitest';
 import { OAuthStateService, OAuthStatePayload } from './oauth-state.service';
-import { OAuthProviderRepository } from '../../repositories/oauth-provider.repository';
-import { UserOAuthConnectionRepository, DecryptedTokens } from '../../repositories/user-oauth-connection.repository';
+import { OAuthProviderRepository, UserOAuthConnectionRepository, DecryptedTokens } from '../../repositories';
 import { OAuthTokenResponse, OAuthUserInfo } from './providers';
 
 /**

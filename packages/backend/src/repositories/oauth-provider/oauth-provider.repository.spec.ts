@@ -4,7 +4,7 @@ import {
   type OAuthProviderConfigData,
   type OAuthProviderType,
 } from './oauth-provider.repository';
-import { DGraphService } from '../services/dgraph.service';
+import { DGraphService } from '../../services/dgraph.service';
 import { LoggerService, EncryptionService, dgraphResolversTypes } from '@skilder-ai/common';
 
 describe('OAuthProviderRepository', () => {
