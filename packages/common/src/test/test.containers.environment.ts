@@ -10,25 +10,23 @@
  * Can be used for both frontend (Playwright) and backend integration tests
  */
 
-import {
-  GenericContainer,
-  StartedTestContainer,
-  Network,
-  StartedNetwork,
-  Wait,
-} from 'testcontainers';
+import { GenericContainer, StartedTestContainer, Network, StartedNetwork, Wait } from 'testcontainers';
 import { generateKeyPairSync } from 'crypto';
 import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
 import { execSync } from 'child_process';
-import { TEST_ENCRYPTION_KEY, TEST_SYSTEM_KEY, TEST_RUNTIME_ROUTE, TEST_RUNTIME_STOP_ROUTE } from './test.containers.constants';
+import {
+  TEST_ENCRYPTION_KEY,
+  TEST_SYSTEM_KEY,
+  TEST_RUNTIME_ROUTE,
+  TEST_RUNTIME_STOP_ROUTE,
+} from './test.containers.constants';
 import { findProjectRoot, waitForHealth } from './test.containers.helpers';
 import { startControllerServer, registerRoute, callRoute } from './test.containers.web-server';
 import { testLog, testError } from './test.containers.logger';
 
 export interface TestEnvironmentConfig {
-
   /**
    * Project root directory (where packages/ folder is located)
    * @default Auto-detected by finding the closest package.json with workspaces
@@ -70,7 +68,7 @@ export interface TestEnvironmentServices {
   runtime?: {
     container: GenericContainer;
     startedContainer?: StartedTestContainer;
-  }
+  };
 }
 
 export class TestEnvironment {
@@ -136,7 +134,7 @@ export class TestEnvironment {
     try {
       const output = execSync(`docker image inspect ${imageName} --format='{{.Created}}'`, {
         encoding: 'utf-8',
-        stdio: ['pipe', 'pipe', 'pipe']
+        stdio: ['pipe', 'pipe', 'pipe'],
       }).trim();
 
       return new Date(output);
@@ -190,18 +188,14 @@ export class TestEnvironment {
 
     // Build Docker images in parallel (if needed)
     testLog(`Building backend and runtime Docker images in parallel...`);
-    const buildPromises: Promise<void>[] = [
-      this.buildBackendImage(),
-      this.buildRuntimeImage(),
-    ];
+    const buildPromises: Promise<void>[] = [this.buildBackendImage(), this.buildRuntimeImage()];
     await Promise.all(buildPromises);
     testLog('Backend and runtime Docker images built successfully');
-    
 
     // Start containers sequentially
     const backend = await this.startBackendContainer();
     this.services.backend = backend;
-    
+
     testLog('Test environment started successfully');
 
     registerRoute(TEST_RUNTIME_ROUTE, async (_request, reply) => {
@@ -210,7 +204,10 @@ export class TestEnvironment {
         reply.send({ status: 'ok', port });
       } catch (error) {
         testError(`Error starting runtime: ${error instanceof Error ? error.message : String(error)}`);
-        reply.send({ status: 'error', message: `Error starting runtime: ${error instanceof Error ? error.message : String(error)}` });
+        reply.send({
+          status: 'error',
+          message: `Error starting runtime: ${error instanceof Error ? error.message : String(error)}`,
+        });
       }
     });
 
@@ -220,7 +217,10 @@ export class TestEnvironment {
         reply.send({ status: 'ok' });
       } catch (error) {
         testError(`Error stopping runtime: ${error instanceof Error ? error.message : String(error)}`);
-        reply.send({ status: 'error', message: `Error stopping runtime: ${error instanceof Error ? error.message : String(error)}` });
+        reply.send({
+          status: 'error',
+          message: `Error stopping runtime: ${error instanceof Error ? error.message : String(error)}`,
+        });
       }
       reply.send({ status: 'ok' });
     });
@@ -240,12 +240,7 @@ export class TestEnvironment {
     const container = await new GenericContainer('nats:2.10-alpine')
       .withNetwork(this.network!)
       .withNetworkAliases('nats')
-      .withCommand([
-        '--jetstream',
-        '--store_dir=/data',
-        '--http_port=8222',
-        '--name=skilder-test-nats',
-      ])
+      .withCommand(['--jetstream', '--store_dir=/data', '--http_port=8222', '--name=skilder-test-nats'])
       .withExposedPorts(4222, 8222)
       .withWaitStrategy(Wait.forListeningPorts())
       .withStartupTimeout(30000)
@@ -304,7 +299,8 @@ export class TestEnvironment {
         'alpha',
         '--my=dgraph-alpha:7080',
         '--zero=dgraph-zero:5080',
-        '--security', 'whitelist=0.0.0.0/0', // Allow all IPs in test environment
+        '--security',
+        'whitelist=0.0.0.0/0', // Allow all IPs in test environment
       ])
       .withExposedPorts(7080, 8080, 9080)
       // Wait for GraphQL port to be open
@@ -335,6 +331,8 @@ export class TestEnvironment {
 
     // Check if rebuild is needed
     if (!this.shouldRebuildImage(imageName)) {
+      testLog('Backend image already exists, waiting for 5 seconds...');
+      await new Promise((resolve) => setTimeout(resolve, 5000));
       return;
     }
 
@@ -348,15 +346,15 @@ export class TestEnvironment {
         testLog('[Backend] Docker build still in progress...');
       }, 10000);
 
-      const buildPromise = GenericContainer.fromDockerfile(
-        this.config.projectRoot,
-        dockerfilePath
-      ).build('skilder-backend-test', { deleteOnExit: false });
+      const buildPromise = GenericContainer.fromDockerfile(this.config.projectRoot, dockerfilePath).build(
+        'skilder-backend-test',
+        { deleteOnExit: false },
+      );
 
       const timeoutPromise = new Promise((_, reject) => {
         promiseTimeout = setTimeout(
           () => reject(new Error('Backend Docker build timed out after 5 minutes')),
-          5 * 60 * 1000
+          5 * 60 * 1000,
         );
       });
 
@@ -393,15 +391,15 @@ export class TestEnvironment {
         testLog('[Runtime] Docker build still in progress...');
       }, 10000);
 
-      const buildPromise = GenericContainer.fromDockerfile(
-        this.config.projectRoot,
-        dockerfilePath
-      ).build('skilder-runtime-test', { deleteOnExit: false });
+      const buildPromise = GenericContainer.fromDockerfile(this.config.projectRoot, dockerfilePath).build(
+        'skilder-runtime-test',
+        { deleteOnExit: false },
+      );
 
       const timeoutPromise = new Promise((_, reject) => {
         promiseTimeout = setTimeout(
           () => reject(new Error('Runtime Docker build timed out after 5 minutes')),
-          5 * 60 * 1000
+          5 * 60 * 1000,
         );
       });
 
@@ -457,11 +455,13 @@ export class TestEnvironment {
           IDENTITY_LOG_LEVEL: 'debug',
           ...this.config.backendEnv,
         })
-        .withBindMounts([{
-          source: keyDir,
-          target: '/keys',
-          mode: 'ro',
-        }])
+        .withBindMounts([
+          {
+            source: keyDir,
+            target: '/keys',
+            mode: 'ro',
+          },
+        ])
         .withExposedPorts(3000)
         // Wait for HTTP port (backend Dockerfile has curl for healthcheck)
         .withWaitStrategy(Wait.forListeningPorts())
@@ -492,7 +492,6 @@ export class TestEnvironment {
     return { container: started, apiUrl, healthUrl };
   }
 
-
   async startRuntime(): Promise<number> {
     if (this.services?.runtime?.startedContainer) {
       // Return the existing port if already started
@@ -517,7 +516,7 @@ export class TestEnvironment {
           RUNTIME_NAME: runtimeName,
           ROOTS: `TEMP:/tmp`,
           SYSTEM_KEY: TEST_SYSTEM_KEY,
-          REMOTE_PORT: String(runtimePort),      // Enable HTTP server for SSE/STREAM transports
+          REMOTE_PORT: String(runtimePort), // Enable HTTP server for SSE/STREAM transports
           REMOTE_HOST: '0.0.0.0',
         })
         // No exposed ports needed - runtime communicates via NATS
@@ -545,8 +544,8 @@ export class TestEnvironment {
     await waitForHealth(healthUrl);
 
     return runtimeExposedPort;
-  };
-  
+  }
+
   async stopRuntime(): Promise<void> {
     if (this.services?.runtime?.startedContainer) {
       await this.services.runtime.startedContainer.stop({ timeout: 10000 });
@@ -554,7 +553,7 @@ export class TestEnvironment {
       delete process.env.TEST_RUNTIME_PORT;
       testLog('Runtime stopped');
     }
-  };
+  }
 
   /**
    * Get service URLs (useful for tests)
@@ -600,7 +599,6 @@ export class TestEnvironment {
     const errors: Error[] = [];
 
     try {
-
       try {
         await this.stopRuntime();
       } catch (error) {
