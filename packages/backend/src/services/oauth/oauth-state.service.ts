@@ -18,7 +18,9 @@ const STATE_EXPIRY_MS = 10 * 60 * 1000; // 10 minutes
 @injectable()
 export class OAuthStateService {
   private logger: pino.Logger;
-  // In-memory store for used nonces (prevents replay attacks)
+  // TODO: In-memory nonce store won't work with horizontal scaling (multiple backend instances).
+  // Move to Redis or database storage for production deployments with multiple replicas.
+  // See: https://github.com/your-org/skilder/issues/XXX (if applicable)
   private usedNonces = new Set<string>();
 
   constructor(
@@ -103,10 +105,14 @@ export class OAuthStateService {
 
   /**
    * Clean up expired nonces from memory.
+   *
+   * TODO: Current cleanup is weak - clearing ALL nonces at 10k allows replay attacks
+   * on recently-used nonces. Should implement one of:
+   * - Track timestamps per nonce (Map<string, number>) and clean only expired ones
+   * - Use a TTL-based cache (Redis, LRU cache with TTL)
+   * This should be addressed together with the in-memory store scalability issue above.
    */
   private cleanupNonces(): void {
-    // For simplicity, clear all nonces after expiry period
-    // In production, you might want more sophisticated cleanup
     if (this.usedNonces.size > 10000) {
       this.usedNonces.clear();
       this.logger.debug('Cleared OAuth state nonces cache');

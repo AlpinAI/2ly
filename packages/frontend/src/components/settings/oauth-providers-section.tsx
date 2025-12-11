@@ -9,6 +9,7 @@ import { useState } from 'react';
 import { Link2, Trash2, Settings2, ToggleLeft, ToggleRight } from 'lucide-react';
 import { SettingsSection } from './settings-section';
 import { ConfigureOAuthProviderDialog } from './configure-oauth-provider-dialog';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { useOAuthProviders, OAUTH_PROVIDER_INFO } from '@/hooks/useOAuthProviders';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -25,6 +26,8 @@ const ALL_PROVIDERS = [
 export function OAuthProvidersSection() {
   const [configureDialogOpen, setConfigureDialogOpen] = useState(false);
   const [selectedProvider, setSelectedProvider] = useState<OAuthProviderType | null>(null);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [pendingProvider, setPendingProvider] = useState<OAuthProviderType | null>(null);
   const { toast } = useNotification();
 
   const {
@@ -69,18 +72,24 @@ export function OAuthProvidersSection() {
     }
   };
 
-  const handleRemove = async (provider: OAuthProviderType) => {
-    const config = providerConfigMap[provider];
+  const handleRemove = (provider: OAuthProviderType) => {
+    setPendingProvider(provider);
+    setConfirmOpen(true);
+  };
+
+  const handleConfirmRemove = async () => {
+    if (!pendingProvider) return;
+
+    const config = providerConfigMap[pendingProvider];
     if (!config) return;
 
-    const providerInfo = OAUTH_PROVIDER_INFO[provider];
-    if (!confirm(`Are you sure you want to remove ${providerInfo.name} configuration?`)) {
-      return;
-    }
+    const providerInfo = OAUTH_PROVIDER_INFO[pendingProvider];
 
     try {
       await removeProvider(config.id);
       toast({ description: `${providerInfo.name} configuration removed`, variant: 'success' });
+      setConfirmOpen(false);
+      setPendingProvider(null);
     } catch (_error) {
       toast({ description: 'Failed to remove provider', variant: 'error' });
     }
@@ -209,6 +218,24 @@ export function OAuthProvidersSection() {
           open={configureDialogOpen}
           onOpenChange={setConfigureDialogOpen}
           onConfigure={configureProvider}
+        />
+      )}
+
+      {/* Remove Confirmation Dialog */}
+      {pendingProvider && (
+        <ConfirmDialog
+          open={confirmOpen}
+          onOpenChange={(open) => {
+            setConfirmOpen(open);
+            if (!open) setPendingProvider(null);
+          }}
+          title="Remove OAuth Provider"
+          description={`Are you sure you want to remove ${OAUTH_PROVIDER_INFO[pendingProvider].name} configuration? This action cannot be undone.`}
+          confirmLabel="Remove"
+          cancelLabel="Cancel"
+          variant="destructive"
+          onConfirm={handleConfirmRemove}
+          loading={removing}
         />
       )}
     </SettingsSection>

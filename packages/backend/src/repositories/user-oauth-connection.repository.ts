@@ -54,11 +54,11 @@ export class UserOAuthConnectionRepository {
         })[];
       }>(GET_USER_OAUTH_CONNECTIONS_BY_WORKSPACE, {});
 
-      // Filter by workspace and user ID in code
+      // TODO: Dgraph limitation - filtering on multiple relationship fields (workspace + user)
+      // with @cascade doesn't work reliably. Filter in code until Dgraph supports this.
+      // See: https://discuss.dgraph.io/t/cascade-with-multiple-nested-filters
       const connections = res.queryUserOAuthConnection || [];
-      return connections.filter(
-        (c) => c.workspace?.id === workspaceId && c.user?.id === userId
-      );
+      return connections.filter((c) => c.workspace?.id === workspaceId && c.user?.id === userId);
     } catch (error) {
       this.logger.error(
         `Failed to get OAuth connections for user ${userId} in workspace ${workspaceId}: ${error}`
@@ -80,11 +80,11 @@ export class UserOAuthConnectionRepository {
         })[];
       }>(FIND_USER_OAUTH_CONNECTION_BY_PROVIDER, { provider });
 
+      // TODO: Dgraph limitation - filtering on multiple relationship fields (workspace + user)
+      // with @cascade doesn't work reliably. Filter in code until Dgraph supports this.
+      // See: https://discuss.dgraph.io/t/cascade-with-multiple-nested-filters
       const connections = res.queryUserOAuthConnection || [];
-      // Filter by workspace and user ID in code (not relying on @cascade)
-      const match = connections.find(
-        (c) => c.workspace?.id === workspaceId && c.user?.id === userId
-      );
+      const match = connections.find((c) => c.workspace?.id === workspaceId && c.user?.id === userId);
       return match || null;
     } catch (error) {
       this.logger.error(

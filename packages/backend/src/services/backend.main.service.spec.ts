@@ -2,11 +2,37 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { MainService } from './backend.main.service';
 import { DGraphService } from './dgraph.service';
+import { OAuthService } from './oauth';
+import { LoggerService } from '@skilder-ai/common';
+
+// Create mock services for OAuth routes
+const mockOAuthService = {
+  handleOAuthCallback: vi.fn(),
+};
+
+const mockOAuthLogger = {
+  info: vi.fn(),
+  warn: vi.fn(),
+  error: vi.fn(),
+  debug: vi.fn(),
+};
+
+const mockOAuthLoggerService = {
+  getLogger: vi.fn(() => mockOAuthLogger),
+};
 
 // Mock the DI container
 vi.mock('../di/container', () => ({
   container: {
-    get: vi.fn(),
+    get: vi.fn((serviceIdentifier: unknown) => {
+      if (serviceIdentifier === OAuthService) {
+        return mockOAuthService;
+      }
+      if (serviceIdentifier === LoggerService) {
+        return mockOAuthLoggerService;
+      }
+      return undefined;
+    }),
   },
 }));
 
@@ -302,11 +328,17 @@ describe('MainService', () => {
     it('resets runtimes and reinitializes database', async () => {
       const { service, runtimeService, dgraphService, systemRepository, workspaceRepository, resetHandler } = createService();
 
-      // Mock the container.get to return our dgraphService mock
+      // Mock the container.get to return our dgraphService mock (plus OAuth mocks)
       const { container } = await import('../di/container');
       vi.mocked(container.get).mockImplementation((serviceIdentifier) => {
         if (serviceIdentifier === DGraphService) {
           return dgraphService;
+        }
+        if (serviceIdentifier === OAuthService) {
+          return mockOAuthService;
+        }
+        if (serviceIdentifier === LoggerService) {
+          return mockOAuthLoggerService;
         }
         return undefined;
       });
@@ -339,11 +371,17 @@ describe('MainService', () => {
         throw new Error('Reset failed');
       });
 
-      // Mock the container.get to return our dgraphService mock
+      // Mock the container.get to return our dgraphService mock (plus OAuth mocks)
       const { container } = await import('../di/container');
       vi.mocked(container.get).mockImplementation((serviceIdentifier) => {
         if (serviceIdentifier === DGraphService) {
           return dgraphService;
+        }
+        if (serviceIdentifier === OAuthService) {
+          return mockOAuthService;
+        }
+        if (serviceIdentifier === LoggerService) {
+          return mockOAuthLoggerService;
         }
         return undefined;
       });
