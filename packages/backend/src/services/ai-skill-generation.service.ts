@@ -61,7 +61,13 @@ export class AISkillGenerationService {
       throw new Error(`AI provider ${providerId} not found`);
     }
 
-    // 2. Get system prompt from AI config (or use default)
+    // 2. Get workspace to check for default model
+    const workspace = await this.workspaceRepo.findById(workspaceId);
+    if (!workspace) {
+      throw new Error(`Workspace ${workspaceId} not found`);
+    }
+
+    // 3. Get system prompt from AI config (or use default)
     let systemPrompt = DEFAULT_SKILL_GENERATION_PROMPT;
     try {
       const aiConfig = await this.aiConfigRepo.findByKey(workspaceId, 'skill-generation-prompt');
@@ -72,7 +78,7 @@ export class AISkillGenerationService {
       this.logger.warn(`Failed to load custom skill generation prompt, using default: ${error}`);
     }
 
-    // 3. Get available MCP tools for context
+    // 4. Get available MCP tools for context
     const availableTools = await this.workspaceRepo.findMCPToolsByWorkspace(workspaceId);
     const toolsContext = availableTools.map((tool: { id: string; name: string; description?: string | null }) => ({
       id: tool.id,
@@ -80,7 +86,7 @@ export class AISkillGenerationService {
       description: tool.description || '',
     }));
 
-    // 4. Build the full prompt
+    // 5. Build the full prompt
     const fullPrompt = `${systemPrompt}
 
 Available MCP Tools:
@@ -89,7 +95,7 @@ ${JSON.stringify(toolsContext, null, 2)}
 User Request:
 ${userPrompt}`;
 
-    // 5. Get decrypted provider config and make AI request
+    // 6. Get decrypted provider config and make AI request
     const providerType = providerConfig.provider.toLowerCase() as AIProviderType;
 
     const decryptedConfig = await this.aiProviderRepo.getDecryptedConfig(
@@ -97,17 +103,23 @@ ${userPrompt}`;
       providerType,
     );
 
-    // Get a model from the provider's available models
-    // Use the first available model from the provider
-    if (!providerConfig.availableModels || providerConfig.availableModels.length === 0) {
-      throw new Error(`AI provider ${providerId} has no available models configured`);
+    // 7. Determine which model to use
+    let fullModelName: string;
+
+    // Try to use workspace default model if set
+    if (workspace.defaultAIModel) {
+      fullModelName = workspace.defaultAIModel;
+      this.logger.info(`Using workspace default model: ${fullModelName}`);
+    } else {
+      // Fall back to first available model from the provider
+      if (!providerConfig.availableModels || providerConfig.availableModels.length === 0) {
+        throw new Error(`AI provider ${providerId} has no available models configured`);
+      }
+
+      const modelName = providerConfig.availableModels[0];
+      fullModelName = `${providerType}/${modelName}`;
+      this.logger.info(`No default model set, using first available model: ${fullModelName}`);
     }
-
-    // Use the first available model (providers return full model names like "gpt-4o", "claude-3-5-sonnet", etc.)
-    const modelName = providerConfig.availableModels[0];
-    const fullModelName = `${providerType}/${modelName}`;
-
-    this.logger.info(`Using model: ${fullModelName}`);
 
     const response = await this.aiProviderService.chat(
       decryptedConfig,
