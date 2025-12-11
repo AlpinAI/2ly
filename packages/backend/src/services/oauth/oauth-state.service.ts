@@ -1,5 +1,12 @@
 import { injectable, inject } from 'inversify';
-import { LoggerService, EncryptionService, dgraphResolversTypes } from '@skilder-ai/common';
+import {
+  LoggerService,
+  EncryptionService,
+  dgraphResolversTypes,
+  NatsCacheService,
+  CACHE_BUCKETS,
+  OAUTH_NONCE_CACHE_TTL,
+} from '@skilder-ai/common';
 import pino from 'pino';
 import crypto from 'crypto';
 
@@ -18,18 +25,35 @@ const STATE_EXPIRY_MS = 10 * 60 * 1000; // 10 minutes
 @injectable()
 export class OAuthStateService {
   private logger: pino.Logger;
-  // TODO: In-memory nonce store won't work with horizontal scaling (multiple backend instances).
-  // Move to Redis or database storage for production deployments with multiple replicas.
-  // See: https://github.com/your-org/skilder/issues/XXX (if applicable)
-  private usedNonces = new Set<string>();
+  private initialized = false;
+  private initPromise: Promise<void> | null = null;
 
   constructor(
     @inject(LoggerService) private readonly loggerService: LoggerService,
-    @inject(EncryptionService) private readonly encryption: EncryptionService
+    @inject(EncryptionService) private readonly encryption: EncryptionService,
+    @inject(NatsCacheService) private readonly cacheService: NatsCacheService,
+    @inject(OAUTH_NONCE_CACHE_TTL) private readonly nonceTTL: number
   ) {
     this.logger = this.loggerService.getLogger('oauth.state.service');
-    // Clean up old nonces periodically
-    setInterval(() => this.cleanupNonces(), STATE_EXPIRY_MS);
+  }
+
+  /**
+   * Ensure the service is initialized before use.
+   * Uses lazy initialization pattern for resilience.
+   */
+  private async ensureInitialized(): Promise<void> {
+    if (this.initialized) return;
+    if (!this.initPromise) {
+      this.initPromise = (async () => {
+        await this.cacheService.createBucket({
+          name: CACHE_BUCKETS.OAUTH_NONCE,
+          ttlMs: this.nonceTTL,
+        });
+        this.initialized = true;
+        this.logger.info('OAuth nonce cache bucket initialized');
+      })();
+    }
+    await this.initPromise;
   }
 
   /**
@@ -70,8 +94,10 @@ export class OAuthStateService {
    * Validate and decode a state token.
    * Returns null if invalid, expired, or already used.
    */
-  validateState(state: string): OAuthStatePayload | null {
+  async validateState(state: string): Promise<OAuthStatePayload | null> {
     try {
+      await this.ensureInitialized();
+
       // Decode from base64url
       const encryptedState = Buffer.from(state, 'base64url').toString();
 
@@ -87,37 +113,28 @@ export class OAuthStateService {
       }
 
       // Check nonce hasn't been used (prevents replay attacks)
-      if (this.usedNonces.has(payload.nonce)) {
+      // Using distributed cache for horizontal scaling support
+      const nonceEntry = await this.cacheService.get<boolean>(
+        CACHE_BUCKETS.OAUTH_NONCE,
+        payload.nonce
+      );
+      if (nonceEntry) {
         this.logger.warn(`OAuth state nonce already used for user ${payload.userId}`);
         return null;
       }
 
-      // Mark nonce as used
-      this.usedNonces.add(payload.nonce);
+      // Mark nonce as used - TTL handles automatic cleanup
+      await this.cacheService.put(
+        CACHE_BUCKETS.OAUTH_NONCE,
+        payload.nonce,
+        true
+      );
 
       this.logger.debug(`Validated OAuth state for user ${payload.userId}, provider ${payload.provider}`);
       return payload;
     } catch (error) {
       this.logger.error(`Failed to validate OAuth state: ${error}`);
       return null;
-    }
-  }
-
-  /**
-   * Clean up expired nonces from memory.
-   *
-   * TODO: Current cleanup is weak - clearing ALL nonces at 10k allows replay attacks
-   * on recently-used nonces. Should implement one of:
-   * - Track timestamps per nonce (Map<string, number>) and clean only expired ones
-   * - Use a TTL-based cache (Redis, LRU cache with TTL)
-   * This should be addressed together with the in-memory store scalability issue above.
-   */
-  private cleanupNonces(): void {
-    // For simplicity, clear all nonces after expiry period
-    // In production, you might want more sophisticated cleanup
-    if (this.usedNonces.size > 10000) {
-      this.usedNonces.clear();
-      this.logger.debug('Cleared OAuth state nonces cache');
     }
   }
 }

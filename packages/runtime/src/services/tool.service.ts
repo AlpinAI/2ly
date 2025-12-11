@@ -13,6 +13,12 @@ import {
   EXECUTION_TARGET,
   ErrorResponse,
   type RuntimeSmartSkill,
+  NatsCacheService,
+  CACHE_BUCKETS,
+  EPHEMERAL_CACHE_TTL,
+  NatsMessage,
+  type CacheWatchSubscription,
+  type RawMessage,
 } from '@skilder-ai/common';
 import { AuthService } from './auth.service';
 import { HealthService } from './runtime.health.service';
@@ -28,6 +34,7 @@ export class ToolService extends Service {
   name = 'tool';
   private logger: pino.Logger;
   private natsSubscriptions: { unsubscribe: () => void; drain: () => Promise<void>; isClosed?: () => boolean }[] = [];
+  private cacheSubscriptions: CacheWatchSubscription[] = [];
   private mcpServers: Map<string, ToolServerService> = new Map();
   private mcpTools: Map<string, dgraphResolversTypes.McpTool[]> = new Map();
   private toolSubscriptions: Map<string, Map<string, { unsubscribe: () => void }>> = new Map();
@@ -41,11 +48,13 @@ export class ToolService extends Service {
   constructor(
     @inject(LoggerService) private loggerService: LoggerService,
     @inject(NatsService) private natsService: NatsService,
+    @inject(NatsCacheService) private cacheService: NatsCacheService,
     @inject(AuthService) private authService: AuthService,
     @inject(HealthService) private healthService: HealthService,
     @inject(ToolServerService) private toolServerServiceFactory: ToolServerServiceFactory,
     @inject(ToolSmartSkillService) private toolSmartSkillServiceFactory: ToolSmartSkillServiceFactory,
     @inject(McpStdioService) @optional() private mcpStdioService: McpStdioService | undefined,
+    @inject(EPHEMERAL_CACHE_TTL) private ephemeralTTL: number,
   ) {
     super();
     this.logger = this.loggerService.getLogger(this.name);
@@ -56,6 +65,13 @@ export class ToolService extends Service {
     await this.authService.waitForStarted();
     await this.natsService.waitForStarted();
     await this.healthService.waitForStarted();
+
+    // Ensure ephemeral cache bucket exists before watching
+    await this.cacheService.createBucket({
+      name: CACHE_BUCKETS.EPHEMERAL,
+      ttlMs: this.ephemeralTTL,
+    });
+
     this.startObserveMCPServers();
     this.startObserveSmartSkills();
 
@@ -93,9 +109,11 @@ export class ToolService extends Service {
     }
     const subject = RuntimeMCPServersPublish.subscribeToRuntime(identity.workspaceId, identity.id);
     this.logger.debug(`Observing configured MCPServers for tool runtime: ${subject}`);
-    const subscription = await this.natsService.observeEphemeral(subject);
-    this.natsSubscriptions.push(subscription);
-    for await (const msg of subscription) {
+    const subscription = await this.cacheService.watch<unknown>(CACHE_BUCKETS.EPHEMERAL, { key: subject });
+    this.cacheSubscriptions.push(subscription);
+    for await (const event of subscription) {
+      if (event.operation !== 'PUT' || !event.value) continue;
+      const msg = NatsMessage.fromRawData(event.value as RawMessage<unknown>);
       if (msg instanceof RuntimeMCPServersPublish) {
         this.roots = msg.data.roots;
         const mcpServerIds = msg.data.mcpServers.map((mcpServer) => mcpServer.id);
@@ -146,6 +164,12 @@ export class ToolService extends Service {
 
     await Promise.allSettled(drainPromises);
     this.natsSubscriptions = [];
+
+    // Unsubscribe from cache subscriptions
+    for (const subscription of this.cacheSubscriptions) {
+      subscription.unsubscribe();
+    }
+    this.cacheSubscriptions = [];
 
     // Stop MCP servers
     // -> will also drain the capabilities subscriptions
@@ -366,9 +390,11 @@ export class ToolService extends Service {
     }
     const subject = RuntimeSmartSkillsPublish.subscribeToRuntime(identity.workspaceId, identity.id);
     this.logger.debug(`Observing smart skills for runtime: ${subject}`);
-    const subscription = await this.natsService.observeEphemeral(subject);
-    this.natsSubscriptions.push(subscription);
-    for await (const msg of subscription) {
+    const subscription = await this.cacheService.watch<unknown>(CACHE_BUCKETS.EPHEMERAL, { key: subject });
+    this.cacheSubscriptions.push(subscription);
+    for await (const event of subscription) {
+      if (event.operation !== 'PUT' || !event.value) continue;
+      const msg = NatsMessage.fromRawData(event.value as RawMessage<unknown>);
       if (msg instanceof RuntimeSmartSkillsPublish) {
         this.logger.debug(
           `Received smart skills update: ${msg.data.smartSkills.map((skill) => skill.name).join(', ')}`,

@@ -1,6 +1,6 @@
 import { inject, injectable } from 'inversify';
 import { FastifyRequest, FastifyReply } from 'fastify';
-import { LoggerService, NatsService, Service } from '@skilder-ai/common';
+import { LoggerService, NatsService, NatsCacheService, Service } from '@skilder-ai/common';
 import { HealthService } from './runtime.health.service';
 import { FastifyManagerService } from './fastify.manager.service';
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
@@ -53,6 +53,7 @@ export class McpStreamableService extends Service {
   constructor(
     @inject(LoggerService) private loggerService: LoggerService,
     @inject(NatsService) private natsService: NatsService,
+    @inject(NatsCacheService) private cacheService: NatsCacheService,
     @inject(HealthService) private healthService: HealthService,
     @inject(FastifyManagerService) private fastifyManager: FastifyManagerService,
   ) {
@@ -429,6 +430,7 @@ export class McpStreamableService extends Service {
         identity,
         this.loggerService,
         this.natsService,
+        this.cacheService,
         this.healthService,
       );
 

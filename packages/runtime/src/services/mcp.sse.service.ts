@@ -1,6 +1,6 @@
 import { inject, injectable } from 'inversify';
 import pino from 'pino';
-import { LoggerService, NatsService, Service } from '@skilder-ai/common';
+import { LoggerService, NatsService, NatsCacheService, Service } from '@skilder-ai/common';
 import { HealthService } from './runtime.health.service';
 import { FastifyManagerService } from './fastify.manager.service';
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
@@ -66,6 +66,7 @@ export class McpSseService extends Service {
   constructor(
     @inject(LoggerService) private loggerService: LoggerService,
     @inject(NatsService) private natsService: NatsService,
+    @inject(NatsCacheService) private cacheService: NatsCacheService,
     @inject(HealthService) private healthService: HealthService,
     @inject(FastifyManagerService) private fastifyManager: FastifyManagerService,
   ) {
@@ -149,6 +150,7 @@ export class McpSseService extends Service {
           identity,
           this.loggerService,
           this.natsService,
+          this.cacheService,
           this.healthService,
         );
 

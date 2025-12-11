@@ -11,6 +11,9 @@ import {
   type RuntimeSmartSkill,
   DEFAULT_TEMPERATURE,
   DEFAULT_MAX_TOKENS,
+  NatsCacheService,
+  CACHE_BUCKETS,
+  type CacheWatchSubscription,
 } from '@skilder-ai/common';
 import { RuntimeRepository } from '../repositories';
 import { SkillRepository } from '../repositories/skill/skill.repository';
@@ -25,11 +28,14 @@ export class RuntimeInstance extends Service {
   name = 'runtime-instance';
   private rxjsSubscriptions: Subscription[] = [];
   private natsSubscriptions: { unsubscribe: () => void; drain: () => Promise<void> }[] = [];
+  private cacheSubscriptions: CacheWatchSubscription[] = [];
   private isSystemRuntime: BehaviorSubject<boolean> = new BehaviorSubject(false);
+  private heartbeatTTL: number;
 
   constructor(
     private logger: pino.Logger,
     private natsService: NatsService,
+    private cacheService: NatsCacheService,
     private runtimeRepository: RuntimeRepository,
     private skillRepository: SkillRepository,
     private aiProviderRepository: AIProviderRepository,
@@ -38,8 +44,10 @@ export class RuntimeInstance extends Service {
     private metadata: ConnectionMetadata,
     private onReady: () => void,
     private onDisconnect: () => void,
+    heartbeatTTL: number,
   ) {
     super();
+    this.heartbeatTTL = heartbeatTTL;
   }
 
   protected async initialize() {
@@ -66,12 +74,18 @@ export class RuntimeInstance extends Service {
       throw new Error('Instance not initialized');
     }
     this.logger.info(`Observed heartbeat for runtime ${this.instance.id}`);
-    const heartbeatSubscription = await this.natsService.observeHeartbeat(this.instance.id);
-    this.natsSubscriptions.push(heartbeatSubscription);
-    for await (const heartbeat of heartbeatSubscription) {
-      if (heartbeat?.i && heartbeat?.t) {
-        this.logger.debug(`Heartbeat for runtime ${heartbeat.i}`);
-        await this.runtimeRepository.updateLastSeen(heartbeat.i);
+    const heartbeatSubscription = await this.cacheService.watch<{ i: string; t: string }>(
+      CACHE_BUCKETS.HEARTBEAT,
+      {
+        key: this.instance.id,
+        timeoutMs: this.heartbeatTTL,
+      }
+    );
+    this.cacheSubscriptions.push(heartbeatSubscription);
+    for await (const event of heartbeatSubscription) {
+      if (event.operation === 'PUT' && event.value?.i && event.value?.t) {
+        this.logger.debug(`Heartbeat for runtime ${event.value.i}`);
+        await this.runtimeRepository.updateLastSeen(event.value.i);
       }
     }
     // when the heartbeatSubscription terminates it can mean two things
@@ -108,6 +122,10 @@ export class RuntimeInstance extends Service {
       subscription.unsubscribe();
     }
     this.natsSubscriptions = [];
+    for (const subscription of this.cacheSubscriptions) {
+      subscription.unsubscribe();
+    }
+    this.cacheSubscriptions = [];
     for (const subscription of this.rxjsSubscriptions) {
       subscription.unsubscribe();
     }
@@ -146,7 +164,8 @@ export class RuntimeInstance extends Service {
             roots,
             mcpServers,
           }) as RuntimeMCPServersPublish;
-          this.natsService.publishEphemeral(mcpServersMessage);
+          const messageData = mcpServersMessage.prepareData();
+          this.cacheService.put(CACHE_BUCKETS.EPHEMERAL, messageData.subject!, messageData);
         }),
       )
       .subscribe();
@@ -224,7 +243,8 @@ export class RuntimeInstance extends Service {
             runtimeId: this.instance.id,
             smartSkills: validSkills,
           }) as RuntimeSmartSkillsPublish;
-          this.natsService.publishEphemeral(smartSkillsMessage);
+          const messageData = smartSkillsMessage.prepareData();
+          this.cacheService.put(CACHE_BUCKETS.EPHEMERAL, messageData.subject!, messageData);
         }),
       )
       .subscribe();
@@ -239,3 +259,6 @@ export type RuntimeInstanceFactory = (
   onReady: () => void,
   onDisconnect: () => void,
 ) => RuntimeInstance;
+
+// Re-export for container factory
+export { NatsCacheService };

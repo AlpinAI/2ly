@@ -3,6 +3,7 @@ import pino from 'pino';
 import {
   LoggerService,
   NatsService,
+  NatsCacheService,
   Service,
 } from '@skilder-ai/common';
 import { HealthService } from './runtime.health.service';
@@ -40,6 +41,7 @@ export class McpStdioService extends Service {
   constructor(
     @inject(LoggerService) private loggerService: LoggerService,
     @inject(NatsService) private natsService: NatsService,
+    @inject(NatsCacheService) private cacheService: NatsCacheService,
     @inject(HealthService) private healthService: HealthService,
     @inject(AuthService) private authService: AuthService,
   ) {
@@ -87,7 +89,7 @@ export class McpStdioService extends Service {
 
     // TODO: we probably should start the server in the initialize phase
     // Create and start the skill service
-    this.skillService = new SkillService(this.loggerService, this.natsService, {
+    this.skillService = new SkillService(this.loggerService, this.natsService, this.cacheService, {
       workspaceId: identity.workspaceId!,
       skillId: identity.id!,
       skillName: identity.name,

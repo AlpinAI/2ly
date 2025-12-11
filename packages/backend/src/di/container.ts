@@ -8,12 +8,17 @@ import {
   MAIN_LOGGER_NAME,
   FORWARD_STDERR,
   dgraphResolversTypes,
-  HEARTBAT_TTL,
-  DEFAULT_HEARTBAT_TTL,
-  EPHEMERAL_TTL,
-  DEFAULT_EPHEMERAL_TTL,
   EncryptionService,
   AIProviderService,
+  // Cache service
+  NatsCacheService,
+  CACHE_SERVICE,
+  CACHE_BUCKET_TTLS,
+  HEARTBEAT_CACHE_TTL,
+  EPHEMERAL_CACHE_TTL,
+  OAUTH_NONCE_CACHE_TTL,
+  RATE_LIMIT_KEY_CACHE_TTL,
+  RATE_LIMIT_IP_CACHE_TTL,
 } from '@skilder-ai/common';
 import { DGraphService, DGRAPH_URL } from '../services/dgraph.service';
 import { ApolloService } from '../services/apollo.service';
@@ -47,7 +52,6 @@ import { MonitoringService } from '../services/monitoring.service';
 
 const container = new Container();
 const start = () => {
-
   // Init nats service
   const natsServers = process.env.NATS_SERVERS || 'localhost:4222';
   const natsName = process.env.NATS_NAME || 'backend';
@@ -58,9 +62,26 @@ const start = () => {
     maxReconnectAttempts: -1,
     reconnectTimeWait: 1000,
   });
-  container.bind(HEARTBAT_TTL).toConstantValue(process.env.HEARTBAT_TTL || DEFAULT_HEARTBAT_TTL);
-  container.bind(EPHEMERAL_TTL).toConstantValue(process.env.EPHEMERAL_TTL || DEFAULT_EPHEMERAL_TTL);
   container.bind(NatsService).toSelf().inSingletonScope();
+
+  // Init cache service
+  container
+    .bind(HEARTBEAT_CACHE_TTL)
+    .toConstantValue(parseInt(process.env.HEARTBEAT_CACHE_TTL || '') || CACHE_BUCKET_TTLS.HEARTBEAT);
+  container
+    .bind(EPHEMERAL_CACHE_TTL)
+    .toConstantValue(parseInt(process.env.EPHEMERAL_CACHE_TTL || '') || CACHE_BUCKET_TTLS.EPHEMERAL);
+  container
+    .bind(OAUTH_NONCE_CACHE_TTL)
+    .toConstantValue(parseInt(process.env.OAUTH_NONCE_CACHE_TTL || '') || CACHE_BUCKET_TTLS.OAUTH_NONCE);
+  container
+    .bind(RATE_LIMIT_KEY_CACHE_TTL)
+    .toConstantValue(parseInt(process.env.RATE_LIMIT_KEY_CACHE_TTL || '') || CACHE_BUCKET_TTLS.RATE_LIMIT_KEY);
+  container
+    .bind(RATE_LIMIT_IP_CACHE_TTL)
+    .toConstantValue(parseInt(process.env.RATE_LIMIT_IP_CACHE_TTL || '') || CACHE_BUCKET_TTLS.RATE_LIMIT_IP);
+  container.bind(CACHE_SERVICE).to(NatsCacheService).inSingletonScope();
+  container.bind(NatsCacheService).toSelf().inSingletonScope();
 
   // Init dgraph service
   container.bind(DROP_ALL_DATA).toConstantValue(process.env.DROP_ALL_DATA === 'true');
@@ -142,11 +163,14 @@ const start = () => {
       instance: dgraphResolversTypes.Runtime,
       metadata: ConnectionMetadata,
       onReady: () => void,
-      onDisconnect: () => void) => {
+      onDisconnect: () => void,
+    ) => {
       const logger = context.get(LoggerService).getLogger('runtime.instance');
+      const heartbeatTTL = context.get<number>(HEARTBEAT_CACHE_TTL);
       const runtimeInstance = new RuntimeInstance(
         logger,
         context.get(NatsService),
+        context.get(NatsCacheService),
         context.get(RuntimeRepository),
         context.get(SkillRepository),
         context.get(AIProviderRepository),
@@ -155,6 +179,7 @@ const start = () => {
         metadata,
         onReady,
         onDisconnect,
+        heartbeatTTL,
       );
       // We know the runtime factory is used by the runtime service so we can
       // identify the consumer safely

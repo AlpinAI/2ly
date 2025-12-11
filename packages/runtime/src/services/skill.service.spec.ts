@@ -1,15 +1,27 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { SkillService, SkillIdentity } from './skill.service';
-import { LoggerService, NatsService, SkillListToolsPublish, RuntimeCallToolResponse, dgraphResolversTypes, SmartSkillTool } from '@skilder-ai/common';
+import {
+  LoggerService,
+  NatsService,
+  NatsCacheService,
+  SkillListToolsPublish,
+  RuntimeCallToolResponse,
+  dgraphResolversTypes,
+  SmartSkillTool,
+  type CacheWatchEvent,
+  type RawMessage,
+} from '@skilder-ai/common';
 import pino from 'pino';
-import { BehaviorSubject } from 'rxjs';
 
-// Type for the subscription mock
-type MockSubscription = {
-  [Symbol.asyncIterator]: () => AsyncGenerator<SkillListToolsPublish, void, unknown>;
+// Type for the cache watch subscription mock
+type MockCacheWatchSubscription = {
+  [Symbol.asyncIterator]: () => AsyncGenerator<
+    CacheWatchEvent<RawMessage<SkillListToolsPublish['data']>>,
+    void,
+    unknown
+  >;
   unsubscribe: () => void;
   drain: () => Promise<void>;
-  isClosed?: () => boolean;
 };
 
 // Test helpers
@@ -19,13 +31,14 @@ const SUBSCRIPTION_WAIT_MS = 50;
  * Wait for async subscription to process after initialization
  */
 const waitForSubscription = (): Promise<void> => {
-  return new Promise(resolve => setTimeout(resolve, SUBSCRIPTION_WAIT_MS));
+  return new Promise((resolve) => setTimeout(resolve, SUBSCRIPTION_WAIT_MS));
 };
 
 describe('SkillService - init_skill tool', () => {
   let skillService: SkillService;
   let mockLoggerService: LoggerService;
   let mockNatsService: NatsService;
+  let mockCacheService: NatsCacheService;
   let mockLogger: pino.Logger;
   let identity: SkillIdentity;
 
@@ -40,9 +53,13 @@ describe('SkillService - init_skill tool', () => {
 
     // Mock NatsService
     mockNatsService = {
-      observeEphemeral: vi.fn(),
       request: vi.fn(),
     } as unknown as NatsService;
+
+    // Mock CacheService
+    mockCacheService = {
+      watch: vi.fn(),
+    } as unknown as NatsCacheService;
 
     // Identity for testing
     identity = {
@@ -51,7 +68,7 @@ describe('SkillService - init_skill tool', () => {
       skillName: 'Test Skill',
     };
 
-    skillService = new SkillService(mockLoggerService, mockNatsService, identity);
+    skillService = new SkillService(mockLoggerService, mockNatsService, mockCacheService, identity);
   });
 
   describe('getToolsForMCP', () => {
@@ -71,23 +88,26 @@ describe('SkillService - init_skill tool', () => {
       ];
 
       // Mock the subscription to immediately provide tools
-      const toolsSubject = new BehaviorSubject<SkillListToolsPublish | null>(
-        new SkillListToolsPublish({
-          workspaceId: 'workspace-1',
-          skillId: 'skill-1',
-          mcpTools: mockTools,
-          description: 'Test skill description',
-        })
-      );
+      const toolsMessage = new SkillListToolsPublish({
+        workspaceId: 'workspace-1',
+        skillId: 'skill-1',
+        mcpTools: mockTools,
+        description: 'Test skill description',
+      });
 
-      vi.mocked(mockNatsService.observeEphemeral).mockResolvedValue({
+      vi.mocked(mockCacheService.watch).mockResolvedValue({
         [Symbol.asyncIterator]: async function* () {
-          const message = toolsSubject.getValue();
-          if (message) yield message;
+          yield {
+            key: 'workspace-1.skill-1.list-tools',
+            operation: 'PUT',
+            value: toolsMessage.prepareData(),
+            revision: 1,
+            timestamp: Date.now(),
+          } as CacheWatchEvent<RawMessage<SkillListToolsPublish['data']>>;
         },
         unsubscribe: vi.fn(),
         drain: vi.fn().mockResolvedValue(undefined),
-      } as MockSubscription);
+      } as MockCacheWatchSubscription);
 
       // Initialize the service
       await skillService['initialize']();
@@ -107,10 +127,10 @@ describe('SkillService - init_skill tool', () => {
         properties: {
           original_prompt: {
             type: 'string',
-            description: 'Original user message'
-          }
+            description: 'Original user message',
+          },
         },
-        required: ['original_prompt']
+        required: ['original_prompt'],
       });
 
       // Verify regular tool is second
@@ -119,23 +139,26 @@ describe('SkillService - init_skill tool', () => {
 
     it('should include init_skill even when no regular tools exist', async () => {
       // Mock the subscription with empty tools
-      const toolsSubject = new BehaviorSubject<SkillListToolsPublish | null>(
-        new SkillListToolsPublish({
-          workspaceId: 'workspace-1',
-          skillId: 'skill-1',
-          mcpTools: [],
-          description: 'Test skill description',
-        })
-      );
+      const toolsMessage = new SkillListToolsPublish({
+        workspaceId: 'workspace-1',
+        skillId: 'skill-1',
+        mcpTools: [],
+        description: 'Test skill description',
+      });
 
-      vi.mocked(mockNatsService.observeEphemeral).mockResolvedValue({
+      vi.mocked(mockCacheService.watch).mockResolvedValue({
         [Symbol.asyncIterator]: async function* () {
-          const message = toolsSubject.getValue();
-          if (message) yield message;
+          yield {
+            key: 'workspace-1.skill-1.list-tools',
+            operation: 'PUT',
+            value: toolsMessage.prepareData(),
+            revision: 1,
+            timestamp: Date.now(),
+          } as CacheWatchEvent<RawMessage<SkillListToolsPublish['data']>>;
         },
         unsubscribe: vi.fn(),
         drain: vi.fn().mockResolvedValue(undefined),
-      } as MockSubscription);
+      } as MockCacheWatchSubscription);
 
       // Initialize the service
       await skillService['initialize']();
@@ -157,23 +180,26 @@ describe('SkillService - init_skill tool', () => {
       const skillDescription = 'This is a test skill for testing purposes';
 
       // Mock the subscription with tools and description
-      const toolsSubject = new BehaviorSubject<SkillListToolsPublish | null>(
-        new SkillListToolsPublish({
-          workspaceId: 'workspace-1',
-          skillId: 'skill-1',
-          mcpTools: [],
-          description: skillDescription,
-        })
-      );
+      const toolsMessage = new SkillListToolsPublish({
+        workspaceId: 'workspace-1',
+        skillId: 'skill-1',
+        mcpTools: [],
+        description: skillDescription,
+      });
 
-      vi.mocked(mockNatsService.observeEphemeral).mockResolvedValue({
+      vi.mocked(mockCacheService.watch).mockResolvedValue({
         [Symbol.asyncIterator]: async function* () {
-          const message = toolsSubject.getValue();
-          if (message) yield message;
+          yield {
+            key: 'workspace-1.skill-1.list-tools',
+            operation: 'PUT',
+            value: toolsMessage.prepareData(),
+            revision: 1,
+            timestamp: Date.now(),
+          } as CacheWatchEvent<RawMessage<SkillListToolsPublish['data']>>;
         },
         unsubscribe: vi.fn(),
         drain: vi.fn().mockResolvedValue(undefined),
-      } as MockSubscription);
+      } as MockCacheWatchSubscription);
 
       // Initialize the service
       await skillService['initialize']();
@@ -183,36 +209,41 @@ describe('SkillService - init_skill tool', () => {
 
       // Call init_skill
       const result = await skillService.callTool('init_skill', {
-        original_prompt: 'Hello, what can you do?'
+        original_prompt: 'Hello, what can you do?',
       });
 
       // Verify response format
       expect(result).toEqual({
-        content: [{
-          type: 'text',
-          text: skillDescription
-        }]
+        content: [
+          {
+            type: 'text',
+            text: skillDescription,
+          },
+        ],
       });
     });
 
     it('should return empty string when skill has no description', async () => {
       // Mock the subscription without description
-      const toolsSubject = new BehaviorSubject<SkillListToolsPublish | null>(
-        new SkillListToolsPublish({
-          workspaceId: 'workspace-1',
-          skillId: 'skill-1',
-          mcpTools: [],
-        })
-      );
+      const toolsMessage = new SkillListToolsPublish({
+        workspaceId: 'workspace-1',
+        skillId: 'skill-1',
+        mcpTools: [],
+      });
 
-      vi.mocked(mockNatsService.observeEphemeral).mockResolvedValue({
+      vi.mocked(mockCacheService.watch).mockResolvedValue({
         [Symbol.asyncIterator]: async function* () {
-          const message = toolsSubject.getValue();
-          if (message) yield message;
+          yield {
+            key: 'workspace-1.skill-1.list-tools',
+            operation: 'PUT',
+            value: toolsMessage.prepareData(),
+            revision: 1,
+            timestamp: Date.now(),
+          } as CacheWatchEvent<RawMessage<SkillListToolsPublish['data']>>;
         },
         unsubscribe: vi.fn(),
         drain: vi.fn().mockResolvedValue(undefined),
-      } as MockSubscription);
+      } as MockCacheWatchSubscription);
 
       // Initialize the service
       await skillService['initialize']();
@@ -222,15 +253,17 @@ describe('SkillService - init_skill tool', () => {
 
       // Call init_skill
       const result = await skillService.callTool('init_skill', {
-        original_prompt: 'Hello'
+        original_prompt: 'Hello',
       });
 
       // Verify empty string in response
       expect(result).toEqual({
-        content: [{
-          type: 'text',
-          text: ''
-        }]
+        content: [
+          {
+            type: 'text',
+            text: '',
+          },
+        ],
       });
     });
 
@@ -249,30 +282,33 @@ describe('SkillService - init_skill tool', () => {
       ];
 
       // Mock the subscription
-      const toolsSubject = new BehaviorSubject<SkillListToolsPublish | null>(
-        new SkillListToolsPublish({
-          workspaceId: 'workspace-1',
-          skillId: 'skill-1',
-          mcpTools: mockTools,
-          description: 'Test skill',
-        })
-      );
+      const toolsMessage = new SkillListToolsPublish({
+        workspaceId: 'workspace-1',
+        skillId: 'skill-1',
+        mcpTools: mockTools,
+        description: 'Test skill',
+      });
 
-      vi.mocked(mockNatsService.observeEphemeral).mockResolvedValue({
+      vi.mocked(mockCacheService.watch).mockResolvedValue({
         [Symbol.asyncIterator]: async function* () {
-          const message = toolsSubject.getValue();
-          if (message) yield message;
+          yield {
+            key: 'workspace-1.skill-1.list-tools',
+            operation: 'PUT',
+            value: toolsMessage.prepareData(),
+            revision: 1,
+            timestamp: Date.now(),
+          } as CacheWatchEvent<RawMessage<SkillListToolsPublish['data']>>;
         },
         unsubscribe: vi.fn(),
         drain: vi.fn().mockResolvedValue(undefined),
-      } as MockSubscription);
+      } as MockCacheWatchSubscription);
 
       // Mock NATS request for regular tool call
       const mockToolResponse = new RuntimeCallToolResponse({
         result: {
-          content: [{ type: 'text', text: 'Tool executed successfully' }]
+          content: [{ type: 'text', text: 'Tool executed successfully' }],
         },
-        executedByIdOrAgent: 'tool-server-1'
+        executedByIdOrAgent: 'tool-server-1',
       });
       vi.mocked(mockNatsService.request).mockResolvedValue(mockToolResponse);
 
@@ -295,6 +331,7 @@ describe('SkillService - smart skill mode', () => {
   let skillService: SkillService;
   let mockLoggerService: LoggerService;
   let mockNatsService: NatsService;
+  let mockCacheService: NatsCacheService;
   let mockLogger: pino.Logger;
   let identity: SkillIdentity;
 
@@ -305,9 +342,12 @@ describe('SkillService - smart skill mode', () => {
     } as unknown as LoggerService;
 
     mockNatsService = {
-      observeEphemeral: vi.fn(),
       request: vi.fn(),
     } as unknown as NatsService;
+
+    mockCacheService = {
+      watch: vi.fn(),
+    } as unknown as NatsCacheService;
 
     identity = {
       workspaceId: 'workspace-1',
@@ -315,7 +355,7 @@ describe('SkillService - smart skill mode', () => {
       skillName: 'Smart Test Skill',
     };
 
-    skillService = new SkillService(mockLoggerService, mockNatsService, identity);
+    skillService = new SkillService(mockLoggerService, mockNatsService, mockCacheService, identity);
   });
 
   describe('getToolsForMCP with smartSkillTool', () => {
@@ -327,22 +367,30 @@ describe('SkillService - smart skill mode', () => {
       };
 
       // Mock the subscription with smartSkillTool (SMART mode)
-      vi.mocked(mockNatsService.observeEphemeral).mockResolvedValue({
+      const toolsMessage = new SkillListToolsPublish({
+        workspaceId: 'workspace-1',
+        skillId: 'skill-1',
+        mcpTools: [],
+        smartSkillTool,
+        description: 'Smart skill description',
+      });
+
+      vi.mocked(mockCacheService.watch).mockResolvedValue({
         [Symbol.asyncIterator]: async function* () {
-          yield new SkillListToolsPublish({
-            workspaceId: 'workspace-1',
-            skillId: 'skill-1',
-            mcpTools: [],
-            smartSkillTool,
-            description: 'Smart skill description',
-          });
+          yield {
+            key: 'workspace-1.skill-1.list-tools',
+            operation: 'PUT',
+            value: toolsMessage.prepareData(),
+            revision: 1,
+            timestamp: Date.now(),
+          } as CacheWatchEvent<RawMessage<SkillListToolsPublish['data']>>;
         },
         unsubscribe: vi.fn(),
         drain: vi.fn().mockResolvedValue(undefined),
-      } as MockSubscription);
+      } as MockCacheWatchSubscription);
 
       await skillService['initialize']();
-      await new Promise(resolve => setTimeout(resolve, 50));
+      await new Promise((resolve) => setTimeout(resolve, 50));
 
       const tools = await skillService.getToolsForMCP();
 
@@ -384,29 +432,37 @@ describe('SkillService - smart skill mode', () => {
       ];
 
       // Mock with both smartSkillTool and mcpTools
-      vi.mocked(mockNatsService.observeEphemeral).mockResolvedValue({
+      const toolsMessage = new SkillListToolsPublish({
+        workspaceId: 'workspace-1',
+        skillId: 'skill-1',
+        mcpTools: mockTools,
+        smartSkillTool,
+        description: 'Smart skill',
+      });
+
+      vi.mocked(mockCacheService.watch).mockResolvedValue({
         [Symbol.asyncIterator]: async function* () {
-          yield new SkillListToolsPublish({
-            workspaceId: 'workspace-1',
-            skillId: 'skill-1',
-            mcpTools: mockTools,
-            smartSkillTool,
-            description: 'Smart skill',
-          });
+          yield {
+            key: 'workspace-1.skill-1.list-tools',
+            operation: 'PUT',
+            value: toolsMessage.prepareData(),
+            revision: 1,
+            timestamp: Date.now(),
+          } as CacheWatchEvent<RawMessage<SkillListToolsPublish['data']>>;
         },
         unsubscribe: vi.fn(),
         drain: vi.fn().mockResolvedValue(undefined),
-      } as MockSubscription);
+      } as MockCacheWatchSubscription);
 
       await skillService['initialize']();
-      await new Promise(resolve => setTimeout(resolve, 50));
+      await new Promise((resolve) => setTimeout(resolve, 50));
 
       const tools = await skillService.getToolsForMCP();
 
       // Should only have init_skill + smart skill tool, not the hidden_tool
       expect(tools.length).toBe(2);
-      expect(tools.find(t => t.name === 'hidden_tool')).toBeUndefined();
-      expect(tools.find(t => t.name === 'Smart Skill')).toBeDefined();
+      expect(tools.find((t) => t.name === 'hidden_tool')).toBeUndefined();
+      expect(tools.find((t) => t.name === 'Smart Skill')).toBeDefined();
     });
   });
 
@@ -418,19 +474,27 @@ describe('SkillService - smart skill mode', () => {
         description: 'A smart skill',
       };
 
-      vi.mocked(mockNatsService.observeEphemeral).mockResolvedValue({
+      const toolsMessage = new SkillListToolsPublish({
+        workspaceId: 'workspace-1',
+        skillId: 'skill-1',
+        mcpTools: [],
+        smartSkillTool,
+        description: 'Smart skill',
+      });
+
+      vi.mocked(mockCacheService.watch).mockResolvedValue({
         [Symbol.asyncIterator]: async function* () {
-          yield new SkillListToolsPublish({
-            workspaceId: 'workspace-1',
-            skillId: 'skill-1',
-            mcpTools: [],
-            smartSkillTool,
-            description: 'Smart skill',
-          });
+          yield {
+            key: 'workspace-1.skill-1.list-tools',
+            operation: 'PUT',
+            value: toolsMessage.prepareData(),
+            revision: 1,
+            timestamp: Date.now(),
+          } as CacheWatchEvent<RawMessage<SkillListToolsPublish['data']>>;
         },
         unsubscribe: vi.fn(),
         drain: vi.fn().mockResolvedValue(undefined),
-      } as MockSubscription);
+      } as MockCacheWatchSubscription);
 
       const mockResponse = new RuntimeCallToolResponse({
         result: {
@@ -442,7 +506,7 @@ describe('SkillService - smart skill mode', () => {
       vi.mocked(mockNatsService.request).mockResolvedValue(mockResponse);
 
       await skillService['initialize']();
-      await new Promise(resolve => setTimeout(resolve, 50));
+      await new Promise((resolve) => setTimeout(resolve, 50));
 
       await skillService.callTool('My Smart Skill', { message: 'Hello smart skill' });
 

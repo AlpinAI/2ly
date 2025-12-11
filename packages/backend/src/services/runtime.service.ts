@@ -5,6 +5,10 @@ import {
   Service,
   RuntimeDiscoveredToolsPublish,
   RuntimeReconnectPublish,
+  NatsCacheService,
+  CACHE_BUCKETS,
+  HEARTBEAT_CACHE_TTL,
+  EPHEMERAL_CACHE_TTL,
 } from '@skilder-ai/common';
 import { DGraphService } from './dgraph.service';
 import pino from 'pino';
@@ -26,10 +30,17 @@ export class RuntimeService extends Service {
   private runtimeInstances: Map<string, RuntimeInstance> = new Map();
   private runtimeHandshakeCallbackId?: string;
 
+  @inject(HEARTBEAT_CACHE_TTL)
+  private heartbeatTTL!: number;
+
+  @inject(EPHEMERAL_CACHE_TTL)
+  private ephemeralTTL!: number;
+
   constructor(
     @inject(LoggerService) private loggerService: LoggerService,
     @inject(DGraphService) private dgraphService: DGraphService,
     @inject(NatsService) private natsService: NatsService,
+    @inject(NatsCacheService) private cacheService: NatsCacheService,
     @inject(IdentityService) private identityService: IdentityService,
     @inject(RuntimeInstance) private runtimeInstanceFactory: RuntimeInstanceFactory,
     @inject(MCPServerRepository) private mcpServerRepository: MCPServerRepository,
@@ -43,6 +54,18 @@ export class RuntimeService extends Service {
     this.logger.info('Starting');
     await this.startService(this.dgraphService);
     await this.startService(this.natsService);
+
+    // Start cache service and create buckets
+    await this.startService(this.cacheService);
+    await this.cacheService.createBucket({
+      name: CACHE_BUCKETS.HEARTBEAT,
+      ttlMs: this.heartbeatTTL,
+    });
+    await this.cacheService.createBucket({
+      name: CACHE_BUCKETS.EPHEMERAL,
+      ttlMs: this.ephemeralTTL,
+    });
+
     await this.rehydrateRuntimes();
     // listen for runtime handshakes and create runtime instances on the fly when connecting
     this.runtimeHandshakeCallbackId = this.identityService.onHandshake('runtime', (identity: RuntimeHandshakeIdentity) => {
@@ -82,6 +105,7 @@ export class RuntimeService extends Service {
       await runtimeInstance.stop('runtime');
     }
     this.runtimeInstances.clear();
+    await this.stopService(this.cacheService);
     await this.stopService(this.natsService);
     await this.stopService(this.dgraphService);
     this.logger.info('Stopped');
@@ -97,7 +121,7 @@ export class RuntimeService extends Service {
     const activeRuntimes = await this.runtimeRepository.findActive();
     this.logger.debug(`Found ${activeRuntimes?.length} active runtimes: ${JSON.stringify(activeRuntimes.map((r) => r.id), null, 2)}`);
     // identify which runtime is active (has a heartbeat)
-    const heartbeatKeys = await this.natsService.heartbeatKeys();
+    const heartbeatKeys = await this.cacheService.keys(CACHE_BUCKETS.HEARTBEAT);
     this.logger.debug(`Found ${heartbeatKeys?.length} heartbeat keys: ${JSON.stringify(heartbeatKeys, null, 2)}`);
     const aliveRuntimes: Set<string> = new Set();
     let nbHydratedRuntimes = 0;
@@ -153,10 +177,10 @@ export class RuntimeService extends Service {
     this.runtimeInstances.clear();
     this.logger.info('Cleared runtime instances map');
 
-    // Clear NATS heartbeat KV bucket
+    // Clear cache buckets
     await Promise.all([
-      this.natsService.clearHeartbeatKeys(),
-      this.natsService.clearEphemeralKeys()
+      this.cacheService.clear(CACHE_BUCKETS.HEARTBEAT),
+      this.cacheService.clear(CACHE_BUCKETS.EPHEMERAL),
     ]);
 
     // Publish RuntimeReconnectMessage to all connected runtimes

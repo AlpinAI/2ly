@@ -3,6 +3,9 @@ import pino from 'pino';
 import {
   LoggerService,
   NatsService,
+  NatsCacheService,
+  NatsMessage,
+  CACHE_BUCKETS,
   Service,
   dgraphResolversTypes,
   ErrorResponse,
@@ -11,6 +14,8 @@ import {
   MCP_CALL_TOOL_TIMEOUT,
   RuntimeCallToolResponse,
   SmartSkillTool,
+  type RawMessage,
+  type CacheWatchSubscription,
 } from '@skilder-ai/common';
 import { BehaviorSubject, filter, firstValueFrom, map } from 'rxjs';
 
@@ -67,11 +72,12 @@ export class SkillService extends Service {
   private tools = new BehaviorSubject<dgraphResolversTypes.McpTool[] | null>(null);
   private skillDescription: string | null = null;
   private smartSkillTool: SmartSkillTool | null = null;
-  private subscriptions: { unsubscribe: () => void; drain: () => Promise<void>; isClosed?: () => boolean }[] = [];
+  private cacheSubscriptions: CacheWatchSubscription[] = [];
 
   constructor(
     private loggerService: LoggerService,
     private natsService: NatsService,
+    private cacheService: NatsCacheService,
     private identity: SkillIdentity,
   ) {
     super();
@@ -86,29 +92,33 @@ export class SkillService extends Service {
   protected async shutdown() {
     this.logger.info(`Stopping skill service for ${this.identity.skillName}`);
 
-    // Drain all subscriptions
-    const drainPromises = this.subscriptions.map(async (subscription) => {
+    // Unsubscribe from cache subscriptions
+    for (const subscription of this.cacheSubscriptions) {
       try {
-        if (!subscription.isClosed?.()) {
-          await subscription.drain();
-        }
+        subscription.unsubscribe();
       } catch (error) {
-        this.logger.warn(`Failed to drain subscription: ${error}`);
+        this.logger.warn(`Failed to unsubscribe from cache: ${error}`);
       }
-    });
-
-    await Promise.allSettled(drainPromises);
-    this.subscriptions = [];
+    }
+    this.cacheSubscriptions = [];
   }
 
   private async subscribeToCapabilities() {
     const skillSubject = SkillListToolsPublish.subscribeToSkill(this.identity.workspaceId, this.identity.skillId);
     this.logger.info(`Subscribing to List Tools for skill: ${skillSubject}`);
-    const subscription = await this.natsService.observeEphemeral(skillSubject);
-    this.subscriptions.push(subscription);
+    const subscription = await this.cacheService.watch<RawMessage<SkillListToolsPublish['data']>>(
+      CACHE_BUCKETS.EPHEMERAL,
+      { key: skillSubject }
+    );
+    this.cacheSubscriptions.push(subscription);
 
     (async () => {
-      for await (const message of subscription) {
+      for await (const event of subscription) {
+        if (event.operation !== 'PUT' || !event.value) {
+          continue;
+        }
+
+        const message = NatsMessage.fromRawData(event.value);
         if (message instanceof SkillListToolsPublish) {
           this.skillDescription = message.data.description || null;
 
@@ -267,5 +277,6 @@ export class SkillService extends Service {
 export type SkillServiceFactory = (
   loggerService: LoggerService,
   natsService: NatsService,
+  cacheService: NatsCacheService,
   identity: SkillIdentity,
 ) => SkillService;

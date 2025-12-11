@@ -3,6 +3,7 @@ import { ToolService } from './tool.service';
 import {
   LoggerService,
   NatsService,
+  NatsCacheService,
   dgraphResolversTypes,
   EXECUTION_TARGET,
 } from '@skilder-ai/common';
@@ -33,7 +34,6 @@ describe('ToolService', () => {
     // Mock NatsService
     mockNatsService = {
       waitForStarted: vi.fn().mockResolvedValue(undefined),
-      observeEphemeral: vi.fn(),
       subscribe: vi.fn(),
       publish: vi.fn(),
     } as unknown as NatsService;
@@ -60,14 +60,26 @@ describe('ToolService', () => {
     // Mock ToolAgentServiceFactory
     const mockToolAgentServiceFactory = vi.fn();
 
+    // Mock CacheService
+    const mockCacheService = {
+      watch: vi.fn().mockResolvedValue({
+        [Symbol.asyncIterator]: async function* () {},
+        unsubscribe: vi.fn(),
+        drain: vi.fn().mockResolvedValue(undefined),
+      }),
+      createBucket: vi.fn().mockResolvedValue(undefined),
+    };
+
     toolService = new ToolService(
       mockLoggerService,
       mockNatsService,
+      mockCacheService as unknown as NatsCacheService,
       mockAuthService,
       mockHealthService,
       mockToolServerServiceFactory,
       mockToolAgentServiceFactory,
       undefined,
+      5 * 60 * 1000, // ephemeralTTL
     );
   });
 

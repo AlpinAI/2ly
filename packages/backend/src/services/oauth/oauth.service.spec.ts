@@ -269,7 +269,7 @@ describe('OAuthService', () => {
 
     it('returns error for invalid state', async () => {
       // Setup mocks
-      stateService.validateState.mockReturnValue(null);
+      stateService.validateState.mockResolvedValue(null);
 
       // Execute
       const result = await service.handleOAuthCallback(mockCode, 'invalid-state');
@@ -283,7 +283,7 @@ describe('OAuthService', () => {
 
     it('returns error when provider not configured', async () => {
       // Setup mocks
-      stateService.validateState.mockReturnValue(mockStatePayload);
+      stateService.validateState.mockResolvedValue(mockStatePayload);
       providerConfigRepo.findByType.mockResolvedValue(null);
 
       // Execute
@@ -298,7 +298,7 @@ describe('OAuthService', () => {
 
     it('exchanges code for tokens successfully', async () => {
       // Setup mocks
-      stateService.validateState.mockReturnValue(mockStatePayload);
+      stateService.validateState.mockResolvedValue(mockStatePayload);
       providerConfigRepo.findByType.mockResolvedValue(mockProviderConfig);
       connectionRepo.upsert.mockResolvedValue(mockConnection);
 
@@ -335,7 +335,7 @@ describe('OAuthService', () => {
 
     it('gets user info and stores connection', async () => {
       // Setup mocks
-      stateService.validateState.mockReturnValue(mockStatePayload);
+      stateService.validateState.mockResolvedValue(mockStatePayload);
       providerConfigRepo.findByType.mockResolvedValue(mockProviderConfig);
       connectionRepo.upsert.mockResolvedValue(mockConnection);
 
@@ -382,7 +382,7 @@ describe('OAuthService', () => {
 
     it('handles token exchange errors gracefully', async () => {
       // Setup mocks
-      stateService.validateState.mockReturnValue(mockStatePayload);
+      stateService.validateState.mockResolvedValue(mockStatePayload);
       providerConfigRepo.findByType.mockResolvedValue(mockProviderConfig);
 
       // Mock fetch to fail on token exchange
@@ -405,7 +405,7 @@ describe('OAuthService', () => {
 
     it('handles user info errors gracefully', async () => {
       // Setup mocks
-      stateService.validateState.mockReturnValue(mockStatePayload);
+      stateService.validateState.mockResolvedValue(mockStatePayload);
       providerConfigRepo.findByType.mockResolvedValue(mockProviderConfig);
 
       // Mock fetch to succeed on token exchange, then fail on user info

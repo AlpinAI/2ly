@@ -2,6 +2,8 @@ import { inject, injectable } from 'inversify';
 import {
   LoggerService,
   NatsService,
+  NatsCacheService,
+  CACHE_BUCKETS,
   RuntimeMCPServersPublish,
   Service,
   SkillListToolsPublish,
@@ -35,6 +37,7 @@ export class SkillService extends Service {
     @inject(IdentityService) private identityService: IdentityService,
     @inject(DGraphService) private dgraphService: DGraphService,
     @inject(NatsService) private natsService: NatsService,
+    @inject(NatsCacheService) private cacheService: NatsCacheService,
     @inject(SkillRepository) private skillRepository: SkillRepository,
     @inject(WorkspaceRepository) private workspaceRepository: WorkspaceRepository,
   ) {
@@ -151,7 +154,8 @@ export class SkillService extends Service {
       smartSkillTool,
       description: skill.description,
     }) as SkillListToolsPublish;
-    this.natsService.publishEphemeral(message);
+    const messageData = message.prepareData();
+    this.cacheService.put(CACHE_BUCKETS.EPHEMERAL, messageData.subject!, messageData);
   }
 
   // TODO: leverage root from handshake ?
@@ -164,6 +168,7 @@ export class SkillService extends Service {
       roots: [] as { name: string; uri: string }[],
       mcpServers,
     }) as RuntimeMCPServersPublish;
-    this.natsService.publishEphemeral(mcpServersMessage);
+    const mcpServersMessageData = mcpServersMessage.prepareData();
+    this.cacheService.put(CACHE_BUCKETS.EPHEMERAL, mcpServersMessageData.subject!, mcpServersMessageData);
   }
 }
