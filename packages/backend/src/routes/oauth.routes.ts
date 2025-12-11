@@ -1,6 +1,7 @@
 import { FastifyInstance } from 'fastify';
 import { Container } from 'inversify';
 import { OAuthService } from '../services/oauth';
+import { AuthenticationService } from '../services/auth/auth.service';
 import { LoggerService } from '@skilder-ai/common';
 
 interface OAuthCallbackQuery {
@@ -12,6 +13,7 @@ interface OAuthCallbackQuery {
 
 export function registerOAuthRoutes(fastify: FastifyInstance, container: Container): void {
   const oauthService = container.get(OAuthService);
+  const authService = container.get(AuthenticationService);
   const logger = container.get(LoggerService).getLogger('oauth.routes');
 
   // Get frontend URL from environment
@@ -52,8 +54,22 @@ export function registerOAuthRoutes(fastify: FastifyInstance, container: Contain
         return reply.redirect(errorUrl.toString());
       }
 
+      // Extract authenticated user ID from JWT if present (defense-in-depth)
+      let authenticatedUserId: string | undefined;
+      const authHeader = request.headers.authorization;
+      if (authHeader?.startsWith('Bearer ')) {
+        try {
+          const token = authHeader.substring(7);
+          const payload = await authService.verifyAccessToken(token);
+          authenticatedUserId = payload.userId;
+        } catch {
+          // Token invalid or expired - proceed without authenticated user
+          // The encrypted state is the primary protection
+        }
+      }
+
       // Process the OAuth callback
-      const result = await oauthService.handleOAuthCallback(code, state);
+      const result = await oauthService.handleOAuthCallback(code, state, authenticatedUserId);
 
       // Build redirect URL
       const workspaceId = result.workspaceId || 'default';

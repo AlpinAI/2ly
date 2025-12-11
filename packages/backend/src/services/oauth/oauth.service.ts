@@ -112,13 +112,20 @@ export class OAuthService {
    */
   async handleOAuthCallback(
     code: string,
-    state: string
+    state: string,
+    authenticatedUserId?: string
   ): Promise<OAuthCallbackResult> {
     // Validate state
     const statePayload = this.stateService.validateState(state);
     if (!statePayload) {
       this.logger.warn('Invalid or expired OAuth state');
       return { success: false, error: 'Invalid or expired OAuth state' };
+    }
+
+    // Verify authenticated user matches state user (defense-in-depth)
+    if (authenticatedUserId && authenticatedUserId !== statePayload.userId) {
+      this.logger.warn(`Session user mismatch: authenticated=${authenticatedUserId}, state=${statePayload.userId}`);
+      return { success: false, error: 'Session user mismatch', workspaceId: statePayload.workspaceId };
     }
 
     const { userId, workspaceId, provider, redirectUri, scopes } = statePayload;
