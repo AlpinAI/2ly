@@ -11,12 +11,12 @@ import { LoggerService, NatsService, dgraphResolversTypes } from '@skilder-ai/co
 type Workspace = dgraphResolversTypes.Workspace;
 
 // Mock dependencies
-vi.mock('../repositories/identity.repository');
+vi.mock('../repositories/identity/identity.repository');
 vi.mock('./key-rate-limiter.service');
-vi.mock('../repositories/system.repository');
+vi.mock('../repositories/system/system.repository');
 vi.mock('../repositories/workspace/workspace.repository');
-vi.mock('../repositories/runtime.repository');
-vi.mock('../repositories/skill.repository');
+vi.mock('../repositories/runtime/runtime.repository');
+vi.mock('../repositories/skill/skill.repository');
 vi.mock('@skilder-ai/common', async () => {
   const actual = await vi.importActual('@skilder-ai/common');
   return {
