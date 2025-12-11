@@ -113,6 +113,8 @@ export class OAuthStateService {
    * This should be addressed together with the in-memory store scalability issue above.
    */
   private cleanupNonces(): void {
+    // For simplicity, clear all nonces after expiry period
+    // In production, you might want more sophisticated cleanup
     if (this.usedNonces.size > 10000) {
       this.usedNonces.clear();
       this.logger.debug('Cleared OAuth state nonces cache');

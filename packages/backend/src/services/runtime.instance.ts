@@ -13,8 +13,8 @@ import {
   DEFAULT_MAX_TOKENS,
 } from '@skilder-ai/common';
 import { RuntimeRepository } from '../repositories';
-import { SkillRepository } from '../repositories/skill.repository';
-import { AIProviderRepository } from '../repositories/ai-provider.repository';
+import { SkillRepository } from '../repositories/skill/skill.repository';
+import { AIProviderRepository } from '../repositories/ai-provider/ai-provider.repository';
 import { BehaviorSubject, combineLatest, debounceTime, Subscription, tap, switchMap, from, of, catchError } from 'rxjs';
 import type { ConnectionMetadata } from '../types';
 

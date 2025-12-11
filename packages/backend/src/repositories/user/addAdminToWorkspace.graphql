@@ -1,0 +1,8 @@
+mutation AddAdminToWorkspace($userId: ID!, $workspaceId: ID!) {
+  updateUser(input: { filter: { id: [$userId] }, set: { adminOfWorkspaces: { id: $workspaceId } } }) {
+    user {
+      id
+      email
+    }
+  }
+}

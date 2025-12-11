@@ -1,0 +1,8 @@
+mutation UpdateUserEmail($id: ID!, $email: String!) {
+  updateUser(input: { filter: { id: [$id] }, set: { email: $email } }) {
+    user {
+      id
+      email
+    }
+  }
+}

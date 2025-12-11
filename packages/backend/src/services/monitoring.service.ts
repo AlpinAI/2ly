@@ -2,7 +2,7 @@ import { inject, injectable } from 'inversify';
 import { LoggerService, Service, NatsService, SkillCallToolRequest, RuntimeCallToolResponse, dgraphResolversTypes, MCP_CALL_TOOL_TIMEOUT, isSmartSkillCall, isMCPToolCall } from '@skilder-ai/common';
 import { DGraphService } from './dgraph.service';
 import pino from 'pino';
-import { MonitoringRepository } from '../repositories/monitoring.repository';
+import { MonitoringRepository } from '../repositories/monitoring/monitoring.repository';
 
 @injectable()
 export class MonitoringService extends Service {

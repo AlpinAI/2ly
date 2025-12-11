@@ -21,7 +21,7 @@
     "typecheck": "npm run typecheck --workspaces --if-present",
     "typecheck:full": "npm run typecheck:full --workspaces --if-present",
     "format": "npm run format --workspaces --if-present",
-    "codegen": "npm run codegen -w @skilder-ai/common && npm run codegen -w @skilder-ai/frontend",
+    "codegen": "npm run codegen -w @skilder-ai/common && npm run codegen -w @skilder-ai/frontend && npm run codegen -w @skilder-ai/backend",
     "codegen:mcp-registry": "npm run codegen:mcp-registry -w @skilder-ai/common",
     "dev:backend": "npm run dev -w @skilder-ai/backend",
     "dev:frontend": "npm run dev -w @skilder-ai/frontend",

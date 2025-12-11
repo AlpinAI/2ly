@@ -86,7 +86,12 @@ async function globalSetup(_config: FullConfig) {
       viteProcess.stdout?.on('data', (data: Buffer) => {
         const output = data.toString();
         // Only log errors or warnings from Vite
-        if (output.includes('error') || output.includes('ERROR') || output.includes('warn') || output.includes('WARN')) {
+        if (
+          output.includes('error') ||
+          output.includes('ERROR') ||
+          output.includes('warn') ||
+          output.includes('WARN')
+        ) {
           console.log('  [Vite]', output.trim());
         }
 

@@ -10,8 +10,8 @@ import {
   MicrosoftOAuthProvider,
   NotionOAuthProvider,
 } from './providers';
-import { OAuthProviderRepository } from '../../repositories/oauth-provider.repository';
-import { UserOAuthConnectionRepository } from '../../repositories/user-oauth-connection.repository';
+import { OAuthProviderRepository } from '../../repositories/oauth-provider/oauth-provider.repository';
+import { UserOAuthConnectionRepository } from '../../repositories/user-oauth-connection/user-oauth-connection.repository';
 
 export interface InitiateOAuthResult {
   url: string;

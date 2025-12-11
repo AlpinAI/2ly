@@ -1,0 +1,10 @@
+mutation UnlockUserAccount($id: ID!) {
+  updateUser(input: { filter: { id: [$id] }, set: { failedLoginAttempts: 0, lockedUntil: null } }) {
+    user {
+      id
+      email
+      failedLoginAttempts
+      lockedUntil
+    }
+  }
+}

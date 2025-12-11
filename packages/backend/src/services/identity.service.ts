@@ -1,14 +1,14 @@
 import { injectable, inject } from 'inversify';
-import { IdentityRepository } from '../repositories/identity.repository';
+import { IdentityRepository } from '../repositories/identity/identity.repository';
 import { KeyRateLimiterService } from './key-rate-limiter.service';
 import { LoggerService, NatsService, Service, HandshakeRequest, HandshakeResponse, ErrorResponse, dgraphResolversTypes } from '@skilder-ai/common';
 import pino from 'pino';
-import { WorkspaceRepository } from '../repositories/workspace.repository';
-import { RuntimeRepository } from '../repositories/runtime.repository';
-import { SkillRepository } from '../repositories/skill.repository';
+import { WorkspaceRepository } from '../repositories/workspace/workspace.repository';
+import { RuntimeRepository } from '../repositories/runtime/runtime.repository';
+import { SkillRepository } from '../repositories/skill/skill.repository';
 import { v4 as uuidv4 } from 'uuid';
 import { HandshakeRuntimeCallback, HandshakeSkillCallback } from '../types';
-import { SystemRepository } from '../repositories/system.repository';
+import { SystemRepository } from '../repositories/system/system.repository';
 
 /**
  * TokenService handles validation of System Keys, Workspace Keys, and Skill Keys.

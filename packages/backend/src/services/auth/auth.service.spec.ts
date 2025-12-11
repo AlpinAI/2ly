@@ -1,12 +1,12 @@
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 import { AuthenticationService, LoginRequest, RefreshTokenRequest, LogoutRequest } from './auth.service';
-import { UserRepository } from '../../repositories/user.repository';
-import { SessionRepository } from '../../repositories/session.repository';
+import { UserRepository } from '../../repositories/user/user.repository';
+import { SessionRepository } from '../../repositories/session/session.repository';
 import { JwtService, JwtPayload, TokenPair } from './jwt.service';
 import { dgraphResolversTypes } from '@skilder-ai/common';
 
 // Mock dependencies
-vi.mock('../../repositories/user.repository');
+vi.mock('../../repositories/user/user.repository');
 vi.mock('../../repositories/session.repository');
 vi.mock('./jwt.service');
 vi.mock('@skilder-ai/common', async () => {

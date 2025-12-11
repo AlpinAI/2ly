@@ -1,22 +1,22 @@
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 import { IdentityService } from './identity.service';
-import { IdentityRepository } from '../repositories/identity.repository';
+import { IdentityRepository } from '../repositories/identity/identity.repository';
 import { KeyRateLimiterService } from './key-rate-limiter.service';
-import { SystemRepository } from '../repositories/system.repository';
-import { WorkspaceRepository } from '../repositories/workspace.repository';
-import { RuntimeRepository } from '../repositories/runtime.repository';
-import { SkillRepository } from '../repositories/skill.repository';
+import { SystemRepository } from '../repositories/system/system.repository';
+import { WorkspaceRepository } from '../repositories/workspace/workspace.repository';
+import { RuntimeRepository } from '../repositories/runtime/runtime.repository';
+import { SkillRepository } from '../repositories/skill/skill.repository';
 import { LoggerService, NatsService, dgraphResolversTypes } from '@skilder-ai/common';
 
 type Workspace = dgraphResolversTypes.Workspace;
 
 // Mock dependencies
-vi.mock('../repositories/identity.repository');
+vi.mock('../repositories/identity/identity.repository');
 vi.mock('./key-rate-limiter.service');
-vi.mock('../repositories/system.repository');
-vi.mock('../repositories/workspace.repository');
-vi.mock('../repositories/runtime.repository');
-vi.mock('../repositories/skill.repository');
+vi.mock('../repositories/system/system.repository');
+vi.mock('../repositories/workspace/workspace.repository');
+vi.mock('../repositories/runtime/runtime.repository');
+vi.mock('../repositories/skill/skill.repository');
 vi.mock('@skilder-ai/common', async () => {
   const actual = await vi.importActual('@skilder-ai/common');
   return {
@@ -116,7 +116,7 @@ describe('IdentityService', () => {
       mockSystemRepository,
       mockWorkspaceRepository,
       mockRuntimeRepository,
-      mockSkillRepository
+      mockSkillRepository,
     );
   });
 
@@ -156,7 +156,9 @@ describe('IdentityService', () => {
       vi.spyOn(mockRuntimeRepository, 'create').mockResolvedValue(mockRuntime);
 
       // Call private method via any cast
-      await (service as unknown as { handleHandshake: (msg: unknown) => Promise<void> }).handleHandshake(handshakeRequest);
+      await (service as unknown as { handleHandshake: (msg: unknown) => Promise<void> }).handleHandshake(
+        handshakeRequest,
+      );
 
       expect(mockRuntimeRepository.create).toHaveBeenCalledWith(
         'system',
@@ -164,7 +166,7 @@ describe('IdentityService', () => {
         'test-runtime',
         '',
         'ACTIVE',
-        'EDGE'
+        'EDGE',
       );
       expect(handshakeRequest.respond).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -174,7 +176,7 @@ describe('IdentityService', () => {
             name: 'test-runtime',
             workspaceId: null,
           }),
-        })
+        }),
       );
     });
 
@@ -205,7 +207,9 @@ describe('IdentityService', () => {
       vi.spyOn(mockSystemRepository, 'getSystem').mockResolvedValue(mockSystem);
       vi.spyOn(mockRuntimeRepository, 'findByName').mockResolvedValue(mockRuntime);
 
-      await (service as unknown as { handleHandshake: (msg: unknown) => Promise<void> }).handleHandshake(handshakeRequest);
+      await (service as unknown as { handleHandshake: (msg: unknown) => Promise<void> }).handleHandshake(
+        handshakeRequest,
+      );
 
       expect(mockRuntimeRepository.create).not.toHaveBeenCalled();
       expect(handshakeRequest.respond).toHaveBeenCalledWith(
@@ -215,7 +219,7 @@ describe('IdentityService', () => {
             id: 'runtime-existing',
             name: 'test-runtime',
           }),
-        })
+        }),
       );
     });
   });
@@ -249,7 +253,9 @@ describe('IdentityService', () => {
       vi.spyOn(mockRuntimeRepository, 'findByName').mockResolvedValue(undefined);
       vi.spyOn(mockRuntimeRepository, 'create').mockResolvedValue(mockRuntime);
 
-      await (service as unknown as { handleHandshake: (msg: unknown) => Promise<void> }).handleHandshake(handshakeRequest);
+      await (service as unknown as { handleHandshake: (msg: unknown) => Promise<void> }).handleHandshake(
+        handshakeRequest,
+      );
 
       expect(mockRuntimeRepository.create).toHaveBeenCalledWith(
         'workspace',
@@ -257,7 +263,7 @@ describe('IdentityService', () => {
         'test-runtime',
         '',
         'ACTIVE',
-        'EDGE'
+        'EDGE',
       );
       expect(handshakeRequest.respond).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -267,7 +273,7 @@ describe('IdentityService', () => {
             name: 'test-runtime',
             workspaceId: 'workspace-123',
           }),
-        })
+        }),
       );
     });
 
@@ -298,7 +304,9 @@ describe('IdentityService', () => {
       vi.spyOn(mockSkillRepository, 'findByName').mockResolvedValue(null);
       vi.spyOn(mockSkillRepository, 'create').mockResolvedValue(mockSkill);
 
-      await (service as unknown as { handleHandshake: (msg: unknown) => Promise<void> }).handleHandshake(handshakeRequest);
+      await (service as unknown as { handleHandshake: (msg: unknown) => Promise<void> }).handleHandshake(
+        handshakeRequest,
+      );
 
       expect(mockSkillRepository.create).toHaveBeenCalledWith('test-skill', '', 'workspace-123');
       expect(handshakeRequest.respond).toHaveBeenCalledWith(
@@ -309,7 +317,7 @@ describe('IdentityService', () => {
             name: 'test-skill',
             workspaceId: 'workspace-123',
           }),
-        })
+        }),
       );
     });
 
@@ -339,7 +347,9 @@ describe('IdentityService', () => {
       vi.spyOn(mockWorkspaceRepository, 'findById').mockResolvedValue(mockWorkspace);
       vi.spyOn(mockSkillRepository, 'findByName').mockResolvedValue(mockSkill);
 
-      await (service as unknown as { handleHandshake: (msg: unknown) => Promise<void> }).handleHandshake(handshakeRequest);
+      await (service as unknown as { handleHandshake: (msg: unknown) => Promise<void> }).handleHandshake(
+        handshakeRequest,
+      );
 
       expect(mockSkillRepository.create).not.toHaveBeenCalled();
       expect(handshakeRequest.respond).toHaveBeenCalledWith(
@@ -349,7 +359,7 @@ describe('IdentityService', () => {
             id: 'skill-existing',
             name: 'test-skill',
           }),
-        })
+        }),
       );
     });
   });
@@ -382,7 +392,9 @@ describe('IdentityService', () => {
       });
       vi.spyOn(mockRuntimeRepository, 'findById').mockResolvedValue(mockRuntime);
 
-      await (service as unknown as { handleHandshake: (msg: unknown) => Promise<void> }).handleHandshake(handshakeRequest);
+      await (service as unknown as { handleHandshake: (msg: unknown) => Promise<void> }).handleHandshake(
+        handshakeRequest,
+      );
 
       expect(handshakeRequest.respond).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -392,7 +404,7 @@ describe('IdentityService', () => {
             name: 'test-runtime',
             workspaceId: 'workspace-123',
           }),
-        })
+        }),
       );
     });
 
@@ -423,11 +435,11 @@ describe('IdentityService', () => {
       });
       vi.spyOn(mockRuntimeRepository, 'findById').mockResolvedValue(mockRuntime);
 
-      await (service as unknown as { handleHandshake: (msg: unknown) => Promise<void> }).handleHandshake(handshakeRequest);
+      await (service as unknown as { handleHandshake: (msg: unknown) => Promise<void> }).handleHandshake(
+        handshakeRequest,
+      );
 
-      expect(mockRuntimeRepository.setRoots).toHaveBeenCalledWith('runtime-456', [
-        { id: 'root1', key: 'temp' },
-      ]);
+      expect(mockRuntimeRepository.setRoots).toHaveBeenCalledWith('runtime-456', [{ id: 'root1', key: 'temp' }]);
     });
   });
 
@@ -457,7 +469,9 @@ describe('IdentityService', () => {
       });
       vi.spyOn(mockSkillRepository, 'findById').mockResolvedValue(mockSkill);
 
-      await (service as unknown as { handleHandshake: (msg: unknown) => Promise<void> }).handleHandshake(handshakeRequest);
+      await (service as unknown as { handleHandshake: (msg: unknown) => Promise<void> }).handleHandshake(
+        handshakeRequest,
+      );
 
       expect(handshakeRequest.respond).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -467,7 +481,7 @@ describe('IdentityService', () => {
             name: 'test-skill',
             workspaceId: 'workspace-123',
           }),
-        })
+        }),
       );
     });
   });
@@ -486,7 +500,9 @@ describe('IdentityService', () => {
 
       vi.spyOn(mockKeyRateLimiter, 'checkKeyAttempt').mockReturnValue(false);
 
-      await (service as unknown as { handleHandshake: (msg: unknown) => Promise<void> }).handleHandshake(handshakeRequest);
+      await (service as unknown as { handleHandshake: (msg: unknown) => Promise<void> }).handleHandshake(
+        handshakeRequest,
+      );
 
       expect(mockIdentityRepository.findKey).not.toHaveBeenCalled();
       expect(handshakeRequest.respond).toHaveBeenCalledWith(
@@ -494,7 +510,7 @@ describe('IdentityService', () => {
           data: expect.objectContaining({
             error: 'AUTHENTICATION_FAILED',
           }),
-        })
+        }),
       );
     });
 
@@ -525,7 +541,9 @@ describe('IdentityService', () => {
       vi.spyOn(mockWorkspaceRepository, 'findById').mockResolvedValue(mockWorkspace);
       vi.spyOn(mockRuntimeRepository, 'findByName').mockResolvedValue(mockRuntime);
 
-      await (service as unknown as { handleHandshake: (msg: unknown) => Promise<void> }).handleHandshake(handshakeRequest);
+      await (service as unknown as { handleHandshake: (msg: unknown) => Promise<void> }).handleHandshake(
+        handshakeRequest,
+      );
 
       expect(mockKeyRateLimiter.recordSuccessfulAttempt).toHaveBeenCalledWith('WSK12345');
     });
@@ -544,7 +562,9 @@ describe('IdentityService', () => {
       vi.spyOn(mockKeyRateLimiter, 'checkKeyAttempt').mockReturnValue(true);
       vi.spyOn(mockIdentityRepository, 'findKey').mockRejectedValue(new Error('NOT_FOUND'));
 
-      await (service as unknown as { handleHandshake: (msg: unknown) => Promise<void> }).handleHandshake(handshakeRequest);
+      await (service as unknown as { handleHandshake: (msg: unknown) => Promise<void> }).handleHandshake(
+        handshakeRequest,
+      );
 
       expect(mockKeyRateLimiter.recordFailedAttempt).toHaveBeenCalledWith('WSK12345', '192.168.1.1');
       expect(handshakeRequest.respond).toHaveBeenCalledWith(
@@ -552,7 +572,7 @@ describe('IdentityService', () => {
           data: expect.objectContaining({
             error: 'AUTHENTICATION_FAILED',
           }),
-        })
+        }),
       );
     });
   });
@@ -572,14 +592,16 @@ describe('IdentityService', () => {
       vi.spyOn(mockKeyRateLimiter, 'checkKeyAttempt').mockReturnValue(true);
       vi.spyOn(mockIdentityRepository, 'findKey').mockRejectedValue(new Error('NOT_FOUND'));
 
-      await (service as unknown as { handleHandshake: (msg: unknown) => Promise<void> }).handleHandshake(handshakeRequest);
+      await (service as unknown as { handleHandshake: (msg: unknown) => Promise<void> }).handleHandshake(
+        handshakeRequest,
+      );
 
       expect(handshakeRequest.respond).toHaveBeenCalledWith(
         expect.objectContaining({
           data: expect.objectContaining({
             error: 'AUTHENTICATION_FAILED',
           }),
-        })
+        }),
       );
     });
 
@@ -597,14 +619,16 @@ describe('IdentityService', () => {
       vi.spyOn(mockKeyRateLimiter, 'checkKeyAttempt').mockReturnValue(true);
       vi.spyOn(mockIdentityRepository, 'findKey').mockRejectedValue(new Error('EXPIRED'));
 
-      await (service as unknown as { handleHandshake: (msg: unknown) => Promise<void> }).handleHandshake(handshakeRequest);
+      await (service as unknown as { handleHandshake: (msg: unknown) => Promise<void> }).handleHandshake(
+        handshakeRequest,
+      );
 
       expect(handshakeRequest.respond).toHaveBeenCalledWith(
         expect.objectContaining({
           data: expect.objectContaining({
             error: 'AUTHENTICATION_FAILED',
           }),
-        })
+        }),
       );
     });
 
@@ -626,14 +650,16 @@ describe('IdentityService', () => {
       });
       vi.spyOn(mockWorkspaceRepository, 'findById').mockResolvedValue(null as unknown as Workspace);
 
-      await (service as unknown as { handleHandshake: (msg: unknown) => Promise<void> }).handleHandshake(handshakeRequest);
+      await (service as unknown as { handleHandshake: (msg: unknown) => Promise<void> }).handleHandshake(
+        handshakeRequest,
+      );
 
       expect(handshakeRequest.respond).toHaveBeenCalledWith(
         expect.objectContaining({
           data: expect.objectContaining({
             error: 'AUTHENTICATION_FAILED',
           }),
-        })
+        }),
       );
     });
   });
@@ -673,7 +699,9 @@ describe('IdentityService', () => {
       });
       vi.spyOn(mockRuntimeRepository, 'findById').mockResolvedValue(mockRuntime);
 
-      await (service as unknown as { handleHandshake: (msg: unknown) => Promise<void> }).handleHandshake(handshakeRequest);
+      await (service as unknown as { handleHandshake: (msg: unknown) => Promise<void> }).handleHandshake(
+        handshakeRequest,
+      );
 
       expect(callback1).toHaveBeenCalledWith({
         instance: mockRuntime,
@@ -719,7 +747,9 @@ describe('IdentityService', () => {
       });
       vi.spyOn(mockSkillRepository, 'findById').mockResolvedValue(mockSkill);
 
-      await (service as unknown as { handleHandshake: (msg: unknown) => Promise<void> }).handleHandshake(handshakeRequest);
+      await (service as unknown as { handleHandshake: (msg: unknown) => Promise<void> }).handleHandshake(
+        handshakeRequest,
+      );
 
       expect(callback).toHaveBeenCalledWith({
         instance: mockSkill,
@@ -760,7 +790,9 @@ describe('IdentityService', () => {
       });
       vi.spyOn(mockRuntimeRepository, 'findById').mockResolvedValue(mockRuntime);
 
-      await (service as unknown as { handleHandshake: (msg: unknown) => Promise<void> }).handleHandshake(handshakeRequest);
+      await (service as unknown as { handleHandshake: (msg: unknown) => Promise<void> }).handleHandshake(
+        handshakeRequest,
+      );
 
       expect(callback).not.toHaveBeenCalled();
     });

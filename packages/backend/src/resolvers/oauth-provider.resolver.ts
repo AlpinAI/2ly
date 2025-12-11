@@ -2,7 +2,7 @@ import { apolloResolversTypes, dgraphResolversTypes } from '@skilder-ai/common';
 import { Container } from 'inversify';
 import { GraphQLError } from 'graphql';
 import { OAuthProviderRepository, WorkspaceRepository } from '../repositories';
-import type { OAuthProviderType } from '../repositories/oauth-provider.repository';
+import type { OAuthProviderType } from '../repositories/oauth-provider/oauth-provider.repository';
 import { GraphQLContext } from '../types';
 import { requireAuth, requireWorkspaceAccess, requireAuthAndWorkspaceAccess } from '../database/authorization.helpers';
 
