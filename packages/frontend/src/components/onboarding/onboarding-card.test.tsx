@@ -114,6 +114,8 @@ describe('OnboardingCard', () => {
     temperature: null,
     maxTokens: null,
     systemPrompt: null,
+    guardrails: null,
+    associatedKnowledge: null,
     executionTarget: null,
     runtime: null,
     workspace: {

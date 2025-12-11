@@ -12,6 +12,8 @@ query GetSkills($workspaceId: ID!) {
     temperature
     maxTokens
     systemPrompt
+    guardrails
+    associatedKnowledge
     executionTarget
     runtime {
       id
