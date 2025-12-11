@@ -21,20 +21,24 @@
  * ```
  */
 
-import { useState, useCallback } from 'react';
-import { X, Wand2, Sparkles, RefreshCw } from 'lucide-react';
+import { useState, useCallback, useMemo } from 'react';
+import { X, Wand2, Sparkles, RefreshCw, CheckCircle } from 'lucide-react';
 import * as Dialog from '@radix-ui/react-dialog';
 import * as Tabs from '@radix-ui/react-tabs';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useCreateSkillDialog } from '@/stores/uiStore';
 import { useParams } from 'react-router-dom';
 import { useMutation } from '@apollo/client/react';
-import { CreateSkillDocument, GenerateSkillWithAiDocument } from '@/graphql/generated/graphql';
+import {
+  CreateSkillDocument,
+  GenerateSkillWithAiDocument,
+  AddMcpToolToSkillDocument,
+} from '@/graphql/generated/graphql';
 import { useNotification } from '@/contexts/NotificationContext';
 import { useAIProviders } from '@/hooks/useAIProviders';
+import { useMCPTools } from '@/hooks/useMCPTools';
 
 type GeneratedData = {
   name: string;
@@ -49,6 +53,7 @@ export function CreateSkillDialog() {
   const { workspaceId } = useParams<{ workspaceId: string }>();
   const { toast } = useNotification();
   const { providers } = useAIProviders();
+  const { tools } = useMCPTools();
 
   // Mode state
   const [mode, setMode] = useState<'manual' | 'ai'>('manual');
@@ -67,17 +72,54 @@ export function CreateSkillDialog() {
   const [editedDescription, setEditedDescription] = useState('');
   const [editedGuardrails, setEditedGuardrails] = useState('');
   const [editedKnowledge, setEditedKnowledge] = useState('');
+  const [isAddingTools, setIsAddingTools] = useState(false);
+
+  const [addToolToSkill] = useMutation(AddMcpToolToSkillDocument, {
+    refetchQueries: ['SubscribeSkills'],
+  });
 
   const [createSkill, { loading: creating }] = useMutation(CreateSkillDocument, {
     refetchQueries: ['SubscribeSkills'],
-    onCompleted: (data) => {
+    onCompleted: async (data) => {
       const skillId = data.createSkill.id;
 
-      toast({
-        title: 'Skill Created',
-        description: `"${mode === 'manual' ? name : editedName}" has been created successfully.`,
-        variant: 'success',
-      });
+      // If in AI mode and we have suggested tools, add them to the skill
+      if (mode === 'ai' && generatedData && generatedData.suggestedToolIds.length > 0) {
+        setIsAddingTools(true);
+        try {
+          // Add all suggested tools to the skill
+          await Promise.all(
+            generatedData.suggestedToolIds.map((toolId) =>
+              addToolToSkill({
+                variables: {
+                  skillId,
+                  mcpToolId: toolId,
+                },
+              })
+            )
+          );
+
+          toast({
+            title: 'Skill Created',
+            description: `"${editedName}" has been created with ${generatedData.suggestedToolIds.length} suggested tool${generatedData.suggestedToolIds.length > 1 ? 's' : ''}.`,
+            variant: 'success',
+          });
+        } catch (_error) {
+          toast({
+            title: 'Skill Created',
+            description: `"${editedName}" was created, but some tools could not be added.`,
+            variant: 'warning',
+          });
+        } finally {
+          setIsAddingTools(false);
+        }
+      } else {
+        toast({
+          title: 'Skill Created',
+          description: `"${mode === 'manual' ? name : editedName}" has been created successfully.`,
+          variant: 'success',
+        });
+      }
 
       // Call callback if provided before closing
       if (callback) {
@@ -205,11 +247,20 @@ export function CreateSkillDialog() {
   };
 
   const isManualValid = name.trim().length > 0;
-  const isAIValid = userPrompt.trim().length > 0 && selectedProviderId.length > 0;
+  const isAIValid = userPrompt.trim().length > 0 && providers.length > 0;
   const isGeneratedValid = editedName.trim().length > 0;
 
-  // Auto-select first provider if only one exists
-  if (providers.length === 1 && !selectedProviderId && mode === 'ai') {
+  // Get suggested tools from the generated data
+  const suggestedTools = useMemo(() => {
+    if (!generatedData || generatedData.suggestedToolIds.length === 0) {
+      return [];
+    }
+    const toolIdSet = new Set(generatedData.suggestedToolIds);
+    return tools.filter((tool) => toolIdSet.has(tool.id));
+  }, [generatedData, tools]);
+
+  // Auto-select first provider when in AI mode
+  if (providers.length > 0 && !selectedProviderId && mode === 'ai') {
     setSelectedProviderId(providers[0].id);
   }
 
@@ -311,37 +362,17 @@ export function CreateSkillDialog() {
             </Tabs.Content>
 
             {/* AI-Assisted Mode */}
-            <Tabs.Content value="ai" className="flex-1 overflow-hidden">
+            <Tabs.Content value="ai" className="flex-1 overflow-hidden flex flex-col">
               <div className="flex flex-col h-full">
-                <div className="p-6 overflow-y-auto flex-1 space-y-4">
+                <div className="p-6 overflow-y-auto flex-1 space-y-4 min-h-0">
                   {!generatedData ? (
                     <>
-                      {/* AI Provider Selector */}
-                      <div>
-                        <label className="block text-sm font-medium text-gray-900 dark:text-white mb-2">
-                          AI Provider *
-                        </label>
-                        {providers.length === 0 ? (
-                          <div className="text-sm text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 p-3 rounded border border-amber-200 dark:border-amber-800">
-                            No AI providers configured. Configure one in Settings → AI Providers.
-                          </div>
-                        ) : (
-                          <Select value={selectedProviderId} onValueChange={setSelectedProviderId}>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select an AI provider..." />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {providers.map((p) => (
-                                <SelectItem key={p.id} value={p.id}>
-                                  {p.provider}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        )}
-                      </div>
-
                       {/* Natural Language Prompt */}
+                      {providers.length === 0 && (
+                        <div className="text-sm text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 p-3 rounded border border-amber-200 dark:border-amber-800">
+                          No AI providers configured. Configure one in Settings → AI Providers.
+                        </div>
+                      )}
                       <div>
                         <label className="block text-sm font-medium text-gray-900 dark:text-white mb-2">
                           Describe Your Skill *
@@ -433,14 +464,43 @@ export function CreateSkillDialog() {
                         </p>
                       </div>
 
-                      {generatedData.suggestedToolIds.length > 0 && (
-                        <div className="bg-gray-50 dark:bg-gray-900/50 rounded-lg p-3 border border-gray-200 dark:border-gray-700">
-                          <p className="text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
-                            Suggested Tools ({generatedData.suggestedToolIds.length})
-                          </p>
-                          <p className="text-xs text-gray-500 dark:text-gray-400">
-                            After creating the skill, you can add these tools in the Manage Tools dialog.
-                          </p>
+                      {suggestedTools.length > 0 && (
+                        <div className="bg-gray-50 dark:bg-gray-900/50 rounded-lg border border-gray-200 dark:border-gray-700">
+                          <div className="p-3 border-b border-gray-200 dark:border-gray-700">
+                            <p className="text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                              Suggested Tools ({suggestedTools.length})
+                            </p>
+                            <p className="text-xs text-gray-500 dark:text-gray-400">
+                              These tools will be automatically added to your skill when created.
+                            </p>
+                          </div>
+                          <div className="max-h-48 overflow-y-auto">
+                            {suggestedTools.map((tool) => (
+                              <div
+                                key={tool.id}
+                                className="p-3 border-b border-gray-200 dark:border-gray-700 last:border-b-0"
+                              >
+                                <div className="flex items-start gap-2">
+                                  <CheckCircle className="h-4 w-4 text-cyan-600 dark:text-cyan-400 mt-0.5 flex-shrink-0" />
+                                  <div className="flex-1 min-w-0">
+                                    <div className="flex items-center gap-2">
+                                      <p className="text-sm font-medium text-gray-900 dark:text-white">
+                                        {tool.name}
+                                      </p>
+                                      <span className="text-xs text-gray-500 dark:text-gray-400 flex-shrink-0">
+                                        {tool.mcpServer.name}
+                                      </span>
+                                    </div>
+                                    {tool.description && (
+                                      <p className="text-xs text-gray-600 dark:text-gray-400 mt-1 line-clamp-2">
+                                        {tool.description}
+                                      </p>
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
                         </div>
                       )}
                     </>
@@ -455,7 +515,7 @@ export function CreateSkillDialog() {
                         type="button"
                         variant="outline"
                         onClick={handleRegenerate}
-                        disabled={creating}
+                        disabled={creating || isAddingTools}
                         className="flex items-center gap-2"
                       >
                         <RefreshCw className="h-4 w-4" />
@@ -464,7 +524,7 @@ export function CreateSkillDialog() {
                     )}
                   </div>
                   <div className="flex gap-2">
-                    <Button type="button" variant="outline" onClick={handleClose} disabled={generating || creating}>
+                    <Button type="button" variant="outline" onClick={handleClose} disabled={generating || creating || isAddingTools}>
                       Cancel
                     </Button>
                     {!generatedData ? (
@@ -490,9 +550,17 @@ export function CreateSkillDialog() {
                       <Button
                         type="button"
                         onClick={handleCreateFromGenerated}
-                        disabled={!isGeneratedValid || creating}
+                        disabled={!isGeneratedValid || creating || isAddingTools}
+                        className="flex items-center gap-2"
                       >
-                        {creating ? 'Creating...' : 'Create Skill'}
+                        {creating || isAddingTools ? (
+                          <>
+                            <div className="h-4 w-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                            {isAddingTools ? 'Adding Tools...' : 'Creating...'}
+                          </>
+                        ) : (
+                          'Create Skill'
+                        )}
                       </Button>
                     )}
                   </div>
