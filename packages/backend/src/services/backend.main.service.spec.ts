@@ -2,11 +2,37 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { MainService } from './backend.main.service';
 import { DGraphService } from './dgraph.service';
+import { OAuthService } from './oauth';
+import { LoggerService } from '@skilder-ai/common';
+
+// Create mock services for OAuth routes
+const mockOAuthService = {
+  handleOAuthCallback: vi.fn(),
+};
+
+const mockOAuthLogger = {
+  info: vi.fn(),
+  warn: vi.fn(),
+  error: vi.fn(),
+  debug: vi.fn(),
+};
+
+const mockOAuthLoggerService = {
+  getLogger: vi.fn(() => mockOAuthLogger),
+};
 
 // Mock the DI container
 vi.mock('../di/container', () => ({
   container: {
-    get: vi.fn(),
+    get: vi.fn((serviceIdentifier: unknown) => {
+      if (serviceIdentifier === OAuthService) {
+        return mockOAuthService;
+      }
+      if (serviceIdentifier === LoggerService) {
+        return mockOAuthLoggerService;
+      }
+      return undefined;
+    }),
   },
 }));
 
@@ -32,7 +58,7 @@ interface FakeRuntimeService {
   resetRuntimes: () => Promise<void>;
 }
 
-interface FakeToolSetService {
+interface FakeSkillService {
   start: () => Promise<void>;
   stop: () => Promise<void>;
 }
@@ -72,7 +98,7 @@ function createService(dropAllData: boolean = false) {
       debug: vi.fn(),
       warn: vi.fn(),
     }),
-  } as unknown as import('@2ly/common').LoggerService;
+  } as unknown as import('@skilder-ai/common').LoggerService;
 
   const dgraphService: FakeDGraphService = {
     start: vi.fn(async () => {}),
@@ -95,7 +121,7 @@ function createService(dropAllData: boolean = false) {
     resetRuntimes: vi.fn(async () => {}),
   };
 
-  const toolSetService: FakeToolSetService = {
+  const skillService: FakeSkillService = {
     start: vi.fn(async () => {}),
     stop: vi.fn(async () => {}),
   };
@@ -141,7 +167,7 @@ function createService(dropAllData: boolean = false) {
     dgraphService as unknown as import('./dgraph.service').DGraphService,
     apolloService as unknown as import('./apollo.service').ApolloService,
     runtimeService as unknown as import('./runtime.service').RuntimeService,
-    toolSetService as unknown as import('./toolset.service').ToolSetService,
+    skillService as unknown as import('./skill.service').SkillService,
     fastifyService as unknown as import('./fastify.service').FastifyService,
     systemRepository as unknown as import('../repositories').SystemRepository,
     workspaceRepository as unknown as import('../repositories').WorkspaceRepository,
@@ -157,7 +183,7 @@ function createService(dropAllData: boolean = false) {
     dgraphService,
     apolloService,
     runtimeService,
-    toolSetService,
+    skillService,
     fastifyService,
     systemRepository,
     workspaceRepository,
@@ -185,19 +211,19 @@ describe('MainService', () => {
     });
 
     it('starts all services in correct order', async () => {
-      const { service, dgraphService, identityService, runtimeService, toolSetService, apolloService, monitoringService } = createService();
+      const { service, dgraphService, identityService, runtimeService, skillService, apolloService, monitoringService } = createService();
       const callOrder: string[] = [];
 
       dgraphService.start = vi.fn(async () => { callOrder.push('dgraph'); });
       identityService.start = vi.fn(async () => { callOrder.push('identity'); });
       runtimeService.start = vi.fn(async () => { callOrder.push('runtime'); });
-      toolSetService.start = vi.fn(async () => { callOrder.push('toolset'); });
+      skillService.start = vi.fn(async () => { callOrder.push('skill'); });
       apolloService.start = vi.fn(async () => { callOrder.push('apollo'); });
       monitoringService.start = vi.fn(async () => { callOrder.push('monitoring'); });
 
       await service.start('test');
 
-      expect(callOrder).toEqual(['dgraph', 'identity', 'runtime', 'toolset', 'apollo', 'monitoring']);
+      expect(callOrder).toEqual(['dgraph', 'identity', 'runtime', 'skill', 'apollo', 'monitoring']);
       await service.stop('test');
     });
 
@@ -302,11 +328,17 @@ describe('MainService', () => {
     it('resets runtimes and reinitializes database', async () => {
       const { service, runtimeService, dgraphService, systemRepository, workspaceRepository, resetHandler } = createService();
 
-      // Mock the container.get to return our dgraphService mock
+      // Mock the container.get to return our dgraphService mock (plus OAuth mocks)
       const { container } = await import('../di/container');
       vi.mocked(container.get).mockImplementation((serviceIdentifier) => {
         if (serviceIdentifier === DGraphService) {
           return dgraphService;
+        }
+        if (serviceIdentifier === OAuthService) {
+          return mockOAuthService;
+        }
+        if (serviceIdentifier === LoggerService) {
+          return mockOAuthLoggerService;
         }
         return undefined;
       });
@@ -339,11 +371,17 @@ describe('MainService', () => {
         throw new Error('Reset failed');
       });
 
-      // Mock the container.get to return our dgraphService mock
+      // Mock the container.get to return our dgraphService mock (plus OAuth mocks)
       const { container } = await import('../di/container');
       vi.mocked(container.get).mockImplementation((serviceIdentifier) => {
         if (serviceIdentifier === DGraphService) {
           return dgraphService;
+        }
+        if (serviceIdentifier === OAuthService) {
+          return mockOAuthService;
+        }
+        if (serviceIdentifier === LoggerService) {
+          return mockOAuthLoggerService;
         }
         return undefined;
       });
@@ -366,7 +404,7 @@ describe('MainService', () => {
 
   describe('shutdown', () => {
     it('stops all services in correct order', async () => {
-      const { service, identityService, runtimeService, apolloService, monitoringService, dgraphService, toolSetService } = createService();
+      const { service, identityService, runtimeService, apolloService, monitoringService, dgraphService, skillService } = createService();
       const callOrder: string[] = [];
 
       identityService.stop = vi.fn(async () => { callOrder.push('identity'); });
@@ -374,12 +412,12 @@ describe('MainService', () => {
       apolloService.stop = vi.fn(async () => { callOrder.push('apollo'); });
       monitoringService.stop = vi.fn(async () => { callOrder.push('monitoring'); });
       dgraphService.stop = vi.fn(async () => { callOrder.push('dgraph'); });
-      toolSetService.stop = vi.fn(async () => { callOrder.push('toolset'); });
+      skillService.stop = vi.fn(async () => { callOrder.push('skill'); });
 
       await service.start('test');
       await service.stop('test');
 
-      expect(callOrder).toEqual(['identity', 'runtime', 'apollo', 'monitoring', 'dgraph', 'toolset']);
+      expect(callOrder).toEqual(['identity', 'runtime', 'apollo', 'monitoring', 'dgraph', 'skill']);
     });
   });
 });

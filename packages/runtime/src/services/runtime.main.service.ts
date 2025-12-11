@@ -5,7 +5,7 @@ import {
   NatsService,
   RuntimeReconnectPublish,
   Service,
-} from '@2ly/common';
+} from '@skilder-ai/common';
 import { HealthService } from './runtime.health.service';
 import { McpStdioService } from './mcp.stdio.service';
 import { FastifyManagerService } from './fastify.manager.service';
@@ -63,7 +63,7 @@ export class MainService extends Service {
       return;
     }
 
-    // Connect phase - Only when runtime or toolset is present
+    // Connect phase - Only when runtime or skill is present
     if (this.runtimeMode !== 'STANDALONE_MCP_STREAM') {
       this.logger.debug(`Starting connect phase in ${this.runtimeMode} mode`);
       try {

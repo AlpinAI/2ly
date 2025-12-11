@@ -1,6 +1,6 @@
 # Frontend Code Conventions
 
-This document outlines coding conventions and best practices for the 2ly frontend.
+This document outlines coding conventions and best practices for the skilder frontend.
 
 ## Import Conventions
 

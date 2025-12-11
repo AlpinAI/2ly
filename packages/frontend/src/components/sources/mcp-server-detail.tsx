@@ -32,10 +32,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue, SelectGr
 import { useNotification } from '@/contexts/NotificationContext';
 import { ConfigEditor } from './config-editor';
 import { useRuntimeData } from '@/stores/runtimeStore';
-import { UpdateMcpServerRunOnDocument, UpdateMcpServerDocument, DeleteMcpServerDocument } from '@/graphql/generated/graphql';
+import { UpdateMcpServerExecutionTargetDocument, UpdateMcpServerDocument, DeleteMcpServerDocument } from '@/graphql/generated/graphql';
 import { extractConfigurableFields, enrichConfigWithValues, type ConfigField, type ConfigOption } from '@/lib/mcpConfigHelpers';
 import type { SubscribeMcpServersSubscription } from '@/graphql/generated/graphql';
-import { McpServerRunOn } from '@/graphql/generated/graphql';
+import { ExecutionTarget } from '@/graphql/generated/graphql';
 
 type McpServer = NonNullable<SubscribeMcpServersSubscription['mcpServers']>[number];
 
@@ -51,7 +51,7 @@ export function MCPServerDetail({ server }: MCPServerDetailProps) {
   // Inline edit state
   const [serverName, setServerName] = useState(server.name);
   const [serverDescription, setServerDescription] = useState(server.description || '');
-  const [runOn, setRunOn] = useState<McpServerRunOn | null>(server.runOn);
+  const [executionTarget, setExecutionTarget] = useState<ExecutionTarget | null>(server.executionTarget);
   const [runtimeId, setRuntimeId] = useState<string | null>(server.runtime?.id || null);
 
   // Configuration fields state
@@ -64,7 +64,7 @@ export function MCPServerDetail({ server }: MCPServerDetailProps) {
 
   // Mutations
   const [updateServer] = useMutation(UpdateMcpServerDocument);
-  const [updateRunOn] = useMutation(UpdateMcpServerRunOnDocument);
+  const [updateExecutionTarget] = useMutation(UpdateMcpServerExecutionTargetDocument);
   const [deleteServer] = useMutation(DeleteMcpServerDocument);
 
   // Create ConfigOption from stored config
@@ -100,7 +100,7 @@ export function MCPServerDetail({ server }: MCPServerDetailProps) {
   useEffect(() => {
     setServerName(server.name);
     setServerDescription(server.description || '');
-    setRunOn(server.runOn);
+    setExecutionTarget(server.executionTarget);
     setRuntimeId(server.runtime?.id || null);
   }, [server]);
 
@@ -113,11 +113,11 @@ export function MCPServerDetail({ server }: MCPServerDetailProps) {
 
   // Generate grouped select value
   const groupedSelectValue = useMemo(() => {
-    if (runOn === McpServerRunOn.Edge && runtimeId) {
+    if (executionTarget === ExecutionTarget.Edge && runtimeId) {
       return `EDGE:${runtimeId}`;
     }
-    return runOn || 'AGENT';
-  }, [runOn, runtimeId]);
+    return executionTarget || 'AGENT';
+  }, [executionTarget, runtimeId]);
 
   // Handle name save on blur
   const handleNameSave = async () => {
@@ -190,36 +190,36 @@ export function MCPServerDetail({ server }: MCPServerDetailProps) {
     }
   };
 
-  // Handle runOn change with auto-save
+  // Handle executionTarget change with auto-save
   const handleRunOnChange = async (value: string) => {
-    let newRunOn: McpServerRunOn;
+    let newRunOn: ExecutionTarget;
     let newRuntimeId: string | null = null;
 
     if (value.startsWith('EDGE:')) {
       newRuntimeId = value.replace('EDGE:', '');
-      newRunOn = McpServerRunOn.Edge;
+      newRunOn = ExecutionTarget.Edge;
     } else {
-      newRunOn = value as McpServerRunOn;
+      newRunOn = value as ExecutionTarget;
       newRuntimeId = null;
     }
 
     // Update local state immediately
-    setRunOn(newRunOn);
+    setExecutionTarget(newRunOn);
     setRuntimeId(newRuntimeId);
 
     // Save to server
     try {
-      await updateRunOn({
+      await updateExecutionTarget({
         variables: {
           mcpServerId: server.id,
-          runOn: newRunOn,
-          runtimeId: newRunOn === McpServerRunOn.Edge ? newRuntimeId : null,
+          executionTarget: newRunOn,
+          runtimeId: newRunOn === ExecutionTarget.Edge ? newRuntimeId : null,
         },
       });
     } catch (error) {
-      console.error('Failed to save runOn:', error);
+      console.error('Failed to save executionTarget:', error);
       // Revert on error
-      setRunOn(server.runOn);
+      setExecutionTarget(server.executionTarget);
       setRuntimeId(server.runtime?.id || null);
     }
   };

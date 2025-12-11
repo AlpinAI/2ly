@@ -1,14 +1,14 @@
 ---
 title: The Stack
-description: Technical architecture and components of the 2LY platform
+description: Technical architecture and components of the Skilder platform
 draft: false
 ---
 
-2LY is built on a distributed, message-based architecture that enables flexible deployment and scalable tool orchestration.
+Skilder is built on a distributed, message-based architecture that enables flexible deployment and scalable tool orchestration.
 
 ## Architecture Overview
 
-Unlike traditional gateways that proxy HTTP requests to fixed endpoints, 2LY uses **message-based pub-sub** where runtimes register dynamically from anywhere. Agents publish requests to topics; the broker routes to available runtimes regardless of location (cloud, edge, behind NAT).
+Unlike traditional gateways that proxy HTTP requests to fixed endpoints, Skilder uses **message-based pub-sub** where runtimes register dynamically from anywhere. Agents publish requests to topics; the broker routes to available runtimes regardless of location (cloud, edge, behind NAT).
 
 This architecture enables:
 - **Message persistence** - No request loss during deployments
@@ -28,7 +28,7 @@ This architecture enables:
 - Auto-register capabilities with backend
 - Multiple transports: STDIO, SSE, WebSocket
 - Isolated execution for security
-- Published as npm package: `@2ly/runtime`
+- Published as npm package: `@skilder-ai/runtime`
 
 **Deployment Options:**
 - Docker containers
@@ -80,7 +80,7 @@ This architecture enables:
 **Key Schemas:**
 - Workspaces (multi-tenancy)
 - MCP Servers (tool sources)
-- Toolsets (curated tool collections)
+- Skills (curated tool collections)
 - Runtimes (execution environments)
 - Tool Calls (observability)
 
@@ -112,7 +112,7 @@ This architecture enables:
 **Key Features:**
 - Workspace management
 - MCP server browser and configuration
-- Toolset creation and curation
+- Skill creation and curation
 - Tool tester (test tools before agent integration)
 - Real-time observability dashboard
 - Runtime monitoring
@@ -123,13 +123,13 @@ This architecture enables:
 
 ## Docker Images
 
-2LY provides pre-built Docker images for all components:
+Skilder provides pre-built Docker images for all components:
 
 | Component | Image | Port | Purpose |
 |-----------|-------|------|---------|
-| Backend | `2ly/backend` | 3000 | Orchestration & API |
-| Frontend | `2ly/frontend` | 8888 | User interface |
-| Runtime | `2ly/runtime` | - | Tool execution |
+| Backend | `Skilder/backend` | 3000 | Orchestration & API |
+| Frontend | `Skilder/frontend` | 8888 | User interface |
+| Runtime | `Skilder/runtime` | - | Tool execution |
 | NATS | `nats:latest` | 4222 | Message broker |
 | Dgraph | `dgraph/standalone` | 9080 | Database |
 
@@ -151,12 +151,12 @@ docker compose up -d
 - Dgraph
 
 **Volumes:**
-- `2ly-internal` - Encrypted keys (isolated from host)
+- `Skilder-internal` - Encrypted keys (isolated from host)
 - `dgraph-data` - Database persistence
 - `nats-data` - Message persistence
 
 **Networks:**
-- `2ly-network` - Internal service communication
+- `Skilder-network` - Internal service communication
 
 ### Development Setup
 
@@ -176,7 +176,7 @@ See [Development Setup](/contributing/development-setup) for details.
 
 ## Distributed Deployment
 
-2LY's architecture supports various distributed deployment patterns:
+Skilder's architecture supports various distributed deployment patterns:
 
 ### Geographic Distribution
 
@@ -220,7 +220,7 @@ Runtimes connect outbound to NATS (no inbound firewall rules needed).
 ### Multi-Tenancy
 
 - Workspace isolation in database
-- Toolset-level access control
+- Skill-level access control
 - Runtime registration per workspace
 
 ## Monitoring & Observability

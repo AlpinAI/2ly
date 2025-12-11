@@ -1,0 +1,6 @@
+query FindUserById($id: ID!) {
+  getUser(id: $id) {
+    id
+    email
+  }
+}

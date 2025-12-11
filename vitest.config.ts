@@ -57,7 +57,7 @@ export default defineConfig({
                 resolve: {
                     alias: {
                         '@': path.resolve(__dirname, 'packages/frontend/src'),
-                        '@2ly/common': path.resolve(__dirname, 'packages/common/src/index.browser.ts'),
+                        '@skilder-ai/common': path.resolve(__dirname, 'packages/common/src/index.browser.ts'),
                     }
                 }
             },
@@ -83,9 +83,9 @@ export default defineConfig({
                 },
                 resolve: {
                     alias: {
-                        '@2ly/common/test/test.containers': path.resolve(__dirname, 'packages/common/src/test/test.containers.ts'),
-                        '@2ly/common/test/vitest': path.resolve(__dirname, 'packages/common/src/test/vitest.ts'),
-                        '@2ly/common': path.resolve(__dirname, 'packages/common/src/index.ts')
+                        '@skilder-ai/common/test/test.containers': path.resolve(__dirname, 'packages/common/src/test/test.containers.ts'),
+                        '@skilder-ai/common/test/vitest': path.resolve(__dirname, 'packages/common/src/test/vitest.ts'),
+                        '@skilder-ai/common': path.resolve(__dirname, 'packages/common/src/index.ts')
                     }
                 }
             }

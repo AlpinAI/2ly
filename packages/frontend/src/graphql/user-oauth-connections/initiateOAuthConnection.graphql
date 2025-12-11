@@ -1,0 +1,16 @@
+mutation InitiateOAuthConnection(
+  $workspaceId: ID!
+  $provider: OAuthProviderType!
+  $redirectUri: String!
+  $scopes: [String!]
+) {
+  initiateOAuthConnection(
+    workspaceId: $workspaceId
+    provider: $provider
+    redirectUri: $redirectUri
+    scopes: $scopes
+  ) {
+    url
+    state
+  }
+}

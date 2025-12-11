@@ -10,7 +10,7 @@
  * - Perform variable substitution in templates (e.g., "Bearer {token}" → "Bearer abc123")
  * - Support STDIO, SSE, and STREAM transports
  *
- * IMPORTANT: Uses shared utilities from @2ly/common for variable extraction and substitution.
+ * IMPORTANT: Uses shared utilities from @skilder-ai/common for variable extraction and substitution.
  */
 
 import type { GetRegistryServersQuery, McpTransportType } from '@/graphql/generated/graphql';
@@ -19,7 +19,7 @@ import {
   getAllVariablesFromConfig,
   substituteAllVariables,
   type VariableDefinition,
-} from '@2ly/common';
+} from '@skilder-ai/common';
 
 // Extract server type
 type MCPRegistryServer = GetRegistryServersQuery['getRegistryServers'][number];

@@ -37,7 +37,7 @@ async function generateNatsOperatorSeed() {
   // Generate operator JWT with correct argument order:
   // encodeOperator(name: string, okp: Key, operator?: Partial<Operator>)
   const operatorJwt = await encodeOperator(
-    '2ly-operator',    // 1st param: operator name
+    'skilder-operator',    // 1st param: operator name
     seedString,        // 2nd param: key (seed string)
     {}                 // 3rd param: operator options (empty for basic JWT)
   );
@@ -103,7 +103,7 @@ function writeSecureFile(path, content, mode) {
  * Main execution
  */
 async function main() {
-  console.log('🔐 2ly Key Initialization');
+  console.log('🔐 Skilder Key Initialization');
   console.log('========================\n');
 
   // Ensure keys directory exists
@@ -134,7 +134,7 @@ async function main() {
 
   // Write environment variables file (shared)
   const envContent = [
-    '# Auto-generated cryptographic keys for 2ly',
+    '# Auto-generated cryptographic keys for Skilder',
     '# DO NOT COMMIT THIS FILE TO VERSION CONTROL',
     '# Generated at: ' + new Date().toISOString(),
     '',
@@ -155,7 +155,7 @@ async function main() {
   // Write local environment variables file (for local dev only)
   const LOCAL_ENV_FILE = join(KEYS_DIR, '.env.local');
   const localEnvContent = [
-    '# Auto-generated local development keys for 2ly',
+    '# Auto-generated local development keys for Skilder',
     '# DO NOT COMMIT THIS FILE TO VERSION CONTROL',
     '# Generated at: ' + new Date().toISOString(),
     '',

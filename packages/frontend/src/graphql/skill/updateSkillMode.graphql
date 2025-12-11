@@ -1,0 +1,18 @@
+# Update Skill Mode Mutation
+# WHY: Change the mode of a skill (LIST, OPTIMIZED, SMART)
+mutation UpdateSkillMode($id: ID!, $mode: SkillMode!) {
+  updateSkillMode(id: $id, mode: $mode) {
+    id
+    name
+    mode
+    model
+    temperature
+    maxTokens
+    systemPrompt
+    executionTarget
+    runtime {
+      id
+      name
+    }
+  }
+}

@@ -1,6 +1,6 @@
 {
-  "name": "@2ly/doc",
-  "version": "0.2.5",
+  "name": "@skilder-ai/doc",
+  "version": "0.3.0",
   "private": true,
   "scripts": {
     "build": "next build",

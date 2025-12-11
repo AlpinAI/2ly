@@ -1,32 +1,32 @@
 {
   "mcpServers": {
-    "2ly-stdio": {
+    "skilder-stdio": {
       "command": "node",
       "args": [
-        "/Users/ben/web/alpinai/2ly/packages/runtime/dist/index.js"
+        "/Users/ben/web/alpinai/skilder/packages/runtime/dist/index.js"
       ],
       "env": {
         "NATS_SERVERS": "nats://localhost:4222",
-        "TOOLSET_NAME": "Test Toolset",
+        "SKILL_NAME": "Test Skill",
         "ROOTS": "tmp:/tmp"
       }
     },
-    "2ly-stream": {
+    "skilder-stream": {
       "type": "streamable-http",
       "url": "http://localhost:3001/mcp"
     },
-    "2ly-sse": {
+    "skilder-sse": {
       "type": "sse",
       "url": "http://localhost:3001/sse"
     },
-    "2ly-saas": {
+    "skilder-saas": {
       "command": "node",
       "args": [
-        "/Users/ben/web/2ly/packages/runtime/dist/index.js"
+        "/Users/ben/web/skilder/packages/runtime/dist/index.js"
       ],
       "env": {
-        "NATS_SERVERS": "nats://nats.2ly.ai",
-        "TOOL_SET": "2ly-saas"
+        "NATS_SERVERS": "nats://nats.skilder.ai",
+        "SKILL_NAME": "skilder-saas"
       }
     }
   }

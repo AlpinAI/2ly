@@ -80,10 +80,10 @@ describe('HelpMenu', () => {
 
     const expectedHrefs = [
       'https://discord.gg/XSFPRSyp',
-      'https://github.com/AlpinAI/2ly/issues',
-      'https://docs.2ly.ai/getting-started/welcome',
-      'https://github.com/AlpinAI/2ly',
-      'https://github.com/AlpinAI/2ly/blob/main/dev/README.md',
+      'https://github.com/skilder-ai/skilder/issues',
+      'https://docs.skilder.ai/getting-started/welcome',
+      'https://github.com/skilder-ai/skilder',
+      'https://github.com/skilder-ai/skilder/blob/main/dev/README.md',
     ];
 
     links.forEach((link, index) => {

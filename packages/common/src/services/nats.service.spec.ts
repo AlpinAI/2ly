@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi } from 'vitest';
 import { NatsContainer, StartedNatsContainer } from '@testcontainers/nats';
 import { Container } from 'inversify';
-import { LoggerService, MAIN_LOGGER_NAME, LOG_LEVEL, FORWARD_STDERR } from './logger.service';
+import { LoggerService, MAIN_LOGGER_NAME, LOG_LEVEL, LOG_LEVELS, FORWARD_STDERR } from './logger.service';
 import { NatsService, NATS_CONNECTION_OPTIONS, HEARTBAT_TTL, EPHEMERAL_TTL } from './nats.service';
 import { NatsConnection } from '@nats-io/nats-core';
 import { NatsMessage, NatsPublish, NatsRequest, NatsResponse } from './nats.message';
@@ -72,9 +72,11 @@ describe('NatsService Integration', () => {
     }, 30000);
 
     beforeEach(async () => {
+        vi.spyOn(console, 'error').mockImplementation(() => {});
         container = new Container();
         container.bind(MAIN_LOGGER_NAME).toConstantValue('test');
         container.bind(LOG_LEVEL).toConstantValue('silent');
+        container.bind(LOG_LEVELS).toConstantValue(undefined);
         container.bind(FORWARD_STDERR).toConstantValue(false);
         container.bind(LoggerService).toSelf().inSingletonScope();
         container.bind(HEARTBAT_TTL).toConstantValue(1000);
@@ -89,7 +91,7 @@ describe('NatsService Integration', () => {
     afterEach(async () => {
         const svc = container.get(NatsService);
         if (svc.isConnected()) await svc.stop('nats');
-
+        vi.restoreAllMocks();
     });
 
     it('connects and reports isConnected', async () => {

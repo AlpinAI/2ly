@@ -107,11 +107,11 @@ export const useWorkspaceStore = create<WorkspaceState>()(
         clearWorkspace: () => set({ selectedWorkspace: null, onboardingSteps: [] }),
       }),
       {
-        name: '2ly-workspace', // localStorage key
+        name: 'skilder-workspace', // localStorage key
       }
     ),
     {
-      name: '2LY Workspace Store', // Name in Redux DevTools
+      name: 'Skilder Workspace Store', // Name in Redux DevTools
     }
   )
 );

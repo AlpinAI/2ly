@@ -1,26 +1,26 @@
 ---
 title: "Langflow"
-description: "Connect Langflow workflows to 2LY"
+description: "Connect Langflow workflows to Skilder"
 draft: false
 ---
 
-Langflow workflows connect to 2LY through the **MCP Connect** component, providing access to your configured tools via the MCP protocol.
+Langflow workflows connect to Skilder through the **MCP Connect** component, providing access to your configured tools via the MCP protocol.
 
 ## Overview
 
 Integration uses Langflow's built-in MCP Connect component to:
-- Discover and load tools from 2LY runtime
+- Discover and load tools from Skilder runtime
 - Execute tool calls through MCP protocol
 - Handle authentication and routing automatically
 
-**Current Limitation**: Langflow allows only one MCP server connection named "2ly" per workflow. We're developing a custom component to unlock full platform capabilities.
+**Current Limitation**: Langflow allows only one MCP server connection named "Skilder" per workflow. We're developing a custom component to unlock full platform capabilities.
 
 ## Quick Start
 
 ### Prerequisites
 
 ```bash
-# Ensure 2LY is running
+# Ensure Skilder is running
 npm run start
 
 # Langflow installed and running
@@ -36,10 +36,10 @@ npm run start
 ```json
 {
     "mcpServers": {
-    "2ly": {
+    "Skilder": {
       "command": "npx",
       "args": [
-        "@2ly/runtime"
+        "@skilder-ai/runtime"
       ],
       "env": {
         "NATS_SERVERS": "nats://localhost:4222",
@@ -52,25 +52,25 @@ npm run start
 ## Basic Workflow
 
 ```
-MCP Connect (2ly) → Tool Caller → Agent → Output
+MCP Connect (Skilder) → Tool Caller → Agent → Output
 ```
 
-The MCP Connect component discovers all tools from your 2LY workspace and makes them available to downstream components.
+The MCP Connect component discovers all tools from your Skilder workspace and makes them available to downstream components.
 
 
 ## Current Limitations
 
 **Single MCP Constraint**: Langflow's current architecture limits connections to one MCP server per workflow. This means:
-- Only one "2ly" MCP Connect allowed per workflow
+- Only one "Skilder" MCP Connect allowed per workflow
 - Cannot partition tools across multiple MCP instances
 - Tool discovery includes all workspace tools
 
-**Workaround**: Assign all required tools to a single agent in the 2LY dashboard to manage which tools are available to workflows.
+**Workaround**: Assign all required tools to a single agent in the Skilder dashboard to manage which tools are available to workflows.
 
 ## Coming Soon
 
 We're building a custom Langflow component that will:
-- Support multiple 2LY MCP connections
+- Support multiple Skilder MCP connections
 - Provide advanced routing and caching
 - Add real-time tool updates
 
@@ -78,7 +78,7 @@ We're building a custom Langflow component that will:
 
 **MCP Connection Failed**
 ```bash
-# Verify 2LY services
+# Verify Skilder services
 docker-compose ps
 
 # Check MCP endpoint
@@ -87,18 +87,18 @@ curl http://localhost:4000/health
 
 **Tools Not Loading**
 - Verify workspace ID is correct in MCP Connect component
-- Check tools are configured in 2LY dashboard
-- Ensure 2LY runtime is connected
+- Check tools are configured in Skilder dashboard
+- Ensure Skilder runtime is connected
 
 **Single MCP Limit Errors**
 - Remove duplicate MCP Connect components
-- Use only one "2ly" connection per workflow
+- Use only one "Skilder" connection per workflow
 - Consider splitting into multiple workflows if needed
 
 **Workflow Execution Issues**
 - Check Langflow logs for errors
-- Verify tool permissions in 2LY dashboard
-- Test tools individually in 2LY playground
+- Verify tool permissions in Skilder dashboard
+- Test tools individually in Skilder playground
 
 ## Next Steps
 

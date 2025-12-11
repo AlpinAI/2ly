@@ -1,0 +1,54 @@
+# Skill: A logical collection of tools with configurable execution modes
+# Skills can operate in three modes:
+# - LIST: Make each tool available to the consuming agent (default)
+# - OPTIMIZED: Provide Search Tool and Call Tool to reduce token usage
+# - SMART: Orchestrate tools using a sub-agent with configurable AI settings
+
+type Skill @withSubscription {
+  id: ID!
+  name: String! @search(by: [hash])
+  description: String
+  createdAt: DateTime!
+  updatedAt: DateTime
+  mcpTools: [MCPTool!] @hasInverse(field: skills)
+  workspace: Workspace! @hasInverse(field: skills)
+  toolCalls: [ToolCall!] @hasInverse(field: calledBy)
+  skillToolCalls: [ToolCall!] @hasInverse(field: skill)
+  mode: SkillMode @search
+  model: String
+  temperature: Float
+  maxTokens: Int
+  systemPrompt: String
+  executionTarget: ExecutionTarget @search
+  runtime: Runtime @hasInverse(field: skills)
+}
+
+#APOLLO_ONLY_START
+input UpdateSkillSmartConfigInput {
+  id: ID!
+  model: String
+  temperature: Float
+  maxTokens: Int
+  systemPrompt: String
+  executionTarget: ExecutionTarget
+  runtimeId: ID
+}
+
+extend type Query {
+  skills(workspaceId: ID!): [Skill!]
+}
+
+extend type Mutation {
+  createSkill(name: String!, description: String!, workspaceId: ID!): Skill!
+  updateSkill(id: ID!, name: String!, description: String!): Skill!
+  deleteSkill(id: ID!): Skill!
+  addMCPToolToSkill(mcpToolId: ID!, skillId: ID!): Skill!
+  removeMCPToolFromSkill(mcpToolId: ID!, skillId: ID!): Skill!
+  updateSkillMode(id: ID!, mode: SkillMode!): Skill!
+  updateSkillSmartConfig(input: UpdateSkillSmartConfigInput!): Skill!
+}
+
+extend type Subscription {
+  skills(workspaceId: ID!): [Skill!]
+}
+#APOLLO_ONLY_END

@@ -1,0 +1,20 @@
+query FindUserByEmail($email: String!) {
+  queryUser(filter: { email: { eq: $email } }) {
+    id
+    email
+    password
+    createdAt
+    updatedAt
+    lastLoginAt
+    failedLoginAttempts
+    lockedUntil
+    adminOfWorkspaces {
+      id
+      name
+    }
+    membersOfWorkspaces {
+      id
+      name
+    }
+  }
+}

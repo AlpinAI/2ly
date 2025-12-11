@@ -8,7 +8,7 @@
  * - AppHeader (logo, search, notifications, user menu, theme)
  * - AppNavigation (horizontal menu bar)
  * - Content area with React Router Outlet
- * - Global bottom panels (AddSourceWorkflow, ToolsetManagementPanel)
+ * - Global bottom panels (AddSourceWorkflow, SkillManagementPanel)
  * - Toast notifications
  * - Responsive container with max-width
  *
@@ -24,7 +24,7 @@
  * ```tsx
  * <Route path="/app" element={<AppLayout />}>
  *   <Route path="overview" element={<DashboardPage />} />
- *   <Route path="toolsets" element={<ToolSetsPage />} />
+ *   <Route path="skills" element={<SkillsPage />} />
  * </Route>
  * ```
  */
@@ -34,9 +34,9 @@ import { AppHeader } from './app-header';
 import { AppNavigation } from './app-navigation';
 import { AddSourceWorkflow } from '@/components/sources/add-source-workflow';
 import { AddServerWorkflow } from '@/components/registry/add-server-workflow';
-import { ToolsetManagementPanel } from '@/components/toolsets/toolset-management-panel';
-import { CreateToolsetDialog } from '@/components/toolsets/create-toolset-dialog';
-import { ConnectToolsetDialog } from '@/components/toolsets/connect-toolset-dialog';
+import { SkillManagementPanel } from '@/components/skills/skill-management-panel';
+import { CreateSkillDialog } from '@/components/skills/create-skill-dialog';
+import { ConnectSkillDialog } from '@/components/skills/connect-skill-dialog';
 
 export function AppLayout() {
 
@@ -56,11 +56,11 @@ export function AppLayout() {
       {/* Global bottom panels - self-contained, accessible from any page */}
       <AddSourceWorkflow />
       <AddServerWorkflow />
-      <ToolsetManagementPanel />
+      <SkillManagementPanel />
 
       {/* Global dialogs - accessible from any page */}
-      <CreateToolsetDialog />
-      <ConnectToolsetDialog />
+      <CreateSkillDialog />
+      <ConnectSkillDialog />
     </div>
   );
 }

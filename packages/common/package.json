@@ -1,6 +1,6 @@
 {
-  "name": "@2ly/common",
-  "version": "0.2.5",
+  "name": "@skilder-ai/common",
+  "version": "0.3.0",
   "type": "module",
   "exports": {
     ".": {
@@ -61,12 +61,18 @@
     "format": "prettier --write \"{src,test}/**/*.*\" && rm -rf node_modules/.cache/prettier",
     "typecheck": "tsc --noEmit --skipLibCheck --pretty false",
     "typecheck:full": "tsc --noEmit --skipLibCheck",
-    "codegen": "graphql-codegen --config apollo.codegen.ts && graphql-codegen --config dgraph.codegen.ts",
+    "build:schema": "tsx schema/build-schema.ts",
+    "codegen": "npm run build:schema && graphql-codegen --config apollo.codegen.ts && graphql-codegen --config dgraph.codegen.ts",
     "codegen:mcp-registry": "openapi-typescript https://registry.modelcontextprotocol.io/openapi.yaml -o src/types/mcp-registry.ts",
     "test": "vitest --run"
   },
   "dependencies": {
-    "bcryptjs": "^3.0.2"
+    "@ai-sdk/anthropic": "^2.0.50",
+    "@ai-sdk/google": "^2.0.44",
+    "@ai-sdk/openai": "^2.0.74",
+    "ai": "^5.0.104",
+    "bcryptjs": "^3.0.2",
+    "ollama-ai-provider-v2": "^1.5.5"
   },
   "devDependencies": {
     "@testcontainers/nats": "^11.7.1",

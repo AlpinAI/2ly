@@ -3,9 +3,9 @@ import { GraphQLError } from 'graphql';
 import { AuthResolver } from './auth.resolver';
 import { AuthenticationService, LoginResult } from '../services/auth/auth.service';
 import { JwtService, TokenPair } from '../services/auth/jwt.service';
-import { UserRepository } from '../repositories/user.repository';
+import { UserRepository } from '../repositories/user/user.repository';
 import { PasswordPolicyService } from '../services/auth/password-policy.service';
-import { apolloResolversTypes, dgraphResolversTypes } from '@2ly/common';
+import { apolloResolversTypes, dgraphResolversTypes } from '@skilder-ai/common';
 
 describe('AuthResolver', () => {
   let resolver: AuthResolver;
@@ -282,7 +282,8 @@ describe('AuthResolver', () => {
 
       // Assert
       expect(result.success).toBe(true);
-      expect(result.user).toEqual(mockUser);
+      // User returned only includes id and email (not full User type)
+      expect(result.user).toEqual({ id: mockUser.id, email: mockUser.email });
       expect(result.tokens).toEqual(mockTokenPair);
       expect(result.errors).toEqual([]);
       expect(mockUserRepository.create).toHaveBeenCalledWith(

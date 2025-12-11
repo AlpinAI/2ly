@@ -5,15 +5,15 @@ import {
   HandshakeRequest,
   HandshakeResponse,
   ErrorResponse
-} from '@2ly/common';
+} from '@skilder-ai/common';
 import { getHostIP } from '../utils';
 import os from 'os';
-import { ToolsetIdentity } from './toolset.service';
+import { SkillIdentity } from './skill.service';
 
 export interface AuthHeaders {
   workspaceKey?: string;
-  toolsetKey?: string;
-  toolsetName?: string;
+  skillKey?: string;
+  skillName?: string;
 }
 
 /**
@@ -22,7 +22,7 @@ export interface AuthHeaders {
  */
 export class SessionAuthService {
   private logger: pino.Logger;
-  private identity: ToolsetIdentity | null = null;
+  private identity: SkillIdentity | null = null;
 
   constructor(
     private loggerService: LoggerService,
@@ -35,43 +35,43 @@ export class SessionAuthService {
    * Validate auth headers according to the rules
    */
   public validateAuthHeaders(headers: AuthHeaders): void {
-    const { workspaceKey, toolsetKey, toolsetName } = headers;
+    const { workspaceKey, skillKey, skillName } = headers;
 
-    // Rule 1: WORKSPACE_KEY and TOOLSET_KEY are mutually exclusive
-    if (workspaceKey && toolsetKey) {
-      throw new Error('WORKSPACE_KEY and TOOLSET_KEY are mutually exclusive');
+    // Rule 1: WORKSPACE_KEY and SKILL_KEY are mutually exclusive
+    if (workspaceKey && skillKey) {
+      throw new Error('WORKSPACE_KEY and SKILL_KEY are mutually exclusive');
     }
 
     // Rule 2: At least one key must be provided
-    if (!workspaceKey && !toolsetKey) {
-      throw new Error('Either WORKSPACE_KEY or TOOLSET_KEY is required');
+    if (!workspaceKey && !skillKey) {
+      throw new Error('Either WORKSPACE_KEY or SKILL_KEY is required');
     }
 
-    // Rule 3: WORKSPACE_KEY requires TOOLSET_NAME
-    if (workspaceKey && !toolsetName) {
-      throw new Error('WORKSPACE_KEY requires TOOLSET_NAME');
+    // Rule 3: WORKSPACE_KEY requires SKILL_NAME
+    if (workspaceKey && !skillName) {
+      throw new Error('WORKSPACE_KEY requires SKILL_NAME');
     }
 
-    // Rule 4: TOOLSET_KEY must not have TOOLSET_NAME
-    if (toolsetKey && toolsetName) {
-      throw new Error('TOOLSET_KEY must not be used with TOOLSET_NAME');
+    // Rule 4: SKILL_KEY must not have SKILL_NAME
+    if (skillKey && skillName) {
+      throw new Error('SKILL_KEY must not be used with SKILL_NAME');
     }
   }
 
   /**
    * Authenticate via handshake and return the session identity
    */
-  public async authenticateViaHandshake(headers: AuthHeaders): Promise<ToolsetIdentity> {
-    const { workspaceKey, toolsetKey, toolsetName } = headers;
-    const key = workspaceKey || toolsetKey!;
+  public async authenticateViaHandshake(headers: AuthHeaders): Promise<SkillIdentity> {
+    const { workspaceKey, skillKey, skillName } = headers;
+    const key = workspaceKey || skillKey!;
 
-    this.logger.debug(`Authenticating via handshake with key type: ${workspaceKey ? 'WORKSPACE_KEY' : 'TOOLSET_KEY'}`);
+    this.logger.debug(`Authenticating via handshake with key type: ${workspaceKey ? 'WORKSPACE_KEY' : 'SKILL_KEY'}`);
 
     // Create handshake request
     const handshakeRequest = HandshakeRequest.create({
       key,
-      nature: 'toolset',
-      name: toolsetName,
+      nature: 'skill',
+      name: skillName,
       pid: process.pid.toString(),
       hostIP: getHostIP(),
       hostname: os.hostname(),
@@ -90,20 +90,20 @@ export class SessionAuthService {
       throw new Error('Authentication failed: invalid response from backend');
     }
 
-    if (response.data.nature !== 'toolset') {
-      throw new Error(`Authentication failed: expected toolset nature, got ${response.data.nature}`);
+    if (response.data.nature !== 'skill') {
+      throw new Error(`Authentication failed: expected skill nature, got ${response.data.nature}`);
     }
 
     if (response.data.workspaceId === null) {
-      throw new Error('Authentication failed: workspace ID cannot be null for toolsets');
+      throw new Error('Authentication failed: workspace ID cannot be null for skills');
     }
 
-    this.logger.info(`Successfully authenticated toolset: ${response.data.name} (${response.data.id})`);
+    this.logger.info(`Successfully authenticated skill: ${response.data.name} (${response.data.id})`);
 
     this.identity = {
       workspaceId: response.data.workspaceId,
-      toolsetId: response.data.id,
-      toolsetName: response.data.name,
+      skillId: response.data.id,
+      skillName: response.data.name,
     };
 
     return this.identity;
@@ -112,7 +112,7 @@ export class SessionAuthService {
   /**
    * Get the authenticated identity
    */
-  public getIdentity(): ToolsetIdentity | null {
+  public getIdentity(): SkillIdentity | null {
     return this.identity;
   }
 }

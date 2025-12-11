@@ -44,7 +44,7 @@ export default function BackendErrorPage() {
             Backend Unavailable
           </h3>
           <p className="text-sm text-muted-foreground text-gray-600 dark:text-gray-400">
-            Unable to connect to the 2LY backend service
+            Unable to connect to the Skilder backend service
           </p>
         </div>
         

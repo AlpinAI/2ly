@@ -1,0 +1,30 @@
+# Get Skills Query
+# WHY: Fetch all skills for a workspace
+query GetSkills($workspaceId: ID!) {
+  skills(workspaceId: $workspaceId) {
+    id
+    name
+    description
+    createdAt
+    updatedAt
+    mode
+    model
+    temperature
+    maxTokens
+    systemPrompt
+    executionTarget
+    runtime {
+      id
+      name
+    }
+    mcpTools {
+      id
+      name
+      description
+      mcpServer {
+        id
+        name
+      }
+    }
+  }
+}

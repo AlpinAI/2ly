@@ -14,7 +14,7 @@
  *
  * USAGE:
  * ```tsx
- * <ToolTester toolId="tool-123" toolName="search" inputSchema={schema} runOn="TOOLSET" />
+ * <ToolTester toolId="tool-123" toolName="search" inputSchema={schema} executionTarget="SKILL" />
  * ```
  */
 
@@ -22,22 +22,23 @@ import { useState, useMemo, useRef, useEffect } from 'react';
 import { useMutation } from '@apollo/client/react';
 import { Play, Loader2, CheckCircle, AlertCircle, Info } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { CallMcpToolDocument, McpServerRunOn } from '@/graphql/generated/graphql';
+import { CallMcpToolDocument, ExecutionTarget } from '@/graphql/generated/graphql';
 import { SchemaInput } from './schema-input';
 import { parseJSONSchema, convertValueToType, validateSchemaValue } from '@/lib/jsonSchemaHelpers';
+import { hasOutputError } from '@/lib/utils';
 
 export interface ToolTesterProps {
   toolId: string;
   toolName: string;
   inputSchema: string;
-  runOn?: McpServerRunOn | null;
+  executionTarget?: ExecutionTarget | null;
 }
 
 interface ToolInput {
   [key: string]: unknown;
 }
 
-export function ToolTester({ toolId, inputSchema, runOn }: ToolTesterProps) {
+export function ToolTester({ toolId, inputSchema, executionTarget }: ToolTesterProps) {
   const [inputValues, setInputValues] = useState<ToolInput>({});
   const [executionResult, setExecutionResult] = useState<{
     success: boolean;
@@ -47,7 +48,7 @@ export function ToolTester({ toolId, inputSchema, runOn }: ToolTesterProps) {
   const resultSectionRef = useRef<HTMLDivElement>(null);
 
   // Check if tool runs on AGENT (testing not supported)
-  const isAgentTool = runOn === McpServerRunOn.Agent;
+  const isAgentTool = executionTarget === ExecutionTarget.Agent;
 
   const [callTool, { loading: isExecuting }] = useMutation(CallMcpToolDocument);
 
@@ -162,7 +163,10 @@ export function ToolTester({ toolId, inputSchema, runOn }: ToolTesterProps) {
       if (response.data.callMCPTool) {
         const { success, result } = response.data.callMCPTool;
 
-        if (success) {
+        // Check if the output contains isError: true even if GraphQL success is true
+        const hasError = hasOutputError(result);
+
+        if (success && !hasError) {
           // Try to parse result as JSON for pretty display
           let parsedResult = result;
           try {

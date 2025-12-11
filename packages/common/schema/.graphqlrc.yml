@@ -1,0 +1,16 @@
+# GraphQL Config for IDE support
+# This file tells IDEs like VSCode (with GraphQL extension) where to find the schema
+# for validation and autocompletion in split .graphql files.
+#
+# Note: The build/ directory contains the generated schemas.
+# Run `npm run build:schema` to generate them before IDE validation works.
+
+projects:
+  apollo:
+    schema: build/apollo.schema.graphql
+    documents:
+      - "../../frontend/src/graphql/**/*.graphql"
+      - "../../frontend/src/graphql/**/*.ts"
+
+  dgraph:
+    schema: build/dgraph.schema.graphql

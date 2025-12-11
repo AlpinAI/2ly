@@ -1,6 +1,6 @@
 {
-  "name": "@2ly/backend",
-  "version": "0.2.5",
+  "name": "@skilder-ai/backend",
+  "version": "0.3.0",
   "description": "",
   "author": "",
   "license": "See license in LICENSE.txt",
@@ -30,9 +30,14 @@
     "typecheck:full": "tsc --noEmit --skipLibCheck",
     "generate-jwt-keys": "tsx scripts/generate-jwt-keys.ts",
     "test": "vitest --run",
-    "test:integration": "vitest --run --config ../../vitest.integration.config.ts packages/backend"
+    "test:integration": "vitest --run --config ../../vitest.integration.config.ts packages/backend",
+    "codegen": "graphql-codegen --config codegen.ts",
+    "codegen:watch": "graphql-codegen --watch --config codegen.ts"
   },
   "dependencies": {
+    "@ai-sdk/anthropic": "^2.0.50",
+    "@ai-sdk/google": "^2.0.44",
+    "@ai-sdk/openai": "^2.0.74",
     "@apollo/server": "^4.12.2",
     "@azure-rest/ai-inference": "^1.0.0-beta.6",
     "@azure/core-auth": "^1.10.0",
@@ -43,15 +48,19 @@
     "@nats-io/jwt": "^0.0.11",
     "@nats-io/nkeys": "^2.0.3",
     "@nitra/as-integrations-fastify": "^3.0.2",
+    "ai": "^5.0.104",
     "dotenv": "^16.5.0",
     "fastify": "^5.3.3",
     "graphql-subscriptions": "^3.0.0",
     "jsonwebtoken": "^9.0.2",
+    "ollama-ai-provider-v2": "^1.5.5",
     "subscriptions-transport-ws": "^0.11.0",
     "urql": "^4.2.2",
     "ws": "^8.18.0"
   },
   "devDependencies": {
+    "@graphql-codegen/typed-document-node": "^5.0.15",
+    "@graphql-codegen/typescript-operations": "^5.0.2",
     "@types/google-protobuf": "^3.15.12",
     "@types/json-schema": "^7.0.15",
     "@types/jsonwebtoken": "^9.0.10",

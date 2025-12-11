@@ -134,7 +134,7 @@ export const useRuntimeStore = create<RuntimeState>()(
       },
     }),
     {
-      name: '2LY Runtime Store', // Name in Redux DevTools
+      name: 'Skilder Runtime Store', // Name in Redux DevTools
     }
   )
 );

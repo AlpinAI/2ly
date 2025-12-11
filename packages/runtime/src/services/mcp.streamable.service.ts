@@ -1,6 +1,6 @@
 import { inject, injectable } from 'inversify';
 import { FastifyRequest, FastifyReply } from 'fastify';
-import { LoggerService, NatsService, Service } from '@2ly/common';
+import { LoggerService, NatsService, Service } from '@skilder-ai/common';
 import { HealthService } from './runtime.health.service';
 import { FastifyManagerService } from './fastify.manager.service';
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
@@ -19,7 +19,7 @@ import {
 import {
   SessionContext,
   authenticateSession,
-  createToolsetService,
+  createSkillService,
   completeSessionContext,
   cleanupSession,
   cleanupAllSessions,
@@ -36,7 +36,7 @@ import pino from 'pino';
  */
 @injectable()
 export class McpStreamableService extends Service {
-  name = 'mcp-streamable';
+  name = 'mcp.streamable';
   private logger!: pino.Logger;
   private sessions: Map<string, SessionContext> = new Map();
 
@@ -246,7 +246,7 @@ export class McpStreamableService extends Service {
 
         if (session && isValidSessionId(sessionId)) {
           // Existing session - validate session ID header is present
-          this.logger.debug(`Reusing session ${sessionId} for toolset: ${session.toolsetService.getIdentity().toolsetName}`);
+          this.logger.debug(`Reusing session ${sessionId} for skill: ${session.skillService.getIdentity().skillName}`);
 
           // For responses and notifications, return HTTP 202 Accepted (per spec)
           if (messageType === JsonRpcMessageType.RESPONSE || messageType === JsonRpcMessageType.NOTIFICATION) {
@@ -361,7 +361,7 @@ export class McpStreamableService extends Service {
         }
 
         const session = this.sessions.get(sessionId)!;
-        this.logger.info(`Terminating session ${sessionId} for toolset: ${session.toolsetService.getIdentity().toolsetName}`);
+        this.logger.info(`Terminating session ${sessionId} for skill: ${session.skillService.getIdentity().skillName}`);
 
         // Inject CORS headers for DELETE response
         injectCorsHeaders(request, reply);
@@ -422,10 +422,10 @@ export class McpStreamableService extends Service {
     try {
       // Authenticate the request
       const identity = await authenticateSession(request, this.loggerService, this.natsService);
-      this.logger.info(`Authenticated new stream connection for toolset: ${identity.toolsetName}`);
+      this.logger.info(`Authenticated new stream connection for skill: ${identity.skillName}`);
 
-      // Create the toolset service first
-      const toolsetService = await createToolsetService(
+      // Create the skill service first
+      const skillService = await createSkillService(
         identity,
         this.loggerService,
         this.natsService,
@@ -436,9 +436,9 @@ export class McpStreamableService extends Service {
       const { transport, sessionId, partialSession } = await this.createStreamableTransport();
 
       // Complete the session context by mutating the partial session
-      completeSessionContext(transport, toolsetService, partialSession);
+      completeSessionContext(transport, skillService, partialSession);
 
-      this.logger.info(`Created session ${sessionId} for toolset: ${identity.toolsetName}`);
+      this.logger.info(`Created session ${sessionId} for skill: ${identity.skillName}`);
 
       return partialSession as SessionContext;
     } catch (authError) {

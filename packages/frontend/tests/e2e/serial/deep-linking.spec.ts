@@ -9,7 +9,7 @@
  * and run serially to maintain database consistency.
  */
 
-import { test, expect, seedPresets, performLogin } from '@2ly/common/test/fixtures/playwright';
+import { test, expect, seedPresets, performLogin } from '@skilder-ai/common/test/fixtures/playwright';
 
 test.describe('Deep Linking with Comprehensive Data', () => {
   // Reset and seed database before all tests
@@ -21,8 +21,8 @@ test.describe('Deep Linking with Comprehensive Data', () => {
   // Log in before each test to ensure authenticated session
   test.beforeEach(async ({ page }) => {
     // Log in with the seeded user credentials
-    // Credentials from comprehensive seed: user1@2ly.ai / testpassword123
-    await performLogin(page, 'user1@2ly.ai', 'testpassword123');
+    // Credentials from comprehensive seed: user1@skilder.ai / testpassword123
+    await performLogin(page, 'user1@skilder.ai', 'testpassword123');
   });
 
   // Configure tests to run serially
@@ -246,7 +246,7 @@ test.describe('Deep Linking with Comprehensive Data', () => {
       }
     });
 
-    test('should navigate to toolsets page when clicking agent link', async ({ page, getDatabaseState }) => {
+    test('should navigate to skills page when clicking agent link', async ({ page, getDatabaseState }) => {
       const state = await getDatabaseState();
       const workspace = state.workspaces[0];
 
@@ -261,24 +261,24 @@ test.describe('Deep Linking with Comprehensive Data', () => {
       await page.waitForSelector('[role="complementary"], [data-testid="detail-panel"]', { timeout: 3000 });
 
       // Look for agent link in "Available on Agents" section
-      const agentLink = page.locator('a[href*="/toolsets?id="]').first();
+      const agentLink = page.locator('a[href*="/skills?id="]').first();
       if (await agentLink.count() > 0) {
         await agentLink.click();
 
-        // Should navigate to toolsets page with ID
-        await page.waitForURL(/\/toolsets\?id=/, { timeout: 3000 });
-        expect(page.url()).toContain('/toolsets');
+        // Should navigate to skills page with ID
+        await page.waitForURL(/\/skills\?id=/, { timeout: 3000 });
+        expect(page.url()).toContain('/skills');
         expect(page.url()).toContain('id=');
       }
     });
   });
 
-  test.describe('Tool Sets Page - Agent Deep Links', () => {
-    test('should open detail panel when visiting URL with tool set ID', async ({ page, getDatabaseState }) => {
+  test.describe('Skills Page - Agent Deep Links', () => {
+    test('should open detail panel when visiting URL with skill ID', async ({ page, getDatabaseState }) => {
       const state = await getDatabaseState();
       const workspace = state.workspaces[0];
 
-      await page.goto(`/w/${workspace.id}/toolsets`);
+      await page.goto(`/w/${workspace.id}/skills`);
       await page.waitForLoadState('networkidle');
 
       // Click first agent/runtime in table
@@ -289,14 +289,14 @@ test.describe('Deep Linking with Comprehensive Data', () => {
       // URL should contain ID
       await page.waitForURL(/id=/, { timeout: 2000 });
       expect(page.url()).toContain('id=');
-      expect(page.url()).toContain('toolsets');
+      expect(page.url()).toContain('skills');
     });
 
     test('should navigate to tools page when clicking tool link', async ({ page, getDatabaseState }) => {
       const state = await getDatabaseState();
       const workspace = state.workspaces[0];
 
-      await page.goto(`/w/${workspace.id}/toolsets`);
+      await page.goto(`/w/${workspace.id}/skills`);
       await page.waitForLoadState('networkidle');
 
       // Click first agent

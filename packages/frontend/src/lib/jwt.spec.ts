@@ -13,14 +13,14 @@ describe('JWT Utility Functions', () => {
 
   describe('decodeJWT', () => {
     it('should decode a valid JWT token', () => {
-      // This is a sample JWT with payload: { userId: "123", email: "user1@2ly.ai", role: "member", iat: 1234567890, exp: 1234567890 }
-      const token = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiIxMjMiLCJlbWFpbCI6InVzZXIxQDJseS5haSIsInJvbGUiOiJtZW1iZXIiLCJpYXQiOjEyMzQ1Njc4OTAsImV4cCI6MTIzNDU2Nzg5MH0.signature';
+      // This is a sample JWT with payload: { userId: "123", email: "user1@test.com", role: "member", iat: 1234567890, exp: 1234567890 }
+      const token = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiIxMjMiLCJlbWFpbCI6InVzZXIxQHRlc3QuY29tIiwicm9sZSI6Im1lbWJlciIsImlhdCI6MTIzNDU2Nzg5MCwiZXhwIjoxMjM0NTY3ODkwfQ.signature';
 
       const payload = decodeJWT(token);
 
       expect(payload).toBeTruthy();
       expect(payload?.userId).toBe('123');
-      expect(payload?.email).toBe('user1@2ly.ai');
+      expect(payload?.email).toBe('user1@test.com');
       expect(payload?.role).toBe('member');
     });
 

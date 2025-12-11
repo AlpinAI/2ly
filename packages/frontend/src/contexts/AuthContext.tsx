@@ -54,8 +54,8 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 // Provider
 // ============================================================================
 
-const STORAGE_KEY_TOKENS = '2ly_auth_tokens';
-const STORAGE_KEY_USER = '2ly_auth_user';
+const STORAGE_KEY_TOKENS = 'skilder_auth_tokens';
+const STORAGE_KEY_USER = 'skilder_auth_user';
 
 interface AuthProviderProps {
   children: ReactNode;
@@ -180,7 +180,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     // Call clearWorkspace() to update store state
     useWorkspaceStore.getState().clearWorkspace();
     // Also directly remove from localStorage to handle Zustand persist timing issues
-    localStorage.removeItem('2ly-workspace');
+    localStorage.removeItem('skilder-workspace');
 
     // Clear any redirect intent
     clearRedirectIntent();

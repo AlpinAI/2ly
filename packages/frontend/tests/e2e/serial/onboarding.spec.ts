@@ -1,23 +1,26 @@
-import { test, expect, performLogin, seedPresets, loginAndGetToken } from '@2ly/common/test/fixtures/playwright';
-import { configureFileSystemMCPServer, createToolset, getRuntimeIdByType } from '@2ly/common/test/fixtures/mcp-builders';
-import { sendToolsetHandshake, waitForOnboardingStepComplete } from '@2ly/common/test/fixtures';
+import { test, expect, performLogin, seedPresets, loginAndGetToken } from '@skilder-ai/common/test/fixtures/playwright';
+import {
+  configureFileSystemMCPServer,
+  createSkill,
+  getRuntimeIdByType,
+} from '@skilder-ai/common/test/fixtures/mcp-builders';
+import { sendSkillHandshake, waitForOnboardingStepComplete } from '@skilder-ai/common/test/fixtures';
 
 /**
  * Onboarding Flow E2E Tests
  *
  * Tests the complete onboarding flow with all three steps:
  * 1. Install an MCP Server
- * 2. Create Your First Tool Set
+ * 2. Create Your First Skill
  * 3. Connect your Agent
  *
  */
 
 test.describe('Onboarding Flow', () => {
-
   let entityIds: Record<string, string> = {};
   let workspaceId: string = '';
-  let toolsetId: string = '';
-  let toolsetKey: string = '';
+  let skillId: string = '';
+  let skillKey: string = '';
   test.beforeAll(async ({ resetDatabase, seedDatabase }) => {
     await resetDatabase(true);
     entityIds = await seedDatabase(seedPresets.withUsers);
@@ -25,40 +28,41 @@ test.describe('Onboarding Flow', () => {
   });
 
   test.describe('Onboarding start', () => {
-    
     test.beforeEach(async ({ page }) => {
-      await performLogin(page, 'user1@2ly.ai', 'password123');
+      await performLogin(page, 'user1@skilder.ai', 'password123');
     });
 
     test('displays all three onboarding steps on initial load', async ({ page }) => {
       // Check that onboarding section is visible
-      await expect(page.getByText('Get Started with 2LY')).toBeVisible();
+      await expect(page.getByText('Get Started with Skilder')).toBeVisible();
       await expect(page.getByText('Complete these steps to set up your workspace')).toBeVisible();
-  
+
       // Check step 1: Install MCP Server
       await expect(page.getByRole('heading', { name: 'Install an MCP Server' })).toBeVisible();
       await expect(page.getByText('Add your first MCP server to start using tools')).toBeVisible();
-  
-      // Check step 2: Create Tool Set
-      await expect(page.getByRole('heading', { name: 'Create Your First Tool Set' })).toBeVisible();
-      await expect(page.getByText('Create a tool set with at least one tool')).toBeVisible();
-  
+
+      // Check step 2: Create Skill
+      await expect(page.getByRole('heading', { name: 'Create Your First Skill' })).toBeVisible();
+      await expect(page.getByText('Create a skill with at least one tool')).toBeVisible();
+
       // Check step 3: Connect Agent
       await expect(page.getByRole('heading', { name: 'Connect your Agent' })).toBeVisible();
-      await expect(page.getByText('Connect your tool set to an agent to start using your tools in AI workflows')).toBeVisible();
+      await expect(
+        page.getByText('Connect your skill to an agent to start using your tools in AI workflows'),
+      ).toBeVisible();
     });
-  
+
     test('shows step priority badges', async ({ page }) => {
       // Find the three priority badges (1, 2, 3)
       const badges = page.locator('.absolute.-top-3.-left-3 .flex');
       await expect(badges).toHaveCount(3);
-  
+
       // Check that badges show correct numbers
       await expect(badges.nth(0)).toContainText('1');
       await expect(badges.nth(1)).toContainText('2');
       await expect(badges.nth(2)).toContainText('3');
     });
-  
+
     test('step 1 shows Browse MCP Servers button when pending', async ({ page }) => {
       // Should show Browse MCP Servers button
       await expect(page.getByRole('button', { name: /Browse MCP Servers/i })).toBeVisible();
@@ -73,7 +77,7 @@ test.describe('Onboarding Flow', () => {
   test.describe('Step 1 completed', () => {
     test.beforeAll(async ({ graphql }) => {
       // Get auth token for API calls
-      const authToken = await loginAndGetToken('user1@2ly.ai', 'password123');
+      const authToken = await loginAndGetToken('user1@skilder.ai', 'password123');
 
       // Get the EDGE runtime ID (from the runtime started by resetDatabase(true))
       const runtimeId = await getRuntimeIdByType(graphql, workspaceId, 'EDGE');
@@ -87,38 +91,38 @@ test.describe('Onboarding Flow', () => {
     });
 
     test.beforeEach(async ({ page }) => {
-      await performLogin(page, 'user1@2ly.ai', 'password123');
+      await performLogin(page, 'user1@skilder.ai', 'password123');
     });
 
-    test('step 1 shows completed status after server is installed', async ({ page }) => {  
+    test('step 1 shows completed status after server is installed', async ({ page }) => {
       // Select the step 1 card containing the step title
       const step1Card = page
         .getByRole('heading', { name: 'Install an MCP Server' })
         .locator('xpath=ancestor::*[contains(@class,"onboarding-card")][1]');
-  
+
       await expect(step1Card).toBeVisible();
-  
+
       // Assert: card shows completion status and installed server name
       await expect(step1Card.getByText('Completed', { exact: true })).toBeVisible();
       await expect(step1Card.getByText('Test MCP Server', { exact: true })).toBeVisible();
     });
-  
-    test('step 2 shows Create Tool Set button when pending', async ({ page }) => {
+
+    test('step 2 shows Create Skill button when pending', async ({ page }) => {
       // Select the step 1 card containing the step title
       const step2Card = page
-        .getByRole('heading', { name: 'Create Your First Tool Set' })
-        .locator('xpath=ancestor::*[contains(@class,"onboarding-card")][1]');    
-      
-      // Should show Create Tool Set button
-      await expect(step2Card.getByRole('button', { name: /Create Tool Set/i })).toBeVisible();
+        .getByRole('heading', { name: 'Create Your First Skill' })
+        .locator('xpath=ancestor::*[contains(@class,"onboarding-card")][1]');
+
+      // Should show Create Skill button
+      await expect(step2Card.getByRole('button', { name: /Create Skill/i })).toBeVisible();
     });
-  
+
     test('step 2 shows the installed server name', async ({ page }) => {
       // Select the step 1 card containing the step title
       const step1Card = page
         .getByRole('heading', { name: 'Install an MCP Server' })
-        .locator('xpath=ancestor::*[contains(@class,"onboarding-card")][1]');    
-      
+        .locator('xpath=ancestor::*[contains(@class,"onboarding-card")][1]');
+
       // Should show the installed server name
       await expect(step1Card.getByText('Test MCP Server', { exact: true })).toBeVisible();
     });
@@ -128,25 +132,25 @@ test.describe('Onboarding Flow', () => {
       const step3Card = page
         .getByRole('heading', { name: 'Connect your Agent' })
         .locator('xpath=ancestor::*[contains(@class,"onboarding-card")][1]');
-  
+
       // Should show message
-      await expect(step3Card.getByText(/Create a tool set first to connect to an agent/)).toBeVisible();
+      await expect(step3Card.getByText(/Create a skill first to connect to an agent/)).toBeVisible();
     });
   });
 
   test.describe('Step 2 completed', () => {
     test.beforeAll(async ({ graphql }) => {
       // Get auth token for API calls
-      const authToken = await loginAndGetToken('user1@2ly.ai', 'password123');
+      const authToken = await loginAndGetToken('user1@skilder.ai', 'password123');
 
       // complete step 2
-      const toolsetResult = await createToolset(graphql, workspaceId, 'My tool set', 'My tool set description', 1, authToken);
-      toolsetId = toolsetResult.toolsetId;
+      const skillResult = await createSkill(graphql, workspaceId, 'My skill', 'My skill description', 1, authToken);
+      skillId = skillResult.skillId;
       await new Promise((resolve) => setTimeout(resolve, 5000));
     });
 
     test.beforeEach(async ({ page }) => {
-      await performLogin(page, 'user1@2ly.ai', 'password123');
+      await performLogin(page, 'user1@skilder.ai', 'password123');
     });
 
     test('step 3 shows Connect button when agent with tools exists', async ({ page }) => {
@@ -154,11 +158,11 @@ test.describe('Onboarding Flow', () => {
       const step3Card = page
         .getByRole('heading', { name: 'Connect your Agent' })
         .locator('xpath=ancestor::*[contains(@class,"onboarding-card")][1]');
-  
+
       // Wait for Connect button to be visible, replacing static timeout
       await expect(step3Card.getByRole('button', { name: /Connect/i })).toBeVisible();
     });
-  
+
     test('step 3 Connect button opens Connect Agent dialog', async ({ page }) => {
       // Select the step 3 card containing the correct step title
       const step3Card = page
@@ -167,52 +171,52 @@ test.describe('Onboarding Flow', () => {
       const connectButton = step3Card.getByRole('button', { name: /Connect/i });
       await expect(connectButton).toBeVisible();
       await connectButton.click();
-  
+
       // Dialog should open
       await expect(page.getByRole('dialog')).toBeVisible();
-      await expect(page.getByText('Connect: My tool set')).toBeVisible();
+      await expect(page.getByText('Connect: My skill')).toBeVisible();
       await expect(page.getByText('Select Platform')).toBeVisible();
     });
 
     // step 3 should contain only one test case since on refresh the onboarding is hidden
     test('step 3 shows completed status after connection', async ({ page, graphql, workspaceId }) => {
-      await performLogin(page, 'user1@2ly.ai', 'password123');
+      await performLogin(page, 'user1@skilder.ai', 'password123');
 
-      // Get auth token for API calls (toolsetKey requires authentication)
-      const authToken = await loginAndGetToken('user1@2ly.ai', 'password123');
+      // Get auth token for API calls (skillKey requires authentication)
+      const authToken = await loginAndGetToken('user1@skilder.ai', 'password123');
 
-      // Get the toolset key
-      const toolsetKeyQuery = `
-        query GetToolsetKey($toolsetId: ID!) {
-          toolsetKey(toolsetId: $toolsetId) {
+      // Get the skill key
+      const skillKeyQuery = `
+        query GetSkillKey($skillId: ID!) {
+          skillKey(skillId: $skillId) {
             key
           }
         }
       `;
-      const keyResult = await graphql<{ toolsetKey: { key: string } }>(toolsetKeyQuery, { toolsetId }, authToken);
-      toolsetKey = keyResult.toolsetKey.key;
+      const keyResult = await graphql<{ skillKey: { key: string } }>(skillKeyQuery, { skillId }, authToken);
+      skillKey = keyResult.skillKey.key;
 
-      // Send toolset handshake to complete step 3
-      await sendToolsetHandshake({
-        toolsetKey,
-        toolsetName: 'My tool set',
+      // Send skill handshake to complete step 3
+      await sendSkillHandshake({
+        skillKey,
+        skillName: 'My skill',
       });
-  
+
       // Wait for the onboarding step to be marked as complete
-      await waitForOnboardingStepComplete(workspaceId, 'connect-tool-set-to-agent');
+      await waitForOnboardingStepComplete(workspaceId, 'connect-skill-to-agent');
 
       // Select the step 3 card containing the correct step title
       const step3Card = page
         .getByRole('heading', { name: 'Connect your Agent' })
         .locator('xpath=ancestor::*[contains(@class,"onboarding-card")][1]');
       await expect(step3Card.getByText('Completed')).toBeVisible();
-      await expect(step3Card.getByText(/My tool set connected/)).toBeVisible();
+      await expect(step3Card.getByText(/My skill connected/)).toBeVisible();
 
       const completedBadges = page.locator('text=Completed');
       await expect(completedBadges).toHaveCount(3);
-  
+
       // Check dismiss button text changes
       await expect(page.getByRole('button', { name: /Close onboarding/i })).toBeVisible();
     });
-  });  
+  });
 });

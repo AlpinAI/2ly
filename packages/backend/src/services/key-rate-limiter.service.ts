@@ -1,5 +1,5 @@
 import { injectable, inject } from 'inversify';
-import { LoggerService } from '@2ly/common';
+import { LoggerService } from '@skilder-ai/common';
 import pino from 'pino';
 
 interface RateLimitEntry {
@@ -33,7 +33,7 @@ export class KeyRateLimiterService {
   private cleanupInterval?: NodeJS.Timeout;
 
   constructor(@inject(LoggerService) private readonly loggerService: LoggerService) {
-    this.logger = this.loggerService.getLogger('key-rate-limiter');
+    this.logger = this.loggerService.getLogger('key.rate.limiter');
 
     // Start periodic cleanup (every 10 minutes)
     this.cleanupInterval = setInterval(() => {

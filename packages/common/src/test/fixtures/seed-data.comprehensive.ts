@@ -4,7 +4,7 @@
  * This file contains realistic, comprehensive fixture data for E2E testing:
  * - Multiple MCP servers with different transports (STDIO, SSE, STREAM)
  * - Realistic tools with proper schemas and descriptions
- * - Tool sets (agent-capable runtimes) with various tool combinations
+ * - Skills (agent-capable runtimes) with various tool combinations
  * - Tool call history with different states (success, error, pending)
  *
  * WHY: Enables thorough UI and navigation testing without requiring live MCP server integrations.
@@ -18,7 +18,7 @@ import {
   buildDevelopmentToolsServer,
   buildDatabaseServer,
 } from './mcp-builders';
-import { dgraphResolversTypes } from '@2ly/common';
+import { dgraphResolversTypes } from '@skilder-ai/common';
 
 // ============================================================================
 // Realistic Input Schemas for Tools
@@ -185,13 +185,13 @@ const GIT_COMMIT_SCHEMA = JSON.stringify({
  * - 3 registry servers
  * - 23 tools across servers
  * - 2 runtimes
- * - 2 tool sets (agent-capable runtimes)
+ * - 2 skills (agent-capable runtimes)
  * - 15 tool calls (various states)
  */
 export const comprehensiveSeededData: SeedData = {
   users: [
     {
-      email: 'user1@2ly.ai',
+      email: 'user1@skilder.ai',
       password: 'testpassword123'
     },
   ],
@@ -262,7 +262,7 @@ export const comprehensiveSeededData: SeedData = {
     },
   ],
   mcpServers: [
-    buildMinimalFilesystemServer({ name: 'Filesystem Server', runOn: 'AGENT' }),
+    buildMinimalFilesystemServer({ name: 'Filesystem Server', executionTarget: 'AGENT' }),
     buildWebFetchServer(),
     buildDevelopmentToolsServer(),
     buildDatabaseServer(),
@@ -535,7 +535,7 @@ export const comprehensiveSeededData: SeedData = {
       workspaceId: '', // Will be set during seeding
     },
   ],
-  toolSets: [
+  skills: [
     {
       name: 'Claude Desktop Agent',
       description: 'Primary agent runtime for Claude Desktop application with filesystem and development tools',

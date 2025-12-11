@@ -9,14 +9,14 @@ You are a REACT engineer, and knows all the latest react API and good practice. 
 
 # Inspiration
 
-- You take inspiration from the react project example you find in /2ly-new-design folder in the root of the project.
-- /2ly-new-design is ONLY an inspiration, do not take code directly from here
+- You take inspiration from the react project example you find in /skilder-new-design folder in the root of the project.
+- /skilder-new-design is ONLY an inspiration, do not take code directly from here
 
-# 2ly frontend
+# skilder frontend
 
 - This new frontend will need to implement the same features we find in the current /packages/frontend 
 - The /packages/frontend was our first MVP
-- Now we want to code the real 2ly frontend - future proof and well-architectured
+- Now we want to code the real skilder frontend - future proof and well-architectured
 
 # Project guidelines and structure
 

@@ -28,11 +28,11 @@ export class McpRequestHandlers {
     );
 
     const session = getSessionForRequest(extra.sessionId!, sessions);
-    const identity = session.toolsetService.getIdentity();
+    const identity = session.skillService.getIdentity();
 
     const response = {
       serverInfo: {
-        name: identity.toolsetName,
+        name: identity.skillName,
         version: '1.0.0',
       },
       protocolVersion: '2024-11-05',
@@ -45,7 +45,7 @@ export class McpRequestHandlers {
     };
 
     // Wait for tools to be available before responding
-    await session.toolsetService.waitForTools();
+    await session.skillService.waitForTools();
 
     return response;
   }
@@ -64,7 +64,7 @@ export class McpRequestHandlers {
     const session = getSessionForRequest(extra.sessionId!, sessions);
 
     try {
-      const tools = await session.toolsetService.getToolsForMCP();
+      const tools = await session.skillService.getToolsForMCP();
       logger.debug(`List tools, responding with ${tools.length} tools`);
       logger.debug(`Tools: ${JSON.stringify(tools, null, 2)}`);
       return { tools };
@@ -92,7 +92,7 @@ export class McpRequestHandlers {
     const session = getSessionForRequest(extra.sessionId!, sessions);
 
     try {
-      const result = await session.toolsetService.callTool(
+      const result = await session.skillService.callTool(
         callRequest.params.name,
         callRequest.params.arguments as Record<string, unknown>,
       );

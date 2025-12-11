@@ -91,7 +91,7 @@ describe('JwtService', () => {
     it('should generate valid access and refresh tokens', async () => {
       const payload: JwtPayload = {
         userId: 'user123',
-        email: 'user1@2ly.ai',
+        email: 'user1@skilder.ai',
         workspaceId: 'workspace123',
         role: 'admin',
       };
@@ -108,7 +108,7 @@ describe('JwtService', () => {
     it('should generate tokens with correct payload', async () => {
       const payload: JwtPayload = {
         userId: 'user123',
-        email: 'user1@2ly.ai',
+        email: 'user1@skilder.ai',
         workspaceId: 'workspace123',
         role: 'member',
       };

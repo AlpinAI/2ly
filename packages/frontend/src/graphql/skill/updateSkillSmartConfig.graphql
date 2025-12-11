@@ -1,0 +1,18 @@
+# Update Skill Smart Config Mutation
+# WHY: Update the smart configuration fields for a skill in SMART mode
+mutation UpdateSkillSmartConfig($input: UpdateSkillSmartConfigInput!) {
+  updateSkillSmartConfig(input: $input) {
+    id
+    name
+    mode
+    model
+    temperature
+    maxTokens
+    systemPrompt
+    executionTarget
+    runtime {
+      id
+      name
+    }
+  }
+}

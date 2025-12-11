@@ -7,7 +7,7 @@ query GetMCPServers($workspaceId: ID!) {
     description
     repositoryUrl
     transport
-    runOn
+    executionTarget
     config
     tools {
       id

@@ -27,7 +27,13 @@
     /* Path mapping */
     "baseUrl": ".",
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["./src/*"],
+      "@skilder-ai/common": ["../common/src"],
+      "@skilder-ai/common/test/fixtures": ["../common/src/test/fixtures/index.ts"],
+      "@skilder-ai/common/test/fixtures/playwright": ["../common/src/test/playwright/index.ts"],
+      "@skilder-ai/common/test/fixtures/mcp-builders": ["../common/src/test/fixtures/mcp-builders.ts"],
+      "@skilder-ai/common/test/fixtures/mcp-test-helpers": ["../common/src/test/fixtures/mcp-test-helpers.ts"],
+      "@skilder-ai/common/test/test.containers": ["../common/src/test/test.containers.ts"]
     }
   },
   "include": ["src", "tests"]

@@ -91,6 +91,12 @@ export const cache = new InMemoryCache({
             return incoming;
           },
         },
+
+        skills: {
+          merge(_existing = [], incoming) {
+            return incoming;
+          },
+        },
       },
     },
 
@@ -113,6 +119,10 @@ export const cache = new InMemoryCache({
     },
 
     Workspace: {
+      keyFields: ['id'],
+    },
+
+    Skill: {
       keyFields: ['id'],
     },
   },
@@ -193,7 +203,7 @@ export const apolloClient = new ApolloClient({
    * Useful for monitoring and debugging in production.
    */
   clientAwareness: {
-    name: '2LY Frontend',
+    name: 'Skilder Frontend',
     version: '2.0',
   },
 });

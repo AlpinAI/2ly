@@ -1,0 +1,5 @@
+# Set Default AI Model Mutation
+# WHY: Set the workspace's default AI model for all AI operations
+mutation SetDefaultAIModel($workspaceId: ID!, $defaultModel: String!) {
+  setDefaultAIModel(workspaceId: $workspaceId, defaultModel: $defaultModel)
+}

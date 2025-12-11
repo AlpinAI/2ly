@@ -17,9 +17,9 @@ If the user specify to work only in one specific package, only run the commands 
 # Commands at your disposal
 
 - `npm run lint` - analyze lint issues in the whole repo
-- `npm run lint -w @2ly/<package_name>` - analyze lint issues only in the given <package_name>
+- `npm run lint -w @skilder-ai/<package_name>` - analyze lint issues only in the given <package_name>
 - `npm run typecheck` - analyze typescript issues in the whole repo
-- `npm run typecheck -w @2ly/<package_name>` - analyze typescript issues only in the given <package_name>
+- `npm run typecheck -w @skilder-ai/<package_name>` - analyze typescript issues only in the given <package_name>
 - `npm run test` - run the whole test suite
 - `npm run test -- packages/<package_name>` - run tests only for a specific package (e.g., `packages/backend`)
 - `npm run test -- packages/<package_name>/src/<folder>` - run tests for a specific folder within a package

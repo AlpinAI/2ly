@@ -4,6 +4,7 @@ import {
   NATS_CONNECTION_OPTIONS,
   LoggerService,
   LOG_LEVEL,
+  LOG_LEVELS,
   MAIN_LOGGER_NAME,
   FORWARD_STDERR,
   dgraphResolversTypes,
@@ -11,11 +12,13 @@ import {
   DEFAULT_HEARTBAT_TTL,
   EPHEMERAL_TTL,
   DEFAULT_EPHEMERAL_TTL,
-} from '@2ly/common';
+  EncryptionService,
+  AIProviderService,
+} from '@skilder-ai/common';
 import { DGraphService, DGRAPH_URL } from '../services/dgraph.service';
 import { ApolloService } from '../services/apollo.service';
 import { RuntimeService } from '../services/runtime.service';
-import { ToolSetService } from '../services/toolset.service';
+import { SkillService } from '../services/skill.service';
 import { FastifyService } from '../services/fastify.service';
 import { MainService, DROP_ALL_DATA } from '../services/backend.main.service';
 import { RuntimeInstance, RuntimeInstanceFactory } from '../services/runtime.instance';
@@ -29,14 +32,17 @@ import {
   MCPToolRepository,
   SystemRepository,
   MonitoringRepository,
-  ToolSetRepository,
+  SkillRepository,
   IdentityRepository,
+  AIProviderRepository,
+  OAuthProviderRepository,
+  UserOAuthConnectionRepository,
 } from '../repositories';
 import { JwtService, AuthenticationService, AccountSecurityService, PasswordPolicyService } from '../services/auth';
+import { OAuthService, OAuthStateService } from '../services/oauth';
 import { SecurityMiddleware, RateLimitMiddleware, GraphQLAuthMiddleware } from '../middleware';
 import { IdentityService } from '../services/identity.service';
 import { KeyRateLimiterService } from '../services/key-rate-limiter.service';
-import pino from 'pino';
 import { MonitoringService } from '../services/monitoring.service';
 
 const container = new Container();
@@ -67,8 +73,8 @@ const start = () => {
   // Init runtime service
   container.bind(RuntimeService).toSelf().inSingletonScope();
 
-  // Init tool set service
-  container.bind(ToolSetService).toSelf().inSingletonScope();
+  // Init skill service
+  container.bind(SkillService).toSelf().inSingletonScope();
 
   // Init fastify service
   container.bind(FastifyService).toSelf().inSingletonScope();
@@ -88,8 +94,11 @@ const start = () => {
   container.bind(MCPToolRepository).toSelf().inSingletonScope();
   container.bind(SystemRepository).toSelf().inSingletonScope();
   container.bind(MonitoringRepository).toSelf().inSingletonScope();
-  container.bind(ToolSetRepository).toSelf().inSingletonScope();
+  container.bind(SkillRepository).toSelf().inSingletonScope();
   container.bind(IdentityRepository).toSelf().inSingletonScope();
+  container.bind(AIProviderRepository).toSelf().inSingletonScope();
+  container.bind(OAuthProviderRepository).toSelf().inSingletonScope();
+  container.bind(UserOAuthConnectionRepository).toSelf().inSingletonScope();
 
   // Init authentication services
   container.bind(JwtService).toSelf().inSingletonScope();
@@ -101,6 +110,14 @@ const start = () => {
   // Init key rate limiter service
   container.bind(KeyRateLimiterService).toSelf().inSingletonScope();
 
+  // Init AI provider core service (from @skilder-ai/common)
+  container.bind(EncryptionService).toSelf().inSingletonScope();
+  container.bind(AIProviderService).toSelf().inSingletonScope();
+
+  // Init OAuth services
+  container.bind(OAuthStateService).toSelf().inSingletonScope();
+  container.bind(OAuthService).toSelf().inSingletonScope();
+
   // Init security services
   container.bind(AccountSecurityService).toSelf().inSingletonScope();
   container.bind(PasswordPolicyService).toSelf().inSingletonScope();
@@ -111,22 +128,14 @@ const start = () => {
   container.bind(GraphQLAuthMiddleware).toSelf().inSingletonScope();
 
   // Init logger service
-  container.bind(MAIN_LOGGER_NAME).toConstantValue('2ly-backend');
+  // LOG_LEVEL: Default level for all loggers (e.g., 'info', 'debug', 'warn')
+  // LOG_LEVELS: Pattern-based configuration (e.g., 'mcp.*=debug,dgraph=trace')
+  container.bind(MAIN_LOGGER_NAME).toConstantValue('skilder-backend');
   container.bind(FORWARD_STDERR).toConstantValue(false);
   container.bind(LOG_LEVEL).toConstantValue(process.env.LOG_LEVEL || 'info');
+  container.bind(LOG_LEVELS).toConstantValue(process.env.LOG_LEVELS);
   container.bind(LoggerService).toSelf().inSingletonScope();
 
-  // Set child log levels
-  const loggerService = container.get(LoggerService);
-  loggerService.setLogLevel('dgraph', (process.env.DGRAPH_LOG_LEVEL || 'info') as pino.Level);
-  loggerService.setLogLevel('nats', (process.env.NATS_LOG_LEVEL || 'info') as pino.Level);
-  loggerService.setLogLevel('fastify', (process.env.FASTIFY_LOG_LEVEL || 'info') as pino.Level);
-  loggerService.setLogLevel('apollo', (process.env.APOLLO_LOG_LEVEL || 'info') as pino.Level);
-  loggerService.setLogLevel('runtime', (process.env.RUNTIME_LOG_LEVEL || 'info') as pino.Level);
-  loggerService.setLogLevel('identity', (process.env.IDENTITY_LOG_LEVEL || 'info') as pino.Level);
-  loggerService.setLogLevel('toolset', (process.env.TOOLSET_LOG_LEVEL || 'info') as pino.Level);
-  loggerService.setLogLevel('runtime.instance', (process.env.RUNTIME_INSTANCE_LOG_LEVEL || 'info') as pino.Level);
-  
   // Init Runtime Instance Factory
   container.bind<RuntimeInstanceFactory>(RuntimeInstance).toFactory((context) => {
     return (
@@ -134,12 +143,14 @@ const start = () => {
       metadata: ConnectionMetadata,
       onReady: () => void,
       onDisconnect: () => void) => {
-      const logger = context.get(LoggerService).getLogger(`runtime.instance`);
-      logger.level = process.env.RUNTIME_INSTANCE_LOG_LEVEL || 'info';
+      const logger = context.get(LoggerService).getLogger('runtime.instance');
       const runtimeInstance = new RuntimeInstance(
         logger,
         context.get(NatsService),
         context.get(RuntimeRepository),
+        context.get(SkillRepository),
+        context.get(AIProviderRepository),
+        context.get(AIProviderService),
         instance,
         metadata,
         onReady,

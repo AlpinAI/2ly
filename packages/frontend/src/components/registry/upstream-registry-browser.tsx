@@ -18,10 +18,11 @@
 
 import { useState } from 'react';
 import { useMutation } from '@apollo/client/react';
-import { Search, Download, ExternalLink, Loader2, AlertCircle, RefreshCw } from 'lucide-react';
+import { Search as SearchIcon, Download, ExternalLink, Loader2, AlertCircle, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Search } from '@/components/ui/search';
 import {
   Select,
   SelectContent,
@@ -158,16 +159,12 @@ export function UpstreamRegistryBrowser({
         </div>
 
         {/* Search */}
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-          <Input
-            placeholder="Search servers..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10"
-            disabled={loading || !!error}
-          />
-        </div>
+        <Search
+          placeholder="Search servers..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          disabled={loading || !!error}
+        />
 
         {/* Error State */}
         {error && (
@@ -281,7 +278,7 @@ export function UpstreamRegistryBrowser({
             {/* Empty State */}
             {servers.length === 0 && (
               <div className="col-span-full text-center py-12">
-                <Search className="mx-auto h-12 w-12 text-gray-400 dark:text-gray-600" />
+                <SearchIcon className="mx-auto h-12 w-12 text-gray-400 dark:text-gray-600" />
                 <h3 className="mt-4 text-sm font-medium text-gray-900 dark:text-white">
                   No servers found
                 </h3>

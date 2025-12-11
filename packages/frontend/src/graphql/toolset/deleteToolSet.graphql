@@ -1,8 +1,0 @@
-# Delete ToolSet Mutation
-# WHY: Delete a tool set
-mutation DeleteToolSet($id: ID!) {
-  deleteToolSet(id: $id) {
-    id
-    name
-  }
-}

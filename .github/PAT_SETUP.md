@@ -29,9 +29,9 @@ Choose one of these options:
 1. Go to GitHub → **Settings** → **Developer settings** → **Personal access tokens** → **Fine-grained tokens**
 2. Click **Generate new token**
 3. Configure the token:
-   - **Token name**: `2ly-release-automation`
+   - **Token name**: `skilder-release-automation`
    - **Expiration**: Choose your preference (90 days recommended, with calendar reminder to renew)
-   - **Repository access**: Select **Only select repositories** → Choose `2ly` repository
+   - **Repository access**: Select **Only select repositories** → Choose `skilder` repository
    - **Permissions**:
      - **Contents**: Read and write ✓
      - **Metadata**: Read-only (automatically selected)
@@ -43,7 +43,7 @@ Choose one of these options:
 1. Go to GitHub → **Settings** → **Developer settings** → **Personal access tokens** → **Tokens (classic)**
 2. Click **Generate new token (classic)**
 3. Configure the token:
-   - **Note**: `2ly-release-automation`
+   - **Note**: `skilder-release-automation`
    - **Expiration**: Choose your preference (90 days recommended)
    - **Scopes**: Select only `repo` (Full control of private repositories)
 4. Click **Generate token**
@@ -51,7 +51,7 @@ Choose one of these options:
 
 ### 2. Add Token to GitHub Repository Secrets
 
-1. Go to your `2ly` repository on GitHub
+1. Go to your `skilder` repository on GitHub
 2. Navigate to **Settings** → **Secrets and variables** → **Actions**
 3. Click **New repository secret**
 4. Create the secret:
@@ -88,8 +88,8 @@ Personal Access Tokens expire for security. When yours expires:
 
 **Symptom**: Release workflow fails with:
 ```
-remote: Permission to AlpinAI/2ly.git denied to [username].
-fatal: unable to access 'https://github.com/AlpinAI/2ly/': The requested URL returned error: 403
+remote: Permission to AlpinAI/skilder.git denied to [username].
+fatal: unable to access 'https://github.com/skilder-ai/skilder/': The requested URL returned error: 403
 ```
 
 **Most Common Causes** (even for organization owners):
@@ -113,7 +113,7 @@ If you created a fine-grained PAT:
 1. Go to your PAT settings
 2. Edit the token
 3. Under **Repository access**, ensure you selected:
-   - **"Only select repositories"** → Check **"2ly"** is in the list
+   - **"Only select repositories"** → Check **"skilder"** is in the list
    - OR use **"All repositories"** (less secure)
 4. Save and retry
 
@@ -146,7 +146,7 @@ Ensure your classic PAT has the **`repo`** scope (full control of private reposi
 **Check 4: Token is for correct user**
 - The PAT should be from a user with **write access** to the repository
 - Organization tokens may have additional restrictions
-- For "AlpinAI/2ly": User must be in AlpinAI organization with write permissions
+- For "AlpinAI/skilder": User must be in AlpinAI organization with write permissions
 
 ### Manual Trigger Workaround
 

@@ -1,8 +1,8 @@
 import { inject, injectable } from 'inversify';
-import { LoggerService, Service, NatsService, ToolSetCallToolRequest, RuntimeCallToolResponse, dgraphResolversTypes, MCP_CALL_TOOL_TIMEOUT } from '@2ly/common';
+import { LoggerService, Service, NatsService, SkillCallToolRequest, RuntimeCallToolResponse, dgraphResolversTypes, MCP_CALL_TOOL_TIMEOUT, isSmartSkillCall, isMCPToolCall } from '@skilder-ai/common';
 import { DGraphService } from './dgraph.service';
 import pino from 'pino';
-import { MonitoringRepository } from '../repositories/monitoring.repository';
+import { MonitoringRepository } from '../repositories/monitoring/monitoring.repository';
 
 @injectable()
 export class MonitoringService extends Service {
@@ -34,10 +34,10 @@ export class MonitoringService extends Service {
     }
 
     private async monitorCallTools() {
-        const messages = this.natsService.subscribe(ToolSetCallToolRequest.subscribeToAll());
+        const messages = this.natsService.subscribe(SkillCallToolRequest.subscribeToAll());
         for await (const message of messages) {
 
-            if (message instanceof ToolSetCallToolRequest) {
+            if (message instanceof SkillCallToolRequest) {
                 // Persist the tool call
                 this.logger.info(`TOOL CALL: ${message.originalMsg?.reply}`);
                 try {
@@ -71,10 +71,15 @@ export class MonitoringService extends Service {
                             }
                         })()
                     }
+                    // Get the tool/skill ID based on the request type
+                    const mcpToolId = isMCPToolCall(message.data) ? message.data.toolId : undefined;
+                    const skillId = isSmartSkillCall(message.data) ? message.data.skillId : undefined;
+
                     this.monitoringRepository.createToolCall({
                         toolInput: JSON.stringify(message.data.arguments),
                         calledById: message.data.from,
-                        mcpToolId: message.data.toolId,
+                        mcpToolId,
+                        skillId,
                         isTest: message.data.isTest,
                     }).then((result) => {
                         toolCall = result;

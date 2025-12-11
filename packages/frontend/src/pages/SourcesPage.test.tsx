@@ -1,7 +1,7 @@
 /**
  * SourcesPage Component Tests
  *
- * WHY: Test the SourcesPage filtering logic for transport and runOn filters.
+ * WHY: Test the SourcesPage filtering logic for transport and executionTarget filters.
  * Ensures filters work independently, combine with AND logic, and only apply to MCP Servers.
  */
 
@@ -11,7 +11,7 @@ import { BrowserRouter } from 'react-router-dom';
 import SourcesPage from './SourcesPage';
 import { SourceType } from '@/types/sources';
 import type { McpServer } from '@/graphql/generated/graphql';
-import { McpTransportType, McpServerRunOn } from '@/graphql/generated/graphql';
+import { McpTransportType, ExecutionTarget } from '@/graphql/generated/graphql';
 import { createMockMcpServer } from '@/test/factories';
 
 // Mock the useMCPServers hook
@@ -43,6 +43,11 @@ vi.mock('@/stores/uiStore', () => ({
   }),
 }));
 
+// Mock workspace store
+vi.mock('@/stores/workspaceStore', () => ({
+  useWorkspaceId: () => 'workspace-123',
+}));
+
 // Mock useUrlSync hook
 const mockSetSelectedId = vi.fn();
 vi.mock('@/hooks/useUrlSync', () => ({
@@ -56,8 +61,10 @@ vi.mock('@/hooks/useUrlSync', () => ({
 const mockSourceTableProps = vi.fn();
 interface MockSourceTableProps {
   sources: unknown[];
+  search: string;
+  onSearchChange: (search: string) => void;
   transportFilter: string[];
-  runOnFilter: string[];
+  executionTargetFilter: string[];
 }
 vi.mock('@/components/sources/source-table', () => ({
   SourceTable: (props: MockSourceTableProps) => {
@@ -65,8 +72,9 @@ vi.mock('@/components/sources/source-table', () => ({
     return (
       <div data-testid="source-table">
         <div data-testid="source-count">{props.sources.length} sources</div>
+        <div data-testid="search">{props.search}</div>
         <div data-testid="transport-filter">{props.transportFilter.join(',')}</div>
-        <div data-testid="runon-filter">{props.runOnFilter.join(',')}</div>
+        <div data-testid="runon-filter">{props.executionTargetFilter.join(',')}</div>
       </div>
     );
   },
@@ -138,7 +146,7 @@ describe('SourcesPage', () => {
         name: 'STDIO Server',
         description: 'A stdio server',
         transport: McpTransportType.Stdio,
-        runOn: McpServerRunOn.Agent,
+        executionTarget: ExecutionTarget.Agent,
       });
 
       const sseServer = createMockMcpServer({
@@ -191,19 +199,19 @@ describe('SourcesPage', () => {
   });
 
   describe('RunOn Filter', () => {
-    it('filters sources by AGENT runOn', async () => {
+    it('filters sources by AGENT executionTarget', async () => {
       const agentServer = createMockMcpServer({
         name: 'Agent Server',
         description: 'An agent server',
         transport: McpTransportType.Stdio,
-        runOn: McpServerRunOn.Agent,
+        executionTarget: ExecutionTarget.Agent,
       });
 
       const edgeServer = createMockMcpServer({
         id: 'server-2',
         name: 'Edge Server',
         description: 'An edge server',
-        runOn: McpServerRunOn.Edge,
+        executionTarget: ExecutionTarget.Edge,
       });
 
       mockServers.push(agentServer, edgeServer);
@@ -218,19 +226,19 @@ describe('SourcesPage', () => {
       const lastCall = mockSourceTableProps.mock.calls[mockSourceTableProps.mock.calls.length - 1][0];
       expect(lastCall.sources).toHaveLength(2);
 
-      // Simulate setting runOn filter to AGENT
+      // Simulate setting executionTarget filter to AGENT
       lastCall.onRunOnFilterChange(['AGENT']);
 
       // Wait for filter to be applied and re-render to occur
       await waitFor(() => {
         const filteredCall = mockSourceTableProps.mock.calls[mockSourceTableProps.mock.calls.length - 1][0];
-        expect(filteredCall.runOnFilter).toEqual(['AGENT']);
+        expect(filteredCall.executionTargetFilter).toEqual(['AGENT']);
         expect(filteredCall.sources).toHaveLength(1);
-        expect(filteredCall.sources[0].runOn).toBe(McpServerRunOn.Agent);
+        expect(filteredCall.sources[0].executionTarget).toBe(ExecutionTarget.Agent);
       });
     });
 
-    it('shows all runOn values when filter is empty', async () => {
+    it('shows all executionTarget values when filter is empty', async () => {
       const server = createMockMcpServer({
         name: 'Test Server',
         description: 'A test server',
@@ -243,32 +251,32 @@ describe('SourcesPage', () => {
       await waitFor(() => {
         const lastCall = mockSourceTableProps.mock.calls[mockSourceTableProps.mock.calls.length - 1][0];
         expect(lastCall.sources).toHaveLength(1);
-        expect(lastCall.runOnFilter).toEqual([]);
+        expect(lastCall.executionTargetFilter).toEqual([]);
       });
     });
   });
 
   describe('Combined Filters', () => {
-    it('combines transport and runOn filters with AND logic', async () => {
+    it('combines transport and executionTarget filters with AND logic', async () => {
       // Server that matches both filters (STREAM + EDGE)
       const matchingServer = createMockMcpServer({
         name: 'Matching Server',
         description: 'Matches both filters',
       });
 
-      // Server that matches transport but not runOn (STREAM + AGENT)
+      // Server that matches transport but not executionTarget (STREAM + AGENT)
       const wrongRunOnServer = createMockMcpServer({
         id: 'server-2',
         name: 'Wrong RunOn Server',
         description: 'Matches transport only',
-        runOn: McpServerRunOn.Agent,
+        executionTarget: ExecutionTarget.Agent,
       });
 
-      // Server that matches runOn but not transport (STDIO + EDGE)
+      // Server that matches executionTarget but not transport (STDIO + EDGE)
       const wrongTransportServer = createMockMcpServer({
         id: 'server-3',
         name: 'Wrong Transport Server',
-        description: 'Matches runOn only',
+        description: 'Matches executionTarget only',
         transport: McpTransportType.Stdio,
       });
 
@@ -284,7 +292,7 @@ describe('SourcesPage', () => {
       const lastCall = mockSourceTableProps.mock.calls[mockSourceTableProps.mock.calls.length - 1][0];
       expect(lastCall.sources).toHaveLength(3);
 
-      // Apply both filters: STREAM transport AND EDGE runOn
+      // Apply both filters: STREAM transport AND EDGE executionTarget
       lastCall.onTransportFilterChange(['STREAM']);
       lastCall.onRunOnFilterChange(['EDGE']);
 
@@ -292,10 +300,10 @@ describe('SourcesPage', () => {
       await waitFor(() => {
         const filteredCall = mockSourceTableProps.mock.calls[mockSourceTableProps.mock.calls.length - 1][0];
         expect(filteredCall.transportFilter).toEqual(['STREAM']);
-        expect(filteredCall.runOnFilter).toEqual(['EDGE']);
+        expect(filteredCall.executionTargetFilter).toEqual(['EDGE']);
         expect(filteredCall.sources).toHaveLength(1);
         expect(filteredCall.sources[0].transport).toBe(McpTransportType.Stream);
-        expect(filteredCall.sources[0].runOn).toBe(McpServerRunOn.Edge);
+        expect(filteredCall.sources[0].executionTarget).toBe(ExecutionTarget.Edge);
       });
     });
 
@@ -310,7 +318,7 @@ describe('SourcesPage', () => {
         name: 'Server 2',
         description: 'Test server 2',
         transport: McpTransportType.Stdio,
-        runOn: McpServerRunOn.Agent,
+        executionTarget: ExecutionTarget.Agent,
       });
 
       mockServers.push(server1, server2);
@@ -322,7 +330,7 @@ describe('SourcesPage', () => {
         // Both filters start empty, so all sources are shown
         expect(lastCall.sources).toHaveLength(2);
         expect(lastCall.transportFilter).toEqual([]);
-        expect(lastCall.runOnFilter).toEqual([]);
+        expect(lastCall.executionTargetFilter).toEqual([]);
       });
     });
   });
@@ -344,17 +352,17 @@ describe('SourcesPage', () => {
       await waitFor(() => {
         const lastCall = mockSourceTableProps.mock.calls[mockSourceTableProps.mock.calls.length - 1][0];
         expect(lastCall.transportFilter).toEqual([]);
-        expect(lastCall.runOnFilter).toEqual([]);
+        expect(lastCall.executionTargetFilter).toEqual([]);
       });
     });
   });
 
   describe('MCP Server Specific Filtering', () => {
-    it('handles null runOn values', async () => {
+    it('handles null executionTarget values', async () => {
       const serverWithNullRunOn = createMockMcpServer({
-        name: 'Server with null runOn',
-        description: 'Has null runOn',
-        runOn: null,
+        name: 'Server with null executionTarget',
+        description: 'Has null executionTarget',
+        executionTarget: null,
       });
 
       mockServers.push(serverWithNullRunOn);
@@ -363,7 +371,7 @@ describe('SourcesPage', () => {
 
       await waitFor(() => {
         const lastCall = mockSourceTableProps.mock.calls[mockSourceTableProps.mock.calls.length - 1][0];
-        // Server with null runOn should still be shown when no filter is applied
+        // Server with null executionTarget should still be shown when no filter is applied
         expect(lastCall.sources).toHaveLength(1);
       });
     });
@@ -381,6 +389,343 @@ describe('SourcesPage', () => {
       await waitFor(() => {
         const lastCall = mockSourceTableProps.mock.calls[mockSourceTableProps.mock.calls.length - 1][0];
         expect(lastCall.sources[0].type).toBe(SourceType.MCP_SERVER);
+      });
+    });
+  });
+
+  describe('Search Filter', () => {
+    it('filters sources by name (case-insensitive)', async () => {
+      const server1 = createMockMcpServer({
+        name: 'GitHub Server',
+        description: 'Connect to GitHub API',
+      });
+
+      const server2 = createMockMcpServer({
+        id: 'server-2',
+        name: 'Slack Server',
+        description: 'Connect to Slack API',
+      });
+
+      mockServers.push(server1, server2);
+
+      renderWithProviders(<SourcesPage />);
+
+      await waitFor(() => {
+        expect(mockSourceTableProps).toHaveBeenCalled();
+      });
+
+      // Initially, all sources are shown
+      const lastCall = mockSourceTableProps.mock.calls[mockSourceTableProps.mock.calls.length - 1][0];
+      expect(lastCall.sources).toHaveLength(2);
+
+      // Simulate search for 'github'
+      lastCall.onSearchChange('github');
+
+      // Wait for search to be applied
+      await waitFor(() => {
+        const filteredCall = mockSourceTableProps.mock.calls[mockSourceTableProps.mock.calls.length - 1][0];
+        expect(filteredCall.search).toBe('github');
+        expect(filteredCall.sources).toHaveLength(1);
+        expect(filteredCall.sources[0].name).toBe('GitHub Server');
+      });
+    });
+
+    it('filters sources by description (case-insensitive)', async () => {
+      const server1 = createMockMcpServer({
+        name: 'Server One',
+        description: 'This connects to GitHub',
+      });
+
+      const server2 = createMockMcpServer({
+        id: 'server-2',
+        name: 'Server Two',
+        description: 'This connects to Slack',
+      });
+
+      mockServers.push(server1, server2);
+
+      renderWithProviders(<SourcesPage />);
+
+      await waitFor(() => {
+        expect(mockSourceTableProps).toHaveBeenCalled();
+      });
+
+      const lastCall = mockSourceTableProps.mock.calls[mockSourceTableProps.mock.calls.length - 1][0];
+      expect(lastCall.sources).toHaveLength(2);
+
+      // Simulate search for 'slack'
+      lastCall.onSearchChange('slack');
+
+      await waitFor(() => {
+        const filteredCall = mockSourceTableProps.mock.calls[mockSourceTableProps.mock.calls.length - 1][0];
+        expect(filteredCall.search).toBe('slack');
+        expect(filteredCall.sources).toHaveLength(1);
+        expect(filteredCall.sources[0].description).toContain('Slack');
+      });
+    });
+
+    it('search is case-insensitive', async () => {
+      const server = createMockMcpServer({
+        name: 'GitHub Server',
+        description: 'Connect to GitHub API',
+      });
+
+      mockServers.push(server);
+
+      renderWithProviders(<SourcesPage />);
+
+      await waitFor(() => {
+        expect(mockSourceTableProps).toHaveBeenCalled();
+      });
+
+      const lastCall = mockSourceTableProps.mock.calls[mockSourceTableProps.mock.calls.length - 1][0];
+
+      // Test uppercase search
+      lastCall.onSearchChange('GITHUB');
+
+      await waitFor(() => {
+        const filteredCall = mockSourceTableProps.mock.calls[mockSourceTableProps.mock.calls.length - 1][0];
+        expect(filteredCall.sources).toHaveLength(1);
+      });
+
+      // Test mixed case search
+      lastCall.onSearchChange('GiThUb');
+
+      await waitFor(() => {
+        const filteredCall = mockSourceTableProps.mock.calls[mockSourceTableProps.mock.calls.length - 1][0];
+        expect(filteredCall.sources).toHaveLength(1);
+      });
+    });
+
+    it('handles sources with no description', async () => {
+      const serverWithDesc = createMockMcpServer({
+        name: 'Server One',
+        description: 'Has description',
+      });
+
+      const serverWithoutDesc = createMockMcpServer({
+        id: 'server-2',
+        name: 'Server Two',
+        description: undefined,
+      });
+
+      mockServers.push(serverWithDesc, serverWithoutDesc);
+
+      renderWithProviders(<SourcesPage />);
+
+      await waitFor(() => {
+        expect(mockSourceTableProps).toHaveBeenCalled();
+      });
+
+      const lastCall = mockSourceTableProps.mock.calls[mockSourceTableProps.mock.calls.length - 1][0];
+
+      // Search by name should still work for server without description
+      lastCall.onSearchChange('Two');
+
+      await waitFor(() => {
+        const filteredCall = mockSourceTableProps.mock.calls[mockSourceTableProps.mock.calls.length - 1][0];
+        expect(filteredCall.sources).toHaveLength(1);
+        expect(filteredCall.sources[0].name).toBe('Server Two');
+      });
+    });
+
+    it('shows empty results when no sources match search', async () => {
+      const server = createMockMcpServer({
+        name: 'GitHub Server',
+        description: 'Connect to GitHub',
+      });
+
+      mockServers.push(server);
+
+      renderWithProviders(<SourcesPage />);
+
+      await waitFor(() => {
+        expect(mockSourceTableProps).toHaveBeenCalled();
+      });
+
+      const lastCall = mockSourceTableProps.mock.calls[mockSourceTableProps.mock.calls.length - 1][0];
+
+      // Search for something that doesn't exist
+      lastCall.onSearchChange('nonexistent');
+
+      await waitFor(() => {
+        const filteredCall = mockSourceTableProps.mock.calls[mockSourceTableProps.mock.calls.length - 1][0];
+        expect(filteredCall.sources).toHaveLength(0);
+      });
+    });
+
+    it('trims whitespace from search query', async () => {
+      const server = createMockMcpServer({
+        name: 'GitHub Server',
+        description: 'Connect to GitHub',
+      });
+
+      mockServers.push(server);
+
+      renderWithProviders(<SourcesPage />);
+
+      await waitFor(() => {
+        expect(mockSourceTableProps).toHaveBeenCalled();
+      });
+
+      const lastCall = mockSourceTableProps.mock.calls[mockSourceTableProps.mock.calls.length - 1][0];
+
+      // Search with whitespace only should show all sources
+      lastCall.onSearchChange('   ');
+
+      await waitFor(() => {
+        const filteredCall = mockSourceTableProps.mock.calls[mockSourceTableProps.mock.calls.length - 1][0];
+        expect(filteredCall.sources).toHaveLength(1);
+      });
+    });
+
+    it('combines search with transport filter', async () => {
+      const githubStream = createMockMcpServer({
+        name: 'GitHub Server',
+        description: 'Connect to GitHub',
+        transport: McpTransportType.Stream,
+      });
+
+      const githubStdio = createMockMcpServer({
+        id: 'server-2',
+        name: 'GitHub STDIO',
+        description: 'GitHub via STDIO',
+        transport: McpTransportType.Stdio,
+      });
+
+      const slackStream = createMockMcpServer({
+        id: 'server-3',
+        name: 'Slack Server',
+        description: 'Connect to Slack',
+        transport: McpTransportType.Stream,
+      });
+
+      mockServers.push(githubStream, githubStdio, slackStream);
+
+      renderWithProviders(<SourcesPage />);
+
+      await waitFor(() => {
+        expect(mockSourceTableProps).toHaveBeenCalled();
+      });
+
+      const lastCall = mockSourceTableProps.mock.calls[mockSourceTableProps.mock.calls.length - 1][0];
+      expect(lastCall.sources).toHaveLength(3);
+
+      // Apply search AND transport filter
+      lastCall.onSearchChange('github');
+      lastCall.onTransportFilterChange(['STREAM']);
+
+      await waitFor(() => {
+        const filteredCall = mockSourceTableProps.mock.calls[mockSourceTableProps.mock.calls.length - 1][0];
+        expect(filteredCall.search).toBe('github');
+        expect(filteredCall.transportFilter).toEqual(['STREAM']);
+        // Should only show GitHub Server with STREAM transport
+        expect(filteredCall.sources).toHaveLength(1);
+        expect(filteredCall.sources[0].name).toBe('GitHub Server');
+        expect(filteredCall.sources[0].transport).toBe(McpTransportType.Stream);
+      });
+    });
+
+    it('combines search with executionTarget filter', async () => {
+      const githubAgent = createMockMcpServer({
+        name: 'GitHub Server',
+        description: 'Connect to GitHub',
+        executionTarget: ExecutionTarget.Agent,
+      });
+
+      const githubEdge = createMockMcpServer({
+        id: 'server-2',
+        name: 'GitHub Edge',
+        description: 'GitHub on Edge',
+        executionTarget: ExecutionTarget.Edge,
+      });
+
+      const slackAgent = createMockMcpServer({
+        id: 'server-3',
+        name: 'Slack Server',
+        description: 'Connect to Slack',
+        executionTarget: ExecutionTarget.Agent,
+      });
+
+      mockServers.push(githubAgent, githubEdge, slackAgent);
+
+      renderWithProviders(<SourcesPage />);
+
+      await waitFor(() => {
+        expect(mockSourceTableProps).toHaveBeenCalled();
+      });
+
+      const lastCall = mockSourceTableProps.mock.calls[mockSourceTableProps.mock.calls.length - 1][0];
+      expect(lastCall.sources).toHaveLength(3);
+
+      // Apply search AND executionTarget filter
+      lastCall.onSearchChange('github');
+      lastCall.onRunOnFilterChange(['AGENT']);
+
+      await waitFor(() => {
+        const filteredCall = mockSourceTableProps.mock.calls[mockSourceTableProps.mock.calls.length - 1][0];
+        expect(filteredCall.search).toBe('github');
+        expect(filteredCall.executionTargetFilter).toEqual(['AGENT']);
+        // Should only show GitHub Server with AGENT executionTarget
+        expect(filteredCall.sources).toHaveLength(1);
+        expect(filteredCall.sources[0].name).toBe('GitHub Server');
+        expect(filteredCall.sources[0].executionTarget).toBe(ExecutionTarget.Agent);
+      });
+    });
+
+    it('combines search with all filters (AND logic)', async () => {
+      const matchingServer = createMockMcpServer({
+        name: 'GitHub Server',
+        description: 'Connect to GitHub',
+        transport: McpTransportType.Stream,
+        executionTarget: ExecutionTarget.Edge,
+      });
+
+      const wrongTransport = createMockMcpServer({
+        id: 'server-2',
+        name: 'GitHub STDIO',
+        description: 'GitHub via STDIO',
+        transport: McpTransportType.Stdio,
+        executionTarget: ExecutionTarget.Edge,
+      });
+
+      const wrongRunOn = createMockMcpServer({
+        id: 'server-3',
+        name: 'GitHub Agent',
+        description: 'GitHub on Agent',
+        transport: McpTransportType.Stream,
+        executionTarget: ExecutionTarget.Agent,
+      });
+
+      const wrongName = createMockMcpServer({
+        id: 'server-4',
+        name: 'Slack Server',
+        description: 'Connect to Slack',
+        transport: McpTransportType.Stream,
+        executionTarget: ExecutionTarget.Edge,
+      });
+
+      mockServers.push(matchingServer, wrongTransport, wrongRunOn, wrongName);
+
+      renderWithProviders(<SourcesPage />);
+
+      await waitFor(() => {
+        expect(mockSourceTableProps).toHaveBeenCalled();
+      });
+
+      const lastCall = mockSourceTableProps.mock.calls[mockSourceTableProps.mock.calls.length - 1][0];
+      expect(lastCall.sources).toHaveLength(4);
+
+      // Apply all filters
+      lastCall.onSearchChange('github');
+      lastCall.onTransportFilterChange(['STREAM']);
+      lastCall.onRunOnFilterChange(['EDGE']);
+
+      await waitFor(() => {
+        const filteredCall = mockSourceTableProps.mock.calls[mockSourceTableProps.mock.calls.length - 1][0];
+        // Should only show the one server matching all criteria
+        expect(filteredCall.sources).toHaveLength(1);
+        expect(filteredCall.sources[0].name).toBe('GitHub Server');
       });
     });
   });
@@ -403,7 +748,7 @@ describe('SourcesPage', () => {
     });
 
     it('shows error message when loading fails', () => {
-      mockUseMCPServers.mockReturnValue({
+      mockUseMCPServers.mockReturnValueOnce({
         servers: [],
         stats: { total: 0, withTools: 0, withoutTools: 0 },
         loading: false,
@@ -414,6 +759,26 @@ describe('SourcesPage', () => {
 
       expect(screen.getByText('Error loading sources')).toBeDefined();
       expect(screen.getByText('Failed to load sources')).toBeDefined();
+    });
+  });
+
+  describe('Filter State Management', () => {
+    it('initializes search as empty string', async () => {
+      renderWithProviders(<SourcesPage />);
+
+      await waitFor(() => {
+        const lastCall = mockSourceTableProps.mock.calls[mockSourceTableProps.mock.calls.length - 1][0];
+        expect(lastCall.search).toBe('');
+      });
+    });
+
+    it('passes search setter to SourceTable', async () => {
+      renderWithProviders(<SourcesPage />);
+
+      await waitFor(() => {
+        const lastCall = mockSourceTableProps.mock.calls[mockSourceTableProps.mock.calls.length - 1][0];
+        expect(typeof lastCall.onSearchChange).toBe('function');
+      });
     });
   });
 });

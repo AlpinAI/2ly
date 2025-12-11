@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-**2ly** is an AI tool management application built as a TypeScript monorepo with microservices architecture. It connects MCP (Model Context Protocol) Tools to Agent runtimes in a distributed way using:
+**Skilder** is an AI tool management application built as a TypeScript monorepo with microservices architecture. It connects MCP (Model Context Protocol) Tools to Agent runtimes in a distributed way using:
 
 - **Database**: Dgraph (graph database) via GraphQL
 - **Message Bus**: NATS with JetStream
@@ -61,7 +61,7 @@ npm run start:dev         # Start infrastructure (NATS, Dgraph) in Docker
 npm run start:dev         # Start infrastructure (NATS, Dgraph) in Docker
 npm run dev:backend       # Run backend locally with hot reload
 npm run dev:frontend      # Run frontend locally with hot reload
-npm run build -w @2ly/runtime && npm run dev:main-runtime  # Run runtime locally without hot reload
+npm run build -w @skilder-ai/runtime && npm run dev:main-runtime  # Run runtime locally without hot reload
 ```
 
 **Note:** The `setup-local` command only needs to be run once to generate keys. Keys persist in `dev/.docker-keys/` across sessions.
@@ -83,7 +83,7 @@ npm run build -w @2ly/runtime && npm run dev:main-runtime  # Run runtime locally
 
 **Key locations:**
 - Docker (dev): `dev/.docker-keys/` via bind mount
-- Docker (prod): `2ly-internal` volume (isolated, no host access)
+- Docker (prod): `skilder-internal` volume (isolated, no host access)
 - Local dev: Loads `dev/.docker-keys/.env.generated` automatically
 - Generation script: `npm run setup-local` or `sh ./generate-keys.sh`
 
@@ -95,7 +95,7 @@ npm run build -w @2ly/runtime && npm run dev:main-runtime  # Run runtime locally
 - `packages/runtime/` - Distributed runtime processes (published to npm)
 - `packages/common/` - Shared GraphQL schemas, types, and utilities
 - `packages/doc/` - Documentation (Next.js)
-- `packages/twoly/` - Python package for LangChain integration
+- `packages/langchain_skilder/` - Python package for LangChain integration
 
 ### Dependency Injection
 Each package uses Inversify containers in `/di/container.ts` for dependency injection.
@@ -117,7 +117,7 @@ packages/frontend/src/
 │   ├── ui/         # Radix UI primitives (button, select, dropdown, etc.)
 │   ├── monitoring/ # Domain-specific components
 │   ├── layout/     # Layout components (header, navigation)
-│   ├── toolsets/   # Tool set management components
+│   ├── skills/     # Skill management components
 │   ├── agents/     # Agent-related components
 │   └── sources/    # Source management components
 ├── hooks/          # Custom hooks (useToolCalls, useMCPServers, etc.)
@@ -132,10 +132,11 @@ The project uses three types of tests with different tools and purposes:
 
 ### 1. Unit Tests
 - **Tool**: Vitest + React Testing Library
-- **Location**: `*.test.ts` / `*.test.tsx` files alongside source code in `src/` directories
+- **Location**: `*.spec.ts` / `*.spec.tsx` files alongside source code in `src/` directories
+- **IMPORTANT**: Always use `.spec.ts` extension, NOT `.test.ts` - this is the project convention
 - **Purpose**: Test individual components and functions in isolation
 - **Pattern**: Mock external dependencies (Apollo hooks, stores, etc.) to keep tests focused
-- **Example**: `src/components/ui/button.test.tsx`
+- **Example**: `src/components/ui/button.spec.tsx`
 - **Run**: `npm run test` (all unit tests) or `npm run test:watch` (watch mode)
 
 ### 2. Integration Tests
@@ -224,7 +225,7 @@ Tests are organized into two strategies:
 - **ESLint**: TypeScript strict mode, no `any` types
 - **Prettier**: Single quotes, trailing commas, 120 char width
 - **Type Safety**: Strict TypeScript configuration across all packages
-- **Path Mapping**: `@2ly/common`, `@2ly/backend`, etc. for cross-package imports
+- **Path Mapping**: `@skilder-ai/common`, `@skilder-ai/backend`, etc. for cross-package imports
 
 ## Current Branch
 

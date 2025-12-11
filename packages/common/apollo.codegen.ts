@@ -1,7 +1,7 @@
 import type { CodegenConfig } from '@graphql-codegen/cli';
 
 const config: CodegenConfig = {
-  schema: 'schema/apollo.schema.graphql',
+  schema: 'schema/build/apollo.schema.graphql',
   generates: {
     './src/graphql/apollo.resolvers.types.ts': {
       config: {

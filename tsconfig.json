@@ -11,23 +11,29 @@
     "experimentalDecorators": true,
     "useDefineForClassFields": false,
     "paths": {
-      "@2ly/frontend": [
+      "@skilder-ai/frontend": [
         "packages/frontend/src"
       ],
-      "@2ly/backend": [
+      "@skilder-ai/backend": [
         "packages/backend/src"
       ],
-      "@2ly/runtime": [
+      "@skilder-ai/runtime": [
         "packages/runtime/src"
       ],
-      "@2ly/common": [
+      "@skilder-ai/common": [
         "packages/common/src"
       ],
-      "@2ly/common/test/testcontainers": [
+      "@skilder-ai/common/test/testcontainers": [
         "packages/common/src/test/testcontainers.ts"
       ],
-      "@2ly/common/test/vitest": [
+      "@skilder-ai/common/test/vitest": [
         "packages/common/src/test/vitest.ts"
+      ],
+      "@skilder-ai/common/test/fixtures": [
+        "packages/common/src/test/fixtures/index.ts"
+      ],
+      "@skilder-ai/common/test/test.containers": [
+        "packages/common/src/test/test.containers.ts"
       ]
     }
   },

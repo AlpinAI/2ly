@@ -10,13 +10,13 @@ import type {
   McpTool,
   Runtime,
   ToolCall,
-  ToolSet,
+  Skill,
   Workspace,
   McpRegistryServer,
 } from '@/graphql/generated/graphql';
 import {
   McpTransportType,
-  McpServerRunOn,
+  ExecutionTarget,
   ToolCallStatus,
   ActiveStatus,
   RuntimeType,
@@ -36,7 +36,10 @@ export const createMockWorkspace = (overrides: Partial<Workspace> = {}): Workspa
   onboardingSteps: null,
   registryServers: null,
   runtimes: null,
-  toolSets: null,
+  aiProviders: null,
+  defaultAIModel: null,
+  skills: null,
+  oauthProviders: null,
   ...overrides,
 });
 
@@ -74,7 +77,7 @@ export const createMockMcpServer = (overrides: Partial<McpServer> = {}): McpServ
   name: 'Test Server',
   description: 'A test server',
   transport: McpTransportType.Stream,
-  runOn: McpServerRunOn.Edge,
+  executionTarget: ExecutionTarget.Edge,
   config: '{}',
   repositoryUrl: '',
   registryServer: createMockRegistryServer(),
@@ -95,7 +98,7 @@ export const createMockMcpServerRef = (overrides: Partial<McpServer> = {}): McpS
   name: 'Test Server',
   description: '',
   transport: McpTransportType.Stdio,
-  runOn: null,
+  executionTarget: null,
   config: '{}',
   repositoryUrl: '',
   registryServer: null as never,
@@ -120,24 +123,32 @@ export const createMockMcpToolRef = (overrides: Partial<McpTool> = {}): McpTool 
   createdAt: new Date(),
   lastSeenAt: new Date(),
   mcpServer: createMockMcpServerRef(),
-  toolSets: null,
+  skills: null,
   workspace: null as never,
   ...overrides,
 });
 
 /**
- * Creates a lightweight mock ToolSet for use as calledBy references in ToolCall.
+ * Creates a lightweight mock Skill for use as calledBy references in ToolCall.
  */
-export const createMockToolSetRef = (overrides: Partial<ToolSet> = {}): ToolSet => ({
-  __typename: 'ToolSet',
-  id: 'toolset-1',
+export const createMockSkillRef = (overrides: Partial<Skill> = {}): Skill => ({
+  __typename: 'Skill',
+  id: 'skill-1',
   name: 'Test Agent',
   description: null,
   createdAt: new Date(),
   updatedAt: null,
   mcpTools: null,
   toolCalls: null,
+  skillToolCalls: null,
   workspace: null as never,
+  mode: null,
+  model: null,
+  temperature: null,
+  maxTokens: null,
+  systemPrompt: null,
+  executionTarget: null,
+  runtime: null,
   ...overrides,
 });
 
@@ -158,6 +169,7 @@ export const createMockRuntimeRef = (overrides: Partial<Runtime> = {}): Runtime 
   lastSeenAt: null,
   createdAt: new Date(),
   mcpServers: null,
+  skills: null,
   toolResponses: null,
   workspace: null as never,
   system: null as never,
@@ -180,6 +192,7 @@ export const createMockToolCall = (overrides: Partial<ToolCall> = {}): ToolCall 
   executedByAgent: false,
   error: null,
   mcpTool: createMockMcpToolRef(),
+  skill: null,
   calledBy: null,
   executedBy: null,
   ...overrides,

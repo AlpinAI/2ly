@@ -45,25 +45,25 @@ const helpMenuItems: HelpMenuItem[] = [
   {
     label: 'Report Issue',
     icon: <Bug className="h-4 w-4" />,
-    href: 'https://github.com/AlpinAI/2ly/issues',
+    href: 'https://github.com/skilder-ai/skilder/issues',
     description: 'Report bugs or request features',
   },
   {
     label: 'Browse Docs',
     icon: <BookOpen className="h-4 w-4" />,
-    href: 'https://docs.2ly.ai/getting-started/welcome',
+    href: 'https://docs.skilder.ai/getting-started/welcome',
     description: 'Read the documentation',
   },
   {
     label: 'View Repository',
     icon: <Github className="h-4 w-4" />,
-    href: 'https://github.com/AlpinAI/2ly',
+    href: 'https://github.com/skilder-ai/skilder',
     description: 'Visit our GitHub repository',
   },
   {
     label: 'Contribute',
     icon: <GitPullRequest className="h-4 w-4" />,
-    href: 'https://github.com/AlpinAI/2ly/blob/main/dev/README.md',
+    href: 'https://github.com/skilder-ai/skilder/blob/main/dev/README.md',
     description: 'Learn how to contribute',
   },
 ];

@@ -1,0 +1,8 @@
+# Get Default AI Model Query
+# WHY: Fetch the workspace's current default AI model setting
+query GetDefaultAIModel($workspaceId: ID!) {
+  workspace(workspaceId: $workspaceId) {
+    id
+    defaultAIModel
+  }
+}

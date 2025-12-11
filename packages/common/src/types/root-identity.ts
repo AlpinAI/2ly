@@ -6,7 +6,7 @@ export type RootIdentity =
       workspaceId: string | null;
     }
   | {
-      nature: 'toolset';
+      nature: 'skill';
       id: string | null;
       name: string | null;
       workspaceId: string;

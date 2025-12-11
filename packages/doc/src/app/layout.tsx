@@ -8,7 +8,7 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: '2LY Documentation',
+  title: 'Skilder Documentation',
   description: 'AI tool management application built with MCP',
   icons: {
     icon: '/favicon.ico',

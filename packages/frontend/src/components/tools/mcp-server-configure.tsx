@@ -36,10 +36,10 @@ import {
 } from '@/lib/mcpConfigHelpers';
 import {
   CreateMcpServerDocument,
-  UpdateMcpServerRunOnDocument,
+  UpdateMcpServerExecutionTargetDocument,
   DeleteMcpServerDocument,
   SubscribeMcpServersDocument,
-  McpServerRunOn,
+  ExecutionTarget,
 } from '@/graphql/generated/graphql';
 import type { GetRegistryServersQuery } from '@/graphql/generated/graphql';
 
@@ -76,7 +76,7 @@ export function MCPServerConfigure({ selectedServer, onBack, onSuccess }: MCPSer
 
   // GraphQL mutations
   const [createServer] = useMutation(CreateMcpServerDocument);
-  const [updateServerRunOn] = useMutation(UpdateMcpServerRunOnDocument);
+  const [updateServerExecutionTarget] = useMutation(UpdateMcpServerExecutionTargetDocument);
   const [deleteServer] = useMutation(DeleteMcpServerDocument);
   
   // Subscribe to MCP servers for tool discovery
@@ -155,7 +155,7 @@ export function MCPServerConfigure({ selectedServer, onBack, onSuccess }: MCPSer
       setDiscoveredTools(server.tools.map((t) => ({ id: t.id, name: t.name })));
       setTestStatus('success');
     }
-  }, [serversData, testServerId, testStatus, updateServerRunOn]);
+  }, [serversData, testServerId, testStatus, updateServerExecutionTarget]);
 
   // Handle field value change
   const handleFieldChange = useCallback((fieldName: string, value: string) => {
@@ -204,10 +204,10 @@ export function MCPServerConfigure({ selectedServer, onBack, onSuccess }: MCPSer
       setTestServerId(serverId);
 
       // Set server to run on EDGE with selected runtime
-      await updateServerRunOn({
+      await updateServerExecutionTarget({
         variables: {
           mcpServerId: serverId,
-          runOn: McpServerRunOn.Edge,
+          executionTarget: ExecutionTarget.Edge,
           runtimeId: selectedRuntimeId,
         },
       });
@@ -234,7 +234,7 @@ export function MCPServerConfigure({ selectedServer, onBack, onSuccess }: MCPSer
     fields,
     customName,
     createServer,
-    updateServerRunOn,
+    updateServerExecutionTarget,
     deleteServer,
   ]);
 

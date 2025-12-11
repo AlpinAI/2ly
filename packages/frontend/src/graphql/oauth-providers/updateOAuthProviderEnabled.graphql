@@ -1,0 +1,11 @@
+mutation UpdateOAuthProviderEnabled($providerId: ID!, $enabled: Boolean!) {
+  updateOAuthProviderEnabled(providerId: $providerId, enabled: $enabled) {
+    id
+    provider
+    enabled
+    clientId
+    tenantId
+    createdAt
+    updatedAt
+  }
+}

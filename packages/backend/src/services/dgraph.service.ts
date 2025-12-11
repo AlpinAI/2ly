@@ -1,5 +1,5 @@
 import { inject, injectable } from 'inversify';
-import { LoggerService, Service } from '@2ly/common';
+import { LoggerService, Service } from '@skilder-ai/common';
 import pino from 'pino';
 import path from 'path';
 import { readFileSync } from 'fs';
@@ -32,7 +32,6 @@ export class DGraphService extends Service {
   ) {
     super();
     this.logger = this.loggerService.getLogger(this.name);
-
   }
 
   isConnected(): boolean {
@@ -98,10 +97,13 @@ export class DGraphService extends Service {
       if (response.ok && !result.error && !result.errors) {
         this.logger.info(`✅ Schema pushed successfully`);
       } else {
-        this.logger.error(`❌ Failed to push schema: ${JSON.stringify(result, null, 2)}`);
+        const errorMsg = `Failed to push schema: ${JSON.stringify(result, null, 2)}`;
+        this.logger.error(`❌ ${errorMsg}`);
+        throw new Error(errorMsg);
       }
     } catch (error) {
       this.logger.error(`❌ Init schema network or parsing error: ${JSON.stringify(error, null, 2)}`);
+      throw error;
     }
   }
 

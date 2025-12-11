@@ -1,5 +1,5 @@
 # syntax=docker/dockerfile:1
-# Dockerfile for 2LY Orchestrator
+# Dockerfile for Skilder Orchestrator
 # Optimized multi-stage build with BuildKit cache mounts
 
 # Stage 1: Build
@@ -25,7 +25,7 @@ COPY packages/common/ ./packages/common/
 COPY scripts/generate-keys.js ./scripts/
 
 # Build the backend
-RUN npm run build -w @2ly/backend
+RUN npm run build:schema -w @skilder-ai/common && npm run build -w @skilder-ai/backend
 
 # Bundle key generation script into standalone file
 # Using .cjs extension to force CommonJS in ESM project

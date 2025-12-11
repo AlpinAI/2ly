@@ -21,7 +21,7 @@
  */
 
 import { useState, useEffect, useCallback } from 'react';
-import { mcpRegistry } from '@2ly/common';
+import { mcpRegistry } from '@skilder-ai/common';
 
 type ServerListResponse = mcpRegistry.components['schemas']['ServerListResponse'];
 type ServerResponse = mcpRegistry.components['schemas']['ServerResponse'];

@@ -1,0 +1,80 @@
+# Monitoring types - ToolCall and OnboardingStep
+
+type OnboardingStep {
+  id: ID!
+  stepId: String! @search(by: [hash])
+  type: OnboardingStepType!
+  status: OnboardingStepStatus!
+  priority: Int
+  metadata: String
+  createdAt: DateTime!
+  updatedAt: DateTime
+}
+
+type ToolCall {
+  id: ID!
+  toolInput: String!
+  calledAt: DateTime!
+  completedAt: DateTime
+  status: ToolCallStatus!
+  toolOutput: String
+  error: String
+  isTest: Boolean!
+  executedByAgent: Boolean
+  mcpTool: MCPTool @hasInverse(field: toolCalls)
+  skill: Skill @hasInverse(field: skillToolCalls)
+  calledBy: Skill @hasInverse(field: toolCalls)
+  executedBy: Runtime @hasInverse(field: toolResponses)
+}
+
+#APOLLO_ONLY_START
+input ToolCallFilters {
+  status: [ToolCallStatus!]
+  mcpToolIds: [ID!]
+  mcpServerIds: [ID!]
+  runtimeIds: [ID!]
+  dateFrom: DateTime
+  dateTo: DateTime
+  search: String
+}
+
+type ToolCallsResult {
+  toolCalls: [ToolCall!]!
+  totalCount: Int!
+  hasMore: Boolean!
+  stats: ToolCallStats!
+}
+
+type ToolCallStats {
+  total: Int!
+  pending: Int!
+  completed: Int!
+  failed: Int!
+  avgDuration: Float
+}
+
+type CallToolResult {
+  success: Boolean!
+  result: String!
+}
+
+extend type Query {
+  toolCalls(
+    workspaceId: ID!
+    limit: Int
+    offset: Int
+    filters: ToolCallFilters
+    orderDirection: OrderDirection
+  ): ToolCallsResult!
+}
+
+extend type Mutation {
+  callMCPTool(toolId: ID!, input: String!): CallToolResult!
+  completeOnboardingStep(workspaceId: ID!, stepId: String!): Boolean!
+  dismissOnboardingStep(workspaceId: ID!, stepId: String!): Boolean!
+}
+
+extend type Subscription {
+  toolCalls(workspaceId: ID!): [ToolCall!]
+}
+#APOLLO_ONLY_END

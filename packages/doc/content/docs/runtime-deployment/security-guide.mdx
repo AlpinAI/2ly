@@ -1,10 +1,10 @@
 ---
 title: "Security Guide"
-description: "Security considerations and best practices for 2LY deployment"
+description: "Security considerations and best practices for Skilder deployment"
 draft: true
 ---
 
-This guide covers current security features and recommendations for securing your 2LY deployment. Note that authentication and authorization are minimal in the current version.
+This guide covers current security features and recommendations for securing your Skilder deployment. Note that authentication and authorization are minimal in the current version.
 
 ## Current Security State
 
@@ -89,7 +89,7 @@ Use nginx or similar for SSL/TLS termination:
 # nginx.conf
 server {
   listen 443 ssl;
-  server_name your-2ly.com;
+  server_name your-Skilder.com;
 
   ssl_certificate /path/to/cert.pem;
   ssl_certificate_key /path/to/key.pem;
@@ -212,7 +212,7 @@ docker run --rm \
   --user 1000:1000 \
   --read-only \
   --security-opt no-new-privileges \
-  @2ly/runtime
+  @skilder-ai/runtime
 ```
 
 **Input Validation:**
@@ -254,10 +254,10 @@ When deploying on user machines:
 # Minimal permissions
 RUNTIME_NAME=user-edge
 NATS_SERVERS=nats://user:pass@secure-nats:4222
-ROOTS=USER_HOME:/home/$USER/2ly-workspace
+ROOTS=USER_HOME:/home/$USER/Skilder-workspace
 
 # Run as user (not root)
-su - $USER -c "npx @2ly/runtime"
+su - $USER -c "npx @skilder-ai/runtime"
 ```
 
 **Agent Runtime Security:**
@@ -285,7 +285,7 @@ Future implementation should include:
 
 **Current Workaround:**
 
-Deploy separate 2LY instances per tenant:
+Deploy separate Skilder instances per tenant:
 ```bash
 # Tenant A
 docker-compose -f tenant-a.yml up
@@ -301,13 +301,13 @@ docker-compose -f tenant-b.yml up
 Monitor for suspicious activity:
 ```bash
 # Failed connections
-docker logs 2ly-backend | grep "connection refused"
+docker logs Skilder-backend | grep "connection refused"
 
 # Unusual tool execution patterns
-docker logs 2ly-backend | grep "AgentCallMCPTool"
+docker logs Skilder-backend | grep "AgentCallMCPTool"
 
 # Runtime anomalies
-docker logs 2ly-backend | grep "INACTIVE"
+docker logs Skilder-backend | grep "INACTIVE"
 ```
 
 **Set Up Alerts:**

@@ -1,7 +1,7 @@
 /**
  * MCP Client Transport E2E Tests
  *
- * Tests direct MCP client connectivity to 2ly runtime using real MCP SDK client.
+ * Tests direct MCP client connectivity to skilder runtime using real MCP SDK client.
  * Uses a single filesystem MCP server (STDIO transport) deployed on the runtime,
  * then connects to the runtime via STREAM transport to access those tools.
  *
@@ -14,17 +14,17 @@
  * runtime configurations not suitable for the current test setup.
  */
 
-import { test, expect, seedPresets, loginAndGetToken } from '@2ly/common/test/fixtures/playwright';
-import { createToolset, updateMCPServerToEdgeRuntime } from '@2ly/common/test/fixtures/mcp-builders';
-import { createMCPClient } from '@2ly/common/test/fixtures/playwright';
+import { test, expect, seedPresets, loginAndGetToken } from '@skilder-ai/common/test/fixtures/playwright';
+import { createSkill, updateMCPServerToEdgeRuntime } from '@skilder-ai/common/test/fixtures/mcp-builders';
+import { createMCPClient } from '@skilder-ai/common/test/fixtures/playwright';
 import {
   assertToolListing,
   assertListAllowedDirectoriesCall,
   assertListDirectoryCall,
   assertDisconnect,
   assertConnectionStatus,
-} from '@2ly/common/test/fixtures/mcp-test-helpers';
-import { dgraphQL } from '@2ly/common/test/fixtures';
+} from '@skilder-ai/common/test/fixtures/mcp-test-helpers';
+import { dgraphQL } from '@skilder-ai/common/test/fixtures';
 
 test.describe('MCP Client Transports', () => {
   const natsUrl = process.env.TEST_NATS_CLIENT_URL || 'nats://localhost:4222';
@@ -45,9 +45,9 @@ test.describe('MCP Client Transports', () => {
     const mcpServerId = entityIds['server-file-system'];
 
     // Get auth token for authenticated API calls (needed for mutations)
-    const authToken = await loginAndGetToken('user1@2ly.ai', 'password123');
+    const authToken = await loginAndGetToken('user1@skilder.ai', 'password123');
 
-    // Update MCP server to use EDGE runtime (GLOBAL runOn has been removed)
+    // Update MCP server to use EDGE runtime (GLOBAL executionTarget has been removed)
     await updateMCPServerToEdgeRuntime(graphql, mcpServerId, workspaceId, authToken);
 
     // Get the workspace key
@@ -61,24 +61,24 @@ test.describe('MCP Client Transports', () => {
     // Using a simple setTimeout since we can't use page.waitForTimeout in beforeAll
     await new Promise((resolve) => setTimeout(resolve, 15000));
 
-    // Create a shared toolset that all tests will use
-    // Tests only create their own MCP clients, they don't modify this toolset
-    await createToolset(graphql, workspaceId, 'My tool set', 'My tool set description', 100, authToken);
+    // Create a shared skill that all tests will use
+    // Tests only create their own MCP clients, they don't modify this skill
+    await createSkill(graphql, workspaceId, 'My skill', 'My skill description', 100, authToken);
   });
 
   /**
    * STDIO Transport Tests
    *
    * STDIO transport uses stdin/stdout for communication with the runtime process.
-   * This is the most direct transport, typically used for toolset-specific connections.
+   * This is the most direct transport, typically used for skill-specific connections.
    *
    * Unlike STREAM/SSE transports which connect to an HTTP server, STDIO spawns the
    * runtime as a child process and communicates via stdin/stdout pipes.
    *
    * Key differences:
    * - No HTTP server required (no REMOTE_PORT)
-   * - Authentication via environment variables (TOOLSET_NAME/KEY + WORKSPACE_KEY)
-   * - 1:1 relationship with a single toolset
+   * - Authentication via environment variables (SKILL_NAME/KEY + WORKSPACE_KEY)
+   * - 1:1 relationship with a single skill
    * - Process lifecycle managed by MCP SDK
    */
   test.describe('STDIO Transport', () => {
@@ -87,8 +87,8 @@ test.describe('MCP Client Transports', () => {
 
       try {
         // Step 1: Connect via STDIO by spawning runtime process
-        // The runtime will run in STDIO mode when TOOLSET_NAME is set and REMOTE_PORT is not
-        // TODO: fetch, provide and use the workspace key instead of the test system key to auth toolsets
+        // The runtime will run in STDIO mode when SKILL_NAME is set and REMOTE_PORT is not
+        // TODO: fetch, provide and use the workspace key instead of the test system key to auth skills
         await mcpClient.connectSTDIO(
           {
             command: 'node',
@@ -99,7 +99,7 @@ test.describe('MCP Client Transports', () => {
           },
           {
             workspaceKey,
-            toolsetName: 'My tool set',
+            skillName: 'My skill',
           }
         );
 
@@ -151,7 +151,7 @@ test.describe('MCP Client Transports', () => {
             },
             {
               workspaceKey: 'WSK_INVALID_KEY_FOR_TESTING',
-              toolsetName: 'My tool set',
+              skillName: 'My skill',
             }
           );
         }).rejects.toThrow();
@@ -176,7 +176,7 @@ test.describe('MCP Client Transports', () => {
           },
           {
             workspaceKey,
-            toolsetName: 'My tool set',
+            skillName: 'My skill',
           }
         );
 
@@ -224,7 +224,7 @@ test.describe('MCP Client Transports', () => {
         // Step 1: Connect to runtime via SSE transport
         await mcpClient.connectSSE(baseUrl, {
           workspaceKey,
-          toolsetName: 'My tool set',
+          skillName: 'My skill',
         });
 
         assertConnectionStatus(mcpClient, true, 'SSE');
@@ -323,7 +323,7 @@ test.describe('MCP Client Transports', () => {
         // Step 1: Connect to runtime via STREAM transport
         await mcpClient.connectSTREAM(baseUrl, {
           workspaceKey,
-          toolsetName: 'My tool set',
+          skillName: 'My skill',
         });
 
         assertConnectionStatus(mcpClient, true, 'STREAM');
@@ -431,14 +431,14 @@ test.describe('MCP Client Transports', () => {
         // First connection
         await mcpClient.connectSTREAM(baseUrl, {
           workspaceKey,
-          toolsetName: 'My tool set',
+          skillName: 'My skill',
         });
 
         // Try to connect again without disconnecting
         await expect(async () => {
           await mcpClient.connectSTREAM(baseUrl, {
             workspaceKey,
-            toolsetName: 'My tool set',
+            skillName: 'My skill',
           });
         }).rejects.toThrow('Client already connected');
 

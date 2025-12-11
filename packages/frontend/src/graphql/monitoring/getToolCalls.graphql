@@ -31,6 +31,11 @@ query GetToolCalls(
           name
         }
       }
+      skill {
+        id
+        name
+        mode
+      }
       isTest
       calledBy {
         id

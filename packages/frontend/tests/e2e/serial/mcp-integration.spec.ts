@@ -4,7 +4,7 @@
  * This test suite verifies the complete MCP server lifecycle with a real containerized runtime:
  * 1. Use pre-seeded FileSystem MCP server from registry
  * 2. Discover tools dynamically from deployed server
- * 3. Create tool set from discovered tools
+ * 3. Create skill from discovered tools
  * 4. Execute tool calls against the real MCP server
  * 5. Verify deep-linking across dynamically created entities
  *
@@ -15,8 +15,8 @@
  * - Tests complete within 2 minutes with proper timeouts
  */
 
-import { test, expect, seedPresets, loginAndGetToken } from '@2ly/common/test/fixtures/playwright';
-import { updateMCPServerToEdgeRuntime } from '@2ly/common/test/fixtures/mcp-builders';
+import { test, expect, seedPresets, loginAndGetToken } from '@skilder-ai/common/test/fixtures/playwright';
+import { updateMCPServerToEdgeRuntime } from '@skilder-ai/common/test/fixtures/mcp-builders';
 
 // Test configuration
 const TEST_FILE_PATH = '/tmp/test.txt';
@@ -41,9 +41,9 @@ test.describe('MCP Integration with Containerized Runtime', () => {
     entityIds = await seedDatabase(seedPresets.withSingleMCPServer);
 
     // Get auth token for authenticated API calls (needed for mutations)
-    authToken = await loginAndGetToken('user1@2ly.ai', 'password123');
+    authToken = await loginAndGetToken('user1@skilder.ai', 'password123');
 
-    // Update MCP server to use EDGE runtime (GLOBAL runOn has been removed)
+    // Update MCP server to use EDGE runtime (GLOBAL executionTarget has been removed)
     const workspaceId = entityIds['default-workspace'];
     const mcpServerId = entityIds['server-file-system'];
     await updateMCPServerToEdgeRuntime(graphql, mcpServerId, workspaceId, authToken);
@@ -57,7 +57,7 @@ test.describe('MCP Integration with Containerized Runtime', () => {
     // Step 1: Login and navigate to workspace
     // ========================================================================
     await page.goto('/login');
-    await page.fill('input[type="email"]', 'user1@2ly.ai');
+    await page.fill('input[type="email"]', 'user1@skilder.ai');
     await page.fill('input[type="password"]', 'password123');
     await page.click('button[type="submit"]');
     await page.waitForURL(/\/w\/.+\/overview/, { timeout: 5000 });
@@ -127,20 +127,20 @@ test.describe('MCP Integration with Containerized Runtime', () => {
     expect(listDirTool).toBeDefined();
 
     // ========================================================================
-    // Step 4: Create tool set from discovered tools (link tools to runtime)
+    // Step 4: Create skill from discovered tools (link tools to runtime)
     // ========================================================================
-    // Create a ToolSet for the runtime
-    const createToolSetMutation = `
-      mutation CreateToolSet($name: String!, $description: String!, $workspaceId: ID!) {
-        createToolSet(name: $name, description: $description, workspaceId: $workspaceId) {
+    // Create a Skill for the runtime
+    const createSkillMutation = `
+      mutation CreateSkill($name: String!, $description: String!, $workspaceId: ID!) {
+        createSkill(name: $name, description: $description, workspaceId: $workspaceId) {
           id
           name
         }
       }
     `;
 
-    const toolSetResult = await graphql<{ createToolSet: { id: string; name: string } }>(
-      createToolSetMutation,
+    const skillResult = await graphql<{ createSkill: { id: string; name: string } }>(
+      createSkillMutation,
       {
         name: 'Test Tools',
         description: 'Tools for testing',
@@ -149,10 +149,10 @@ test.describe('MCP Integration with Containerized Runtime', () => {
       authToken,
     );
 
-    // Add tools to the toolset
+    // Add tools to the skill
     const addToolMutation = `
-      mutation AddToolToToolSet($mcpToolId: ID!, $toolSetId: ID!) {
-        addMCPToolToToolSet(mcpToolId: $mcpToolId, toolSetId: $toolSetId) {
+      mutation AddToolToSkill($mcpToolId: ID!, $skillId: ID!) {
+        addMCPToolToSkill(mcpToolId: $mcpToolId, skillId: $skillId) {
           id
           mcpTools {
             id
@@ -165,13 +165,13 @@ test.describe('MCP Integration with Containerized Runtime', () => {
     // Add write_file tool
     await graphql(addToolMutation, {
       mcpToolId: writeFileTool!.id,
-      toolSetId: toolSetResult.createToolSet.id,
+      skillId: skillResult.createSkill.id,
     }, authToken);
 
     // Add read_file tool
     await graphql(addToolMutation, {
       mcpToolId: readFileTool!.id,
-      toolSetId: toolSetResult.createToolSet.id,
+      skillId: skillResult.createSkill.id,
     }, authToken);
 
     // ========================================================================
@@ -281,7 +281,7 @@ test.describe('MCP Integration with Containerized Runtime', () => {
     expect(testServer!.tools.length).toBeGreaterThan(0);
 
     // Verify tools → server link
-    // Verify runtime → tools link (tool set)
+    // Verify runtime → tools link (skill)
     const toolServerQuery = `
       query GetToolServer($workspaceId: ID!) {
         mcpTools(workspaceId: $workspaceId) {
@@ -291,7 +291,7 @@ test.describe('MCP Integration with Containerized Runtime', () => {
             id
             name
           }
-          toolSets {
+          skills {
             id
             name
           }
@@ -300,7 +300,7 @@ test.describe('MCP Integration with Containerized Runtime', () => {
     `;
 
     const toolServerResult = await graphql<{
-      mcpTools: Array<{ id: string; name: string; mcpServer: { id: string; name: string }; toolSets: Array<{ id: string; name: string }> }>;
+      mcpTools: Array<{ id: string; name: string; mcpServer: { id: string; name: string }; skills: Array<{ id: string; name: string }> }>;
     }>(toolServerQuery, { workspaceId }, authToken);
 
     const testTools = toolServerResult.mcpTools.filter((t) => t.mcpServer.id === mcpServerId);
@@ -308,8 +308,8 @@ test.describe('MCP Integration with Containerized Runtime', () => {
     testTools.forEach((tool) => {
       expect(tool.mcpServer.id).toBe(mcpServerId);
       if (tool.name === 'write_file' || tool.name === 'read_file') {
-        expect(tool.toolSets.length).toBeGreaterThan(0);
-        expect(tool.toolSets.find((r) => r.id === toolSetResult.createToolSet.id)).toBeDefined();
+        expect(tool.skills.length).toBeGreaterThan(0);
+        expect(tool.skills.find((r) => r.id === skillResult.createSkill.id)).toBeDefined();
       }
     });
   });
@@ -317,7 +317,7 @@ test.describe('MCP Integration with Containerized Runtime', () => {
   test('should handle tool call failures gracefully', async ({ page, graphql }) => {
     // Login
     await page.goto('/login');
-    await page.fill('input[type="email"]', 'user1@2ly.ai');
+    await page.fill('input[type="email"]', 'user1@skilder.ai');
     await page.fill('input[type="password"]', 'password123');
     await page.click('button[type="submit"]');
     await page.waitForURL(/\/w\/.+\/overview/, { timeout: 5000 });

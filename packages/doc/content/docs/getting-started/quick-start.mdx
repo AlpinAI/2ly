@@ -8,7 +8,7 @@ This guide walks you through the 3-step onboarding process to get your first too
 
 ## Prerequisites
 
-[Install 2LY](/getting-started/installation) and ensure it's running at http://localhost:8888
+[Install Skilder](/getting-started/installation) and ensure it's running at http://localhost:8888
 
 ## Step 1: Create Your Workspace
 
@@ -21,17 +21,17 @@ Your workspace is where all your tools, agents, and runtimes are managed. Think 
 
 ## Step 2: Follow the Onboarding
 
-2LY provides a 3-step guided onboarding that walks you through the core concepts:
+Skilder provides a 3-step guided onboarding that walks you through the core concepts:
 
 1. **Understanding Runtimes** - See how distributed execution environments work
 2. **Connecting MCP Servers** - Learn how to add tool sources
-3. **Creating Toolsets** - Discover how to curate tools for your agents
+3. **Creating Skills** - Discover how to curate tools for your agents
 
 The onboarding is interactive and takes about 2 minutes. Don't skip it—it covers everything you need to know.
 
 ## Step 3: Connect an MCP Server
 
-2LY comes with a selection of popular MCP servers ready to install:
+Skilder comes with a selection of popular MCP servers ready to install:
 
 **Recommended for first-time users:**
 
@@ -62,10 +62,10 @@ This ensures everything is configured correctly before integrating with your age
 
 ## Step 5: Connect Your Agent
 
-Now your toolset is ready to be consumed by agents:
+Now your skill is ready to be consumed by agents:
 
-1. Navigate to the **Toolsets** page
-2. Click **Connect** on your toolset
+1. Navigate to the **Skills** page
+2. Click **Connect** on your skill
 3. Choose your agent framework:
    - **LangChain** - Copy the Python code snippet
    - **JSON** - Use the raw MCP configuration
@@ -77,11 +77,11 @@ Now your toolset is ready to be consumed by agents:
 ```python
 from twoly import MCPAdapter
 
-# Connect to 2LY
+# Connect to Skilder
 adapter = MCPAdapter(
     endpoint="http://localhost:3000/mcp",
     workspace_id="your-workspace-id",
-    toolset_id="your-toolset-id"
+    skill_id="your-skill-id"
 )
 
 # Use with LangChain
@@ -123,13 +123,13 @@ Now that you've completed the quick start, here's what to explore:
 
 ### Deep Dives
 
-- [Architecture](/core-concepts/architecture) - How 2LY works under the hood
+- [Architecture](/core-concepts/architecture) - How Skilder works under the hood
 - [Runtime Deployment](/deployment/runtime) - Deploy runtimes anywhere
-- [Security](/deployment/security) - Secure your 2LY installation
+- [Security](/deployment/security) - Secure your Skilder installation
 
 ### Production Deployment
 
-Ready to deploy 2LY for production use?
+Ready to deploy Skilder for production use?
 
 - Scale runtimes across multiple environments
 - Configure monitoring and observability
@@ -163,5 +163,5 @@ docker compose restart
 **Tools not appearing in agent?**
 
 - Ensure your agent is properly configured with the MCP endpoint
-- Check that the toolset includes at least one tool
+- Check that the skill includes at least one tool
 - Verify the runtime is connected in the dashboard

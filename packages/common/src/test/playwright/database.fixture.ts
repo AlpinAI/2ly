@@ -12,10 +12,10 @@ import {
   graphql as coreGraphql,
   resetDatabase as coreResetDatabase,
   getDatabaseState as coreGetDatabaseState,
-  seedDatabase as coreSeedDatabase
+  seedDatabase as coreSeedDatabase,
 } from '../fixtures/core';
 import type { SeedData, DatabaseState } from '../fixtures/seed-data.types';
-import { startRuntime, stopRuntime } from '@2ly/common/test/test.containers';
+import { startRuntime, stopRuntime } from '@skilder-ai/common/test/test.containers';
 import { seedPresets } from '../fixtures/seed-data.presets';
 
 // Worker-scoped storage for runtime port
@@ -75,6 +75,8 @@ export const test = base.extend<DatabaseFixture>({
       } catch (error) {
         throw new Error(`Failed to stop runtime: ${error instanceof Error ? error.message : String(error)}`);
       }
+      await new Promise((resolve) => setTimeout(resolve, 200));
+
       await coreResetDatabase();
       if (shouldStartRuntime) {
         const port = await startRuntime();
@@ -91,7 +93,7 @@ export const test = base.extend<DatabaseFixture>({
    * Wraps the core seedDatabase function for use in Playwright tests
    */
   // eslint-disable-next-line no-empty-pattern
-  seedDatabase: async ({ }, use) => {
+  seedDatabase: async ({}, use) => {
     await use(coreSeedDatabase);
   },
 
@@ -100,7 +102,7 @@ export const test = base.extend<DatabaseFixture>({
    * Returns current database state for debugging/assertions
    */
   // eslint-disable-next-line no-empty-pattern
-  getDatabaseState: async ({ }, use) => {
+  getDatabaseState: async ({}, use) => {
     await use(coreGetDatabaseState);
   },
 
@@ -109,7 +111,7 @@ export const test = base.extend<DatabaseFixture>({
    * Execute GraphQL queries against the backend
    */
   // eslint-disable-next-line no-empty-pattern
-  graphql: async ({ }, use) => {
+  graphql: async ({}, use) => {
     await use(coreGraphql);
   },
 
@@ -118,7 +120,7 @@ export const test = base.extend<DatabaseFixture>({
    * Makes default workspace ID available in tests
    */
   // eslint-disable-next-line no-empty-pattern
-  workspaceId: async ({ }, use) => {
+  workspaceId: async ({}, use) => {
     const state = await coreGetDatabaseState();
     const workspaceId = state.workspaces[0]?.id;
     if (!workspaceId) {
@@ -132,7 +134,7 @@ export const test = base.extend<DatabaseFixture>({
    * Makes runtime port available in tests after resetDatabase(true) is called
    */
   // eslint-disable-next-line no-empty-pattern
-  runtimePort: async ({ }, use) => {
+  runtimePort: async ({}, use) => {
     await use(currentRuntimePort);
   },
 });

@@ -17,19 +17,47 @@ export type Scalars = {
   Date: { input: Date; output: Date; }
 };
 
+export type AiModel = {
+  contextWindow?: Maybe<Scalars['Int']['output']>;
+  id: Scalars['String']['output'];
+  name: Scalars['String']['output'];
+};
+
+export type AiProviderConfig = {
+  availableModels?: Maybe<Array<Scalars['String']['output']>>;
+  baseUrl?: Maybe<Scalars['String']['output']>;
+  createdAt: Scalars['Date']['output'];
+  id: Scalars['ID']['output'];
+  provider: AiProviderType;
+  updatedAt: Scalars['Date']['output'];
+};
+
+export enum AiProviderType {
+  Anthropic = 'ANTHROPIC',
+  Google = 'GOOGLE',
+  Ollama = 'OLLAMA',
+  Openai = 'OPENAI'
+}
+
+export type AiProviderValidation = {
+  availableModels?: Maybe<Array<Scalars['String']['output']>>;
+  error?: Maybe<Scalars['String']['output']>;
+  valid: Scalars['Boolean']['output'];
+};
+
 export enum ActiveStatus {
   Active = 'ACTIVE',
   Inactive = 'INACTIVE'
 }
 
 export type AuthPayload = {
-  accessToken: Scalars['String']['output'];
+  accessToken?: Maybe<Scalars['String']['output']>;
   errors?: Maybe<Array<Scalars['String']['output']>>;
-  expiresIn: Scalars['Int']['output'];
-  refreshToken: Scalars['String']['output'];
-  success: Scalars['Boolean']['output'];
+  expiresIn?: Maybe<Scalars['Int']['output']>;
+  refreshToken?: Maybe<Scalars['String']['output']>;
+  success?: Maybe<Scalars['Boolean']['output']>;
   tokens?: Maybe<AuthTokens>;
-  user: User;
+  user?: Maybe<User>;
 };
 
 export type AuthTokens = {
@@ -41,6 +69,11 @@ export type CallToolResult = {
   result: Scalars['String']['output'];
   success: Scalars['Boolean']['output'];
 };
+
+export enum ExecutionTarget {
+  Agent = 'AGENT',
+  Edge = 'EDGE'
+}
 
 export type IdentityKey = {
   createdAt: Scalars['Date']['output'];
@@ -101,21 +134,16 @@ export type McpRegistryServer = {
 export type McpServer = {
   config: Scalars['String']['output'];
   description: Scalars['String']['output'];
+  executionTarget?: Maybe<ExecutionTarget>;
   id: Scalars['ID']['output'];
   name: Scalars['String']['output'];
   registryServer: McpRegistryServer;
   repositoryUrl: Scalars['String']['output'];
-  runOn?: Maybe<McpServerRunOn>;
   runtime?: Maybe<Runtime>;
   tools?: Maybe<Array<McpTool>>;
   transport: McpTransportType;
   workspace: Workspace;
 };
-
-export enum McpServerRunOn {
-  Agent = 'AGENT',
-  Edge = 'EDGE'
-}
 
 export type McpTool = {
   annotations: Scalars['String']['output'];
@@ -126,8 +154,8 @@ export type McpTool = {
   lastSeenAt: Scalars['Date']['output'];
   mcpServer: McpServer;
   name: Scalars['String']['output'];
+  skills?: Maybe<Array<Skill>>;
   status: ActiveStatus;
-  toolSets?: Maybe<Array<ToolSet>>;
   workspace: Workspace;
 };
 
@@ -138,20 +166,25 @@ export enum McpTransportType {
 }
 
 export type Mutation = {
-  addMCPToolToToolSet: ToolSet;
+  addMCPToolToSkill: Skill;
   addServerToRegistry: McpRegistryServer;
   callMCPTool: CallToolResult;
+  chatWithModel: Scalars['String']['output'];
   completeOnboardingStep: Scalars['Boolean']['output'];
+  configureAIProvider: AiProviderValidation;
+  configureOAuthProvider: OAuthProviderValidation;
   createMCPServer: McpServer;
   createRuntime: Runtime;
-  createToolSet: ToolSet;
+  createSkill: Skill;
   createWorkspaceKey: IdentityKey;
   deleteMCPServer: McpServer;
   deleteMCPTool: McpTool;
   deleteRuntime: Runtime;
-  deleteToolSet: ToolSet;
+  deleteSkill: Skill;
+  disconnectOAuthProvider: Scalars['Boolean']['output'];
   dismissOnboardingStep: Scalars['Boolean']['output'];
   initSystem: System;
+  initiateOAuthConnection: OAuthAuthorizationUrl;
   linkMCPServerToRuntime: McpServer;
   login: AuthPayload;
   loginUser: AuthPayload;
@@ -159,24 +192,30 @@ export type Mutation = {
   logoutUser: LogoutPayload;
   refreshToken: RefreshTokenPayload;
   registerUser: RegisterUserPayload;
-  removeMCPToolFromToolSet: ToolSet;
+  removeAIProvider: Scalars['Boolean']['output'];
+  removeMCPToolFromSkill: Skill;
+  removeOAuthProvider: Scalars['Boolean']['output'];
   removeServerFromRegistry: McpRegistryServer;
   revokeKey: IdentityKey;
+  setDefaultAIModel: Scalars['Boolean']['output'];
   setGlobalRuntime: Workspace;
   unlinkMCPServerFromRuntime: McpServer;
   unsetGlobalRuntime: Workspace;
   updateMCPServer: McpServer;
-  updateMCPServerRunOn: McpServer;
+  updateMCPServerExecutionTarget: McpServer;
+  updateOAuthProviderEnabled: OAuthProviderConfig;
   updateRuntime: Runtime;
   updateServerInRegistry: McpRegistryServer;
-  updateToolSet: ToolSet;
+  updateSkill: Skill;
+  updateSkillMode: Skill;
+  updateSkillSmartConfig: Skill;
   updateWorkspace: Workspace;
 };
 
 
-export type MutationAddMcpToolToToolSetArgs = {
+export type MutationAddMcpToolToSkillArgs = {
   mcpToolId: Scalars['ID']['input'];
-  toolSetId: Scalars['ID']['input'];
+  skillId: Scalars['ID']['input'];
 };
 
 
@@ -198,8 +237,32 @@ export type MutationCallMcpToolArgs = {
 };
 
 
+export type MutationChatWithModelArgs = {
+  message: Scalars['String']['input'];
+  model: Scalars['String']['input'];
+  workspaceId: Scalars['ID']['input'];
+};
+
+
 export type MutationCompleteOnboardingStepArgs = {
   stepId: Scalars['String']['input'];
+  workspaceId: Scalars['ID']['input'];
+};
+
+
+export type MutationConfigureAiProviderArgs = {
+  apiKey?: InputMaybe<Scalars['String']['input']>;
+  baseUrl?: InputMaybe<Scalars['String']['input']>;
+  provider: AiProviderType;
+  workspaceId: Scalars['ID']['input'];
+};
+
+
+export type MutationConfigureOAuthProviderArgs = {
+  clientId: Scalars['String']['input'];
+  clientSecret: Scalars['String']['input'];
+  provider: OAuthProviderType;
+  tenantId?: InputMaybe<Scalars['String']['input']>;
   workspaceId: Scalars['ID']['input'];
 };
 
@@ -207,10 +270,10 @@ export type MutationCompleteOnboardingStepArgs = {
 export type MutationCreateMcpServerArgs = {
   config: Scalars['String']['input'];
   description: Scalars['String']['input'];
+  executionTarget?: InputMaybe<ExecutionTarget>;
   name: Scalars['String']['input'];
   registryServerId: Scalars['ID']['input'];
   repositoryUrl: Scalars['String']['input'];
-  runOn?: InputMaybe<McpServerRunOn>;
   transport: McpTransportType;
   workspaceId: Scalars['ID']['input'];
 };
@@ -224,7 +287,7 @@ export type MutationCreateRuntimeArgs = {
 };
 
 
-export type MutationCreateToolSetArgs = {
+export type MutationCreateSkillArgs = {
   description: Scalars['String']['input'];
   name: Scalars['String']['input'];
   workspaceId: Scalars['ID']['input'];
@@ -252,8 +315,13 @@ export type MutationDeleteRuntimeArgs = {
 };
 
 
-export type MutationDeleteToolSetArgs = {
+export type MutationDeleteSkillArgs = {
   id: Scalars['ID']['input'];
+};
+
+
+export type MutationDisconnectOAuthProviderArgs = {
+  connectionId: Scalars['ID']['input'];
 };
 
 
@@ -266,6 +334,14 @@ export type MutationDismissOnboardingStepArgs = {
 export type MutationInitSystemArgs = {
   adminPassword: Scalars['String']['input'];
   email: Scalars['String']['input'];
+};
+
+
+export type MutationInitiateOAuthConnectionArgs = {
+  provider: OAuthProviderType;
+  redirectUri: Scalars['String']['input'];
+  scopes?: InputMaybe<Array<Scalars['String']['input']>>;
+  workspaceId: Scalars['ID']['input'];
 };
 
 
@@ -305,9 +381,19 @@ export type MutationRegisterUserArgs = {
 };
 
 
-export type MutationRemoveMcpToolFromToolSetArgs = {
+export type MutationRemoveAiProviderArgs = {
+  providerId: Scalars['ID']['input'];
+};
+
+
+export type MutationRemoveMcpToolFromSkillArgs = {
   mcpToolId: Scalars['ID']['input'];
-  toolSetId: Scalars['ID']['input'];
+  skillId: Scalars['ID']['input'];
+};
+
+
+export type MutationRemoveOAuthProviderArgs = {
+  providerId: Scalars['ID']['input'];
 };
 
 
@@ -318,6 +404,12 @@ export type MutationRemoveServerFromRegistryArgs = {
 
 export type MutationRevokeKeyArgs = {
   keyId: Scalars['ID']['input'];
+};
+
+
+export type MutationSetDefaultAiModelArgs = {
+  defaultModel: Scalars['String']['input'];
+  workspaceId: Scalars['ID']['input'];
 };
 
 
@@ -340,18 +432,24 @@ export type MutationUnsetGlobalRuntimeArgs = {
 export type MutationUpdateMcpServerArgs = {
   config: Scalars['String']['input'];
   description: Scalars['String']['input'];
+  executionTarget?: InputMaybe<ExecutionTarget>;
   id: Scalars['ID']['input'];
   name: Scalars['String']['input'];
   repositoryUrl: Scalars['String']['input'];
-  runOn?: InputMaybe<McpServerRunOn>;
   transport: McpTransportType;
 };
 
 
-export type MutationUpdateMcpServerRunOnArgs = {
+export type MutationUpdateMcpServerExecutionTargetArgs = {
+  executionTarget: ExecutionTarget;
   mcpServerId: Scalars['ID']['input'];
-  runOn: McpServerRunOn;
   runtimeId?: InputMaybe<Scalars['ID']['input']>;
+};
+
+
+export type MutationUpdateOAuthProviderEnabledArgs = {
+  enabled: Scalars['Boolean']['input'];
+  providerId: Scalars['ID']['input'];
 };
 
 
@@ -374,16 +472,59 @@ export type MutationUpdateServerInRegistryArgs = {
 };
 
 
-export type MutationUpdateToolSetArgs = {
+export type MutationUpdateSkillArgs = {
   description: Scalars['String']['input'];
   id: Scalars['ID']['input'];
   name: Scalars['String']['input'];
 };
 
 
+export type MutationUpdateSkillModeArgs = {
+  id: Scalars['ID']['input'];
+  mode: SkillMode;
+};
+
+
+export type MutationUpdateSkillSmartConfigArgs = {
+  input: UpdateSkillSmartConfigInput;
+};
+
+
 export type MutationUpdateWorkspaceArgs = {
   id: Scalars['ID']['input'];
   name: Scalars['String']['input'];
+};
+
+export type OAuthAuthorizationUrl = {
+  state: Scalars['String']['output'];
+  url: Scalars['String']['output'];
+};
+
+export type OAuthCallbackResult = {
+  connection?: Maybe<UserOAuthConnection>;
+  error?: Maybe<Scalars['String']['output']>;
+  success: Scalars['Boolean']['output'];
+};
+
+export type OAuthProviderConfig = {
+  clientId: Scalars['String']['output'];
+  createdAt: Scalars['Date']['output'];
+  enabled: Scalars['Boolean']['output'];
+  id: Scalars['ID']['output'];
+  provider: OAuthProviderType;
+  tenantId?: Maybe<Scalars['String']['output']>;
+  updatedAt: Scalars['Date']['output'];
+};
+
+export enum OAuthProviderType {
+  Google = 'GOOGLE',
+  Microsoft = 'MICROSOFT',
+  Notion = 'NOTION'
+}
+
+export type OAuthProviderValidation = {
+  error?: Maybe<Scalars['String']['output']>;
+  valid: Scalars['Boolean']['output'];
 };
 
 export type OnboardingStep = {
@@ -415,16 +556,23 @@ export enum OrderDirection {
 }
 
 export type Query = {
+  getAIModels: Array<Scalars['String']['output']>;
+  getAIProvider?: Maybe<AiProviderConfig>;
+  getAIProviders: Array<AiProviderConfig>;
+  getOAuthProvider?: Maybe<OAuthProviderConfig>;
+  getOAuthProviders: Array<OAuthProviderConfig>;
   getRegistryServers: Array<McpRegistryServer>;
+  getUserOAuthConnections: Array<UserOAuthConnection>;
+  hasUserOAuthConnection: Scalars['Boolean']['output'];
   infra: Infra;
   keyValue: Scalars['String']['output'];
   mcpServers?: Maybe<Array<McpServer>>;
   mcpTools?: Maybe<Array<McpTool>>;
   me?: Maybe<User>;
+  skillKey?: Maybe<IdentityKey>;
+  skills?: Maybe<Array<Skill>>;
   system?: Maybe<System>;
   toolCalls: ToolCallsResult;
-  toolSets?: Maybe<Array<ToolSet>>;
-  toolsetKey?: Maybe<IdentityKey>;
   workspace?: Maybe<Workspace>;
   workspaceKeys: Array<IdentityKey>;
   workspaceMCPTools?: Maybe<Workspace>;
@@ -432,7 +580,45 @@ export type Query = {
 };
 
 
+export type QueryGetAiModelsArgs = {
+  workspaceId: Scalars['ID']['input'];
+};
+
+
+export type QueryGetAiProviderArgs = {
+  provider: AiProviderType;
+  workspaceId: Scalars['ID']['input'];
+};
+
+
+export type QueryGetAiProvidersArgs = {
+  workspaceId: Scalars['ID']['input'];
+};
+
+
+export type QueryGetOAuthProviderArgs = {
+  provider: OAuthProviderType;
+  workspaceId: Scalars['ID']['input'];
+};
+
+
+export type QueryGetOAuthProvidersArgs = {
+  workspaceId: Scalars['ID']['input'];
+};
+
+
 export type QueryGetRegistryServersArgs = {
+  workspaceId: Scalars['ID']['input'];
+};
+
+
+export type QueryGetUserOAuthConnectionsArgs = {
+  workspaceId: Scalars['ID']['input'];
+};
+
+
+export type QueryHasUserOAuthConnectionArgs = {
+  provider: OAuthProviderType;
   workspaceId: Scalars['ID']['input'];
 };
 
@@ -452,22 +638,22 @@ export type QueryMcpToolsArgs = {
 };
 
 
+export type QuerySkillKeyArgs = {
+  skillId: Scalars['ID']['input'];
+};
+
+
+export type QuerySkillsArgs = {
+  workspaceId: Scalars['ID']['input'];
+};
+
+
 export type QueryToolCallsArgs = {
   filters?: InputMaybe<ToolCallFilters>;
   limit?: InputMaybe<Scalars['Int']['input']>;
   offset?: InputMaybe<Scalars['Int']['input']>;
   orderDirection?: InputMaybe<OrderDirection>;
   workspaceId: Scalars['ID']['input'];
-};
-
-
-export type QueryToolSetsArgs = {
-  workspaceId: Scalars['ID']['input'];
-};
-
-
-export type QueryToolsetKeyArgs = {
-  toolsetId: Scalars['ID']['input'];
 };
 
 
@@ -490,10 +676,10 @@ export type RefreshTokenInput = {
 };
 
 export type RefreshTokenPayload = {
-  accessToken: Scalars['String']['output'];
+  accessToken?: Maybe<Scalars['String']['output']>;
   errors?: Maybe<Array<Scalars['String']['output']>>;
-  expiresIn: Scalars['Int']['output'];
-  success: Scalars['Boolean']['output'];
+  expiresIn?: Maybe<Scalars['Int']['output']>;
+  success?: Maybe<Scalars['Boolean']['output']>;
 };
 
 export type RegisterUserInput = {
@@ -520,6 +706,7 @@ export type Runtime = {
   mcpServers?: Maybe<Array<McpServer>>;
   name: Scalars['String']['output'];
   roots?: Maybe<Scalars['String']['output']>;
+  skills?: Maybe<Array<Skill>>;
   status: ActiveStatus;
   system?: Maybe<System>;
   toolResponses?: Maybe<Array<ToolCall>>;
@@ -532,12 +719,37 @@ export enum RuntimeType {
   Mcp = 'MCP'
 }
 
+export type Skill = {
+  createdAt: Scalars['Date']['output'];
+  description?: Maybe<Scalars['String']['output']>;
+  executionTarget?: Maybe<ExecutionTarget>;
+  id: Scalars['ID']['output'];
+  maxTokens?: Maybe<Scalars['Int']['output']>;
+  mcpTools?: Maybe<Array<McpTool>>;
+  mode?: Maybe<SkillMode>;
+  model?: Maybe<Scalars['String']['output']>;
+  name: Scalars['String']['output'];
+  runtime?: Maybe<Runtime>;
+  skillToolCalls?: Maybe<Array<ToolCall>>;
+  systemPrompt?: Maybe<Scalars['String']['output']>;
+  temperature?: Maybe<Scalars['Float']['output']>;
+  toolCalls?: Maybe<Array<ToolCall>>;
+  updatedAt?: Maybe<Scalars['Date']['output']>;
+  workspace: Workspace;
+};
+
+export enum SkillMode {
+  List = 'LIST',
+  Optimized = 'OPTIMIZED',
+  Smart = 'SMART'
+}
+
 export type Subscription = {
   mcpServers?: Maybe<Array<McpServer>>;
   mcpTools?: Maybe<Array<McpTool>>;
   runtimes?: Maybe<Array<Runtime>>;
+  skills?: Maybe<Array<Skill>>;
   toolCalls?: Maybe<Array<ToolCall>>;
-  toolSets?: Maybe<Array<ToolSet>>;
   workspace?: Maybe<Workspace>;
   workspaces?: Maybe<Array<Workspace>>;
 };
@@ -558,12 +770,12 @@ export type SubscriptionRuntimesArgs = {
 };
 
 
-export type SubscriptionToolCallsArgs = {
+export type SubscriptionSkillsArgs = {
   workspaceId: Scalars['ID']['input'];
 };
 
 
-export type SubscriptionToolSetsArgs = {
+export type SubscriptionToolCallsArgs = {
   workspaceId: Scalars['ID']['input'];
 };
 
@@ -583,14 +795,15 @@ export type System = {
 
 export type ToolCall = {
   calledAt: Scalars['Date']['output'];
-  calledBy?: Maybe<ToolSet>;
+  calledBy?: Maybe<Skill>;
   completedAt?: Maybe<Scalars['Date']['output']>;
   error?: Maybe<Scalars['String']['output']>;
   executedBy?: Maybe<Runtime>;
   executedByAgent?: Maybe<Scalars['Boolean']['output']>;
   id: Scalars['ID']['output'];
   isTest: Scalars['Boolean']['output'];
-  mcpTool: McpTool;
+  mcpTool?: Maybe<McpTool>;
+  skill?: Maybe<Skill>;
   status: ToolCallStatus;
   toolInput: Scalars['String']['output'];
   toolOutput?: Maybe<Scalars['String']['output']>;
@@ -627,15 +840,14 @@ export type ToolCallsResult = {
   totalCount: Scalars['Int']['output'];
 };
 
-export type ToolSet = {
-  createdAt: Scalars['Date']['output'];
-  description?: Maybe<Scalars['String']['output']>;
-  id: Scalars['ID']['output'];
-  mcpTools?: Maybe<Array<McpTool>>;
-  name: Scalars['String']['output'];
-  toolCalls?: Maybe<Array<ToolCall>>;
-  updatedAt?: Maybe<Scalars['Date']['output']>;
-  workspace: Workspace;
+export type UpdateSkillSmartConfigInput = {
+  executionTarget?: InputMaybe<ExecutionTarget>;
+  id: Scalars['ID']['input'];
+  maxTokens?: InputMaybe<Scalars['Int']['input']>;
+  model?: InputMaybe<Scalars['String']['input']>;
+  runtimeId?: InputMaybe<Scalars['ID']['input']>;
+  systemPrompt?: InputMaybe<Scalars['String']['input']>;
+  temperature?: InputMaybe<Scalars['Float']['input']>;
 };
 
 export type User = {
@@ -648,16 +860,31 @@ export type User = {
   updatedAt: Scalars['Date']['output'];
 };
 
-export type Workspace = {
+export type UserOAuthConnection = {
+  accountAvatarUrl?: Maybe<Scalars['String']['output']>;
+  accountEmail?: Maybe<Scalars['String']['output']>;
+  accountName?: Maybe<Scalars['String']['output']>;
   createdAt: Scalars['Date']['output'];
+  id: Scalars['ID']['output'];
+  lastUsedAt?: Maybe<Scalars['Date']['output']>;
+  provider: OAuthProviderType;
+  scopes?: Maybe<Array<Scalars['String']['output']>>;
+  updatedAt: Scalars['Date']['output'];
+};
+
+export type Workspace = {
+  aiProviders?: Maybe<Array<AiProviderConfig>>;
+  createdAt: Scalars['Date']['output'];
+  defaultAIModel?: Maybe<Scalars['String']['output']>;
   id: Scalars['ID']['output'];
   mcpServers?: Maybe<Array<McpServer>>;
   mcpTools?: Maybe<Array<McpTool>>;
   name: Scalars['String']['output'];
+  oauthProviders?: Maybe<Array<OAuthProviderConfig>>;
   onboardingSteps?: Maybe<Array<OnboardingStep>>;
   registryServers?: Maybe<Array<McpRegistryServer>>;
   runtimes?: Maybe<Array<Runtime>>;
-  toolSets?: Maybe<Array<ToolSet>>;
+  skills?: Maybe<Array<Skill>>;
 };
 
 
@@ -731,12 +958,17 @@ export type DirectiveResolverFn<TResult = {}, TParent = {}, TContext = {}, TArgs
 
 /** Mapping between all available schema types and the resolvers types */
 export type ResolversTypes = {
+  AIModel: ResolverTypeWrapper<AiModel>;
+  AIProviderConfig: ResolverTypeWrapper<AiProviderConfig>;
+  AIProviderType: AiProviderType;
+  AIProviderValidation: ResolverTypeWrapper<AiProviderValidation>;
   ActiveStatus: ActiveStatus;
   AuthPayload: ResolverTypeWrapper<AuthPayload>;
   AuthTokens: ResolverTypeWrapper<AuthTokens>;
   Boolean: ResolverTypeWrapper<Scalars['Boolean']['output']>;
   CallToolResult: ResolverTypeWrapper<CallToolResult>;
   Date: ResolverTypeWrapper<Scalars['Date']['output']>;
+  ExecutionTarget: ExecutionTarget;
   Float: ResolverTypeWrapper<Scalars['Float']['output']>;
   ID: ResolverTypeWrapper<Scalars['ID']['output']>;
   IdentityKey: ResolverTypeWrapper<IdentityKey>;
@@ -749,10 +981,14 @@ export type ResolversTypes = {
   LogoutUserInput: LogoutUserInput;
   MCPRegistryServer: ResolverTypeWrapper<McpRegistryServer>;
   MCPServer: ResolverTypeWrapper<McpServer>;
-  MCPServerRunOn: McpServerRunOn;
   MCPTool: ResolverTypeWrapper<McpTool>;
   MCPTransportType: McpTransportType;
   Mutation: ResolverTypeWrapper<{}>;
+  OAuthAuthorizationUrl: ResolverTypeWrapper<OAuthAuthorizationUrl>;
+  OAuthCallbackResult: ResolverTypeWrapper<OAuthCallbackResult>;
+  OAuthProviderConfig: ResolverTypeWrapper<OAuthProviderConfig>;
+  OAuthProviderType: OAuthProviderType;
+  OAuthProviderValidation: ResolverTypeWrapper<OAuthProviderValidation>;
   OnboardingStep: ResolverTypeWrapper<OnboardingStep>;
   OnboardingStepStatus: OnboardingStepStatus;
   OnboardingStepType: OnboardingStepType;
@@ -764,6 +1000,8 @@ export type ResolversTypes = {
   RegisterUserPayload: ResolverTypeWrapper<RegisterUserPayload>;
   Runtime: ResolverTypeWrapper<Runtime>;
   RuntimeType: RuntimeType;
+  Skill: ResolverTypeWrapper<Skill>;
+  SkillMode: SkillMode;
   String: ResolverTypeWrapper<Scalars['String']['output']>;
   Subscription: ResolverTypeWrapper<{}>;
   System: ResolverTypeWrapper<System>;
@@ -772,13 +1010,17 @@ export type ResolversTypes = {
   ToolCallStats: ResolverTypeWrapper<ToolCallStats>;
   ToolCallStatus: ToolCallStatus;
   ToolCallsResult: ResolverTypeWrapper<ToolCallsResult>;
-  ToolSet: ResolverTypeWrapper<ToolSet>;
+  UpdateSkillSmartConfigInput: UpdateSkillSmartConfigInput;
   User: ResolverTypeWrapper<User>;
+  UserOAuthConnection: ResolverTypeWrapper<UserOAuthConnection>;
   Workspace: ResolverTypeWrapper<Workspace>;
 };
 
 /** Mapping between all available schema types and the resolvers parents */
 export type ResolversParentTypes = {
+  AIModel: AiModel;
+  AIProviderConfig: AiProviderConfig;
+  AIProviderValidation: AiProviderValidation;
   AuthPayload: AuthPayload;
   AuthTokens: AuthTokens;
   Boolean: Scalars['Boolean']['output'];
@@ -798,6 +1040,10 @@ export type ResolversParentTypes = {
   MCPServer: McpServer;
   MCPTool: McpTool;
   Mutation: {};
+  OAuthAuthorizationUrl: OAuthAuthorizationUrl;
+  OAuthCallbackResult: OAuthCallbackResult;
+  OAuthProviderConfig: OAuthProviderConfig;
+  OAuthProviderValidation: OAuthProviderValidation;
   OnboardingStep: OnboardingStep;
   Query: {};
   RefreshTokenInput: RefreshTokenInput;
@@ -805,6 +1051,7 @@ export type ResolversParentTypes = {
   RegisterUserInput: RegisterUserInput;
   RegisterUserPayload: RegisterUserPayload;
   Runtime: Runtime;
+  Skill: Skill;
   String: Scalars['String']['output'];
   Subscription: {};
   System: System;
@@ -812,19 +1059,44 @@ export type ResolversParentTypes = {
   ToolCallFilters: ToolCallFilters;
   ToolCallStats: ToolCallStats;
   ToolCallsResult: ToolCallsResult;
-  ToolSet: ToolSet;
+  UpdateSkillSmartConfigInput: UpdateSkillSmartConfigInput;
   User: User;
+  UserOAuthConnection: UserOAuthConnection;
   Workspace: Workspace;
 };
 
+export type AiModelResolvers<ContextType = object, ParentType extends ResolversParentTypes['AIModel'] = ResolversParentTypes['AIModel']> = {
+  contextWindow?: Resolver<Maybe<ResolversTypes['Int']>, ParentType, ContextType>;
+  id?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  name?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+};
+
+export type AiProviderConfigResolvers<ContextType = object, ParentType extends ResolversParentTypes['AIProviderConfig'] = ResolversParentTypes['AIProviderConfig']> = {
+  availableModels?: Resolver<Maybe<Array<ResolversTypes['String']>>, ParentType, ContextType>;
+  baseUrl?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  createdAt?: Resolver<ResolversTypes['Date'], ParentType, ContextType>;
+  id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
+  provider?: Resolver<ResolversTypes['AIProviderType'], ParentType, ContextType>;
+  updatedAt?: Resolver<ResolversTypes['Date'], ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+};
+
+export type AiProviderValidationResolvers<ContextType = object, ParentType extends ResolversParentTypes['AIProviderValidation'] = ResolversParentTypes['AIProviderValidation']> = {
+  availableModels?: Resolver<Maybe<Array<ResolversTypes['String']>>, ParentType, ContextType>;
+  error?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  valid?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+};
+
 export type AuthPayloadResolvers<ContextType = object, ParentType extends ResolversParentTypes['AuthPayload'] = ResolversParentTypes['AuthPayload']> = {
-  accessToken?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  accessToken?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   errors?: Resolver<Maybe<Array<ResolversTypes['String']>>, ParentType, ContextType>;
-  expiresIn?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
-  refreshToken?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
-  success?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
+  expiresIn?: Resolver<Maybe<ResolversTypes['Int']>, ParentType, ContextType>;
+  refreshToken?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  success?: Resolver<Maybe<ResolversTypes['Boolean']>, ParentType, ContextType>;
   tokens?: Resolver<Maybe<ResolversTypes['AuthTokens']>, ParentType, ContextType>;
-  user?: Resolver<ResolversTypes['User'], ParentType, ContextType>;
+  user?: Resolver<Maybe<ResolversTypes['User']>, ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 };
 
@@ -887,11 +1159,11 @@ export type McpRegistryServerResolvers<ContextType = object, ParentType extends 
 export type McpServerResolvers<ContextType = object, ParentType extends ResolversParentTypes['MCPServer'] = ResolversParentTypes['MCPServer']> = {
   config?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   description?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  executionTarget?: Resolver<Maybe<ResolversTypes['ExecutionTarget']>, ParentType, ContextType>;
   id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
   name?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   registryServer?: Resolver<ResolversTypes['MCPRegistryServer'], ParentType, ContextType>;
   repositoryUrl?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
-  runOn?: Resolver<Maybe<ResolversTypes['MCPServerRunOn']>, ParentType, ContextType>;
   runtime?: Resolver<Maybe<ResolversTypes['Runtime']>, ParentType, ContextType>;
   tools?: Resolver<Maybe<Array<ResolversTypes['MCPTool']>>, ParentType, ContextType>;
   transport?: Resolver<ResolversTypes['MCPTransportType'], ParentType, ContextType>;
@@ -908,27 +1180,32 @@ export type McpToolResolvers<ContextType = object, ParentType extends ResolversP
   lastSeenAt?: Resolver<ResolversTypes['Date'], ParentType, ContextType>;
   mcpServer?: Resolver<ResolversTypes['MCPServer'], ParentType, ContextType>;
   name?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  skills?: Resolver<Maybe<Array<ResolversTypes['Skill']>>, ParentType, ContextType>;
   status?: Resolver<ResolversTypes['ActiveStatus'], ParentType, ContextType>;
-  toolSets?: Resolver<Maybe<Array<ResolversTypes['ToolSet']>>, ParentType, ContextType>;
   workspace?: Resolver<ResolversTypes['Workspace'], ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 };
 
 export type MutationResolvers<ContextType = object, ParentType extends ResolversParentTypes['Mutation'] = ResolversParentTypes['Mutation']> = {
-  addMCPToolToToolSet?: Resolver<ResolversTypes['ToolSet'], ParentType, ContextType, RequireFields<MutationAddMcpToolToToolSetArgs, 'mcpToolId' | 'toolSetId'>>;
+  addMCPToolToSkill?: Resolver<ResolversTypes['Skill'], ParentType, ContextType, RequireFields<MutationAddMcpToolToSkillArgs, 'mcpToolId' | 'skillId'>>;
   addServerToRegistry?: Resolver<ResolversTypes['MCPRegistryServer'], ParentType, ContextType, RequireFields<MutationAddServerToRegistryArgs, 'description' | 'name' | 'repositoryUrl' | 'title' | 'version' | 'workspaceId'>>;
   callMCPTool?: Resolver<ResolversTypes['CallToolResult'], ParentType, ContextType, RequireFields<MutationCallMcpToolArgs, 'input' | 'toolId'>>;
+  chatWithModel?: Resolver<ResolversTypes['String'], ParentType, ContextType, RequireFields<MutationChatWithModelArgs, 'message' | 'model' | 'workspaceId'>>;
   completeOnboardingStep?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType, RequireFields<MutationCompleteOnboardingStepArgs, 'stepId' | 'workspaceId'>>;
+  configureAIProvider?: Resolver<ResolversTypes['AIProviderValidation'], ParentType, ContextType, RequireFields<MutationConfigureAiProviderArgs, 'provider' | 'workspaceId'>>;
+  configureOAuthProvider?: Resolver<ResolversTypes['OAuthProviderValidation'], ParentType, ContextType, RequireFields<MutationConfigureOAuthProviderArgs, 'clientId' | 'clientSecret' | 'provider' | 'workspaceId'>>;
   createMCPServer?: Resolver<ResolversTypes['MCPServer'], ParentType, ContextType, RequireFields<MutationCreateMcpServerArgs, 'config' | 'description' | 'name' | 'registryServerId' | 'repositoryUrl' | 'transport' | 'workspaceId'>>;
   createRuntime?: Resolver<ResolversTypes['Runtime'], ParentType, ContextType, RequireFields<MutationCreateRuntimeArgs, 'description' | 'name' | 'type' | 'workspaceId'>>;
-  createToolSet?: Resolver<ResolversTypes['ToolSet'], ParentType, ContextType, RequireFields<MutationCreateToolSetArgs, 'description' | 'name' | 'workspaceId'>>;
+  createSkill?: Resolver<ResolversTypes['Skill'], ParentType, ContextType, RequireFields<MutationCreateSkillArgs, 'description' | 'name' | 'workspaceId'>>;
   createWorkspaceKey?: Resolver<ResolversTypes['IdentityKey'], ParentType, ContextType, RequireFields<MutationCreateWorkspaceKeyArgs, 'description' | 'workspaceId'>>;
   deleteMCPServer?: Resolver<ResolversTypes['MCPServer'], ParentType, ContextType, RequireFields<MutationDeleteMcpServerArgs, 'id'>>;
   deleteMCPTool?: Resolver<ResolversTypes['MCPTool'], ParentType, ContextType, RequireFields<MutationDeleteMcpToolArgs, 'id'>>;
   deleteRuntime?: Resolver<ResolversTypes['Runtime'], ParentType, ContextType, RequireFields<MutationDeleteRuntimeArgs, 'id'>>;
-  deleteToolSet?: Resolver<ResolversTypes['ToolSet'], ParentType, ContextType, RequireFields<MutationDeleteToolSetArgs, 'id'>>;
+  deleteSkill?: Resolver<ResolversTypes['Skill'], ParentType, ContextType, RequireFields<MutationDeleteSkillArgs, 'id'>>;
+  disconnectOAuthProvider?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType, RequireFields<MutationDisconnectOAuthProviderArgs, 'connectionId'>>;
   dismissOnboardingStep?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType, RequireFields<MutationDismissOnboardingStepArgs, 'stepId' | 'workspaceId'>>;
   initSystem?: Resolver<ResolversTypes['System'], ParentType, ContextType, RequireFields<MutationInitSystemArgs, 'adminPassword' | 'email'>>;
+  initiateOAuthConnection?: Resolver<ResolversTypes['OAuthAuthorizationUrl'], ParentType, ContextType, RequireFields<MutationInitiateOAuthConnectionArgs, 'provider' | 'redirectUri' | 'workspaceId'>>;
   linkMCPServerToRuntime?: Resolver<ResolversTypes['MCPServer'], ParentType, ContextType, RequireFields<MutationLinkMcpServerToRuntimeArgs, 'mcpServerId' | 'runtimeId'>>;
   login?: Resolver<ResolversTypes['AuthPayload'], ParentType, ContextType, RequireFields<MutationLoginArgs, 'input'>>;
   loginUser?: Resolver<ResolversTypes['AuthPayload'], ParentType, ContextType, RequireFields<MutationLoginUserArgs, 'input'>>;
@@ -936,18 +1213,54 @@ export type MutationResolvers<ContextType = object, ParentType extends Resolvers
   logoutUser?: Resolver<ResolversTypes['LogoutPayload'], ParentType, ContextType, RequireFields<MutationLogoutUserArgs, 'input'>>;
   refreshToken?: Resolver<ResolversTypes['RefreshTokenPayload'], ParentType, ContextType, RequireFields<MutationRefreshTokenArgs, 'input'>>;
   registerUser?: Resolver<ResolversTypes['RegisterUserPayload'], ParentType, ContextType, RequireFields<MutationRegisterUserArgs, 'input'>>;
-  removeMCPToolFromToolSet?: Resolver<ResolversTypes['ToolSet'], ParentType, ContextType, RequireFields<MutationRemoveMcpToolFromToolSetArgs, 'mcpToolId' | 'toolSetId'>>;
+  removeAIProvider?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType, RequireFields<MutationRemoveAiProviderArgs, 'providerId'>>;
+  removeMCPToolFromSkill?: Resolver<ResolversTypes['Skill'], ParentType, ContextType, RequireFields<MutationRemoveMcpToolFromSkillArgs, 'mcpToolId' | 'skillId'>>;
+  removeOAuthProvider?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType, RequireFields<MutationRemoveOAuthProviderArgs, 'providerId'>>;
   removeServerFromRegistry?: Resolver<ResolversTypes['MCPRegistryServer'], ParentType, ContextType, RequireFields<MutationRemoveServerFromRegistryArgs, 'serverId'>>;
   revokeKey?: Resolver<ResolversTypes['IdentityKey'], ParentType, ContextType, RequireFields<MutationRevokeKeyArgs, 'keyId'>>;
+  setDefaultAIModel?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType, RequireFields<MutationSetDefaultAiModelArgs, 'defaultModel' | 'workspaceId'>>;
   setGlobalRuntime?: Resolver<ResolversTypes['Workspace'], ParentType, ContextType, RequireFields<MutationSetGlobalRuntimeArgs, 'id' | 'runtimeId'>>;
   unlinkMCPServerFromRuntime?: Resolver<ResolversTypes['MCPServer'], ParentType, ContextType, RequireFields<MutationUnlinkMcpServerFromRuntimeArgs, 'mcpServerId'>>;
   unsetGlobalRuntime?: Resolver<ResolversTypes['Workspace'], ParentType, ContextType, RequireFields<MutationUnsetGlobalRuntimeArgs, 'id'>>;
   updateMCPServer?: Resolver<ResolversTypes['MCPServer'], ParentType, ContextType, RequireFields<MutationUpdateMcpServerArgs, 'config' | 'description' | 'id' | 'name' | 'repositoryUrl' | 'transport'>>;
-  updateMCPServerRunOn?: Resolver<ResolversTypes['MCPServer'], ParentType, ContextType, RequireFields<MutationUpdateMcpServerRunOnArgs, 'mcpServerId' | 'runOn'>>;
+  updateMCPServerExecutionTarget?: Resolver<ResolversTypes['MCPServer'], ParentType, ContextType, RequireFields<MutationUpdateMcpServerExecutionTargetArgs, 'executionTarget' | 'mcpServerId'>>;
+  updateOAuthProviderEnabled?: Resolver<ResolversTypes['OAuthProviderConfig'], ParentType, ContextType, RequireFields<MutationUpdateOAuthProviderEnabledArgs, 'enabled' | 'providerId'>>;
   updateRuntime?: Resolver<ResolversTypes['Runtime'], ParentType, ContextType, RequireFields<MutationUpdateRuntimeArgs, 'description' | 'id' | 'name'>>;
   updateServerInRegistry?: Resolver<ResolversTypes['MCPRegistryServer'], ParentType, ContextType, RequireFields<MutationUpdateServerInRegistryArgs, 'serverId'>>;
-  updateToolSet?: Resolver<ResolversTypes['ToolSet'], ParentType, ContextType, RequireFields<MutationUpdateToolSetArgs, 'description' | 'id' | 'name'>>;
+  updateSkill?: Resolver<ResolversTypes['Skill'], ParentType, ContextType, RequireFields<MutationUpdateSkillArgs, 'description' | 'id' | 'name'>>;
+  updateSkillMode?: Resolver<ResolversTypes['Skill'], ParentType, ContextType, RequireFields<MutationUpdateSkillModeArgs, 'id' | 'mode'>>;
+  updateSkillSmartConfig?: Resolver<ResolversTypes['Skill'], ParentType, ContextType, RequireFields<MutationUpdateSkillSmartConfigArgs, 'input'>>;
   updateWorkspace?: Resolver<ResolversTypes['Workspace'], ParentType, ContextType, RequireFields<MutationUpdateWorkspaceArgs, 'id' | 'name'>>;
+};
+
+export type OAuthAuthorizationUrlResolvers<ContextType = object, ParentType extends ResolversParentTypes['OAuthAuthorizationUrl'] = ResolversParentTypes['OAuthAuthorizationUrl']> = {
+  state?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  url?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+};
+
+export type OAuthCallbackResultResolvers<ContextType = object, ParentType extends ResolversParentTypes['OAuthCallbackResult'] = ResolversParentTypes['OAuthCallbackResult']> = {
+  connection?: Resolver<Maybe<ResolversTypes['UserOAuthConnection']>, ParentType, ContextType>;
+  error?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  success?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+};
+
+export type OAuthProviderConfigResolvers<ContextType = object, ParentType extends ResolversParentTypes['OAuthProviderConfig'] = ResolversParentTypes['OAuthProviderConfig']> = {
+  clientId?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  createdAt?: Resolver<ResolversTypes['Date'], ParentType, ContextType>;
+  enabled?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
+  id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
+  provider?: Resolver<ResolversTypes['OAuthProviderType'], ParentType, ContextType>;
+  tenantId?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  updatedAt?: Resolver<ResolversTypes['Date'], ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+};
+
+export type OAuthProviderValidationResolvers<ContextType = object, ParentType extends ResolversParentTypes['OAuthProviderValidation'] = ResolversParentTypes['OAuthProviderValidation']> = {
+  error?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  valid?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 };
 
 export type OnboardingStepResolvers<ContextType = object, ParentType extends ResolversParentTypes['OnboardingStep'] = ResolversParentTypes['OnboardingStep']> = {
@@ -963,16 +1276,23 @@ export type OnboardingStepResolvers<ContextType = object, ParentType extends Res
 };
 
 export type QueryResolvers<ContextType = object, ParentType extends ResolversParentTypes['Query'] = ResolversParentTypes['Query']> = {
+  getAIModels?: Resolver<Array<ResolversTypes['String']>, ParentType, ContextType, RequireFields<QueryGetAiModelsArgs, 'workspaceId'>>;
+  getAIProvider?: Resolver<Maybe<ResolversTypes['AIProviderConfig']>, ParentType, ContextType, RequireFields<QueryGetAiProviderArgs, 'provider' | 'workspaceId'>>;
+  getAIProviders?: Resolver<Array<ResolversTypes['AIProviderConfig']>, ParentType, ContextType, RequireFields<QueryGetAiProvidersArgs, 'workspaceId'>>;
+  getOAuthProvider?: Resolver<Maybe<ResolversTypes['OAuthProviderConfig']>, ParentType, ContextType, RequireFields<QueryGetOAuthProviderArgs, 'provider' | 'workspaceId'>>;
+  getOAuthProviders?: Resolver<Array<ResolversTypes['OAuthProviderConfig']>, ParentType, ContextType, RequireFields<QueryGetOAuthProvidersArgs, 'workspaceId'>>;
   getRegistryServers?: Resolver<Array<ResolversTypes['MCPRegistryServer']>, ParentType, ContextType, RequireFields<QueryGetRegistryServersArgs, 'workspaceId'>>;
+  getUserOAuthConnections?: Resolver<Array<ResolversTypes['UserOAuthConnection']>, ParentType, ContextType, RequireFields<QueryGetUserOAuthConnectionsArgs, 'workspaceId'>>;
+  hasUserOAuthConnection?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType, RequireFields<QueryHasUserOAuthConnectionArgs, 'provider' | 'workspaceId'>>;
   infra?: Resolver<ResolversTypes['Infra'], ParentType, ContextType>;
   keyValue?: Resolver<ResolversTypes['String'], ParentType, ContextType, RequireFields<QueryKeyValueArgs, 'keyId'>>;
   mcpServers?: Resolver<Maybe<Array<ResolversTypes['MCPServer']>>, ParentType, ContextType, RequireFields<QueryMcpServersArgs, 'workspaceId'>>;
   mcpTools?: Resolver<Maybe<Array<ResolversTypes['MCPTool']>>, ParentType, ContextType, RequireFields<QueryMcpToolsArgs, 'workspaceId'>>;
   me?: Resolver<Maybe<ResolversTypes['User']>, ParentType, ContextType>;
+  skillKey?: Resolver<Maybe<ResolversTypes['IdentityKey']>, ParentType, ContextType, RequireFields<QuerySkillKeyArgs, 'skillId'>>;
+  skills?: Resolver<Maybe<Array<ResolversTypes['Skill']>>, ParentType, ContextType, RequireFields<QuerySkillsArgs, 'workspaceId'>>;
   system?: Resolver<Maybe<ResolversTypes['System']>, ParentType, ContextType>;
   toolCalls?: Resolver<ResolversTypes['ToolCallsResult'], ParentType, ContextType, RequireFields<QueryToolCallsArgs, 'workspaceId'>>;
-  toolSets?: Resolver<Maybe<Array<ResolversTypes['ToolSet']>>, ParentType, ContextType, RequireFields<QueryToolSetsArgs, 'workspaceId'>>;
-  toolsetKey?: Resolver<Maybe<ResolversTypes['IdentityKey']>, ParentType, ContextType, RequireFields<QueryToolsetKeyArgs, 'toolsetId'>>;
   workspace?: Resolver<Maybe<ResolversTypes['Workspace']>, ParentType, ContextType, RequireFields<QueryWorkspaceArgs, 'workspaceId'>>;
   workspaceKeys?: Resolver<Array<ResolversTypes['IdentityKey']>, ParentType, ContextType, RequireFields<QueryWorkspaceKeysArgs, 'workspaceId'>>;
   workspaceMCPTools?: Resolver<Maybe<ResolversTypes['Workspace']>, ParentType, ContextType, RequireFields<QueryWorkspaceMcpToolsArgs, 'workspaceId'>>;
@@ -980,10 +1300,10 @@ export type QueryResolvers<ContextType = object, ParentType extends ResolversPar
 };
 
 export type RefreshTokenPayloadResolvers<ContextType = object, ParentType extends ResolversParentTypes['RefreshTokenPayload'] = ResolversParentTypes['RefreshTokenPayload']> = {
-  accessToken?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  accessToken?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   errors?: Resolver<Maybe<Array<ResolversTypes['String']>>, ParentType, ContextType>;
-  expiresIn?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
-  success?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
+  expiresIn?: Resolver<Maybe<ResolversTypes['Int']>, ParentType, ContextType>;
+  success?: Resolver<Maybe<ResolversTypes['Boolean']>, ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 };
 
@@ -1006,6 +1326,7 @@ export type RuntimeResolvers<ContextType = object, ParentType extends ResolversP
   mcpServers?: Resolver<Maybe<Array<ResolversTypes['MCPServer']>>, ParentType, ContextType>;
   name?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   roots?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  skills?: Resolver<Maybe<Array<ResolversTypes['Skill']>>, ParentType, ContextType>;
   status?: Resolver<ResolversTypes['ActiveStatus'], ParentType, ContextType>;
   system?: Resolver<Maybe<ResolversTypes['System']>, ParentType, ContextType>;
   toolResponses?: Resolver<Maybe<Array<ResolversTypes['ToolCall']>>, ParentType, ContextType>;
@@ -1014,12 +1335,32 @@ export type RuntimeResolvers<ContextType = object, ParentType extends ResolversP
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 };
 
+export type SkillResolvers<ContextType = object, ParentType extends ResolversParentTypes['Skill'] = ResolversParentTypes['Skill']> = {
+  createdAt?: Resolver<ResolversTypes['Date'], ParentType, ContextType>;
+  description?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  executionTarget?: Resolver<Maybe<ResolversTypes['ExecutionTarget']>, ParentType, ContextType>;
+  id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
+  maxTokens?: Resolver<Maybe<ResolversTypes['Int']>, ParentType, ContextType>;
+  mcpTools?: Resolver<Maybe<Array<ResolversTypes['MCPTool']>>, ParentType, ContextType>;
+  mode?: Resolver<Maybe<ResolversTypes['SkillMode']>, ParentType, ContextType>;
+  model?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  name?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  runtime?: Resolver<Maybe<ResolversTypes['Runtime']>, ParentType, ContextType>;
+  skillToolCalls?: Resolver<Maybe<Array<ResolversTypes['ToolCall']>>, ParentType, ContextType>;
+  systemPrompt?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  temperature?: Resolver<Maybe<ResolversTypes['Float']>, ParentType, ContextType>;
+  toolCalls?: Resolver<Maybe<Array<ResolversTypes['ToolCall']>>, ParentType, ContextType>;
+  updatedAt?: Resolver<Maybe<ResolversTypes['Date']>, ParentType, ContextType>;
+  workspace?: Resolver<ResolversTypes['Workspace'], ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+};
+
 export type SubscriptionResolvers<ContextType = object, ParentType extends ResolversParentTypes['Subscription'] = ResolversParentTypes['Subscription']> = {
   mcpServers?: SubscriptionResolver<Maybe<Array<ResolversTypes['MCPServer']>>, "mcpServers", ParentType, ContextType, RequireFields<SubscriptionMcpServersArgs, 'workspaceId'>>;
   mcpTools?: SubscriptionResolver<Maybe<Array<ResolversTypes['MCPTool']>>, "mcpTools", ParentType, ContextType, RequireFields<SubscriptionMcpToolsArgs, 'workspaceId'>>;
   runtimes?: SubscriptionResolver<Maybe<Array<ResolversTypes['Runtime']>>, "runtimes", ParentType, ContextType, RequireFields<SubscriptionRuntimesArgs, 'workspaceId'>>;
+  skills?: SubscriptionResolver<Maybe<Array<ResolversTypes['Skill']>>, "skills", ParentType, ContextType, RequireFields<SubscriptionSkillsArgs, 'workspaceId'>>;
   toolCalls?: SubscriptionResolver<Maybe<Array<ResolversTypes['ToolCall']>>, "toolCalls", ParentType, ContextType, RequireFields<SubscriptionToolCallsArgs, 'workspaceId'>>;
-  toolSets?: SubscriptionResolver<Maybe<Array<ResolversTypes['ToolSet']>>, "toolSets", ParentType, ContextType, RequireFields<SubscriptionToolSetsArgs, 'workspaceId'>>;
   workspace?: SubscriptionResolver<Maybe<ResolversTypes['Workspace']>, "workspace", ParentType, ContextType, RequireFields<SubscriptionWorkspaceArgs, 'workspaceId'>>;
   workspaces?: SubscriptionResolver<Maybe<Array<ResolversTypes['Workspace']>>, "workspaces", ParentType, ContextType>;
 };
@@ -1036,14 +1377,15 @@ export type SystemResolvers<ContextType = object, ParentType extends ResolversPa
 
 export type ToolCallResolvers<ContextType = object, ParentType extends ResolversParentTypes['ToolCall'] = ResolversParentTypes['ToolCall']> = {
   calledAt?: Resolver<ResolversTypes['Date'], ParentType, ContextType>;
-  calledBy?: Resolver<Maybe<ResolversTypes['ToolSet']>, ParentType, ContextType>;
+  calledBy?: Resolver<Maybe<ResolversTypes['Skill']>, ParentType, ContextType>;
   completedAt?: Resolver<Maybe<ResolversTypes['Date']>, ParentType, ContextType>;
   error?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   executedBy?: Resolver<Maybe<ResolversTypes['Runtime']>, ParentType, ContextType>;
   executedByAgent?: Resolver<Maybe<ResolversTypes['Boolean']>, ParentType, ContextType>;
   id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
   isTest?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
-  mcpTool?: Resolver<ResolversTypes['MCPTool'], ParentType, ContextType>;
+  mcpTool?: Resolver<Maybe<ResolversTypes['MCPTool']>, ParentType, ContextType>;
+  skill?: Resolver<Maybe<ResolversTypes['Skill']>, ParentType, ContextType>;
   status?: Resolver<ResolversTypes['ToolCallStatus'], ParentType, ContextType>;
   toolInput?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   toolOutput?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
@@ -1067,18 +1409,6 @@ export type ToolCallsResultResolvers<ContextType = object, ParentType extends Re
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 };
 
-export type ToolSetResolvers<ContextType = object, ParentType extends ResolversParentTypes['ToolSet'] = ResolversParentTypes['ToolSet']> = {
-  createdAt?: Resolver<ResolversTypes['Date'], ParentType, ContextType>;
-  description?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
-  id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
-  mcpTools?: Resolver<Maybe<Array<ResolversTypes['MCPTool']>>, ParentType, ContextType>;
-  name?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
-  toolCalls?: Resolver<Maybe<Array<ResolversTypes['ToolCall']>>, ParentType, ContextType>;
-  updatedAt?: Resolver<Maybe<ResolversTypes['Date']>, ParentType, ContextType>;
-  workspace?: Resolver<ResolversTypes['Workspace'], ParentType, ContextType>;
-  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
-};
-
 export type UserResolvers<ContextType = object, ParentType extends ResolversParentTypes['User'] = ResolversParentTypes['User']> = {
   adminOfWorkspaces?: Resolver<Maybe<Array<ResolversTypes['Workspace']>>, ParentType, ContextType>;
   createdAt?: Resolver<ResolversTypes['Date'], ParentType, ContextType>;
@@ -1090,20 +1420,39 @@ export type UserResolvers<ContextType = object, ParentType extends ResolversPare
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 };
 
-export type WorkspaceResolvers<ContextType = object, ParentType extends ResolversParentTypes['Workspace'] = ResolversParentTypes['Workspace']> = {
+export type UserOAuthConnectionResolvers<ContextType = object, ParentType extends ResolversParentTypes['UserOAuthConnection'] = ResolversParentTypes['UserOAuthConnection']> = {
+  accountAvatarUrl?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  accountEmail?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  accountName?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   createdAt?: Resolver<ResolversTypes['Date'], ParentType, ContextType>;
+  id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
+  lastUsedAt?: Resolver<Maybe<ResolversTypes['Date']>, ParentType, ContextType>;
+  provider?: Resolver<ResolversTypes['OAuthProviderType'], ParentType, ContextType>;
+  scopes?: Resolver<Maybe<Array<ResolversTypes['String']>>, ParentType, ContextType>;
+  updatedAt?: Resolver<ResolversTypes['Date'], ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+};
+
+export type WorkspaceResolvers<ContextType = object, ParentType extends ResolversParentTypes['Workspace'] = ResolversParentTypes['Workspace']> = {
+  aiProviders?: Resolver<Maybe<Array<ResolversTypes['AIProviderConfig']>>, ParentType, ContextType>;
+  createdAt?: Resolver<ResolversTypes['Date'], ParentType, ContextType>;
+  defaultAIModel?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
   mcpServers?: Resolver<Maybe<Array<ResolversTypes['MCPServer']>>, ParentType, ContextType>;
   mcpTools?: Resolver<Maybe<Array<ResolversTypes['MCPTool']>>, ParentType, ContextType>;
   name?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  oauthProviders?: Resolver<Maybe<Array<ResolversTypes['OAuthProviderConfig']>>, ParentType, ContextType>;
   onboardingSteps?: Resolver<Maybe<Array<ResolversTypes['OnboardingStep']>>, ParentType, ContextType>;
   registryServers?: Resolver<Maybe<Array<ResolversTypes['MCPRegistryServer']>>, ParentType, ContextType>;
   runtimes?: Resolver<Maybe<Array<ResolversTypes['Runtime']>>, ParentType, ContextType>;
-  toolSets?: Resolver<Maybe<Array<ResolversTypes['ToolSet']>>, ParentType, ContextType>;
+  skills?: Resolver<Maybe<Array<ResolversTypes['Skill']>>, ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 };
 
 export type Resolvers<ContextType = object> = {
+  AIModel?: AiModelResolvers<ContextType>;
+  AIProviderConfig?: AiProviderConfigResolvers<ContextType>;
+  AIProviderValidation?: AiProviderValidationResolvers<ContextType>;
   AuthPayload?: AuthPayloadResolvers<ContextType>;
   AuthTokens?: AuthTokensResolvers<ContextType>;
   CallToolResult?: CallToolResultResolvers<ContextType>;
@@ -1115,18 +1464,23 @@ export type Resolvers<ContextType = object> = {
   MCPServer?: McpServerResolvers<ContextType>;
   MCPTool?: McpToolResolvers<ContextType>;
   Mutation?: MutationResolvers<ContextType>;
+  OAuthAuthorizationUrl?: OAuthAuthorizationUrlResolvers<ContextType>;
+  OAuthCallbackResult?: OAuthCallbackResultResolvers<ContextType>;
+  OAuthProviderConfig?: OAuthProviderConfigResolvers<ContextType>;
+  OAuthProviderValidation?: OAuthProviderValidationResolvers<ContextType>;
   OnboardingStep?: OnboardingStepResolvers<ContextType>;
   Query?: QueryResolvers<ContextType>;
   RefreshTokenPayload?: RefreshTokenPayloadResolvers<ContextType>;
   RegisterUserPayload?: RegisterUserPayloadResolvers<ContextType>;
   Runtime?: RuntimeResolvers<ContextType>;
+  Skill?: SkillResolvers<ContextType>;
   Subscription?: SubscriptionResolvers<ContextType>;
   System?: SystemResolvers<ContextType>;
   ToolCall?: ToolCallResolvers<ContextType>;
   ToolCallStats?: ToolCallStatsResolvers<ContextType>;
   ToolCallsResult?: ToolCallsResultResolvers<ContextType>;
-  ToolSet?: ToolSetResolvers<ContextType>;
   User?: UserResolvers<ContextType>;
+  UserOAuthConnection?: UserOAuthConnectionResolvers<ContextType>;
   Workspace?: WorkspaceResolvers<ContextType>;
 };
 

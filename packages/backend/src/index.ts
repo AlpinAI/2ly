@@ -2,7 +2,7 @@ import { resolve } from 'path';
 import { container, start } from './di/container';
 import { MainService } from './services/backend.main.service';
 import 'reflect-metadata';
-import { loadEnv } from '@2ly/common';
+import { loadEnv } from '@skilder-ai/common';
 
 // Load environment variables in layers (shared keys first, then package-specific)
 const projectRoot = resolve(__dirname, '../../..');

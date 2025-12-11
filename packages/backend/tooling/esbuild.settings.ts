@@ -19,11 +19,11 @@ export function createBuildSettings(options: BuildOptions): BuildOptions {
       copy({
         assets: [
           {
-            from: '../common/schema/dgraph.schema.graphql',
+            from: '../common/schema/build/dgraph.schema.graphql',
             to: 'dgraph.schema.graphql',
           },
           {
-            from: '../common/schema/apollo.schema.graphql',
+            from: '../common/schema/build/apollo.schema.graphql',
             to: 'apollo.schema.graphql',
           },
           {

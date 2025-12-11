@@ -38,7 +38,7 @@ import {
   seedDatabase,
   seedPresets,
   createMCPClient, // ← Now available for integration tests!
-} from '@2ly/common/test/fixtures';
+} from '@skilder-ai/common/test/fixtures';
 
 describe('My Feature Tests', () => {
   beforeEach(async () => {
@@ -72,13 +72,13 @@ describe('My Feature Tests', () => {
 ### E2E Tests (Playwright)
 
 ```typescript
-import { test, expect, seedPresets, performLogin } from '@2ly/common/test/fixtures/playwright';
+import { test, expect, seedPresets, performLogin } from '@skilder-ai/common/test/fixtures/playwright';
 
 test.describe('My Feature', () => {
   test.beforeEach(async ({ resetDatabase, seedDatabase, page }) => {
     await resetDatabase();
     await seedDatabase(seedPresets.withSingleMCPServer);
-    await performLogin(page, 'user1@2ly.ai', 'password123');
+    await performLogin(page, 'user1@skilder.ai', 'password123');
   });
 
   test('should display MCP server', async ({ page, workspaceId }) => {
@@ -184,15 +184,15 @@ Create a filesystem MCP server via GraphQL.
 
 Create a runtime dynamically.
 
-### `createToolset(graphql, workspaceId, name, description, nbToolsToLink)`
+### `createSkill(graphql, workspaceId, name, description, nbToolsToLink)`
 
-Create a toolset and link tools dynamically.
+Create a skill and link tools dynamically.
 
 ## NATS Helpers
 
-### `sendToolsetHandshake(params)`
+### `sendSkillHandshake(params)`
 
-Send a toolset handshake message to trigger onboarding step 3.
+Send a skill handshake message to trigger onboarding step 3.
 
 ### `waitForOnboardingStepComplete(workspaceId, stepId, timeoutMs, pollIntervalMs)`
 

@@ -1,8 +1,8 @@
 import { GraphQLError } from 'graphql';
 import { AuthenticationService } from '../services/auth/auth.service';
 import { JwtService } from '../services/auth/jwt.service';
-import { apolloResolversTypes } from '@2ly/common';
-import { UserRepository } from '../repositories/user.repository';
+import { apolloResolversTypes } from '@skilder-ai/common';
+import { UserRepository } from '../repositories/user/user.repository';
 import { PasswordPolicyService } from '../services/auth/password-policy.service';
 
 
@@ -61,6 +61,12 @@ export class AuthResolver {
 
       // Create new user
       const user = await this.userRepository.create(input.email, input.password);
+      if (!user) {
+        return {
+          success: false,
+          errors: ['Failed to create user'],
+        };
+      }
 
       // Generate JWT tokens
       const tokenPair = await this.jwtService.generateTokenPair({
@@ -72,7 +78,7 @@ export class AuthResolver {
 
       return {
         success: true,
-        user,
+        user: { id: user.id, email: user.email } as apolloResolversTypes.User,
         tokens: tokenPair,
         errors: [],
       };
@@ -160,7 +166,7 @@ export class AuthResolver {
 
       return {
         success: true,
-        user: result.user,
+        user: result.user as unknown as apolloResolversTypes.User,
         tokens: {
           accessToken: result.tokens.accessToken,
           refreshToken: result.tokens.refreshToken,

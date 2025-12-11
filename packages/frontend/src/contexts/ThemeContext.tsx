@@ -56,7 +56,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   // WHY lazy initialization: Prevents hydration mismatch and checks preferences only once
   const [theme, setThemeState] = useState<Theme>(() => {
     // Priority 1: User's saved preference
-    const stored = localStorage.getItem('2ly-theme') as Theme;
+    const stored = localStorage.getItem('skilder-theme') as Theme;
     if (stored) return stored;
 
     // Priority 2: System preference
@@ -74,7 +74,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     const root = window.document.documentElement;
     root.classList.remove('light', 'dark');
     root.classList.add(theme);
-    localStorage.setItem('2ly-theme', theme);
+    localStorage.setItem('skilder-theme', theme);
   }, [theme]);
 
   const toggleTheme = () => {

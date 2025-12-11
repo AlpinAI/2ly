@@ -1,0 +1,44 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "langchain_skilder"
+version = "0.1.0"
+description = "Skilder python module providing helpers to quickly connect Skilder to your agents in Python."
+authors = [
+  { name="Skilder AI", email="contact@skilder.ai" }
+]
+license = { text = "Apache-2.0" }
+readme = "README.md"
+requires-python = ">=3.10"
+
+dependencies = [
+  "mcp",
+  "langchain-core",
+  "langchain-mcp-adapters"
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=7.0",
+  "pytest-asyncio>=0.21",
+  "build>=0.10",
+  "twine>=5.0"
+]
+examples = [
+  "langgraph>=0.2.0",
+  "langchain-openai>=0.2.0",
+  "pydantic>=2.0.0",
+  "python-dotenv>=1.0.0"
+]
+# A "meta" extra that installs everything
+all = [
+    # reference other extras
+    "langchain_skilder[dev]",
+    "langchain_skilder[examples]",
+]
+
+[project.urls]
+Homepage = "https://github.com/skilder-ai/skilder"
+Issues = "https://github.com/skilder-ai/skilder/issues"

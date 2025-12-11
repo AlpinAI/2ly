@@ -1,0 +1,3 @@
+mutation RemoveOAuthProvider($providerId: ID!) {
+  removeOAuthProvider(providerId: $providerId)
+}

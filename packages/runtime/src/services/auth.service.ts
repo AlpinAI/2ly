@@ -1,7 +1,7 @@
 import { inject, injectable } from 'inversify';
 import { getHostIP } from '../utils';
 import os from 'os';
-import { LoggerService, NatsService, RootIdentity, Service, HandshakeRequest, HandshakeResponse, ErrorResponse } from '@2ly/common';
+import { LoggerService, NatsService, RootIdentity, Service, HandshakeRequest, HandshakeResponse, ErrorResponse } from '@skilder-ai/common';
 import { v4 as uuidv4 } from 'uuid';
 import pino from 'pino';
 import fs from 'fs';
@@ -13,16 +13,16 @@ export class PermanentAuthenticationError extends Error {};
  *
  * Responsibilities:
  * - Authentication:
- *   - login runtime or toolset
+ *   - login runtime or skill
  * - Identity:
- *   - retrieve runtime id and toolset id (depending on the active services)
+ *   - retrieve runtime id and skill id (depending on the active services)
  * - Provide metadata during handshake: PID, hostname, host IP, platform info
  *
  * Environment variables (read-only, not stored):
  * - SYSTEM_KEY (system-level access)
  * - WORKSPACE_KEY (workspace-level access)
- *   - require TOOLSET_NAME or RUNTIME_NAME to be set
- * - TOOLSET_KEY (toolset-level access, toolset name will be implied by the key upon auth)
+ *   - require SKILL_NAME or RUNTIME_NAME to be set
+ * - SKILL_KEY (skill-level access, skill name will be implied by the key upon auth)
  * - RUNTIME_KEY (runtime-level access, runtime name will be implied by the key upon auth)
 */
 @injectable()
@@ -70,18 +70,18 @@ export class AuthService extends Service {
 
   private prepareHandshakeRequest(): HandshakeRequest {
     // The DI already validates the mutually exclusive keys
-    const key = process.env.SYSTEM_KEY || process.env.WORKSPACE_KEY || process.env.TOOLSET_KEY || process.env.RUNTIME_KEY;
+    const key = process.env.SYSTEM_KEY || process.env.WORKSPACE_KEY || process.env.SKILL_KEY || process.env.RUNTIME_KEY;
     if (!key) {
       throw new Error(
-        'No key found in environment variables. Runtime requires SYSTEM_KEY, WORKSPACE_KEY, TOOLSET_KEY, or RUNTIME_KEY to operate.'
+        'No key found in environment variables. Runtime requires SYSTEM_KEY, WORKSPACE_KEY, SKILL_KEY, or RUNTIME_KEY to operate.'
       );
     }
-    const nature = process.env.RUNTIME_NAME ? 'runtime' : process.env.TOOLSET_NAME ? 'toolset' : undefined;
+    const nature = process.env.RUNTIME_NAME ? 'runtime' : process.env.SKILL_NAME ? 'skill' : undefined;
     const roots = this.prepareRoots();
     const handshake = new HandshakeRequest({
       key,
       nature,
-      name: process.env.RUNTIME_NAME || process.env.TOOLSET_NAME || undefined,
+      name: process.env.RUNTIME_NAME || process.env.SKILL_NAME || undefined,
       pid: process.pid.toString() ?? uuidv4(),
       hostIP: getHostIP(),
       hostname: os.hostname(),
@@ -132,12 +132,12 @@ export class AuthService extends Service {
           name: handshakeResponse.data.name,
           workspaceId: handshakeResponse.data.workspaceId,
         };
-      } else if (handshakeResponse.data.nature === 'toolset') {
+      } else if (handshakeResponse.data.nature === 'skill') {
         if (!handshakeResponse.data.workspaceId) {
-          throw new Error('Authentication failed: workspace ID cannot be null for toolsets');
+          throw new Error('Authentication failed: workspace ID cannot be null for skills');
         }
         this.identity = {
-          nature: 'toolset',
+          nature: 'skill',
           id: handshakeResponse.data.id,
           name: handshakeResponse.data.name,
           workspaceId: handshakeResponse.data.workspaceId,

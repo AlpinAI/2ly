@@ -22,7 +22,7 @@ mutation CreateMCPServer(
     name
     description
     transport
-    runOn
+    executionTarget
     runtime {
       id
       name

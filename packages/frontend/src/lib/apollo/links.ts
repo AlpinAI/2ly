@@ -139,11 +139,11 @@ export const errorLink = onError(({ error, operation }) => {
  * SECURITY NOTE:
  * - Tokens are stored in localStorage (XSS vulnerable but convenient)
  * - Alternative: httpOnly cookies (CSRF vulnerable but XSS safe)
- * - 2LY uses JWT in Authorization header pattern
+ * - Skilder uses JWT in Authorization header pattern
  */
 export const authLink = new ApolloLink((operation, forward) => {
   // WHY: Get tokens from localStorage (matches AuthContext storage key)
-  const tokensJson = localStorage.getItem('2ly_auth_tokens');
+  const tokensJson = localStorage.getItem('skilder_auth_tokens');
 
   // WHY: Set authorization header if token exists
   if (tokensJson) {
@@ -194,7 +194,7 @@ export const wsLink = new GraphQLWsLink(
 
     // WHY: Connection parameters sent on WebSocket handshake
     connectionParams: () => {
-      const tokensJson = localStorage.getItem('2ly_auth_tokens');
+      const tokensJson = localStorage.getItem('skilder_auth_tokens');
       if (tokensJson) {
         try {
           const tokens = JSON.parse(tokensJson);

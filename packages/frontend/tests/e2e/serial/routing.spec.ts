@@ -1,4 +1,4 @@
-import { test, expect, seedPresets } from '@2ly/common/test/fixtures/playwright';
+import { test, expect, seedPresets } from '@skilder-ai/common/test/fixtures/playwright';
 
 /**
  * Routing E2E Tests - Parallel Strategy
@@ -31,7 +31,7 @@ test.describe('Routing and Navigation', () => {
     test('should allow authenticated user to access workspace', async ({ page }) => {
       // Login first
       await page.goto('/login');
-      await page.fill('input[type="email"]', 'user1@2ly.ai');
+      await page.fill('input[type="email"]', 'user1@skilder.ai');
       await page.fill('input[type="password"]', 'password123');
       await page.click('button[type="submit"]');
 
@@ -45,7 +45,7 @@ test.describe('Routing and Navigation', () => {
     test('should redirect root path to workspace for authenticated users', async ({ page }) => {
       // Login first
       await page.goto('/login');
-      await page.fill('input[type="email"]', 'user1@2ly.ai');
+      await page.fill('input[type="email"]', 'user1@skilder.ai');
       await page.fill('input[type="password"]', 'password123');
       await page.click('button[type="submit"]');
       await page.waitForURL(/\/w\/.+\/overview/, { timeout: 5000 });
@@ -77,7 +77,7 @@ test.describe('Routing and Navigation', () => {
       await page.waitForURL('/login', { timeout: 5000 });
 
       // Login
-      await page.fill('input[type="email"]', 'user1@2ly.ai');
+      await page.fill('input[type="email"]', 'user1@skilder.ai');
       await page.fill('input[type="password"]', 'password123');
       await page.click('button[type="submit"]');
 
@@ -91,7 +91,7 @@ test.describe('Routing and Navigation', () => {
       await page.goto('/login');
 
       // Login
-      await page.fill('input[type="email"]', 'user1@2ly.ai');
+      await page.fill('input[type="email"]', 'user1@skilder.ai');
       await page.fill('input[type="password"]', 'password123');
       await page.click('button[type="submit"]');
 
@@ -106,7 +106,7 @@ test.describe('Routing and Navigation', () => {
       await page.waitForURL('/login', { timeout: 5000 });
 
       // Login
-      await page.fill('input[type="email"]', 'user1@2ly.ai');
+      await page.fill('input[type="email"]', 'user1@skilder.ai');
       await page.fill('input[type="password"]', 'password123');
       await page.click('button[type="submit"]');
       await page.waitForURL(/\/w\/.+\/overview/, { timeout: 5000 });
@@ -126,7 +126,7 @@ test.describe('Routing and Navigation', () => {
       }
 
       // Login again (this time starting from /login with no intent)
-      await page.fill('input[type="email"]', 'user1@2ly.ai');
+      await page.fill('input[type="email"]', 'user1@skilder.ai');
       await page.fill('input[type="password"]', 'password123');
       await page.click('button[type="submit"]');
 
@@ -159,7 +159,7 @@ test.describe('Routing and Navigation', () => {
     test('should allow navigation from 404 page to workspace', async ({ page }) => {
       // Login first
       await page.goto('/login');
-      await page.fill('input[type="email"]', 'user1@2ly.ai');
+      await page.fill('input[type="email"]', 'user1@skilder.ai');
       await page.fill('input[type="password"]', 'password123');
       await page.click('button[type="submit"]');
       await page.waitForURL(/\/w\/.+\/overview/, { timeout: 5000 });
@@ -229,14 +229,14 @@ test.describe('Routing and Navigation', () => {
 
       // Login first
       await page.goto('/login');
-      await page.fill('input[type="email"]', 'user1@2ly.ai');
+      await page.fill('input[type="email"]', 'user1@skilder.ai');
       await page.fill('input[type="password"]', 'password123');
       await page.click('button[type="submit"]');
       await page.waitForURL(/\/w\/.+\/overview/, { timeout: 5000 });
 
       // Manipulate the stored JWT token to be expired
       await page.evaluate(() => {
-        const tokensJson = localStorage.getItem('2ly_auth_tokens');
+        const tokensJson = localStorage.getItem('skilder_auth_tokens');
         if (tokensJson) {
           const tokens = JSON.parse(tokensJson);
 
@@ -256,7 +256,7 @@ test.describe('Routing and Navigation', () => {
             tokens.accessToken = `${parts[0]}.${newPayload}.${parts[2]}`;
 
             // Save back to localStorage
-            localStorage.setItem('2ly_auth_tokens', JSON.stringify(tokens));
+            localStorage.setItem('skilder_auth_tokens', JSON.stringify(tokens));
           }
         }
       });

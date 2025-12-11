@@ -13,8 +13,8 @@
  * - Workspace indicator
  */
 
-import { Link } from 'react-router-dom';
-import { User as UserIcon, LogOut, Settings, Terminal } from 'lucide-react';
+import { Link, useParams } from 'react-router-dom';
+import { LogOut, Settings, Terminal, Link2 } from 'lucide-react';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { HelpMenu } from '@/components/layout/help-menu';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -34,6 +34,7 @@ import { CommandPalette } from '@/components/command-palette/command-palette';
 export function AppHeader() {
   const { user, logout } = useAuth();
   const { theme } = useTheme();
+  const { workspaceId } = useParams<{ workspaceId: string }>();
 
   // Extract user initials from email
   const getUserInitials = (email: string): string => {
@@ -58,9 +59,9 @@ export function AppHeader() {
             <div className="flex items-center gap-4 min-w-0">
               <Link to="/app/overview" className="flex items-center gap-2 flex-shrink-0">
                 <img
-                  src={theme === 'dark' ? '/logo-2ly-dark.png' : '/logo-2ly.png'}
-                  alt="2LY"
-                  className="h-8 w-auto"
+                  src={theme === 'dark' ? '/logo-skilder-dark.png' : '/logo-skilder.png'}
+                  alt="Skilder"
+                  className="h-12 w-auto"
                 />
               </Link>
             </div>
@@ -134,13 +135,13 @@ export function AppHeader() {
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem asChild>
-                  <Link to="/app/settings" className="flex items-center cursor-pointer">
-                    <UserIcon className="mr-2 h-4 w-4" />
-                    <span>Profile</span>
+                  <Link to={`/w/${workspaceId}/my-integrations`} className="flex items-center cursor-pointer">
+                    <Link2 className="mr-2 h-4 w-4" />
+                    <span>My Integrations</span>
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
-                  <Link to="/app/settings" className="flex items-center cursor-pointer">
+                  <Link to={`/w/${workspaceId}/settings`} className="flex items-center cursor-pointer">
                     <Settings className="mr-2 h-4 w-4" />
                     <span>Settings</span>
                   </Link>

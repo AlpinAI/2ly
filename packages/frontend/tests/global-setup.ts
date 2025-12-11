@@ -9,7 +9,7 @@
  */
 
 import { chromium, FullConfig } from '@playwright/test';
-import { TestEnvironment, TEST_ENCRYPTION_KEY } from '@2ly/common/test/test.containers';
+import { TestEnvironment, TEST_ENCRYPTION_KEY } from '@skilder-ai/common/test/test.containers';
 import { exec } from 'child_process';
 // import { promisify } from 'util';
 import * as fs from 'fs';
@@ -86,7 +86,12 @@ async function globalSetup(_config: FullConfig) {
       viteProcess.stdout?.on('data', (data: Buffer) => {
         const output = data.toString();
         // Only log errors or warnings from Vite
-        if (output.includes('error') || output.includes('ERROR') || output.includes('warn') || output.includes('WARN')) {
+        if (
+          output.includes('error') ||
+          output.includes('ERROR') ||
+          output.includes('warn') ||
+          output.includes('WARN')
+        ) {
           console.log('  [Vite]', output.trim());
         }
 

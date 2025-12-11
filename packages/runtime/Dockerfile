@@ -1,5 +1,5 @@
 # syntax=docker/dockerfile:1
-# Dockerfile for 2LY Runtime
+# Dockerfile for Skilder Runtime
 # Optimized multi-stage build with BuildKit cache mounts
 
 # Stage 1: Build
@@ -22,7 +22,7 @@ COPY packages/runtime/ ./packages/runtime/
 COPY packages/common/ ./packages/common/
 
 # Build the runtime
-RUN npm run build -w @2ly/runtime
+RUN npm run build -w @skilder-ai/runtime
 
 # Stage 2: Download uv (fast Python package manager)
 FROM alpine:3.20 AS uv-downloader

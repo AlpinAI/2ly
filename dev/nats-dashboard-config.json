@@ -1,6 +1,6 @@
 {
   "server": {
-    "name": "2ly-nats",
+    "name": "skilder-nats",
     "url": "http://localhost:8222"
   },
   "hideServerInput": true

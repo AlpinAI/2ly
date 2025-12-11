@@ -1,0 +1,19 @@
+# Add MCP Tool to Skill Mutation
+# WHY: Add a tool to a skill for management
+mutation AddMCPToolToSkill($mcpToolId: ID!, $skillId: ID!) {
+  addMCPToolToSkill(mcpToolId: $mcpToolId, skillId: $skillId) {
+    id
+    name
+    description
+    updatedAt
+    mcpTools {
+      id
+      name
+      description
+      mcpServer {
+        id
+        name
+      }
+    }
+  }
+}

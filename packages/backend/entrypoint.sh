@@ -5,7 +5,7 @@ set -e
 KEYS_DIR=${KEYS_DIR:-/keys}
 AUTOGEN_KEYS=${AUTOGEN_KEYS:-false}
 
-echo "🔐 2ly Entrypoint - Key Management"
+echo "🔐 skilder Entrypoint - Key Management"
 echo "=================================="
 echo "Keys directory: $KEYS_DIR"
 echo "Auto-generation: $AUTOGEN_KEYS"

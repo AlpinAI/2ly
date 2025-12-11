@@ -11,10 +11,10 @@ import type {
   MCPServerSeed,
   AugmentedArgument,
 } from './mcp-types';
-import { apolloResolversTypes } from '@2ly/common';
+import { apolloResolversTypes } from '@skilder-ai/common';
 
 type McpTransportType = apolloResolversTypes.McpTransportType;
-type McpServerRunOn = apolloResolversTypes.McpServerRunOn;
+type ExecutionTarget = apolloResolversTypes.ExecutionTarget;
 
 /**
  * Build a FileSystem MCP server configuration
@@ -156,7 +156,7 @@ export function buildMCPServerSeed(options: {
   repositoryUrl: string;
   transport: 'STDIO' | 'SSE' | 'STREAM';
   config: MCPServerConfig;
-  runOn: 'AGENT' | 'EDGE';
+  executionTarget: 'AGENT' | 'EDGE';
   registryServerId?: string;
   workspaceId?: string;
 }): MCPServerSeed {
@@ -166,7 +166,7 @@ export function buildMCPServerSeed(options: {
     repositoryUrl: options.repositoryUrl,
     transport: options.transport as McpTransportType,
     config: options.config,
-    runOn: options.runOn as McpServerRunOn,
+    executionTarget: options.executionTarget as ExecutionTarget,
     registryServerId: options.registryServerId,
     workspaceId: options.workspaceId,
   };
@@ -181,7 +181,7 @@ export function buildMCPServerSeed(options: {
 export function buildMinimalFilesystemServer(options?: {
   name?: string;
   description?: string;
-  runOn?: 'AGENT' | 'EDGE';
+  executionTarget?: 'AGENT' | 'EDGE';
   directoryPath?: string;
   registryServerId?: string;
   workspaceId?: string;
@@ -192,7 +192,7 @@ export function buildMinimalFilesystemServer(options?: {
     repositoryUrl: 'https://github.com/modelcontextprotocol/servers',
     transport: 'STDIO',
     config: buildFilesystemServerConfig(options?.directoryPath),
-    runOn: options?.runOn ?? 'AGENT',
+    executionTarget: options?.executionTarget ?? 'AGENT',
     registryServerId: options?.registryServerId,
     workspaceId: options?.workspaceId,
   });
@@ -226,7 +226,7 @@ export function buildGenericServerConfig(identifier: string, version: string): M
 export function buildWebFetchServer(options?: {
   name?: string;
   description?: string;
-  runOn?: 'AGENT' | 'EDGE';
+  executionTarget?: 'AGENT' | 'EDGE';
   registryServerId?: string;
   workspaceId?: string;
 }): MCPServerSeed {
@@ -236,7 +236,7 @@ export function buildWebFetchServer(options?: {
     repositoryUrl: 'https://github.com/example/web-fetch-mcp',
     transport: 'SSE',
     config: buildGenericServerConfig('@example/web-fetch-mcp-server', '1.5.0'),
-    runOn: options?.runOn ?? 'AGENT',
+    executionTarget: options?.executionTarget ?? 'AGENT',
     registryServerId: options?.registryServerId,
     workspaceId: options?.workspaceId,
   });
@@ -251,7 +251,7 @@ export function buildWebFetchServer(options?: {
 export function buildDevelopmentToolsServer(options?: {
   name?: string;
   description?: string;
-  runOn?: 'AGENT' | 'EDGE';
+  executionTarget?: 'AGENT' | 'EDGE';
   registryServerId?: string;
   workspaceId?: string;
 }): MCPServerSeed {
@@ -261,7 +261,7 @@ export function buildDevelopmentToolsServer(options?: {
     repositoryUrl: 'https://github.com/example/dev-tools-mcp',
     transport: 'STREAM',
     config: buildGenericServerConfig('@example/dev-tools-mcp-server', '2.1.0'),
-    runOn: options?.runOn ?? 'AGENT',
+    executionTarget: options?.executionTarget ?? 'AGENT',
     registryServerId: options?.registryServerId,
     workspaceId: options?.workspaceId,
   });
@@ -276,7 +276,7 @@ export function buildDevelopmentToolsServer(options?: {
 export function buildDatabaseServer(options?: {
   name?: string;
   description?: string;
-  runOn?: 'AGENT' | 'EDGE';
+  executionTarget?: 'AGENT' | 'EDGE';
   registryServerId?: string;
   workspaceId?: string;
 }): MCPServerSeed {
@@ -286,7 +286,7 @@ export function buildDatabaseServer(options?: {
     repositoryUrl: 'https://github.com/example/database-mcp',
     transport: 'STDIO',
     config: buildGenericServerConfig('@example/database-mcp-server', '3.2.1'),
-    runOn: options?.runOn ?? 'AGENT',
+    executionTarget: options?.executionTarget ?? 'AGENT',
     registryServerId: options?.registryServerId,
     workspaceId: options?.workspaceId,
   });
@@ -331,7 +331,7 @@ export const getRuntimeIdByType = async (
  *
  * @param graphql - GraphQL query function
  * @param workspaceId - Workspace ID to create the server in
- * @param runOn - Where the server should run ('AGENT' or 'EDGE')
+ * @param executionTarget - Where the server should run ('AGENT' or 'EDGE')
  * @param runtimeId - Optional runtime ID for EDGE deployments
  * @param authToken - Optional JWT token for authenticated requests
  */
@@ -339,7 +339,7 @@ export const configureFileSystemMCPServer = async (
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   graphql: <T = any>(query: string, variables?: Record<string, any>, authToken?: string) => Promise<T>,
   workspaceId: string,
-  runOn: 'AGENT' | 'EDGE',
+  executionTarget: 'AGENT' | 'EDGE',
   runtimeId?: string,
   authToken?: string,
 ) => {
@@ -360,26 +360,26 @@ export const configureFileSystemMCPServer = async (
   const registryServerId = registryServer.id;
 
   const mutation = `
-      mutation CreateMCPServer($name: String!, $description: String!, $repositoryUrl: String!, $transport: MCPTransportType!, $config: String!, $runOn: MCPServerRunOn!, $workspaceId: ID!, $registryServerId: ID!) {
-        createMCPServer(name: $name, description: $description, repositoryUrl: $repositoryUrl, transport: $transport, config: $config, runOn: $runOn, workspaceId: $workspaceId, registryServerId: $registryServerId) {
+      mutation CreateMCPServer($name: String!, $description: String!, $repositoryUrl: String!, $transport: MCPTransportType!, $config: String!, $executionTarget: ExecutionTarget!, $workspaceId: ID!, $registryServerId: ID!) {
+        createMCPServer(name: $name, description: $description, repositoryUrl: $repositoryUrl, transport: $transport, config: $config, executionTarget: $executionTarget, workspaceId: $workspaceId, registryServerId: $registryServerId) {
           id
           name
           description
           repositoryUrl
           transport
           config
-          runOn
+          executionTarget
         }
       }
     `;
 
-  const createMCPServerResult = await graphql<{ createMCPServer: { id: string; name: string; description: string; repositoryUrl: string; transport: string; config: string; runOn: string } }>(mutation, {
+  const createMCPServerResult = await graphql<{ createMCPServer: { id: string; name: string; description: string; repositoryUrl: string; transport: string; config: string; executionTarget: string } }>(mutation, {
     name: 'Test MCP Server',
     description: 'Test MCP Server Description',
     repositoryUrl: 'https://github.com/test/test',
     transport: 'STDIO',
     config: JSON.stringify(buildFilesystemServerConfig('/tmp')),
-    runOn,
+    executionTarget,
     workspaceId,
     registryServerId,
   }, authToken);
@@ -387,12 +387,12 @@ export const configureFileSystemMCPServer = async (
   const mcpServerId = createMCPServerResult.createMCPServer.id;
 
   // If EDGE and runtimeId provided, link the server to the specific runtime
-  if (runOn === 'EDGE' && runtimeId) {
+  if (executionTarget === 'EDGE' && runtimeId) {
     const updateMutation = `
-      mutation UpdateMCPServerRunOn($mcpServerId: ID!, $runOn: MCPServerRunOn!, $runtimeId: ID) {
-        updateMCPServerRunOn(mcpServerId: $mcpServerId, runOn: $runOn, runtimeId: $runtimeId) {
+      mutation UpdateExecutionTarget($mcpServerId: ID!, $executionTarget: ExecutionTarget!, $runtimeId: ID) {
+        updateMCPServerExecutionTarget(mcpServerId: $mcpServerId, executionTarget: $executionTarget, runtimeId: $runtimeId) {
           id
-          runOn
+          executionTarget
           runtime {
             id
             name
@@ -400,7 +400,7 @@ export const configureFileSystemMCPServer = async (
         }
       }
     `;
-    await graphql(updateMutation, { mcpServerId, runOn, runtimeId }, authToken);
+    await graphql(updateMutation, { mcpServerId, executionTarget, runtimeId }, authToken);
   }
 
   return {
@@ -409,12 +409,12 @@ export const configureFileSystemMCPServer = async (
 };
 
 /**
- * Helper function to create a toolset dynamically via GraphQL
- * This is used in tests that need to create toolsets on the fly
+ * Helper function to create a skill dynamically via GraphQL
+ * This is used in tests that need to create skills on the fly
  *
  * @param authToken - Optional JWT token for authenticated requests
  */
-export const createToolset = async (
+export const createSkill = async (
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   graphql: <T = any>(query: string, variables?: Record<string, any>, authToken?: string) => Promise<T>,
   workspaceId: string,
@@ -433,18 +433,18 @@ export const createToolset = async (
   `;
   const toolResult = await graphql<{ mcpTools: Array<{ id: string }> }>(toolQuery, { workspaceId }, authToken);
 
-  // Create a ToolSet
-  const createToolSetMutation = `
-    mutation CreateToolSet($name: String!, $description: String!, $workspaceId: ID!) {
-      createToolSet(name: $name, description: $description, workspaceId: $workspaceId) {
+  // Create a Skill
+  const createSkillMutation = `
+    mutation CreateSkill($name: String!, $description: String!, $workspaceId: ID!) {
+      createSkill(name: $name, description: $description, workspaceId: $workspaceId) {
         id
         name
       }
     }
   `;
 
-  const toolSetResult = await graphql<{ createToolSet: { id: string; name: string } }>(
-    createToolSetMutation,
+  const skillResult = await graphql<{ createSkill: { id: string; name: string } }>(
+    createSkillMutation,
     {
       name,
       description,
@@ -453,10 +453,10 @@ export const createToolset = async (
     authToken
   );
 
-  // Add tools to the toolset
+  // Add tools to the skill
   const addToolMutation = `
-    mutation AddToolToToolSet($mcpToolId: ID!, $toolSetId: ID!) {
-      addMCPToolToToolSet(mcpToolId: $mcpToolId, toolSetId: $toolSetId) {
+    mutation AddToolToSkill($mcpToolId: ID!, $skillId: ID!) {
+      addMCPToolToSkill(mcpToolId: $mcpToolId, skillId: $skillId) {
         id
         mcpTools {
           id
@@ -471,18 +471,18 @@ export const createToolset = async (
   for (let i = 0; i < maxTools; i++) {
     await graphql(addToolMutation, {
       mcpToolId: toolResult.mcpTools[i]!.id,
-      toolSetId: toolSetResult.createToolSet.id,
+      skillId: skillResult.createSkill.id,
     }, authToken);
   }
 
   return {
-    toolsetId: toolSetResult.createToolSet.id,
+    skillId: skillResult.createSkill.id,
   };
 };
 
 /**
  * Update an existing MCP server to run on EDGE runtime
- * This is needed after seeding because presets default to AGENT runOn
+ * This is needed after seeding because presets default to AGENT executionTarget
  *
  * @param graphql - GraphQL query function
  * @param mcpServerId - ID of the MCP server to update
@@ -495,7 +495,7 @@ export const updateMCPServerToEdgeRuntime = async (
   mcpServerId: string,
   workspaceId: string,
   authToken?: string,
-): Promise<{ id: string; runOn: string; runtime: { id: string; name: string } }> => {
+): Promise<{ id: string; executionTarget: string; runtime: { id: string; name: string } }> => {
   // Get the EDGE runtime ID (system query doesn't require auth)
   const runtimeId = await getRuntimeIdByType(graphql, workspaceId, 'EDGE');
 
@@ -505,10 +505,10 @@ export const updateMCPServerToEdgeRuntime = async (
 
   // Update MCP server to use EDGE runtime
   const updateMutation = `
-    mutation UpdateMCPServerRunOn($mcpServerId: ID!, $runOn: MCPServerRunOn!, $runtimeId: ID) {
-      updateMCPServerRunOn(mcpServerId: $mcpServerId, runOn: $runOn, runtimeId: $runtimeId) {
+    mutation UpdateExecutionTarget($mcpServerId: ID!, $executionTarget: ExecutionTarget!, $runtimeId: ID) {
+      updateMCPServerExecutionTarget(mcpServerId: $mcpServerId, executionTarget: $executionTarget, runtimeId: $runtimeId) {
         id
-        runOn
+        executionTarget
         runtime {
           id
           name
@@ -518,12 +518,12 @@ export const updateMCPServerToEdgeRuntime = async (
   `;
 
   const result = await graphql<{
-    updateMCPServerRunOn: { id: string; runOn: string; runtime: { id: string; name: string } };
+    updateMCPServerExecutionTarget: { id: string; executionTarget: string; runtime: { id: string; name: string } };
   }>(updateMutation, {
     mcpServerId,
-    runOn: 'EDGE',
+    executionTarget: 'EDGE',
     runtimeId,
   }, authToken);
 
-  return result.updateMCPServerRunOn;
+  return result.updateMCPServerExecutionTarget;
 };

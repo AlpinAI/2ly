@@ -1,7 +1,7 @@
 import { GraphQLDateTime } from 'graphql-scalars';
 import { GraphQLError } from 'graphql';
 import { container as defaultContainer } from '../di/container';
-import { apolloResolversTypes, LoggerService, MCP_SERVER_RUN_ON } from '@2ly/common';
+import { apolloResolversTypes, LoggerService, EXECUTION_TARGET } from '@skilder-ai/common';
 import { Observable } from 'rxjs';
 import { latestValueFrom } from 'rxjs-for-await';
 import {
@@ -12,14 +12,18 @@ import {
   SystemRepository,
   UserRepository,
   MonitoringRepository,
-  ToolSetRepository,
+  SkillRepository,
   IdentityRepository,
   KEY_NATURE_PREFIX,
 } from '../repositories';
 import { createAuthResolvers } from '../resolvers/auth.resolver';
+import { createAIProviderResolvers } from '../resolvers/ai-provider.resolver';
+import { createOAuthProviderResolvers } from '../resolvers/oauth-provider.resolver';
+import { createUserOAuthConnectionResolvers } from '../resolvers/user-oauth-connection.resolver';
 import { AuthenticationService, JwtService, PasswordPolicyService } from '../services/auth';
 import { Container } from 'inversify';
 import { requireAuth, requireWorkspaceAccess, requireAuthAndWorkspaceAccess, withPeriodicValidation } from './authorization.helpers';
+import { validateRuntimeForWorkspace, updateExecutionTargetWithRuntime, applyRuntimeLinking } from './execution-target.helpers';
 import { GraphQLContext } from '../types';
 
 const observableToAsyncGenerator = <T, K extends string>(
@@ -40,7 +44,7 @@ export const resolvers = (container: Container = defaultContainer): apolloResolv
   const mcpToolRepository = container.get(MCPToolRepository);
   const runtimeRepository = container.get(RuntimeRepository);
   const workspaceRepository = container.get(WorkspaceRepository);
-  const toolSetRepository = container.get(ToolSetRepository);
+  const skillRepository = container.get(SkillRepository);
   const identityRepository = container.get(IdentityRepository);
   const authenticationService = container.get(AuthenticationService);
   const jwtService = container.get(JwtService);
@@ -50,6 +54,16 @@ export const resolvers = (container: Container = defaultContainer): apolloResolv
   const userRepository = container.get(UserRepository);
   const passwordPolicyService = container.get(PasswordPolicyService);
   const authResolvers = createAuthResolvers(authenticationService, jwtService, userRepository, passwordPolicyService);
+
+  // Create AI provider resolvers
+  const aiProviderResolvers = createAIProviderResolvers(container);
+
+  // Create OAuth provider resolvers
+  const oauthProviderResolvers = createOAuthProviderResolvers(container);
+
+  // Create User OAuth connection resolvers
+  const userOAuthConnectionResolvers = createUserOAuthConnectionResolvers(container);
+
   return {
     Date: GraphQLDateTime,
     Query: {
@@ -82,13 +96,13 @@ export const resolvers = (container: Container = defaultContainer): apolloResolv
         await requireAuthAndWorkspaceAccess(workspaceRepository, context, workspaceId);
         return workspaceRepository.findMCPToolsByWorkspace(workspaceId);
       },
-      toolSets: async (
+      skills: async (
         _parent: unknown,
         { workspaceId }: { workspaceId: string },
         context: GraphQLContext
       ) => {
         await requireAuthAndWorkspaceAccess(workspaceRepository, context, workspaceId);
-        return toolSetRepository.findByWorkspace(workspaceId);
+        return skillRepository.findByWorkspace(workspaceId);
       },
       system: async () => {
         return systemRepository.getSystem();
@@ -147,18 +161,18 @@ export const resolvers = (container: Container = defaultContainer): apolloResolv
         await requireAuthAndWorkspaceAccess(workspaceRepository, context, workspaceId);
         return identityRepository.findKeysByRelatedId(workspaceId);
       },
-      toolsetKey: async (
+      skillKey: async (
         _parent: unknown,
-        { toolsetId }: { toolsetId: string },
+        { skillId }: { skillId: string },
         context: GraphQLContext
       ) => {
         const userId = requireAuth(context);
-        const toolset = await toolSetRepository.findById(toolsetId);
-        if (!toolset?.workspace?.id) {
-          throw new GraphQLError('Toolset not found', { extensions: { code: 'NOT_FOUND' } });
+        const skill = await skillRepository.findById(skillId);
+        if (!skill?.workspace?.id) {
+          throw new GraphQLError('Skill not found', { extensions: { code: 'NOT_FOUND' } });
         }
-        await requireWorkspaceAccess(workspaceRepository, userId, toolset.workspace.id);
-        const keys = await identityRepository.findKeysByRelatedId(toolsetId);
+        await requireWorkspaceAccess(workspaceRepository, userId, skill.workspace.id);
+        const keys = await identityRepository.findKeysByRelatedId(skillId);
         return keys.length > 0 ? keys[0] : null;
       },
       keyValue: async (_parent: unknown, { keyId }: { keyId: string }) => {
@@ -170,6 +184,12 @@ export const resolvers = (container: Container = defaultContainer): apolloResolv
       },
       // Authentication queries
       ...authResolvers.Query,
+      // AI Provider queries
+      ...aiProviderResolvers.Query,
+      // OAuth Provider queries
+      ...oauthProviderResolvers.Query,
+      // User OAuth Connection queries
+      ...userOAuthConnectionResolvers.Query,
     },
     Mutation: {
       // Authentication mutations
@@ -197,9 +217,9 @@ export const resolvers = (container: Container = defaultContainer): apolloResolv
         return result;
       },
 
-      updateMCPServerRunOn: async (
+      updateMCPServerExecutionTarget: async (
         _parent: unknown,
-        { mcpServerId, runOn, runtimeId }: { mcpServerId: string; runOn: MCP_SERVER_RUN_ON; runtimeId?: string | null },
+        { mcpServerId, executionTarget, runtimeId }: { mcpServerId: string; executionTarget: EXECUTION_TARGET; runtimeId?: string | null },
         context: GraphQLContext,
       ) => {
         const userId = requireAuth(context);
@@ -207,28 +227,11 @@ export const resolvers = (container: Container = defaultContainer): apolloResolv
         if (!mcpServer?.workspace?.id) {
           throw new GraphQLError('MCP Server not found', { extensions: { code: 'NOT_FOUND' } });
         }
-        // If runtimeId provided, verify it belongs to the same workspace
-        // or that it's a system runtime
         if (runtimeId) {
-          const runtime = await runtimeRepository.getRuntime(runtimeId);
-          if (!runtime?.workspace?.id && !runtime?.system?.id) {
-            throw new GraphQLError('Runtime not found', { extensions: { code: 'NOT_FOUND' } });
-          }
-          if (runtime.workspace?.id && mcpServer.workspace.id !== runtime.workspace.id) {
-            throw new GraphQLError('MCP Server and Runtime must belong to the same workspace', {
-              extensions: { code: 'BAD_REQUEST' },
-            });
-          }
+          await validateRuntimeForWorkspace(runtimeRepository, runtimeId, mcpServer.workspace.id, 'MCP Server');
         }
         await requireWorkspaceAccess(workspaceRepository, userId, mcpServer.workspace.id);
-        await mcpServerRepository.updateRunOn(mcpServerId, runOn);
-        if (runOn !== 'EDGE') {
-          return mcpServerRepository.unlinkRuntime(mcpServerId);
-        }
-        if (runtimeId) {
-          return mcpServerRepository.linkRuntime(mcpServerId, runtimeId);
-        }
-        return mcpServerRepository.unlinkRuntime(mcpServerId);
+        return updateExecutionTargetWithRuntime(mcpServerRepository, mcpServerId, executionTarget, runtimeId);
       },
       createMCPServer: async (
         _parent: unknown,
@@ -238,7 +241,7 @@ export const resolvers = (container: Container = defaultContainer): apolloResolv
           repositoryUrl,
           transport,
           config,
-          runOn,
+          executionTarget,
           workspaceId,
           registryServerId,
         }: {
@@ -247,7 +250,7 @@ export const resolvers = (container: Container = defaultContainer): apolloResolv
           repositoryUrl: string;
           transport: 'STREAM' | 'STDIO' | 'SSE';
           config: string;
-          runOn?: MCP_SERVER_RUN_ON | null;
+          executionTarget?: EXECUTION_TARGET | null;
           workspaceId: string;
           registryServerId: string;
         },
@@ -260,7 +263,7 @@ export const resolvers = (container: Container = defaultContainer): apolloResolv
           repositoryUrl,
           transport,
           config,
-          runOn ?? null,
+          executionTarget ?? null,
           workspaceId,
           registryServerId,
         );
@@ -367,7 +370,7 @@ export const resolvers = (container: Container = defaultContainer): apolloResolv
           repositoryUrl,
           transport,
           config,
-          runOn,
+          executionTarget,
         }: {
           id: string;
           name: string;
@@ -375,7 +378,7 @@ export const resolvers = (container: Container = defaultContainer): apolloResolv
           repositoryUrl: string;
           transport: 'STREAM' | 'STDIO' | 'SSE';
           config: string;
-          runOn?: MCP_SERVER_RUN_ON | null;
+          executionTarget?: EXECUTION_TARGET | null;
         },
         context: GraphQLContext,
       ) => {
@@ -385,7 +388,7 @@ export const resolvers = (container: Container = defaultContainer): apolloResolv
           throw new GraphQLError('MCP Server not found', { extensions: { code: 'NOT_FOUND' } });
         }
         await requireWorkspaceAccess(workspaceRepository, userId, mcpServer.workspace.id);
-        return mcpServerRepository.update(id, name, description, repositoryUrl, transport, config, runOn ?? null);
+        return mcpServerRepository.update(id, name, description, repositoryUrl, transport, config, executionTarget ?? null);
       },
       deleteMCPServer: async (_parent: unknown, { id }: { id: string }, context: GraphQLContext) => {
         const userId = requireAuth(context);
@@ -511,10 +514,10 @@ export const resolvers = (container: Container = defaultContainer): apolloResolv
         if (prefix === KEY_NATURE_PREFIX.workspace) {
           // Workspace key - relatedId is the workspace ID
           workspaceId = key.relatedId;
-        } else if (prefix === KEY_NATURE_PREFIX.toolset) {
-          // Toolset key - lookup toolset to get workspace
-          const toolSet = await toolSetRepository.findById(key.relatedId);
-          workspaceId = toolSet?.workspace?.id;
+        } else if (prefix === KEY_NATURE_PREFIX.skill) {
+          // Skill key - lookup skill to get workspace
+          const skill = await skillRepository.findById(key.relatedId);
+          workspaceId = skill?.workspace?.id;
         } else if (prefix === KEY_NATURE_PREFIX.runtime) {
           // Runtime key - lookup runtime to get workspace
           const runtime = await runtimeRepository.getRuntime(key.relatedId);
@@ -527,43 +530,43 @@ export const resolvers = (container: Container = defaultContainer): apolloResolv
         return identityRepository.revokeKey(key.key);
       },
 
-      // ToolSet mutations
-      createToolSet: async (
+      // Skill mutations
+      createSkill: async (
         _parent: unknown,
         { name, description, workspaceId }: { name: string; description: string; workspaceId: string },
         context: GraphQLContext,
       ) => {
         await requireAuthAndWorkspaceAccess(workspaceRepository, context, workspaceId);
-        return toolSetRepository.create(name, description, workspaceId);
+        return skillRepository.create(name, description, workspaceId);
       },
 
-      updateToolSet: async (
+      updateSkill: async (
         _parent: unknown,
         { id, name, description }: { id: string; name: string; description: string },
         context: GraphQLContext,
       ) => {
         const userId = requireAuth(context);
-        const toolSet = await toolSetRepository.findById(id);
-        if (!toolSet?.workspace?.id) {
-          throw new GraphQLError('Tool Set not found', { extensions: { code: 'NOT_FOUND' } });
+        const skill = await skillRepository.findById(id);
+        if (!skill?.workspace?.id) {
+          throw new GraphQLError('Skill not found', { extensions: { code: 'NOT_FOUND' } });
         }
-        await requireWorkspaceAccess(workspaceRepository, userId, toolSet.workspace.id);
-        return toolSetRepository.update(id, name, description);
+        await requireWorkspaceAccess(workspaceRepository, userId, skill.workspace.id);
+        return skillRepository.update(id, name, description);
       },
 
-      deleteToolSet: async (_parent: unknown, { id }: { id: string }, context: GraphQLContext) => {
+      deleteSkill: async (_parent: unknown, { id }: { id: string }, context: GraphQLContext) => {
         const userId = requireAuth(context);
-        const toolSet = await toolSetRepository.findById(id);
-        if (!toolSet?.workspace?.id) {
-          throw new GraphQLError('Tool Set not found', { extensions: { code: 'NOT_FOUND' } });
+        const skill = await skillRepository.findById(id);
+        if (!skill?.workspace?.id) {
+          throw new GraphQLError('Skill not found', { extensions: { code: 'NOT_FOUND' } });
         }
-        await requireWorkspaceAccess(workspaceRepository, userId, toolSet.workspace.id);
-        return toolSetRepository.delete(id);
+        await requireWorkspaceAccess(workspaceRepository, userId, skill.workspace.id);
+        return skillRepository.delete(id);
       },
 
-      addMCPToolToToolSet: async (
+      addMCPToolToSkill: async (
         _parent: unknown,
-        { mcpToolId, toolSetId }: { mcpToolId: string; toolSetId: string },
+        { mcpToolId, skillId }: { mcpToolId: string; skillId: string },
         context: GraphQLContext,
       ) => {
         const userId = requireAuth(context);
@@ -571,22 +574,22 @@ export const resolvers = (container: Container = defaultContainer): apolloResolv
         if (!tool?.workspace?.id) {
           throw new GraphQLError('MCP Tool not found', { extensions: { code: 'NOT_FOUND' } });
         }
-        const toolSet = await toolSetRepository.findById(toolSetId);
-        if (!toolSet?.workspace?.id) {
-          throw new GraphQLError('Tool Set not found', { extensions: { code: 'NOT_FOUND' } });
+        const skill = await skillRepository.findById(skillId);
+        if (!skill?.workspace?.id) {
+          throw new GraphQLError('Skill not found', { extensions: { code: 'NOT_FOUND' } });
         }
-        if (tool.workspace.id !== toolSet.workspace.id) {
-          throw new GraphQLError('MCP Tool and Tool Set must belong to the same workspace', {
+        if (tool.workspace.id !== skill.workspace.id) {
+          throw new GraphQLError('MCP Tool and Skill must belong to the same workspace', {
             extensions: { code: 'BAD_REQUEST' },
           });
         }
         await requireWorkspaceAccess(workspaceRepository, userId, tool.workspace.id);
-        return toolSetRepository.addMCPToolToToolSet(mcpToolId, toolSetId);
+        return skillRepository.addMCPToolToSkill(mcpToolId, skillId);
       },
 
-      removeMCPToolFromToolSet: async (
+      removeMCPToolFromSkill: async (
         _parent: unknown,
-        { mcpToolId, toolSetId }: { mcpToolId: string; toolSetId: string },
+        { mcpToolId, skillId }: { mcpToolId: string; skillId: string },
         context: GraphQLContext,
       ) => {
         const userId = requireAuth(context);
@@ -594,23 +597,81 @@ export const resolvers = (container: Container = defaultContainer): apolloResolv
         if (!tool?.workspace?.id) {
           throw new GraphQLError('MCP Tool not found', { extensions: { code: 'NOT_FOUND' } });
         }
-        const toolSet = await toolSetRepository.findById(toolSetId);
-        if (!toolSet?.workspace?.id) {
-          throw new GraphQLError('Tool Set not found', { extensions: { code: 'NOT_FOUND' } });
+        const skill = await skillRepository.findById(skillId);
+        if (!skill?.workspace?.id) {
+          throw new GraphQLError('Skill not found', { extensions: { code: 'NOT_FOUND' } });
         }
-        if (tool.workspace.id !== toolSet.workspace.id) {
-          throw new GraphQLError('MCP Tool and Tool Set must belong to the same workspace', {
+        if (tool.workspace.id !== skill.workspace.id) {
+          throw new GraphQLError('MCP Tool and Skill must belong to the same workspace', {
             extensions: { code: 'BAD_REQUEST' },
           });
         }
         await requireWorkspaceAccess(workspaceRepository, userId, tool.workspace.id);
-        return toolSetRepository.removeMCPToolFromToolSet(mcpToolId, toolSetId);
+        return skillRepository.removeMCPToolFromSkill(mcpToolId, skillId);
       },
+
+      updateSkillMode: async (
+        _parent: unknown,
+        { id, mode }: apolloResolversTypes.MutationUpdateSkillModeArgs,
+        context: GraphQLContext,
+      ) => {
+        const userId = requireAuth(context);
+        const skill = await skillRepository.findById(id);
+        if (!skill?.workspace?.id) {
+          throw new GraphQLError('Skill not found', { extensions: { code: 'NOT_FOUND' } });
+        }
+        await requireWorkspaceAccess(workspaceRepository, userId, skill.workspace.id);
+        return skillRepository.updateMode(id, mode);
+      },
+
+      updateSkillSmartConfig: async (
+        _parent: unknown,
+        { input }: apolloResolversTypes.MutationUpdateSkillSmartConfigArgs,
+        context: GraphQLContext,
+      ) => {
+        const userId = requireAuth(context);
+        const skill = await skillRepository.findById(input.id);
+        if (!skill?.workspace?.id) {
+          throw new GraphQLError('Skill not found', { extensions: { code: 'NOT_FOUND' } });
+        }
+        if (input.runtimeId) {
+          await validateRuntimeForWorkspace(runtimeRepository, input.runtimeId, skill.workspace.id, 'Skill');
+        }
+        await requireWorkspaceAccess(workspaceRepository, userId, skill.workspace.id);
+
+        // Update the smart config fields
+        await skillRepository.updateSmartConfig(input.id, {
+          model: input.model ?? undefined,
+          temperature: input.temperature ?? undefined,
+          maxTokens: input.maxTokens ?? undefined,
+          systemPrompt: input.systemPrompt ?? undefined,
+          executionTarget: input.executionTarget ?? undefined,
+        });
+
+        // Handle runtime linking/unlinking based on executionTarget
+        if (input.executionTarget) {
+          return applyRuntimeLinking(skillRepository, input.id, input.executionTarget, input.runtimeId);
+        }
+
+        // Return the updated skill
+        const updatedSkill = await skillRepository.findById(input.id);
+        if (!updatedSkill) {
+          throw new GraphQLError('Skill not found after update', { extensions: { code: 'NOT_FOUND' } });
+        }
+        return updatedSkill;
+      },
+
+      // AI Provider mutations
+      ...aiProviderResolvers.Mutation,
+      // OAuth Provider mutations
+      ...oauthProviderResolvers.Mutation,
+      // User OAuth Connection mutations
+      ...userOAuthConnectionResolvers.Mutation,
     },
     Runtime: {},
     MCPServer: {},
     MCPTool: {},
-    ToolSet: {},
+    Skill: {},
     Subscription: {
       // SECURITY: All workspace-scoped subscriptions use withPeriodicValidation
       // to re-check access every 5 minutes and complete gracefully if revoked
@@ -683,15 +744,15 @@ export const resolvers = (container: Container = defaultContainer): apolloResolv
           return withPeriodicValidation(generator, userId, workspaceId, workspaceRepository, logger);
         },
       },
-      toolSets: {
+      skills: {
         subscribe: async (
           _parent: unknown,
           { workspaceId }: { workspaceId: string },
           context: GraphQLContext
         ) => {
           const userId = await requireAuthAndWorkspaceAccess(workspaceRepository, context, workspaceId);
-          const observable = toolSetRepository.observeToolSets(workspaceId);
-          const generator = observableToAsyncGenerator(observable, 'toolSets');
+          const observable = skillRepository.observeSkills(workspaceId);
+          const generator = observableToAsyncGenerator(observable, 'skills');
           return withPeriodicValidation(generator, userId, workspaceId, workspaceRepository, logger);
         },
       },

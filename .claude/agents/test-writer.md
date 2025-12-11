@@ -366,7 +366,7 @@ test.describe('Tool Management', () => {
 - **E2E**: `packages/frontend/tests/e2e/serial/*.spec.ts` or `packages/frontend/tests/e2e/parallel/*.spec.ts`
 
 ### Test Commands
-- Unit: `npm run test` or `npm run test -w @2ly/frontend`
+- Unit: `npm run test` or `npm run test -w @skilder-ai/frontend`
 - Integration: `npm run test:integration`
 - E2E: `npm run test:e2e` or `npm run test:e2e:chromium`
 

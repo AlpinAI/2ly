@@ -1,15 +1,15 @@
 ---
 title: "n8n"
-description: "Connect n8n workflows to 2LY"
+description: "Connect n8n workflows to Skilder"
 draft: false
 ---
 
-n8n workflows connect to 2LY through the **MCP Client Tool** node, providing access to your configured tools via the MCP protocol.
+n8n workflows connect to Skilder through the **MCP Client Tool** node, providing access to your configured tools via the MCP protocol.
 
 ## Overview
 
 Integration uses n8n's MCP Client Tool node to:
-- Discover and load tools from 2LY runtime
+- Discover and load tools from Skilder runtime
 - Execute tool calls through MCP protocol
 - Handle authentication and routing automatically
 
@@ -18,7 +18,7 @@ Integration uses n8n's MCP Client Tool node to:
 ### Prerequisites
 
 ```bash
-# Ensure 2LY is running
+# Ensure Skilder is running
 npm run start
 
 # n8n installed and running
@@ -35,7 +35,7 @@ npm run start
 {
   "type": "mcp",
   "server": "http://localhost:7801",
-  "runtime": "@2ly/runtime"
+  "runtime": "@skilder-ai/runtime"
 }
 ```
 
@@ -47,15 +47,15 @@ npm run start
 Trigger → MCP Client Tool → Process Data → Output
 ```
 
-The MCP Client Tool node discovers all tools from your 2LY workspace and makes them available within the workflow.
+The MCP Client Tool node discovers all tools from your Skilder workspace and makes them available within the workflow.
 
 ## Configuration
 
 ### MCP Server Settings
 
 - **Type**: Must be "mcp"
-- **Server URL**: Your 2LY MCP endpoint (default: `http://localhost:7801`)
-- **Runtime**: Package name `@2ly/runtime`
+- **Server URL**: Your Skilder MCP endpoint (default: `http://localhost:7801`)
+- **Runtime**: Package name `@skilder-ai/runtime`
 
 ### Environment Variables
 
@@ -75,16 +75,16 @@ Send Notification
 ```
 
 1. **Schedule Trigger**: Run workflow on schedule
-2. **MCP: read_file**: Read file using 2LY filesystem tool
+2. **MCP: read_file**: Read file using Skilder filesystem tool
 3. **Process Content**: Transform or analyze data
-4. **MCP: write_file**: Save results using 2LY filesystem tool
+4. **MCP: write_file**: Save results using Skilder filesystem tool
 5. **Send Notification**: Alert via email/Slack
 
 ## Troubleshooting
 
 **MCP Connection Failed**
 ```bash
-# Verify 2LY services
+# Verify Skilder services
 docker-compose ps
 
 # Check runtime endpoint
@@ -93,13 +93,13 @@ curl http://localhost:7801/health
 
 **Tools Not Loading**
 - Verify server URL in MCP Client Tool node
-- Check tools are configured in 2LY dashboard
-- Ensure 2LY runtime is connected
+- Check tools are configured in Skilder dashboard
+- Ensure Skilder runtime is connected
 
 **Workflow Execution Issues**
 - Check n8n execution logs
-- Verify tool permissions in 2LY dashboard
-- Test tools individually in 2LY playground
+- Verify tool permissions in Skilder dashboard
+- Test tools individually in Skilder playground
 
 ## Next Steps
 

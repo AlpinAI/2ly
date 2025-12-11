@@ -5,7 +5,7 @@
  * Only shows when there are pending onboarding steps.
  *
  * WHAT IT SHOWS:
- * - Section title "Get Started with 2LY"
+ * - Section title "Get Started with Skilder"
  * - Grid layout for onboarding cards
  * - Responsive design (1 column on mobile, 3 on desktop)
  *
@@ -52,7 +52,7 @@ export function OnboardingSection({ steps, isComplete, onHide }: OnboardingSecti
         {/* Centered Title */}
         <div className="mb-8 text-center">
           <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
-            Get Started with 2LY
+            Get Started with Skilder
           </h2>
           <p className="text-gray-600 dark:text-gray-400 mt-1">
             Complete these steps to set up your workspace and start using MCP tools.

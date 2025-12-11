@@ -3,7 +3,7 @@ const type = 'handshake';
 
 export class HandshakeRequest extends NatsRequest<{
     key: string;
-    nature?: 'runtime' | 'toolset';
+    nature?: 'runtime' | 'skill';
     name?: string;
     pid: string;
     hostIP: string;
@@ -17,8 +17,8 @@ export class HandshakeRequest extends NatsRequest<{
             // if name is provided, nature must be provided
             return false;
         }
-        if (data.nature !== undefined && data.nature !== 'runtime' && data.nature !== 'toolset') {
-            // nature must be either runtime or toolset
+        if (data.nature !== undefined && data.nature !== 'runtime' && data.nature !== 'skill') {
+            // nature must be either runtime or skill
             return false;
         }
         if (data.roots !== undefined) {

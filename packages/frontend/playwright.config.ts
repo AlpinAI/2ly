@@ -3,7 +3,7 @@ import { fileURLToPath } from 'url';
 import path from 'path';
 
 /**
- * Playwright Configuration for @2ly/frontend
+ * Playwright Configuration for @skilder-ai/frontend
  *
  * This configuration:
  * - Uses testcontainers to spin up a complete test environment (Dgraph, NATS, Backend)

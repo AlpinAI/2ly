@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import {
   GraphQLSchema,
   GraphQLObjectType,
@@ -19,6 +19,7 @@ describe('AuthDirective', () => {
   let authContext: AuthDirectiveContext;
 
   beforeEach(() => {
+    vi.spyOn(console, 'error').mockImplementation(() => {});
     // Create a test schema
     const typeDefsWithDirectives = `
       directive @requireAuth on FIELD_DEFINITION | OBJECT
@@ -60,12 +61,12 @@ describe('AuthDirective', () => {
       typeDefs: typeDefsWithDirectives,
       resolvers: {
         Query: {
-          me: () => ({ id: '1', email: 'user1@2ly.ai' }),
+          me: () => ({ id: '1', email: 'user1@skilder.ai' }),
           publicData: () => 'public',
           privateData: () => 'private',
           adminData: () => 'admin',
           workspaceData: () => 'workspace',
-          user: () => ({ id: '1', email: 'user1@2ly.ai' }),
+          user: () => ({ id: '1', email: 'user1@skilder.ai' }),
           secureData: () => ({ id: '1', data: 'secure' }),
           adminOnlyData: () => ({ id: '1', adminData: 'admin-only' }),
         },
@@ -87,6 +88,10 @@ describe('AuthDirective', () => {
 
     // Default unauthenticated context
     authContext = createAuthContext(null, false);
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
   });
 
   describe('Directive Creation', () => {
@@ -118,7 +123,7 @@ describe('AuthDirective', () => {
     it('should create authenticated context', () => {
       const user = {
         userId: '123',
-        email: 'user1@2ly.ai',
+        email: 'user1@skilder.ai',
         workspaceId: 'ws1',
         role: 'member',
       };
@@ -156,7 +161,7 @@ describe('AuthDirective', () => {
     it('should allow access to private fields with authentication', async () => {
       const authenticatedContext = createAuthContext({
         userId: '123',
-        email: 'user1@2ly.ai',
+        email: 'user1@skilder.ai',
         workspaceId: 'ws1',
         role: 'member',
       }, true);
@@ -175,7 +180,7 @@ describe('AuthDirective', () => {
     it('should deny access to admin fields for non-admin users', async () => {
       const memberContext = createAuthContext({
         userId: '123',
-        email: 'user1@2ly.ai',
+        email: 'user1@skilder.ai',
         workspaceId: 'ws1',
         role: 'member',
       }, true);
@@ -196,7 +201,7 @@ describe('AuthDirective', () => {
     it('should allow access to admin fields for admin users', async () => {
       const adminContext = createAuthContext({
         userId: '456',
-        email: 'user1@2ly.ai',
+        email: 'user1@skilder.ai',
         workspaceId: 'ws1',
         role: 'admin',
       }, true);
@@ -228,7 +233,7 @@ describe('AuthDirective', () => {
     it('should allow admin access to any workspace by default', async () => {
       const adminContext = createAuthContext({
         userId: '456',
-        email: 'user1@2ly.ai',
+        email: 'user1@skilder.ai',
         workspaceId: 'ws1',
         role: 'admin',
       }, true);
@@ -247,7 +252,7 @@ describe('AuthDirective', () => {
     it('should deny access to different workspace for non-admin users', async () => {
       const memberContext = createAuthContext({
         userId: '123',
-        email: 'user1@2ly.ai',
+        email: 'user1@skilder.ai',
         workspaceId: 'ws1',
         role: 'member',
       }, true);
@@ -269,7 +274,7 @@ describe('AuthDirective', () => {
     it('should allow access to same workspace for members', async () => {
       const memberContext = createAuthContext({
         userId: '123',
-        email: 'user1@2ly.ai',
+        email: 'user1@skilder.ai',
         workspaceId: 'ws1',
         role: 'member',
       }, true);
@@ -288,7 +293,7 @@ describe('AuthDirective', () => {
     it('should require workspace context when not provided', async () => {
       const memberContext = createAuthContext({
         userId: '123',
-        email: 'user1@2ly.ai',
+        email: 'user1@skilder.ai',
         workspaceId: 'ws1',
         role: 'member',
       }, true);
@@ -310,7 +315,7 @@ describe('AuthDirective', () => {
     it('should get workspace ID from arguments', async () => {
       const memberContext = createAuthContext({
         userId: '123',
-        email: 'user1@2ly.ai',
+        email: 'user1@skilder.ai',
         workspaceId: 'ws1',
         role: 'member',
       }, true);
@@ -343,7 +348,7 @@ describe('AuthDirective', () => {
     it('should apply role-based access to entire type', async () => {
       const memberContext = createAuthContext({
         userId: '123',
-        email: 'user1@2ly.ai',
+        email: 'user1@skilder.ai',
         workspaceId: 'ws1',
         role: 'member',
       }, true);
@@ -376,7 +381,7 @@ describe('AuthDirective', () => {
     it('should include required roles in authorization errors', async () => {
       const memberContext = createAuthContext({
         userId: '123',
-        email: 'user1@2ly.ai',
+        email: 'user1@skilder.ai',
         workspaceId: 'ws1',
         role: 'member',
       }, true);

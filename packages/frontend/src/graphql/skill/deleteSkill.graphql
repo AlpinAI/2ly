@@ -1,0 +1,8 @@
+# Delete Skill Mutation
+# WHY: Delete a skill
+mutation DeleteSkill($id: ID!) {
+  deleteSkill(id: $id) {
+    id
+    name
+  }
+}
