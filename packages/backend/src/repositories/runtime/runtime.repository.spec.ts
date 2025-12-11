@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { RuntimeRepository } from '../runtime/runtime.repository';
 import type { DGraphService } from '../../services/dgraph.service';
 import { DgraphServiceMock } from '../../services/dgraph.service.mock';
@@ -18,6 +18,7 @@ describe('RuntimeRepository', () => {
     let runtimeRepository: RuntimeRepository;
 
     beforeEach(() => {
+        vi.spyOn(console, 'error').mockImplementation(() => {});
         dgraphService = new DgraphServiceMock();
         mcpToolRepository = {
             setStatus: vi.fn(),
@@ -44,6 +45,10 @@ describe('RuntimeRepository', () => {
             natsService,
             identityRepository,
         );
+    });
+
+    afterEach(() => {
+        vi.restoreAllMocks();
     });
 
     it('creates runtime', async () => {

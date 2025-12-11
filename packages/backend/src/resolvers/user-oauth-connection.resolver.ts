@@ -5,6 +5,7 @@ import { UserOAuthConnectionRepository, WorkspaceRepository } from '../repositor
 import { OAuthService } from '../services/oauth';
 import { GraphQLContext } from '../types';
 import { requireAuth, requireAuthAndWorkspaceAccess } from '../database/authorization.helpers';
+import { checkOAuthInitiationRateLimit } from './user-oauth-connection.rate-limiter';
 
 /**
  * Factory function to create resolver functions for User OAuth Connection GraphQL schema.
@@ -55,6 +56,13 @@ export function createUserOAuthConnectionResolvers(container: Container) {
         context: GraphQLContext
       ) => {
         const userId = await requireAuthAndWorkspaceAccess(workspaceRepository, context, workspaceId);
+
+        // Rate limit OAuth initiation to prevent abuse
+        if (!checkOAuthInitiationRateLimit(userId)) {
+          throw new GraphQLError('Too many OAuth initiation attempts. Please try again later.', {
+            extensions: { code: 'RATE_LIMITED' },
+          });
+        }
 
         try {
           const result = await oauthService.initiateOAuthConnection(

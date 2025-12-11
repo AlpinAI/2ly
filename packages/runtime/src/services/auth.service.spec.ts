@@ -18,6 +18,7 @@ describe('AuthService', () => {
   let originalEnv: NodeJS.ProcessEnv;
 
   beforeEach(() => {
+    vi.spyOn(console, 'error').mockImplementation(() => {});
     // Save original environment
     originalEnv = { ...process.env };
 
@@ -43,7 +44,7 @@ describe('AuthService', () => {
   afterEach(() => {
     // Restore original environment
     process.env = originalEnv;
-    vi.clearAllMocks();
+    vi.restoreAllMocks();
   });
 
   describe('initialize - environment variable validation', () => {

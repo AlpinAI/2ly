@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { SessionAuthService } from './session.auth.service';
 import { LoggerService, NatsService, HandshakeResponse, ErrorResponse } from '@skilder-ai/common';
 import pino from 'pino';
@@ -10,6 +10,7 @@ describe('SessionAuthService', () => {
   let mockLogger: pino.Logger;
 
   beforeEach(() => {
+    vi.spyOn(console, 'error').mockImplementation(() => {});
     // Create silent logger to avoid test output noise
     mockLogger = pino({ level: 'silent' });
 
@@ -24,6 +25,10 @@ describe('SessionAuthService', () => {
     } as unknown as NatsService;
 
     sessionAuthService = new SessionAuthService(mockLoggerService, mockNatsService);
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
   });
 
   describe('validateAuthHeaders', () => {

@@ -19,8 +19,7 @@ COPY packages/backend/ ./packages/backend/
 COPY packages/common/ ./packages/common/
 
 # Build the backend
-RUN npm run build:schema -w @skilder-ai/common
-RUN npm run build -w @skilder-ai/backend
+RUN npm run build:schema -w @skilder-ai/common && npm run build -w @skilder-ai/backend
 
 # Stage 2: Production
 FROM node:22-alpine

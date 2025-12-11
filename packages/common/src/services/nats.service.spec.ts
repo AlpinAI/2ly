@@ -72,6 +72,7 @@ describe('NatsService Integration', () => {
     }, 30000);
 
     beforeEach(async () => {
+        vi.spyOn(console, 'error').mockImplementation(() => {});
         container = new Container();
         container.bind(MAIN_LOGGER_NAME).toConstantValue('test');
         container.bind(LOG_LEVEL).toConstantValue('silent');
@@ -90,7 +91,7 @@ describe('NatsService Integration', () => {
     afterEach(async () => {
         const svc = container.get(NatsService);
         if (svc.isConnected()) await svc.stop('nats');
-
+        vi.restoreAllMocks();
     });
 
     it('connects and reports isConnected', async () => {

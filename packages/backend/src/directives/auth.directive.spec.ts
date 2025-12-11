@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import {
   GraphQLSchema,
   GraphQLObjectType,
@@ -19,6 +19,7 @@ describe('AuthDirective', () => {
   let authContext: AuthDirectiveContext;
 
   beforeEach(() => {
+    vi.spyOn(console, 'error').mockImplementation(() => {});
     // Create a test schema
     const typeDefsWithDirectives = `
       directive @requireAuth on FIELD_DEFINITION | OBJECT
@@ -87,6 +88,10 @@ describe('AuthDirective', () => {
 
     // Default unauthenticated context
     authContext = createAuthContext(null, false);
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
   });
 
   describe('Directive Creation', () => {

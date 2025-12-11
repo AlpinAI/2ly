@@ -25,8 +25,12 @@ export function SystemInitChecker({ children }: SystemInitCheckerProps) {
   const location = useLocation();
 
   useEffect(() => {
-    // Don't redirect if we're already on the init page or backend error page
-    if (location.pathname === '/init' || location.pathname === '/backend-error') {
+    // Don't redirect if we're already on the init page, backend error page, or OAuth error page
+    if (
+      location.pathname === '/init' ||
+      location.pathname === '/backend-error' ||
+      location.pathname === '/oauth/error'
+    ) {
       return;
     }
 

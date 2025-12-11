@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { WorkspaceRepository } from '../workspace/workspace.repository';
 import { Subject, of } from 'rxjs';
 import type { DGraphService } from '../../services/dgraph.service';
@@ -18,6 +18,7 @@ describe('WorkspaceRepository', () => {
     let repo: WorkspaceRepository;
 
     beforeEach(() => {
+        vi.spyOn(console, 'error').mockImplementation(() => {});
         dgraph = new DgraphServiceMock();
         loggerService = new LoggerServiceMock();
         identityRepo = {} as unknown as IdentityRepository;
@@ -28,6 +29,10 @@ describe('WorkspaceRepository', () => {
             findById: vi.fn().mockResolvedValue({ id: 'admin1', email: 'admin@example.com' }),
         } as unknown as UserRepository;
         repo = new WorkspaceRepository(loggerService as unknown as LoggerService, dgraph as unknown as DGraphService, identityRepo, systemRepo, userRepo);
+    });
+
+    afterEach(() => {
+        vi.restoreAllMocks();
     });
 
     it('create throws error when system not found', async () => {
