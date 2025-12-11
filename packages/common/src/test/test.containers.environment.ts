@@ -346,10 +346,9 @@ export class TestEnvironment {
         testLog('[Backend] Docker build still in progress...');
       }, 10000);
 
-      const buildPromise = GenericContainer.fromDockerfile(this.config.projectRoot, dockerfilePath).build(
-        'skilder-backend-test',
-        { deleteOnExit: false },
-      );
+      const buildPromise = GenericContainer.fromDockerfile(this.config.projectRoot, dockerfilePath)
+        .withBuildkit()
+        .build('skilder-backend-test', { deleteOnExit: false });
 
       const timeoutPromise = new Promise((_, reject) => {
         promiseTimeout = setTimeout(
@@ -391,10 +390,9 @@ export class TestEnvironment {
         testLog('[Runtime] Docker build still in progress...');
       }, 10000);
 
-      const buildPromise = GenericContainer.fromDockerfile(this.config.projectRoot, dockerfilePath).build(
-        'skilder-runtime-test',
-        { deleteOnExit: false },
-      );
+      const buildPromise = GenericContainer.fromDockerfile(this.config.projectRoot, dockerfilePath)
+        .withBuildkit()
+        .build('skilder-runtime-test', { deleteOnExit: false });
 
       const timeoutPromise = new Promise((_, reject) => {
         promiseTimeout = setTimeout(
