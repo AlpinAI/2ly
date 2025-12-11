@@ -1,0 +1,9 @@
+mutation GenerateSkillWithAI($input: GenerateSkillWithAIInput!) {
+  generateSkillWithAI(input: $input) {
+    name
+    description
+    guardrails
+    associatedKnowledge
+    suggestedToolIds
+  }
+}

@@ -1,0 +1,161 @@
+import { injectable, inject } from 'inversify';
+import { AIProviderService, LoggerService, type AIProviderType } from '@skilder-ai/common';
+import pino from 'pino';
+import { AIProviderRepository } from '../repositories/ai-provider/ai-provider.repository';
+import { AIConfigRepository } from '../repositories/ai-config/ai-config.repository';
+import { WorkspaceRepository } from '../repositories/workspace/workspace.repository';
+
+export interface GeneratedSkillData {
+  name: string;
+  description: string;
+  guardrails?: string;
+  associatedKnowledge?: string;
+  suggestedToolIds: string[];
+}
+
+const DEFAULT_SKILL_GENERATION_PROMPT = `You are a skill configuration assistant. Given a user's description of what they want to accomplish, generate a structured skill configuration.
+
+IMPORTANT RULES:
+1. Description must be 250 characters or less
+2. Guardrails must be 1000 characters or less
+3. Associated knowledge must be 2000 characters or less
+4. Be concise and specific
+5. Suggest tools based on the available MCP tools provided
+
+Respond ONLY with valid JSON in this exact format:
+{
+  "name": "Skill Name",
+  "description": "Brief description (max 250 chars)",
+  "guardrails": "Safety rules and constraints (max 1000 chars)",
+  "associatedKnowledge": "Relevant context and knowledge (max 2000 chars)",
+  "suggestedToolIds": ["tool-id-1", "tool-id-2"]
+}`;
+
+@injectable()
+export class AISkillGenerationService {
+  private logger: pino.Logger;
+
+  constructor(
+    @inject(AIProviderService) private readonly aiProviderService: AIProviderService,
+    @inject(AIProviderRepository) private readonly aiProviderRepo: AIProviderRepository,
+    @inject(AIConfigRepository) private readonly aiConfigRepo: AIConfigRepository,
+    @inject(WorkspaceRepository) private readonly workspaceRepo: WorkspaceRepository,
+    @inject(LoggerService) private readonly loggerService: LoggerService,
+  ) {
+    this.logger = this.loggerService.getLogger('ai-skill-generation.service');
+  }
+
+  /**
+   * Generate skill configuration using AI based on user prompt
+   */
+  async generateSkill(
+    userPrompt: string,
+    workspaceId: string,
+    providerId: string,
+  ): Promise<GeneratedSkillData> {
+    this.logger.info(`Generating skill for workspace ${workspaceId} using provider ${providerId}`);
+
+    // 1. Get AI provider config
+    const providerConfig = await this.aiProviderRepo.findById(providerId);
+    if (!providerConfig) {
+      throw new Error(`AI provider ${providerId} not found`);
+    }
+
+    // 2. Get system prompt from AI config (or use default)
+    let systemPrompt = DEFAULT_SKILL_GENERATION_PROMPT;
+    try {
+      const aiConfig = await this.aiConfigRepo.findByKey(workspaceId, 'skill-generation-prompt');
+      if (aiConfig?.value) {
+        systemPrompt = aiConfig.value;
+      }
+    } catch (error) {
+      this.logger.warn(`Failed to load custom skill generation prompt, using default: ${error}`);
+    }
+
+    // 3. Get available MCP tools for context
+    const availableTools = await this.workspaceRepo.findMCPToolsByWorkspace(workspaceId);
+    const toolsContext = availableTools.map((tool: { id: string; name: string; description?: string | null }) => ({
+      id: tool.id,
+      name: tool.name,
+      description: tool.description || '',
+    }));
+
+    // 4. Build the full prompt
+    const fullPrompt = `${systemPrompt}
+
+Available MCP Tools:
+${JSON.stringify(toolsContext, null, 2)}
+
+User Request:
+${userPrompt}`;
+
+    // 5. Get decrypted provider config and make AI request
+    const providerType = providerConfig.provider.toLowerCase() as AIProviderType;
+
+    const decryptedConfig = await this.aiProviderRepo.getDecryptedConfig(
+      workspaceId,
+      providerType,
+    );
+
+    // Parse model string (format: provider/model or just model)
+    const modelName = providerConfig.provider.toLowerCase();
+
+    const response = await this.aiProviderService.chat(
+      decryptedConfig,
+      providerType,
+      modelName,
+      fullPrompt,
+    );
+
+    // 6. Parse the AI response
+    const generatedData = this.parseAIResponse(response);
+
+    // 7. Validate field lengths
+    this.validateGeneratedData(generatedData);
+
+    // 8. Filter suggested tools to only include valid IDs
+    const validToolIds = new Set(availableTools.map((t: { id: string }) => t.id));
+    generatedData.suggestedToolIds = generatedData.suggestedToolIds.filter((id: string) => validToolIds.has(id));
+
+    this.logger.info(`Successfully generated skill: ${generatedData.name}`);
+    return generatedData;
+  }
+
+  private parseAIResponse(response: string): GeneratedSkillData {
+    try {
+      // Try to extract JSON from the response (AI might wrap it in markdown code blocks)
+      const jsonMatch = response.match(/```json\s*([\s\S]*?)\s*```/) || response.match(/```\s*([\s\S]*?)\s*```/);
+      const jsonString = jsonMatch ? jsonMatch[1] : response;
+
+      const parsed = JSON.parse(jsonString.trim());
+
+      if (!parsed.name || !parsed.description) {
+        throw new Error('AI response missing required fields: name and description');
+      }
+
+      return {
+        name: parsed.name,
+        description: parsed.description,
+        guardrails: parsed.guardrails || undefined,
+        associatedKnowledge: parsed.associatedKnowledge || undefined,
+        suggestedToolIds: Array.isArray(parsed.suggestedToolIds) ? parsed.suggestedToolIds : [],
+      };
+    } catch (error) {
+      this.logger.error(`Failed to parse AI response: ${error}`);
+      this.logger.debug(`AI response was: ${response}`);
+      throw new Error('Failed to parse AI-generated skill data. The AI response was not in the expected JSON format.');
+    }
+  }
+
+  private validateGeneratedData(data: GeneratedSkillData): void {
+    if (data.description.length > 250) {
+      throw new Error('AI-generated description exceeds 250 characters');
+    }
+    if (data.guardrails && data.guardrails.length > 1000) {
+      throw new Error('AI-generated guardrails exceed 1000 characters');
+    }
+    if (data.associatedKnowledge && data.associatedKnowledge.length > 2000) {
+      throw new Error('AI-generated associated knowledge exceeds 2000 characters');
+    }
+  }
+}

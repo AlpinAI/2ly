@@ -43,8 +43,21 @@ export class SkillRepository {
     name: string,
     description: string | undefined,
     workspaceId: string,
+    guardrails?: string,
+    associatedKnowledge?: string,
   ): Promise<dgraphResolversTypes.Skill> {
     const now = new Date().toISOString();
+
+    // Validate field lengths
+    if (description && description.length > 250) {
+      throw new Error('Skill description cannot exceed 250 characters');
+    }
+    if (guardrails && guardrails.length > 1000) {
+      throw new Error('Skill guardrails cannot exceed 1000 characters');
+    }
+    if (associatedKnowledge && associatedKnowledge.length > 2000) {
+      throw new Error('Skill associated knowledge cannot exceed 2000 characters');
+    }
 
     // 1. Create the skill
     const res = await this.dgraphService.mutation<{
@@ -52,6 +65,8 @@ export class SkillRepository {
     }>(ADD_SKILL, {
       name,
       description: description ?? '',
+      guardrails: guardrails ?? null,
+      associatedKnowledge: associatedKnowledge ?? null,
       workspaceId,
       createdAt: now,
     });
@@ -69,14 +84,30 @@ export class SkillRepository {
     id: string,
     name: string,
     description: string | undefined,
+    guardrails?: string,
+    associatedKnowledge?: string,
   ): Promise<dgraphResolversTypes.Skill> {
     const now = new Date().toISOString();
+
+    // Validate field lengths
+    if (description && description.length > 250) {
+      throw new Error('Skill description cannot exceed 250 characters');
+    }
+    if (guardrails && guardrails.length > 1000) {
+      throw new Error('Skill guardrails cannot exceed 1000 characters');
+    }
+    if (associatedKnowledge && associatedKnowledge.length > 2000) {
+      throw new Error('Skill associated knowledge cannot exceed 2000 characters');
+    }
+
     const res = await this.dgraphService.mutation<{
       updateSkill: { skill: dgraphResolversTypes.Skill[] };
     }>(UPDATE_SKILL, {
       id,
       name,
       description: description ?? '',
+      guardrails: guardrails ?? null,
+      associatedKnowledge: associatedKnowledge ?? null,
       updatedAt: now,
     });
 

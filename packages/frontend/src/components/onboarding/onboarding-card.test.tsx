@@ -75,6 +75,7 @@ describe('OnboardingCard', () => {
       onboardingSteps: [],
       runtimes: [],
       aiProviders: [],
+      aiConfigs: [],
       defaultAIModel: null,
       skills: [],
       oauthProviders: [],

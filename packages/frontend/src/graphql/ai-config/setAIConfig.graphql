@@ -1,0 +1,20 @@
+mutation SetAIConfig(
+  $workspaceId: ID!
+  $key: String!
+  $value: String!
+  $description: String
+) {
+  setAIConfig(
+    workspaceId: $workspaceId
+    key: $key
+    value: $value
+    description: $description
+  ) {
+    id
+    key
+    value
+    description
+    createdAt
+    updatedAt
+  }
+}
