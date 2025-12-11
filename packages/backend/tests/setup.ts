@@ -23,7 +23,7 @@ export default async function globalSetup() {
 
   // Initialize test environment with minimal logging
   testEnv = new TestEnvironment({
-    logging: true,
+    logging: false,
   });
 
   try {
