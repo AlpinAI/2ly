@@ -97,13 +97,22 @@ ${userPrompt}`;
       providerType,
     );
 
-    // Parse model string (format: provider/model or just model)
-    const modelName = providerConfig.provider.toLowerCase();
+    // Get a model from the provider's available models
+    // Use the first available model from the provider
+    if (!providerConfig.availableModels || providerConfig.availableModels.length === 0) {
+      throw new Error(`AI provider ${providerId} has no available models configured`);
+    }
+
+    // Use the first available model (providers return full model names like "gpt-4o", "claude-3-5-sonnet", etc.)
+    const modelName = providerConfig.availableModels[0];
+    const fullModelName = `${providerType}/${modelName}`;
+
+    this.logger.info(`Using model: ${fullModelName}`);
 
     const response = await this.aiProviderService.chat(
       decryptedConfig,
       providerType,
-      modelName,
+      fullModelName,
       fullPrompt,
     );
 

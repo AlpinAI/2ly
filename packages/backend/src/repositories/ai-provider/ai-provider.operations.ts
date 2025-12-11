@@ -114,6 +114,11 @@ export const GET_AI_PROVIDER_BY_ID = gql`
     getAIProviderConfig(id: $id) {
       id
       provider
+      baseUrl
+      availableModels
+      encryptedApiKey
+      createdAt
+      updatedAt
       workspace {
         id
       }

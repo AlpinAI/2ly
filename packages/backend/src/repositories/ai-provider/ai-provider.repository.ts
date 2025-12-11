@@ -71,16 +71,15 @@ export class AIProviderRepository {
     }
   }
 
-  async findById(id: string): Promise<{ id: string; provider: string; workspaceId: string } | null> {
+  async findById(id: string): Promise<dgraphResolversTypes.AiProviderConfig & { workspaceId: string } | null> {
     try {
       const res = await this.dgraphService.query<{
-        getAIProviderConfig: { id: string; provider: string; workspace: { id: string } } | null;
+        getAIProviderConfig: dgraphResolversTypes.AiProviderConfig & { workspace: { id: string } } | null;
       }>(GET_AI_PROVIDER_BY_ID, { id });
 
       if (!res.getAIProviderConfig) return null;
       return {
-        id: res.getAIProviderConfig.id,
-        provider: res.getAIProviderConfig.provider,
+        ...res.getAIProviderConfig,
         workspaceId: res.getAIProviderConfig.workspace.id,
       };
     } catch (error) {
