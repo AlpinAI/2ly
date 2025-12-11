@@ -35,7 +35,7 @@ export function registerOAuthRoutes(fastify: FastifyInstance, container: Contain
       // Handle OAuth error from provider
       if (error) {
         logger.warn(`OAuth error from provider: ${error} - ${error_description}`);
-        const errorUrl = new URL(`${frontendUrl}/w/default/my-integrations`);
+        const errorUrl = new URL(`${frontendUrl}/oauth/error`);
         errorUrl.searchParams.set('error', error);
         if (error_description) {
           errorUrl.searchParams.set('error_description', error_description);
@@ -46,7 +46,7 @@ export function registerOAuthRoutes(fastify: FastifyInstance, container: Contain
       // Validate required parameters
       if (!code || !state) {
         logger.warn('Missing code or state in OAuth callback');
-        const errorUrl = new URL(`${frontendUrl}/w/default/my-integrations`);
+        const errorUrl = new URL(`${frontendUrl}/oauth/error`);
         errorUrl.searchParams.set('error', 'missing_params');
         errorUrl.searchParams.set('error_description', 'Missing authorization code or state');
         return reply.redirect(errorUrl.toString());

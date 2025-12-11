@@ -131,28 +131,11 @@ export class MicrosoftOAuthProvider implements OAuthProvider {
 
     const data = await response.json();
 
-    // Get profile photo URL if available
-    let avatarUrl: string | undefined;
-    try {
-      const photoResponse = await fetch(`${MICROSOFT_GRAPH_URL}/photo/$value`, {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
-      });
-      if (photoResponse.ok) {
-        // Microsoft returns binary photo, we'd need to convert or use a photo endpoint
-        // For now, we'll skip the avatar
-        avatarUrl = undefined;
-      }
-    } catch {
-      // Photo not available
-    }
-
     return {
       id: data.id,
       email: data.mail || data.userPrincipalName,
       name: data.displayName,
-      avatarUrl,
+      avatarUrl: undefined, // Microsoft returns binary photo; not implemented
     };
   }
 }

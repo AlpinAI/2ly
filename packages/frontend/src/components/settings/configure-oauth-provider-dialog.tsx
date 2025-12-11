@@ -76,8 +76,7 @@ export function ConfigureOAuthProviderDialog({
       return;
     }
 
-    // For new configs or when updating secret, require secret
-    if (!existingConfig && !clientSecret.trim()) {
+    if (!clientSecret.trim()) {
       toast({ description: 'Please enter a Client Secret', variant: 'error' });
       return;
     }
@@ -91,8 +90,7 @@ export function ConfigureOAuthProviderDialog({
     setResult(null);
 
     try {
-      // If updating and no new secret provided, use a placeholder that backend will handle
-      const secretToSend = clientSecret.trim() || (existingConfig ? '__KEEP_EXISTING__' : '');
+      const secretToSend = clientSecret.trim();
 
       const configResult = await onConfigure(
         provider,
@@ -166,13 +164,13 @@ export function ConfigureOAuthProviderDialog({
               {/* Client Secret field */}
               <div className="space-y-2">
                 <Label htmlFor="clientSecret">
-                  Client Secret {!existingConfig && <span className="text-red-500">*</span>}
+                  Client Secret <span className="text-red-500">*</span>
                 </Label>
                 <div className="relative">
                   <Input
                     id="clientSecret"
                     type={showSecret ? 'text' : 'password'}
-                    placeholder={existingConfig ? 'Leave empty to keep existing secret' : 'Enter your Client Secret'}
+                    placeholder="Enter your Client Secret"
                     value={clientSecret}
                     onChange={(e) => setClientSecret(e.target.value)}
                     disabled={loading}
@@ -187,9 +185,7 @@ export function ConfigureOAuthProviderDialog({
                   </button>
                 </div>
                 <p className="text-xs text-gray-500 dark:text-gray-400">
-                  {existingConfig
-                    ? 'Leave empty to keep the existing secret, or enter a new one to update'
-                    : 'Your Client Secret will be encrypted and stored securely'}
+                  Your Client Secret will be encrypted and stored securely
                 </p>
               </div>
 

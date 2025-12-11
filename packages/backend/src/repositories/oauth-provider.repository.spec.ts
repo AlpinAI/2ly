@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import {
   OAuthProviderRepository,
   type OAuthProviderConfigData,
@@ -14,6 +14,7 @@ describe('OAuthProviderRepository', () => {
   let mockEncryptionService: EncryptionService;
 
   beforeEach(() => {
+    vi.spyOn(console, 'error').mockImplementation(() => {});
     // Mock DGraphService
     mockDGraphService = {
       mutation: vi.fn(),
@@ -38,6 +39,10 @@ describe('OAuthProviderRepository', () => {
     } as unknown as EncryptionService;
 
     repository = new OAuthProviderRepository(mockDGraphService, mockLoggerService, mockEncryptionService);
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
   });
 
   describe('validateConfiguration()', () => {

@@ -16,6 +16,7 @@ describe('MicrosoftOAuthProvider', () => {
   const mockTenantId = 'test-tenant-id';
 
   beforeEach(() => {
+    vi.spyOn(console, 'error').mockImplementation(() => {});
     fetchMock = vi.fn();
     global.fetch = fetchMock;
   });

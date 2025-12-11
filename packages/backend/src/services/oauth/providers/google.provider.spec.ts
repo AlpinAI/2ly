@@ -15,6 +15,7 @@ describe('GoogleOAuthProvider', () => {
   const mockRefreshToken = 'refresh-token-def456';
 
   beforeEach(() => {
+    vi.spyOn(console, 'error').mockImplementation(() => {});
     provider = new GoogleOAuthProvider();
     fetchMock = vi.fn();
     global.fetch = fetchMock;
