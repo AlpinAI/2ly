@@ -3,7 +3,7 @@ import { Container } from 'inversify';
 import { GraphQLError } from 'graphql';
 import { createOAuthProviderResolvers } from './oauth-provider.resolver';
 import { OAuthProviderRepository } from '../repositories/oauth-provider.repository';
-import { WorkspaceRepository } from '../repositories/workspace.repository';
+import { WorkspaceRepository } from '../repositories/workspace/workspace.repository';
 import { GraphQLContext } from '../types';
 import { apolloResolversTypes, dgraphResolversTypes } from '@skilder-ai/common';
 import * as authHelpers from '../database/authorization.helpers';
@@ -79,17 +79,13 @@ describe('OAuthProviderResolver', () => {
       vi.spyOn(mockProviderRepo, 'getByWorkspace').mockResolvedValue(providers);
 
       // Act
-      const result = await resolvers.Query.getOAuthProviders(
-        {},
-        { workspaceId: mockWorkspaceId },
-        context
-      );
+      const result = await resolvers.Query.getOAuthProviders({}, { workspaceId: mockWorkspaceId }, context);
 
       // Assert
       expect(authHelpers.requireAuthAndWorkspaceAccess).toHaveBeenCalledWith(
         mockWorkspaceRepo,
         context,
-        mockWorkspaceId
+        mockWorkspaceId,
       );
       expect(mockProviderRepo.getByWorkspace).toHaveBeenCalledWith(mockWorkspaceId);
       expect(result).toEqual(providers);
@@ -102,16 +98,16 @@ describe('OAuthProviderResolver', () => {
       vi.spyOn(authHelpers, 'requireAuthAndWorkspaceAccess').mockRejectedValue(
         new GraphQLError('Authentication required', {
           extensions: { code: 'UNAUTHENTICATED' },
-        })
+        }),
       );
 
       // Act & Assert
-      await expect(
-        resolvers.Query.getOAuthProviders({}, { workspaceId: mockWorkspaceId }, context)
-      ).rejects.toThrow(GraphQLError);
-      await expect(
-        resolvers.Query.getOAuthProviders({}, { workspaceId: mockWorkspaceId }, context)
-      ).rejects.toThrow('Authentication required');
+      await expect(resolvers.Query.getOAuthProviders({}, { workspaceId: mockWorkspaceId }, context)).rejects.toThrow(
+        GraphQLError,
+      );
+      await expect(resolvers.Query.getOAuthProviders({}, { workspaceId: mockWorkspaceId }, context)).rejects.toThrow(
+        'Authentication required',
+      );
     });
 
     it('should throw when user lacks workspace access', async () => {
@@ -123,16 +119,16 @@ describe('OAuthProviderResolver', () => {
       vi.spyOn(authHelpers, 'requireAuthAndWorkspaceAccess').mockRejectedValue(
         new GraphQLError('Access denied to this workspace', {
           extensions: { code: 'FORBIDDEN', reason: 'WORKSPACE_ACCESS_DENIED' },
-        })
+        }),
       );
 
       // Act & Assert
-      await expect(
-        resolvers.Query.getOAuthProviders({}, { workspaceId: mockWorkspaceId }, context)
-      ).rejects.toThrow(GraphQLError);
-      await expect(
-        resolvers.Query.getOAuthProviders({}, { workspaceId: mockWorkspaceId }, context)
-      ).rejects.toThrow('Access denied to this workspace');
+      await expect(resolvers.Query.getOAuthProviders({}, { workspaceId: mockWorkspaceId }, context)).rejects.toThrow(
+        GraphQLError,
+      );
+      await expect(resolvers.Query.getOAuthProviders({}, { workspaceId: mockWorkspaceId }, context)).rejects.toThrow(
+        'Access denied to this workspace',
+      );
     });
   });
 
@@ -148,17 +144,13 @@ describe('OAuthProviderResolver', () => {
       vi.spyOn(mockProviderRepo, 'findByType').mockResolvedValue(mockProviderConfig);
 
       // Act
-      const result = await resolvers.Query.getOAuthProvider(
-        {},
-        { provider, workspaceId: mockWorkspaceId },
-        context
-      );
+      const result = await resolvers.Query.getOAuthProvider({}, { provider, workspaceId: mockWorkspaceId }, context);
 
       // Assert
       expect(authHelpers.requireAuthAndWorkspaceAccess).toHaveBeenCalledWith(
         mockWorkspaceRepo,
         context,
-        mockWorkspaceId
+        mockWorkspaceId,
       );
       expect(mockProviderRepo.findByType).toHaveBeenCalledWith(mockWorkspaceId, 'GOOGLE');
       expect(result).toEqual(mockProviderConfig);
@@ -175,11 +167,7 @@ describe('OAuthProviderResolver', () => {
       vi.spyOn(mockProviderRepo, 'findByType').mockResolvedValue(null);
 
       // Act
-      const result = await resolvers.Query.getOAuthProvider(
-        {},
-        { provider, workspaceId: mockWorkspaceId },
-        context
-      );
+      const result = await resolvers.Query.getOAuthProvider({}, { provider, workspaceId: mockWorkspaceId }, context);
 
       // Assert
       expect(mockProviderRepo.findByType).toHaveBeenCalledWith(mockWorkspaceId, 'GOOGLE');
@@ -194,12 +182,12 @@ describe('OAuthProviderResolver', () => {
       vi.spyOn(authHelpers, 'requireAuthAndWorkspaceAccess').mockRejectedValue(
         new GraphQLError('Authentication required', {
           extensions: { code: 'UNAUTHENTICATED' },
-        })
+        }),
       );
 
       // Act & Assert
       await expect(
-        resolvers.Query.getOAuthProvider({}, { provider, workspaceId: mockWorkspaceId }, context)
+        resolvers.Query.getOAuthProvider({}, { provider, workspaceId: mockWorkspaceId }, context),
       ).rejects.toThrow(GraphQLError);
 
       expect(mockProviderRepo.findByType).not.toHaveBeenCalled();
@@ -224,21 +212,21 @@ describe('OAuthProviderResolver', () => {
       const result = await resolvers.Mutation.configureOAuthProvider(
         {},
         { workspaceId: mockWorkspaceId, provider, clientId, clientSecret },
-        context
+        context,
       );
 
       // Assert
       expect(authHelpers.requireAuthAndWorkspaceAccess).toHaveBeenCalledWith(
         mockWorkspaceRepo,
         context,
-        mockWorkspaceId
+        mockWorkspaceId,
       );
       expect(mockProviderRepo.configure).toHaveBeenCalledWith(
         mockWorkspaceId,
         'google',
         clientId,
         clientSecret,
-        undefined
+        undefined,
       );
       expect(result).toEqual(validationResult);
     });
@@ -261,7 +249,7 @@ describe('OAuthProviderResolver', () => {
       await resolvers.Mutation.configureOAuthProvider(
         {},
         { workspaceId: mockWorkspaceId, provider, clientId, clientSecret, tenantId },
-        context
+        context,
       );
 
       // Assert
@@ -270,7 +258,7 @@ describe('OAuthProviderResolver', () => {
         'microsoft',
         clientId,
         clientSecret,
-        tenantId
+        tenantId,
       );
     });
 
@@ -291,7 +279,7 @@ describe('OAuthProviderResolver', () => {
       await resolvers.Mutation.configureOAuthProvider(
         {},
         { workspaceId: mockWorkspaceId, provider, clientId, clientSecret, tenantId: null },
-        context
+        context,
       );
 
       // Assert
@@ -300,7 +288,7 @@ describe('OAuthProviderResolver', () => {
         'google',
         clientId,
         clientSecret,
-        undefined
+        undefined,
       );
     });
 
@@ -314,7 +302,7 @@ describe('OAuthProviderResolver', () => {
       vi.spyOn(authHelpers, 'requireAuthAndWorkspaceAccess').mockRejectedValue(
         new GraphQLError('Authentication required', {
           extensions: { code: 'UNAUTHENTICATED' },
-        })
+        }),
       );
 
       // Act & Assert
@@ -322,8 +310,8 @@ describe('OAuthProviderResolver', () => {
         resolvers.Mutation.configureOAuthProvider(
           {},
           { workspaceId: mockWorkspaceId, provider, clientId, clientSecret },
-          context
-        )
+          context,
+        ),
       ).rejects.toThrow(GraphQLError);
 
       expect(mockProviderRepo.configure).not.toHaveBeenCalled();
@@ -352,17 +340,13 @@ describe('OAuthProviderResolver', () => {
       const result = await resolvers.Mutation.updateOAuthProviderEnabled(
         {},
         { providerId: mockProviderId, enabled },
-        context
+        context,
       );
 
       // Assert
       expect(authHelpers.requireAuth).toHaveBeenCalledWith(context);
       expect(mockProviderRepo.findById).toHaveBeenCalledWith(mockProviderId);
-      expect(authHelpers.requireWorkspaceAccess).toHaveBeenCalledWith(
-        mockWorkspaceRepo,
-        mockUserId,
-        mockWorkspaceId
-      );
+      expect(authHelpers.requireWorkspaceAccess).toHaveBeenCalledWith(mockWorkspaceRepo, mockUserId, mockWorkspaceId);
       expect(mockProviderRepo.updateEnabled).toHaveBeenCalledWith(mockProviderId, enabled);
       expect(result).toEqual(updatedConfig);
     });
@@ -380,11 +364,7 @@ describe('OAuthProviderResolver', () => {
 
       // Act & Assert
       await expect(
-        resolvers.Mutation.updateOAuthProviderEnabled(
-          {},
-          { providerId: mockProviderId, enabled },
-          context
-        )
+        resolvers.Mutation.updateOAuthProviderEnabled({}, { providerId: mockProviderId, enabled }, context),
       ).rejects.toMatchObject({
         message: 'OAuth provider not found',
         extensions: { code: 'NOT_FOUND' },
@@ -407,11 +387,7 @@ describe('OAuthProviderResolver', () => {
 
       // Act & Assert
       await expect(
-        resolvers.Mutation.updateOAuthProviderEnabled(
-          {},
-          { providerId: mockProviderId, enabled },
-          context
-        )
+        resolvers.Mutation.updateOAuthProviderEnabled({}, { providerId: mockProviderId, enabled }, context),
       ).rejects.toThrow(GraphQLError);
 
       expect(mockProviderRepo.findById).not.toHaveBeenCalled();
@@ -434,24 +410,16 @@ describe('OAuthProviderResolver', () => {
       vi.spyOn(authHelpers, 'requireWorkspaceAccess').mockRejectedValue(
         new GraphQLError('Access denied to this workspace', {
           extensions: { code: 'FORBIDDEN', reason: 'WORKSPACE_ACCESS_DENIED' },
-        })
+        }),
       );
 
       // Act & Assert
       await expect(
-        resolvers.Mutation.updateOAuthProviderEnabled(
-          {},
-          { providerId: mockProviderId, enabled },
-          context
-        )
+        resolvers.Mutation.updateOAuthProviderEnabled({}, { providerId: mockProviderId, enabled }, context),
       ).rejects.toThrow('Access denied to this workspace');
 
       expect(mockProviderRepo.findById).toHaveBeenCalledWith(mockProviderId);
-      expect(authHelpers.requireWorkspaceAccess).toHaveBeenCalledWith(
-        mockWorkspaceRepo,
-        mockUserId,
-        mockWorkspaceId
-      );
+      expect(authHelpers.requireWorkspaceAccess).toHaveBeenCalledWith(mockWorkspaceRepo, mockUserId, mockWorkspaceId);
       expect(mockProviderRepo.updateEnabled).not.toHaveBeenCalled();
     });
   });
@@ -473,20 +441,12 @@ describe('OAuthProviderResolver', () => {
       vi.spyOn(mockProviderRepo, 'delete').mockResolvedValue(true);
 
       // Act
-      const result = await resolvers.Mutation.removeOAuthProvider(
-        {},
-        { providerId: mockProviderId },
-        context
-      );
+      const result = await resolvers.Mutation.removeOAuthProvider({}, { providerId: mockProviderId }, context);
 
       // Assert
       expect(authHelpers.requireAuth).toHaveBeenCalledWith(context);
       expect(mockProviderRepo.findById).toHaveBeenCalledWith(mockProviderId);
-      expect(authHelpers.requireWorkspaceAccess).toHaveBeenCalledWith(
-        mockWorkspaceRepo,
-        mockUserId,
-        mockWorkspaceId
-      );
+      expect(authHelpers.requireWorkspaceAccess).toHaveBeenCalledWith(mockWorkspaceRepo, mockUserId, mockWorkspaceId);
       expect(mockProviderRepo.delete).toHaveBeenCalledWith(mockProviderId);
       expect(result).toBe(true);
     });
@@ -503,7 +463,7 @@ describe('OAuthProviderResolver', () => {
 
       // Act & Assert
       await expect(
-        resolvers.Mutation.removeOAuthProvider({}, { providerId: mockProviderId }, context)
+        resolvers.Mutation.removeOAuthProvider({}, { providerId: mockProviderId }, context),
       ).rejects.toMatchObject({
         message: 'OAuth provider not found',
         extensions: { code: 'NOT_FOUND' },
@@ -524,9 +484,9 @@ describe('OAuthProviderResolver', () => {
       });
 
       // Act & Assert
-      await expect(
-        resolvers.Mutation.removeOAuthProvider({}, { providerId: mockProviderId }, context)
-      ).rejects.toThrow(GraphQLError);
+      await expect(resolvers.Mutation.removeOAuthProvider({}, { providerId: mockProviderId }, context)).rejects.toThrow(
+        GraphQLError,
+      );
 
       expect(mockProviderRepo.findById).not.toHaveBeenCalled();
       expect(mockProviderRepo.delete).not.toHaveBeenCalled();
@@ -547,20 +507,16 @@ describe('OAuthProviderResolver', () => {
       vi.spyOn(authHelpers, 'requireWorkspaceAccess').mockRejectedValue(
         new GraphQLError('Access denied to this workspace', {
           extensions: { code: 'FORBIDDEN', reason: 'WORKSPACE_ACCESS_DENIED' },
-        })
+        }),
       );
 
       // Act & Assert
-      await expect(
-        resolvers.Mutation.removeOAuthProvider({}, { providerId: mockProviderId }, context)
-      ).rejects.toThrow('Access denied to this workspace');
+      await expect(resolvers.Mutation.removeOAuthProvider({}, { providerId: mockProviderId }, context)).rejects.toThrow(
+        'Access denied to this workspace',
+      );
 
       expect(mockProviderRepo.findById).toHaveBeenCalledWith(mockProviderId);
-      expect(authHelpers.requireWorkspaceAccess).toHaveBeenCalledWith(
-        mockWorkspaceRepo,
-        mockUserId,
-        mockWorkspaceId
-      );
+      expect(authHelpers.requireWorkspaceAccess).toHaveBeenCalledWith(mockWorkspaceRepo, mockUserId, mockWorkspaceId);
       expect(mockProviderRepo.delete).not.toHaveBeenCalled();
     });
   });

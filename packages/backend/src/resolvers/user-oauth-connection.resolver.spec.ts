@@ -3,7 +3,7 @@ import { Container } from 'inversify';
 import { GraphQLError } from 'graphql';
 import { createUserOAuthConnectionResolvers } from './user-oauth-connection.resolver';
 import { UserOAuthConnectionRepository } from '../repositories/user-oauth-connection.repository';
-import { WorkspaceRepository } from '../repositories/workspace.repository';
+import { WorkspaceRepository } from '../repositories/workspace/workspace.repository';
 import { OAuthService } from '../services/oauth/oauth.service';
 import { GraphQLContext } from '../types';
 import { apolloResolversTypes, dgraphResolversTypes } from '@skilder-ai/common';
@@ -99,22 +99,15 @@ describe('UserOAuthConnectionResolver', () => {
       vi.spyOn(mockConnectionRepo, 'findByUserAndWorkspace').mockResolvedValue(connections);
 
       // Act
-      const result = await resolvers.Query.getUserOAuthConnections(
-        {},
-        { workspaceId: mockWorkspaceId },
-        context
-      );
+      const result = await resolvers.Query.getUserOAuthConnections({}, { workspaceId: mockWorkspaceId }, context);
 
       // Assert
       expect(authHelpers.requireAuthAndWorkspaceAccess).toHaveBeenCalledWith(
         mockWorkspaceRepo,
         context,
-        mockWorkspaceId
+        mockWorkspaceId,
       );
-      expect(mockConnectionRepo.findByUserAndWorkspace).toHaveBeenCalledWith(
-        mockUserId,
-        mockWorkspaceId
-      );
+      expect(mockConnectionRepo.findByUserAndWorkspace).toHaveBeenCalledWith(mockUserId, mockWorkspaceId);
       expect(result).toEqual(connections);
     });
 
@@ -125,15 +118,15 @@ describe('UserOAuthConnectionResolver', () => {
       vi.spyOn(authHelpers, 'requireAuthAndWorkspaceAccess').mockRejectedValue(
         new GraphQLError('Authentication required', {
           extensions: { code: 'UNAUTHENTICATED' },
-        })
+        }),
       );
 
       // Act & Assert
       await expect(
-        resolvers.Query.getUserOAuthConnections({}, { workspaceId: mockWorkspaceId }, context)
+        resolvers.Query.getUserOAuthConnections({}, { workspaceId: mockWorkspaceId }, context),
       ).rejects.toThrow(GraphQLError);
       await expect(
-        resolvers.Query.getUserOAuthConnections({}, { workspaceId: mockWorkspaceId }, context)
+        resolvers.Query.getUserOAuthConnections({}, { workspaceId: mockWorkspaceId }, context),
       ).rejects.toThrow('Authentication required');
     });
 
@@ -146,15 +139,15 @@ describe('UserOAuthConnectionResolver', () => {
       vi.spyOn(authHelpers, 'requireAuthAndWorkspaceAccess').mockRejectedValue(
         new GraphQLError('Access denied to this workspace', {
           extensions: { code: 'FORBIDDEN', reason: 'WORKSPACE_ACCESS_DENIED' },
-        })
+        }),
       );
 
       // Act & Assert
       await expect(
-        resolvers.Query.getUserOAuthConnections({}, { workspaceId: mockWorkspaceId }, context)
+        resolvers.Query.getUserOAuthConnections({}, { workspaceId: mockWorkspaceId }, context),
       ).rejects.toThrow(GraphQLError);
       await expect(
-        resolvers.Query.getUserOAuthConnections({}, { workspaceId: mockWorkspaceId }, context)
+        resolvers.Query.getUserOAuthConnections({}, { workspaceId: mockWorkspaceId }, context),
       ).rejects.toThrow('Access denied to this workspace');
     });
   });
@@ -174,20 +167,16 @@ describe('UserOAuthConnectionResolver', () => {
       const result = await resolvers.Query.hasUserOAuthConnection(
         {},
         { workspaceId: mockWorkspaceId, provider },
-        context
+        context,
       );
 
       // Assert
       expect(authHelpers.requireAuthAndWorkspaceAccess).toHaveBeenCalledWith(
         mockWorkspaceRepo,
         context,
-        mockWorkspaceId
-      );
-      expect(mockConnectionRepo.hasConnection).toHaveBeenCalledWith(
-        mockUserId,
         mockWorkspaceId,
-        'GOOGLE'
       );
+      expect(mockConnectionRepo.hasConnection).toHaveBeenCalledWith(mockUserId, mockWorkspaceId, 'GOOGLE');
       expect(result).toBe(true);
     });
 
@@ -205,7 +194,7 @@ describe('UserOAuthConnectionResolver', () => {
       const result = await resolvers.Query.hasUserOAuthConnection(
         {},
         { workspaceId: mockWorkspaceId, provider },
-        context
+        context,
       );
 
       // Assert
@@ -220,16 +209,12 @@ describe('UserOAuthConnectionResolver', () => {
       vi.spyOn(authHelpers, 'requireAuthAndWorkspaceAccess').mockRejectedValue(
         new GraphQLError('Authentication required', {
           extensions: { code: 'UNAUTHENTICATED' },
-        })
+        }),
       );
 
       // Act & Assert
       await expect(
-        resolvers.Query.hasUserOAuthConnection(
-          {},
-          { workspaceId: mockWorkspaceId, provider },
-          context
-        )
+        resolvers.Query.hasUserOAuthConnection({}, { workspaceId: mockWorkspaceId, provider }, context),
       ).rejects.toThrow(GraphQLError);
     });
 
@@ -244,18 +229,10 @@ describe('UserOAuthConnectionResolver', () => {
       vi.spyOn(mockConnectionRepo, 'hasConnection').mockResolvedValue(true);
 
       // Act
-      await resolvers.Query.hasUserOAuthConnection(
-        {},
-        { workspaceId: mockWorkspaceId, provider },
-        context
-      );
+      await resolvers.Query.hasUserOAuthConnection({}, { workspaceId: mockWorkspaceId, provider }, context);
 
       // Assert
-      expect(mockConnectionRepo.hasConnection).toHaveBeenCalledWith(
-        mockUserId,
-        mockWorkspaceId,
-        'MICROSOFT'
-      );
+      expect(mockConnectionRepo.hasConnection).toHaveBeenCalledWith(mockUserId, mockWorkspaceId, 'MICROSOFT');
     });
   });
 
@@ -282,14 +259,14 @@ describe('UserOAuthConnectionResolver', () => {
       const result = await resolvers.Mutation.initiateOAuthConnection(
         {},
         { workspaceId: mockWorkspaceId, provider, redirectUri, scopes },
-        context
+        context,
       );
 
       // Assert
       expect(authHelpers.requireAuthAndWorkspaceAccess).toHaveBeenCalledWith(
         mockWorkspaceRepo,
         context,
-        mockWorkspaceId
+        mockWorkspaceId,
       );
       expect(checkOAuthInitiationRateLimit).toHaveBeenCalledWith(mockUserId);
       expect(mockOAuthService.initiateOAuthConnection).toHaveBeenCalledWith(
@@ -297,7 +274,7 @@ describe('UserOAuthConnectionResolver', () => {
         mockWorkspaceId,
         'GOOGLE',
         redirectUri,
-        scopes
+        scopes,
       );
       expect(result).toEqual({
         url: oauthResult.url,
@@ -324,7 +301,7 @@ describe('UserOAuthConnectionResolver', () => {
       await resolvers.Mutation.initiateOAuthConnection(
         {},
         { workspaceId: mockWorkspaceId, provider, redirectUri, scopes: null },
-        context
+        context,
       );
 
       // Assert
@@ -333,7 +310,7 @@ describe('UserOAuthConnectionResolver', () => {
         mockWorkspaceId,
         'GOOGLE',
         redirectUri,
-        undefined
+        undefined,
       );
     });
 
@@ -352,16 +329,16 @@ describe('UserOAuthConnectionResolver', () => {
         resolvers.Mutation.initiateOAuthConnection(
           {},
           { workspaceId: mockWorkspaceId, provider, redirectUri, scopes },
-          context
-        )
+          context,
+        ),
       ).rejects.toThrow(GraphQLError);
 
       await expect(
         resolvers.Mutation.initiateOAuthConnection(
           {},
           { workspaceId: mockWorkspaceId, provider, redirectUri, scopes },
-          context
-        )
+          context,
+        ),
       ).rejects.toMatchObject({
         message: 'Too many OAuth initiation attempts. Please try again later.',
         extensions: { code: 'RATE_LIMITED' },
@@ -380,17 +357,15 @@ describe('UserOAuthConnectionResolver', () => {
 
       vi.spyOn(authHelpers, 'requireAuthAndWorkspaceAccess').mockResolvedValue(mockUserId);
       vi.mocked(checkOAuthInitiationRateLimit).mockReturnValue(true);
-      vi.spyOn(mockOAuthService, 'initiateOAuthConnection').mockRejectedValue(
-        new Error(errorMessage)
-      );
+      vi.spyOn(mockOAuthService, 'initiateOAuthConnection').mockRejectedValue(new Error(errorMessage));
 
       // Act & Assert
       await expect(
         resolvers.Mutation.initiateOAuthConnection(
           {},
           { workspaceId: mockWorkspaceId, provider, redirectUri, scopes },
-          context
-        )
+          context,
+        ),
       ).rejects.toMatchObject({
         message: errorMessage,
         extensions: { code: 'OAUTH_ERROR' },
@@ -413,8 +388,8 @@ describe('UserOAuthConnectionResolver', () => {
         resolvers.Mutation.initiateOAuthConnection(
           {},
           { workspaceId: mockWorkspaceId, provider, redirectUri, scopes },
-          context
-        )
+          context,
+        ),
       ).rejects.toMatchObject({
         message: 'Failed to initiate OAuth connection',
         extensions: { code: 'OAUTH_ERROR' },
@@ -429,7 +404,7 @@ describe('UserOAuthConnectionResolver', () => {
       vi.spyOn(authHelpers, 'requireAuthAndWorkspaceAccess').mockRejectedValue(
         new GraphQLError('Authentication required', {
           extensions: { code: 'UNAUTHENTICATED' },
-        })
+        }),
       );
 
       // Act & Assert
@@ -437,8 +412,8 @@ describe('UserOAuthConnectionResolver', () => {
         resolvers.Mutation.initiateOAuthConnection(
           {},
           { workspaceId: mockWorkspaceId, provider, redirectUri },
-          context
-        )
+          context,
+        ),
       ).rejects.toThrow(GraphQLError);
 
       expect(checkOAuthInitiationRateLimit).not.toHaveBeenCalled();
@@ -466,19 +441,12 @@ describe('UserOAuthConnectionResolver', () => {
       vi.spyOn(mockOAuthService, 'disconnectProvider').mockResolvedValue(true);
 
       // Act
-      const result = await resolvers.Mutation.disconnectOAuthProvider(
-        {},
-        { connectionId: mockConnectionId },
-        context
-      );
+      const result = await resolvers.Mutation.disconnectOAuthProvider({}, { connectionId: mockConnectionId }, context);
 
       // Assert
       expect(authHelpers.requireAuth).toHaveBeenCalledWith(context);
       expect(mockConnectionRepo.findById).toHaveBeenCalledWith(mockConnectionId);
-      expect(mockOAuthService.disconnectProvider).toHaveBeenCalledWith(
-        mockConnectionId,
-        mockUserId
-      );
+      expect(mockOAuthService.disconnectProvider).toHaveBeenCalledWith(mockConnectionId, mockUserId);
       expect(result).toBe(true);
     });
 
@@ -493,7 +461,7 @@ describe('UserOAuthConnectionResolver', () => {
 
       // Act & Assert
       await expect(
-        resolvers.Mutation.disconnectOAuthProvider({}, { connectionId: mockConnectionId }, context)
+        resolvers.Mutation.disconnectOAuthProvider({}, { connectionId: mockConnectionId }, context),
       ).rejects.toMatchObject({
         message: 'Connection not found',
         extensions: { code: 'NOT_FOUND' },
@@ -517,7 +485,7 @@ describe('UserOAuthConnectionResolver', () => {
 
       // Act & Assert
       await expect(
-        resolvers.Mutation.disconnectOAuthProvider({}, { connectionId: mockConnectionId }, context)
+        resolvers.Mutation.disconnectOAuthProvider({}, { connectionId: mockConnectionId }, context),
       ).rejects.toMatchObject({
         message: 'Unauthorized',
         extensions: { code: 'UNAUTHORIZED' },
@@ -538,7 +506,7 @@ describe('UserOAuthConnectionResolver', () => {
 
       // Act & Assert
       await expect(
-        resolvers.Mutation.disconnectOAuthProvider({}, { connectionId: mockConnectionId }, context)
+        resolvers.Mutation.disconnectOAuthProvider({}, { connectionId: mockConnectionId }, context),
       ).rejects.toThrow(GraphQLError);
 
       expect(mockConnectionRepo.findById).not.toHaveBeenCalled();
@@ -558,7 +526,7 @@ describe('UserOAuthConnectionResolver', () => {
 
       // Act & Assert
       await expect(
-        resolvers.Mutation.disconnectOAuthProvider({}, { connectionId: mockConnectionId }, context)
+        resolvers.Mutation.disconnectOAuthProvider({}, { connectionId: mockConnectionId }, context),
       ).rejects.toMatchObject({
         message: errorMessage,
         extensions: { code: 'OAUTH_ERROR' },
@@ -577,7 +545,7 @@ describe('UserOAuthConnectionResolver', () => {
 
       // Act & Assert
       await expect(
-        resolvers.Mutation.disconnectOAuthProvider({}, { connectionId: mockConnectionId }, context)
+        resolvers.Mutation.disconnectOAuthProvider({}, { connectionId: mockConnectionId }, context),
       ).rejects.toMatchObject({
         message: 'Failed to disconnect OAuth provider',
         extensions: { code: 'OAUTH_ERROR' },
