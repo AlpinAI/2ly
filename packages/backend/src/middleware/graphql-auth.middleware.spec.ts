@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { FastifyRequest } from 'fastify';
 import { GraphQLAuthMiddleware, AuthContext, AuthenticatedContext } from './graphql-auth.middleware';
 import { AuthenticationService } from '../services/auth/auth.service';
@@ -23,6 +23,7 @@ describe('GraphQLAuthMiddleware', () => {
   let mockRequest: Partial<FastifyRequest>;
 
   beforeEach(() => {
+    vi.spyOn(console, 'error').mockImplementation(() => {});
     middleware = new GraphQLAuthMiddleware(mockAuthService, mockWorkspaceRepository);
     mockRequest = {
       headers: {},
@@ -40,6 +41,10 @@ describe('GraphQLAuthMiddleware', () => {
       },
     };
     vi.clearAllMocks();
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
   });
 
   describe('Context Creation', () => {

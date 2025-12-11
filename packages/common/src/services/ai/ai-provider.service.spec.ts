@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { AIProviderService } from './ai-provider.service';
 import { LoggerService } from '../logger.service';
 
@@ -7,6 +7,7 @@ describe('AIProviderService', () => {
   let mockLoggerService: LoggerService;
 
   beforeEach(() => {
+    vi.spyOn(console, 'error').mockImplementation(() => {});
     mockLoggerService = {
       getLogger: vi.fn(() => ({
         info: vi.fn(),
@@ -17,6 +18,10 @@ describe('AIProviderService', () => {
     } as unknown as LoggerService;
 
     service = new AIProviderService(mockLoggerService);
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
   });
 
   describe('parseModelString()', () => {

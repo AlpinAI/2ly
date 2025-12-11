@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { ToolService } from './tool.service';
 import {
   LoggerService,
@@ -21,6 +21,7 @@ describe('ToolService', () => {
   let mockLogger: pino.Logger;
 
   beforeEach(() => {
+    vi.spyOn(console, 'error').mockImplementation(() => {});
     // Create silent logger to avoid test output noise
     mockLogger = pino({ level: 'silent' });
 
@@ -68,6 +69,10 @@ describe('ToolService', () => {
       mockToolAgentServiceFactory,
       undefined,
     );
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
   });
 
   describe('ensureToolsSubscribed', () => {

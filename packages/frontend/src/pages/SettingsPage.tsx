@@ -12,7 +12,7 @@
  */
 
 import { useState } from 'react';
-import { Database, Users, Cpu, Key, Plus, Sparkles } from 'lucide-react';
+import { Database, Users, Cpu, Key, Plus, Sparkles, Link2 } from 'lucide-react';
 import { useWorkspaceId } from '@/stores/workspaceStore';
 import { useMCPRegistries } from '@/hooks/useMCPRegistries';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
@@ -22,6 +22,7 @@ import { UsersRolesSection } from '@/components/settings/users-roles-section';
 import { RuntimesSection } from '@/components/settings/runtimes-section';
 import { ApiKeysSection } from '@/components/settings/api-keys-section';
 import { AIProvidersSection } from '@/components/settings/ai-providers-section';
+import { OAuthProvidersSection } from '@/components/settings/oauth-providers-section';
 import { useAddServerWorkflow } from '@/stores/uiStore';
 
 
@@ -60,6 +61,10 @@ export default function SettingsPage() {
               <Sparkles className="h-4 w-4" />
               <span>AI Providers</span>
             </TabsTrigger>
+            <TabsTrigger value="integrations" className="flex items-center gap-2">
+              <Link2 className="h-4 w-4" />
+              <span>Integrations</span>
+            </TabsTrigger>
           </TabsList>
 
           {/* Conditional Action Button - Only show for Private Registry */}
@@ -93,6 +98,10 @@ export default function SettingsPage() {
 
         <TabsContent value="ai-providers">
           <AIProvidersSection />
+        </TabsContent>
+
+        <TabsContent value="integrations">
+          <OAuthProvidersSection />
         </TabsContent>
       </Tabs>
     </div>

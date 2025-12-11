@@ -1,0 +1,110 @@
+# MCP Server and Tool types
+
+type MCPRegistryServer @withSubscription {
+  id: ID!
+  name: String! @search(by: [hash])
+  description: String!
+  title: String!
+  repositoryUrl: String!
+  version: String!
+  packages: String
+  remotes: String
+  _meta: String
+  createdAt: DateTime!
+  lastSeenAt: DateTime!
+  workspace: Workspace! @hasInverse(field: registryServers)
+  configurations: [MCPServer!] @hasInverse(field: registryServer)
+}
+
+type MCPServer @withSubscription {
+  id: ID!
+  name: String! @search(by: [hash])
+  description: String!
+  repositoryUrl: String!
+  transport: MCPTransportType!
+  config: String!
+  tools: [MCPTool!] @hasInverse(field: mcpServer)
+  executionTarget: ExecutionTarget @search
+  runtime: Runtime @hasInverse(field: mcpServers)
+  registryServer: MCPRegistryServer! @hasInverse(field: configurations)
+  workspace: Workspace! @hasInverse(field: mcpServers)
+}
+
+type MCPTool @withSubscription {
+  id: ID!
+  name: String! @search(by: [hash])
+  description: String!
+  inputSchema: String!
+  annotations: String!
+  status: ActiveStatus! @search
+  createdAt: DateTime!
+  lastSeenAt: DateTime!
+  mcpServer: MCPServer! @hasInverse(field: tools)
+  skills: [Skill!] @hasInverse(field: mcpTools)
+  workspace: Workspace! @hasInverse(field: mcpTools)
+  #DGRAPH_ONLY_START
+  toolCalls: [ToolCall!] @hasInverse(field: mcpTool)
+  #DGRAPH_ONLY_END
+}
+
+#APOLLO_ONLY_START
+extend type Query {
+  mcpServers(workspaceId: ID!): [MCPServer!]
+  mcpTools(workspaceId: ID!): [MCPTool!]
+  workspaceMCPTools(workspaceId: ID!): Workspace
+  getRegistryServers(workspaceId: ID!): [MCPRegistryServer!]!
+}
+
+extend type Mutation {
+  createMCPServer(
+    name: String!
+    description: String!
+    repositoryUrl: String!
+    transport: MCPTransportType!
+    config: String!
+    executionTarget: ExecutionTarget
+    workspaceId: ID!
+    registryServerId: ID!
+  ): MCPServer!
+  updateMCPServer(
+    id: ID!
+    name: String!
+    description: String!
+    repositoryUrl: String!
+    transport: MCPTransportType!
+    config: String!
+    executionTarget: ExecutionTarget
+  ): MCPServer!
+  linkMCPServerToRuntime(mcpServerId: ID!, runtimeId: ID!): MCPServer!
+  unlinkMCPServerFromRuntime(mcpServerId: ID!): MCPServer!
+  deleteMCPTool(id: ID!): MCPTool!
+  deleteMCPServer(id: ID!): MCPServer!
+  updateMCPServerExecutionTarget(mcpServerId: ID!, executionTarget: ExecutionTarget!, runtimeId: ID): MCPServer!
+  addServerToRegistry(
+    workspaceId: ID!
+    name: String!
+    description: String!
+    title: String!
+    repositoryUrl: String!
+    version: String!
+    packages: String
+    remotes: String
+  ): MCPRegistryServer!
+  updateServerInRegistry(
+    serverId: ID!
+    name: String
+    description: String
+    title: String
+    repositoryUrl: String
+    version: String
+    packages: String
+    remotes: String
+  ): MCPRegistryServer!
+  removeServerFromRegistry(serverId: ID!): MCPRegistryServer!
+}
+
+extend type Subscription {
+  mcpServers(workspaceId: ID!): [MCPServer!]
+  mcpTools(workspaceId: ID!): [MCPTool!]
+}
+#APOLLO_ONLY_END

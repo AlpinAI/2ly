@@ -1,0 +1,114 @@
+# User and authentication types
+
+type User @withSubscription {
+  id: ID!
+  email: String! @search(by: [hash])
+  #DGRAPH_ONLY_START
+  password: String!
+  failedLoginAttempts: Int
+  lockedUntil: DateTime
+  sessions: [Session!] @hasInverse(field: user)
+  oauthConnections: [UserOAuthConnection!] @hasInverse(field: user)
+  #DGRAPH_ONLY_END
+  createdAt: DateTime!
+  updatedAt: DateTime!
+  lastLoginAt: DateTime
+  adminOfWorkspaces: [Workspace!] @hasInverse(field: admins)
+  membersOfWorkspaces: [Workspace!] @hasInverse(field: users)
+}
+
+#DGRAPH_ONLY_START
+type Session @withSubscription {
+  id: ID!
+  refreshToken: String! @search(by: [hash])
+  userId: String! @search(by: [hash])
+  user: User! @hasInverse(field: sessions)
+  deviceInfo: String
+  ipAddress: String
+  userAgent: String
+  createdAt: DateTime!
+  expiresAt: DateTime! @search
+  lastUsedAt: DateTime
+  isActive: Boolean! @search
+}
+#DGRAPH_ONLY_END
+
+#APOLLO_ONLY_START
+type AuthTokens {
+  accessToken: String!
+  refreshToken: String!
+}
+
+# AuthPayload supports both patterns for backward compatibility
+type AuthPayload {
+  user: User
+  accessToken: String
+  refreshToken: String
+  expiresIn: Int
+  success: Boolean
+  tokens: AuthTokens
+  errors: [String!]
+}
+
+type RegisterUserPayload {
+  success: Boolean!
+  user: User
+  tokens: AuthTokens
+  errors: [String!]
+}
+
+type RefreshTokenPayload {
+  accessToken: String
+  expiresIn: Int
+  success: Boolean
+  errors: [String!]
+}
+
+type LogoutPayload {
+  success: Boolean!
+  errors: [String!]
+}
+
+input LoginInput {
+  email: String!
+  password: String!
+  deviceInfo: String
+}
+
+input RegisterUserInput {
+  email: String!
+  password: String!
+  deviceInfo: String
+}
+
+input LoginUserInput {
+  email: String!
+  password: String!
+  deviceInfo: String
+}
+
+input RefreshTokenInput {
+  refreshToken: String!
+}
+
+input LogoutInput {
+  refreshToken: String!
+}
+
+input LogoutUserInput {
+  refreshToken: String!
+}
+
+extend type Query {
+  me: User
+}
+
+extend type Mutation {
+  registerUser(input: RegisterUserInput!): RegisterUserPayload!
+  loginUser(input: LoginUserInput!): AuthPayload!
+  login(input: LoginInput!): AuthPayload!
+  refreshToken(input: RefreshTokenInput!): RefreshTokenPayload!
+  logout(input: LogoutInput!): Boolean!
+  logoutUser(input: LogoutUserInput!): LogoutPayload!
+}
+#APOLLO_ONLY_END

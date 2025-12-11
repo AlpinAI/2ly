@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { AIProviderRepository, type AIProviderConfigData } from './ai-provider.repository';
 import { DGraphService } from '../services/dgraph.service';
 import { LoggerService, EncryptionService, AIProviderService, dgraphResolversTypes } from '@skilder-ai/common';
@@ -11,6 +11,7 @@ describe('AIProviderRepository', () => {
   let mockAIProviderService: AIProviderService;
 
   beforeEach(() => {
+    vi.spyOn(console, 'error').mockImplementation(() => {});
     // Mock DGraphService
     mockDGraphService = {
       mutation: vi.fn(),
@@ -49,6 +50,10 @@ describe('AIProviderRepository', () => {
       mockEncryptionService,
       mockAIProviderService
     );
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
   });
 
   describe('Opportunity 5: Repository Upsert Logic', () => {

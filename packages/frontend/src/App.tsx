@@ -30,8 +30,10 @@ import ToolsPage from '@/pages/ToolsPage';
 import SourcesPage from '@/pages/SourcesPage';
 import SettingsPage from '@/pages/SettingsPage';
 import MonitoringPage from '@/pages/MonitoringPage';
+import MyIntegrationsPage from '@/pages/MyIntegrationsPage';
 import InitPage from '@/pages/InitPage';
 import BackendErrorPage from '@/pages/BackendErrorPage';
+import OAuthErrorPage from '@/pages/OAuthErrorPage';
 import NotFoundPage from '@/pages/NotFoundPage';
 
 function App() {
@@ -63,6 +65,9 @@ function App() {
                 {/* Backend error page (no auth required, SystemInitChecker handles this) */}
                 <Route path="/backend-error" element={<BackendErrorPage />} />
 
+                {/* OAuth error page (no auth required, shown when OAuth callback fails) */}
+                <Route path="/oauth/error" element={<OAuthErrorPage />} />
+
                 {/* Public routes (only accessible if system is initialized) */}
                 <Route path="/login" element={<LoginPage />} />
                 <Route path="/register" element={<RegisterPage />} />
@@ -85,6 +90,7 @@ function App() {
                   <Route path="sources" element={<SourcesPage />} />
                   <Route path="monitoring" element={<MonitoringPage />} />
                   <Route path="settings" element={<SettingsPage />} />
+                  <Route path="my-integrations" element={<MyIntegrationsPage />} />
 
                   {/* Redirect /w/:workspaceId to /w/:workspaceId/overview */}
                   <Route index element={<Navigate to="overview" replace />} />

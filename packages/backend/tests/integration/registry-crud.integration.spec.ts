@@ -14,7 +14,7 @@
  */
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { graphql, resetDatabase } from '@skilder-ai/common/test/fixtures';
 
 /**
@@ -53,6 +53,7 @@ describe('Registry CRUD Operations', () => {
   let accessToken: string;
 
   beforeEach(async () => {
+    vi.spyOn(console, 'error').mockImplementation(() => {});
     // Reset database before each test
     // The /reset endpoint automatically creates:
     // - System
@@ -126,6 +127,10 @@ describe('Registry CRUD Operations', () => {
     // Verify featured servers were auto-created
     expect(registryServersResult.getRegistryServers).toBeDefined();
     expect(registryServersResult.getRegistryServers.length).toBeGreaterThan(0);
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
   });
 
   it('should create workspace with initial featured servers', async () => {

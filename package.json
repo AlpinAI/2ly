@@ -10,7 +10,7 @@
     "packages/runtime"
   ],
   "scripts": {
-    "build": "npm run build --workspaces --if-present",
+    "build": "npm run build:schema -w @skilder-ai/common && npm run build --workspaces --if-present",
     "start": "docker compose up -d --pull=always",
     "start:dev": "docker compose -f dev/docker-compose.dev.yml up -d --build",
     "start:dev:full": "docker compose -f dev/docker-compose.dev.yml --profile all up -d --build",

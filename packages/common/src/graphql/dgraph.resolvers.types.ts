@@ -63,7 +63,7 @@ export type McpRegistryServer = {
   id: Scalars['ID']['output'];
   lastSeenAt: Scalars['DateTime']['output'];
   name: Scalars['String']['output'];
-  packages: Scalars['String']['output'];
+  packages?: Maybe<Scalars['String']['output']>;
   remotes?: Maybe<Scalars['String']['output']>;
   repositoryUrl: Scalars['String']['output'];
   title: Scalars['String']['output'];
@@ -104,6 +104,24 @@ export enum McpTransportType {
   Sse = 'SSE',
   Stdio = 'STDIO',
   Stream = 'STREAM'
+}
+
+export type OAuthProviderConfig = {
+  clientId: Scalars['String']['output'];
+  createdAt: Scalars['DateTime']['output'];
+  enabled: Scalars['Boolean']['output'];
+  encryptedClientSecret: Scalars['String']['output'];
+  id: Scalars['ID']['output'];
+  provider: OAuthProviderType;
+  tenantId?: Maybe<Scalars['String']['output']>;
+  updatedAt: Scalars['DateTime']['output'];
+  workspace: Workspace;
+};
+
+export enum OAuthProviderType {
+  Google = 'GOOGLE',
+  Microsoft = 'MICROSOFT',
+  Notion = 'NOTION'
 }
 
 export type OnboardingStep = {
@@ -236,9 +254,28 @@ export type User = {
   lastLoginAt?: Maybe<Scalars['DateTime']['output']>;
   lockedUntil?: Maybe<Scalars['DateTime']['output']>;
   membersOfWorkspaces?: Maybe<Array<Workspace>>;
+  oauthConnections?: Maybe<Array<UserOAuthConnection>>;
   password: Scalars['String']['output'];
   sessions?: Maybe<Array<Session>>;
   updatedAt: Scalars['DateTime']['output'];
+};
+
+export type UserOAuthConnection = {
+  accountAvatarUrl?: Maybe<Scalars['String']['output']>;
+  accountEmail?: Maybe<Scalars['String']['output']>;
+  accountName?: Maybe<Scalars['String']['output']>;
+  createdAt: Scalars['DateTime']['output'];
+  encryptedAccessToken: Scalars['String']['output'];
+  encryptedRefreshToken?: Maybe<Scalars['String']['output']>;
+  id: Scalars['ID']['output'];
+  lastUsedAt?: Maybe<Scalars['DateTime']['output']>;
+  provider: OAuthProviderType;
+  providerAccountId?: Maybe<Scalars['String']['output']>;
+  scopes?: Maybe<Array<Scalars['String']['output']>>;
+  tokenExpiresAt?: Maybe<Scalars['DateTime']['output']>;
+  updatedAt: Scalars['DateTime']['output'];
+  user: User;
+  workspace: Workspace;
 };
 
 export type Workspace = {
@@ -250,11 +287,13 @@ export type Workspace = {
   mcpServers?: Maybe<Array<McpServer>>;
   mcpTools?: Maybe<Array<McpTool>>;
   name: Scalars['String']['output'];
+  oauthProviders?: Maybe<Array<OAuthProviderConfig>>;
   onboardingSteps?: Maybe<Array<OnboardingStep>>;
   registryServers?: Maybe<Array<McpRegistryServer>>;
   runtimes?: Maybe<Array<Runtime>>;
   skills?: Maybe<Array<Skill>>;
   system: System;
+  userOAuthConnections?: Maybe<Array<UserOAuthConnection>>;
   users?: Maybe<Array<User>>;
 };
 
@@ -344,6 +383,8 @@ export type ResolversTypes = ResolversObject<{
   MCPServer: ResolverTypeWrapper<McpServer>;
   MCPTool: ResolverTypeWrapper<McpTool>;
   MCPTransportType: McpTransportType;
+  OAuthProviderConfig: ResolverTypeWrapper<OAuthProviderConfig>;
+  OAuthProviderType: OAuthProviderType;
   OnboardingStep: ResolverTypeWrapper<OnboardingStep>;
   OnboardingStepStatus: OnboardingStepStatus;
   OnboardingStepType: OnboardingStepType;
@@ -357,6 +398,7 @@ export type ResolversTypes = ResolversObject<{
   ToolCall: ResolverTypeWrapper<ToolCall>;
   ToolCallStatus: ToolCallStatus;
   User: ResolverTypeWrapper<User>;
+  UserOAuthConnection: ResolverTypeWrapper<UserOAuthConnection>;
   Workspace: ResolverTypeWrapper<Workspace>;
 }>;
 
@@ -372,6 +414,7 @@ export type ResolversParentTypes = ResolversObject<{
   MCPRegistryServer: McpRegistryServer;
   MCPServer: McpServer;
   MCPTool: McpTool;
+  OAuthProviderConfig: OAuthProviderConfig;
   OnboardingStep: OnboardingStep;
   Runtime: Runtime;
   Session: Session;
@@ -380,6 +423,7 @@ export type ResolversParentTypes = ResolversObject<{
   System: System;
   ToolCall: ToolCall;
   User: User;
+  UserOAuthConnection: UserOAuthConnection;
   Workspace: Workspace;
 }>;
 
@@ -419,7 +463,7 @@ export type McpRegistryServerResolvers<ContextType = any, ParentType extends Res
   id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
   lastSeenAt?: Resolver<ResolversTypes['DateTime'], ParentType, ContextType>;
   name?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
-  packages?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  packages?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   remotes?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   repositoryUrl?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   title?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
@@ -455,6 +499,19 @@ export type McpToolResolvers<ContextType = any, ParentType extends ResolversPare
   skills?: Resolver<Maybe<Array<ResolversTypes['Skill']>>, ParentType, ContextType>;
   status?: Resolver<ResolversTypes['ActiveStatus'], ParentType, ContextType>;
   toolCalls?: Resolver<Maybe<Array<ResolversTypes['ToolCall']>>, ParentType, ContextType>;
+  workspace?: Resolver<ResolversTypes['Workspace'], ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+}>;
+
+export type OAuthProviderConfigResolvers<ContextType = any, ParentType extends ResolversParentTypes['OAuthProviderConfig'] = ResolversParentTypes['OAuthProviderConfig']> = ResolversObject<{
+  clientId?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  createdAt?: Resolver<ResolversTypes['DateTime'], ParentType, ContextType>;
+  enabled?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
+  encryptedClientSecret?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
+  provider?: Resolver<ResolversTypes['OAuthProviderType'], ParentType, ContextType>;
+  tenantId?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  updatedAt?: Resolver<ResolversTypes['DateTime'], ParentType, ContextType>;
   workspace?: Resolver<ResolversTypes['Workspace'], ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
@@ -566,9 +623,29 @@ export type UserResolvers<ContextType = any, ParentType extends ResolversParentT
   lastLoginAt?: Resolver<Maybe<ResolversTypes['DateTime']>, ParentType, ContextType>;
   lockedUntil?: Resolver<Maybe<ResolversTypes['DateTime']>, ParentType, ContextType>;
   membersOfWorkspaces?: Resolver<Maybe<Array<ResolversTypes['Workspace']>>, ParentType, ContextType>;
+  oauthConnections?: Resolver<Maybe<Array<ResolversTypes['UserOAuthConnection']>>, ParentType, ContextType>;
   password?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   sessions?: Resolver<Maybe<Array<ResolversTypes['Session']>>, ParentType, ContextType>;
   updatedAt?: Resolver<ResolversTypes['DateTime'], ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+}>;
+
+export type UserOAuthConnectionResolvers<ContextType = any, ParentType extends ResolversParentTypes['UserOAuthConnection'] = ResolversParentTypes['UserOAuthConnection']> = ResolversObject<{
+  accountAvatarUrl?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  accountEmail?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  accountName?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  createdAt?: Resolver<ResolversTypes['DateTime'], ParentType, ContextType>;
+  encryptedAccessToken?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  encryptedRefreshToken?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
+  lastUsedAt?: Resolver<Maybe<ResolversTypes['DateTime']>, ParentType, ContextType>;
+  provider?: Resolver<ResolversTypes['OAuthProviderType'], ParentType, ContextType>;
+  providerAccountId?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  scopes?: Resolver<Maybe<Array<ResolversTypes['String']>>, ParentType, ContextType>;
+  tokenExpiresAt?: Resolver<Maybe<ResolversTypes['DateTime']>, ParentType, ContextType>;
+  updatedAt?: Resolver<ResolversTypes['DateTime'], ParentType, ContextType>;
+  user?: Resolver<ResolversTypes['User'], ParentType, ContextType>;
+  workspace?: Resolver<ResolversTypes['Workspace'], ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
@@ -581,11 +658,13 @@ export type WorkspaceResolvers<ContextType = any, ParentType extends ResolversPa
   mcpServers?: Resolver<Maybe<Array<ResolversTypes['MCPServer']>>, ParentType, ContextType>;
   mcpTools?: Resolver<Maybe<Array<ResolversTypes['MCPTool']>>, ParentType, ContextType>;
   name?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  oauthProviders?: Resolver<Maybe<Array<ResolversTypes['OAuthProviderConfig']>>, ParentType, ContextType>;
   onboardingSteps?: Resolver<Maybe<Array<ResolversTypes['OnboardingStep']>>, ParentType, ContextType>;
   registryServers?: Resolver<Maybe<Array<ResolversTypes['MCPRegistryServer']>>, ParentType, ContextType>;
   runtimes?: Resolver<Maybe<Array<ResolversTypes['Runtime']>>, ParentType, ContextType>;
   skills?: Resolver<Maybe<Array<ResolversTypes['Skill']>>, ParentType, ContextType>;
   system?: Resolver<ResolversTypes['System'], ParentType, ContextType>;
+  userOAuthConnections?: Resolver<Maybe<Array<ResolversTypes['UserOAuthConnection']>>, ParentType, ContextType>;
   users?: Resolver<Maybe<Array<ResolversTypes['User']>>, ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
@@ -597,6 +676,7 @@ export type Resolvers<ContextType = any> = ResolversObject<{
   MCPRegistryServer?: McpRegistryServerResolvers<ContextType>;
   MCPServer?: McpServerResolvers<ContextType>;
   MCPTool?: McpToolResolvers<ContextType>;
+  OAuthProviderConfig?: OAuthProviderConfigResolvers<ContextType>;
   OnboardingStep?: OnboardingStepResolvers<ContextType>;
   Runtime?: RuntimeResolvers<ContextType>;
   Session?: SessionResolvers<ContextType>;
@@ -604,6 +684,7 @@ export type Resolvers<ContextType = any> = ResolversObject<{
   System?: SystemResolvers<ContextType>;
   ToolCall?: ToolCallResolvers<ContextType>;
   User?: UserResolvers<ContextType>;
+  UserOAuthConnection?: UserOAuthConnectionResolvers<ContextType>;
   Workspace?: WorkspaceResolvers<ContextType>;
 }>;
 

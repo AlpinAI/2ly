@@ -11,6 +11,7 @@ import { MonitoringService } from './monitoring.service';
 import packageJson from '../../package.json';
 import { SkillService } from './skill.service';
 import { IdentityService } from './identity.service';
+import { registerOAuthRoutes } from '../routes/oauth.routes';
 
 export const DROP_ALL_DATA = 'dropAllData';
 
@@ -47,6 +48,7 @@ export class MainService extends Service {
     await this.startService(this.skillService);
     this.registerHealthCheck();
     this.registerUtilityEndpoints();
+    this.registerOAuthRoutes();
     await this.startService(this.apolloService);
     await this.initInstance();
     await this.startService(this.monitoringService);
@@ -110,6 +112,11 @@ export class MainService extends Service {
         res.status(503).send({ status: 'error', message: 'Service not running' });
       }
     });
+  }
+
+  private registerOAuthRoutes() {
+    this.logger.debug('Registering OAuth routes');
+    registerOAuthRoutes(this.fastifyService.fastify, container);
   }
 
   private registerUtilityEndpoints() {

@@ -1,0 +1,80 @@
+# OAuth Provider Configuration - B2B OAuth integrations
+
+type OAuthProviderConfig @withSubscription {
+  id: ID!
+  #DGRAPH_ONLY_START
+  workspace: Workspace! @hasInverse(field: oauthProviders)
+  encryptedClientSecret: String!
+  #DGRAPH_ONLY_END
+  provider: OAuthProviderType! @search
+  enabled: Boolean! @search
+  clientId: String!
+  tenantId: String
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
+# User OAuth Connection - Personal OAuth connections to workspace-enabled providers
+type UserOAuthConnection @withSubscription {
+  id: ID!
+  #DGRAPH_ONLY_START
+  user: User! @hasInverse(field: oauthConnections)
+  workspace: Workspace! @hasInverse(field: userOAuthConnections)
+  encryptedAccessToken: String!
+  encryptedRefreshToken: String
+  tokenExpiresAt: DateTime
+  providerAccountId: String @search(by: [hash])
+  #DGRAPH_ONLY_END
+  provider: OAuthProviderType! @search
+  scopes: [String!]
+  accountEmail: String @search(by: [hash])
+  accountName: String
+  accountAvatarUrl: String
+  createdAt: DateTime!
+  updatedAt: DateTime!
+  lastUsedAt: DateTime
+}
+
+#APOLLO_ONLY_START
+type OAuthProviderValidation {
+  valid: Boolean!
+  error: String
+}
+
+type OAuthAuthorizationUrl {
+  url: String!
+  state: String!
+}
+
+type OAuthCallbackResult {
+  success: Boolean!
+  connection: UserOAuthConnection
+  error: String
+}
+
+extend type Query {
+  getOAuthProviders(workspaceId: ID!): [OAuthProviderConfig!]!
+  getOAuthProvider(workspaceId: ID!, provider: OAuthProviderType!): OAuthProviderConfig
+  getUserOAuthConnections(workspaceId: ID!): [UserOAuthConnection!]!
+  hasUserOAuthConnection(workspaceId: ID!, provider: OAuthProviderType!): Boolean!
+}
+
+extend type Mutation {
+  configureOAuthProvider(
+    workspaceId: ID!
+    provider: OAuthProviderType!
+    clientId: String!
+    clientSecret: String!
+    tenantId: String
+  ): OAuthProviderValidation!
+  updateOAuthProviderEnabled(providerId: ID!, enabled: Boolean!): OAuthProviderConfig!
+  removeOAuthProvider(providerId: ID!): Boolean!
+  initiateOAuthConnection(
+    workspaceId: ID!
+    provider: OAuthProviderType!
+    redirectUri: String!
+    scopes: [String!]
+  ): OAuthAuthorizationUrl!
+  disconnectOAuthProvider(connectionId: ID!): Boolean!
+}
+#APOLLO_ONLY_END

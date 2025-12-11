@@ -1,0 +1,13 @@
+query GetUserOAuthConnections($workspaceId: ID!) {
+  getUserOAuthConnections(workspaceId: $workspaceId) {
+    id
+    provider
+    accountEmail
+    accountName
+    accountAvatarUrl
+    scopes
+    createdAt
+    updatedAt
+    lastUsedAt
+  }
+}

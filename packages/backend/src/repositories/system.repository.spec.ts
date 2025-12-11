@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { SystemRepository } from './system.repository';
 import type { DGraphService } from '../services/dgraph.service';
 import { DgraphServiceMock } from '../services/dgraph.service.mock';
@@ -16,6 +16,7 @@ describe('SystemRepository', () => {
     let loggerService: LoggerServiceMock;
 
     beforeEach(() => {
+        vi.spyOn(console, 'error').mockImplementation(() => {});
         dgraphService = new DgraphServiceMock();
         loggerService = new LoggerServiceMock();
         identityRepository = {
@@ -31,6 +32,10 @@ describe('SystemRepository', () => {
             userRepository,
             identityRepository,
         );
+    });
+
+    afterEach(() => {
+        vi.restoreAllMocks();
     });
 
     it('createSystem creates admin user and system', async () => {

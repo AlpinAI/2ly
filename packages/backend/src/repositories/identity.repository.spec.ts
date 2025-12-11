@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { IdentityRepository } from './identity.repository';
 import { DGraphService } from '../services/dgraph.service';
 import { LoggerService, dgraphResolversTypes } from '@skilder-ai/common';
@@ -27,6 +27,7 @@ describe('IdentityRepository', () => {
   let mockLoggerService: LoggerService;
 
   beforeEach(() => {
+    vi.spyOn(console, 'error').mockImplementation(() => {});
     mockLoggerService = {
       getLogger: vi.fn().mockReturnValue({
         info: vi.fn(),
@@ -42,6 +43,10 @@ describe('IdentityRepository', () => {
     } as unknown as DGraphService;
 
     repository = new IdentityRepository(mockDgraphService, mockLoggerService);
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
   });
 
   describe('createKey', () => {

@@ -1,0 +1,37 @@
+# Runtime type for edge execution
+
+type Runtime @withSubscription {
+  id: ID!
+  name: String! @search(by: [hash])
+  description: String
+  status: ActiveStatus! @search
+  type: RuntimeType! @search
+  roots: String
+  createdAt: DateTime!
+  #DGRAPH_ONLY_START
+  processId: String
+  #DGRAPH_ONLY_END
+  hostIP: String
+  hostname: String
+  mcpClientName: String
+  lastSeenAt: DateTime
+  mcpServers: [MCPServer!] @hasInverse(field: runtime)
+  skills: [Skill!] @hasInverse(field: runtime)
+  workspace: Workspace @hasInverse(field: runtimes)
+  system: System @hasInverse(field: runtimes)
+  toolResponses: [ToolCall!] @hasInverse(field: executedBy)
+}
+
+#APOLLO_ONLY_START
+extend type Mutation {
+  createRuntime(name: String!, description: String!, type: RuntimeType!, workspaceId: ID!): Runtime!
+  updateRuntime(id: ID!, name: String!, description: String!): Runtime!
+  deleteRuntime(id: ID!): Runtime!
+  setGlobalRuntime(id: ID!, runtimeId: ID!): Workspace!
+  unsetGlobalRuntime(id: ID!): Workspace!
+}
+
+extend type Subscription {
+  runtimes(workspaceId: ID!): [Runtime!]
+}
+#APOLLO_ONLY_END

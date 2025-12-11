@@ -35,8 +35,11 @@ import {
   SkillRepository,
   IdentityRepository,
   AIProviderRepository,
+  OAuthProviderRepository,
+  UserOAuthConnectionRepository,
 } from '../repositories';
 import { JwtService, AuthenticationService, AccountSecurityService, PasswordPolicyService } from '../services/auth';
+import { OAuthService, OAuthStateService } from '../services/oauth';
 import { SecurityMiddleware, RateLimitMiddleware, GraphQLAuthMiddleware } from '../middleware';
 import { IdentityService } from '../services/identity.service';
 import { KeyRateLimiterService } from '../services/key-rate-limiter.service';
@@ -94,6 +97,8 @@ const start = () => {
   container.bind(SkillRepository).toSelf().inSingletonScope();
   container.bind(IdentityRepository).toSelf().inSingletonScope();
   container.bind(AIProviderRepository).toSelf().inSingletonScope();
+  container.bind(OAuthProviderRepository).toSelf().inSingletonScope();
+  container.bind(UserOAuthConnectionRepository).toSelf().inSingletonScope();
 
   // Init authentication services
   container.bind(JwtService).toSelf().inSingletonScope();
@@ -108,6 +113,10 @@ const start = () => {
   // Init AI provider core service (from @skilder-ai/common)
   container.bind(EncryptionService).toSelf().inSingletonScope();
   container.bind(AIProviderService).toSelf().inSingletonScope();
+
+  // Init OAuth services
+  container.bind(OAuthStateService).toSelf().inSingletonScope();
+  container.bind(OAuthService).toSelf().inSingletonScope();
 
   // Init security services
   container.bind(AccountSecurityService).toSelf().inSingletonScope();

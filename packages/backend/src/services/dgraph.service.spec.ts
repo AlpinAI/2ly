@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { Container } from 'inversify';
 
 import '../../mocks/subscriptions-transport-ws.mock';
@@ -10,6 +10,14 @@ import { DGRAPH_URL, DGraphService } from './dgraph.service';
 type AnyRecord = Record<string, unknown>;
 
 describe('DGraphService', () => {
+    beforeEach(() => {
+        vi.spyOn(console, 'error').mockImplementation(() => {});
+    });
+
+    afterEach(() => {
+        vi.restoreAllMocks();
+    });
+
     const createService = async () => {
         const container = new Container();
         container.bind(MAIN_LOGGER_NAME).toConstantValue('test');

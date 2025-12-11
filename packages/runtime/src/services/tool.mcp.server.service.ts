@@ -74,7 +74,7 @@ export class ToolServerService extends Service {
       }
 
       parsedConfig = validationResult.data as ServerPackage | ServerTransport;
-      this.logger.info(`Parsed and validated config: ${JSON.stringify(parsedConfig, null, 2)}`);
+      this.logger.debug(`Parsed and validated config: ${JSON.stringify(parsedConfig, null, 2)}`);
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
       throw new Error(`Failed to parse config for ${this.config.name}: ${errorMessage}`);
@@ -96,7 +96,7 @@ export class ToolServerService extends Service {
 
       // Use common transport builder
       const defaultEnv = getDefaultEnvironment();
-      const stdioConfig = buildStdioTransport(parsedConfig as ServerPackage, {...defaultEnv, LOG_LEVEL: 'silent'});
+      const stdioConfig = buildStdioTransport(parsedConfig as ServerPackage, { ...defaultEnv, LOG_LEVEL: 'silent' });
       this.logger.info(`STDIO config: ${stdioConfig}`);
 
       this.transport = new StdioClientTransport({
