@@ -95,46 +95,52 @@ ${JSON.stringify(toolsContext, null, 2)}
 User Request:
 ${userPrompt}`;
 
-    // 6. Get decrypted provider config and make AI request
-    const providerType = providerConfig.provider.toLowerCase() as AIProviderType;
-
-    const decryptedConfig = await this.aiProviderRepo.getDecryptedConfig(
-      workspaceId,
-      providerType,
-    );
-
-    // 7. Determine which model to use
-    let fullModelName: string;
+    // 6. Determine which model to use
+    let fullModelString: string;
 
     // Try to use workspace default model if set
     if (workspace.defaultAIModel) {
-      fullModelName = workspace.defaultAIModel;
-      this.logger.info(`Using workspace default model: ${fullModelName}`);
+      fullModelString = workspace.defaultAIModel;
+      this.logger.info(`Using workspace default model: ${fullModelString}`);
     } else {
-      // Fall back to first available model from the provider
+      // Fall back to first available model from the selected provider
       if (!providerConfig.availableModels || providerConfig.availableModels.length === 0) {
         throw new Error(`AI provider ${providerId} has no available models configured`);
       }
 
+      const providerType = providerConfig.provider.toLowerCase();
       const modelName = providerConfig.availableModels[0];
-      fullModelName = `${providerType}/${modelName}`;
-      this.logger.info(`No default model set, using first available model: ${fullModelName}`);
+      fullModelString = `${providerType}/${modelName}`;
+      this.logger.info(`No default model set, using first available model from provider: ${fullModelString}`);
     }
 
+    // 7. Parse model string to get provider and model name (same as chatWithModel resolver)
+    // This ensures we handle the model string correctly regardless of its source
+    const { provider: parsedProvider, modelName: parsedModelName } = this.aiProviderService.parseModelString(fullModelString);
+
+    // 8. Get decrypted config for the parsed provider
+    const finalConfig = await this.aiProviderRepo.getDecryptedConfig(
+      workspaceId,
+      parsedProvider,
+    );
+
+    this.logger.info(`Calling AI with provider: ${parsedProvider}, model: ${parsedModelName}`);
+
+    // 9. Make the AI request
     const response = await this.aiProviderService.chat(
-      decryptedConfig,
-      providerType,
-      fullModelName,
+      finalConfig,
+      parsedProvider,
+      parsedModelName,
       fullPrompt,
     );
 
-    // 6. Parse the AI response
+    // 10. Parse the AI response
     const generatedData = this.parseAIResponse(response);
 
-    // 7. Validate field lengths
+    // 11. Validate field lengths
     this.validateGeneratedData(generatedData);
 
-    // 8. Filter suggested tools to only include valid IDs
+    // 12. Filter suggested tools to only include valid IDs
     const validToolIds = new Set(availableTools.map((t: { id: string }) => t.id));
     generatedData.suggestedToolIds = generatedData.suggestedToolIds.filter((id: string) => validToolIds.has(id));
 
