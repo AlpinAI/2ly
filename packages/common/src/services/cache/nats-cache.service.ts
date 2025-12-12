@@ -11,7 +11,7 @@ import pino from 'pino';
 import { LoggerService } from '../logger.service';
 import { NatsService } from '../nats.service';
 import { Service } from '../service.interface';
-import {
+import type {
   ICacheService,
   CacheBucketConfig,
   CacheEntry,
@@ -19,7 +19,9 @@ import {
   CacheWatchSubscription,
   CacheWatchEvent,
   CacheWatchOperation,
+  CacheServiceConfig,
 } from './cache.interface';
+import { CACHE_SERVICE_CONFIG } from './cache.constants';
 
 @injectable()
 export class NatsCacheService extends Service implements ICacheService {
@@ -32,6 +34,7 @@ export class NatsCacheService extends Service implements ICacheService {
   constructor(
     @inject(LoggerService) private loggerService: LoggerService,
     @inject(NatsService) private natsService: NatsService,
+    @inject(CACHE_SERVICE_CONFIG) private config: CacheServiceConfig,
   ) {
     super();
     this.logger = this.loggerService.getLogger(this.name);
@@ -49,6 +52,12 @@ export class NatsCacheService extends Service implements ICacheService {
     if (!this.kvManager) {
       throw new Error('Failed to get KV manager from NatsService');
     }
+
+    // Create all initial buckets from config
+    for (const bucketConfig of this.config.initialBuckets ?? []) {
+      await this.createBucket(bucketConfig);
+    }
+
     this.logger.info('CacheService started');
   }
 

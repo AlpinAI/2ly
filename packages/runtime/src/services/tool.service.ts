@@ -15,7 +15,6 @@ import {
   type RuntimeSmartSkill,
   NatsCacheService,
   CACHE_BUCKETS,
-  EPHEMERAL_CACHE_TTL,
   NatsMessage,
   type CacheWatchSubscription,
   type RawMessage,
@@ -54,7 +53,6 @@ export class ToolService extends Service {
     @inject(ToolServerService) private toolServerServiceFactory: ToolServerServiceFactory,
     @inject(ToolSmartSkillService) private toolSmartSkillServiceFactory: ToolSmartSkillServiceFactory,
     @inject(McpStdioService) @optional() private mcpStdioService: McpStdioService | undefined,
-    @inject(EPHEMERAL_CACHE_TTL) private ephemeralTTL: number,
   ) {
     super();
     this.logger = this.loggerService.getLogger(this.name);
@@ -65,12 +63,6 @@ export class ToolService extends Service {
     await this.authService.waitForStarted();
     await this.natsService.waitForStarted();
     await this.healthService.waitForStarted();
-
-    // Ensure ephemeral cache bucket exists before watching
-    await this.cacheService.createBucket({
-      name: CACHE_BUCKETS.EPHEMERAL,
-      ttlMs: this.ephemeralTTL,
-    });
 
     this.startObserveMCPServers();
     this.startObserveSmartSkills();
@@ -149,7 +141,9 @@ export class ToolService extends Service {
       this.logger.warn(`Cannot stop observing configured MCPServers for tool runtime: workspaceId or id not found`);
       return;
     }
-    this.logger.debug(`Stopping to observe configured MCPServers for tool runtime ${identity.workspaceId} - ${identity.id}`);
+    this.logger.debug(
+      `Stopping to observe configured MCPServers for tool runtime ${identity.workspaceId} - ${identity.id}`,
+    );
 
     // Drain NATS subscriptions before stopping services
     const drainPromises = this.natsSubscriptions.map(async (subscription) => {
@@ -219,7 +213,7 @@ export class ToolService extends Service {
       const message = RuntimeDiscoveredToolsPublish.create({
         workspaceId: this.authService.getIdentity()!.workspaceId!,
         mcpServerId: mcpServer.id,
-        tools
+        tools,
       }) as RuntimeDiscoveredToolsPublish;
       // TODO: Publish with jetstream in a way that activate a retry in case the backend did not pick up the message
       // target to the backend, doesn't need to be linked to a specific runtime instance
@@ -329,7 +323,9 @@ export class ToolService extends Service {
     // Unsubscribe from all tool subscriptions for this MCP server
     const serverToolSubs = this.toolSubscriptions.get(mcpServer.id);
     if (serverToolSubs) {
-      this.logger.debug(`Unsubscribing from ${serverToolSubs.size} tool subscriptions for MCP server ${mcpServer.name}`);
+      this.logger.debug(
+        `Unsubscribing from ${serverToolSubs.size} tool subscriptions for MCP server ${mcpServer.name}`,
+      );
       for (const [toolId, subscription] of serverToolSubs.entries()) {
         try {
           subscription.unsubscribe();
@@ -354,8 +350,11 @@ export class ToolService extends Service {
    * Ensure all tools for an MCP server are subscribed.
    * This method is idempotent - it only subscribes to tools that don't have subscriptions yet.
    */
-  private ensureToolsSubscribed(mcpServerId: string, tools: dgraphResolversTypes.McpTool[], executionTarget: EXECUTION_TARGET) {
-
+  private ensureToolsSubscribed(
+    mcpServerId: string,
+    tools: dgraphResolversTypes.McpTool[],
+    executionTarget: EXECUTION_TARGET,
+  ) {
     this.mcpTools.set(
       mcpServerId,
       tools.filter((tool) => !!tool),
@@ -400,9 +399,7 @@ export class ToolService extends Service {
           `Received smart skills update: ${msg.data.smartSkills.map((skill) => skill.name).join(', ')}`,
         );
         const skillIds = msg.data.smartSkills.map((skill) => skill.id);
-        const skillsToStop = Array.from(this.smartSkills.keys()).filter(
-          (skillId) => !skillIds.includes(skillId),
-        );
+        const skillsToStop = Array.from(this.smartSkills.keys()).filter((skillId) => !skillIds.includes(skillId));
 
         // Stop smart skills that are not in the message
         for (const skillId of skillsToStop) {
@@ -509,9 +506,10 @@ export class ToolService extends Service {
       throw new Error('Cannot subscribe to smart skill tool: missing runtimeId or workspaceId');
     }
     // Smart skills run on EDGE, use workspaceId from skill config
-    const subject = executionTarget === 'AGENT'
-      ? SkillCallToolRequest.subscribeToSkillOnOneRuntime(skillId, workspaceId!, runtimeId)
-      : SkillCallToolRequest.subscribeToSkill(skillId);
+    const subject =
+      executionTarget === 'AGENT'
+        ? SkillCallToolRequest.subscribeToSkillOnOneRuntime(skillId, workspaceId!, runtimeId)
+        : SkillCallToolRequest.subscribeToSkill(skillId);
     this.logger.debug(`Subscribing to smart skill tool ${skillId} on subject: ${subject}`);
     const subscription = this.natsService.subscribe(subject);
     this.handleSmartSkillToolCall(subscription, skillId);
@@ -529,7 +527,9 @@ export class ToolService extends Service {
 
         // Check type discriminator - only handle smart-skill requests
         if (msg.data.type !== 'smart-skill') {
-          this.logger.warn(`Received non-smart-skill request (type: ${msg.data.type}) in smart skill handler, ignoring`);
+          this.logger.warn(
+            `Received non-smart-skill request (type: ${msg.data.type}) in smart skill handler, ignoring`,
+          );
           msg.respond(
             new ErrorResponse({
               error: `Expected smart-skill request type, got: ${msg.data.type}`,

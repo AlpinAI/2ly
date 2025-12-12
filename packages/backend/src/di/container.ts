@@ -13,12 +13,15 @@ import {
   // Cache service
   NatsCacheService,
   CACHE_SERVICE,
+  CACHE_SERVICE_CONFIG,
+  CACHE_BUCKETS,
   CACHE_BUCKET_TTLS,
   HEARTBEAT_CACHE_TTL,
   EPHEMERAL_CACHE_TTL,
   OAUTH_NONCE_CACHE_TTL,
   RATE_LIMIT_KEY_CACHE_TTL,
   RATE_LIMIT_IP_CACHE_TTL,
+  CacheServiceConfig,
 } from '@skilder-ai/common';
 import { DGraphService, DGRAPH_URL } from '../services/dgraph.service';
 import { ApolloService } from '../services/apollo.service';
@@ -80,6 +83,33 @@ const start = () => {
   container
     .bind(RATE_LIMIT_IP_CACHE_TTL)
     .toConstantValue(parseInt(process.env.RATE_LIMIT_IP_CACHE_TTL || '') || CACHE_BUCKET_TTLS.RATE_LIMIT_IP);
+
+  // Build cache service config with all initial buckets
+  const cacheServiceConfig: CacheServiceConfig = {
+    initialBuckets: [
+      {
+        name: CACHE_BUCKETS.HEARTBEAT,
+        ttlMs: parseInt(process.env.HEARTBEAT_CACHE_TTL || '') || CACHE_BUCKET_TTLS.HEARTBEAT,
+      },
+      {
+        name: CACHE_BUCKETS.EPHEMERAL,
+        ttlMs: parseInt(process.env.EPHEMERAL_CACHE_TTL || '') || CACHE_BUCKET_TTLS.EPHEMERAL,
+      },
+      {
+        name: CACHE_BUCKETS.OAUTH_NONCE,
+        ttlMs: parseInt(process.env.OAUTH_NONCE_CACHE_TTL || '') || CACHE_BUCKET_TTLS.OAUTH_NONCE,
+      },
+      {
+        name: CACHE_BUCKETS.RATE_LIMIT_KEY,
+        ttlMs: parseInt(process.env.RATE_LIMIT_KEY_CACHE_TTL || '') || CACHE_BUCKET_TTLS.RATE_LIMIT_KEY,
+      },
+      {
+        name: CACHE_BUCKETS.RATE_LIMIT_IP,
+        ttlMs: parseInt(process.env.RATE_LIMIT_IP_CACHE_TTL || '') || CACHE_BUCKET_TTLS.RATE_LIMIT_IP,
+      },
+    ],
+  };
+  container.bind(CACHE_SERVICE_CONFIG).toConstantValue(cacheServiceConfig);
   container.bind(CACHE_SERVICE).to(NatsCacheService).inSingletonScope();
   container.bind(NatsCacheService).toSelf().inSingletonScope();
 

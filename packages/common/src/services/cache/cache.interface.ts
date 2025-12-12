@@ -31,6 +31,11 @@ export interface CacheBucketConfig {
   maxEntries?: number; // Optional max entries (for rate limiting scenarios)
 }
 
+// Cache service configuration (passed at initialization)
+export interface CacheServiceConfig {
+  initialBuckets?: CacheBucketConfig[];
+}
+
 // Watch options
 export interface CacheWatchOptions {
   key?: string; // Watch specific key

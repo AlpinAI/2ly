@@ -24,6 +24,7 @@ export const CACHE_BUCKET_TTLS = {
 
 // DI injection symbols
 export const CACHE_SERVICE = 'cache.service';
+export const CACHE_SERVICE_CONFIG = 'cache.service.config';
 export const HEARTBEAT_CACHE_TTL = 'cache.heartbeat.ttl';
 export const EPHEMERAL_CACHE_TTL = 'cache.ephemeral.ttl';
 export const OAUTH_NONCE_CACHE_TTL = 'cache.oauth-nonce.ttl';

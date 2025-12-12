@@ -1,13 +1,6 @@
 import { inject, injectable } from 'inversify';
 import pino from 'pino';
-import {
-  LoggerService,
-  NatsService,
-  Service,
-  NatsCacheService,
-  CACHE_BUCKETS,
-  HEARTBEAT_CACHE_TTL,
-} from '@skilder-ai/common';
+import { LoggerService, NatsService, Service, NatsCacheService, CACHE_BUCKETS } from '@skilder-ai/common';
 import { AuthService } from './auth.service';
 
 export const HEARTBEAT_INTERVAL = 'heartbeat.interval';
@@ -20,9 +13,6 @@ export class HealthService extends Service {
 
   @inject(HEARTBEAT_INTERVAL)
   private heartbeatInterval!: number;
-
-  @inject(HEARTBEAT_CACHE_TTL)
-  private heartbeatTTL!: number;
 
   constructor(
     @inject(LoggerService) private loggerService: LoggerService,
@@ -46,10 +36,6 @@ export class HealthService extends Service {
 
     // Start the cache service and create heartbeat bucket
     await this.startService(this.cacheService);
-    await this.cacheService.createBucket({
-      name: CACHE_BUCKETS.HEARTBEAT,
-      ttlMs: this.heartbeatTTL,
-    });
 
     // Send initial heartbeat
     await this.sendHeartbeat(identity.id!);

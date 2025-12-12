@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { NatsCacheService } from './nats-cache.service';
 import { LoggerService, NatsService } from '../index';
+import { CacheServiceConfig } from './cache.interface';
 
 /**
  * Mock KV store for testing
@@ -173,6 +174,7 @@ describe('NatsCacheService', () => {
   let mockLoggerService: LoggerService;
   let mockNatsService: NatsService;
   let mockKvm: MockKvm;
+  let mockConfig: CacheServiceConfig;
 
   beforeEach(async () => {
     mockKvm = new MockKvm();
@@ -192,7 +194,11 @@ describe('NatsCacheService', () => {
       waitForStarted: vi.fn().mockResolvedValue(undefined),
     } as unknown as NatsService;
 
-    service = new NatsCacheService(mockLoggerService, mockNatsService);
+    mockConfig = {
+      initialBuckets: [],
+    };
+
+    service = new NatsCacheService(mockLoggerService, mockNatsService, mockConfig);
     await service.start('test');
   });
 

@@ -7,8 +7,6 @@ import {
   RuntimeReconnectPublish,
   NatsCacheService,
   CACHE_BUCKETS,
-  HEARTBEAT_CACHE_TTL,
-  EPHEMERAL_CACHE_TTL,
 } from '@skilder-ai/common';
 import { DGraphService } from './dgraph.service';
 import pino from 'pino';
@@ -30,12 +28,6 @@ export class RuntimeService extends Service {
   private runtimeInstances: Map<string, RuntimeInstance> = new Map();
   private runtimeHandshakeCallbackId?: string;
 
-  @inject(HEARTBEAT_CACHE_TTL)
-  private heartbeatTTL!: number;
-
-  @inject(EPHEMERAL_CACHE_TTL)
-  private ephemeralTTL!: number;
-
   constructor(
     @inject(LoggerService) private loggerService: LoggerService,
     @inject(DGraphService) private dgraphService: DGraphService,
@@ -54,17 +46,7 @@ export class RuntimeService extends Service {
     this.logger.info('Starting');
     await this.startService(this.dgraphService);
     await this.startService(this.natsService);
-
-    // Start cache service and create buckets
     await this.startService(this.cacheService);
-    await this.cacheService.createBucket({
-      name: CACHE_BUCKETS.HEARTBEAT,
-      ttlMs: this.heartbeatTTL,
-    });
-    await this.cacheService.createBucket({
-      name: CACHE_BUCKETS.EPHEMERAL,
-      ttlMs: this.ephemeralTTL,
-    });
 
     await this.rehydrateRuntimes();
     // listen for runtime handshakes and create runtime instances on the fly when connecting

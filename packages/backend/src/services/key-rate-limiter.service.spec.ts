@@ -45,9 +45,6 @@ describe('KeyRateLimiterService', () => {
   let mockLoggerService: LoggerService;
   let cacheService: NatsCacheServiceMock;
 
-  const KEY_TTL = 15 * 60 * 1000; // 15 minutes
-  const IP_TTL = 60 * 60 * 1000; // 1 hour
-
   beforeEach(async () => {
     mockLoggerService = {
       getLogger: vi.fn().mockReturnValue({
@@ -60,12 +57,7 @@ describe('KeyRateLimiterService', () => {
 
     cacheService = new NatsCacheServiceMock();
 
-    service = new KeyRateLimiterService(
-      mockLoggerService,
-      cacheService as unknown as NatsCacheService,
-      KEY_TTL,
-      IP_TTL
-    );
+    service = new KeyRateLimiterService(mockLoggerService, cacheService as unknown as NatsCacheService);
   });
 
   afterEach(() => {

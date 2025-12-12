@@ -118,11 +118,6 @@ function createService(deps?: Partial<{
         mcpRepo as unknown as import('../repositories').MCPServerRepository,
         runtimeRepo as unknown as import('../repositories').RuntimeRepository,
     );
-    // Inject the TTL values
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (service as any).heartbeatTTL = 30000;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (service as any).ephemeralTTL = 60000;
     return {
         service,
         iterator,

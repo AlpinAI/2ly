@@ -5,7 +5,6 @@ import {
   dgraphResolversTypes,
   NatsCacheService,
   CACHE_BUCKETS,
-  OAUTH_NONCE_CACHE_TTL,
 } from '@skilder-ai/common';
 import pino from 'pino';
 import crypto from 'crypto';
@@ -25,35 +24,13 @@ const STATE_EXPIRY_MS = 10 * 60 * 1000; // 10 minutes
 @injectable()
 export class OAuthStateService {
   private logger: pino.Logger;
-  private initialized = false;
-  private initPromise: Promise<void> | null = null;
 
   constructor(
     @inject(LoggerService) private readonly loggerService: LoggerService,
     @inject(EncryptionService) private readonly encryption: EncryptionService,
     @inject(NatsCacheService) private readonly cacheService: NatsCacheService,
-    @inject(OAUTH_NONCE_CACHE_TTL) private readonly nonceTTL: number
   ) {
     this.logger = this.loggerService.getLogger('oauth.state.service');
-  }
-
-  /**
-   * Ensure the service is initialized before use.
-   * Uses lazy initialization pattern for resilience.
-   */
-  private async ensureInitialized(): Promise<void> {
-    if (this.initialized) return;
-    if (!this.initPromise) {
-      this.initPromise = (async () => {
-        await this.cacheService.createBucket({
-          name: CACHE_BUCKETS.OAUTH_NONCE,
-          ttlMs: this.nonceTTL,
-        });
-        this.initialized = true;
-        this.logger.info('OAuth nonce cache bucket initialized');
-      })();
-    }
-    await this.initPromise;
   }
 
   /**
@@ -96,8 +73,6 @@ export class OAuthStateService {
    */
   async validateState(state: string): Promise<OAuthStatePayload | null> {
     try {
-      await this.ensureInitialized();
-
       // Decode from base64url
       const encryptedState = Buffer.from(state, 'base64url').toString();
 

@@ -1,11 +1,5 @@
 import { injectable, inject } from 'inversify';
-import {
-  LoggerService,
-  NatsCacheService,
-  CACHE_BUCKETS,
-  RATE_LIMIT_KEY_CACHE_TTL,
-  RATE_LIMIT_IP_CACHE_TTL,
-} from '@skilder-ai/common';
+import { LoggerService, NatsCacheService, CACHE_BUCKETS, CACHE_BUCKET_TTLS } from '@skilder-ai/common';
 import pino from 'pino';
 
 interface RateLimitEntry {
@@ -25,43 +19,18 @@ interface RateLimitEntry {
 @injectable()
 export class KeyRateLimiterService {
   private logger: pino.Logger;
-  private initialized = false;
-  private initPromise: Promise<void> | null = null;
 
   // Configuration
   private readonly KEY_MAX_ATTEMPTS = 10;
   private readonly IP_MAX_ATTEMPTS = 50;
+  private readonly keyTTL = CACHE_BUCKET_TTLS.RATE_LIMIT_KEY;
+  private readonly ipTTL = CACHE_BUCKET_TTLS.RATE_LIMIT_IP;
 
   constructor(
     @inject(LoggerService) private readonly loggerService: LoggerService,
     @inject(NatsCacheService) private readonly cacheService: NatsCacheService,
-    @inject(RATE_LIMIT_KEY_CACHE_TTL) private readonly keyTTL: number,
-    @inject(RATE_LIMIT_IP_CACHE_TTL) private readonly ipTTL: number
   ) {
     this.logger = this.loggerService.getLogger('key.rate.limiter');
-  }
-
-  /**
-   * Ensure the service is initialized before use.
-   * Uses lazy initialization pattern for resilience.
-   */
-  private async ensureInitialized(): Promise<void> {
-    if (this.initialized) return;
-    if (!this.initPromise) {
-      this.initPromise = (async () => {
-        await this.cacheService.createBucket({
-          name: CACHE_BUCKETS.RATE_LIMIT_KEY,
-          ttlMs: this.keyTTL,
-        });
-        await this.cacheService.createBucket({
-          name: CACHE_BUCKETS.RATE_LIMIT_IP,
-          ttlMs: this.ipTTL,
-        });
-        this.initialized = true;
-        this.logger.info('Rate limiter cache buckets initialized');
-      })();
-    }
-    await this.initPromise;
   }
 
   /**
@@ -73,7 +42,6 @@ export class KeyRateLimiterService {
    * @returns true if attempt is allowed, false if rate limited
    */
   async checkKeyAttempt(keyPrefix: string, ipAddress: string): Promise<boolean> {
-    await this.ensureInitialized();
     const now = Date.now();
 
     // Check per-key limit
@@ -115,7 +83,6 @@ export class KeyRateLimiterService {
    * @param ipAddress - IP address of the requester
    */
   async recordFailedAttempt(keyPrefix: string, ipAddress: string): Promise<void> {
-    await this.ensureInitialized();
     const now = Date.now();
 
     await Promise.all([
@@ -133,7 +100,6 @@ export class KeyRateLimiterService {
    * @param keyPrefix - First 8 characters of the key
    */
   async recordSuccessfulAttempt(keyPrefix: string): Promise<void> {
-    await this.ensureInitialized();
     // Reset key counter on success
     await this.cacheService.delete(CACHE_BUCKETS.RATE_LIMIT_KEY, keyPrefix);
   }

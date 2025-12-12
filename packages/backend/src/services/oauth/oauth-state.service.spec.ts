@@ -85,7 +85,6 @@ describe('OAuthStateService', () => {
   const mockProvider = dgraphResolversTypes.OAuthProviderType.Google;
   const mockRedirectUri = 'https://app.example.com/oauth/callback';
   const mockScopes = ['email', 'profile'];
-  const mockNonceTTL = 10 * 60 * 1000; // 10 minutes
 
   beforeEach(async () => {
     loggerService = new LoggerServiceMock();
@@ -95,7 +94,6 @@ describe('OAuthStateService', () => {
       loggerService as unknown as LoggerService,
       encryptionService as unknown as EncryptionService,
       cacheService as unknown as NatsCacheService,
-      mockNonceTTL
     );
   });
 
