@@ -17,6 +17,15 @@ export type Scalars = {
   Date: { input: Date; output: Date; }
 };
 
+export type AiConfig = {
+  createdAt: Scalars['Date']['output'];
+  description?: Maybe<Scalars['String']['output']>;
+  id: Scalars['ID']['output'];
+  key: Scalars['String']['output'];
+  updatedAt: Scalars['Date']['output'];
+  value: Scalars['String']['output'];
+};
+
 export type AiModel = {
   contextWindow?: Maybe<Scalars['Int']['output']>;
   id: Scalars['String']['output'];
@@ -74,6 +83,20 @@ export enum ExecutionTarget {
   Agent = 'AGENT',
   Edge = 'EDGE'
 }
+
+export type GenerateSkillWithAiInput = {
+  providerId: Scalars['String']['input'];
+  userPrompt: Scalars['String']['input'];
+  workspaceId: Scalars['ID']['input'];
+};
+
+export type GeneratedSkillData = {
+  associatedKnowledge?: Maybe<Scalars['String']['output']>;
+  description: Scalars['String']['output'];
+  guardrails?: Maybe<Scalars['String']['output']>;
+  name: Scalars['String']['output'];
+  suggestedToolIds: Array<Scalars['ID']['output']>;
+};
 
 export type IdentityKey = {
   createdAt: Scalars['Date']['output'];
@@ -177,12 +200,14 @@ export type Mutation = {
   createRuntime: Runtime;
   createSkill: Skill;
   createWorkspaceKey: IdentityKey;
+  deleteAIConfig: Scalars['Boolean']['output'];
   deleteMCPServer: McpServer;
   deleteMCPTool: McpTool;
   deleteRuntime: Runtime;
   deleteSkill: Skill;
   disconnectOAuthProvider: Scalars['Boolean']['output'];
   dismissOnboardingStep: Scalars['Boolean']['output'];
+  generateSkillWithAI: GeneratedSkillData;
   initSystem: System;
   initiateOAuthConnection: OAuthAuthorizationUrl;
   linkMCPServerToRuntime: McpServer;
@@ -197,6 +222,7 @@ export type Mutation = {
   removeOAuthProvider: Scalars['Boolean']['output'];
   removeServerFromRegistry: McpRegistryServer;
   revokeKey: IdentityKey;
+  setAIConfig: AiConfig;
   setDefaultAIModel: Scalars['Boolean']['output'];
   setGlobalRuntime: Workspace;
   unlinkMCPServerFromRuntime: McpServer;
@@ -288,7 +314,9 @@ export type MutationCreateRuntimeArgs = {
 
 
 export type MutationCreateSkillArgs = {
+  associatedKnowledge?: InputMaybe<Scalars['String']['input']>;
   description: Scalars['String']['input'];
+  guardrails?: InputMaybe<Scalars['String']['input']>;
   name: Scalars['String']['input'];
   workspaceId: Scalars['ID']['input'];
 };
@@ -297,6 +325,11 @@ export type MutationCreateSkillArgs = {
 export type MutationCreateWorkspaceKeyArgs = {
   description: Scalars['String']['input'];
   workspaceId: Scalars['ID']['input'];
+};
+
+
+export type MutationDeleteAiConfigArgs = {
+  id: Scalars['ID']['input'];
 };
 
 
@@ -328,6 +361,11 @@ export type MutationDisconnectOAuthProviderArgs = {
 export type MutationDismissOnboardingStepArgs = {
   stepId: Scalars['String']['input'];
   workspaceId: Scalars['ID']['input'];
+};
+
+
+export type MutationGenerateSkillWithAiArgs = {
+  input: GenerateSkillWithAiInput;
 };
 
 
@@ -407,6 +445,14 @@ export type MutationRevokeKeyArgs = {
 };
 
 
+export type MutationSetAiConfigArgs = {
+  description?: InputMaybe<Scalars['String']['input']>;
+  key: Scalars['String']['input'];
+  value: Scalars['String']['input'];
+  workspaceId: Scalars['ID']['input'];
+};
+
+
 export type MutationSetDefaultAiModelArgs = {
   defaultModel: Scalars['String']['input'];
   workspaceId: Scalars['ID']['input'];
@@ -473,7 +519,9 @@ export type MutationUpdateServerInRegistryArgs = {
 
 
 export type MutationUpdateSkillArgs = {
+  associatedKnowledge?: InputMaybe<Scalars['String']['input']>;
   description: Scalars['String']['input'];
+  guardrails?: InputMaybe<Scalars['String']['input']>;
   id: Scalars['ID']['input'];
   name: Scalars['String']['input'];
 };
@@ -556,6 +604,8 @@ export enum OrderDirection {
 }
 
 export type Query = {
+  getAIConfig?: Maybe<AiConfig>;
+  getAIConfigs: Array<AiConfig>;
   getAIModels: Array<Scalars['String']['output']>;
   getAIProvider?: Maybe<AiProviderConfig>;
   getAIProviders: Array<AiProviderConfig>;
@@ -577,6 +627,17 @@ export type Query = {
   workspaceKeys: Array<IdentityKey>;
   workspaceMCPTools?: Maybe<Workspace>;
   workspaces: Array<Workspace>;
+};
+
+
+export type QueryGetAiConfigArgs = {
+  key: Scalars['String']['input'];
+  workspaceId: Scalars['ID']['input'];
+};
+
+
+export type QueryGetAiConfigsArgs = {
+  workspaceId: Scalars['ID']['input'];
 };
 
 
@@ -720,9 +781,11 @@ export enum RuntimeType {
 }
 
 export type Skill = {
+  associatedKnowledge?: Maybe<Scalars['String']['output']>;
   createdAt: Scalars['Date']['output'];
   description?: Maybe<Scalars['String']['output']>;
   executionTarget?: Maybe<ExecutionTarget>;
+  guardrails?: Maybe<Scalars['String']['output']>;
   id: Scalars['ID']['output'];
   maxTokens?: Maybe<Scalars['Int']['output']>;
   mcpTools?: Maybe<Array<McpTool>>;
@@ -745,6 +808,7 @@ export enum SkillMode {
 }
 
 export type Subscription = {
+  aiConfigs?: Maybe<Array<AiConfig>>;
   mcpServers?: Maybe<Array<McpServer>>;
   mcpTools?: Maybe<Array<McpTool>>;
   runtimes?: Maybe<Array<Runtime>>;
@@ -752,6 +816,11 @@ export type Subscription = {
   toolCalls?: Maybe<Array<ToolCall>>;
   workspace?: Maybe<Workspace>;
   workspaces?: Maybe<Array<Workspace>>;
+};
+
+
+export type SubscriptionAiConfigsArgs = {
+  workspaceId: Scalars['ID']['input'];
 };
 
 
@@ -873,6 +942,7 @@ export type UserOAuthConnection = {
 };
 
 export type Workspace = {
+  aiConfigs?: Maybe<Array<AiConfig>>;
   aiProviders?: Maybe<Array<AiProviderConfig>>;
   createdAt: Scalars['Date']['output'];
   defaultAIModel?: Maybe<Scalars['String']['output']>;
@@ -958,6 +1028,7 @@ export type DirectiveResolverFn<TResult = {}, TParent = {}, TContext = {}, TArgs
 
 /** Mapping between all available schema types and the resolvers types */
 export type ResolversTypes = {
+  AIConfig: ResolverTypeWrapper<AiConfig>;
   AIModel: ResolverTypeWrapper<AiModel>;
   AIProviderConfig: ResolverTypeWrapper<AiProviderConfig>;
   AIProviderType: AiProviderType;
@@ -970,6 +1041,8 @@ export type ResolversTypes = {
   Date: ResolverTypeWrapper<Scalars['Date']['output']>;
   ExecutionTarget: ExecutionTarget;
   Float: ResolverTypeWrapper<Scalars['Float']['output']>;
+  GenerateSkillWithAIInput: GenerateSkillWithAiInput;
+  GeneratedSkillData: ResolverTypeWrapper<GeneratedSkillData>;
   ID: ResolverTypeWrapper<Scalars['ID']['output']>;
   IdentityKey: ResolverTypeWrapper<IdentityKey>;
   Infra: ResolverTypeWrapper<Infra>;
@@ -1018,6 +1091,7 @@ export type ResolversTypes = {
 
 /** Mapping between all available schema types and the resolvers parents */
 export type ResolversParentTypes = {
+  AIConfig: AiConfig;
   AIModel: AiModel;
   AIProviderConfig: AiProviderConfig;
   AIProviderValidation: AiProviderValidation;
@@ -1027,6 +1101,8 @@ export type ResolversParentTypes = {
   CallToolResult: CallToolResult;
   Date: Scalars['Date']['output'];
   Float: Scalars['Float']['output'];
+  GenerateSkillWithAIInput: GenerateSkillWithAiInput;
+  GeneratedSkillData: GeneratedSkillData;
   ID: Scalars['ID']['output'];
   IdentityKey: IdentityKey;
   Infra: Infra;
@@ -1063,6 +1139,16 @@ export type ResolversParentTypes = {
   User: User;
   UserOAuthConnection: UserOAuthConnection;
   Workspace: Workspace;
+};
+
+export type AiConfigResolvers<ContextType = object, ParentType extends ResolversParentTypes['AIConfig'] = ResolversParentTypes['AIConfig']> = {
+  createdAt?: Resolver<ResolversTypes['Date'], ParentType, ContextType>;
+  description?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
+  key?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  updatedAt?: Resolver<ResolversTypes['Date'], ParentType, ContextType>;
+  value?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 };
 
 export type AiModelResolvers<ContextType = object, ParentType extends ResolversParentTypes['AIModel'] = ResolversParentTypes['AIModel']> = {
@@ -1115,6 +1201,15 @@ export type CallToolResultResolvers<ContextType = object, ParentType extends Res
 export interface DateScalarConfig extends GraphQLScalarTypeConfig<ResolversTypes['Date'], any> {
   name: 'Date';
 }
+
+export type GeneratedSkillDataResolvers<ContextType = object, ParentType extends ResolversParentTypes['GeneratedSkillData'] = ResolversParentTypes['GeneratedSkillData']> = {
+  associatedKnowledge?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  description?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  guardrails?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  name?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  suggestedToolIds?: Resolver<Array<ResolversTypes['ID']>, ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+};
 
 export type IdentityKeyResolvers<ContextType = object, ParentType extends ResolversParentTypes['IdentityKey'] = ResolversParentTypes['IdentityKey']> = {
   createdAt?: Resolver<ResolversTypes['Date'], ParentType, ContextType>;
@@ -1198,12 +1293,14 @@ export type MutationResolvers<ContextType = object, ParentType extends Resolvers
   createRuntime?: Resolver<ResolversTypes['Runtime'], ParentType, ContextType, RequireFields<MutationCreateRuntimeArgs, 'description' | 'name' | 'type' | 'workspaceId'>>;
   createSkill?: Resolver<ResolversTypes['Skill'], ParentType, ContextType, RequireFields<MutationCreateSkillArgs, 'description' | 'name' | 'workspaceId'>>;
   createWorkspaceKey?: Resolver<ResolversTypes['IdentityKey'], ParentType, ContextType, RequireFields<MutationCreateWorkspaceKeyArgs, 'description' | 'workspaceId'>>;
+  deleteAIConfig?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType, RequireFields<MutationDeleteAiConfigArgs, 'id'>>;
   deleteMCPServer?: Resolver<ResolversTypes['MCPServer'], ParentType, ContextType, RequireFields<MutationDeleteMcpServerArgs, 'id'>>;
   deleteMCPTool?: Resolver<ResolversTypes['MCPTool'], ParentType, ContextType, RequireFields<MutationDeleteMcpToolArgs, 'id'>>;
   deleteRuntime?: Resolver<ResolversTypes['Runtime'], ParentType, ContextType, RequireFields<MutationDeleteRuntimeArgs, 'id'>>;
   deleteSkill?: Resolver<ResolversTypes['Skill'], ParentType, ContextType, RequireFields<MutationDeleteSkillArgs, 'id'>>;
   disconnectOAuthProvider?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType, RequireFields<MutationDisconnectOAuthProviderArgs, 'connectionId'>>;
   dismissOnboardingStep?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType, RequireFields<MutationDismissOnboardingStepArgs, 'stepId' | 'workspaceId'>>;
+  generateSkillWithAI?: Resolver<ResolversTypes['GeneratedSkillData'], ParentType, ContextType, RequireFields<MutationGenerateSkillWithAiArgs, 'input'>>;
   initSystem?: Resolver<ResolversTypes['System'], ParentType, ContextType, RequireFields<MutationInitSystemArgs, 'adminPassword' | 'email'>>;
   initiateOAuthConnection?: Resolver<ResolversTypes['OAuthAuthorizationUrl'], ParentType, ContextType, RequireFields<MutationInitiateOAuthConnectionArgs, 'provider' | 'redirectUri' | 'workspaceId'>>;
   linkMCPServerToRuntime?: Resolver<ResolversTypes['MCPServer'], ParentType, ContextType, RequireFields<MutationLinkMcpServerToRuntimeArgs, 'mcpServerId' | 'runtimeId'>>;
@@ -1218,6 +1315,7 @@ export type MutationResolvers<ContextType = object, ParentType extends Resolvers
   removeOAuthProvider?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType, RequireFields<MutationRemoveOAuthProviderArgs, 'providerId'>>;
   removeServerFromRegistry?: Resolver<ResolversTypes['MCPRegistryServer'], ParentType, ContextType, RequireFields<MutationRemoveServerFromRegistryArgs, 'serverId'>>;
   revokeKey?: Resolver<ResolversTypes['IdentityKey'], ParentType, ContextType, RequireFields<MutationRevokeKeyArgs, 'keyId'>>;
+  setAIConfig?: Resolver<ResolversTypes['AIConfig'], ParentType, ContextType, RequireFields<MutationSetAiConfigArgs, 'key' | 'value' | 'workspaceId'>>;
   setDefaultAIModel?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType, RequireFields<MutationSetDefaultAiModelArgs, 'defaultModel' | 'workspaceId'>>;
   setGlobalRuntime?: Resolver<ResolversTypes['Workspace'], ParentType, ContextType, RequireFields<MutationSetGlobalRuntimeArgs, 'id' | 'runtimeId'>>;
   unlinkMCPServerFromRuntime?: Resolver<ResolversTypes['MCPServer'], ParentType, ContextType, RequireFields<MutationUnlinkMcpServerFromRuntimeArgs, 'mcpServerId'>>;
@@ -1276,6 +1374,8 @@ export type OnboardingStepResolvers<ContextType = object, ParentType extends Res
 };
 
 export type QueryResolvers<ContextType = object, ParentType extends ResolversParentTypes['Query'] = ResolversParentTypes['Query']> = {
+  getAIConfig?: Resolver<Maybe<ResolversTypes['AIConfig']>, ParentType, ContextType, RequireFields<QueryGetAiConfigArgs, 'key' | 'workspaceId'>>;
+  getAIConfigs?: Resolver<Array<ResolversTypes['AIConfig']>, ParentType, ContextType, RequireFields<QueryGetAiConfigsArgs, 'workspaceId'>>;
   getAIModels?: Resolver<Array<ResolversTypes['String']>, ParentType, ContextType, RequireFields<QueryGetAiModelsArgs, 'workspaceId'>>;
   getAIProvider?: Resolver<Maybe<ResolversTypes['AIProviderConfig']>, ParentType, ContextType, RequireFields<QueryGetAiProviderArgs, 'provider' | 'workspaceId'>>;
   getAIProviders?: Resolver<Array<ResolversTypes['AIProviderConfig']>, ParentType, ContextType, RequireFields<QueryGetAiProvidersArgs, 'workspaceId'>>;
@@ -1336,9 +1436,11 @@ export type RuntimeResolvers<ContextType = object, ParentType extends ResolversP
 };
 
 export type SkillResolvers<ContextType = object, ParentType extends ResolversParentTypes['Skill'] = ResolversParentTypes['Skill']> = {
+  associatedKnowledge?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   createdAt?: Resolver<ResolversTypes['Date'], ParentType, ContextType>;
   description?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   executionTarget?: Resolver<Maybe<ResolversTypes['ExecutionTarget']>, ParentType, ContextType>;
+  guardrails?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
   maxTokens?: Resolver<Maybe<ResolversTypes['Int']>, ParentType, ContextType>;
   mcpTools?: Resolver<Maybe<Array<ResolversTypes['MCPTool']>>, ParentType, ContextType>;
@@ -1356,6 +1458,7 @@ export type SkillResolvers<ContextType = object, ParentType extends ResolversPar
 };
 
 export type SubscriptionResolvers<ContextType = object, ParentType extends ResolversParentTypes['Subscription'] = ResolversParentTypes['Subscription']> = {
+  aiConfigs?: SubscriptionResolver<Maybe<Array<ResolversTypes['AIConfig']>>, "aiConfigs", ParentType, ContextType, RequireFields<SubscriptionAiConfigsArgs, 'workspaceId'>>;
   mcpServers?: SubscriptionResolver<Maybe<Array<ResolversTypes['MCPServer']>>, "mcpServers", ParentType, ContextType, RequireFields<SubscriptionMcpServersArgs, 'workspaceId'>>;
   mcpTools?: SubscriptionResolver<Maybe<Array<ResolversTypes['MCPTool']>>, "mcpTools", ParentType, ContextType, RequireFields<SubscriptionMcpToolsArgs, 'workspaceId'>>;
   runtimes?: SubscriptionResolver<Maybe<Array<ResolversTypes['Runtime']>>, "runtimes", ParentType, ContextType, RequireFields<SubscriptionRuntimesArgs, 'workspaceId'>>;
@@ -1434,6 +1537,7 @@ export type UserOAuthConnectionResolvers<ContextType = object, ParentType extend
 };
 
 export type WorkspaceResolvers<ContextType = object, ParentType extends ResolversParentTypes['Workspace'] = ResolversParentTypes['Workspace']> = {
+  aiConfigs?: Resolver<Maybe<Array<ResolversTypes['AIConfig']>>, ParentType, ContextType>;
   aiProviders?: Resolver<Maybe<Array<ResolversTypes['AIProviderConfig']>>, ParentType, ContextType>;
   createdAt?: Resolver<ResolversTypes['Date'], ParentType, ContextType>;
   defaultAIModel?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
@@ -1450,6 +1554,7 @@ export type WorkspaceResolvers<ContextType = object, ParentType extends Resolver
 };
 
 export type Resolvers<ContextType = object> = {
+  AIConfig?: AiConfigResolvers<ContextType>;
   AIModel?: AiModelResolvers<ContextType>;
   AIProviderConfig?: AiProviderConfigResolvers<ContextType>;
   AIProviderValidation?: AiProviderValidationResolvers<ContextType>;
@@ -1457,6 +1562,7 @@ export type Resolvers<ContextType = object> = {
   AuthTokens?: AuthTokensResolvers<ContextType>;
   CallToolResult?: CallToolResultResolvers<ContextType>;
   Date?: GraphQLScalarType;
+  GeneratedSkillData?: GeneratedSkillDataResolvers<ContextType>;
   IdentityKey?: IdentityKeyResolvers<ContextType>;
   Infra?: InfraResolvers<ContextType>;
   LogoutPayload?: LogoutPayloadResolvers<ContextType>;

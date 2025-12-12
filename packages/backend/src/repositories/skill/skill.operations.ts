@@ -4,6 +4,8 @@ export const ADD_SKILL = gql`
   mutation addSkill(
     $name: String!
     $description: String
+    $guardrails: String
+    $associatedKnowledge: String
     $workspaceId: ID!
     $createdAt: DateTime!
   ) {
@@ -11,6 +13,8 @@ export const ADD_SKILL = gql`
       input: {
         name: $name
         description: $description
+        guardrails: $guardrails
+        associatedKnowledge: $associatedKnowledge
         workspace: { id: $workspaceId }
         createdAt: $createdAt
         updatedAt: $createdAt
@@ -20,6 +24,8 @@ export const ADD_SKILL = gql`
         id
         name
         description
+        guardrails
+        associatedKnowledge
         createdAt
         updatedAt
         workspace {
@@ -36,6 +42,8 @@ export const UPDATE_SKILL = gql`
     $id: ID!
     $name: String!
     $description: String
+    $guardrails: String
+    $associatedKnowledge: String
     $updatedAt: DateTime!
   ) {
     updateSkill(
@@ -44,6 +52,8 @@ export const UPDATE_SKILL = gql`
         set: {
           name: $name
           description: $description
+          guardrails: $guardrails
+          associatedKnowledge: $associatedKnowledge
           updatedAt: $updatedAt
         }
       }
@@ -52,6 +62,8 @@ export const UPDATE_SKILL = gql`
         id
         name
         description
+        guardrails
+        associatedKnowledge
         createdAt
         updatedAt
         workspace {
@@ -87,6 +99,8 @@ export const GET_SKILL = gql`
       id
       name
       description
+      guardrails
+      associatedKnowledge
       createdAt
       updatedAt
       mode

@@ -16,6 +16,16 @@ export type Scalars = {
   DateTime: { input: any; output: any; }
 };
 
+export type AiConfig = {
+  createdAt: Scalars['DateTime']['output'];
+  description?: Maybe<Scalars['String']['output']>;
+  id: Scalars['ID']['output'];
+  key: Scalars['String']['output'];
+  updatedAt: Scalars['DateTime']['output'];
+  value: Scalars['String']['output'];
+  workspace: Workspace;
+};
+
 export type AiProviderConfig = {
   availableModels?: Maybe<Array<Scalars['String']['output']>>;
   baseUrl?: Maybe<Scalars['String']['output']>;
@@ -187,9 +197,11 @@ export type Session = {
 };
 
 export type Skill = {
+  associatedKnowledge?: Maybe<Scalars['String']['output']>;
   createdAt: Scalars['DateTime']['output'];
   description?: Maybe<Scalars['String']['output']>;
   executionTarget?: Maybe<ExecutionTarget>;
+  guardrails?: Maybe<Scalars['String']['output']>;
   id: Scalars['ID']['output'];
   maxTokens?: Maybe<Scalars['Int']['output']>;
   mcpTools?: Maybe<Array<McpTool>>;
@@ -280,6 +292,7 @@ export type UserOAuthConnection = {
 
 export type Workspace = {
   admins?: Maybe<Array<User>>;
+  aiConfigs?: Maybe<Array<AiConfig>>;
   aiProviders?: Maybe<Array<AiProviderConfig>>;
   createdAt: Scalars['DateTime']['output'];
   defaultAIModel?: Maybe<Scalars['String']['output']>;
@@ -369,6 +382,7 @@ export type DirectiveResolverFn<TResult = {}, TParent = {}, TContext = {}, TArgs
 
 /** Mapping between all available schema types and the resolvers types */
 export type ResolversTypes = ResolversObject<{
+  AIConfig: ResolverTypeWrapper<AiConfig>;
   AIProviderConfig: ResolverTypeWrapper<AiProviderConfig>;
   AIProviderType: AiProviderType;
   ActiveStatus: ActiveStatus;
@@ -404,6 +418,7 @@ export type ResolversTypes = ResolversObject<{
 
 /** Mapping between all available schema types and the resolvers parents */
 export type ResolversParentTypes = ResolversObject<{
+  AIConfig: AiConfig;
   AIProviderConfig: AiProviderConfig;
   Boolean: Scalars['Boolean']['output'];
   DateTime: Scalars['DateTime']['output'];
@@ -425,6 +440,17 @@ export type ResolversParentTypes = ResolversObject<{
   User: User;
   UserOAuthConnection: UserOAuthConnection;
   Workspace: Workspace;
+}>;
+
+export type AiConfigResolvers<ContextType = any, ParentType extends ResolversParentTypes['AIConfig'] = ResolversParentTypes['AIConfig']> = ResolversObject<{
+  createdAt?: Resolver<ResolversTypes['DateTime'], ParentType, ContextType>;
+  description?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
+  key?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  updatedAt?: Resolver<ResolversTypes['DateTime'], ParentType, ContextType>;
+  value?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  workspace?: Resolver<ResolversTypes['Workspace'], ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
 export type AiProviderConfigResolvers<ContextType = any, ParentType extends ResolversParentTypes['AIProviderConfig'] = ResolversParentTypes['AIProviderConfig']> = ResolversObject<{
@@ -565,9 +591,11 @@ export type SessionResolvers<ContextType = any, ParentType extends ResolversPare
 }>;
 
 export type SkillResolvers<ContextType = any, ParentType extends ResolversParentTypes['Skill'] = ResolversParentTypes['Skill']> = ResolversObject<{
+  associatedKnowledge?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   createdAt?: Resolver<ResolversTypes['DateTime'], ParentType, ContextType>;
   description?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   executionTarget?: Resolver<Maybe<ResolversTypes['ExecutionTarget']>, ParentType, ContextType>;
+  guardrails?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
   maxTokens?: Resolver<Maybe<ResolversTypes['Int']>, ParentType, ContextType>;
   mcpTools?: Resolver<Maybe<Array<ResolversTypes['MCPTool']>>, ParentType, ContextType>;
@@ -651,6 +679,7 @@ export type UserOAuthConnectionResolvers<ContextType = any, ParentType extends R
 
 export type WorkspaceResolvers<ContextType = any, ParentType extends ResolversParentTypes['Workspace'] = ResolversParentTypes['Workspace']> = ResolversObject<{
   admins?: Resolver<Maybe<Array<ResolversTypes['User']>>, ParentType, ContextType>;
+  aiConfigs?: Resolver<Maybe<Array<ResolversTypes['AIConfig']>>, ParentType, ContextType>;
   aiProviders?: Resolver<Maybe<Array<ResolversTypes['AIProviderConfig']>>, ParentType, ContextType>;
   createdAt?: Resolver<ResolversTypes['DateTime'], ParentType, ContextType>;
   defaultAIModel?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
@@ -670,6 +699,7 @@ export type WorkspaceResolvers<ContextType = any, ParentType extends ResolversPa
 }>;
 
 export type Resolvers<ContextType = any> = ResolversObject<{
+  AIConfig?: AiConfigResolvers<ContextType>;
   AIProviderConfig?: AiProviderConfigResolvers<ContextType>;
   DateTime?: GraphQLScalarType;
   IdentityKey?: IdentityKeyResolvers<ContextType>;

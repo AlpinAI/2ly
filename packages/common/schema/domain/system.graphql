@@ -25,6 +25,7 @@ type Workspace @withSubscription {
   registryServers: [MCPRegistryServer!] @hasInverse(field: workspace)
   onboardingSteps: [OnboardingStep!]
   aiProviders: [AIProviderConfig!] @hasInverse(field: workspace)
+  aiConfigs: [AIConfig!] @hasInverse(field: workspace)
   defaultAIModel: String
   oauthProviders: [OAuthProviderConfig!] @hasInverse(field: workspace)
   #DGRAPH_ONLY_START

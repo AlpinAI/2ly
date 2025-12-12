@@ -26,6 +26,7 @@ export const QUERY_WORKSPACE = gql`
       id
       name
       createdAt
+      defaultAIModel
       onboardingSteps {
         id
         stepId

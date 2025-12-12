@@ -2,6 +2,11 @@ import { injectable, inject } from 'inversify';
 import { DGraphService } from '../../services/dgraph.service';
 import { dgraphResolversTypes, LoggerService } from '@skilder-ai/common';
 import {
+  SKILL_DESCRIPTION_MAX_LENGTH,
+  SKILL_GUARDRAILS_MAX_LENGTH,
+  SKILL_KNOWLEDGE_MAX_LENGTH,
+} from '../../constants';
+import {
   ADD_SKILL,
   UPDATE_SKILL,
   DELETE_SKILL,
@@ -39,12 +44,31 @@ export class SkillRepository {
     this.logger = this.loggerService.getLogger('skill.repository');
   }
 
+  private validateSkillFields(
+    description?: string,
+    guardrails?: string,
+    associatedKnowledge?: string,
+  ): void {
+    if (description && description.length > SKILL_DESCRIPTION_MAX_LENGTH) {
+      throw new Error(`Skill description cannot exceed ${SKILL_DESCRIPTION_MAX_LENGTH} characters`);
+    }
+    if (guardrails && guardrails.length > SKILL_GUARDRAILS_MAX_LENGTH) {
+      throw new Error(`Skill guardrails cannot exceed ${SKILL_GUARDRAILS_MAX_LENGTH} characters`);
+    }
+    if (associatedKnowledge && associatedKnowledge.length > SKILL_KNOWLEDGE_MAX_LENGTH) {
+      throw new Error(`Skill associated knowledge cannot exceed ${SKILL_KNOWLEDGE_MAX_LENGTH} characters`);
+    }
+  }
+
   async create(
     name: string,
     description: string | undefined,
     workspaceId: string,
+    guardrails?: string,
+    associatedKnowledge?: string,
   ): Promise<dgraphResolversTypes.Skill> {
     const now = new Date().toISOString();
+    this.validateSkillFields(description, guardrails, associatedKnowledge);
 
     // 1. Create the skill
     const res = await this.dgraphService.mutation<{
@@ -52,6 +76,8 @@ export class SkillRepository {
     }>(ADD_SKILL, {
       name,
       description: description ?? '',
+      guardrails: guardrails ?? null,
+      associatedKnowledge: associatedKnowledge ?? null,
       workspaceId,
       createdAt: now,
     });
@@ -69,14 +95,20 @@ export class SkillRepository {
     id: string,
     name: string,
     description: string | undefined,
+    guardrails?: string,
+    associatedKnowledge?: string,
   ): Promise<dgraphResolversTypes.Skill> {
     const now = new Date().toISOString();
+    this.validateSkillFields(description, guardrails, associatedKnowledge);
+
     const res = await this.dgraphService.mutation<{
       updateSkill: { skill: dgraphResolversTypes.Skill[] };
     }>(UPDATE_SKILL, {
       id,
       name,
       description: description ?? '',
+      guardrails: guardrails ?? null,
+      associatedKnowledge: associatedKnowledge ?? null,
       updatedAt: now,
     });
 
