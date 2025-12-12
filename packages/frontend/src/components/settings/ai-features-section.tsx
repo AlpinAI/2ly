@@ -133,7 +133,7 @@ function EditPromptDialog({
 }
 
 export function AIFeaturesSection() {
-  const { configs, loading, setConfig, deleteConfig } = useAIConfigs();
+  const { configs, loading, error, setConfig, deleteConfig } = useAIConfigs();
   const { toast } = useNotification();
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [editingKey, setEditingKey] = useState<string | null>(null);
@@ -205,6 +205,11 @@ export function AIFeaturesSection() {
 
           {loading ? (
             <div className="text-center py-8 text-gray-500 dark:text-gray-400">Loading prompts...</div>
+          ) : error ? (
+            <div className="text-center py-8 border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/20 rounded-lg">
+              <p className="text-red-600 dark:text-red-400 mb-2">Failed to load AI prompts</p>
+              <p className="text-sm text-red-500 dark:text-red-500">{error.message}</p>
+            </div>
           ) : configs.length === 0 ? (
             <div className="text-center py-8 border border-dashed border-gray-300 dark:border-gray-700 rounded-lg">
               <Sparkles className="h-12 w-12 mx-auto mb-4 text-gray-400 dark:text-gray-600" />

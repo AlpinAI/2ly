@@ -2,7 +2,8 @@ import { Container } from 'inversify';
 import { apolloResolversTypes } from '@skilder-ai/common';
 import { AIConfigRepository } from '../repositories/ai-config/ai-config.repository';
 import { WorkspaceRepository } from '../repositories/workspace/workspace.repository';
-import { requireAuthAndWorkspaceAccess } from '../database/authorization.helpers';
+import { requireAuth, requireWorkspaceAccess, requireAuthAndWorkspaceAccess } from '../database/authorization.helpers';
+import { GraphQLError } from 'graphql';
 import { GraphQLContext } from '../types';
 import { Observable } from 'rxjs';
 import { latestValueFrom } from 'rxjs-for-await';
@@ -61,10 +62,16 @@ export const createAIConfigResolvers = (container: Container) => {
       deleteAIConfig: async (
         _parent: unknown,
         { id }: { id: string },
-        _context: GraphQLContext,
+        context: GraphQLContext,
       ): Promise<boolean> => {
-        // Note: We could add workspace ownership check here by first fetching the config
-        // For now, relying on auth check
+        const userId = requireAuth(context);
+        const config = await aiConfigRepo.findById(id);
+        if (!config) {
+          throw new GraphQLError('AI config not found', {
+            extensions: { code: 'NOT_FOUND' },
+          });
+        }
+        await requireWorkspaceAccess(workspaceRepo, userId, config.workspace.id);
         return aiConfigRepo.delete(id);
       },
     },

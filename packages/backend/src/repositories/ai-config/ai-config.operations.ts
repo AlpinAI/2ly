@@ -91,6 +91,22 @@ export const UPDATE_AI_CONFIG = gql`
   }
 `;
 
+export const GET_AI_CONFIG_BY_ID = gql`
+  query getAIConfigById($id: ID!) {
+    getAIConfig(id: $id) {
+      id
+      key
+      value
+      description
+      createdAt
+      updatedAt
+      workspace {
+        id
+      }
+    }
+  }
+`;
+
 export const DELETE_AI_CONFIG = gql`
   mutation deleteAIConfig($id: ID!) {
     deleteAIConfig(filter: { id: [$id] }) {

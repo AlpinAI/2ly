@@ -4,6 +4,11 @@ import pino from 'pino';
 import { AIProviderRepository } from '../repositories/ai-provider/ai-provider.repository';
 import { AIConfigRepository } from '../repositories/ai-config/ai-config.repository';
 import { WorkspaceRepository } from '../repositories/workspace/workspace.repository';
+import {
+  SKILL_DESCRIPTION_MAX_LENGTH,
+  SKILL_GUARDRAILS_MAX_LENGTH,
+  SKILL_KNOWLEDGE_MAX_LENGTH,
+} from '../constants';
 
 export interface GeneratedSkillData {
   name: string;
@@ -16,18 +21,18 @@ export interface GeneratedSkillData {
 const DEFAULT_SKILL_GENERATION_PROMPT = `You are a skill configuration assistant. Given a user's description of what they want to accomplish, generate a structured skill configuration.
 
 IMPORTANT RULES:
-1. Description must be 250 characters or less
-2. Guardrails must be 1000 characters or less
-3. Associated knowledge must be 2000 characters or less
+1. Description must be ${SKILL_DESCRIPTION_MAX_LENGTH} characters or less
+2. Guardrails must be ${SKILL_GUARDRAILS_MAX_LENGTH} characters or less
+3. Associated knowledge must be ${SKILL_KNOWLEDGE_MAX_LENGTH} characters or less
 4. Be concise and specific
 5. Suggest tools based on the available MCP tools provided
 
 Respond ONLY with valid JSON in this exact format:
 {
   "name": "Skill Name",
-  "description": "Brief description (max 250 chars)",
-  "guardrails": "Safety rules and constraints (max 1000 chars)",
-  "associatedKnowledge": "Relevant context and knowledge (max 2000 chars)",
+  "description": "Brief description (max ${SKILL_DESCRIPTION_MAX_LENGTH} chars)",
+  "guardrails": "Safety rules and constraints (max ${SKILL_GUARDRAILS_MAX_LENGTH} chars)",
+  "associatedKnowledge": "Relevant context and knowledge (max ${SKILL_KNOWLEDGE_MAX_LENGTH} chars)",
   "suggestedToolIds": ["tool-id-1", "tool-id-2"]
 }`;
 
@@ -175,14 +180,14 @@ ${userPrompt}`;
   }
 
   private validateGeneratedData(data: GeneratedSkillData): void {
-    if (data.description.length > 250) {
-      throw new Error('AI-generated description exceeds 250 characters');
+    if (data.description.length > SKILL_DESCRIPTION_MAX_LENGTH) {
+      throw new Error(`AI-generated description exceeds ${SKILL_DESCRIPTION_MAX_LENGTH} characters`);
     }
-    if (data.guardrails && data.guardrails.length > 1000) {
-      throw new Error('AI-generated guardrails exceed 1000 characters');
+    if (data.guardrails && data.guardrails.length > SKILL_GUARDRAILS_MAX_LENGTH) {
+      throw new Error(`AI-generated guardrails exceed ${SKILL_GUARDRAILS_MAX_LENGTH} characters`);
     }
-    if (data.associatedKnowledge && data.associatedKnowledge.length > 2000) {
-      throw new Error('AI-generated associated knowledge exceeds 2000 characters');
+    if (data.associatedKnowledge && data.associatedKnowledge.length > SKILL_KNOWLEDGE_MAX_LENGTH) {
+      throw new Error(`AI-generated associated knowledge exceeds ${SKILL_KNOWLEDGE_MAX_LENGTH} characters`);
     }
   }
 }

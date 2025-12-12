@@ -2,6 +2,11 @@ import { injectable, inject } from 'inversify';
 import { DGraphService } from '../../services/dgraph.service';
 import { dgraphResolversTypes, LoggerService } from '@skilder-ai/common';
 import {
+  SKILL_DESCRIPTION_MAX_LENGTH,
+  SKILL_GUARDRAILS_MAX_LENGTH,
+  SKILL_KNOWLEDGE_MAX_LENGTH,
+} from '../../constants';
+import {
   ADD_SKILL,
   UPDATE_SKILL,
   DELETE_SKILL,
@@ -39,6 +44,22 @@ export class SkillRepository {
     this.logger = this.loggerService.getLogger('skill.repository');
   }
 
+  private validateSkillFields(
+    description?: string,
+    guardrails?: string,
+    associatedKnowledge?: string,
+  ): void {
+    if (description && description.length > SKILL_DESCRIPTION_MAX_LENGTH) {
+      throw new Error(`Skill description cannot exceed ${SKILL_DESCRIPTION_MAX_LENGTH} characters`);
+    }
+    if (guardrails && guardrails.length > SKILL_GUARDRAILS_MAX_LENGTH) {
+      throw new Error(`Skill guardrails cannot exceed ${SKILL_GUARDRAILS_MAX_LENGTH} characters`);
+    }
+    if (associatedKnowledge && associatedKnowledge.length > SKILL_KNOWLEDGE_MAX_LENGTH) {
+      throw new Error(`Skill associated knowledge cannot exceed ${SKILL_KNOWLEDGE_MAX_LENGTH} characters`);
+    }
+  }
+
   async create(
     name: string,
     description: string | undefined,
@@ -47,17 +68,7 @@ export class SkillRepository {
     associatedKnowledge?: string,
   ): Promise<dgraphResolversTypes.Skill> {
     const now = new Date().toISOString();
-
-    // Validate field lengths
-    if (description && description.length > 250) {
-      throw new Error('Skill description cannot exceed 250 characters');
-    }
-    if (guardrails && guardrails.length > 1000) {
-      throw new Error('Skill guardrails cannot exceed 1000 characters');
-    }
-    if (associatedKnowledge && associatedKnowledge.length > 2000) {
-      throw new Error('Skill associated knowledge cannot exceed 2000 characters');
-    }
+    this.validateSkillFields(description, guardrails, associatedKnowledge);
 
     // 1. Create the skill
     const res = await this.dgraphService.mutation<{
@@ -88,17 +99,7 @@ export class SkillRepository {
     associatedKnowledge?: string,
   ): Promise<dgraphResolversTypes.Skill> {
     const now = new Date().toISOString();
-
-    // Validate field lengths
-    if (description && description.length > 250) {
-      throw new Error('Skill description cannot exceed 250 characters');
-    }
-    if (guardrails && guardrails.length > 1000) {
-      throw new Error('Skill guardrails cannot exceed 1000 characters');
-    }
-    if (associatedKnowledge && associatedKnowledge.length > 2000) {
-      throw new Error('Skill associated knowledge cannot exceed 2000 characters');
-    }
+    this.validateSkillFields(description, guardrails, associatedKnowledge);
 
     const res = await this.dgraphService.mutation<{
       updateSkill: { skill: dgraphResolversTypes.Skill[] };

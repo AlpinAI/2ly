@@ -5,6 +5,7 @@ import pino from 'pino';
 import {
   GET_AI_CONFIGS_BY_WORKSPACE,
   FIND_AI_CONFIG_BY_KEY,
+  GET_AI_CONFIG_BY_ID,
   CREATE_AI_CONFIG,
   UPDATE_AI_CONFIG,
   DELETE_AI_CONFIG,
@@ -41,6 +42,19 @@ export class AIConfigRepository {
     } catch (error) {
       this.logger.error(`Failed to get AI configs for workspace ${workspaceId}: ${error}`);
       throw new Error('Failed to get AI configs');
+    }
+  }
+
+  async findById(id: string): Promise<(dgraphResolversTypes.AiConfig & { workspace: { id: string } }) | null> {
+    try {
+      const res = await this.dgraphService.query<{
+        getAIConfig: (dgraphResolversTypes.AiConfig & { workspace: { id: string } }) | null;
+      }>(GET_AI_CONFIG_BY_ID, { id });
+
+      return res.getAIConfig;
+    } catch (error) {
+      this.logger.error(`Failed to find AI config by id ${id}: ${error}`);
+      throw new Error('Failed to find AI config');
     }
   }
 
