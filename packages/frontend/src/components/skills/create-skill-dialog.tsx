@@ -302,7 +302,7 @@ export function CreateSkillDialog() {
 
           {/* Content */}
           <Tabs.Root value={mode} onValueChange={(v) => setMode(v as 'manual' | 'ai')} className="flex flex-col flex-1 overflow-hidden">
-            <Tabs.List className="px-6 pt-4 flex gap-2 border-b border-gray-200 dark:border-gray-700">
+            <Tabs.List className="px-6 pt-4 flex gap-2 border-b border-gray-200 dark:border-gray-700 flex-shrink-0">
               <Tabs.Trigger
                 value="manual"
                 className="px-4 py-2 text-sm font-medium text-gray-600 dark:text-gray-400 border-b-2 border-transparent data-[state=active]:border-cyan-500 data-[state=active]:text-cyan-600 dark:data-[state=active]:text-cyan-400 hover:text-gray-900 dark:hover:text-gray-200 transition-colors"
@@ -319,9 +319,9 @@ export function CreateSkillDialog() {
             </Tabs.List>
 
             {/* Manual Mode */}
-            <Tabs.Content value="manual" className="flex-1 overflow-hidden">
-              <form onSubmit={handleManualSubmit} className="flex flex-col h-full">
-                <div className="p-6 overflow-y-auto flex-1 space-y-4">
+            <Tabs.Content value="manual" className="flex-1 overflow-hidden min-h-0">
+              <form onSubmit={handleManualSubmit} className="flex flex-col flex-1 min-h-0">
+                <div className="p-6 overflow-y-auto flex-1 space-y-4 min-h-0">
                   {/* Name Field */}
                   <div>
                     <label
@@ -361,7 +361,7 @@ export function CreateSkillDialog() {
                 </div>
 
                 {/* Footer */}
-                <div className="p-6 border-t border-gray-200 dark:border-gray-700 flex justify-end gap-2">
+                <div className="p-6 border-t border-gray-200 dark:border-gray-700 flex justify-end gap-2 flex-shrink-0">
                   <Button type="button" variant="outline" onClick={handleClose} disabled={creating}>
                     Cancel
                   </Button>
@@ -373,8 +373,8 @@ export function CreateSkillDialog() {
             </Tabs.Content>
 
             {/* AI-Assisted Mode */}
-            <Tabs.Content value="ai" className="flex-1 overflow-hidden flex flex-col">
-              <div className="flex flex-col h-full">
+            <Tabs.Content value="ai" className="flex-1 overflow-hidden flex flex-col min-h-0">
+              <div className="flex flex-col flex-1 min-h-0">
                 <div className="p-6 overflow-y-auto flex-1 space-y-4 min-h-0">
                   {!generatedData ? (
                     <>
@@ -542,7 +542,7 @@ export function CreateSkillDialog() {
                 </div>
 
                 {/* Footer */}
-                <div className="p-6 border-t border-gray-200 dark:border-gray-700 flex justify-between gap-2">
+                <div className="p-6 border-t border-gray-200 dark:border-gray-700 flex justify-between gap-2 flex-shrink-0">
                   <div>
                     {generatedData && (
                       <Button
