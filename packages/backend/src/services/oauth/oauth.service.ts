@@ -116,7 +116,7 @@ export class OAuthService {
     authenticatedUserId?: string
   ): Promise<OAuthCallbackResult> {
     // Validate state
-    const statePayload = this.stateService.validateState(state);
+    const statePayload = await this.stateService.validateState(state);
     if (!statePayload) {
       this.logger.warn('Invalid or expired OAuth state');
       return { success: false, error: 'Invalid or expired OAuth state' };

@@ -1,7 +1,15 @@
 import { injectable, inject } from 'inversify';
 import { IdentityRepository } from '../repositories/identity/identity.repository';
 import { KeyRateLimiterService } from './key-rate-limiter.service';
-import { LoggerService, NatsService, Service, HandshakeRequest, HandshakeResponse, ErrorResponse, dgraphResolversTypes } from '@skilder-ai/common';
+import {
+  LoggerService,
+  NatsService,
+  Service,
+  HandshakeRequest,
+  HandshakeResponse,
+  ErrorResponse,
+  dgraphResolversTypes,
+} from '@skilder-ai/common';
 import pino from 'pino';
 import { WorkspaceRepository } from '../repositories/workspace/workspace.repository';
 import { RuntimeRepository } from '../repositories/runtime/runtime.repository';
@@ -84,11 +92,13 @@ export class IdentityService extends Service {
     const keyPrefix = key.substring(0, 8); // First 8 chars for rate limiting
     const ipAddress = msg.data.hostIP || 'unknown';
 
-    this.logger.debug(`Handling handshake message: ${key.slice(0, 5)}...${key.slice(-3)}, ${msg.data.nature} ${msg.data.name}]`);
+    this.logger.debug(
+      `Handling handshake message: ${key.slice(0, 5)}...${key.slice(-3)}, ${msg.data.nature} ${msg.data.name}]`,
+    );
 
     try {
       // 1. Check rate limiting before validation
-      if (!this.keyRateLimiter.checkKeyAttempt(keyPrefix, ipAddress)) {
+      if (!(await this.keyRateLimiter.checkKeyAttempt(keyPrefix, ipAddress))) {
         this.logger.warn(`Rate limit exceeded for key validation attempt from IP: ${ipAddress}`);
         throw new Error('AUTHENTICATION_FAILED');
       }
@@ -97,7 +107,7 @@ export class IdentityService extends Service {
       const { nature, relatedId } = await this.identityRepository.findKey(key);
 
       // 3. Record successful validation
-      this.keyRateLimiter.recordSuccessfulAttempt(keyPrefix);
+      await this.keyRateLimiter.recordSuccessfulAttempt(keyPrefix);
       let workspaceId: string | null = null;
       let finalNature: 'runtime' | 'skill' | null = null;
       let finalRelatedId: string | null = null;
@@ -113,7 +123,7 @@ export class IdentityService extends Service {
         }
         // upsert the runtime or skill
         if (msg.data.nature === 'runtime' && msg.data.name) {
-          runtime = await this.runtimeRepository.findByName('system', system.id, msg.data.name) ?? null;
+          runtime = (await this.runtimeRepository.findByName('system', system.id, msg.data.name)) ?? null;
           if (!runtime) {
             this.logger.debug(`Creating runtime ${msg.data.name} for system ${system.id}`);
             runtime = await this.runtimeRepository.create('system', system.id, msg.data.name, '', 'ACTIVE', 'EDGE');
@@ -133,10 +143,17 @@ export class IdentityService extends Service {
         workspaceId = workspace.id;
         // upsert the runtime or skill
         if (msg.data.nature === 'runtime' && msg.data.name) {
-          runtime = await this.runtimeRepository.findByName('workspace', workspace.id, msg.data.name) ?? null;
+          runtime = (await this.runtimeRepository.findByName('workspace', workspace.id, msg.data.name)) ?? null;
           if (!runtime) {
             this.logger.debug(`Creating runtime ${msg.data.name} for workspace ${workspace.id}`);
-            runtime = await this.runtimeRepository.create('workspace', workspace.id, msg.data.name, '', 'ACTIVE', 'EDGE');
+            runtime = await this.runtimeRepository.create(
+              'workspace',
+              workspace.id,
+              msg.data.name,
+              '',
+              'ACTIVE',
+              'EDGE',
+            );
           } else {
             this.logger.debug(`Found runtime identity for ${msg.data.name}: ${runtime.id}`);
           }
@@ -144,7 +161,7 @@ export class IdentityService extends Service {
           finalRelatedId = runtime.id;
           finalRelatedName = msg.data.name;
         } else if (msg.data.nature === 'skill' && msg.data.name) {
-          skill = await this.skillRepository.findByName(workspace.id, msg.data.name) ?? null;
+          skill = (await this.skillRepository.findByName(workspace.id, msg.data.name)) ?? null;
           if (!skill) {
             this.logger.debug(`Creating skill ${msg.data.name} for workspace ${workspace.id}`);
             skill = await this.skillRepository.create(msg.data.name, '', workspace.id);
@@ -210,7 +227,7 @@ export class IdentityService extends Service {
       // Record failed attempt for rate limiting (unless it was a rate limit error)
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       if (errorMessage !== 'AUTHENTICATION_FAILED') {
-        this.keyRateLimiter.recordFailedAttempt(keyPrefix, ipAddress);
+        await this.keyRateLimiter.recordFailedAttempt(keyPrefix, ipAddress);
       }
 
       // Log detailed error for debugging (preserves original error information)
@@ -229,10 +246,7 @@ export class IdentityService extends Service {
 
   onHandshake(nature: 'runtime', callback: HandshakeRuntimeCallback): string;
   onHandshake(nature: 'skill', callback: HandshakeSkillCallback): string;
-  onHandshake(
-    nature: 'runtime' | 'skill',
-    callback: HandshakeRuntimeCallback | HandshakeSkillCallback
-  ): string {
+  onHandshake(nature: 'runtime' | 'skill', callback: HandshakeRuntimeCallback | HandshakeSkillCallback): string {
     const callbackId = uuidv4();
     if (nature === 'runtime') {
       this.onRuntimeHandshakeCallbacks.set(callbackId, callback as HandshakeRuntimeCallback);

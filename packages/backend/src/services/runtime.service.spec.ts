@@ -71,6 +71,26 @@ function createService(deps?: Partial<{
 
     const logger = { getLogger: () => ({ info: vi.fn(), error: vi.fn(), debug: vi.fn() }) } as unknown as import('@skilder-ai/common').LoggerService;
 
+    const cacheService = {
+        start: vi.fn(async () => {}),
+        stop: vi.fn(async () => {}),
+        createBucket: vi.fn(async () => {}),
+        deleteBucket: vi.fn(async () => {}),
+        get: vi.fn(async () => null),
+        put: vi.fn(async () => 1),
+        delete: vi.fn(async () => {}),
+        keys: vi.fn(async () => []),
+        clear: vi.fn(async () => 0),
+        watch: vi.fn(async () => ({
+            [Symbol.asyncIterator]: async function* () {},
+            unsubscribe: vi.fn(),
+            drain: vi.fn(async () => {}),
+        })),
+        increment: vi.fn(async () => 1),
+        getOrSet: vi.fn(async () => ({ value: null, revision: 1, createdAt: Date.now() })),
+        getBuckets: vi.fn(async () => []),
+    } as unknown as import('@skilder-ai/common').NatsCacheService;
+
     let runtimeHandshakeCallback: ((identity: RuntimeHandshakeIdentity) => void) | null = null;
     const identityService: FakeIdentityService = {
         start: vi.fn(async () => { }),
@@ -92,6 +112,7 @@ function createService(deps?: Partial<{
         logger,
         dgraph,
         nats as unknown as import('@skilder-ai/common').NatsService,
+        cacheService,
         identityService as unknown as import('./identity.service').IdentityService,
         factory as unknown as import('./runtime.instance').RuntimeInstanceFactory,
         mcpRepo as unknown as import('../repositories').MCPServerRepository,

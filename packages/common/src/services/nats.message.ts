@@ -69,6 +69,29 @@ export class NatsMessage<T = unknown> {
     }
   }
 
+  /**
+   * Parse a message from raw data (e.g., from cache).
+   * Unlike get(), this doesn't require a NATS Msg object.
+   */
+  static fromRawData<T = unknown>(rawData: RawMessage<T>): NatsMessage<T | { error: string }> {
+    const messageClass = this.registry.get(rawData.type);
+    if (!messageClass) {
+      return this.getError(`Message type ${rawData.type} was not registered`) as NatsMessage<T | { error: string }>;
+    }
+
+    try {
+      const message = new messageClass(rawData.data) as NatsMessage<T>;
+      if (message instanceof NatsRequest || message instanceof NatsPublish) {
+        if (rawData.subject) {
+          message.setSubject(rawData.subject);
+        }
+      }
+      return message;
+    } catch (error) {
+      return this.getError(`Invalid message ${rawData.type}: ${error}`) as NatsMessage<T | { error: string }>;
+    }
+  }
+
   static getError(message: string) {
     const messageClass = this.registry.get('error');
     if (!messageClass) {

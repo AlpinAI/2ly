@@ -1,7 +1,7 @@
 import { NatsConnection, Msg, ConnectionOptions, RequestOptions, TimeoutError } from '@nats-io/nats-core';
 import { connect } from '@nats-io/transport-node';
-import { JetStreamClient } from "@nats-io/jetstream";
-import { Kvm, KV } from "@nats-io/kv";
+import { JetStreamClient } from '@nats-io/jetstream';
+import { Kvm } from '@nats-io/kv';
 import { injectable, inject } from 'inversify';
 import { LoggerService } from './logger.service';
 import pino from 'pino';
@@ -10,10 +10,6 @@ import { NatsMessage, NatsPublish, NatsRequest, NatsResponse } from './nats.mess
 import { DEFAULT_REQUEST_TIMEOUT } from '../constants';
 
 export const NATS_CONNECTION_OPTIONS = 'nats.connectionOptions';
-export const HEARTBAT_TTL = 'nats.heartbeat.ttl';
-export const DEFAULT_HEARTBAT_TTL = 30 * 1000; // 30 seconds in milliseconds
-export const EPHEMERAL_TTL = 'nats.ephemeral.ttl';
-export const DEFAULT_EPHEMERAL_TTL = 60 * 1000; // 60 seconds in milliseconds
 
 @injectable()
 export class NatsService extends Service {
@@ -22,13 +18,10 @@ export class NatsService extends Service {
   private logger: pino.Logger;
   private jetstream: JetStreamClient | null = null;
   private kvManager: Kvm | null = null;
-  private heartbeatKV: KV | null = null;
-  private ephemeralKV: KV | null = null;
+
   constructor(
     @inject(LoggerService) private loggerService: LoggerService,
     @inject(NATS_CONNECTION_OPTIONS) private readonly natsConnectionOptions: Partial<ConnectionOptions>,
-    @inject(HEARTBAT_TTL) private readonly heartbeatTTL: number = DEFAULT_HEARTBAT_TTL,
-    @inject(EPHEMERAL_TTL) private readonly ephemeralTTL: number = DEFAULT_EPHEMERAL_TTL,
   ) {
     super();
     this.logger = this.loggerService.getLogger(this.name);
@@ -52,12 +45,6 @@ export class NatsService extends Service {
         reconnectTimeWait: 1000,
       });
       this.kvManager = new Kvm(this.nats);
-      this.heartbeatKV = await this.kvManager.create('heartbeat', {
-        ttl: this.heartbeatTTL,
-      });
-      this.ephemeralKV = await this.kvManager.create('ephemeral', {
-        ttl: this.ephemeralTTL,
-      });
     } catch (error) {
       this.logger.error(`Error connecting to NATS: ${error}`);
       throw error as Error;
@@ -77,6 +64,14 @@ export class NatsService extends Service {
   // Reports whether the service is connected and started
   public isConnected(): boolean {
     return this.state === 'STARTED' && this.nats !== null && !this.nats.isClosed();
+  }
+
+  /**
+   * Get the KV manager for use by CacheService.
+   * Returns null if not connected.
+   */
+  public getKvManager(): Kvm | null {
+    return this.kvManager;
   }
 
   // Subscribes to a core NATS subject (ephemeral, no persistence)
@@ -138,7 +133,10 @@ export class NatsService extends Service {
   }
 
   // Sends a core NATS request and awaits a reply (RPC style)
-  async request(message: NatsRequest, opts: RequestOptions & { retryOnTimeout?: boolean } = { timeout: DEFAULT_REQUEST_TIMEOUT, retryOnTimeout: false }): Promise<NatsResponse> {
+  async request(
+    message: NatsRequest,
+    opts: RequestOptions & { retryOnTimeout?: boolean } = { timeout: DEFAULT_REQUEST_TIMEOUT, retryOnTimeout: false },
+  ): Promise<NatsResponse> {
     if (!this.nats) {
       throw new Error('Not connected to NATS');
     }
@@ -163,188 +161,5 @@ export class NatsService extends Service {
       throw new Error('Invalid response, must be a NatsResponse');
     }
     return response;
-  }
-
-  heartbeat(id: string, metadata: Record<string, string>) {
-    if (!this.heartbeatKV) {
-      throw new Error('Heartbeat KV not initialized');
-    }
-    metadata.i = id;
-    metadata.t = Date.now().toString();
-    this.heartbeatKV.put(id, JSON.stringify(metadata));
-  }
-
-  async heartbeatKeys(): Promise<string[]> {
-    if (!this.heartbeatKV) {
-      throw new Error('Heartbeat KV not initialized');
-    }
-    const keys = await this.heartbeatKV.keys();
-    if (!keys) {
-      return [];
-    }
-    const keysArray = [];
-    for await (const key of keys) {
-      keysArray.push(key);
-    }
-    return keysArray;
-  }
-
-  async kill(id: string) {
-    if (!this.heartbeatKV) {
-      throw new Error('Heartbeat KV not initialized');
-    }
-    try {
-      await this.heartbeatKV.delete(id);
-    } catch (error) {
-      this.logger.warn(`Failed to delete the hearbeatKV for ${id}: ${error}`)
-    }
-  }
-
-  async clearHeartbeatKeys(): Promise<void> {
-    if (!this.heartbeatKV) {
-      throw new Error('Heartbeat KV not initialized');
-    }
-    try {
-      const keys = await this.heartbeatKeys();
-      for (const key of keys) {
-        await this.heartbeatKV.delete(key);
-      }
-      this.logger.info(`Cleared ${keys.length} heartbeat keys`);
-    } catch (error) {
-      this.logger.error(`Failed to clear heartbeat keys: ${error}`);
-      throw error;
-    }
-  }
-
-  async observeHeartbeat(id: string) {
-    if (!this.heartbeatKV) {
-      throw new Error('Heartbeat KV not initialized');
-    }
-    if (!this.nats) {
-      throw new Error('Not connected to NATS');
-    }
-
-    const TTL = this.heartbeatTTL;
-    const watcher = await this.heartbeatKV.watch({ key: id });
-    const TIMEOUT_ERROR_MSG = 'Timeout Error';
-    const activeTimeouts = new Set<NodeJS.Timeout>();
-    const clearTimoutId = (timeoutId: NodeJS.Timeout) => {
-      clearTimeout(timeoutId);
-      activeTimeouts.delete(timeoutId);
-    };
-
-    return {
-      [Symbol.asyncIterator]: async function* () {
-        const iterator = watcher[Symbol.asyncIterator]();
-        let timeoutId: NodeJS.Timeout | null = null;
-
-        const createTimeoutPromise = (): Promise<never> => {
-          return new Promise((_, reject) => {
-            const timeout = setTimeout(() => {
-              reject(new Error(TIMEOUT_ERROR_MSG));
-            }, TTL);
-            activeTimeouts.add(timeout);
-            timeoutId = timeout;
-          });
-        };
-
-        const cleanup = () => {
-          if (timeoutId) {
-            clearTimoutId(timeoutId);
-            timeoutId = null;
-          }
-        };
-
-        try {
-          while (true) {
-            const timeoutPromise = createTimeoutPromise();
-
-            try {
-              const result = await Promise.race([
-                iterator.next(),
-                timeoutPromise
-              ]);
-
-              // Clear the timeout since we got a result
-              cleanup();
-
-              if (result.done || result.value.operation === 'DEL') {
-                return;
-              }
-
-              yield result.value.json() as Record<string, string>;
-
-            } catch (error) {
-              cleanup();
-              if (error instanceof Error && error.message === TIMEOUT_ERROR_MSG) {
-                // silently fail => just terminate the async iterator
-                watcher?.stop?.();
-              } else {
-                throw error;
-              }
-            }
-          }
-        } finally {
-          cleanup();
-        }
-      },
-
-      unsubscribe: () => {
-        watcher?.stop?.();
-        activeTimeouts.forEach(clearTimoutId);
-        activeTimeouts.clear();
-      },
-
-      drain: () => Promise.resolve()
-    };
-  }
-
-  async publishEphemeral(msg: NatsPublish) {
-    if (!this.ephemeralKV) {
-      throw new Error('Ephemeral KV not initialized');
-    }
-    const data = msg.prepareData();
-    this.logger.info(`Publishing ephemeral message to ${data.subject!}: ${JSON.stringify(data).slice(0, 50)}`);
-    await this.ephemeralKV.put(data.subject!, JSON.stringify(data));
-  }
-
-  async observeEphemeral(subject: string) {
-    if (!this.ephemeralKV) {
-      this.logger.error('Ephemeral KV not initialized');
-      throw new Error('Ephemeral KV not initialized');
-    }
-    this.logger.info(`Observing ephemeral message from ${subject}`);
-    const watcher = await this.ephemeralKV.watch({ key: subject });
-    return {
-      [Symbol.asyncIterator]: async function* () {
-        for await (const msg of watcher) {
-          if (msg.operation === 'DEL' || msg.operation === 'PURGE') {
-            return;
-          }
-          yield NatsMessage.get(msg as unknown as Msg);
-        }
-      },
-      unsubscribe: () => {
-        watcher?.stop?.();
-      },
-      drain: () => Promise.resolve()
-    };
-  }
-
-  async clearEphemeralKeys(): Promise<void> {
-    if (!this.ephemeralKV) {
-      throw new Error('Ephemeral KV not initialized');
-    }
-    try {
-      const entries = await this.ephemeralKV.keys(); // returns Promise<string[]>
-      for await (const key of entries) {
-        await this.ephemeralKV.delete(key);
-      }
-      this.logger.info(`Cleared ephemeral keys`);
-    }
-    catch (error) {
-      this.logger.error(`Failed to clear ephemeral keys: ${error}`);
-      throw error;
-    }
   }
 }

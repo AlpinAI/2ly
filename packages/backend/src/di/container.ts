@@ -8,12 +8,15 @@ import {
   MAIN_LOGGER_NAME,
   FORWARD_STDERR,
   dgraphResolversTypes,
-  HEARTBAT_TTL,
-  DEFAULT_HEARTBAT_TTL,
-  EPHEMERAL_TTL,
-  DEFAULT_EPHEMERAL_TTL,
   EncryptionService,
   AIProviderService,
+  // Cache service
+  NatsCacheService,
+  CACHE_SERVICE,
+  CACHE_SERVICE_CONFIG,
+  CACHE_BUCKET_TTLS,
+  HEARTBEAT_CACHE_TTL,
+  createCacheServiceConfig,
 } from '@skilder-ai/common';
 import { DGraphService, DGRAPH_URL } from '../services/dgraph.service';
 import { ApolloService } from '../services/apollo.service';
@@ -49,7 +52,6 @@ import { AISkillGenerationService } from '../services/ai-skill-generation.servic
 
 const container = new Container();
 const start = () => {
-
   // Init nats service
   const natsServers = process.env.NATS_SERVERS || 'localhost:4222';
   const natsName = process.env.NATS_NAME || 'backend';
@@ -60,9 +62,16 @@ const start = () => {
     maxReconnectAttempts: -1,
     reconnectTimeWait: 1000,
   });
-  container.bind(HEARTBAT_TTL).toConstantValue(process.env.HEARTBAT_TTL || DEFAULT_HEARTBAT_TTL);
-  container.bind(EPHEMERAL_TTL).toConstantValue(process.env.EPHEMERAL_TTL || DEFAULT_EPHEMERAL_TTL);
   container.bind(NatsService).toSelf().inSingletonScope();
+
+  // Init cache service
+  // Note: HEARTBEAT_CACHE_TTL is still bound individually for RuntimeInstance factory
+  container
+    .bind(HEARTBEAT_CACHE_TTL)
+    .toConstantValue(parseInt(process.env.HEARTBEAT_CACHE_TTL || '') || CACHE_BUCKET_TTLS.HEARTBEAT);
+  container.bind(CACHE_SERVICE_CONFIG).toConstantValue(createCacheServiceConfig());
+  container.bind(NatsCacheService).toSelf().inSingletonScope();
+  container.bind(CACHE_SERVICE).toService(NatsCacheService);
 
   // Init dgraph service
   container.bind(DROP_ALL_DATA).toConstantValue(process.env.DROP_ALL_DATA === 'true');
@@ -146,11 +155,14 @@ const start = () => {
       instance: dgraphResolversTypes.Runtime,
       metadata: ConnectionMetadata,
       onReady: () => void,
-      onDisconnect: () => void) => {
+      onDisconnect: () => void,
+    ) => {
       const logger = context.get(LoggerService).getLogger('runtime.instance');
+      const heartbeatTTL = context.get<number>(HEARTBEAT_CACHE_TTL);
       const runtimeInstance = new RuntimeInstance(
         logger,
         context.get(NatsService),
+        context.get(NatsCacheService),
         context.get(RuntimeRepository),
         context.get(SkillRepository),
         context.get(AIProviderRepository),
@@ -159,6 +171,7 @@ const start = () => {
         metadata,
         onReady,
         onDisconnect,
+        heartbeatTTL,
       );
       // We know the runtime factory is used by the runtime service so we can
       // identify the consumer safely

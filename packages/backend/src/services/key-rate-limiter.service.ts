@@ -1,5 +1,5 @@
 import { injectable, inject } from 'inversify';
-import { LoggerService } from '@skilder-ai/common';
+import { LoggerService, NatsCacheService, CACHE_BUCKETS, CACHE_BUCKET_TTLS } from '@skilder-ai/common';
 import pino from 'pino';
 
 interface RateLimitEntry {
@@ -8,37 +8,29 @@ interface RateLimitEntry {
 }
 
 /**
- * In-memory rate limiter for key validation attempts.
+ * Distributed rate limiter for key validation attempts.
  * Prevents brute force attacks on API keys.
+ * Uses NATS KV for distributed storage, supporting horizontal scaling.
  *
  * Limits:
  * - Per key: 10 failed attempts per 15 minutes
  * - Per IP: 50 validation attempts per hour
- *
- * TODO: Consider Redis for distributed rate limiting in production
  */
 @injectable()
 export class KeyRateLimiterService {
   private logger: pino.Logger;
-  private keyAttempts: Map<string, RateLimitEntry> = new Map();
-  private ipAttempts: Map<string, RateLimitEntry> = new Map();
 
   // Configuration
   private readonly KEY_MAX_ATTEMPTS = 10;
-  private readonly KEY_WINDOW_MS = 15 * 60 * 1000; // 15 minutes
   private readonly IP_MAX_ATTEMPTS = 50;
-  private readonly IP_WINDOW_MS = 60 * 60 * 1000; // 1 hour
+  private readonly keyTTL = CACHE_BUCKET_TTLS.RATE_LIMIT_KEY;
+  private readonly ipTTL = CACHE_BUCKET_TTLS.RATE_LIMIT_IP;
 
-  // Cleanup interval
-  private cleanupInterval?: NodeJS.Timeout;
-
-  constructor(@inject(LoggerService) private readonly loggerService: LoggerService) {
+  constructor(
+    @inject(LoggerService) private readonly loggerService: LoggerService,
+    @inject(NatsCacheService) private readonly cacheService: NatsCacheService,
+  ) {
     this.logger = this.loggerService.getLogger('key.rate.limiter');
-
-    // Start periodic cleanup (every 10 minutes)
-    this.cleanupInterval = setInterval(() => {
-      this.cleanup();
-    }, 10 * 60 * 1000);
   }
 
   /**
@@ -49,15 +41,15 @@ export class KeyRateLimiterService {
    * @param ipAddress - IP address of the requester
    * @returns true if attempt is allowed, false if rate limited
    */
-  checkKeyAttempt(keyPrefix: string, ipAddress: string): boolean {
+  async checkKeyAttempt(keyPrefix: string, ipAddress: string): Promise<boolean> {
     const now = Date.now();
 
     // Check per-key limit
-    const keyLimited = this.isRateLimited(
-      this.keyAttempts,
+    const keyLimited = await this.isRateLimited(
+      CACHE_BUCKETS.RATE_LIMIT_KEY,
       keyPrefix,
       this.KEY_MAX_ATTEMPTS,
-      this.KEY_WINDOW_MS,
+      this.keyTTL,
       now
     );
 
@@ -67,11 +59,11 @@ export class KeyRateLimiterService {
     }
 
     // Check per-IP limit
-    const ipLimited = this.isRateLimited(
-      this.ipAttempts,
+    const ipLimited = await this.isRateLimited(
+      CACHE_BUCKETS.RATE_LIMIT_IP,
       ipAddress,
       this.IP_MAX_ATTEMPTS,
-      this.IP_WINDOW_MS,
+      this.ipTTL,
       now
     );
 
@@ -90,11 +82,13 @@ export class KeyRateLimiterService {
    * @param keyPrefix - First 8 characters of the key
    * @param ipAddress - IP address of the requester
    */
-  recordFailedAttempt(keyPrefix: string, ipAddress: string): void {
+  async recordFailedAttempt(keyPrefix: string, ipAddress: string): Promise<void> {
     const now = Date.now();
 
-    this.incrementCounter(this.keyAttempts, keyPrefix, this.KEY_WINDOW_MS, now);
-    this.incrementCounter(this.ipAttempts, ipAddress, this.IP_WINDOW_MS, now);
+    await Promise.all([
+      this.incrementCounter(CACHE_BUCKETS.RATE_LIMIT_KEY, keyPrefix, this.keyTTL, now),
+      this.incrementCounter(CACHE_BUCKETS.RATE_LIMIT_IP, ipAddress, this.ipTTL, now),
+    ]);
 
     this.logger.info(`Failed key validation attempt - key prefix: ${keyPrefix}, IP: ${ipAddress}`);
   }
@@ -105,106 +99,62 @@ export class KeyRateLimiterService {
    *
    * @param keyPrefix - First 8 characters of the key
    */
-  recordSuccessfulAttempt(keyPrefix: string): void {
+  async recordSuccessfulAttempt(keyPrefix: string): Promise<void> {
     // Reset key counter on success
-    this.keyAttempts.delete(keyPrefix);
+    await this.cacheService.delete(CACHE_BUCKETS.RATE_LIMIT_KEY, keyPrefix);
   }
 
   /**
    * Check if a specific identifier is rate limited.
    */
-  private isRateLimited(
-    store: Map<string, RateLimitEntry>,
+  private async isRateLimited(
+    bucket: string,
     identifier: string,
     maxAttempts: number,
     windowMs: number,
     now: number
-  ): boolean {
-    const entry = store.get(identifier);
+  ): Promise<boolean> {
+    const entry = await this.cacheService.get<RateLimitEntry>(bucket, identifier);
 
     if (!entry) {
       return false; // No attempts yet
     }
 
-    // Check if window has expired
-    if (now > entry.resetAt) {
-      store.delete(identifier);
+    // Check if window has expired (TTL should handle this, but double-check)
+    if (now > entry.value.resetAt) {
+      await this.cacheService.delete(bucket, identifier);
       return false;
     }
 
     // Check if limit exceeded
-    return entry.count >= maxAttempts;
+    return entry.value.count >= maxAttempts;
   }
 
   /**
    * Increment the attempt counter for an identifier.
    */
-  private incrementCounter(
-    store: Map<string, RateLimitEntry>,
-    identifier: string,
-    windowMs: number,
-    now: number
-  ): void {
-    const entry = store.get(identifier);
+  private async incrementCounter(bucket: string, identifier: string, windowMs: number, now: number): Promise<void> {
+    const entry = await this.cacheService.get<RateLimitEntry>(bucket, identifier);
 
-    if (!entry || now > entry.resetAt) {
+    if (!entry || now > entry.value.resetAt) {
       // Create new entry or reset expired entry
-      store.set(identifier, {
+      await this.cacheService.put<RateLimitEntry>(bucket, identifier, {
         count: 1,
         resetAt: now + windowMs,
       });
     } else {
       // Increment existing entry
-      entry.count++;
+      await this.cacheService.put<RateLimitEntry>(bucket, identifier, {
+        count: entry.value.count + 1,
+        resetAt: entry.value.resetAt,
+      });
     }
   }
 
   /**
-   * Clean up expired entries to prevent memory leaks.
-   */
-  private cleanup(): void {
-    const now = Date.now();
-    let removedKey = 0;
-    let removedIp = 0;
-
-    // Clean up key attempts
-    for (const [key, entry] of this.keyAttempts.entries()) {
-      if (now > entry.resetAt) {
-        this.keyAttempts.delete(key);
-        removedKey++;
-      }
-    }
-
-    // Clean up IP attempts
-    for (const [ip, entry] of this.ipAttempts.entries()) {
-      if (now > entry.resetAt) {
-        this.ipAttempts.delete(ip);
-        removedIp++;
-      }
-    }
-
-    if (removedKey > 0 || removedIp > 0) {
-      this.logger.debug(`Cleaned up ${removedKey} key entries and ${removedIp} IP entries`);
-    }
-  }
-
-  /**
-   * Stop the cleanup interval (for testing or shutdown).
+   * Stop the service (no-op, cleanup handled by TTL).
    */
   destroy(): void {
-    if (this.cleanupInterval) {
-      clearInterval(this.cleanupInterval);
-      this.cleanupInterval = undefined;
-    }
-  }
-
-  /**
-   * Get current stats for monitoring.
-   */
-  getStats(): { keyTracked: number; ipTracked: number } {
-    return {
-      keyTracked: this.keyAttempts.size,
-      ipTracked: this.ipAttempts.size,
-    };
+    // No cleanup interval needed - TTL handles expiration
   }
 }

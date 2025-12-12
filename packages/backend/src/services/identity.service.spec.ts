@@ -146,7 +146,7 @@ describe('IdentityService', () => {
         respond: vi.fn(),
       };
 
-      vi.spyOn(mockKeyRateLimiter, 'checkKeyAttempt').mockReturnValue(true);
+      vi.spyOn(mockKeyRateLimiter, 'checkKeyAttempt').mockResolvedValue(true);
       vi.spyOn(mockIdentityRepository, 'findKey').mockResolvedValue({
         nature: 'system',
         relatedId: 'system-123',
@@ -199,7 +199,7 @@ describe('IdentityService', () => {
         respond: vi.fn(),
       };
 
-      vi.spyOn(mockKeyRateLimiter, 'checkKeyAttempt').mockReturnValue(true);
+      vi.spyOn(mockKeyRateLimiter, 'checkKeyAttempt').mockResolvedValue(true);
       vi.spyOn(mockIdentityRepository, 'findKey').mockResolvedValue({
         nature: 'system',
         relatedId: 'system-123',
@@ -244,7 +244,7 @@ describe('IdentityService', () => {
         respond: vi.fn(),
       };
 
-      vi.spyOn(mockKeyRateLimiter, 'checkKeyAttempt').mockReturnValue(true);
+      vi.spyOn(mockKeyRateLimiter, 'checkKeyAttempt').mockResolvedValue(true);
       vi.spyOn(mockIdentityRepository, 'findKey').mockResolvedValue({
         nature: 'workspace',
         relatedId: 'workspace-123',
@@ -295,7 +295,7 @@ describe('IdentityService', () => {
         respond: vi.fn(),
       };
 
-      vi.spyOn(mockKeyRateLimiter, 'checkKeyAttempt').mockReturnValue(true);
+      vi.spyOn(mockKeyRateLimiter, 'checkKeyAttempt').mockResolvedValue(true);
       vi.spyOn(mockIdentityRepository, 'findKey').mockResolvedValue({
         nature: 'workspace',
         relatedId: 'workspace-123',
@@ -339,7 +339,7 @@ describe('IdentityService', () => {
         respond: vi.fn(),
       };
 
-      vi.spyOn(mockKeyRateLimiter, 'checkKeyAttempt').mockReturnValue(true);
+      vi.spyOn(mockKeyRateLimiter, 'checkKeyAttempt').mockResolvedValue(true);
       vi.spyOn(mockIdentityRepository, 'findKey').mockResolvedValue({
         nature: 'workspace',
         relatedId: 'workspace-123',
@@ -385,7 +385,7 @@ describe('IdentityService', () => {
         respond: vi.fn(),
       };
 
-      vi.spyOn(mockKeyRateLimiter, 'checkKeyAttempt').mockReturnValue(true);
+      vi.spyOn(mockKeyRateLimiter, 'checkKeyAttempt').mockResolvedValue(true);
       vi.spyOn(mockIdentityRepository, 'findKey').mockResolvedValue({
         nature: 'runtime',
         relatedId: 'runtime-456',
@@ -428,7 +428,7 @@ describe('IdentityService', () => {
         respond: vi.fn(),
       };
 
-      vi.spyOn(mockKeyRateLimiter, 'checkKeyAttempt').mockReturnValue(true);
+      vi.spyOn(mockKeyRateLimiter, 'checkKeyAttempt').mockResolvedValue(true);
       vi.spyOn(mockIdentityRepository, 'findKey').mockResolvedValue({
         nature: 'runtime',
         relatedId: 'runtime-456',
@@ -462,7 +462,7 @@ describe('IdentityService', () => {
         respond: vi.fn(),
       };
 
-      vi.spyOn(mockKeyRateLimiter, 'checkKeyAttempt').mockReturnValue(true);
+      vi.spyOn(mockKeyRateLimiter, 'checkKeyAttempt').mockResolvedValue(true);
       vi.spyOn(mockIdentityRepository, 'findKey').mockResolvedValue({
         nature: 'skill',
         relatedId: 'skill-789',
@@ -498,7 +498,7 @@ describe('IdentityService', () => {
         respond: vi.fn(),
       };
 
-      vi.spyOn(mockKeyRateLimiter, 'checkKeyAttempt').mockReturnValue(false);
+      vi.spyOn(mockKeyRateLimiter, 'checkKeyAttempt').mockResolvedValue(false);
 
       await (service as unknown as { handleHandshake: (msg: unknown) => Promise<void> }).handleHandshake(
         handshakeRequest,
@@ -533,7 +533,7 @@ describe('IdentityService', () => {
         respond: vi.fn(),
       };
 
-      vi.spyOn(mockKeyRateLimiter, 'checkKeyAttempt').mockReturnValue(true);
+      vi.spyOn(mockKeyRateLimiter, 'checkKeyAttempt').mockResolvedValue(true);
       vi.spyOn(mockIdentityRepository, 'findKey').mockResolvedValue({
         nature: 'workspace',
         relatedId: 'workspace-123',
@@ -559,7 +559,7 @@ describe('IdentityService', () => {
         respond: vi.fn(),
       };
 
-      vi.spyOn(mockKeyRateLimiter, 'checkKeyAttempt').mockReturnValue(true);
+      vi.spyOn(mockKeyRateLimiter, 'checkKeyAttempt').mockResolvedValue(true);
       vi.spyOn(mockIdentityRepository, 'findKey').mockRejectedValue(new Error('NOT_FOUND'));
 
       await (service as unknown as { handleHandshake: (msg: unknown) => Promise<void> }).handleHandshake(
@@ -589,7 +589,7 @@ describe('IdentityService', () => {
         respond: vi.fn(),
       };
 
-      vi.spyOn(mockKeyRateLimiter, 'checkKeyAttempt').mockReturnValue(true);
+      vi.spyOn(mockKeyRateLimiter, 'checkKeyAttempt').mockResolvedValue(true);
       vi.spyOn(mockIdentityRepository, 'findKey').mockRejectedValue(new Error('NOT_FOUND'));
 
       await (service as unknown as { handleHandshake: (msg: unknown) => Promise<void> }).handleHandshake(
@@ -616,7 +616,7 @@ describe('IdentityService', () => {
         respond: vi.fn(),
       };
 
-      vi.spyOn(mockKeyRateLimiter, 'checkKeyAttempt').mockReturnValue(true);
+      vi.spyOn(mockKeyRateLimiter, 'checkKeyAttempt').mockResolvedValue(true);
       vi.spyOn(mockIdentityRepository, 'findKey').mockRejectedValue(new Error('EXPIRED'));
 
       await (service as unknown as { handleHandshake: (msg: unknown) => Promise<void> }).handleHandshake(
@@ -643,7 +643,7 @@ describe('IdentityService', () => {
         respond: vi.fn(),
       };
 
-      vi.spyOn(mockKeyRateLimiter, 'checkKeyAttempt').mockReturnValue(true);
+      vi.spyOn(mockKeyRateLimiter, 'checkKeyAttempt').mockResolvedValue(true);
       vi.spyOn(mockIdentityRepository, 'findKey').mockResolvedValue({
         nature: 'workspace',
         relatedId: 'workspace-123',
@@ -692,7 +692,7 @@ describe('IdentityService', () => {
       service.onHandshake('runtime', callback1);
       service.onHandshake('runtime', callback2);
 
-      vi.spyOn(mockKeyRateLimiter, 'checkKeyAttempt').mockReturnValue(true);
+      vi.spyOn(mockKeyRateLimiter, 'checkKeyAttempt').mockResolvedValue(true);
       vi.spyOn(mockIdentityRepository, 'findKey').mockResolvedValue({
         nature: 'runtime',
         relatedId: 'runtime-456',
@@ -740,7 +740,7 @@ describe('IdentityService', () => {
       const callback = vi.fn();
       service.onHandshake('skill', callback);
 
-      vi.spyOn(mockKeyRateLimiter, 'checkKeyAttempt').mockReturnValue(true);
+      vi.spyOn(mockKeyRateLimiter, 'checkKeyAttempt').mockResolvedValue(true);
       vi.spyOn(mockIdentityRepository, 'findKey').mockResolvedValue({
         nature: 'skill',
         relatedId: 'skill-789',
@@ -783,7 +783,7 @@ describe('IdentityService', () => {
         respond: vi.fn(),
       };
 
-      vi.spyOn(mockKeyRateLimiter, 'checkKeyAttempt').mockReturnValue(true);
+      vi.spyOn(mockKeyRateLimiter, 'checkKeyAttempt').mockResolvedValue(true);
       vi.spyOn(mockIdentityRepository, 'findKey').mockResolvedValue({
         nature: 'runtime',
         relatedId: 'runtime-456',

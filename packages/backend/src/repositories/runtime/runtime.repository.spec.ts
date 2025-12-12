@@ -33,7 +33,6 @@ describe('RuntimeRepository', () => {
         } as unknown as LoggerService;
         natsService = {
             request: vi.fn(),
-            publishEphemeral: vi.fn(),
         } as unknown as NatsService;
         identityRepository = {
             createKey: vi.fn().mockResolvedValue({ id: 'k1', key: 'RK_test123' }),

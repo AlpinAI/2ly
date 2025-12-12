@@ -1,6 +1,6 @@
 import { inject, injectable } from 'inversify';
 import pino from 'pino';
-import { LoggerService, NatsService, Service } from '@skilder-ai/common';
+import { LoggerService, NatsService, Service, NatsCacheService, CACHE_BUCKETS } from '@skilder-ai/common';
 import { AuthService } from './auth.service';
 
 export const HEARTBEAT_INTERVAL = 'heartbeat.interval';
@@ -17,6 +17,7 @@ export class HealthService extends Service {
   constructor(
     @inject(LoggerService) private loggerService: LoggerService,
     @inject(NatsService) private natsService: NatsService,
+    @inject(NatsCacheService) private cacheService: NatsCacheService,
     @inject(AuthService) private authService: AuthService,
   ) {
     super();
@@ -32,13 +33,19 @@ export class HealthService extends Service {
       throw new Error('NATS not connected');
     }
     this.logger.info('Starting');
-    this.natsService.heartbeat(identity.id!, {});
+
+    // Start the cache service and create heartbeat bucket
+    await this.startService(this.cacheService);
+
+    // Send initial heartbeat
+    await this.sendHeartbeat(identity.id!);
+
     this.heartbeatIntervalRef = setInterval(async () => {
       if (!this.authService.getIdentity()) {
         // ignore
         return;
       }
-      this.natsService.heartbeat(identity.id!, {});
+      await this.sendHeartbeat(identity.id!);
     }, this.heartbeatInterval);
     this.logger.info(`Heartbeat started for ${identity.nature} ${identity.id}`);
   }
@@ -53,6 +60,14 @@ export class HealthService extends Service {
     if (!identity) {
       return;
     }
-    await this.natsService.kill(identity.id!);
+    await this.cacheService.delete(CACHE_BUCKETS.HEARTBEAT, identity.id!);
+    await this.stopService(this.cacheService);
+  }
+
+  private async sendHeartbeat(id: string): Promise<void> {
+    await this.cacheService.put(CACHE_BUCKETS.HEARTBEAT, id, {
+      i: id,
+      t: Date.now().toString(),
+    });
   }
 }

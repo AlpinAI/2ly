@@ -1,6 +1,6 @@
 import pino from 'pino';
 import { FastifyRequest } from 'fastify';
-import { NatsService, LoggerService } from '@skilder-ai/common';
+import { NatsService, NatsCacheService, LoggerService } from '@skilder-ai/common';
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
 import { SSEServerTransport } from '@modelcontextprotocol/sdk/server/sse.js';
 import { tap } from 'rxjs';
@@ -61,9 +61,10 @@ export async function createSkillService(
   identity: SkillIdentity,
   loggerService: LoggerService,
   natsService: NatsService,
+  cacheService: NatsCacheService,
   healthService: HealthService,
 ): Promise<SkillService> {
-  const skillService = new SkillService(loggerService, natsService, identity);
+  const skillService = new SkillService(loggerService, natsService, cacheService, identity);
   await healthService.startService(skillService);
   return skillService;
 }

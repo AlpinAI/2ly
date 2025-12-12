@@ -8,17 +8,16 @@ import {
   MAIN_LOGGER_NAME,
   dgraphResolversTypes,
   FORWARD_STDERR,
-  HEARTBAT_TTL,
-  DEFAULT_HEARTBAT_TTL,
-  EPHEMERAL_TTL,
-  DEFAULT_EPHEMERAL_TTL,
   AIProviderService,
   type RuntimeSmartSkill,
+  // Cache service
+  NatsCacheService,
+  CACHE_SERVICE,
+  CACHE_SERVICE_CONFIG,
+  createCacheServiceConfig,
 } from '@skilder-ai/common';
 import { MainService } from '../services/runtime.main.service';
-import {
-  AuthService,
-} from '../services/auth.service';
+import { AuthService } from '../services/auth.service';
 import { HealthService, HEARTBEAT_INTERVAL } from '../services/runtime.health.service';
 import { ToolServerService, type ToolServerServiceFactory } from '../services/tool.mcp.server.service';
 import { ToolSmartSkillService, type ToolSmartSkillServiceFactory } from '../services/tool.smart-skill.service';
@@ -59,12 +58,14 @@ function validateAndDetectMode(): RuntimeMode {
 
   // Get remote port from environment variables
   const remotePort = process.env.REMOTE_PORT;
-  
+
   // Keys are mutually exclusive
   const keyVariables = [systemKey, workspaceKey, skillKey, runtimeKey];
   const keyVariablesSet = keyVariables.filter((key) => !!key);
   if (keyVariablesSet.length > 1) {
-    throw new Error(`Invalid configuration: Only one of SYSTEM_KEY, WORKSPACE_KEY, SKILL_KEY, or RUNTIME_KEY can be set but found values for ${keyVariablesSet.join(', ')}`);
+    throw new Error(
+      `Invalid configuration: Only one of SYSTEM_KEY, WORKSPACE_KEY, SKILL_KEY, or RUNTIME_KEY can be set but found values for ${keyVariablesSet.join(', ')}`,
+    );
   }
 
   // Validate name with their respective keys
@@ -160,9 +161,12 @@ const start = () => {
     maxReconnectAttempts: -1,
     reconnectTimeWait: 1000,
   });
-  container.bind(HEARTBAT_TTL).toConstantValue(process.env.HEARTBAT_TTL || DEFAULT_HEARTBAT_TTL);
-  container.bind(EPHEMERAL_TTL).toConstantValue(process.env.EPHEMERAL_TTL || DEFAULT_EPHEMERAL_TTL);
   container.bind(NatsService).toSelf().inSingletonScope();
+
+  // Init cache service
+  container.bind(CACHE_SERVICE_CONFIG).toConstantValue(createCacheServiceConfig());
+  container.bind(NatsCacheService).toSelf().inSingletonScope();
+  container.bind(CACHE_SERVICE).toService(NatsCacheService);
 
   // Init health service
   container.bind(HEARTBEAT_INTERVAL).toConstantValue(process.env.HEARTBEAT_INTERVAL || '5000');

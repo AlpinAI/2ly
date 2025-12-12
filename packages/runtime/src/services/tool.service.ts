@@ -13,6 +13,11 @@ import {
   EXECUTION_TARGET,
   ErrorResponse,
   type RuntimeSmartSkill,
+  NatsCacheService,
+  CACHE_BUCKETS,
+  NatsMessage,
+  type CacheWatchSubscription,
+  type RawMessage,
 } from '@skilder-ai/common';
 import { AuthService } from './auth.service';
 import { HealthService } from './runtime.health.service';
@@ -28,6 +33,7 @@ export class ToolService extends Service {
   name = 'tool';
   private logger: pino.Logger;
   private natsSubscriptions: { unsubscribe: () => void; drain: () => Promise<void>; isClosed?: () => boolean }[] = [];
+  private cacheSubscriptions: CacheWatchSubscription[] = [];
   private mcpServers: Map<string, ToolServerService> = new Map();
   private mcpTools: Map<string, dgraphResolversTypes.McpTool[]> = new Map();
   private toolSubscriptions: Map<string, Map<string, { unsubscribe: () => void }>> = new Map();
@@ -41,6 +47,7 @@ export class ToolService extends Service {
   constructor(
     @inject(LoggerService) private loggerService: LoggerService,
     @inject(NatsService) private natsService: NatsService,
+    @inject(NatsCacheService) private cacheService: NatsCacheService,
     @inject(AuthService) private authService: AuthService,
     @inject(HealthService) private healthService: HealthService,
     @inject(ToolServerService) private toolServerServiceFactory: ToolServerServiceFactory,
@@ -56,6 +63,7 @@ export class ToolService extends Service {
     await this.authService.waitForStarted();
     await this.natsService.waitForStarted();
     await this.healthService.waitForStarted();
+
     this.startObserveMCPServers();
     this.startObserveSmartSkills();
 
@@ -93,9 +101,11 @@ export class ToolService extends Service {
     }
     const subject = RuntimeMCPServersPublish.subscribeToRuntime(identity.workspaceId, identity.id);
     this.logger.debug(`Observing configured MCPServers for tool runtime: ${subject}`);
-    const subscription = await this.natsService.observeEphemeral(subject);
-    this.natsSubscriptions.push(subscription);
-    for await (const msg of subscription) {
+    const subscription = await this.cacheService.watch<unknown>(CACHE_BUCKETS.EPHEMERAL, { key: subject });
+    this.cacheSubscriptions.push(subscription);
+    for await (const event of subscription) {
+      if (event.operation !== 'PUT' || !event.value) continue;
+      const msg = NatsMessage.fromRawData(event.value as RawMessage<unknown>);
       if (msg instanceof RuntimeMCPServersPublish) {
         this.roots = msg.data.roots;
         const mcpServerIds = msg.data.mcpServers.map((mcpServer) => mcpServer.id);
@@ -131,7 +141,9 @@ export class ToolService extends Service {
       this.logger.warn(`Cannot stop observing configured MCPServers for tool runtime: workspaceId or id not found`);
       return;
     }
-    this.logger.debug(`Stopping to observe configured MCPServers for tool runtime ${identity.workspaceId} - ${identity.id}`);
+    this.logger.debug(
+      `Stopping to observe configured MCPServers for tool runtime ${identity.workspaceId} - ${identity.id}`,
+    );
 
     // Drain NATS subscriptions before stopping services
     const drainPromises = this.natsSubscriptions.map(async (subscription) => {
@@ -146,6 +158,12 @@ export class ToolService extends Service {
 
     await Promise.allSettled(drainPromises);
     this.natsSubscriptions = [];
+
+    // Unsubscribe from cache subscriptions
+    for (const subscription of this.cacheSubscriptions) {
+      subscription.unsubscribe();
+    }
+    this.cacheSubscriptions = [];
 
     // Stop MCP servers
     // -> will also drain the capabilities subscriptions
@@ -195,7 +213,7 @@ export class ToolService extends Service {
       const message = RuntimeDiscoveredToolsPublish.create({
         workspaceId: this.authService.getIdentity()!.workspaceId!,
         mcpServerId: mcpServer.id,
-        tools
+        tools,
       }) as RuntimeDiscoveredToolsPublish;
       // TODO: Publish with jetstream in a way that activate a retry in case the backend did not pick up the message
       // target to the backend, doesn't need to be linked to a specific runtime instance
@@ -305,7 +323,9 @@ export class ToolService extends Service {
     // Unsubscribe from all tool subscriptions for this MCP server
     const serverToolSubs = this.toolSubscriptions.get(mcpServer.id);
     if (serverToolSubs) {
-      this.logger.debug(`Unsubscribing from ${serverToolSubs.size} tool subscriptions for MCP server ${mcpServer.name}`);
+      this.logger.debug(
+        `Unsubscribing from ${serverToolSubs.size} tool subscriptions for MCP server ${mcpServer.name}`,
+      );
       for (const [toolId, subscription] of serverToolSubs.entries()) {
         try {
           subscription.unsubscribe();
@@ -330,8 +350,11 @@ export class ToolService extends Service {
    * Ensure all tools for an MCP server are subscribed.
    * This method is idempotent - it only subscribes to tools that don't have subscriptions yet.
    */
-  private ensureToolsSubscribed(mcpServerId: string, tools: dgraphResolversTypes.McpTool[], executionTarget: EXECUTION_TARGET) {
-
+  private ensureToolsSubscribed(
+    mcpServerId: string,
+    tools: dgraphResolversTypes.McpTool[],
+    executionTarget: EXECUTION_TARGET,
+  ) {
     this.mcpTools.set(
       mcpServerId,
       tools.filter((tool) => !!tool),
@@ -366,17 +389,17 @@ export class ToolService extends Service {
     }
     const subject = RuntimeSmartSkillsPublish.subscribeToRuntime(identity.workspaceId, identity.id);
     this.logger.debug(`Observing smart skills for runtime: ${subject}`);
-    const subscription = await this.natsService.observeEphemeral(subject);
-    this.natsSubscriptions.push(subscription);
-    for await (const msg of subscription) {
+    const subscription = await this.cacheService.watch<unknown>(CACHE_BUCKETS.EPHEMERAL, { key: subject });
+    this.cacheSubscriptions.push(subscription);
+    for await (const event of subscription) {
+      if (event.operation !== 'PUT' || !event.value) continue;
+      const msg = NatsMessage.fromRawData(event.value as RawMessage<unknown>);
       if (msg instanceof RuntimeSmartSkillsPublish) {
         this.logger.debug(
           `Received smart skills update: ${msg.data.smartSkills.map((skill) => skill.name).join(', ')}`,
         );
         const skillIds = msg.data.smartSkills.map((skill) => skill.id);
-        const skillsToStop = Array.from(this.smartSkills.keys()).filter(
-          (skillId) => !skillIds.includes(skillId),
-        );
+        const skillsToStop = Array.from(this.smartSkills.keys()).filter((skillId) => !skillIds.includes(skillId));
 
         // Stop smart skills that are not in the message
         for (const skillId of skillsToStop) {
@@ -483,9 +506,10 @@ export class ToolService extends Service {
       throw new Error('Cannot subscribe to smart skill tool: missing runtimeId or workspaceId');
     }
     // Smart skills run on EDGE, use workspaceId from skill config
-    const subject = executionTarget === 'AGENT'
-      ? SkillCallToolRequest.subscribeToSkillOnOneRuntime(skillId, workspaceId!, runtimeId)
-      : SkillCallToolRequest.subscribeToSkill(skillId);
+    const subject =
+      executionTarget === 'AGENT'
+        ? SkillCallToolRequest.subscribeToSkillOnOneRuntime(skillId, workspaceId!, runtimeId)
+        : SkillCallToolRequest.subscribeToSkill(skillId);
     this.logger.debug(`Subscribing to smart skill tool ${skillId} on subject: ${subject}`);
     const subscription = this.natsService.subscribe(subject);
     this.handleSmartSkillToolCall(subscription, skillId);
@@ -503,7 +527,9 @@ export class ToolService extends Service {
 
         // Check type discriminator - only handle smart-skill requests
         if (msg.data.type !== 'smart-skill') {
-          this.logger.warn(`Received non-smart-skill request (type: ${msg.data.type}) in smart skill handler, ignoring`);
+          this.logger.warn(
+            `Received non-smart-skill request (type: ${msg.data.type}) in smart skill handler, ignoring`,
+          );
           msg.respond(
             new ErrorResponse({
               error: `Expected smart-skill request type, got: ${msg.data.type}`,
