@@ -1,0 +1,9 @@
+mutation UpdateWorkspace($id: ID!, $name: String!) {
+  updateWorkspace(input: { filter: { id: [$id] }, set: { name: $name } }) {
+    workspace {
+      id
+      name
+      createdAt
+    }
+  }
+}

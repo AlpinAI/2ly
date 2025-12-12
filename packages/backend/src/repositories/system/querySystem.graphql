@@ -1,0 +1,18 @@
+query QuerySystem {
+  querySystem {
+    id
+    initialized
+    createdAt
+    updatedAt
+    instanceId
+    defaultWorkspace {
+      id
+      name
+      createdAt
+    }
+    admins {
+      id
+      email
+    }
+  }
+}

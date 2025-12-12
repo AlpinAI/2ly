@@ -1,0 +1,21 @@
+mutation UpdateOnboardingStepStatus($id: ID!, $status: OnboardingStepStatus!, $now: DateTime!, $metadata: String) {
+  updateOnboardingStep(input: {
+    filter: { id: [$id] }
+    set: {
+      status: $status
+      updatedAt: $now
+      metadata: $metadata
+    }
+  }) {
+    onboardingStep {
+      id
+      stepId
+      type
+      status
+      priority
+      metadata
+      createdAt
+      updatedAt
+    }
+  }
+}

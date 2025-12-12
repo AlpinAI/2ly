@@ -1,0 +1,12 @@
+query FindKeysByRelatedId($relatedId: String!) {
+  queryIdentityKey(filter: { relatedId: { eq: $relatedId } }) {
+    id
+    key
+    relatedId
+    createdAt
+    expiresAt
+    revokedAt
+    description
+    permissions
+  }
+}

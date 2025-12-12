@@ -1,0 +1,17 @@
+mutation LinkRuntime($mcpServerId: ID!, $runtimeId: ID!) {
+  updateMCPServer(input: { filter: { id: [$mcpServerId] }, set: { runtime: { id: $runtimeId } } }) {
+    mCPServer {
+      id
+      name
+      description
+      executionTarget
+      runtime {
+        id
+        name
+        description
+        status
+        lastSeenAt
+      }
+    }
+  }
+}

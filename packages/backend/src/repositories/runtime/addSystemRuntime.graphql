@@ -1,0 +1,38 @@
+mutation AddSystemRuntime(
+  $name: String!
+  $description: String!
+  $status: ActiveStatus!
+  $type: RuntimeType!
+  $createdAt: DateTime!
+  $lastSeenAt: DateTime!
+  $systemId: ID!
+) {
+  addRuntime(
+    input: {
+      name: $name
+      description: $description
+      status: $status
+      type: $type
+      createdAt: $createdAt
+      lastSeenAt: $lastSeenAt
+      system: { id: $systemId }
+    }
+  ) {
+    runtime {
+      id
+      name
+      description
+      status
+      type
+      createdAt
+      lastSeenAt
+      workspace {
+        id
+        name
+      }
+      system {
+        id
+      }
+    }
+  }
+}

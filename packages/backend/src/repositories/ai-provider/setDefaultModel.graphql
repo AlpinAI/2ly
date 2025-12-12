@@ -1,0 +1,8 @@
+mutation SetDefaultModel($workspaceId: ID!, $providerModel: String!) {
+  updateWorkspace(input: { filter: { id: [$workspaceId] }, set: { defaultAIModel: $providerModel } }) {
+    workspace {
+      id
+      defaultAIModel
+    }
+  }
+}

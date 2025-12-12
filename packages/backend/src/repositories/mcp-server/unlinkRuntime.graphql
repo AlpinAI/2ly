@@ -1,0 +1,13 @@
+mutation UnlinkRuntime($mcpServerId: ID!, $runtimeId: ID!) {
+  updateMCPServer(input: { filter: { id: [$mcpServerId] }, remove: { runtime: { id: $runtimeId } } }) {
+    mCPServer {
+      id
+      name
+      description
+      executionTarget
+      runtime {
+        id
+      }
+    }
+  }
+}

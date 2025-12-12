@@ -1,0 +1,32 @@
+query QueryMcpServers {
+  queryMCPServer {
+    id
+    name
+    description
+    repositoryUrl
+    transport
+    config
+    executionTarget
+    tools {
+      id
+      name
+      description
+      inputSchema
+      annotations
+      status
+      createdAt
+      lastSeenAt
+    }
+    runtime {
+      id
+      name
+      description
+      status
+      lastSeenAt
+    }
+    workspace {
+      id
+      name
+    }
+  }
+}

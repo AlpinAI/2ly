@@ -2,14 +2,14 @@ import { injectable, inject } from 'inversify';
 import { DGraphService } from '../../services/dgraph.service';
 import { dgraphResolversTypes, LoggerService } from '@skilder-ai/common';
 import {
-  CREATE_SESSION,
-  FIND_SESSION_BY_REFRESH_TOKEN,
-  UPDATE_SESSION_LAST_USED,
-  DEACTIVATE_SESSION,
-  DEACTIVATE_USER_SESSIONS,
-  CLEANUP_EXPIRED_SESSIONS,
-  GET_USER_ACTIVE_SESSIONS,
-} from './session.operations';
+  CreateSessionDocument,
+  FindSessionByRefreshTokenDocument,
+  UpdateSessionLastUsedDocument,
+  DeactivateSessionDocument,
+  DeactivateUserSessionsDocument,
+  CleanupExpiredSessionsDocument,
+  GetUserActiveSessionsDocument,
+} from '../../generated/dgraph';
 import pino from 'pino';
 
 export interface CreateSessionData {
@@ -39,11 +39,10 @@ export class SessionRepository {
       const now = new Date().toISOString();
       const expiresAt = sessionData.expiresAt.toISOString();
 
-      const res = await this.dgraphService.mutation<{
-        addSession: { session: dgraphResolversTypes.Session[] };
-      }>(CREATE_SESSION, {
+      const res = await this.dgraphService.mutation(CreateSessionDocument, {
         refreshToken: sessionData.refreshToken,
         userId: sessionData.userId,
+        userIdRef: sessionData.userId,
         deviceInfo: sessionData.deviceInfo,
         ipAddress: sessionData.ipAddress,
         userAgent: sessionData.userAgent,
@@ -51,7 +50,7 @@ export class SessionRepository {
         expiresAt,
       });
 
-      return res.addSession.session[0];
+      return res.addSession!.session![0]! as dgraphResolversTypes.Session;
     } catch (error) {
       this.logger.error(`Failed to create session: ${error instanceof Error ? error.message : String(error)}`);
       throw new Error('Failed to create session');
@@ -63,24 +62,22 @@ export class SessionRepository {
    */
   async findByRefreshToken(refreshToken: string): Promise<dgraphResolversTypes.Session | null> {
     try {
-      const res = await this.dgraphService.query<{
-        querySession: dgraphResolversTypes.Session[];
-      }>(FIND_SESSION_BY_REFRESH_TOKEN, { refreshToken });
+      const res = await this.dgraphService.query(FindSessionByRefreshTokenDocument, { refreshToken });
 
       if (!res.querySession || res.querySession.length === 0) {
         return null;
       }
 
-      const session = res.querySession[0];
+      const session = res.querySession[0]!;
 
       // Check if session is expired
-      if (new Date(session.expiresAt) < new Date()) {
+      if (new Date(session!.expiresAt) < new Date()) {
         // Deactivate expired session
         await this.deactivate(session.id);
         return null;
       }
 
-      return session;
+      return session as dgraphResolversTypes.Session;
     } catch (error) {
       this.logger.error(`Failed to find session by refresh token: ${error instanceof Error ? error.message : String(error)}`);
       throw new Error('Failed to find session by refresh token');
@@ -93,11 +90,9 @@ export class SessionRepository {
   async updateLastUsed(sessionId: string): Promise<dgraphResolversTypes.Session> {
     try {
       const now = new Date().toISOString();
-      const res = await this.dgraphService.mutation<{
-        updateSession: { session: dgraphResolversTypes.Session[] };
-      }>(UPDATE_SESSION_LAST_USED, { id: sessionId, now });
+      const res = await this.dgraphService.mutation(UpdateSessionLastUsedDocument, { id: sessionId, now });
 
-      return res.updateSession.session[0];
+      return res.updateSession!.session![0]! as dgraphResolversTypes.Session;
     } catch (error) {
       this.logger.error(`Failed to update session last used: ${error instanceof Error ? error.message : String(error)}`);
       throw new Error('Failed to update session last used');
@@ -109,11 +104,9 @@ export class SessionRepository {
    */
   async deactivate(sessionId: string): Promise<dgraphResolversTypes.Session> {
     try {
-      const res = await this.dgraphService.mutation<{
-        updateSession: { session: dgraphResolversTypes.Session[] };
-      }>(DEACTIVATE_SESSION, { id: sessionId });
+      const res = await this.dgraphService.mutation(DeactivateSessionDocument, { id: sessionId });
 
-      return res.updateSession.session[0];
+      return res.updateSession!.session![0]! as dgraphResolversTypes.Session;
     } catch (error) {
       this.logger.error(`Failed to deactivate session: ${error instanceof Error ? error.message : String(error)}`);
       throw new Error('Failed to deactivate session');
@@ -125,11 +118,9 @@ export class SessionRepository {
    */
   async deactivateAllUserSessions(userId: string): Promise<dgraphResolversTypes.Session[]> {
     try {
-      const res = await this.dgraphService.mutation<{
-        updateSession: { session: dgraphResolversTypes.Session[] };
-      }>(DEACTIVATE_USER_SESSIONS, { userId });
+      const res = await this.dgraphService.mutation(DeactivateUserSessionsDocument, { userId });
 
-      return res.updateSession.session;
+      return (res.updateSession?.session?.filter((s): s is dgraphResolversTypes.Session => s !== null) || []);
     } catch (error) {
       this.logger.error(`Failed to deactivate user sessions: ${error instanceof Error ? error.message : String(error)}`);
       throw new Error('Failed to deactivate user sessions');
@@ -141,11 +132,9 @@ export class SessionRepository {
    */
   async getUserActiveSessions(userId: string): Promise<dgraphResolversTypes.Session[]> {
     try {
-      const res = await this.dgraphService.query<{
-        querySession: dgraphResolversTypes.Session[];
-      }>(GET_USER_ACTIVE_SESSIONS, { userId });
+      const res = await this.dgraphService.query(GetUserActiveSessionsDocument, { userId });
 
-      return res.querySession || [];
+      return (res.querySession?.filter((s): s is dgraphResolversTypes.Session => s !== null) || []);
     } catch (error) {
       this.logger.error(`Failed to get user active sessions: ${error instanceof Error ? error.message : String(error)}`);
       throw new Error('Failed to get user active sessions');
@@ -158,11 +147,9 @@ export class SessionRepository {
   async cleanupExpiredSessions(): Promise<number> {
     try {
       const now = new Date().toISOString();
-      const res = await this.dgraphService.mutation<{
-        updateSession: { session: dgraphResolversTypes.Session[] };
-      }>(CLEANUP_EXPIRED_SESSIONS, { now });
+      const res = await this.dgraphService.mutation(CleanupExpiredSessionsDocument, { now });
 
-      return res.updateSession.session.length;
+      return res.updateSession?.session?.length || 0;
     } catch (error) {
       this.logger.error(`Failed to cleanup expired sessions: ${error instanceof Error ? error.message : String(error)}`);
       throw new Error('Failed to cleanup expired sessions');

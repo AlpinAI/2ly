@@ -1,0 +1,7 @@
+mutation DeleteIdentityKey($id: ID!) {
+  deleteIdentityKey(filter: { id: [$id] }) {
+    identityKey {
+      id
+    }
+  }
+}

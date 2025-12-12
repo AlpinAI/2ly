@@ -1,0 +1,7 @@
+mutation DeleteOAuthProvider($id: ID!) {
+  deleteOAuthProviderConfig(filter: { id: [$id] }) {
+    oAuthProviderConfig {
+      id
+    }
+  }
+}

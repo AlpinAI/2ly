@@ -1,0 +1,15 @@
+mutation UpdateExecutionTarget($id: ID!, $executionTarget: ExecutionTarget) {
+  updateMCPServer(input: { filter: { id: [$id] }, set: { executionTarget: $executionTarget } }) {
+    mCPServer {
+      id
+      executionTarget
+      runtime {
+        id
+        name
+        description
+        status
+        lastSeenAt
+      }
+    }
+  }
+}

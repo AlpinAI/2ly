@@ -1,0 +1,22 @@
+mutation SetRuntimeActive($id: ID!, $processId: String!, $hostIP: String!, $hostname: String!) {
+  updateRuntime(input: { filter: { id: [$id] }, set: { status: ACTIVE, lastSeenAt: "2025-12-12T00:00:00Z", processId: $processId, hostIP: $hostIP, hostname: $hostname } }) {
+    runtime {
+      id
+      name
+      status
+      createdAt
+      lastSeenAt
+      processId
+      hostIP
+      hostname
+      mcpClientName
+      roots
+      workspace {
+        id
+      }
+      system {
+        id
+      }
+    }
+  }
+}

@@ -3,14 +3,14 @@ import { DGraphService } from '../../services/dgraph.service';
 import { dgraphResolversTypes, LoggerService, EncryptionService } from '@skilder-ai/common';
 import pino from 'pino';
 import {
-  GET_USER_OAUTH_CONNECTIONS_BY_WORKSPACE,
-  FIND_USER_OAUTH_CONNECTION_BY_PROVIDER,
-  GET_USER_OAUTH_CONNECTION_BY_ID,
-  CREATE_USER_OAUTH_CONNECTION,
-  UPDATE_USER_OAUTH_CONNECTION,
-  UPDATE_USER_OAUTH_CONNECTION_LAST_USED,
-  DELETE_USER_OAUTH_CONNECTION,
-} from './user-oauth-connection.operations';
+  GetUserOAuthConnectionsByWorkspaceDocument,
+  FindUserOAuthConnectionByProviderDocument,
+  GetUserOAuthConnectionByIdDocument,
+  CreateUserOAuthConnectionDocument,
+  UpdateUserOAuthConnectionDocument,
+  UpdateUserOAuthConnectionLastUsedDocument,
+  DeleteUserOAuthConnectionDocument,
+} from '../../generated/dgraph';
 
 export interface UserOAuthConnectionData {
   provider: dgraphResolversTypes.OAuthProviderType;
@@ -47,18 +47,13 @@ export class UserOAuthConnectionRepository {
     workspaceId: string
   ): Promise<dgraphResolversTypes.UserOAuthConnection[]> {
     try {
-      const res = await this.dgraphService.query<{
-        queryUserOAuthConnection: (dgraphResolversTypes.UserOAuthConnection & {
-          workspace: { id: string } | null;
-          user: { id: string } | null;
-        })[];
-      }>(GET_USER_OAUTH_CONNECTIONS_BY_WORKSPACE, {});
+      const res = await this.dgraphService.query(GetUserOAuthConnectionsByWorkspaceDocument, {});
 
       // Filter by workspace and user ID in code
       const connections = res.queryUserOAuthConnection || [];
       return connections.filter(
-        (c) => c.workspace?.id === workspaceId && c.user?.id === userId
-      );
+        (c) => c && c.workspace?.id === workspaceId && c.user?.id === userId
+      ) as dgraphResolversTypes.UserOAuthConnection[];
     } catch (error) {
       this.logger.error(
         `Failed to get OAuth connections for user ${userId} in workspace ${workspaceId}: ${error}`
@@ -73,19 +68,14 @@ export class UserOAuthConnectionRepository {
     provider: dgraphResolversTypes.OAuthProviderType
   ): Promise<dgraphResolversTypes.UserOAuthConnection | null> {
     try {
-      const res = await this.dgraphService.query<{
-        queryUserOAuthConnection: (dgraphResolversTypes.UserOAuthConnection & {
-          workspace: { id: string } | null;
-          user: { id: string } | null;
-        })[];
-      }>(FIND_USER_OAUTH_CONNECTION_BY_PROVIDER, { provider });
+      const res = await this.dgraphService.query(FindUserOAuthConnectionByProviderDocument, { provider });
 
       const connections = res.queryUserOAuthConnection || [];
       // Filter by workspace and user ID in code (not relying on @cascade)
       const match = connections.find(
-        (c) => c.workspace?.id === workspaceId && c.user?.id === userId
+        (c) => c && c.workspace?.id === workspaceId && c.user?.id === userId
       );
-      return match || null;
+      return (match || null) as dgraphResolversTypes.UserOAuthConnection | null;
     } catch (error) {
       this.logger.error(
         `Failed to find OAuth connection for user ${userId}, workspace ${workspaceId}, provider ${provider}: ${error}`
@@ -101,19 +91,14 @@ export class UserOAuthConnectionRepository {
     userId: string;
   } | null> {
     try {
-      const res = await this.dgraphService.query<{
-        getUserOAuthConnection: (dgraphResolversTypes.UserOAuthConnection & {
-          workspace: { id: string };
-          user: { id: string };
-        }) | null;
-      }>(GET_USER_OAUTH_CONNECTION_BY_ID, { id });
+      const res = await this.dgraphService.query(GetUserOAuthConnectionByIdDocument, { id });
 
       if (!res.getUserOAuthConnection) return null;
       return {
         id: res.getUserOAuthConnection.id,
         provider: res.getUserOAuthConnection.provider,
-        workspaceId: res.getUserOAuthConnection.workspace.id,
-        userId: res.getUserOAuthConnection.user.id,
+        workspaceId: res.getUserOAuthConnection.workspace!.id,
+        userId: res.getUserOAuthConnection.user!.id,
       };
     } catch (error) {
       this.logger.error(`Failed to find OAuth connection by id ${id}: ${error}`);
@@ -135,9 +120,7 @@ export class UserOAuthConnectionRepository {
         ? this.encryption.encrypt(data.refreshToken)
         : null;
 
-      const res = await this.dgraphService.mutation<{
-        addUserOAuthConnection: { userOAuthConnection: dgraphResolversTypes.UserOAuthConnection[] };
-      }>(CREATE_USER_OAUTH_CONNECTION, {
+      const res = await this.dgraphService.mutation(CreateUserOAuthConnectionDocument, {
         workspaceId,
         userId,
         provider: data.provider,
@@ -155,7 +138,7 @@ export class UserOAuthConnectionRepository {
       this.logger.info(
         `Created OAuth connection for user ${userId} in workspace ${workspaceId} with provider ${data.provider}`
       );
-      return res.addUserOAuthConnection.userOAuthConnection[0];
+      return res.addUserOAuthConnection!.userOAuthConnection![0]! as dgraphResolversTypes.UserOAuthConnection;
     } catch (error) {
       this.logger.error(
         `Failed to create OAuth connection for user ${userId} in workspace ${workspaceId}: ${error}`
@@ -179,9 +162,7 @@ export class UserOAuthConnectionRepository {
         ? this.encryption.encrypt(data.refreshToken)
         : undefined;
 
-      const res = await this.dgraphService.mutation<{
-        updateUserOAuthConnection: { userOAuthConnection: dgraphResolversTypes.UserOAuthConnection[] };
-      }>(UPDATE_USER_OAUTH_CONNECTION, {
+      const res = await this.dgraphService.mutation(UpdateUserOAuthConnectionDocument, {
         id,
         encryptedAccessToken,
         encryptedRefreshToken,
@@ -194,7 +175,7 @@ export class UserOAuthConnectionRepository {
       });
 
       this.logger.info(`Updated OAuth connection ${id}`);
-      return res.updateUserOAuthConnection.userOAuthConnection[0];
+      return res.updateUserOAuthConnection!.userOAuthConnection![0]! as dgraphResolversTypes.UserOAuthConnection;
     } catch (error) {
       this.logger.error(`Failed to update OAuth connection ${id}: ${error}`);
       throw new Error('Failed to update user OAuth connection');
@@ -204,9 +185,7 @@ export class UserOAuthConnectionRepository {
   async updateLastUsed(id: string): Promise<void> {
     try {
       const now = new Date().toISOString();
-      await this.dgraphService.mutation<{
-        updateUserOAuthConnection: { userOAuthConnection: { id: string }[] };
-      }>(UPDATE_USER_OAUTH_CONNECTION_LAST_USED, { id, now });
+      await this.dgraphService.mutation(UpdateUserOAuthConnectionLastUsedDocument, { id, now });
     } catch (error) {
       this.logger.error(`Failed to update lastUsedAt for OAuth connection ${id}: ${error}`);
       // Don't throw - this is a non-critical update
@@ -215,9 +194,7 @@ export class UserOAuthConnectionRepository {
 
   async delete(id: string): Promise<boolean> {
     try {
-      await this.dgraphService.mutation<{
-        deleteUserOAuthConnection: { userOAuthConnection: { id: string }[] };
-      }>(DELETE_USER_OAUTH_CONNECTION, { id });
+      await this.dgraphService.mutation(DeleteUserOAuthConnectionDocument, { id });
 
       this.logger.info(`Deleted OAuth connection ${id}`);
       return true;
@@ -247,14 +224,7 @@ export class UserOAuthConnectionRepository {
    */
   async getDecryptedTokens(id: string): Promise<DecryptedTokens | null> {
     try {
-      const res = await this.dgraphService.query<{
-        getUserOAuthConnection: {
-          id: string;
-          encryptedAccessToken: string;
-          encryptedRefreshToken?: string;
-          tokenExpiresAt?: string;
-        } | null;
-      }>(GET_USER_OAUTH_CONNECTION_BY_ID, { id });
+      const res = await this.dgraphService.query(GetUserOAuthConnectionByIdDocument, { id });
 
       if (!res.getUserOAuthConnection) {
         return null;

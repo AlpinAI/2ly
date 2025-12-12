@@ -1,0 +1,26 @@
+mutation UpdateAiConfig(
+  $id: ID!
+  $value: String!
+  $description: String
+  $now: DateTime!
+) {
+  updateAIConfig(
+    input: {
+      filter: { id: [$id] }
+      set: {
+        value: $value
+        description: $description
+        updatedAt: $now
+      }
+    }
+  ) {
+    aIConfig {
+      id
+      key
+      value
+      description
+      createdAt
+      updatedAt
+    }
+  }
+}

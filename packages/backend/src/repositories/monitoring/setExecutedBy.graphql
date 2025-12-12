@@ -1,0 +1,7 @@
+mutation SetExecutedBy($id: ID!, $executedById: ID!) {
+  updateToolCall(
+    input: { filter: { id: [$id] }, set: { executedBy: { id: $executedById } } }
+  ) {
+    toolCall { id executedBy { id name } }
+  }
+}

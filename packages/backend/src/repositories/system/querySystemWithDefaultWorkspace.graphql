@@ -1,0 +1,26 @@
+query QuerySystemWithDefaultWorkspace {
+  querySystem {
+    id
+    initialized
+    createdAt
+    updatedAt
+    instanceId
+    defaultWorkspace {
+      id
+      name
+      createdAt
+    }
+    runtimes {
+      id
+      name
+      description
+      status
+      type
+      createdAt
+    }
+    admins {
+      id
+      email
+    }
+  }
+}

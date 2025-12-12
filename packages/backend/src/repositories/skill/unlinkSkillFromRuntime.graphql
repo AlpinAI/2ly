@@ -1,0 +1,31 @@
+mutation UnlinkSkillFromRuntime($skillId: ID!, $updatedAt: DateTime!) {
+  updateSkill(
+    input: {
+      filter: { id: [$skillId] }
+      remove: { runtime: {} }
+      set: { updatedAt: $updatedAt }
+    }
+  ) {
+    skill {
+      id
+      name
+      description
+      createdAt
+      updatedAt
+      mode
+      model
+      temperature
+      maxTokens
+      systemPrompt
+      executionTarget
+      runtime {
+        id
+        name
+      }
+      workspace {
+        id
+        name
+      }
+    }
+  }
+}

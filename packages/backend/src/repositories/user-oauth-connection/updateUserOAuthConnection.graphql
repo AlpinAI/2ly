@@ -1,0 +1,41 @@
+mutation UpdateUserOAuthConnection(
+  $id: ID!
+  $encryptedAccessToken: String
+  $encryptedRefreshToken: String
+  $tokenExpiresAt: DateTime
+  $scopes: [String!]
+  $accountEmail: String
+  $accountName: String
+  $accountAvatarUrl: String
+  $now: DateTime!
+) {
+  updateUserOAuthConnection(
+    input: {
+      filter: { id: [$id] }
+      set: {
+        encryptedAccessToken: $encryptedAccessToken
+        encryptedRefreshToken: $encryptedRefreshToken
+        tokenExpiresAt: $tokenExpiresAt
+        scopes: $scopes
+        accountEmail: $accountEmail
+        accountName: $accountName
+        accountAvatarUrl: $accountAvatarUrl
+        updatedAt: $now
+      }
+    }
+  ) {
+    userOAuthConnection {
+      id
+      provider
+      accountEmail
+      accountName
+      accountAvatarUrl
+      providerAccountId
+      scopes
+      tokenExpiresAt
+      createdAt
+      updatedAt
+      lastUsedAt
+    }
+  }
+}

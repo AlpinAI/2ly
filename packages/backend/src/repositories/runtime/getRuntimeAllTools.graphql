@@ -1,0 +1,19 @@
+query GetRuntimeAllTools($id: ID!) {
+  getRuntime(id: $id) {
+    id
+    workspace {
+      id
+    }
+    mcpServers {
+      id
+      tools(filter: { status: { eq: ACTIVE } }) {
+        id
+        name
+        description
+        inputSchema
+        annotations
+        status
+      }
+    }
+  }
+}

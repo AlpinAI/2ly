@@ -1,0 +1,14 @@
+mutation RevokeIdentityKey($id: ID!, $now: DateTime!) {
+  updateIdentityKey(input: { filter: { id: [$id] }, set: { revokedAt: $now } }) {
+    identityKey {
+      id
+      key
+      relatedId
+      createdAt
+      expiresAt
+      revokedAt
+      description
+      permissions
+    }
+  }
+}

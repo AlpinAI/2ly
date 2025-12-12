@@ -1,0 +1,7 @@
+mutation SetExecutedByAgent($id: ID!) {
+  updateToolCall(
+    input: { filter: { id: [$id] }, set: { executedByAgent: true } }
+  ) {
+    toolCall { id executedByAgent }
+  }
+}

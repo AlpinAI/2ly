@@ -1,0 +1,29 @@
+mutation UpdateOAuthProvider(
+  $id: ID!
+  $clientId: String
+  $encryptedClientSecret: String
+  $tenantId: String
+  $now: DateTime!
+) {
+  updateOAuthProviderConfig(
+    input: {
+      filter: { id: [$id] }
+      set: {
+        clientId: $clientId
+        encryptedClientSecret: $encryptedClientSecret
+        tenantId: $tenantId
+        updatedAt: $now
+      }
+    }
+  ) {
+    oAuthProviderConfig {
+      id
+      provider
+      enabled
+      clientId
+      tenantId
+      createdAt
+      updatedAt
+    }
+  }
+}

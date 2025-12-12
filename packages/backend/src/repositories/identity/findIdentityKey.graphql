@@ -1,0 +1,12 @@
+query FindIdentityKey($key: String!) {
+  queryIdentityKey(filter: { key: { eq: $key } }) {
+    id
+    key
+    relatedId
+    createdAt
+    expiresAt
+    revokedAt
+    description
+    permissions
+  }
+}

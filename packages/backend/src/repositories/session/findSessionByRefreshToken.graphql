@@ -1,0 +1,14 @@
+query FindSessionByRefreshToken($refreshToken: String!) {
+  querySession(filter: { refreshToken: { eq: $refreshToken }, isActive: true }) {
+    id
+    refreshToken
+    userId
+    deviceInfo
+    ipAddress
+    userAgent
+    createdAt
+    expiresAt
+    lastUsedAt
+    isActive
+  }
+}

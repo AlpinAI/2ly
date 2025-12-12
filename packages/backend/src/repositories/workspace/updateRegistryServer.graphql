@@ -1,0 +1,39 @@
+mutation UpdateRegistryServer(
+  $id: ID!
+  $name: String
+  $description: String
+  $title: String
+  $repositoryUrl: String
+  $version: String
+  $packages: String
+  $remotes: String
+) {
+  updateMCPRegistryServer(
+    input: {
+      filter: { id: [$id] }
+      set: {
+        name: $name
+        description: $description
+        title: $title
+        repositoryUrl: $repositoryUrl
+        version: $version
+        packages: $packages
+        remotes: $remotes
+      }
+    }
+  ) {
+    mCPRegistryServer {
+      id
+      name
+      description
+      title
+      repositoryUrl
+      version
+      packages
+      remotes
+      _meta
+      createdAt
+      lastSeenAt
+    }
+  }
+}

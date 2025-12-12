@@ -12,14 +12,14 @@ import {
 } from '@skilder-ai/common';
 import pino from 'pino';
 import {
-  GET_AI_PROVIDERS_BY_WORKSPACE,
-  FIND_AI_PROVIDER_BY_TYPE,
-  CREATE_AI_PROVIDER,
-  UPDATE_AI_PROVIDER,
-  DELETE_AI_PROVIDER,
-  GET_AI_PROVIDER_BY_ID,
-  SET_DEFAULT_MODEL,
-} from './ai-provider.operations';
+  GetAiProvidersByWorkspaceDocument,
+  FindAiProviderByTypeDocument,
+  CreateAiProviderDocument,
+  UpdateAiProviderDocument,
+  DeleteAiProviderDocument,
+  GetAiProviderByIdDocument,
+  SetDefaultModelDocument,
+} from '../../generated/dgraph';
 
 export interface AIProviderConfigData {
   provider: dgraphResolversTypes.AiProviderType;
@@ -43,11 +43,9 @@ export class AIProviderRepository {
 
   async getByWorkspace(workspaceId: string): Promise<dgraphResolversTypes.AiProviderConfig[]> {
     try {
-      const res = await this.dgraphService.query<{
-        getWorkspace: { aiProviders: dgraphResolversTypes.AiProviderConfig[] } | null;
-      }>(GET_AI_PROVIDERS_BY_WORKSPACE, { workspaceId });
+      const res = await this.dgraphService.query(GetAiProvidersByWorkspaceDocument, { workspaceId });
 
-      return res.getWorkspace?.aiProviders || [];
+      return (res.getWorkspace?.aiProviders || []) as dgraphResolversTypes.AiProviderConfig[];
     } catch (error) {
       this.logger.error(`Failed to get AI providers for workspace ${workspaceId}: ${error}`);
       throw new Error('Failed to get AI providers');
@@ -59,12 +57,10 @@ export class AIProviderRepository {
     provider: dgraphResolversTypes.AiProviderType
   ): Promise<dgraphResolversTypes.AiProviderConfig | null> {
     try {
-      const res = await this.dgraphService.query<{
-        getWorkspace: { aiProviders: dgraphResolversTypes.AiProviderConfig[] } | null;
-      }>(FIND_AI_PROVIDER_BY_TYPE, { workspaceId, provider });
+      const res = await this.dgraphService.query(FindAiProviderByTypeDocument, { workspaceId, provider });
 
       const providers = res.getWorkspace?.aiProviders || [];
-      return providers.length > 0 ? providers[0] : null;
+      return providers.length > 0 ? (providers[0] as dgraphResolversTypes.AiProviderConfig) : null;
     } catch (error) {
       this.logger.error(`Failed to find AI provider for workspace ${workspaceId} and provider ${provider}: ${error}`);
       throw new Error('Failed to find AI provider');
@@ -73,15 +69,13 @@ export class AIProviderRepository {
 
   async findById(id: string): Promise<dgraphResolversTypes.AiProviderConfig & { workspaceId: string } | null> {
     try {
-      const res = await this.dgraphService.query<{
-        getAIProviderConfig: dgraphResolversTypes.AiProviderConfig & { workspace: { id: string } } | null;
-      }>(GET_AI_PROVIDER_BY_ID, { id });
+      const res = await this.dgraphService.query(GetAiProviderByIdDocument, { id });
 
       if (!res.getAIProviderConfig) return null;
       return {
         ...res.getAIProviderConfig,
         workspaceId: res.getAIProviderConfig.workspace.id,
-      };
+      } as dgraphResolversTypes.AiProviderConfig & { workspaceId: string };
     } catch (error) {
       this.logger.error(`Failed to find AI provider by id ${id}: ${error}`);
       throw new Error('Failed to find AI provider');
@@ -92,9 +86,7 @@ export class AIProviderRepository {
     try {
       const now = new Date().toISOString();
 
-      const res = await this.dgraphService.mutation<{
-        addAIProviderConfig: { aIProviderConfig: dgraphResolversTypes.AiProviderConfig[] };
-      }>(CREATE_AI_PROVIDER, {
+      const res = await this.dgraphService.mutation(CreateAiProviderDocument, {
         workspaceId,
         provider: data.provider,
         encryptedApiKey: data.encryptedApiKey,
@@ -104,7 +96,7 @@ export class AIProviderRepository {
       });
 
       this.logger.info(`Created AI provider for workspace ${workspaceId} and provider ${data.provider}`);
-      return res.addAIProviderConfig.aIProviderConfig[0];
+      return res.addAIProviderConfig!.aIProviderConfig![0]! as dgraphResolversTypes.AiProviderConfig;
     } catch (error) {
       this.logger.error(`Failed to create AI provider for workspace ${workspaceId} and provider ${data.provider}: ${error}`);
       throw new Error('Failed to create AI provider');
@@ -118,9 +110,7 @@ export class AIProviderRepository {
     try {
       const now = new Date().toISOString();
 
-      const res = await this.dgraphService.mutation<{
-        updateAIProviderConfig: { aIProviderConfig: dgraphResolversTypes.AiProviderConfig[] };
-      }>(UPDATE_AI_PROVIDER, {
+      const res = await this.dgraphService.mutation(UpdateAiProviderDocument, {
         id,
         encryptedApiKey: data.encryptedApiKey,
         baseUrl: data.baseUrl,
@@ -129,7 +119,7 @@ export class AIProviderRepository {
       });
 
       this.logger.info(`Updated AI provider ${id}`);
-      return res.updateAIProviderConfig.aIProviderConfig[0];
+      return res.updateAIProviderConfig!.aIProviderConfig![0]! as dgraphResolversTypes.AiProviderConfig;
     } catch (error) {
       this.logger.error(`Failed to update AI provider ${id}: ${error}`);
       throw new Error('Failed to update AI provider');
@@ -171,9 +161,7 @@ export class AIProviderRepository {
 
   async delete(id: string): Promise<boolean> {
     try {
-      await this.dgraphService.mutation<{
-        deleteAIProviderConfig: { aIProviderConfig: { id: string }[] };
-      }>(DELETE_AI_PROVIDER, { id });
+      await this.dgraphService.mutation(DeleteAiProviderDocument, { id });
 
       this.logger.info(`Deleted AI provider ${id}`);
       return true;
@@ -204,9 +192,7 @@ export class AIProviderRepository {
     }
 
     try {
-      await this.dgraphService.mutation<{
-        updateWorkspace: { workspace: { id: string; defaultAIModel: string }[] };
-      }>(SET_DEFAULT_MODEL, {
+      await this.dgraphService.mutation(SetDefaultModelDocument, {
         workspaceId,
         providerModel,
       });

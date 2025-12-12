@@ -1,0 +1,14 @@
+query GetMcpToolWithWorkspace($toolId: ID!) {
+  getMCPTool(id: $toolId) {
+    id
+    name
+    workspace {
+      id
+      name
+    }
+    mcpServer {
+      id
+      executionTarget
+    }
+  }
+}

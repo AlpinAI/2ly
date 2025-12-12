@@ -3,25 +3,27 @@ import { DGraphService } from '../../services/dgraph.service';
 import { dgraphResolversTypes, NatsService, LoggerService, SkillCallToolRequest, RuntimeCallToolResponse, ErrorResponse, apolloResolversTypes } from '@skilder-ai/common';
 import { ConnectionMetadata } from '../../types';
 import {
-  QUERY_MCPSERVER_WITH_TOOL,
-  SET_ROOTS,
-  DELETE_RUNTIME,
-  UPDATE_RUNTIME,
-  ADD_SYSTEM_RUNTIME,
-  ADD_WORKSPACE_RUNTIME,
-  ADD_MCPSERVER_TO_RUNTIME,
-  GET_RUNTIME,
-  QUERY_ACTIVE_RUNTIMES,
-  QUERY_SYSTEM_RUNTIME_BY_NAME,
-  QUERY_WORKSPACE_RUNTIME_BY_NAME,
-  SET_RUNTIME_INACTIVE,
-  SET_RUNTIME_ACTIVE,
-  UPDATE_MCP_TOOL,
-  ADD_MCP_TOOL,
-  GET_RUNTIME_EDGE_MCP_SERVERS,
-  GET_RUNTIME_ALL_TOOLS,
-  UPDATE_RUNTIME_LAST_SEEN,
-} from './runtime.operations';
+  QueryMcpServerWithToolDocument,
+  SetRootsDocument,
+  DeleteRuntimeDocument,
+  UpdateRuntimeDocument,
+  AddSystemRuntimeDocument,
+  AddWorkspaceRuntimeDocument,
+  AddMcpServerToRuntimeDocument,
+  GetRuntimeDocument,
+  QueryActiveRuntimesDocument,
+  QuerySystemRuntimeByNameDocument,
+  QueryWorkspaceRuntimeByNameDocument,
+  SetRuntimeInactiveDocument,
+  SetRuntimeActiveDocument,
+  UpdateMcpToolDocument,
+  AddMcpToolDocument,
+  GetRuntimeEdgeMcpServersDocument,
+  GetRuntimeAllToolsDocument,
+  UpdateRuntimeLastSeenDocument,
+  ActiveStatus,
+  RuntimeType,
+} from '../../generated/dgraph';
 import { map, Observable } from 'rxjs';
 import { createSubscriptionFromQuery, escapeValue } from '../../helpers';
 import { MCPToolRepository } from '../mcp-tool/mcp-tool.repository';
@@ -54,32 +56,28 @@ export class RuntimeRepository {
     // 1. Create the runtime
     let runtime: dgraphResolversTypes.Runtime | undefined;
     if (connectedTo === 'system') {
-      const res = await this.dgraphService.mutation<{
-        addRuntime: { runtime: dgraphResolversTypes.Runtime[] };
-      }>(ADD_SYSTEM_RUNTIME, {
+      const res = await this.dgraphService.mutation(AddSystemRuntimeDocument, {
         name,
         description,
-        status,
-        type,
+        status: status as ActiveStatus,
+        type: type as RuntimeType,
         createdAt: now,
         lastSeenAt: now,
         systemId: relatedId,
       });
-      runtime = res.addRuntime.runtime[0];
+      runtime = res.addRuntime!.runtime![0]! as dgraphResolversTypes.Runtime;
     } else if (connectedTo === 'workspace') {
-      const res = await this.dgraphService.mutation<{
-        addRuntime: { runtime: dgraphResolversTypes.Runtime[] };
-      }>(ADD_WORKSPACE_RUNTIME, {
+      const res = await this.dgraphService.mutation(AddWorkspaceRuntimeDocument, {
         name,
         description,
-        status,
-        type,
+        status: status as ActiveStatus,
+        type: type as RuntimeType,
         createdAt: now,
         lastSeenAt: now,
         workspaceId: relatedId,
       });
 
-      runtime = res.addRuntime.runtime[0];
+      runtime = res.addRuntime!.runtime![0]! as dgraphResolversTypes.Runtime;
     } else {
       throw new Error(`Invalid connectedTo: ${connectedTo}`);
     }
@@ -95,23 +93,19 @@ export class RuntimeRepository {
   }
 
   async update(id: string, name: string, description: string): Promise<dgraphResolversTypes.Runtime> {
-    const res = await this.dgraphService.mutation<{
-      updateRuntime: { runtime: dgraphResolversTypes.Runtime[] };
-    }>(UPDATE_RUNTIME, {
+    const res = await this.dgraphService.mutation(UpdateRuntimeDocument, {
       id,
       name,
       description,
     });
-    return res.updateRuntime.runtime[0];
+    return res.updateRuntime!.runtime![0]! as dgraphResolversTypes.Runtime;
   }
 
   async delete(id: string): Promise<dgraphResolversTypes.Runtime> {
-    const res = await this.dgraphService.mutation<{
-      deleteRuntime: { runtime: dgraphResolversTypes.Runtime[] };
-    }>(DELETE_RUNTIME, {
+    const res = await this.dgraphService.mutation(DeleteRuntimeDocument, {
       id,
     });
-    return res.deleteRuntime.runtime[0];
+    return res.deleteRuntime!.runtime![0]! as dgraphResolversTypes.Runtime;
   }
 
   /**
@@ -129,10 +123,7 @@ export class RuntimeRepository {
       throw new Error('Tool name is required');
     }
     this.logger.debug(`Upserting tool ${toolName} for MCP Server ${mcpServerId}`);
-    const res = await this.dgraphService.query<{ getMCPServer: dgraphResolversTypes.McpServer }>(
-      QUERY_MCPSERVER_WITH_TOOL,
-      { id: mcpServerId, toolName },
-    );
+    const res = await this.dgraphService.query(QueryMcpServerWithToolDocument, { id: mcpServerId, toolName });
 
     const mcpServer = res.getMCPServer;
     if (!mcpServer) {
@@ -143,22 +134,20 @@ export class RuntimeRepository {
     const workspace = mcpServer.workspace;
     // if tool already exists, update it
     if ((mcpServer.tools?.length ?? 0) > 0) {
-      const tool = mcpServer.tools![0];
-      const response = (await this.dgraphService.mutation(UPDATE_MCP_TOOL, {
+      const tool = mcpServer.tools![0]!;
+      const response = await this.dgraphService.mutation(UpdateMcpToolDocument, {
         toolId: tool.id,
         toolDescription: escapeValue(toolDescription),
         toolInputSchema: toolInputSchema,
         toolAnnotations: toolAnnotations,
         now: new Date().toISOString(),
-        status: 'ACTIVE',
-      })) as {
-        updateMCPTool: { mCPTool: dgraphResolversTypes.McpTool[] };
-      };
-      return response.updateMCPTool.mCPTool[0];
+        status: ActiveStatus.Active,
+      });
+      return response.updateMCPTool!.mCPTool![0]! as dgraphResolversTypes.McpTool;
     }
 
     // if tool does not exist, create it
-    const response = (await this.dgraphService.mutation(ADD_MCP_TOOL, {
+    const response = await this.dgraphService.mutation(AddMcpToolDocument, {
       toolName,
       toolDescription: escapeValue(toolDescription),
       toolInputSchema: toolInputSchema,
@@ -166,35 +155,29 @@ export class RuntimeRepository {
       now: new Date().toISOString(),
       workspaceId: workspace.id,
       mcpServerId,
-    })) as {
-      addMCPTool: {
-        mCPTool: dgraphResolversTypes.McpTool[];
-      };
-    };
+    });
 
-    return response.addMCPTool.mCPTool[0];
+    return response.addMCPTool!.mCPTool![0]! as dgraphResolversTypes.McpTool;
   }
 
   async addMCPServer(
     runtimeId: string,
     mcpServerId: string,
   ): Promise<dgraphResolversTypes.Runtime> {
-    const res = await this.dgraphService.mutation<{
-      updateRuntime: { runtime: dgraphResolversTypes.Runtime[] };
-    }>(ADD_MCPSERVER_TO_RUNTIME, {
+    const res = await this.dgraphService.mutation(AddMcpServerToRuntimeDocument, {
       runtimeId,
       mcpServerId,
     });
-    return res.updateRuntime.runtime[0];
+    return res.updateRuntime!.runtime![0]! as dgraphResolversTypes.Runtime;
   }
 
   async getRuntime(id: string): Promise<dgraphResolversTypes.Runtime> {
-    const response = await this.dgraphService.query(GET_RUNTIME, { id });
-    return (response as { getRuntime: dgraphResolversTypes.Runtime }).getRuntime;
+    const response = await this.dgraphService.query(GetRuntimeDocument, { id });
+    return response.getRuntime! as dgraphResolversTypes.Runtime;
   }
 
   observeRoots(id: string): Observable<{ name: string; uri: string }[]> {
-    const query = createSubscriptionFromQuery(GET_RUNTIME);
+    const query = createSubscriptionFromQuery(GetRuntimeDocument);
     return this.dgraphService.observe<dgraphResolversTypes.Runtime>(
       query,
       { id },
@@ -204,7 +187,7 @@ export class RuntimeRepository {
   }
 
   observeMCPServersOnEdge(id: string): Observable<dgraphResolversTypes.McpServer[]> {
-    const query = createSubscriptionFromQuery(GET_RUNTIME_EDGE_MCP_SERVERS);
+    const query = createSubscriptionFromQuery(GetRuntimeEdgeMcpServersDocument);
     return this.dgraphService.observe<dgraphResolversTypes.Runtime>(
       query,
       { id },
@@ -216,12 +199,10 @@ export class RuntimeRepository {
   }
 
   async setInactive(id: string) {
-    const res = await this.dgraphService.mutation<{
-      updateRuntime: { runtime: dgraphResolversTypes.Runtime[] };
-    }>(SET_RUNTIME_INACTIVE, {
+    const res = await this.dgraphService.mutation(SetRuntimeInactiveDocument, {
       id,
     });
-    const runtime = res.updateRuntime.runtime[0];
+    const runtime = res.updateRuntime!.runtime![0];
     if (!runtime) {
       this.logger.warn(`Runtime ${id} not found, skipping setInactive`);
       return;
@@ -232,40 +213,33 @@ export class RuntimeRepository {
         await this.mcpToolRepository.setStatus(MCPTool.id, 'INACTIVE');
       }
     }
-    return res.updateRuntime.runtime[0];
+    return res.updateRuntime!.runtime![0]! as dgraphResolversTypes.Runtime;
   }
 
   async findActive(): Promise<dgraphResolversTypes.Runtime[]> {
-    const res = await this.dgraphService.query<{ queryRuntime: dgraphResolversTypes.Runtime[] }>(
-      QUERY_ACTIVE_RUNTIMES,
-      {},
-    );
-    return res.queryRuntime;
+    const res = await this.dgraphService.query(QueryActiveRuntimesDocument, {});
+    return res.queryRuntime as dgraphResolversTypes.Runtime[];
   }
 
   async setActive(
     id: string,
     metadata: ConnectionMetadata,
   ): Promise<dgraphResolversTypes.Runtime> {
-    const res = await this.dgraphService.mutation<{
-      updateRuntime: { runtime: dgraphResolversTypes.Runtime[] };
-    }>(SET_RUNTIME_ACTIVE, {
+    const res = await this.dgraphService.mutation(SetRuntimeActiveDocument, {
       id,
       processId: metadata.pid,
       hostIP: metadata.hostIP,
       hostname: metadata.hostname,
     });
-    return res.updateRuntime.runtime[0];
+    return res.updateRuntime!.runtime![0]! as dgraphResolversTypes.Runtime;
   }
 
   async updateLastSeen(id: string): Promise<dgraphResolversTypes.Runtime> {
-    const res = await this.dgraphService.mutation<{
-      updateRuntime: { runtime: dgraphResolversTypes.Runtime[] };
-    }>(UPDATE_RUNTIME_LAST_SEEN, {
+    const res = await this.dgraphService.mutation(UpdateRuntimeLastSeenDocument, {
       id,
       now: new Date().toISOString(),
     });
-    return res.updateRuntime.runtime[0];
+    return res.updateRuntime!.runtime![0]! as dgraphResolversTypes.Runtime;
   }
 
   async setRoots(id: string, roots: { name: string; uri: string }[]): Promise<dgraphResolversTypes.Runtime> {
@@ -275,42 +249,31 @@ export class RuntimeRepository {
         throw new Error('Invalid root');
       }
     }
-    const res = await this.dgraphService.mutation<{
-      updateRuntime: { runtime: dgraphResolversTypes.Runtime[] };
-    }>(SET_ROOTS, {
+    const res = await this.dgraphService.mutation(SetRootsDocument, {
       id,
       roots: JSON.stringify(roots),
     });
-    return res.updateRuntime.runtime[0];
+    return res.updateRuntime!.runtime![0]! as dgraphResolversTypes.Runtime;
   }
 
   async findById(id: string): Promise<dgraphResolversTypes.Runtime | null> {
-    const response = await this.dgraphService.query<{ getRuntime: dgraphResolversTypes.Runtime | null }>(
-      GET_RUNTIME,
-      { id },
-    );
-    return response.getRuntime;
+    const response = await this.dgraphService.query(GetRuntimeDocument, { id });
+    return response.getRuntime as dgraphResolversTypes.Runtime | null;
   }
 
   async findByName(connectedTo: 'workspace' | 'system', relatedId: string, name: string): Promise<dgraphResolversTypes.Runtime | undefined> {
     if (connectedTo === 'workspace') {
-      const res = await this.dgraphService.query<{ getWorkspace: { runtimes: dgraphResolversTypes.Runtime[] } }>(
-        QUERY_WORKSPACE_RUNTIME_BY_NAME,
-        { workspaceId: relatedId, name },
-      );
-      return res.getWorkspace?.runtimes?.[0];
+      const res = await this.dgraphService.query(QueryWorkspaceRuntimeByNameDocument, { workspaceId: relatedId, name });
+      return res.getWorkspace?.runtimes?.[0] as dgraphResolversTypes.Runtime | undefined;
     } else if (connectedTo === 'system') {
-      const res = await this.dgraphService.query<{ getSystem: { runtimes: dgraphResolversTypes.Runtime[] } }>(
-        QUERY_SYSTEM_RUNTIME_BY_NAME,
-        { systemId: relatedId, name },
-      );
-      return res.getSystem?.runtimes?.[0];
+      const res = await this.dgraphService.query(QuerySystemRuntimeByNameDocument, { systemId: relatedId, name });
+      return res.getSystem?.runtimes?.[0] as dgraphResolversTypes.Runtime | undefined;
     }
     throw new Error(`Invalid connectedTo: ${connectedTo}`);
   }
 
   observeCapabilities(runtimeId: string): Observable<dgraphResolversTypes.Runtime> {
-    const query = createSubscriptionFromQuery(GET_RUNTIME_ALL_TOOLS);
+    const query = createSubscriptionFromQuery(GetRuntimeAllToolsDocument);
     return this.dgraphService.observe<dgraphResolversTypes.Runtime>(
       query,
       { id: runtimeId },

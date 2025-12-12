@@ -1,0 +1,10 @@
+mutation SetSkill($id: ID!, $skillId: ID!) {
+  updateToolCall(
+    input: { filter: { id: [$id] }, set: { skill: { id: $skillId } } }
+  ) {
+    toolCall {
+      id
+      skill { id name mode }
+    }
+  }
+}

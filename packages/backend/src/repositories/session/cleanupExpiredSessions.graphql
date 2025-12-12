@@ -1,0 +1,9 @@
+mutation CleanupExpiredSessions($now: DateTime!) {
+  updateSession(input: { filter: { expiresAt: { lt: $now } }, set: { isActive: false } }) {
+    session {
+      id
+      expiresAt
+      isActive
+    }
+  }
+}

@@ -1,0 +1,21 @@
+mutation CreateSystem($adminId: ID!, $now: DateTime!, $instanceId: String!) {
+  addSystem(input: {
+    createdAt: $now,
+    updatedAt: $now,
+    initialized: false,
+    instanceId: $instanceId,
+    admins: { id: $adminId }
+  }) {
+    system {
+      id
+      initialized
+      createdAt
+      updatedAt
+      instanceId
+      admins {
+        id
+        email
+      }
+    }
+  }
+}

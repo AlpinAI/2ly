@@ -1,0 +1,10 @@
+mutation SetCalledBy($id: ID!, $calledById: ID!) {
+  updateToolCall(
+    input: { filter: { id: [$id] }, set: { calledBy: { id: $calledById } } }
+  ) {
+    toolCall {
+      id
+      calledBy { id name }
+    }
+  }
+}

@@ -3,14 +3,14 @@ import { DGraphService } from '../../services/dgraph.service';
 import { dgraphResolversTypes, LoggerService } from '@skilder-ai/common';
 import pino from 'pino';
 import {
-  GET_AI_CONFIGS_BY_WORKSPACE,
-  FIND_AI_CONFIG_BY_KEY,
-  GET_AI_CONFIG_BY_ID,
-  CREATE_AI_CONFIG,
-  UPDATE_AI_CONFIG,
-  DELETE_AI_CONFIG,
-  OBSERVE_AI_CONFIGS,
-} from './ai-config.operations';
+  GetAiConfigsByWorkspaceDocument,
+  FindAiConfigByKeyDocument,
+  GetAiConfigByIdDocument,
+  CreateAiConfigDocument,
+  UpdateAiConfigDocument,
+  DeleteAiConfigDocument,
+  ObserveAiConfigsSubscriptionDocument,
+} from '../../generated/dgraph';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 
@@ -33,11 +33,9 @@ export class AIConfigRepository {
 
   async getByWorkspace(workspaceId: string): Promise<dgraphResolversTypes.AiConfig[]> {
     try {
-      const res = await this.dgraphService.query<{
-        getWorkspace: { aiConfigs: dgraphResolversTypes.AiConfig[] } | null;
-      }>(GET_AI_CONFIGS_BY_WORKSPACE, { workspaceId });
+      const res = await this.dgraphService.query(GetAiConfigsByWorkspaceDocument, { workspaceId });
 
-      return res.getWorkspace?.aiConfigs || [];
+      return (res.getWorkspace?.aiConfigs || []) as dgraphResolversTypes.AiConfig[];
     } catch (error) {
       this.logger.error(`Failed to get AI configs for workspace ${workspaceId}: ${error}`);
       throw new Error('Failed to get AI configs');
@@ -46,11 +44,9 @@ export class AIConfigRepository {
 
   async findById(id: string): Promise<(dgraphResolversTypes.AiConfig & { workspace: { id: string } }) | null> {
     try {
-      const res = await this.dgraphService.query<{
-        getAIConfig: (dgraphResolversTypes.AiConfig & { workspace: { id: string } }) | null;
-      }>(GET_AI_CONFIG_BY_ID, { id });
+      const res = await this.dgraphService.query(GetAiConfigByIdDocument, { id });
 
-      return res.getAIConfig;
+      return (res.getAIConfig || null) as (dgraphResolversTypes.AiConfig & { workspace: { id: string } }) | null;
     } catch (error) {
       this.logger.error(`Failed to find AI config by id ${id}: ${error}`);
       throw new Error('Failed to find AI config');
@@ -59,12 +55,10 @@ export class AIConfigRepository {
 
   async findByKey(workspaceId: string, key: string): Promise<dgraphResolversTypes.AiConfig | null> {
     try {
-      const res = await this.dgraphService.query<{
-        getWorkspace: { aiConfigs: dgraphResolversTypes.AiConfig[] } | null;
-      }>(FIND_AI_CONFIG_BY_KEY, { workspaceId, key });
+      const res = await this.dgraphService.query(FindAiConfigByKeyDocument, { workspaceId, key });
 
       const configs = res.getWorkspace?.aiConfigs || [];
-      return configs.length > 0 ? configs[0] : null;
+      return configs.length > 0 ? (configs[0] as dgraphResolversTypes.AiConfig) : null;
     } catch (error) {
       this.logger.error(`Failed to find AI config by key ${key} for workspace ${workspaceId}: ${error}`);
       throw new Error('Failed to find AI config');
@@ -75,9 +69,7 @@ export class AIConfigRepository {
     try {
       const now = new Date().toISOString();
 
-      const res = await this.dgraphService.mutation<{
-        addAIConfig: { aIConfig: dgraphResolversTypes.AiConfig[] };
-      }>(CREATE_AI_CONFIG, {
+      const res = await this.dgraphService.mutation(CreateAiConfigDocument, {
         workspaceId,
         key: data.key,
         value: data.value,
@@ -86,7 +78,7 @@ export class AIConfigRepository {
       });
 
       this.logger.info(`Created AI config for workspace ${workspaceId} with key ${data.key}`);
-      return res.addAIConfig.aIConfig[0];
+      return res.addAIConfig!.aIConfig![0]! as dgraphResolversTypes.AiConfig;
     } catch (error) {
       this.logger.error(`Failed to create AI config for workspace ${workspaceId}: ${error}`);
       throw new Error('Failed to create AI config');
@@ -97,9 +89,7 @@ export class AIConfigRepository {
     try {
       const now = new Date().toISOString();
 
-      const res = await this.dgraphService.mutation<{
-        updateAIConfig: { aIConfig: dgraphResolversTypes.AiConfig[] };
-      }>(UPDATE_AI_CONFIG, {
+      const res = await this.dgraphService.mutation(UpdateAiConfigDocument, {
         id,
         value,
         description: description || null,
@@ -107,7 +97,7 @@ export class AIConfigRepository {
       });
 
       this.logger.info(`Updated AI config ${id}`);
-      return res.updateAIConfig.aIConfig[0];
+      return res.updateAIConfig!.aIConfig![0]! as dgraphResolversTypes.AiConfig;
     } catch (error) {
       this.logger.error(`Failed to update AI config ${id}: ${error}`);
       throw new Error('Failed to update AI config');
@@ -126,9 +116,7 @@ export class AIConfigRepository {
 
   async delete(id: string): Promise<boolean> {
     try {
-      await this.dgraphService.mutation<{
-        deleteAIConfig: { aIConfig: { id: string }[] };
-      }>(DELETE_AI_CONFIG, { id });
+      await this.dgraphService.mutation(DeleteAiConfigDocument, { id });
 
       this.logger.info(`Deleted AI config ${id}`);
       return true;
@@ -139,10 +127,9 @@ export class AIConfigRepository {
   }
 
   observeAIConfigs(workspaceId: string): Observable<dgraphResolversTypes.AiConfig[]> {
-    const subscription = OBSERVE_AI_CONFIGS('subscription');
     return this.dgraphService
       .observe<{ aiConfigs: dgraphResolversTypes.AiConfig[] }>(
-        subscription,
+        ObserveAiConfigsSubscriptionDocument,
         { workspaceId },
         'getWorkspace',
         true,

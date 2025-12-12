@@ -1,0 +1,8 @@
+mutation UpdateSessionLastUsed($id: ID!, $now: DateTime!) {
+  updateSession(input: { filter: { id: [$id] }, set: { lastUsedAt: $now } }) {
+    session {
+      id
+      lastUsedAt
+    }
+  }
+}

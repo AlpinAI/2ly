@@ -1,0 +1,49 @@
+mutation UpdateSkillSmartConfig(
+  $id: ID!
+  $model: String
+  $temperature: Float
+  $maxTokens: Int
+  $systemPrompt: String
+  $executionTarget: ExecutionTarget
+  $updatedAt: DateTime!
+) {
+  updateSkill(
+    input: {
+      filter: { id: [$id] }
+      set: {
+        model: $model
+        temperature: $temperature
+        maxTokens: $maxTokens
+        systemPrompt: $systemPrompt
+        executionTarget: $executionTarget
+        updatedAt: $updatedAt
+      }
+    }
+  ) {
+    skill {
+      id
+      name
+      description
+      createdAt
+      updatedAt
+      mode
+      model
+      temperature
+      maxTokens
+      systemPrompt
+      executionTarget
+      runtime {
+        id
+        name
+      }
+      mcpTools {
+        id
+        name
+      }
+      workspace {
+        id
+        name
+      }
+    }
+  }
+}

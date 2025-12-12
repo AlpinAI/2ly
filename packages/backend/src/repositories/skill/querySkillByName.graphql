@@ -1,0 +1,31 @@
+query QuerySkillByName($workspaceId: ID!, $name: String!) {
+  getWorkspace(id: $workspaceId) {
+    id
+    skills(filter: { name: { eq: $name } }) {
+      id
+      name
+      description
+      createdAt
+      updatedAt
+      mcpTools {
+        id
+        name
+        description
+        inputSchema
+        annotations
+        status
+        createdAt
+        lastSeenAt
+        mcpServer {
+          id
+          name
+          executionTarget
+        }
+      }
+      workspace {
+        id
+        name
+      }
+    }
+  }
+}

@@ -1,0 +1,20 @@
+mutation InitSystem($systemId: ID!, $now: DateTime!) {
+  updateSystem(input: { filter: { id: [$systemId] }, set: { initialized: true, updatedAt: $now } }) {
+    system {
+      id
+      initialized
+      createdAt
+      updatedAt
+      instanceId
+      defaultWorkspace {
+        id
+        name
+        createdAt
+      }
+      admins {
+        id
+        email
+      }
+    }
+  }
+}

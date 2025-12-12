@@ -1,0 +1,31 @@
+query FindUserOAuthConnectionByProvider($provider: OAuthProviderType!) {
+  queryUserOAuthConnection(
+    filter: {
+      and: [
+        { provider: { eq: $provider } }
+        { has: workspace }
+        { has: user }
+      ]
+    }
+  ) {
+    id
+    provider
+    encryptedAccessToken
+    encryptedRefreshToken
+    tokenExpiresAt
+    scopes
+    accountEmail
+    accountName
+    accountAvatarUrl
+    providerAccountId
+    createdAt
+    updatedAt
+    lastUsedAt
+    workspace {
+      id
+    }
+    user {
+      id
+    }
+  }
+}
