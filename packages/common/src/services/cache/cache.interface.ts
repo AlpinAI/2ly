@@ -60,7 +60,7 @@ export interface ICacheService {
 
   // Basic operations
   get<T>(bucket: string, key: string): Promise<CacheEntry<T> | null>;
-  put<T>(bucket: string, key: string, value: T, ttlMs?: number): Promise<number>; // returns revision
+  put<T>(bucket: string, key: string, value: T): Promise<number>; // returns revision
   delete(bucket: string, key: string): Promise<void>;
 
   // Bulk operations
@@ -72,5 +72,5 @@ export interface ICacheService {
 
   // Atomic operations (for rate limiting)
   increment(bucket: string, key: string, delta?: number): Promise<number>;
-  getOrSet<T>(bucket: string, key: string, factory: () => T | Promise<T>, ttlMs?: number): Promise<CacheEntry<T>>;
+  getOrSet<T>(bucket: string, key: string, factory: () => T | Promise<T>): Promise<CacheEntry<T>>;
 }

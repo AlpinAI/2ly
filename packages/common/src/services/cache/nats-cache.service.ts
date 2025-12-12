@@ -115,11 +115,9 @@ export class NatsCacheService extends Service implements ICacheService {
     }
   }
 
-  async put<T>(bucket: string, key: string, value: T, _ttlMs?: number): Promise<number> {
+  async put<T>(bucket: string, key: string, value: T): Promise<number> {
     const kv = this.getBucket(bucket);
     const data = JSON.stringify(value);
-    // Note: NATS KV uses bucket-level TTL; per-key TTL is not natively supported
-    // For per-key TTL, consider using a separate bucket or encoding expiry in the value
     const revision = await kv.put(key, data);
     return revision;
   }
@@ -267,23 +265,19 @@ export class NatsCacheService extends Service implements ICacheService {
     return newValue;
   }
 
-  async getOrSet<T>(
-    bucket: string,
-    key: string,
-    factory: () => T | Promise<T>,
-    ttlMs?: number,
-  ): Promise<CacheEntry<T>> {
+  async getOrSet<T>(bucket: string, key: string, factory: () => T | Promise<T>): Promise<CacheEntry<T>> {
     const existing = await this.get<T>(bucket, key);
     if (existing) {
       return existing;
     }
     const value = await factory();
-    const revision = await this.put(bucket, key, value, ttlMs);
+    const revision = await this.put(bucket, key, value);
+    const bucketConfig = this.bucketConfigs.get(bucket);
     return {
       value,
       revision,
       createdAt: Date.now(),
-      expiresAt: ttlMs ? Date.now() + ttlMs : undefined,
+      expiresAt: bucketConfig?.ttlMs ? Date.now() + bucketConfig.ttlMs : undefined,
     };
   }
 

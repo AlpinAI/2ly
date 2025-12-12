@@ -5,8 +5,7 @@ import { ICacheService, CacheBucketConfig, CacheEntry, CacheWatchOptions, CacheW
  * Provides an in-memory cache with all the same operations as the real service.
  */
 export class NatsCacheServiceMock implements ICacheService {
-  private buckets: Map<string, Map<string, { value: unknown; revision: number; ttlMs?: number; createdAt: number }>> =
-    new Map();
+  private buckets: Map<string, Map<string, { value: unknown; revision: number; createdAt: number }>> = new Map();
   private bucketConfigs: Map<string, CacheBucketConfig> = new Map();
   private revisionCounter = 0;
 
@@ -47,10 +46,11 @@ export class NatsCacheServiceMock implements ICacheService {
       value: entry.value as T,
       revision: entry.revision,
       createdAt: entry.createdAt,
+      expiresAt: config?.ttlMs ? entry.createdAt + config.ttlMs : undefined,
     };
   }
 
-  async put<T>(bucket: string, key: string, value: T, ttlMs?: number): Promise<number> {
+  async put<T>(bucket: string, key: string, value: T): Promise<number> {
     if (!this.buckets.has(bucket)) {
       this.buckets.set(bucket, new Map());
     }
@@ -59,7 +59,6 @@ export class NatsCacheServiceMock implements ICacheService {
     this.buckets.get(bucket)!.set(key, {
       value,
       revision: this.revisionCounter,
-      ttlMs,
       createdAt: Date.now(),
     });
 
@@ -135,19 +134,20 @@ export class NatsCacheServiceMock implements ICacheService {
     return newValue;
   }
 
-  async getOrSet<T>(
-    bucket: string,
-    key: string,
-    factory: () => T | Promise<T>,
-    ttlMs?: number
-  ): Promise<CacheEntry<T>> {
+  async getOrSet<T>(bucket: string, key: string, factory: () => T | Promise<T>): Promise<CacheEntry<T>> {
     const existing = await this.get<T>(bucket, key);
     if (existing) return existing;
 
     const value = await factory();
     const createdAt = Date.now();
-    const revision = await this.put(bucket, key, value, ttlMs);
-    return { value, revision, createdAt };
+    const revision = await this.put(bucket, key, value);
+    const bucketConfig = this.bucketConfigs.get(bucket);
+    return {
+      value,
+      revision,
+      createdAt,
+      expiresAt: bucketConfig?.ttlMs ? createdAt + bucketConfig.ttlMs : undefined,
+    };
   }
 
   /**
