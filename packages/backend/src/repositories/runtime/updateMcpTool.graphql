@@ -1,0 +1,33 @@
+mutation UpdateMcpTool(
+  $toolId: ID!
+  $toolDescription: String!
+  $toolInputSchema: String!
+  $toolAnnotations: String!
+  $now: DateTime!
+  $status: ActiveStatus!
+) {
+  updateMCPTool(
+    input: {
+      filter: { id: [$toolId] }
+      set: {
+        description: $toolDescription
+        inputSchema: $toolInputSchema
+        annotations: $toolAnnotations
+        lastSeenAt: $now
+        status: $status
+      }
+    }
+  ) {
+    mCPTool {
+      id
+      name
+      description
+      inputSchema
+      annotations
+      status
+      workspace {
+        id
+      }
+    }
+  }
+}

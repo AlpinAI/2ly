@@ -1,0 +1,22 @@
+query QueryMcpServersByWorkspace($workspaceId: ID!) {
+  queryMCPServer(filter: { has: workspace }) @cascade {
+    id
+    name
+    description
+    repositoryUrl
+    transport
+    config
+    executionTarget
+    tools {
+      id
+      name
+    }
+    runtime {
+      id
+      name
+    }
+    workspace(filter: { id: [$workspaceId] }) {
+      id
+    }
+  }
+}

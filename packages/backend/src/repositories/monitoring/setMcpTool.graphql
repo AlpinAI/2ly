@@ -1,0 +1,10 @@
+mutation SetMcpTool($id: ID!, $mcpToolId: ID!) {
+  updateToolCall(
+    input: { filter: { id: [$id] }, set: { mcpTool: { id: $mcpToolId } } }
+  ) {
+    toolCall {
+      id
+      mcpTool { id name }
+    }
+  }
+}

@@ -1,0 +1,38 @@
+mutation CreateSession(
+  $refreshToken: String!
+  $userId: String!
+  $userIdRef: ID!
+  $deviceInfo: String
+  $ipAddress: String
+  $userAgent: String
+  $now: DateTime!
+  $expiresAt: DateTime!
+) {
+  addSession(
+    input: {
+      refreshToken: $refreshToken
+      userId: $userId
+      user: { id: $userIdRef }
+      deviceInfo: $deviceInfo
+      ipAddress: $ipAddress
+      userAgent: $userAgent
+      createdAt: $now
+      lastUsedAt: $now
+      expiresAt: $expiresAt
+      isActive: true
+    }
+  ) {
+    session {
+      id
+      refreshToken
+      userId
+      deviceInfo
+      ipAddress
+      userAgent
+      createdAt
+      expiresAt
+      lastUsedAt
+      isActive
+    }
+  }
+}

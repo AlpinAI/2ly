@@ -1,0 +1,22 @@
+query QuerySkillsByWorkspace($workspaceId: ID!) {
+  getWorkspace(id: $workspaceId) {
+    id
+    skills {
+      id
+      name
+      description
+      createdAt
+      updatedAt
+      mcpTools {
+        id
+        name
+        description
+        inputSchema
+        annotations
+        status
+        createdAt
+        lastSeenAt
+      }
+    }
+  }
+}

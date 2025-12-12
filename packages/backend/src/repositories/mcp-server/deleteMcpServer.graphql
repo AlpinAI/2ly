@@ -1,0 +1,17 @@
+mutation DeleteMcpServer($id: ID!) {
+  deleteMCPServer(filter: { id: [$id] }) {
+    mCPServer {
+      id
+      name
+      description
+      repositoryUrl
+      transport
+      config
+      executionTarget
+      workspace {
+        id
+        name
+      }
+    }
+  }
+}

@@ -2,23 +2,28 @@ import { injectable, inject } from 'inversify';
 import { DGraphService } from '../../services/dgraph.service';
 import { dgraphResolversTypes, LoggerService } from '@skilder-ai/common';
 import {
-  ADD_SKILL,
-  UPDATE_SKILL,
-  DELETE_SKILL,
-  GET_SKILL,
-  QUERY_SKILLS_BY_WORKSPACE,
-  ADD_MCP_TOOL_TO_SKILL,
-  REMOVE_MCP_TOOL_FROM_SKILL,
-  OBSERVE_SKILLS,
-  QUERY_ALL_SKILLS,
-  QUERY_SKILL_BY_NAME,
-  GET_SKILL_AGENT_MCP_SERVERS,
-  UPDATE_SKILL_MODE,
-  UPDATE_SKILL_SMART_CONFIG,
-  LINK_SKILL_TO_RUNTIME,
-  UNLINK_SKILL_FROM_RUNTIME,
-  QUERY_SMART_SKILLS_BY_RUNTIME,
-} from '../skill/skill.operations';
+  AddSkillDocument,
+  UpdateSkillDocument,
+  DeleteSkillDocument,
+  GetSkillDocument,
+  QuerySkillsByWorkspaceDocument,
+  AddMcpToolToSkillDocument,
+  RemoveMcpToolFromSkillDocument,
+  ObserveSkillsQueryDocument,
+  QueryAllSkillsDocument,
+  QuerySkillByNameDocument,
+  GetSkillAgentMcpServersDocument,
+  UpdateSkillModeDocument,
+  UpdateSkillSmartConfigDocument,
+  LinkSkillToRuntimeDocument,
+  UnlinkSkillFromRuntimeDocument,
+  QuerySmartSkillsByRuntimeDocument,
+} from '../../generated/dgraph';
+import {
+  SKILL_DESCRIPTION_MAX_LENGTH,
+  SKILL_GUARDRAILS_MAX_LENGTH,
+  SKILL_KNOWLEDGE_MAX_LENGTH,
+} from '../../constants';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { createSubscriptionFromQuery } from '../../helpers';
@@ -39,24 +44,43 @@ export class SkillRepository {
     this.logger = this.loggerService.getLogger('skill.repository');
   }
 
+  private validateSkillFields(
+    description?: string,
+    guardrails?: string,
+    associatedKnowledge?: string,
+  ): void {
+    if (description && description.length > SKILL_DESCRIPTION_MAX_LENGTH) {
+      throw new Error(`Skill description cannot exceed ${SKILL_DESCRIPTION_MAX_LENGTH} characters`);
+    }
+    if (guardrails && guardrails.length > SKILL_GUARDRAILS_MAX_LENGTH) {
+      throw new Error(`Skill guardrails cannot exceed ${SKILL_GUARDRAILS_MAX_LENGTH} characters`);
+    }
+    if (associatedKnowledge && associatedKnowledge.length > SKILL_KNOWLEDGE_MAX_LENGTH) {
+      throw new Error(`Skill associated knowledge cannot exceed ${SKILL_KNOWLEDGE_MAX_LENGTH} characters`);
+    }
+  }
+
   async create(
     name: string,
     description: string | undefined,
     workspaceId: string,
+    guardrails?: string,
+    associatedKnowledge?: string,
   ): Promise<dgraphResolversTypes.Skill> {
     const now = new Date().toISOString();
+    this.validateSkillFields(description, guardrails, associatedKnowledge);
 
     // 1. Create the skill
-    const res = await this.dgraphService.mutation<{
-      addSkill: { skill: dgraphResolversTypes.Skill[] };
-    }>(ADD_SKILL, {
+    const res = await this.dgraphService.mutation(AddSkillDocument, {
       name,
       description: description ?? '',
+      guardrails: guardrails ?? null,
+      associatedKnowledge: associatedKnowledge ?? null,
       workspaceId,
       createdAt: now,
     });
 
-    const skill = res.addSkill.skill[0];
+    const skill = res.addSkill!.skill![0]! as dgraphResolversTypes.Skill;
     this.logger.debug(`Created skill ${name} with id ${skill.id}`);
 
     // 2. Create the skill key
@@ -69,53 +93,47 @@ export class SkillRepository {
     id: string,
     name: string,
     description: string | undefined,
+    guardrails?: string,
+    associatedKnowledge?: string,
   ): Promise<dgraphResolversTypes.Skill> {
     const now = new Date().toISOString();
-    const res = await this.dgraphService.mutation<{
-      updateSkill: { skill: dgraphResolversTypes.Skill[] };
-    }>(UPDATE_SKILL, {
+    this.validateSkillFields(description, guardrails, associatedKnowledge);
+
+    const res = await this.dgraphService.mutation(UpdateSkillDocument, {
       id,
       name,
       description: description ?? '',
+      guardrails: guardrails ?? null,
+      associatedKnowledge: associatedKnowledge ?? null,
       updatedAt: now,
     });
 
     this.logger.info(`Updated skill ${id} with name ${name}`);
-    return res.updateSkill.skill[0];
+    return res.updateSkill!.skill![0]! as dgraphResolversTypes.Skill;
   }
 
   async delete(id: string): Promise<dgraphResolversTypes.Skill> {
-    const res = await this.dgraphService.mutation<{
-      deleteSkill: { skill: dgraphResolversTypes.Skill[] };
-    }>(DELETE_SKILL, {
+    const res = await this.dgraphService.mutation(DeleteSkillDocument, {
       id,
     });
 
     this.logger.info(`Deleted skill ${id}`);
-    return res.deleteSkill.skill[0];
+    return res.deleteSkill!.skill![0]! as dgraphResolversTypes.Skill;
   }
 
   async findById(id: string): Promise<dgraphResolversTypes.Skill | null> {
-    const response = await this.dgraphService.query<{ getSkill: dgraphResolversTypes.Skill | null }>(
-      GET_SKILL,
-      { id },
-    );
-    return response.getSkill;
+    const response = await this.dgraphService.query(GetSkillDocument, { id });
+    return response.getSkill as dgraphResolversTypes.Skill | null;
   }
 
   async findByName(workspaceId: string, name: string): Promise<dgraphResolversTypes.Skill | null> {
-    const response = await this.dgraphService.query<{ getWorkspace: { skills: dgraphResolversTypes.Skill[] } }>(
-      QUERY_SKILL_BY_NAME,
-      { workspaceId, name },
-    );
-    return response.getWorkspace?.skills?.[0] ?? null;
+    const response = await this.dgraphService.query(QuerySkillByNameDocument, { workspaceId, name });
+    return (response.getWorkspace?.skills?.[0] ?? null) as dgraphResolversTypes.Skill | null;
   }
 
   async findByWorkspace(workspaceId: string): Promise<dgraphResolversTypes.Skill[]> {
-    const response = await this.dgraphService.query<{
-      getWorkspace: { skills: dgraphResolversTypes.Skill[] } | null;
-    }>(QUERY_SKILLS_BY_WORKSPACE, { workspaceId });
-    return response.getWorkspace?.skills ?? [];
+    const response = await this.dgraphService.query(QuerySkillsByWorkspaceDocument, { workspaceId });
+    return (response.getWorkspace?.skills ?? []) as dgraphResolversTypes.Skill[];
   }
 
   async addMCPToolToSkill(
@@ -123,9 +141,7 @@ export class SkillRepository {
     skillId: string,
   ): Promise<dgraphResolversTypes.Skill> {
     const now = new Date().toISOString();
-    const res = await this.dgraphService.mutation<{
-      updateSkill: { skill: dgraphResolversTypes.Skill[] };
-    }>(ADD_MCP_TOOL_TO_SKILL, {
+    const res = await this.dgraphService.mutation(AddMcpToolToSkillDocument, {
       skillId,
       mcpToolId,
       updatedAt: now,
@@ -134,7 +150,7 @@ export class SkillRepository {
     this.logger.info(`Added MCP tool ${mcpToolId} to skill ${skillId}`);
 
     // Trigger onboarding step completion check
-    const skill = res.updateSkill.skill[0];
+    const skill = res.updateSkill!.skill![0]! as dgraphResolversTypes.Skill;
     if (skill.workspace?.id) {
       await this.workspaceRepository.checkAndCompleteStep(
         skill.workspace.id,
@@ -150,30 +166,26 @@ export class SkillRepository {
     skillId: string,
   ): Promise<dgraphResolversTypes.Skill> {
     const now = new Date().toISOString();
-    const res = await this.dgraphService.mutation<{
-      updateSkill: { skill: dgraphResolversTypes.Skill[] };
-    }>(REMOVE_MCP_TOOL_FROM_SKILL, {
+    const res = await this.dgraphService.mutation(RemoveMcpToolFromSkillDocument, {
       skillId,
       mcpToolId,
       updatedAt: now,
     });
 
     this.logger.info(`Removed MCP tool ${mcpToolId} from skill ${skillId}`);
-    return res.updateSkill.skill[0];
+    return res.updateSkill!.skill![0]! as dgraphResolversTypes.Skill;
   }
 
   async updateMode(id: string, mode: dgraphResolversTypes.SkillMode): Promise<dgraphResolversTypes.Skill> {
     const now = new Date().toISOString();
-    const res = await this.dgraphService.mutation<{
-      updateSkill: { skill: dgraphResolversTypes.Skill[] };
-    }>(UPDATE_SKILL_MODE, {
+    const res = await this.dgraphService.mutation(UpdateSkillModeDocument, {
       id,
       mode,
       updatedAt: now,
     });
 
     this.logger.info(`Updated skill ${id} mode to ${mode}`);
-    return res.updateSkill.skill[0];
+    return res.updateSkill!.skill![0]! as dgraphResolversTypes.Skill;
   }
 
   async updateSmartConfig(
@@ -187,54 +199,46 @@ export class SkillRepository {
     },
   ): Promise<dgraphResolversTypes.Skill> {
     const now = new Date().toISOString();
-    const res = await this.dgraphService.mutation<{
-      updateSkill: { skill: dgraphResolversTypes.Skill[] };
-    }>(UPDATE_SKILL_SMART_CONFIG, {
+    const res = await this.dgraphService.mutation(UpdateSkillSmartConfigDocument, {
       id,
       ...config,
       updatedAt: now,
     });
 
     this.logger.info(`Updated skill ${id} smart config`);
-    return res.updateSkill.skill[0];
+    return res.updateSkill!.skill![0]! as dgraphResolversTypes.Skill;
   }
 
   async linkRuntime(skillId: string, runtimeId: string): Promise<dgraphResolversTypes.Skill> {
     const now = new Date().toISOString();
-    const res = await this.dgraphService.mutation<{
-      updateSkill: { skill: dgraphResolversTypes.Skill[] };
-    }>(LINK_SKILL_TO_RUNTIME, {
+    const res = await this.dgraphService.mutation(LinkSkillToRuntimeDocument, {
       skillId,
       runtimeId,
       updatedAt: now,
     });
 
     this.logger.info(`Linked skill ${skillId} to runtime ${runtimeId}`);
-    return res.updateSkill.skill[0];
+    return res.updateSkill!.skill![0]! as dgraphResolversTypes.Skill;
   }
 
   async unlinkRuntime(skillId: string): Promise<dgraphResolversTypes.Skill> {
     const now = new Date().toISOString();
-    const res = await this.dgraphService.mutation<{
-      updateSkill: { skill: dgraphResolversTypes.Skill[] };
-    }>(UNLINK_SKILL_FROM_RUNTIME, {
+    const res = await this.dgraphService.mutation(UnlinkSkillFromRuntimeDocument, {
       skillId,
       updatedAt: now,
     });
 
     this.logger.info(`Unlinked skill ${skillId} from runtime`);
-    return res.updateSkill.skill[0];
+    return res.updateSkill!.skill![0]! as dgraphResolversTypes.Skill;
   }
 
   async getSmartSkillsByRuntime(runtimeId: string): Promise<dgraphResolversTypes.Skill[]> {
-    const response = await this.dgraphService.query<{
-      getRuntime: { skills: dgraphResolversTypes.Skill[] } | null;
-    }>(QUERY_SMART_SKILLS_BY_RUNTIME, { runtimeId });
-    return response.getRuntime?.skills ?? [];
+    const response = await this.dgraphService.query(QuerySmartSkillsByRuntimeDocument, { runtimeId });
+    return (response.getRuntime?.skills ?? []) as dgraphResolversTypes.Skill[];
   }
 
   observeSmartSkillsOnRuntime(runtimeId: string): Observable<dgraphResolversTypes.Skill[]> {
-    const query = createSubscriptionFromQuery(QUERY_SMART_SKILLS_BY_RUNTIME);
+    const query = createSubscriptionFromQuery(QuerySmartSkillsByRuntimeDocument);
     return this.dgraphService
       .observe<{ skills: dgraphResolversTypes.Skill[] }>(
         query,
@@ -246,7 +250,7 @@ export class SkillRepository {
   }
 
   observeSkills(workspaceId: string): Observable<dgraphResolversTypes.Skill[]> {
-    const query = createSubscriptionFromQuery(OBSERVE_SKILLS('query'));
+    const query = createSubscriptionFromQuery(ObserveSkillsQueryDocument);
     return this.dgraphService
       .observe<{ skills: dgraphResolversTypes.Skill[] }>(
         query,
@@ -258,7 +262,7 @@ export class SkillRepository {
   }
 
   observeAllSkills(): Observable<dgraphResolversTypes.Skill[]> {
-    const query = createSubscriptionFromQuery(QUERY_ALL_SKILLS);
+    const query = createSubscriptionFromQuery(QueryAllSkillsDocument);
     return this.dgraphService
       .observe<dgraphResolversTypes.Skill[]>(
         query,
@@ -270,17 +274,14 @@ export class SkillRepository {
   }
 
   async getMCPServersOnAgent(skillId: string): Promise<dgraphResolversTypes.McpServer[]> {
-    const response = await this.dgraphService.query<{ getSkill: dgraphResolversTypes.Skill }>(
-      GET_SKILL_AGENT_MCP_SERVERS,
-      { skillId },
-    );
-    return response.getSkill?.mcpTools
-      ?.map((mcpTool) => mcpTool.mcpServer)
-      .filter((mcpServer) => mcpServer.executionTarget === 'AGENT') ?? [];
+    const response = await this.dgraphService.query(GetSkillAgentMcpServersDocument, { skillId });
+    return (response.getSkill?.mcpTools
+      ?.map((mcpTool) => mcpTool.mcpServer!)
+      .filter((mcpServer) => mcpServer.executionTarget === 'AGENT') ?? []) as dgraphResolversTypes.McpServer[];
   }
 
   observeMCPServersOnAgent(skillId: string): Observable<dgraphResolversTypes.McpServer[]> {
-    const query = createSubscriptionFromQuery(GET_SKILL_AGENT_MCP_SERVERS);
+    const query = createSubscriptionFromQuery(GetSkillAgentMcpServersDocument);
     return this.dgraphService.observe<dgraphResolversTypes.Skill>(
       query,
       { skillId },
@@ -289,7 +290,7 @@ export class SkillRepository {
     ).pipe(
       map((skill) =>
         skill?.mcpTools
-          ?.map((mcpTool) => mcpTool.mcpServer)
+          ?.map((mcpTool) => mcpTool.mcpServer!)
           .filter((mcpServer) => mcpServer.executionTarget === 'AGENT') ?? []
       ),
     );

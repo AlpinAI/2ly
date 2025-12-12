@@ -2,17 +2,17 @@ import { inject, injectable } from 'inversify';
 import { DGraphService } from '../../services/dgraph.service';
 import { apolloResolversTypes, dgraphResolversTypes } from '@skilder-ai/common';
 import {
-    ADD_TOOL_CALL,
-    SET_CALLED_BY,
-    SET_MCP_TOOL,
-    SET_SKILL,
-    COMPLETE_TOOL_CALL_ERROR,
-    COMPLETE_TOOL_CALL_SUCCESS,
-    QUERY_TOOL_CALLS,
-    QUERY_TOOL_CALLS_FILTERED,
-    SET_EXECUTED_BY_AGENT,
-    SET_EXECUTED_BY,
-} from './monitoring.operations';
+    AddToolCallDocument,
+    SetCalledByDocument,
+    SetMcpToolDocument,
+    SetSkillDocument,
+    CompleteToolCallErrorDocument,
+    CompleteToolCallSuccessDocument,
+    QueryToolCallsDocument,
+    QueryToolCallsFilteredDocument,
+    SetExecutedByAgentDocument,
+    SetExecutedByDocument,
+} from '../../generated/dgraph';
 import { map, Observable } from 'rxjs';
 import { createSubscriptionFromQuery } from '../../helpers';
 
@@ -30,81 +30,65 @@ export class MonitoringRepository {
         const now = new Date().toISOString();
 
         // Step 1: Create basic ToolCall (without mcpTool, skill, or calledBy)
-        const res = await this.dgraphService.mutation<{
-            addToolCall: { toolCall: dgraphResolversTypes.ToolCall[] };
-        }>(ADD_TOOL_CALL, {
+        const res = await this.dgraphService.mutation(AddToolCallDocument, {
             toolInput: params.toolInput,
             calledAt: now,
             isTest: params.isTest ?? false,
         });
 
-        let toolCall = res.addToolCall.toolCall[0];
+        let toolCall = res.addToolCall!.toolCall![0]!;
 
         // Step 2: Link mcpTool OR skill (mutually exclusive)
         if (params.mcpToolId) {
-            const updateRes = await this.dgraphService.mutation<{
-                updateToolCall: { toolCall: dgraphResolversTypes.ToolCall[] };
-            }>(SET_MCP_TOOL, {
+            const updateRes = await this.dgraphService.mutation(SetMcpToolDocument, {
                 id: toolCall.id,
                 mcpToolId: params.mcpToolId
             });
-            toolCall = updateRes.updateToolCall.toolCall[0];
+            toolCall = updateRes.updateToolCall!.toolCall![0]! as dgraphResolversTypes.ToolCall;
         } else if (params.skillId) {
-            const updateRes = await this.dgraphService.mutation<{
-                updateToolCall: { toolCall: dgraphResolversTypes.ToolCall[] };
-            }>(SET_SKILL, {
+            const updateRes = await this.dgraphService.mutation(SetSkillDocument, {
                 id: toolCall.id,
                 skillId: params.skillId
             });
-            toolCall = updateRes.updateToolCall.toolCall[0];
+            toolCall = updateRes.updateToolCall!.toolCall![0]! as dgraphResolversTypes.ToolCall;
         }
 
         // Step 3: If calledById provided, link the caller
         if (params.calledById) {
-            const updateRes = await this.dgraphService.mutation<{
-                updateToolCall: { toolCall: dgraphResolversTypes.ToolCall[] };
-            }>(SET_CALLED_BY, {
+            const updateRes = await this.dgraphService.mutation(SetCalledByDocument, {
                 id: toolCall.id,
                 calledById: params.calledById
             });
-            return updateRes.updateToolCall.toolCall[0];
+            return updateRes.updateToolCall!.toolCall![0]! as dgraphResolversTypes.ToolCall;
         }
 
-        return toolCall;
+        return toolCall as dgraphResolversTypes.ToolCall;
     }
 
     async completeToolCall(id: string, toolOutput: string, executedByIdOrAgent: string | 'AGENT'): Promise<dgraphResolversTypes.ToolCall> {
         const completedAt = new Date().toISOString();
-        const res = await this.dgraphService.mutation<{
-            updateToolCall: { toolCall: dgraphResolversTypes.ToolCall[] };
-        }>(COMPLETE_TOOL_CALL_SUCCESS, { id, toolOutput, completedAt });
+        const res = await this.dgraphService.mutation(CompleteToolCallSuccessDocument, { id, toolOutput, completedAt });
         await this.setExecutedBy(id, executedByIdOrAgent);
-        return res.updateToolCall.toolCall[0];
+        return res.updateToolCall!.toolCall![0]! as dgraphResolversTypes.ToolCall;
     }
 
     async errorToolCall(id: string, errorMessage: string, executedByIdOrAgent: string | 'AGENT' | undefined): Promise<dgraphResolversTypes.ToolCall> {
         const completedAt = new Date().toISOString();
-        const res = await this.dgraphService.mutation<{
-            updateToolCall: { toolCall: dgraphResolversTypes.ToolCall[] };
-        }>(COMPLETE_TOOL_CALL_ERROR, { id, error: errorMessage, completedAt });
+        const res = await this.dgraphService.mutation(CompleteToolCallErrorDocument, { id, error: errorMessage, completedAt });
         await this.setExecutedBy(id, executedByIdOrAgent);
-        return res.updateToolCall.toolCall[0];
+        return res.updateToolCall!.toolCall![0]! as dgraphResolversTypes.ToolCall;
     }
 
     async setExecutedBy(id: string, executedByIdOrAgent: string | 'AGENT' | undefined) {
         if (executedByIdOrAgent === 'AGENT') {
-            await this.dgraphService.mutation<{
-                updateToolCall: { toolCall: dgraphResolversTypes.ToolCall[] };
-            }>(SET_EXECUTED_BY_AGENT, { id });
+            await this.dgraphService.mutation(SetExecutedByAgentDocument, { id });
         } else if (executedByIdOrAgent) {
-            await this.dgraphService.mutation<{
-                updateToolCall: { toolCall: dgraphResolversTypes.ToolCall[] };
-            }>(SET_EXECUTED_BY, { id, executedById: executedByIdOrAgent });
+            await this.dgraphService.mutation(SetExecutedByDocument, { id, executedById: executedByIdOrAgent });
         }
     }
 
     observeToolCalls(workspaceId: string): Observable<apolloResolversTypes.ToolCall[]> {
-        const query = createSubscriptionFromQuery(QUERY_TOOL_CALLS);
+        const query = createSubscriptionFromQuery(QueryToolCallsDocument);
         return this.dgraphService
             .observe<{ mcpTools: dgraphResolversTypes.McpTool[] }>(query, { workspaceId }, 'getWorkspace', true)
             .pipe(map((workspace) => workspace.mcpTools.flatMap((mcpTool) => mcpTool.toolCalls).filter(x => x !== null && x !== undefined) || []));
@@ -123,23 +107,7 @@ export class MonitoringRepository {
         orderDirection?: apolloResolversTypes.OrderDirection;
     }): Promise<apolloResolversTypes.ToolCallsResult> {
         // Fetch all tool calls for workspace (through mcpTools AND skills)
-        const result = await this.dgraphService.query<{
-            getWorkspace: {
-                mcpTools: Array<{
-                    id: string;
-                    name: string;
-                    description: string;
-                    mcpServer: { id: string; name: string };
-                    toolCalls: dgraphResolversTypes.ToolCall[];
-                }>;
-                skills: Array<{
-                    id: string;
-                    name: string;
-                    mode: string;
-                    skillToolCalls: dgraphResolversTypes.ToolCall[];
-                }>;
-            };
-        }>(QUERY_TOOL_CALLS_FILTERED, {
+        const result = await this.dgraphService.query(QueryToolCallsFilteredDocument, {
             workspaceId: params.workspaceId,
         });
 

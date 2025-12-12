@@ -1,0 +1,20 @@
+mutation UpdateRuntime($id: ID!, $name: String!, $description: String!) {
+  updateRuntime(input: { filter: { id: [$id] }, set: { name: $name, description: $description } }) {
+    runtime {
+      id
+      name
+      description
+      status
+      type
+      createdAt
+      lastSeenAt
+      workspace {
+        id
+        name
+      }
+      system {
+        id
+      }
+    }
+  }
+}

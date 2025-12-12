@@ -1,0 +1,17 @@
+mutation AddWorkspace($name: String!, $now: DateTime!, $systemId: ID!, $adminId: ID!) {
+  addWorkspace(input: { name: $name, createdAt: $now, system: { id: $systemId }, admins: { id: $adminId } }) {
+    workspace {
+      id
+      name
+      createdAt
+      system {
+        id
+        initialized
+        admins {
+          id
+          email
+        }
+      }
+    }
+  }
+}

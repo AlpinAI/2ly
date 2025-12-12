@@ -1,0 +1,29 @@
+mutation UpdateAiProvider(
+  $id: ID!
+  $encryptedApiKey: String
+  $baseUrl: String
+  $availableModels: [String!]
+  $now: DateTime!
+) {
+  updateAIProviderConfig(
+    input: {
+      filter: { id: [$id] }
+      set: {
+        encryptedApiKey: $encryptedApiKey
+        baseUrl: $baseUrl
+        availableModels: $availableModels
+        updatedAt: $now
+      }
+    }
+  ) {
+    aIProviderConfig {
+      id
+      provider
+      encryptedApiKey
+      baseUrl
+      availableModels
+      createdAt
+      updatedAt
+    }
+  }
+}

@@ -1,0 +1,13 @@
+query FindAiConfigByKey($workspaceId: ID!, $key: String!) {
+  getWorkspace(id: $workspaceId) {
+    id
+    aiConfigs(filter: { key: { eq: $key } }) {
+      id
+      key
+      value
+      description
+      createdAt
+      updatedAt
+    }
+  }
+}

@@ -11,5 +11,6 @@ export * from './monitoring/monitoring.repository';
 export * from './skill/skill.repository';
 export * from './identity/identity.repository';
 export * from './ai-provider/ai-provider.repository';
+export * from './ai-config/ai-config.repository';
 export * from './oauth-provider/oauth-provider.repository';
 export * from './user-oauth-connection/user-oauth-connection.repository';

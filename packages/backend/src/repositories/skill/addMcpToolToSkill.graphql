@@ -1,0 +1,42 @@
+mutation AddMcpToolToSkill(
+  $skillId: ID!
+  $mcpToolId: ID!
+  $updatedAt: DateTime!
+) {
+  updateSkill(
+    input: {
+      filter: { id: [$skillId] }
+      set: {
+        mcpTools: [{ id: $mcpToolId }]
+        updatedAt: $updatedAt
+      }
+    }
+  ) {
+    skill {
+      id
+      name
+      description
+      createdAt
+      updatedAt
+      mcpTools {
+        id
+        name
+        description
+        inputSchema
+        annotations
+        status
+        createdAt
+        lastSeenAt
+        mcpServer {
+          id
+          name
+          executionTarget
+        }
+      }
+      workspace {
+        id
+        name
+      }
+    }
+  }
+}

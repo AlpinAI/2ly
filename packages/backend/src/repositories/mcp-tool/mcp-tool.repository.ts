@@ -1,28 +1,22 @@
 import { injectable, inject } from 'inversify';
 import { DGraphService } from '../../services/dgraph.service';
 import { dgraphResolversTypes } from '@skilder-ai/common';
-import { GET_MCP_TOOL_WITH_WORKSPACE, SET_MCP_TOOL_STATUS } from './mcp-tool.operations';
+import { GetMcpToolWithWorkspaceDocument, SetMcpToolStatusDocument, ActiveStatus } from '../../generated/dgraph';
 
 @injectable()
 export class MCPToolRepository {
-  constructor(@inject(DGraphService) private readonly dgraphService: DGraphService) { }
+  constructor(@inject(DGraphService) private readonly dgraphService: DGraphService) {}
 
   async getToolWithWorkspace(toolId: string): Promise<dgraphResolversTypes.McpTool> {
-    const res = await this.dgraphService.query<{
-      getMCPTool: dgraphResolversTypes.McpTool;
-    }>(GET_MCP_TOOL_WITH_WORKSPACE, {
-      toolId,
-    });
-    return res.getMCPTool;
+    const res = await this.dgraphService.query(GetMcpToolWithWorkspaceDocument, { toolId });
+    return res.getMCPTool! as dgraphResolversTypes.McpTool;
   }
 
   async setStatus(id: string, status: 'ACTIVE' | 'INACTIVE'): Promise<dgraphResolversTypes.McpTool> {
-    const res = await this.dgraphService.mutation<{
-      updateMCPTool: { mCPTool: dgraphResolversTypes.McpTool[] };
-    }>(SET_MCP_TOOL_STATUS, {
+    const res = await this.dgraphService.mutation(SetMcpToolStatusDocument, {
       mcpToolId: id,
-      status,
+      status: status as ActiveStatus,
     });
-    return res.updateMCPTool.mCPTool[0];
+    return res.updateMCPTool!.mCPTool![0]! as dgraphResolversTypes.McpTool;
   }
 }

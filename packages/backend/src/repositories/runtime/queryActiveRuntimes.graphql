@@ -1,0 +1,22 @@
+query QueryActiveRuntimes {
+  queryRuntime(filter: { status: { eq: ACTIVE } }) {
+    id
+    name
+    description
+    status
+    createdAt
+    lastSeenAt
+    processId
+    hostIP
+    hostname
+    mcpClientName
+    roots
+    workspace {
+      id
+      name
+    }
+    system {
+      id
+    }
+  }
+}

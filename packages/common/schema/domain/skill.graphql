@@ -8,6 +8,8 @@ type Skill @withSubscription {
   id: ID!
   name: String! @search(by: [hash])
   description: String
+  guardrails: String
+  associatedKnowledge: String
   createdAt: DateTime!
   updatedAt: DateTime
   mcpTools: [MCPTool!] @hasInverse(field: skills)
@@ -38,14 +40,29 @@ extend type Query {
   skills(workspaceId: ID!): [Skill!]
 }
 
+input GenerateSkillWithAIInput {
+  userPrompt: String!
+  workspaceId: ID!
+  providerId: String!
+}
+
+type GeneratedSkillData {
+  name: String!
+  description: String!
+  guardrails: String
+  associatedKnowledge: String
+  suggestedToolIds: [ID!]!
+}
+
 extend type Mutation {
-  createSkill(name: String!, description: String!, workspaceId: ID!): Skill!
-  updateSkill(id: ID!, name: String!, description: String!): Skill!
+  createSkill(name: String!, description: String!, workspaceId: ID!, guardrails: String, associatedKnowledge: String): Skill!
+  updateSkill(id: ID!, name: String!, description: String!, guardrails: String, associatedKnowledge: String): Skill!
   deleteSkill(id: ID!): Skill!
   addMCPToolToSkill(mcpToolId: ID!, skillId: ID!): Skill!
   removeMCPToolFromSkill(mcpToolId: ID!, skillId: ID!): Skill!
   updateSkillMode(id: ID!, mode: SkillMode!): Skill!
   updateSkillSmartConfig(input: UpdateSkillSmartConfigInput!): Skill!
+  generateSkillWithAI(input: GenerateSkillWithAIInput!): GeneratedSkillData!
 }
 
 extend type Subscription {

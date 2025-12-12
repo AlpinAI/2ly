@@ -1,0 +1,22 @@
+query QueryWorkspaceWithRegistryServers($workspaceId: ID!) {
+  getWorkspace(id: $workspaceId) {
+    id
+    registryServers {
+      id
+      name
+      description
+      title
+      repositoryUrl
+      version
+      packages
+      remotes
+      _meta
+      createdAt
+      lastSeenAt
+      configurations {
+        id
+        name
+      }
+    }
+  }
+}

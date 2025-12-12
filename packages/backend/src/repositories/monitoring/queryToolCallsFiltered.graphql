@@ -1,0 +1,58 @@
+query QueryToolCallsFiltered($workspaceId: ID!) {
+  getWorkspace(id: $workspaceId) {
+    mcpTools {
+      id
+      name
+      description
+      mcpServer {
+        id
+        name
+      }
+      toolCalls(order: { desc: calledAt }) {
+        id
+        toolInput
+        toolOutput
+        error
+        calledAt
+        completedAt
+        status
+        isTest
+        executedByAgent
+        calledBy {
+          id
+          name
+        }
+        executedBy {
+          id
+          name
+          hostname
+        }
+      }
+    }
+    skills {
+      id
+      name
+      mode
+      skillToolCalls(order: { desc: calledAt }) {
+        id
+        toolInput
+        toolOutput
+        error
+        calledAt
+        completedAt
+        status
+        isTest
+        executedByAgent
+        calledBy {
+          id
+          name
+        }
+        executedBy {
+          id
+          name
+          hostname
+        }
+      }
+    }
+  }
+}

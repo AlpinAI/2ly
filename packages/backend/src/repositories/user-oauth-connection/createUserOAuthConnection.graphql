@@ -1,0 +1,48 @@
+mutation CreateUserOAuthConnection(
+  $workspaceId: ID!
+  $userId: ID!
+  $provider: OAuthProviderType!
+  $encryptedAccessToken: String!
+  $encryptedRefreshToken: String
+  $tokenExpiresAt: DateTime
+  $scopes: [String!]
+  $accountEmail: String
+  $accountName: String
+  $accountAvatarUrl: String
+  $providerAccountId: String
+  $now: DateTime!
+) {
+  addUserOAuthConnection(
+    input: [
+      {
+        workspace: { id: $workspaceId }
+        user: { id: $userId }
+        provider: $provider
+        encryptedAccessToken: $encryptedAccessToken
+        encryptedRefreshToken: $encryptedRefreshToken
+        tokenExpiresAt: $tokenExpiresAt
+        scopes: $scopes
+        accountEmail: $accountEmail
+        accountName: $accountName
+        accountAvatarUrl: $accountAvatarUrl
+        providerAccountId: $providerAccountId
+        createdAt: $now
+        updatedAt: $now
+      }
+    ]
+  ) {
+    userOAuthConnection {
+      id
+      provider
+      accountEmail
+      accountName
+      accountAvatarUrl
+      providerAccountId
+      scopes
+      tokenExpiresAt
+      createdAt
+      updatedAt
+      lastUsedAt
+    }
+  }
+}

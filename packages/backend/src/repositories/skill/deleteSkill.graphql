@@ -1,0 +1,15 @@
+mutation DeleteSkill($id: ID!) {
+  deleteSkill(filter: { id: [$id] }) {
+    skill {
+      id
+      name
+      description
+      createdAt
+      updatedAt
+      workspace {
+        id
+        name
+      }
+    }
+  }
+}

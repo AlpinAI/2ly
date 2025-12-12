@@ -1,0 +1,8 @@
+query GetMcpServerWithWorkspace($id: ID!) {
+  getMCPServer(id: $id) {
+    id
+    workspace {
+      id
+    }
+  }
+}

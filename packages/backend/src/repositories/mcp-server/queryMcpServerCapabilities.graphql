@@ -1,0 +1,15 @@
+query QueryMcpServerCapabilities($id: ID!) {
+  getMCPServer(id: $id) {
+    id
+    tools {
+      id
+      name
+      description
+      inputSchema
+      annotations
+      status
+      createdAt
+      lastSeenAt
+    }
+  }
+}

@@ -1,0 +1,12 @@
+mutation SetMcpToolStatus($mcpToolId: ID!, $status: ActiveStatus!) {
+  updateMCPTool(input: { filter: { id: [$mcpToolId] }, set: { status: $status } }) {
+    mCPTool {
+      id
+      name
+      description
+      inputSchema
+      annotations
+      status
+    }
+  }
+}

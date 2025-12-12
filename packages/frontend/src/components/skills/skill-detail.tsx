@@ -429,6 +429,32 @@ export function SkillDetail({ skill }: SkillDetailProps) {
             />
           </div>
         </div>
+
+        {/* Guardrails and Associated Knowledge */}
+        {(skill.guardrails || skill.associatedKnowledge) && (
+          <div className="mt-3 space-y-2">
+            {skill.guardrails && (
+              <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-3">
+                <div className="text-xs font-medium text-amber-700 dark:text-amber-300 uppercase tracking-wider mb-1">
+                  Guardrails
+                </div>
+                <div className="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap">
+                  {skill.guardrails}
+                </div>
+              </div>
+            )}
+            {skill.associatedKnowledge && (
+              <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3">
+                <div className="text-xs font-medium text-blue-700 dark:text-blue-300 uppercase tracking-wider mb-1">
+                  Associated Knowledge
+                </div>
+                <div className="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap">
+                  {skill.associatedKnowledge}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Action Bar */}

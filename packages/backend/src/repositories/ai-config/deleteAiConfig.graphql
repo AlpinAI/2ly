@@ -1,0 +1,7 @@
+mutation DeleteAiConfig($id: ID!) {
+  deleteAIConfig(filter: { id: [$id] }) {
+    aIConfig {
+      id
+    }
+  }
+}

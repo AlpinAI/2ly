@@ -1,0 +1,22 @@
+query GetRuntime($id: ID!) {
+  getRuntime(id: $id) {
+    id
+    name
+    description
+    status
+    type
+    createdAt
+    lastSeenAt
+    processId
+    hostIP
+    hostname
+    mcpClientName
+    roots
+    workspace {
+      id
+    }
+    system {
+      id
+    }
+  }
+}

@@ -1,0 +1,14 @@
+query GetUserActiveSessions($userId: String!) {
+  querySession(
+    filter: { userId: { eq: $userId }, isActive: true }
+    order: { desc: lastUsedAt }
+  ) {
+    id
+    deviceInfo
+    ipAddress
+    userAgent
+    createdAt
+    lastUsedAt
+    expiresAt
+  }
+}

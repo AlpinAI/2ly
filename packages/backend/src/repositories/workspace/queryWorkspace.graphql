@@ -1,0 +1,18 @@
+query QueryWorkspace($workspaceId: ID!) {
+  getWorkspace(id: $workspaceId) {
+    id
+    name
+    createdAt
+    defaultAIModel
+    onboardingSteps {
+      id
+      stepId
+      type
+      status
+      priority
+      createdAt
+      updatedAt
+      metadata
+    }
+  }
+}

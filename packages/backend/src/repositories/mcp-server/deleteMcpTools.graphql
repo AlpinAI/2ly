@@ -1,0 +1,7 @@
+mutation DeleteMcpTools($ids: [ID!]!) {
+  deleteMCPTool(filter: { id: $ids }) {
+    mCPTool {
+      id
+    }
+  }
+}

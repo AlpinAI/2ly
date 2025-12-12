@@ -77,6 +77,8 @@ const mockSkill = {
   model: null,
   temperature: null,
   maxTokens: null,
+  guardrails: null,
+  associatedKnowledge: null,
   systemPrompt: null,
   executionTarget: null,
   runtime: null,

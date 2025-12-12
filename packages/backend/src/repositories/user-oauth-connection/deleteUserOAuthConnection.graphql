@@ -1,0 +1,7 @@
+mutation DeleteUserOAuthConnection($id: ID!) {
+  deleteUserOAuthConnection(filter: { id: [$id] }) {
+    userOAuthConnection {
+      id
+    }
+  }
+}

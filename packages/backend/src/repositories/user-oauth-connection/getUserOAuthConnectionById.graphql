@@ -1,0 +1,23 @@
+query GetUserOAuthConnectionById($id: ID!) {
+  getUserOAuthConnection(id: $id) {
+    id
+    provider
+    encryptedAccessToken
+    encryptedRefreshToken
+    tokenExpiresAt
+    scopes
+    accountEmail
+    accountName
+    accountAvatarUrl
+    providerAccountId
+    createdAt
+    updatedAt
+    lastUsedAt
+    workspace {
+      id
+    }
+    user {
+      id
+    }
+  }
+}

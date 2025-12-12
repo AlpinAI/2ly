@@ -1,0 +1,22 @@
+mutation AddToolCall(
+  $toolInput: String!
+  $calledAt: DateTime!
+  $isTest: Boolean!
+) {
+  addToolCall(
+    input: {
+      toolInput: $toolInput
+      calledAt: $calledAt
+      status: PENDING
+      isTest: $isTest
+    }
+  ) {
+    toolCall {
+      id
+      toolInput
+      calledAt
+      status
+      isTest
+    }
+  }
+}

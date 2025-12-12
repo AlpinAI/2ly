@@ -1,0 +1,16 @@
+query QueryMcpServerWithTool($id: ID!, $toolName: String!) {
+  getMCPServer(id: $id) {
+    id
+    workspace {
+      id
+    }
+    tools(filter: { name: { eq: $toolName } }) {
+      id
+      name
+      description
+      inputSchema
+      annotations
+      status
+    }
+  }
+}

@@ -1,0 +1,27 @@
+query QueryWorkspaceWithRuntimes($workspaceId: ID!) {
+  getWorkspace(id: $workspaceId) {
+    id
+    name
+    defaultAIModel
+    runtimes {
+      id
+      name
+      description
+      status
+      createdAt
+      lastSeenAt
+      roots
+      type
+      hostname
+      mcpClientName
+      hostIP
+      mcpClientName
+      mcpServers {
+        id
+        name
+        description
+        executionTarget
+      }
+    }
+  }
+}

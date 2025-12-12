@@ -1,0 +1,13 @@
+mutation CompleteToolCallError($id: ID!, $error: String!, $completedAt: DateTime!) {
+  updateToolCall(
+    input: { filter: { id: [$id] }, set: { status: FAILED, error: $error, completedAt: $completedAt } }
+  ) {
+    toolCall {
+      id
+      status
+      error
+      completedAt
+      isTest
+    }
+  }
+}

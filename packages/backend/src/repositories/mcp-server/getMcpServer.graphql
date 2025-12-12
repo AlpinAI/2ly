@@ -1,0 +1,9 @@
+query GetMcpServer($id: ID!) {
+  getMCPServer(id: $id) {
+    id
+    executionTarget
+    runtime {
+      id
+    }
+  }
+}

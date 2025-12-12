@@ -1,0 +1,12 @@
+mutation DeleteRuntime($id: ID!) {
+  deleteRuntime(filter: { id: [$id] }) {
+    runtime {
+      id
+      name
+      description
+      status
+      createdAt
+      lastSeenAt
+    }
+  }
+}

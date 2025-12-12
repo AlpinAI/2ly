@@ -1,0 +1,14 @@
+query GetOAuthProvidersByWorkspace($workspaceId: ID!) {
+  getWorkspace(id: $workspaceId) {
+    oauthProviders {
+      id
+      provider
+      enabled
+      clientId
+      encryptedClientSecret
+      tenantId
+      createdAt
+      updatedAt
+    }
+  }
+}

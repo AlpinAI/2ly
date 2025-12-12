@@ -1,0 +1,30 @@
+# AI Configuration - System prompts for AI features
+# Stores key-value pairs for AI prompt management
+
+type AIConfig @withSubscription {
+  id: ID!
+  key: String! @search(by: [hash])
+  value: String!
+  description: String
+  createdAt: DateTime!
+  updatedAt: DateTime!
+  #DGRAPH_ONLY_START
+  workspace: Workspace! @hasInverse(field: aiConfigs)
+  #DGRAPH_ONLY_END
+}
+
+#APOLLO_ONLY_START
+extend type Query {
+  getAIConfigs(workspaceId: ID!): [AIConfig!]!
+  getAIConfig(workspaceId: ID!, key: String!): AIConfig
+}
+
+extend type Mutation {
+  setAIConfig(workspaceId: ID!, key: String!, value: String!, description: String): AIConfig!
+  deleteAIConfig(id: ID!): Boolean!
+}
+
+extend type Subscription {
+  aiConfigs(workspaceId: ID!): [AIConfig!]
+}
+#APOLLO_ONLY_END

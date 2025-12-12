@@ -1,0 +1,13 @@
+query GetAiConfigById($id: ID!) {
+  getAIConfig(id: $id) {
+    id
+    key
+    value
+    description
+    createdAt
+    updatedAt
+    workspace {
+      id
+    }
+  }
+}

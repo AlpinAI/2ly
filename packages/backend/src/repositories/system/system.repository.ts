@@ -2,13 +2,13 @@ import { inject, injectable } from 'inversify';
 import { DGraphService } from '../../services/dgraph.service';
 import { dgraphResolversTypes, apolloResolversTypes, LoggerService } from '@skilder-ai/common';
 import {
-  CREATE_SYSTEM,
-  QUERY_SYSTEM,
-  INIT_SYSTEM,
-  QUERY_SYSTEM_WITH_DEFAULT_WORKSPACE,
-  SET_DEFAULT_WORKSPACE,
-  QUERY_SYSTEM_WITH_RUNTIMES,
-} from '../system/system.operations';
+  CreateSystemDocument,
+  QuerySystemDocument,
+  InitSystemDocument,
+  QuerySystemWithDefaultWorkspaceDocument,
+  SetDefaultWorkspaceDocument,
+  QuerySystemWithRuntimesDocument,
+} from '../../generated/dgraph';
 import { Observable, BehaviorSubject, Subscription } from 'rxjs';
 import { map, tap } from 'rxjs/operators';
 import { createSubscriptionFromQuery } from '../../helpers';
@@ -39,7 +39,7 @@ export class SystemRepository {
       return;
     }
     this.logger.info('Starting to observe system runtimes');
-    const query = createSubscriptionFromQuery(QUERY_SYSTEM_WITH_RUNTIMES);
+    const query = createSubscriptionFromQuery(QuerySystemWithRuntimesDocument);
     this.observingRuntimesSubscription = this.dgraphService.observe<apolloResolversTypes.System[]>(query, {}, 'querySystem', true).pipe(
       tap((system) => {
         if (system.length === 0) {
@@ -73,10 +73,8 @@ export class SystemRepository {
     }
 
     // 2. Create System
-    const res = await this.dgraphService.mutation<{
-      addSystem: { system: dgraphResolversTypes.System[] };
-    }>(CREATE_SYSTEM, { now, adminId: user.id, instanceId });
-    const system = res.addSystem.system[0];
+    const res = await this.dgraphService.mutation(CreateSystemDocument, { now, adminId: user.id, instanceId });
+    const system = res.addSystem!.system![0]! as dgraphResolversTypes.System;
 
     // 3. Create system key
     const identityOptions = { key: systemKey };
@@ -90,17 +88,13 @@ export class SystemRepository {
     if (!system) {
       throw new Error('System not found');
     }
-    const res = await this.dgraphService.mutation<{
-      updateSystem: { system: dgraphResolversTypes.System[] };
-    }>(SET_DEFAULT_WORKSPACE, { systemId: system.id, workspaceId });
-    return res.updateSystem.system[0];
+    const res = await this.dgraphService.mutation(SetDefaultWorkspaceDocument, { systemId: system.id, workspaceId });
+    return res.updateSystem!.system![0]! as dgraphResolversTypes.System;
   }
 
   async getSystem(): Promise<dgraphResolversTypes.System | null> {
-    const res = await this.dgraphService.query<{
-      querySystem: dgraphResolversTypes.System[];
-    }>(QUERY_SYSTEM_WITH_DEFAULT_WORKSPACE, {});
-    return res.querySystem?.[0] || null;
+    const res = await this.dgraphService.query(QuerySystemWithDefaultWorkspaceDocument, {});
+    return (res.querySystem?.[0] || null) as dgraphResolversTypes.System | null;
   }
 
   /**
@@ -122,17 +116,15 @@ export class SystemRepository {
         'Cannot initialize system. This can happen if the system was already initialized or if the default workspace or admin user was not found.',
       );
     }
-    await this.userRepository.updateEmail(system.admins[0].id, email);
-    await this.userRepository.updatePassword(system.admins[0].id, adminPassword);
+    await this.userRepository.updateEmail(system.admins[0]!.id, email);
+    await this.userRepository.updatePassword(system.admins[0]!.id, adminPassword);
     await this.announceInit(email, system.instanceId);
     const now = new Date().toISOString();
-    const res = await this.dgraphService.mutation<{
-      updateSystem: { system: dgraphResolversTypes.System[] };
-    }>(INIT_SYSTEM, {
+    const res = await this.dgraphService.mutation(InitSystemDocument, {
       systemId: system.id,
-      now
+      now,
     });
-    return res.updateSystem.system[0];
+    return res.updateSystem!.system![0]! as dgraphResolversTypes.System;
   }
 
   private async announceInit(email: string, instanceId: string): Promise<void> {
@@ -159,14 +151,14 @@ export class SystemRepository {
   }
 
   observeSystem(): Observable<dgraphResolversTypes.System[]> {
-    const query = createSubscriptionFromQuery(QUERY_SYSTEM);
+    const query = createSubscriptionFromQuery(QuerySystemDocument);
     return this.dgraphService
       .observe<dgraphResolversTypes.System>(query, {}, 'querySystem', true)
       .pipe(map((system) => [system]));
   }
 
   observeSystemWithDefaultWorkspace(): Observable<dgraphResolversTypes.System[]> {
-    const query = createSubscriptionFromQuery(QUERY_SYSTEM_WITH_DEFAULT_WORKSPACE);
+    const query = createSubscriptionFromQuery(QuerySystemWithDefaultWorkspaceDocument);
     return this.dgraphService
       .observe<dgraphResolversTypes.System>(query, {}, 'querySystem', true)
       .pipe(map((system) => [system]));

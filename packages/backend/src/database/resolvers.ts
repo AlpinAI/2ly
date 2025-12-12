@@ -18,9 +18,11 @@ import {
 } from '../repositories';
 import { createAuthResolvers } from '../resolvers/auth.resolver';
 import { createAIProviderResolvers } from '../resolvers/ai-provider.resolver';
+import { createAIConfigResolvers } from '../resolvers/ai-config.resolver';
 import { createOAuthProviderResolvers } from '../resolvers/oauth-provider.resolver';
 import { createUserOAuthConnectionResolvers } from '../resolvers/user-oauth-connection.resolver';
 import { AuthenticationService, JwtService, PasswordPolicyService } from '../services/auth';
+import { AISkillGenerationService } from '../services/ai-skill-generation.service';
 import { Container } from 'inversify';
 import { requireAuth, requireWorkspaceAccess, requireAuthAndWorkspaceAccess, withPeriodicValidation } from './authorization.helpers';
 import { validateRuntimeForWorkspace, updateExecutionTargetWithRuntime, applyRuntimeLinking } from './execution-target.helpers';
@@ -49,6 +51,7 @@ export const resolvers = (container: Container = defaultContainer): apolloResolv
   const authenticationService = container.get(AuthenticationService);
   const jwtService = container.get(JwtService);
   const monitoringRepository = container.get(MonitoringRepository);
+  const aiSkillGenerationService = container.get(AISkillGenerationService);
 
   // Create authentication resolvers
   const userRepository = container.get(UserRepository);
@@ -57,6 +60,9 @@ export const resolvers = (container: Container = defaultContainer): apolloResolv
 
   // Create AI provider resolvers
   const aiProviderResolvers = createAIProviderResolvers(container);
+
+  // Create AI config resolvers
+  const aiConfigResolvers = createAIConfigResolvers(container);
 
   // Create OAuth provider resolvers
   const oauthProviderResolvers = createOAuthProviderResolvers(container);
@@ -186,6 +192,8 @@ export const resolvers = (container: Container = defaultContainer): apolloResolv
       ...authResolvers.Query,
       // AI Provider queries
       ...aiProviderResolvers.Query,
+      // AI Config queries
+      ...aiConfigResolvers.Query,
       // OAuth Provider queries
       ...oauthProviderResolvers.Query,
       // User OAuth Connection queries
@@ -533,16 +541,16 @@ export const resolvers = (container: Container = defaultContainer): apolloResolv
       // Skill mutations
       createSkill: async (
         _parent: unknown,
-        { name, description, workspaceId }: { name: string; description: string; workspaceId: string },
+        { name, description, workspaceId, guardrails, associatedKnowledge }: apolloResolversTypes.MutationCreateSkillArgs,
         context: GraphQLContext,
       ) => {
         await requireAuthAndWorkspaceAccess(workspaceRepository, context, workspaceId);
-        return skillRepository.create(name, description, workspaceId);
+        return skillRepository.create(name, description, workspaceId, guardrails ?? undefined, associatedKnowledge ?? undefined);
       },
 
       updateSkill: async (
         _parent: unknown,
-        { id, name, description }: { id: string; name: string; description: string },
+        { id, name, description, guardrails, associatedKnowledge }: apolloResolversTypes.MutationUpdateSkillArgs,
         context: GraphQLContext,
       ) => {
         const userId = requireAuth(context);
@@ -551,7 +559,7 @@ export const resolvers = (container: Container = defaultContainer): apolloResolv
           throw new GraphQLError('Skill not found', { extensions: { code: 'NOT_FOUND' } });
         }
         await requireWorkspaceAccess(workspaceRepository, userId, skill.workspace.id);
-        return skillRepository.update(id, name, description);
+        return skillRepository.update(id, name, description, guardrails ?? undefined, associatedKnowledge ?? undefined);
       },
 
       deleteSkill: async (_parent: unknown, { id }: { id: string }, context: GraphQLContext) => {
@@ -661,8 +669,19 @@ export const resolvers = (container: Container = defaultContainer): apolloResolv
         return updatedSkill;
       },
 
+      generateSkillWithAI: async (
+        _parent: unknown,
+        { input }: apolloResolversTypes.MutationGenerateSkillWithAiArgs,
+        context: GraphQLContext,
+      ) => {
+        await requireAuthAndWorkspaceAccess(workspaceRepository, context, input.workspaceId);
+        return aiSkillGenerationService.generateSkill(input.userPrompt, input.workspaceId, input.providerId);
+      },
+
       // AI Provider mutations
       ...aiProviderResolvers.Mutation,
+      // AI Config mutations
+      ...aiConfigResolvers.Mutation,
       // OAuth Provider mutations
       ...oauthProviderResolvers.Mutation,
       // User OAuth Connection mutations
@@ -756,6 +775,8 @@ export const resolvers = (container: Container = defaultContainer): apolloResolv
           return withPeriodicValidation(generator, userId, workspaceId, workspaceRepository, logger);
         },
       },
+      // AI Config subscriptions
+      ...aiConfigResolvers.Subscription,
     },
   };
 };

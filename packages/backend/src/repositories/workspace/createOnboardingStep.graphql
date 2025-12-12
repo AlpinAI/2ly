@@ -1,0 +1,18 @@
+mutation CreateOnboardingStep($stepId: String!, $type: OnboardingStepType!, $priority: Int!, $now: DateTime!) {
+  addOnboardingStep(input: {
+    stepId: $stepId
+    type: $type
+    status: PENDING
+    priority: $priority
+    createdAt: $now
+  }) {
+    onboardingStep {
+      id
+      stepId
+      type
+      status
+      priority
+      createdAt
+    }
+  }
+}

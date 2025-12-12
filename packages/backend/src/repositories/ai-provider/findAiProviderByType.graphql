@@ -1,0 +1,13 @@
+query FindAiProviderByType($workspaceId: ID!, $provider: AIProviderType!) {
+  getWorkspace(id: $workspaceId) {
+    aiProviders(filter: { provider: { eq: $provider } }) {
+      id
+      provider
+      encryptedApiKey
+      baseUrl
+      availableModels
+      createdAt
+      updatedAt
+    }
+  }
+}

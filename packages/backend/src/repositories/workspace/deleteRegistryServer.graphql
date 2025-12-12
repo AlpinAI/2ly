@@ -1,0 +1,8 @@
+mutation DeleteRegistryServer($id: ID!) {
+  deleteMCPRegistryServer(filter: { id: [$id] }) {
+    mCPRegistryServer {
+      id
+      name
+    }
+  }
+}

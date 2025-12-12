@@ -1,0 +1,12 @@
+query FindKeyById($id: ID!) {
+  getIdentityKey(id: $id) {
+    id
+    key
+    relatedId
+    createdAt
+    expiresAt
+    revokedAt
+    description
+    permissions
+  }
+}

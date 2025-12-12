@@ -1,0 +1,20 @@
+mutation LinkOnboardingStepToWorkspace($workspaceId: ID!, $stepId: ID!) {
+  updateWorkspace(input: {
+    filter: { id: [$workspaceId] }
+    set: { onboardingSteps: { id: $stepId } }
+  }) {
+    workspace {
+      id
+      name
+      onboardingSteps {
+        id
+        stepId
+        type
+        status
+        priority
+        createdAt
+        updatedAt
+      }
+    }
+  }
+}

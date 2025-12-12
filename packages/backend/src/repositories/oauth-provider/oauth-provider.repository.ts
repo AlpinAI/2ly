@@ -3,14 +3,14 @@ import { DGraphService } from '../../services/dgraph.service';
 import { dgraphResolversTypes, LoggerService, EncryptionService } from '@skilder-ai/common';
 import pino from 'pino';
 import {
-  GET_OAUTH_PROVIDERS_BY_WORKSPACE,
-  FIND_OAUTH_PROVIDER_BY_TYPE,
-  CREATE_OAUTH_PROVIDER,
-  UPDATE_OAUTH_PROVIDER,
-  UPDATE_OAUTH_PROVIDER_ENABLED,
-  DELETE_OAUTH_PROVIDER,
-  GET_OAUTH_PROVIDER_BY_ID,
-} from './oauth-provider.operations';
+  GetOAuthProvidersByWorkspaceDocument,
+  FindOAuthProviderByTypeDocument,
+  CreateOAuthProviderDocument,
+  UpdateOAuthProviderDocument,
+  UpdateOAuthProviderEnabledDocument,
+  DeleteOAuthProviderDocument,
+  GetOAuthProviderByIdDocument,
+} from '../../generated/dgraph';
 
 export type OAuthProviderType = 'google' | 'microsoft' | 'notion' | 'supabase';
 
@@ -41,11 +41,9 @@ export class OAuthProviderRepository {
 
   async getByWorkspace(workspaceId: string): Promise<dgraphResolversTypes.OAuthProviderConfig[]> {
     try {
-      const res = await this.dgraphService.query<{
-        getWorkspace: { oauthProviders: dgraphResolversTypes.OAuthProviderConfig[] } | null;
-      }>(GET_OAUTH_PROVIDERS_BY_WORKSPACE, { workspaceId });
+      const res = await this.dgraphService.query(GetOAuthProvidersByWorkspaceDocument, { workspaceId });
 
-      return res.getWorkspace?.oauthProviders || [];
+      return (res.getWorkspace?.oauthProviders || []) as dgraphResolversTypes.OAuthProviderConfig[];
     } catch (error) {
       this.logger.error(`Failed to get OAuth providers for workspace ${workspaceId}: ${error}`);
       throw new Error('Failed to get OAuth providers');
@@ -57,12 +55,10 @@ export class OAuthProviderRepository {
     provider: dgraphResolversTypes.OAuthProviderType
   ): Promise<dgraphResolversTypes.OAuthProviderConfig | null> {
     try {
-      const res = await this.dgraphService.query<{
-        getWorkspace: { oauthProviders: dgraphResolversTypes.OAuthProviderConfig[] } | null;
-      }>(FIND_OAUTH_PROVIDER_BY_TYPE, { workspaceId, provider });
+      const res = await this.dgraphService.query(FindOAuthProviderByTypeDocument, { workspaceId, provider });
 
       const providers = res.getWorkspace?.oauthProviders || [];
-      return providers.length > 0 ? providers[0] : null;
+      return providers.length > 0 ? (providers[0] as dgraphResolversTypes.OAuthProviderConfig) : null;
     } catch (error) {
       this.logger.error(
         `Failed to find OAuth provider for workspace ${workspaceId} and provider ${provider}: ${error}`
@@ -73,9 +69,7 @@ export class OAuthProviderRepository {
 
   async findById(id: string): Promise<{ id: string; provider: string; workspaceId: string } | null> {
     try {
-      const res = await this.dgraphService.query<{
-        getOAuthProviderConfig: { id: string; provider: string; workspace: { id: string } } | null;
-      }>(GET_OAUTH_PROVIDER_BY_ID, { id });
+      const res = await this.dgraphService.query(GetOAuthProviderByIdDocument, { id });
 
       if (!res.getOAuthProviderConfig) return null;
       return {
@@ -93,9 +87,7 @@ export class OAuthProviderRepository {
     try {
       const now = new Date().toISOString();
 
-      const res = await this.dgraphService.mutation<{
-        addOAuthProviderConfig: { oAuthProviderConfig: dgraphResolversTypes.OAuthProviderConfig[] };
-      }>(CREATE_OAUTH_PROVIDER, {
+      const res = await this.dgraphService.mutation(CreateOAuthProviderDocument, {
         workspaceId,
         provider: data.provider,
         enabled: data.enabled,
@@ -106,7 +98,7 @@ export class OAuthProviderRepository {
       });
 
       this.logger.info(`Created OAuth provider for workspace ${workspaceId} and provider ${data.provider}`);
-      return res.addOAuthProviderConfig.oAuthProviderConfig[0];
+      return res.addOAuthProviderConfig!.oAuthProviderConfig![0]! as dgraphResolversTypes.OAuthProviderConfig;
     } catch (error) {
       this.logger.error(
         `Failed to create OAuth provider for workspace ${workspaceId} and provider ${data.provider}: ${error}`
@@ -122,9 +114,7 @@ export class OAuthProviderRepository {
     try {
       const now = new Date().toISOString();
 
-      const res = await this.dgraphService.mutation<{
-        updateOAuthProviderConfig: { oAuthProviderConfig: dgraphResolversTypes.OAuthProviderConfig[] };
-      }>(UPDATE_OAUTH_PROVIDER, {
+      const res = await this.dgraphService.mutation(UpdateOAuthProviderDocument, {
         id,
         clientId: data.clientId,
         encryptedClientSecret: data.encryptedClientSecret,
@@ -133,7 +123,7 @@ export class OAuthProviderRepository {
       });
 
       this.logger.info(`Updated OAuth provider ${id}`);
-      return res.updateOAuthProviderConfig.oAuthProviderConfig[0];
+      return res.updateOAuthProviderConfig!.oAuthProviderConfig![0]! as dgraphResolversTypes.OAuthProviderConfig;
     } catch (error) {
       this.logger.error(`Failed to update OAuth provider ${id}: ${error}`);
       throw new Error('Failed to update OAuth provider');
@@ -144,16 +134,14 @@ export class OAuthProviderRepository {
     try {
       const now = new Date().toISOString();
 
-      const res = await this.dgraphService.mutation<{
-        updateOAuthProviderConfig: { oAuthProviderConfig: dgraphResolversTypes.OAuthProviderConfig[] };
-      }>(UPDATE_OAUTH_PROVIDER_ENABLED, {
+      const res = await this.dgraphService.mutation(UpdateOAuthProviderEnabledDocument, {
         id,
         enabled,
         now,
       });
 
       this.logger.info(`Updated OAuth provider ${id} enabled to ${enabled}`);
-      return res.updateOAuthProviderConfig.oAuthProviderConfig[0];
+      return res.updateOAuthProviderConfig!.oAuthProviderConfig![0]! as dgraphResolversTypes.OAuthProviderConfig;
     } catch (error) {
       this.logger.error(`Failed to update OAuth provider ${id} enabled status: ${error}`);
       throw new Error('Failed to update OAuth provider');
@@ -177,9 +165,7 @@ export class OAuthProviderRepository {
 
   async delete(id: string): Promise<boolean> {
     try {
-      await this.dgraphService.mutation<{
-        deleteOAuthProviderConfig: { oAuthProviderConfig: { id: string }[] };
-      }>(DELETE_OAUTH_PROVIDER, { id });
+      await this.dgraphService.mutation(DeleteOAuthProviderDocument, { id });
 
       this.logger.info(`Deleted OAuth provider ${id}`);
       return true;
