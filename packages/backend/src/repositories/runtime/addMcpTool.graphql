@@ -1,0 +1,35 @@
+mutation AddMcpTool(
+  $toolName: String!
+  $toolDescription: String!
+  $toolInputSchema: String!
+  $toolAnnotations: String!
+  $now: DateTime!
+  $workspaceId: ID!
+  $mcpServerId: ID!
+) {
+  addMCPTool(
+    input: {
+      name: $toolName
+      description: $toolDescription
+      inputSchema: $toolInputSchema
+      annotations: $toolAnnotations
+      status: ACTIVE
+      createdAt: $now
+      lastSeenAt: $now
+      workspace: { id: $workspaceId }
+      mcpServer: { id: $mcpServerId }
+    }
+  ) {
+    mCPTool {
+      id
+      name
+      description
+      inputSchema
+      annotations
+      status
+      workspace {
+        id
+      }
+    }
+  }
+}

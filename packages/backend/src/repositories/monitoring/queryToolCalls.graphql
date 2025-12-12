@@ -1,0 +1,20 @@
+query QueryToolCalls($workspaceId: ID!) {
+  getWorkspace(id: $workspaceId) {
+    mcpTools {
+      id
+      toolCalls {
+        id
+        toolInput
+        toolOutput
+        error
+        calledAt
+        completedAt
+        status
+        isTest
+        mcpTool { id name mcpServer { id name } }
+        calledBy { id name }
+        executedBy { id name }
+      }
+    }
+  }
+}

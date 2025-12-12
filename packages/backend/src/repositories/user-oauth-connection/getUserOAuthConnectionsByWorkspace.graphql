@@ -1,0 +1,28 @@
+query GetUserOAuthConnectionsByWorkspace {
+  queryUserOAuthConnection(
+    filter: {
+      and: [
+        { has: workspace }
+        { has: user }
+      ]
+    }
+  ) {
+    id
+    provider
+    accountEmail
+    accountName
+    accountAvatarUrl
+    providerAccountId
+    scopes
+    tokenExpiresAt
+    createdAt
+    updatedAt
+    lastUsedAt
+    workspace {
+      id
+    }
+    user {
+      id
+    }
+  }
+}

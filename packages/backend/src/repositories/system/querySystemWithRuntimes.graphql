@@ -1,0 +1,23 @@
+query QuerySystemWithRuntimes {
+  querySystem {
+    id
+    runtimes {
+      id
+      name
+      description
+      status
+      createdAt
+      lastSeenAt
+      roots
+      type
+      hostname
+      mcpClientName
+      hostIP
+      mcpServers {
+        id
+        name
+        description
+      }
+    }
+  }
+}

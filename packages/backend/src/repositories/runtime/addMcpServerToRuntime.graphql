@@ -1,0 +1,13 @@
+mutation AddMcpServerToRuntime($runtimeId: ID!, $mcpServerId: ID!) {
+  updateRuntime(input: { filter: { id: [$runtimeId] }, set: { mcpServers: { id: $mcpServerId } } }) {
+    runtime {
+      id
+      mcpServers {
+        id
+        description
+        transport
+        config
+      }
+    }
+  }
+}

@@ -1,0 +1,30 @@
+mutation CreateIdentityKey(
+  $key: String!
+  $relatedId: String!
+  $now: DateTime!
+  $expiresAt: DateTime
+  $description: String
+  $permissions: String
+) {
+  addIdentityKey(
+    input: {
+      key: $key
+      relatedId: $relatedId
+      createdAt: $now
+      expiresAt: $expiresAt
+      description: $description
+      permissions: $permissions
+    }
+  ) {
+    identityKey {
+      id
+      key
+      relatedId
+      createdAt
+      expiresAt
+      revokedAt
+      description
+      permissions
+    }
+  }
+}

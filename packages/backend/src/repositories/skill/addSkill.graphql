@@ -1,0 +1,34 @@
+mutation AddSkill(
+  $name: String!
+  $description: String
+  $guardrails: String
+  $associatedKnowledge: String
+  $workspaceId: ID!
+  $createdAt: DateTime!
+) {
+  addSkill(
+    input: {
+      name: $name
+      description: $description
+      guardrails: $guardrails
+      associatedKnowledge: $associatedKnowledge
+      workspace: { id: $workspaceId }
+      createdAt: $createdAt
+      updatedAt: $createdAt
+    }
+  ) {
+    skill {
+      id
+      name
+      description
+      guardrails
+      associatedKnowledge
+      createdAt
+      updatedAt
+      workspace {
+        id
+        name
+      }
+    }
+  }
+}

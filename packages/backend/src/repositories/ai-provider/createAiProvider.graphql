@@ -1,0 +1,32 @@
+mutation CreateAiProvider(
+  $workspaceId: ID!
+  $provider: AIProviderType!
+  $encryptedApiKey: String
+  $baseUrl: String
+  $availableModels: [String!]
+  $now: DateTime!
+) {
+  addAIProviderConfig(
+    input: [
+      {
+        workspace: { id: $workspaceId }
+        provider: $provider
+        encryptedApiKey: $encryptedApiKey
+        baseUrl: $baseUrl
+        availableModels: $availableModels
+        createdAt: $now
+        updatedAt: $now
+      }
+    ]
+  ) {
+    aIProviderConfig {
+      id
+      provider
+      encryptedApiKey
+      baseUrl
+      availableModels
+      createdAt
+      updatedAt
+    }
+  }
+}

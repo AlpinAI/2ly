@@ -1,0 +1,35 @@
+mutation UpdateSkill(
+  $id: ID!
+  $name: String!
+  $description: String
+  $guardrails: String
+  $associatedKnowledge: String
+  $updatedAt: DateTime!
+) {
+  updateSkill(
+    input: {
+      filter: { id: [$id] }
+      set: {
+        name: $name
+        description: $description
+        guardrails: $guardrails
+        associatedKnowledge: $associatedKnowledge
+        updatedAt: $updatedAt
+      }
+    }
+  ) {
+    skill {
+      id
+      name
+      description
+      guardrails
+      associatedKnowledge
+      createdAt
+      updatedAt
+      workspace {
+        id
+        name
+      }
+    }
+  }
+}

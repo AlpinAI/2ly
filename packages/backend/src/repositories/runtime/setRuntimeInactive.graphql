@@ -1,0 +1,32 @@
+mutation SetRuntimeInactive($id: ID!) {
+  updateRuntime(
+    input: { filter: { id: [$id] }, set: { status: INACTIVE, processId: "", hostIP: "", hostname: "" } }
+  ) {
+    runtime {
+      id
+      name
+      status
+      createdAt
+      lastSeenAt
+      processId
+      hostIP
+      hostname
+      mcpClientName
+      roots
+      mcpServers {
+        id
+        tools {
+          id
+          name
+          status
+        }
+      }
+      workspace {
+        id
+      }
+      system {
+        id
+      }
+    }
+  }
+}

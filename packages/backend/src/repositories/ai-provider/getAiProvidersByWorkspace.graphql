@@ -1,0 +1,13 @@
+query GetAiProvidersByWorkspace($workspaceId: ID!) {
+  getWorkspace(id: $workspaceId) {
+    aiProviders {
+      id
+      provider
+      encryptedApiKey
+      baseUrl
+      availableModels
+      createdAt
+      updatedAt
+    }
+  }
+}

@@ -1,0 +1,27 @@
+mutation CreateAiConfig(
+  $workspaceId: ID!
+  $key: String!
+  $value: String!
+  $description: String
+  $now: DateTime!
+) {
+  addAIConfig(
+    input: {
+      key: $key
+      value: $value
+      description: $description
+      workspace: { id: $workspaceId }
+      createdAt: $now
+      updatedAt: $now
+    }
+  ) {
+    aIConfig {
+      id
+      key
+      value
+      description
+      createdAt
+      updatedAt
+    }
+  }
+}

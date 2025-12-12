@@ -1,0 +1,20 @@
+query QuerySmartSkillsByRuntime($runtimeId: ID!) {
+  getRuntime(id: $runtimeId) {
+    id
+    skills(filter: { mode: { eq: SMART }, executionTarget: { eq: EDGE } }) {
+      id
+      name
+      description
+      mode
+      model
+      temperature
+      maxTokens
+      systemPrompt
+      executionTarget
+      workspace {
+        id
+        name
+      }
+    }
+  }
+}

@@ -1,0 +1,21 @@
+query GetSkillAgentMcpServers($skillId: ID!) {
+  getSkill(id: $skillId) {
+    mcpTools {
+      mcpServer {
+        id
+        name
+        description
+        transport
+        config
+        executionTarget
+        tools {
+          id
+          name
+          description
+          inputSchema
+          annotations
+        }
+      }
+    }
+  }
+}

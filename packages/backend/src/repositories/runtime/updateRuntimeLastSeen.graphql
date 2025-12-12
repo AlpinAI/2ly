@@ -1,0 +1,8 @@
+mutation UpdateRuntimeLastSeen($id: ID!, $now: DateTime!) {
+  updateRuntime(input: { filter: { id: [$id] }, set: { lastSeenAt: $now } }) {
+    runtime {
+      id
+      lastSeenAt
+    }
+  }
+}

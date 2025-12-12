@@ -1,0 +1,9 @@
+mutation DeactivateUserSessions($userId: String!) {
+  updateSession(input: { filter: { userId: { eq: $userId }, isActive: true }, set: { isActive: false } }) {
+    session {
+      id
+      userId
+      isActive
+    }
+  }
+}

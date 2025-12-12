@@ -1,0 +1,18 @@
+query QuerySystemRuntimeByName($systemId: ID!, $name: String!) {
+  getSystem(id: $systemId) {
+    id
+    runtimes(filter: { name: { eq: $name } }) {
+      id
+      name
+      description
+      status
+      createdAt
+      lastSeenAt
+      processId
+      hostIP
+      hostname
+      mcpClientName
+      roots
+    }
+  }
+}

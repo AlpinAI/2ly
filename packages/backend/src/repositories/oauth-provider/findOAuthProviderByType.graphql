@@ -1,0 +1,14 @@
+query FindOAuthProviderByType($workspaceId: ID!, $provider: OAuthProviderType!) {
+  getWorkspace(id: $workspaceId) {
+    oauthProviders(filter: { provider: { eq: $provider } }) {
+      id
+      provider
+      enabled
+      clientId
+      encryptedClientSecret
+      tenantId
+      createdAt
+      updatedAt
+    }
+  }
+}

@@ -1,0 +1,13 @@
+mutation CompleteToolCallSuccess($id: ID!, $toolOutput: String!, $completedAt: DateTime!) {
+  updateToolCall(
+    input: { filter: { id: [$id] }, set: { status: COMPLETED, toolOutput: $toolOutput, completedAt: $completedAt } }
+  ) {
+    toolCall {
+      id
+      status
+      toolOutput
+      completedAt
+      isTest
+    }
+  }
+}

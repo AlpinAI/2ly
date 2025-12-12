@@ -1,0 +1,7 @@
+mutation DeleteAiProvider($id: ID!) {
+  deleteAIProviderConfig(filter: { id: [$id] }) {
+    aIProviderConfig {
+      id
+    }
+  }
+}

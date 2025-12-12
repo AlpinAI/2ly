@@ -1,0 +1,45 @@
+mutation AddRegistryServer(
+  $name: String!
+  $description: String!
+  $title: String!
+  $repositoryUrl: String!
+  $version: String!
+  $packages: String!
+  $remotes: String
+  $_meta: String
+  $workspaceId: ID!
+  $now: DateTime!
+) {
+  addMCPRegistryServer(
+    input: {
+      name: $name
+      description: $description
+      title: $title
+      repositoryUrl: $repositoryUrl
+      version: $version
+      packages: $packages
+      remotes: $remotes
+      _meta: $_meta
+      createdAt: $now
+      lastSeenAt: $now
+      workspace: { id: $workspaceId }
+    }
+  ) {
+    mCPRegistryServer {
+      id
+      name
+      description
+      title
+      repositoryUrl
+      version
+      packages
+      remotes
+      _meta
+      createdAt
+      lastSeenAt
+      workspace {
+        id
+      }
+    }
+  }
+}

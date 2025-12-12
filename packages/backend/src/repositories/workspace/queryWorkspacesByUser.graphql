@@ -1,0 +1,10 @@
+query QueryWorkspacesByUser($userId: ID!) {
+  getUser(id: $userId) {
+    id
+    adminOfWorkspaces {
+      id
+      name
+      createdAt
+    }
+  }
+}

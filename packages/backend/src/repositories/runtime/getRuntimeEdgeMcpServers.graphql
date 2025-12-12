@@ -1,0 +1,20 @@
+query GetRuntimeEdgeMcpServers($id: ID!) {
+  getRuntime(id: $id) {
+    id
+    mcpServers(filter: { executionTarget: { eq: EDGE } }) {
+      id
+      name
+      description
+      transport
+      config
+      executionTarget
+      tools {
+        id
+        name
+        description
+        inputSchema
+        annotations
+      }
+    }
+  }
+}

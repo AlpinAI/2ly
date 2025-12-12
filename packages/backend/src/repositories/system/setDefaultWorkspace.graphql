@@ -1,0 +1,16 @@
+mutation SetDefaultWorkspace($systemId: ID!, $workspaceId: ID!) {
+  updateSystem(input: { filter: { id: [$systemId] }, set: { defaultWorkspace: { id: $workspaceId } } }) {
+    system {
+      id
+      instanceId
+      defaultWorkspace {
+        id
+        name
+      }
+      admins {
+        id
+        email
+      }
+    }
+  }
+}

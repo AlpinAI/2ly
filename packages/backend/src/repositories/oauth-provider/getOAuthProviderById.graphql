@@ -1,0 +1,9 @@
+query GetOAuthProviderById($id: ID!) {
+  getOAuthProviderConfig(id: $id) {
+    id
+    provider
+    workspace {
+      id
+    }
+  }
+}

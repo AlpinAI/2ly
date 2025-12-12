@@ -1,0 +1,11 @@
+query CheckUserWorkspaceAccess($userId: ID!, $workspaceId: ID!) {
+  getUser(id: $userId) {
+    id
+    adminOfWorkspaces(filter: { id: [$workspaceId] }) {
+      id
+    }
+    membersOfWorkspaces(filter: { id: [$workspaceId] }) {
+      id
+    }
+  }
+}

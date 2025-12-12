@@ -1,0 +1,34 @@
+mutation CreateOAuthProvider(
+  $workspaceId: ID!
+  $provider: OAuthProviderType!
+  $enabled: Boolean!
+  $clientId: String!
+  $encryptedClientSecret: String!
+  $tenantId: String
+  $now: DateTime!
+) {
+  addOAuthProviderConfig(
+    input: [
+      {
+        workspace: { id: $workspaceId }
+        provider: $provider
+        enabled: $enabled
+        clientId: $clientId
+        encryptedClientSecret: $encryptedClientSecret
+        tenantId: $tenantId
+        createdAt: $now
+        updatedAt: $now
+      }
+    ]
+  ) {
+    oAuthProviderConfig {
+      id
+      provider
+      enabled
+      clientId
+      tenantId
+      createdAt
+      updatedAt
+    }
+  }
+}

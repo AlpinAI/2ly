@@ -1,0 +1,27 @@
+query QueryWorkspaceWithMcpTools($workspaceId: ID!) {
+  getWorkspace(id: $workspaceId) {
+    id
+    mcpTools {
+      id
+      name
+      description
+      inputSchema
+      annotations
+      status
+      createdAt
+      lastSeenAt
+      mcpServer {
+        id
+        name
+        description
+        repositoryUrl
+        executionTarget
+      }
+      skills {
+        id
+        name
+        description
+      }
+    }
+  }
+}

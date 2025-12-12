@@ -1,0 +1,8 @@
+mutation SetRoots($id: ID!, $roots: String!) {
+  updateRuntime(input: { filter: { id: [$id] }, set: { roots: $roots } }) {
+    runtime {
+      id
+      roots
+    }
+  }
+}

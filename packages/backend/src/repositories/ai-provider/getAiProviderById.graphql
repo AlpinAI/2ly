@@ -1,0 +1,14 @@
+query GetAiProviderById($id: ID!) {
+  getAIProviderConfig(id: $id) {
+    id
+    provider
+    baseUrl
+    availableModels
+    encryptedApiKey
+    createdAt
+    updatedAt
+    workspace {
+      id
+    }
+  }
+}

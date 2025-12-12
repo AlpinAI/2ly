@@ -1,0 +1,34 @@
+mutation UpdateSkillMode($id: ID!, $mode: SkillMode!, $updatedAt: DateTime!) {
+  updateSkill(
+    input: {
+      filter: { id: [$id] }
+      set: { mode: $mode, updatedAt: $updatedAt }
+    }
+  ) {
+    skill {
+      id
+      name
+      description
+      createdAt
+      updatedAt
+      mode
+      model
+      temperature
+      maxTokens
+      systemPrompt
+      executionTarget
+      runtime {
+        id
+        name
+      }
+      mcpTools {
+        id
+        name
+      }
+      workspace {
+        id
+        name
+      }
+    }
+  }
+}

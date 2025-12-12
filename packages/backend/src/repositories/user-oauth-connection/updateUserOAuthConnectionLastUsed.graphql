@@ -1,0 +1,13 @@
+mutation UpdateUserOAuthConnectionLastUsed($id: ID!, $now: DateTime!) {
+  updateUserOAuthConnection(
+    input: {
+      filter: { id: [$id] }
+      set: { lastUsedAt: $now }
+    }
+  ) {
+    userOAuthConnection {
+      id
+      lastUsedAt
+    }
+  }
+}

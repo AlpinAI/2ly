@@ -2,29 +2,32 @@ import { inject, injectable } from 'inversify';
 import { DGraphService } from '../../services/dgraph.service';
 import { apolloResolversTypes, dgraphResolversTypes } from '@skilder-ai/common';
 import {
-  ADD_WORKSPACE,
-  QUERY_WORKSPACE,
-  QUERY_WORKSPACES_BY_USER,
-  CHECK_USER_WORKSPACE_ACCESS,
-  QUERY_WORKSPACE_WITH_RUNTIMES,
-  QUERY_WORKSPACE_WITH_MCP_SERVERS,
-  QUERY_WORKSPACE_WITH_MCP_TOOLS,
-  CREATE_ONBOARDING_STEP,
-  LINK_ONBOARDING_STEP_TO_WORKSPACE,
-  UPDATE_ONBOARDING_STEP_STATUS,
-  ADD_REGISTRY_SERVER,
-  UPDATE_REGISTRY_SERVER,
-  DELETE_REGISTRY_SERVER,
-  GET_REGISTRY_SERVER,
-  QUERY_WORKSPACE_WITH_REGISTRY_SERVERS,
-} from './workspace.operations';
-import { QUERY_SYSTEM } from '../system/system.operations';
+  AddWorkspaceDocument,
+  QueryWorkspaceDocument,
+  QueryWorkspacesByUserDocument,
+  CheckUserWorkspaceAccessDocument,
+  QueryWorkspaceWithRuntimesDocument,
+  QueryWorkspaceWithMcpServersDocument,
+  QueryWorkspaceWithMcpToolsDocument,
+  CreateOnboardingStepDocument,
+  LinkOnboardingStepToWorkspaceDocument,
+  UpdateOnboardingStepStatusDocument,
+  AddRegistryServerDocument,
+  UpdateRegistryServerDocument,
+  DeleteRegistryServerDocument,
+  GetRegistryServerDocument,
+  QueryWorkspaceWithRegistryServersDocument,
+  UpdateWorkspaceDocument,
+  OnboardingStepType,
+  OnboardingStepStatus,
+} from '../../generated/dgraph';
+import { QuerySystemDocument } from "../../generated/dgraph";
 import { Observable, combineLatestWith } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { createSubscriptionFromQuery } from '../../helpers';
 import { INITIAL_ONBOARDING_STEPS } from './onboarding-step-definitions';
 import { INITIAL_FEATURED_SERVERS } from './initial-servers';
-import { QUERY_SKILLS_BY_WORKSPACE } from '../skill/skill.operations';
+import { QuerySkillsByWorkspaceDocument } from "../../generated/dgraph";
 import { IdentityRepository } from '../identity/identity.repository';
 import { LoggerService } from '@skilder-ai/common';
 import { SystemRepository } from '../system/system.repository';
@@ -49,10 +52,8 @@ export class WorkspaceRepository {
     const now = new Date().toISOString();
 
     // 1. Get system
-    const system = await this.dgraphService.query<{
-      querySystem: dgraphResolversTypes.System[];
-    }>(QUERY_SYSTEM, {});
-    if (!system.querySystem[0]) {
+    const system = await this.dgraphService.query(QuerySystemDocument, {});
+    if (!system.querySystem || !system.querySystem[0]) {
       throw new Error('System not found');
     }
     const systemId = system.querySystem[0].id;
@@ -64,15 +65,13 @@ export class WorkspaceRepository {
     }
 
     // 3. Create workspace
-    const res = await this.dgraphService.mutation<{
-      addWorkspace: { workspace: apolloResolversTypes.Workspace[] };
-    }>(ADD_WORKSPACE, {
+    const res = await this.dgraphService.mutation(AddWorkspaceDocument, {
       name,
       now,
       systemId,
       adminId,
     });
-    const workspace = res.addWorkspace.workspace[0];
+    const workspace = res.addWorkspace!.workspace![0]! as unknown as apolloResolversTypes.Workspace;
 
     // 4. Create workspace key
     const identityOptions = { key: options?.masterKey };
@@ -82,7 +81,7 @@ export class WorkspaceRepository {
     const failedServers: string[] = [];
     for (const server of INITIAL_FEATURED_SERVERS) {
       try {
-        await this.dgraphService.mutation(ADD_REGISTRY_SERVER, {
+        await this.dgraphService.mutation(AddRegistryServerDocument, {
           name: server.name,
           description: server.description,
           title: server.name,
@@ -113,11 +112,9 @@ export class WorkspaceRepository {
 
   async findAll(userId: string): Promise<dgraphResolversTypes.Workspace[]> {
     // Filter workspaces by admin relationship
-    const res = await this.dgraphService.query<{
-      getUser: { adminOfWorkspaces: dgraphResolversTypes.Workspace[] }
-    }>(QUERY_WORKSPACES_BY_USER, { userId });
+    const res = await this.dgraphService.query(QueryWorkspacesByUserDocument, { userId });
 
-    return res.getUser?.adminOfWorkspaces || [];
+    return (res.getUser?.adminOfWorkspaces || []) as dgraphResolversTypes.Workspace[];
   }
 
   /**
@@ -125,13 +122,7 @@ export class WorkspaceRepository {
    * A user has access if they are either an admin or member of the workspace.
    */
   async hasUserAccess(userId: string, workspaceId: string): Promise<boolean> {
-    const res = await this.dgraphService.query<{
-      getUser: {
-        id: string;
-        adminOfWorkspaces: { id: string }[];
-        membersOfWorkspaces: { id: string }[];
-      } | null;
-    }>(CHECK_USER_WORKSPACE_ACCESS, { userId, workspaceId });
+    const res = await this.dgraphService.query(CheckUserWorkspaceAccessDocument, { userId, workspaceId });
 
     if (!res.getUser) {
       return false;
@@ -144,36 +135,27 @@ export class WorkspaceRepository {
   }
 
   async findById(workspaceId: string): Promise<dgraphResolversTypes.Workspace> {
-    const res = await this.dgraphService.query<{
-      getWorkspace: dgraphResolversTypes.Workspace;
-    }>(QUERY_WORKSPACE, { workspaceId });
-    return res.getWorkspace;
+    const res = await this.dgraphService.query(QueryWorkspaceDocument, { workspaceId });
+    return res.getWorkspace! as dgraphResolversTypes.Workspace;
   }
 
   async findByIdWithRuntimes(workspaceId: string): Promise<apolloResolversTypes.Workspace> {
-    const res = await this.dgraphService.query<{
-      getWorkspace: apolloResolversTypes.Workspace;
-    }>(QUERY_WORKSPACE_WITH_RUNTIMES, { workspaceId });
-    return res.getWorkspace;
+    const res = await this.dgraphService.query(QueryWorkspaceWithRuntimesDocument, { workspaceId });
+    return res.getWorkspace! as apolloResolversTypes.Workspace;
   }
 
   async getRuntimes(workspaceId: string): Promise<apolloResolversTypes.Runtime[]> {
-    const res = await this.dgraphService.query<{
-      getWorkspace: apolloResolversTypes.Workspace;
-    }>(QUERY_WORKSPACE_WITH_RUNTIMES, { workspaceId });
-    return res.getWorkspace.runtimes || [];
+    const res = await this.dgraphService.query(QueryWorkspaceWithRuntimesDocument, { workspaceId });
+    return (res.getWorkspace!.runtimes || []) as unknown as apolloResolversTypes.Runtime[];
   }
 
   async update(id: string, name: string): Promise<apolloResolversTypes.Workspace> {
-    const { UPDATE_WORKSPACE } = await import('./workspace.operations');
-    const res = await this.dgraphService.mutation<{
-      updateWorkspace: { workspace: apolloResolversTypes.Workspace[] };
-    }>(UPDATE_WORKSPACE, { id, name });
-    return res.updateWorkspace.workspace[0];
+    const res = await this.dgraphService.mutation(UpdateWorkspaceDocument, { id, name });
+    return res.updateWorkspace!.workspace![0]! as unknown as apolloResolversTypes.Workspace;
   }
 
   observeRuntimes(workspaceId: string): Observable<apolloResolversTypes.Runtime[]> {
-    const query = createSubscriptionFromQuery(QUERY_WORKSPACE_WITH_RUNTIMES);
+    const query = createSubscriptionFromQuery(QueryWorkspaceWithRuntimesDocument);
     return this.dgraphService
       .observe<apolloResolversTypes.Workspace>(query, { workspaceId }, 'getWorkspace', true)
       .pipe(
@@ -186,21 +168,19 @@ export class WorkspaceRepository {
   }
 
   observeMCPServers(workspaceId: string): Observable<apolloResolversTypes.McpServer[]> {
-    const query = createSubscriptionFromQuery(QUERY_WORKSPACE_WITH_MCP_SERVERS);
+    const query = createSubscriptionFromQuery(QueryWorkspaceWithMcpServersDocument);
     return this.dgraphService
       .observe<{ mcpServers: apolloResolversTypes.McpServer[] }>(query, { workspaceId }, 'getWorkspace', true)
       .pipe(map((workspace) => workspace.mcpServers || []));
   }
 
   async findMCPToolsByWorkspace(workspaceId: string): Promise<apolloResolversTypes.McpTool[]> {
-    const res = await this.dgraphService.query<{
-      getWorkspace: { mcpTools: apolloResolversTypes.McpTool[] };
-    }>(QUERY_WORKSPACE_WITH_MCP_TOOLS, { workspaceId });
-    return res.getWorkspace.mcpTools || [];
+    const res = await this.dgraphService.query(QueryWorkspaceWithMcpToolsDocument, { workspaceId });
+    return (res.getWorkspace!.mcpTools || []) as unknown as apolloResolversTypes.McpTool[];
   }
 
   observeMCPTools(workspaceId: string): Observable<apolloResolversTypes.McpTool[]> {
-    const query = createSubscriptionFromQuery(QUERY_WORKSPACE_WITH_MCP_TOOLS);
+    const query = createSubscriptionFromQuery(QueryWorkspaceWithMcpToolsDocument);
     return this.dgraphService
       .observe<{ mcpTools: apolloResolversTypes.McpTool[] }>(query, { workspaceId }, 'getWorkspace', true)
       .pipe(map((workspace) => workspace.mcpTools || []));
@@ -208,7 +188,7 @@ export class WorkspaceRepository {
 
   observeWorkspaces(userId: string): Observable<apolloResolversTypes.Workspace[]> {
     // Observe workspaces by admin relationship
-    const query = createSubscriptionFromQuery(QUERY_WORKSPACES_BY_USER);
+    const query = createSubscriptionFromQuery(QueryWorkspacesByUserDocument);
     return this.dgraphService
       .observe<{ adminOfWorkspaces: apolloResolversTypes.Workspace[] }>(query, { userId }, 'getUser', true)
       .pipe(map((user) => user?.adminOfWorkspaces || []));
@@ -216,43 +196,38 @@ export class WorkspaceRepository {
 
 
   observeWorkspace(workspaceId: string): Observable<apolloResolversTypes.Workspace> {
-    const query = createSubscriptionFromQuery(QUERY_WORKSPACE);
+    const query = createSubscriptionFromQuery(QueryWorkspaceDocument);
     return this.dgraphService
       .observe<apolloResolversTypes.Workspace>(query, { workspaceId }, 'getWorkspace', true);
   }
 
   async getWorkspaceOnboardingSteps(workspaceId: string): Promise<apolloResolversTypes.OnboardingStep[]> {
-    const res = await this.dgraphService.query<{
-      getWorkspace: { onboardingSteps: apolloResolversTypes.OnboardingStep[] };
-    }>(QUERY_WORKSPACE, { workspaceId });
-    return res.getWorkspace.onboardingSteps || [];
+    const res = await this.dgraphService.query(QueryWorkspaceDocument, { workspaceId });
+    const steps = res.getWorkspace?.onboardingSteps?.filter((s): s is NonNullable<typeof s> => s !== null && s !== undefined) || [];
+    return steps as unknown as apolloResolversTypes.OnboardingStep[];
   }
 
   async initializeOnboardingSteps(workspaceId: string): Promise<void> {
     const now = new Date().toISOString();
-    
+
     // Get existing onboarding steps to avoid duplicates
     const existingSteps = await this.getWorkspaceOnboardingSteps(workspaceId);
     const existingStepIds = new Set(existingSteps.map(s => s.stepId));
-    
+
     // Create only missing steps
     for (const stepDef of INITIAL_ONBOARDING_STEPS) {
       if (!existingStepIds.has(stepDef.stepId)) {
         // First create the onboarding step
-        const createResult = await this.dgraphService.mutation<{
-          addOnboardingStep: { onboardingStep: { id: string }[] };
-        }>(CREATE_ONBOARDING_STEP, {
+        const createResult = await this.dgraphService.mutation(CreateOnboardingStepDocument, {
           stepId: stepDef.stepId,
-          type: stepDef.type,
+          type: stepDef.type as OnboardingStepType,
           priority: stepDef.priority,
           now,
         });
-        
+
         // Then link it to the workspace using the actual ID
-        const stepId = createResult.addOnboardingStep.onboardingStep[0].id;
-        await this.dgraphService.mutation<{
-          updateWorkspace: { workspace: { id: string }[] };
-        }>(LINK_ONBOARDING_STEP_TO_WORKSPACE, {
+        const stepId = createResult.addOnboardingStep!.onboardingStep![0]!.id;
+        await this.dgraphService.mutation(LinkOnboardingStepToWorkspaceDocument, {
           workspaceId,
           stepId,
         });
@@ -274,11 +249,9 @@ export class WorkspaceRepository {
     }
 
     // Update the onboarding step status to COMPLETED
-    await this.dgraphService.mutation<{
-      updateOnboardingStep: { onboardingStep: { id: string }[] };
-    }>(UPDATE_ONBOARDING_STEP_STATUS, {
+    await this.dgraphService.mutation(UpdateOnboardingStepStatusDocument, {
       id: existingStep.id,
-      status: 'COMPLETED',
+      status: OnboardingStepStatus.Completed,
       now,
       metadata: metadata ? JSON.stringify(metadata) : undefined,
     });
@@ -296,29 +269,21 @@ export class WorkspaceRepository {
     if (existingStep.status === 'DISMISSED') {
       return;
     }
-    
+
     // Update the onboarding step status to DISMISSED
-    await this.dgraphService.mutation<{
-      updateOnboardingStep: { onboardingStep: { id: string }[] };
-    }>(UPDATE_ONBOARDING_STEP_STATUS, {
+    await this.dgraphService.mutation(UpdateOnboardingStepStatusDocument, {
       id: existingStep.id,
-      status: 'DISMISSED',
+      status: OnboardingStepStatus.Dismissed,
       now,
     });
   }
 
   async checkAndCompleteStep(workspaceId: string, stepId: string): Promise<void> {
     // Get current workspace state
-    const workspace = await this.dgraphService.query<{
-      getWorkspace: {
-        onboardingSteps: { stepId: string; status: string }[];
-        registryServers: { id: string }[];
-        mcpServers: { id: string }[];
-      };
-    }>(QUERY_WORKSPACE, { workspaceId });
+    const workspace = await this.dgraphService.query(QueryWorkspaceDocument, { workspaceId });
 
     // Check if step is already completed
-    const step = workspace.getWorkspace.onboardingSteps?.find(s => s.stepId === stepId);
+    const step = workspace.getWorkspace!.onboardingSteps?.find(s => s.stepId === stepId);
     if (step?.status === 'COMPLETED') {
       return; // Already completed
     }
@@ -327,18 +292,14 @@ export class WorkspaceRepository {
 
     switch (stepId) {
       case 'install-mcp-server':
-        { const servers = await this.dgraphService.query<{
-          getWorkspace: { mcpServers: { id: string }[] };
-        }>(QUERY_WORKSPACE_WITH_MCP_SERVERS, { workspaceId });
-        shouldComplete = (servers.getWorkspace.mcpServers?.length || 0) > 0;
+        { const servers = await this.dgraphService.query(QueryWorkspaceWithMcpServersDocument, { workspaceId });
+        shouldComplete = (servers.getWorkspace!.mcpServers?.length || 0) > 0;
         break; }
       case 'create-skill':
         { // Check if workspace has at least one Skill with at least one tool
-        const skills = await this.dgraphService.query<{
-          getWorkspace: { skills: dgraphResolversTypes.Skill[] } | null;
-        }>(QUERY_SKILLS_BY_WORKSPACE, { workspaceId });
-        
-        shouldComplete = (skills.getWorkspace?.skills.some(ts => ts.mcpTools && ts.mcpTools.length > 0) ?? false);
+        const skills = await this.dgraphService.query(QuerySkillsByWorkspaceDocument, { workspaceId });
+
+        shouldComplete = (skills.getWorkspace?.skills?.some(ts => ts.mcpTools && ts.mcpTools.length > 0) ?? false);
         break; }
       default:
         return; // Unknown step
@@ -356,10 +317,8 @@ export class WorkspaceRepository {
    * Used for authorization checks on registry server mutations.
    */
   async getRegistryServerById(serverId: string): Promise<dgraphResolversTypes.McpRegistryServer | null> {
-    const result = await this.dgraphService.query<{
-      getMCPRegistryServer: dgraphResolversTypes.McpRegistryServer | null;
-    }>(GET_REGISTRY_SERVER, { id: serverId });
-    return result.getMCPRegistryServer;
+    const result = await this.dgraphService.query(GetRegistryServerDocument, { id: serverId });
+    return result.getMCPRegistryServer as dgraphResolversTypes.McpRegistryServer | null;
   }
 
   /**
@@ -370,9 +329,7 @@ export class WorkspaceRepository {
     configCount: number;
     configNames: string[];
   }> {
-    const result = await this.dgraphService.query<{
-      getMCPRegistryServer: dgraphResolversTypes.McpRegistryServer;
-    }>(GET_REGISTRY_SERVER, { id: serverId });
+    const result = await this.dgraphService.query(GetRegistryServerDocument, { id: serverId });
 
     const server = result.getMCPRegistryServer;
     if (!server) {
@@ -381,9 +338,9 @@ export class WorkspaceRepository {
 
     const configurations = server.configurations || [];
     const configCount = configurations.length;
-    const configNames = configurations.map((config) => config.name).filter(Boolean);
+    const configNames = configurations.map((config) => config!.name).filter(Boolean);
 
-    return { server, configCount, configNames };
+    return { server: server as dgraphResolversTypes.McpRegistryServer, configCount, configNames };
   }
 
   async canModifyServer(serverId: string): Promise<boolean> {
@@ -420,11 +377,19 @@ export class WorkspaceRepository {
       variables.remotes = serverData.remotes;
     }
 
-    const res = await this.dgraphService.mutation<{
-      addMCPRegistryServer: { mCPRegistryServer: dgraphResolversTypes.McpRegistryServer[] };
-    }>(ADD_REGISTRY_SERVER, variables);
+    const res = await this.dgraphService.mutation(AddRegistryServerDocument, {
+      name: variables.name!,
+      description: variables.description!,
+      title: variables.title!,
+      repositoryUrl: variables.repositoryUrl!,
+      version: variables.version!,
+      packages: variables.packages!,
+      remotes: variables.remotes,
+      workspaceId: variables.workspaceId,
+      now: variables.now,
+    });
 
-    return res.addMCPRegistryServer.mCPRegistryServer[0];
+    return res.addMCPRegistryServer!.mCPRegistryServer![0]! as dgraphResolversTypes.McpRegistryServer;
   }
 
   async updateServerInWorkspace(
@@ -461,14 +426,12 @@ export class WorkspaceRepository {
     if (serverData.packages !== undefined) updateFields.packages = serverData.packages;
     if (serverData.remotes !== undefined) updateFields.remotes = serverData.remotes;
 
-    const res = await this.dgraphService.mutation<{
-      updateMCPRegistryServer: { mCPRegistryServer: dgraphResolversTypes.McpRegistryServer[] };
-    }>(UPDATE_REGISTRY_SERVER, {
+    const res = await this.dgraphService.mutation(UpdateRegistryServerDocument, {
       id: serverId,
       ...updateFields,
     });
 
-    return res.updateMCPRegistryServer.mCPRegistryServer[0];
+    return res.updateMCPRegistryServer!.mCPRegistryServer![0]! as dgraphResolversTypes.McpRegistryServer;
   }
 
   async removeServerFromWorkspace(serverId: string): Promise<dgraphResolversTypes.McpRegistryServer> {
@@ -492,11 +455,9 @@ export class WorkspaceRepository {
     // Perform deletion - this may fail if configurations were added concurrently
     // and Dgraph enforces referential integrity
     try {
-      const res = await this.dgraphService.mutation<{
-        deleteMCPRegistryServer: { mCPRegistryServer: dgraphResolversTypes.McpRegistryServer[] };
-      }>(DELETE_REGISTRY_SERVER, { id: serverId });
+      const res = await this.dgraphService.mutation(DeleteRegistryServerDocument, { id: serverId });
 
-      return res.deleteMCPRegistryServer.mCPRegistryServer[0];
+      return res.deleteMCPRegistryServer!.mCPRegistryServer![0]! as dgraphResolversTypes.McpRegistryServer;
     } catch (error) {
       // If delete fails, re-check to provide accurate error message
       const updatedInfo = await this.getServerUsageInfo(serverId).catch(() => null);
@@ -513,9 +474,7 @@ export class WorkspaceRepository {
   }
 
   async findRegistryServersByWorkspace(workspaceId: string): Promise<dgraphResolversTypes.McpRegistryServer[]> {
-    const res = await this.dgraphService.query<{
-      getWorkspace: { registryServers: dgraphResolversTypes.McpRegistryServer[] };
-    }>(QUERY_WORKSPACE_WITH_REGISTRY_SERVERS, { workspaceId });
-    return res.getWorkspace.registryServers || [];
+    const res = await this.dgraphService.query(QueryWorkspaceWithRegistryServersDocument, { workspaceId });
+    return (res.getWorkspace!.registryServers || []) as dgraphResolversTypes.McpRegistryServer[];
   }
 }

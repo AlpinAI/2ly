@@ -2,19 +2,21 @@ import { injectable, inject } from 'inversify';
 import { DGraphService } from '../../services/dgraph.service';
 import { dgraphResolversTypes, EXECUTION_TARGET } from '@skilder-ai/common';
 import {
-  ADD_MCPSERVER,
-  UPDATE_MCPSERVER,
-  UPDATE_MCPSERVER_EXECUTION_TARGET,
-  DELETE_MCP_TOOLS,
-  DELETE_MCPSERVER,
-  QUERY_MCP_SERVER_CAPABILITIES,
-  QUERY_MCPSERVERS,
-  QUERY_MCPSERVERS_BY_WORKSPACE,
-  LINK_RUNTIME,
-  UNLINK_RUNTIME,
-  GET_MCPSERVER,
-  GET_MCPSERVER_WITH_WORKSPACE,
-} from './mcp-server.operations';
+  AddMcpServerDocument,
+  UpdateMcpServerDocument,
+  UpdateExecutionTargetDocument,
+  DeleteMcpToolsDocument,
+  DeleteMcpServerDocument,
+  QueryMcpServerCapabilitiesDocument,
+  QueryMcpServersDocument,
+  QueryMcpServersByWorkspaceDocument,
+  LinkRuntimeDocument,
+  UnlinkRuntimeDocument,
+  GetMcpServerDocument,
+  GetMcpServerWithWorkspaceDocument,
+  McpTransportType,
+  ExecutionTarget,
+} from '../../generated/dgraph';
 import { WorkspaceRepository } from '../workspace/workspace.repository';
 
 @injectable()
@@ -25,24 +27,18 @@ export class MCPServerRepository {
   ) {}
 
   async findAll(): Promise<dgraphResolversTypes.McpServer[]> {
-    const res = await this.dgraphService.query<{
-      queryMCPServer: dgraphResolversTypes.McpServer[];
-    }>(QUERY_MCPSERVERS, {});
-    return res.queryMCPServer;
+    const res = await this.dgraphService.query(QueryMcpServersDocument, {});
+    return res.queryMCPServer as dgraphResolversTypes.McpServer[];
   }
 
   async findByWorkspace(workspaceId: string): Promise<dgraphResolversTypes.McpServer[]> {
-    const res = await this.dgraphService.query<{
-      queryMCPServer: dgraphResolversTypes.McpServer[];
-    }>(QUERY_MCPSERVERS_BY_WORKSPACE, { workspaceId });
-    return res.queryMCPServer ?? [];
+    const res = await this.dgraphService.query(QueryMcpServersByWorkspaceDocument, { workspaceId });
+    return (res.queryMCPServer ?? []) as dgraphResolversTypes.McpServer[];
   }
 
   async findById(id: string): Promise<dgraphResolversTypes.McpServer | null> {
-    const res = await this.dgraphService.query<{
-      getMCPServer: dgraphResolversTypes.McpServer | null;
-    }>(GET_MCPSERVER_WITH_WORKSPACE, { id });
-    return res.getMCPServer;
+    const res = await this.dgraphService.query(GetMcpServerWithWorkspaceDocument, { id });
+    return res.getMCPServer as dgraphResolversTypes.McpServer | null;
   }
 
   async create(
@@ -55,19 +51,17 @@ export class MCPServerRepository {
     workspaceId: string,
     registryServerId: string,
   ): Promise<dgraphResolversTypes.McpServer> {
-    const res = await this.dgraphService.mutation<{
-      addMCPServer: { mCPServer: dgraphResolversTypes.McpServer[] };
-    }>(ADD_MCPSERVER, {
+    const res = await this.dgraphService.mutation(AddMcpServerDocument, {
       name,
       description,
       repositoryUrl,
-      transport,
+      transport: transport as McpTransportType,
       config,
       workspaceId,
       registryServerId,
-      executionTarget,
+      executionTarget: executionTarget as ExecutionTarget | null,
     });
-    const created = res.addMCPServer.mCPServer[0];
+    const created = res.addMCPServer!.mCPServer![0]! as dgraphResolversTypes.McpServer;
     await this.workspaceRepository.checkAndCompleteStep(workspaceId, 'install-mcp-server');
     return created;
   }
@@ -81,60 +75,50 @@ export class MCPServerRepository {
     config: string,
     executionTarget: EXECUTION_TARGET | null,
   ): Promise<dgraphResolversTypes.McpServer> {
-    const res = await this.dgraphService.mutation<{
-      updateMCPServer: { mCPServer: dgraphResolversTypes.McpServer[] };
-    }>(UPDATE_MCPSERVER, {
+    const res = await this.dgraphService.mutation(UpdateMcpServerDocument, {
       id,
       name,
       description,
       repositoryUrl,
-      transport,
+      transport: transport as McpTransportType,
       config,
-      executionTarget,
+      executionTarget: executionTarget as ExecutionTarget | null,
     });
-    return res.updateMCPServer.mCPServer[0];
+    return res.updateMCPServer!.mCPServer![0]! as dgraphResolversTypes.McpServer;
   }
 
   async updateExecutionTarget(id: string, executionTarget: EXECUTION_TARGET): Promise<dgraphResolversTypes.McpServer> {
-    const res = await this.dgraphService.mutation<{
-      updateMCPServer: { mCPServer: dgraphResolversTypes.McpServer[] };
-    }>(UPDATE_MCPSERVER_EXECUTION_TARGET, {
+    const res = await this.dgraphService.mutation(UpdateExecutionTargetDocument, {
       id,
-      executionTarget,
+      executionTarget: executionTarget as ExecutionTarget,
     });
-    return res.updateMCPServer.mCPServer[0];
+    return res.updateMCPServer!.mCPServer![0]! as dgraphResolversTypes.McpServer;
   }
 
   async linkRuntime(mcpServerId: string, runtimeId: string): Promise<dgraphResolversTypes.McpServer> {
-    const res = await this.dgraphService.mutation<{
-      updateMCPServer: { mCPServer: dgraphResolversTypes.McpServer[] };
-    }>(LINK_RUNTIME, {
+    const res = await this.dgraphService.mutation(LinkRuntimeDocument, {
       mcpServerId,
       runtimeId,
     });
-    return res.updateMCPServer.mCPServer[0];
+    return res.updateMCPServer!.mCPServer![0]! as dgraphResolversTypes.McpServer;
   }
 
   async unlinkRuntime(mcpServerId: string): Promise<dgraphResolversTypes.McpServer> {
     // get the currently linked runtime
-    const mcpServer = await this.dgraphService.query<{
-      getMCPServer: dgraphResolversTypes.McpServer;
-    }>(GET_MCPSERVER, {
+    const mcpServer = await this.dgraphService.query(GetMcpServerDocument, {
       id: mcpServerId,
     });
-    const currentRuntime = mcpServer.getMCPServer.runtime;
+    const currentRuntime = mcpServer.getMCPServer!.runtime;
     if (!currentRuntime) {
       // no runtime linked to MCP server, early return the MCP server
-      return mcpServer.getMCPServer;
+      return mcpServer.getMCPServer! as dgraphResolversTypes.McpServer;
     }
 
-    const res = await this.dgraphService.mutation<{
-      updateMCPServer: { mCPServer: dgraphResolversTypes.McpServer[] };
-    }>(UNLINK_RUNTIME, {
+    const res = await this.dgraphService.mutation(UnlinkRuntimeDocument, {
       mcpServerId,
       runtimeId: currentRuntime.id,
     });
-    return res.updateMCPServer.mCPServer[0];
+    return res.updateMCPServer!.mCPServer![0]! as dgraphResolversTypes.McpServer;
   }
 
   async delete(id: string): Promise<dgraphResolversTypes.McpServer> {
@@ -142,20 +126,18 @@ export class MCPServerRepository {
     const tools = await this.getTools(id);
     const toolsIds = tools.tools?.map((tool) => tool.id) ?? [];
     // delete all tools linked to the MCP server
-    await this.dgraphService.mutation(DELETE_MCP_TOOLS, {
+    await this.dgraphService.mutation(DeleteMcpToolsDocument, {
       ids: toolsIds,
     });
     // delete the MCP server
-    const res = await this.dgraphService.mutation<{
-      deleteMCPServer: { mCPServer: dgraphResolversTypes.McpServer[] };
-    }>(DELETE_MCPSERVER, {
+    const res = await this.dgraphService.mutation(DeleteMcpServerDocument, {
       id,
     });
-    return res.deleteMCPServer.mCPServer[0];
+    return res.deleteMCPServer!.mCPServer![0]! as dgraphResolversTypes.McpServer;
   }
 
   async getTools(id: string): Promise<dgraphResolversTypes.McpServer> {
-    const response = await this.dgraphService.query(QUERY_MCP_SERVER_CAPABILITIES('query'), { id });
-    return (response as { getMCPServer: dgraphResolversTypes.McpServer }).getMCPServer;
+    const response = await this.dgraphService.query(QueryMcpServerCapabilitiesDocument, { id });
+    return response.getMCPServer! as dgraphResolversTypes.McpServer;
   }
 }

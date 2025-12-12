@@ -1,0 +1,18 @@
+mutation UpdateOAuthProviderEnabled($id: ID!, $enabled: Boolean!, $now: DateTime!) {
+  updateOAuthProviderConfig(
+    input: {
+      filter: { id: [$id] }
+      set: { enabled: $enabled, updatedAt: $now }
+    }
+  ) {
+    oAuthProviderConfig {
+      id
+      provider
+      enabled
+      clientId
+      tenantId
+      createdAt
+      updatedAt
+    }
+  }
+}

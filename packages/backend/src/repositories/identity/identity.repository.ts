@@ -3,13 +3,13 @@ import { randomBytes } from 'crypto';
 import { DGraphService } from '../../services/dgraph.service';
 import { dgraphResolversTypes, LoggerService } from '@skilder-ai/common';
 import {
-  CREATE_IDENTITY_KEY,
-  REVOKE_IDENTITY_KEY,
-  FIND_IDENTITY_KEY,
-  DELETE_IDENTITY_KEY,
-  FIND_KEYS_BY_RELATED_ID,
-  FIND_KEY_BY_ID,
-} from './identity.operations';
+  CreateIdentityKeyDocument,
+  RevokeIdentityKeyDocument,
+  FindIdentityKeyDocument,
+  DeleteIdentityKeyDocument,
+  FindKeysByRelatedIdDocument,
+  FindKeyByIdDocument,
+} from '../../generated/dgraph';
 import pino from 'pino';
 
 export interface CreateIdentityKeyData {
@@ -76,9 +76,7 @@ export class IdentityRepository {
         key = await this.generateUniqueKey(nature);
       }
 
-      const res = await this.dgraphService.mutation<{
-        addIdentityKey: { identityKey: dgraphResolversTypes.IdentityKey[] };
-      }>(CREATE_IDENTITY_KEY, {
+      const res = await this.dgraphService.mutation(CreateIdentityKeyDocument, {
         key,
         relatedId,
         now,
@@ -88,7 +86,7 @@ export class IdentityRepository {
       });
 
       this.logger.info(`Created ${nature} key for relatedId: ${relatedId}`);
-      return res.addIdentityKey.identityKey[0];
+      return res.addIdentityKey!.identityKey![0]!;
     } catch (error) {
       this.logger.error(`Failed to create identity key: ${error}`);
       throw new Error('Failed to create identity key');
@@ -120,11 +118,9 @@ export class IdentityRepository {
 
       // Check for duplicate (statistically extremely unlikely, but good practice)
       try {
-        const findKey = await this.dgraphService.query<{
-          queryIdentityKey: dgraphResolversTypes.IdentityKey[];
-        }>(FIND_IDENTITY_KEY, { key });
+        const findKey = await this.dgraphService.query(FindIdentityKeyDocument, { key });
 
-        if (findKey.queryIdentityKey.length > 0) {
+        if (findKey.queryIdentityKey && findKey.queryIdentityKey.length > 0) {
           if (attempt === maxRetries) {
             throw new Error('Failed to generate unique key after maximum retries');
           }
@@ -188,15 +184,13 @@ export class IdentityRepository {
     // Validate key format before database lookup
     this.validateKeyFormat(key);
 
-    const res = await this.dgraphService.query<{
-      queryIdentityKey: dgraphResolversTypes.IdentityKey[];
-    }>(FIND_IDENTITY_KEY, { key });
+    const res = await this.dgraphService.query(FindIdentityKeyDocument, { key });
 
     if (!res.queryIdentityKey || res.queryIdentityKey.length === 0) {
       throw new Error('NOT_FOUND');
     }
 
-    const identityKey = res.queryIdentityKey[0];
+    const identityKey = res.queryIdentityKey[0]!;
     if (this.isKeyExpired(identityKey)) {
       throw new Error('EXPIRED');
     }
@@ -206,10 +200,10 @@ export class IdentityRepository {
     }
 
     // Extract nature from validated prefix
-    const prefix = identityKey.key.substring(0, 3) as 'SYK' | 'WSK' | 'RTK' | 'SKK';
+    const prefix = identityKey!.key.substring(0, 3) as 'SYK' | 'WSK' | 'RTK' | 'SKK';
     const nature = this.getNatureFromPrefix(prefix);
 
-    return { relatedId: identityKey.relatedId, nature };
+    return { relatedId: identityKey!.relatedId, nature };
   }
 
   /**
@@ -241,11 +235,9 @@ export class IdentityRepository {
   async revokeKey(key: string): Promise<dgraphResolversTypes.IdentityKey> {
     try {
       const now = new Date().toISOString();
-      const res = await this.dgraphService.mutation<{
-        updateIdentityKey: { identityKey: dgraphResolversTypes.IdentityKey[] };
-      }>(REVOKE_IDENTITY_KEY, { id: key, now });
+      const res = await this.dgraphService.mutation(RevokeIdentityKeyDocument, { id: key, now });
 
-      return res.updateIdentityKey.identityKey[0];
+      return res.updateIdentityKey!.identityKey![0]!;
     } catch (error) {
       this.logger.error(`Failed to revoke identity key: ${error}`);
       throw new Error('Failed to revoke identity key');
@@ -257,11 +249,9 @@ export class IdentityRepository {
    */
   async deleteKey(key: string): Promise<dgraphResolversTypes.IdentityKey> {
     try {
-      const res = await this.dgraphService.mutation<{
-        deleteIdentityKey: { identityKey: dgraphResolversTypes.IdentityKey[] };
-      }>(DELETE_IDENTITY_KEY, { id: key });
+      const res = await this.dgraphService.mutation(DeleteIdentityKeyDocument, { id: key });
 
-      return res.deleteIdentityKey.identityKey[0];
+      return res.deleteIdentityKey!.identityKey![0]! as dgraphResolversTypes.IdentityKey;
     } catch (error) {
       this.logger.error(`Failed to delete identity key: ${error}`);
       throw new Error('Failed to delete identity key');
@@ -273,11 +263,9 @@ export class IdentityRepository {
    */
   async findKeysByRelatedId(relatedId: string): Promise<dgraphResolversTypes.IdentityKey[]> {
     try {
-      const res = await this.dgraphService.query<{
-        queryIdentityKey: dgraphResolversTypes.IdentityKey[];
-      }>(FIND_KEYS_BY_RELATED_ID, { relatedId });
+      const res = await this.dgraphService.query(FindKeysByRelatedIdDocument, { relatedId });
 
-      return res.queryIdentityKey || [];
+      return (res.queryIdentityKey?.filter((key): key is dgraphResolversTypes.IdentityKey => key !== null) || []);
     } catch (error) {
       this.logger.error(`Failed to find keys by relatedId: ${error}`);
       throw new Error('Failed to find keys by relatedId');
@@ -289,9 +277,7 @@ export class IdentityRepository {
    */
   async findKeyById(keyId: string): Promise<dgraphResolversTypes.IdentityKey | null> {
     try {
-      const res = await this.dgraphService.query<{
-        getIdentityKey: dgraphResolversTypes.IdentityKey;
-      }>(FIND_KEY_BY_ID, { id: keyId });
+      const res = await this.dgraphService.query(FindKeyByIdDocument, { id: keyId });
 
       return res.getIdentityKey || null;
     } catch (error) {

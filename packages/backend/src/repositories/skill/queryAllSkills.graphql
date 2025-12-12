@@ -1,0 +1,38 @@
+query QueryAllSkills {
+  querySkill {
+    id
+    name
+    description
+    createdAt
+    updatedAt
+    mode
+    model
+    temperature
+    maxTokens
+    systemPrompt
+    executionTarget
+    runtime {
+      id
+      name
+    }
+    mcpTools {
+      id
+      name
+      description
+      inputSchema
+      annotations
+      status
+      createdAt
+      lastSeenAt
+      mcpServer {
+        id
+        name
+        executionTarget
+      }
+    }
+    workspace {
+      id
+      name
+    }
+  }
+}
