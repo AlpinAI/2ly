@@ -6,8 +6,9 @@
  */
 
 import { useState } from 'react';
-import { Sparkles, Plus, Trash2, Edit } from 'lucide-react';
+import { Sparkles, Plus, Trash2, Edit, X } from 'lucide-react';
 import * as Dialog from '@radix-ui/react-dialog';
+import * as AlertDialog from '@radix-ui/react-alert-dialog';
 import { SettingsSection } from './settings-section';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -15,7 +16,6 @@ import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { useAIConfigs } from '@/hooks/useAIConfigs';
 import { useNotification } from '@/contexts/NotificationContext';
-import { X } from 'lucide-react';
 
 interface EditPromptDialogProps {
   open: boolean;
@@ -140,6 +140,8 @@ export function AIFeaturesSection() {
   const [editingValue, setEditingValue] = useState('');
   const [editingDescription, setEditingDescription] = useState('');
   const [isNewPrompt, setIsNewPrompt] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [deletingConfig, setDeletingConfig] = useState<{ id: string; key: string } | null>(null);
 
   const handleEdit = (key: string, value: string, description: string) => {
     setEditingKey(key);
@@ -171,17 +173,23 @@ export function AIFeaturesSection() {
     }
   };
 
-  const handleDelete = async (id: string, key: string) => {
-    if (!confirm(`Are you sure you want to delete the prompt "${key}"?`)) {
-      return;
-    }
+  const handleDeleteClick = (id: string, key: string) => {
+    setDeletingConfig({ id, key });
+    setDeleteDialogOpen(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!deletingConfig) return;
 
     try {
-      await deleteConfig(id);
+      await deleteConfig(deletingConfig.id);
       toast({ description: 'Prompt deleted successfully', variant: 'success' });
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Failed to delete prompt';
       toast({ description: message, variant: 'error' });
+    } finally {
+      setDeleteDialogOpen(false);
+      setDeletingConfig(null);
     }
   };
 
@@ -253,7 +261,11 @@ export function AIFeaturesSection() {
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => handleDelete(config.id ?? '', config.key)}
+                        onClick={() => {
+                          if (!config.id) return;
+                          handleDeleteClick(config.id, config.key);
+                        }}
+                        disabled={!config.id}
                       >
                         <Trash2 className="h-4 w-4 text-red-600 dark:text-red-400" />
                       </Button>
@@ -286,6 +298,30 @@ export function AIFeaturesSection() {
         onSave={handleSave}
         isNew={isNewPrompt}
       />
+
+      <AlertDialog.Root open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialog.Portal>
+          <AlertDialog.Overlay className="fixed inset-0 bg-black/50 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 z-50" />
+          <AlertDialog.Content className="fixed left-[50%] top-[50%] max-h-[85vh] w-[90vw] max-w-[450px] translate-x-[-50%] translate-y-[-50%] rounded-lg border border-gray-200 bg-white shadow-lg p-6 dark:border-gray-700 dark:bg-gray-800 z-50 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0">
+            <AlertDialog.Title className="text-lg font-semibold text-gray-900 dark:text-white">
+              Delete Prompt
+            </AlertDialog.Title>
+            <AlertDialog.Description className="text-sm text-gray-500 dark:text-gray-400 mt-2">
+              Are you sure you want to delete the prompt "{deletingConfig?.key}"? This action cannot be undone.
+            </AlertDialog.Description>
+            <div className="flex justify-end gap-3 mt-6">
+              <AlertDialog.Cancel asChild>
+                <Button variant="outline">Cancel</Button>
+              </AlertDialog.Cancel>
+              <AlertDialog.Action asChild>
+                <Button variant="destructive" onClick={handleDeleteConfirm}>
+                  Delete
+                </Button>
+              </AlertDialog.Action>
+            </div>
+          </AlertDialog.Content>
+        </AlertDialog.Portal>
+      </AlertDialog.Root>
     </>
   );
 }

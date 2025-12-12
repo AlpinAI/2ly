@@ -1,7 +1,7 @@
 # Create Skill Mutation
 # WHY: Create a new skill for organizing tools
-mutation CreateSkill($workspaceId: ID!, $name: String!, $description: String!) {
-  createSkill(workspaceId: $workspaceId, name: $name, description: $description) {
+mutation CreateSkill($workspaceId: ID!, $name: String!, $description: String!, $guardrails: String, $associatedKnowledge: String) {
+  createSkill(workspaceId: $workspaceId, name: $name, description: $description, guardrails: $guardrails, associatedKnowledge: $associatedKnowledge) {
     id
     name
     description

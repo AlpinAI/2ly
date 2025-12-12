@@ -13,7 +13,6 @@ import {
 } from './ai-config.operations';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
-import { createSubscriptionFromQuery } from '../../helpers';
 
 export interface AIConfigData {
   key: string;
@@ -140,10 +139,10 @@ export class AIConfigRepository {
   }
 
   observeAIConfigs(workspaceId: string): Observable<dgraphResolversTypes.AiConfig[]> {
-    const query = createSubscriptionFromQuery(OBSERVE_AI_CONFIGS('query'));
+    const subscription = OBSERVE_AI_CONFIGS('subscription');
     return this.dgraphService
       .observe<{ aiConfigs: dgraphResolversTypes.AiConfig[] }>(
-        query,
+        subscription,
         { workspaceId },
         'getWorkspace',
         true,

@@ -21,13 +21,20 @@
  * ```
  */
 
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useEffect } from 'react';
 import { X, Wand2, Sparkles, RefreshCw, CheckCircle } from 'lucide-react';
 import * as Dialog from '@radix-ui/react-dialog';
 import * as Tabs from '@radix-ui/react-tabs';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { useCreateSkillDialog } from '@/stores/uiStore';
 import { useParams } from 'react-router-dom';
 import { useMutation } from '@apollo/client/react';
@@ -234,6 +241,8 @@ export function CreateSkillDialog() {
         workspaceId,
         name: editedName.trim(),
         description: editedDescription.trim() || '',
+        guardrails: editedGuardrails.trim() || null,
+        associatedKnowledge: editedKnowledge.trim() || null,
       },
     });
   };
@@ -260,9 +269,11 @@ export function CreateSkillDialog() {
   }, [generatedData, tools]);
 
   // Auto-select first provider when in AI mode
-  if (providers.length > 0 && !selectedProviderId && mode === 'ai') {
-    setSelectedProviderId(providers[0].id);
-  }
+  useEffect(() => {
+    if (mode === 'ai' && providers.length > 0 && !selectedProviderId) {
+      setSelectedProviderId(providers[0].id);
+    }
+  }, [mode, providers, selectedProviderId]);
 
   return (
     <Dialog.Root open={open} onOpenChange={handleOpenChange}>
@@ -371,6 +382,29 @@ export function CreateSkillDialog() {
                       {providers.length === 0 && (
                         <div className="text-sm text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 p-3 rounded border border-amber-200 dark:border-amber-800">
                           No AI providers configured. Configure one in Settings → AI Providers.
+                        </div>
+                      )}
+                      {providers.length > 1 && (
+                        <div>
+                          <label className="block text-sm font-medium text-gray-900 dark:text-white mb-2">
+                            AI Provider
+                          </label>
+                          <Select
+                            value={selectedProviderId}
+                            onValueChange={setSelectedProviderId}
+                            disabled={generating}
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select an AI provider" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {providers.map((provider) => (
+                                <SelectItem key={provider.id} value={provider.id}>
+                                  {provider.provider}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
                         </div>
                       )}
                       <div>

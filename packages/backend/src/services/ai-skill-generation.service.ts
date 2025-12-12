@@ -174,7 +174,8 @@ ${userPrompt}`;
       };
     } catch (error) {
       this.logger.error(`Failed to parse AI response: ${error}`);
-      this.logger.debug(`AI response was: ${response}`);
+      const truncatedResponse = response.length > 500 ? `${response.slice(0, 500)}... (truncated)` : response;
+      this.logger.debug(`AI response was: ${truncatedResponse}`);
       throw new Error('Failed to parse AI-generated skill data. The AI response was not in the expected JSON format.');
     }
   }
