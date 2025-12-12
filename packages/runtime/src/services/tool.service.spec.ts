@@ -79,7 +79,6 @@ describe('ToolService', () => {
       mockToolServerServiceFactory,
       mockToolAgentServiceFactory,
       undefined,
-      5 * 60 * 1000, // ephemeralTTL
     );
   });
 

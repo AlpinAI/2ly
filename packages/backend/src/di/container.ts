@@ -14,14 +14,9 @@ import {
   NatsCacheService,
   CACHE_SERVICE,
   CACHE_SERVICE_CONFIG,
-  CACHE_BUCKETS,
   CACHE_BUCKET_TTLS,
   HEARTBEAT_CACHE_TTL,
-  EPHEMERAL_CACHE_TTL,
-  OAUTH_NONCE_CACHE_TTL,
-  RATE_LIMIT_KEY_CACHE_TTL,
-  RATE_LIMIT_IP_CACHE_TTL,
-  CacheServiceConfig,
+  createCacheServiceConfig,
 } from '@skilder-ai/common';
 import { DGraphService, DGRAPH_URL } from '../services/dgraph.service';
 import { ApolloService } from '../services/apollo.service';
@@ -68,50 +63,13 @@ const start = () => {
   container.bind(NatsService).toSelf().inSingletonScope();
 
   // Init cache service
+  // Note: HEARTBEAT_CACHE_TTL is still bound individually for RuntimeInstance factory
   container
     .bind(HEARTBEAT_CACHE_TTL)
     .toConstantValue(parseInt(process.env.HEARTBEAT_CACHE_TTL || '') || CACHE_BUCKET_TTLS.HEARTBEAT);
-  container
-    .bind(EPHEMERAL_CACHE_TTL)
-    .toConstantValue(parseInt(process.env.EPHEMERAL_CACHE_TTL || '') || CACHE_BUCKET_TTLS.EPHEMERAL);
-  container
-    .bind(OAUTH_NONCE_CACHE_TTL)
-    .toConstantValue(parseInt(process.env.OAUTH_NONCE_CACHE_TTL || '') || CACHE_BUCKET_TTLS.OAUTH_NONCE);
-  container
-    .bind(RATE_LIMIT_KEY_CACHE_TTL)
-    .toConstantValue(parseInt(process.env.RATE_LIMIT_KEY_CACHE_TTL || '') || CACHE_BUCKET_TTLS.RATE_LIMIT_KEY);
-  container
-    .bind(RATE_LIMIT_IP_CACHE_TTL)
-    .toConstantValue(parseInt(process.env.RATE_LIMIT_IP_CACHE_TTL || '') || CACHE_BUCKET_TTLS.RATE_LIMIT_IP);
-
-  // Build cache service config with all initial buckets
-  const cacheServiceConfig: CacheServiceConfig = {
-    initialBuckets: [
-      {
-        name: CACHE_BUCKETS.HEARTBEAT,
-        ttlMs: parseInt(process.env.HEARTBEAT_CACHE_TTL || '') || CACHE_BUCKET_TTLS.HEARTBEAT,
-      },
-      {
-        name: CACHE_BUCKETS.EPHEMERAL,
-        ttlMs: parseInt(process.env.EPHEMERAL_CACHE_TTL || '') || CACHE_BUCKET_TTLS.EPHEMERAL,
-      },
-      {
-        name: CACHE_BUCKETS.OAUTH_NONCE,
-        ttlMs: parseInt(process.env.OAUTH_NONCE_CACHE_TTL || '') || CACHE_BUCKET_TTLS.OAUTH_NONCE,
-      },
-      {
-        name: CACHE_BUCKETS.RATE_LIMIT_KEY,
-        ttlMs: parseInt(process.env.RATE_LIMIT_KEY_CACHE_TTL || '') || CACHE_BUCKET_TTLS.RATE_LIMIT_KEY,
-      },
-      {
-        name: CACHE_BUCKETS.RATE_LIMIT_IP,
-        ttlMs: parseInt(process.env.RATE_LIMIT_IP_CACHE_TTL || '') || CACHE_BUCKET_TTLS.RATE_LIMIT_IP,
-      },
-    ],
-  };
-  container.bind(CACHE_SERVICE_CONFIG).toConstantValue(cacheServiceConfig);
-  container.bind(CACHE_SERVICE).to(NatsCacheService).inSingletonScope();
+  container.bind(CACHE_SERVICE_CONFIG).toConstantValue(createCacheServiceConfig());
   container.bind(NatsCacheService).toSelf().inSingletonScope();
+  container.bind(CACHE_SERVICE).toService(NatsCacheService);
 
   // Init dgraph service
   container.bind(DROP_ALL_DATA).toConstantValue(process.env.DROP_ALL_DATA === 'true');
