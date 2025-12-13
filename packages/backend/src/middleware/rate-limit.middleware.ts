@@ -1,9 +1,12 @@
 import { FastifyInstance } from 'fastify';
 import rateLimit from '@fastify/rate-limit';
-import { injectable } from 'inversify';
+import { injectable, inject } from 'inversify';
+import { NatsCacheService } from '@skilder-ai/common';
+import { createRateLimitStore } from './rate-limit-store';
 
 /**
- * Simple rate limiting middleware for the entire application.
+ * Distributed rate limiting middleware for the entire application.
+ * Uses a distributed cache for state storage, supporting horizontal scaling.
  *
  * TODO: Future improvements could include:
  * - Different limits for different endpoint types
@@ -13,16 +16,24 @@ import { injectable } from 'inversify';
  */
 @injectable()
 export class RateLimitMiddleware {
+  constructor(
+    @inject(NatsCacheService) private readonly cacheService: NatsCacheService,
+  ) {}
+
   async register(fastify: FastifyInstance): Promise<void> {
+    const timeWindow = parseInt(process.env.RATE_LIMIT_WINDOW || '60000', 10);
+
     await fastify.register(rateLimit, {
       // 100 requests per minute per IP - generous for POC
       max: parseInt(process.env.RATE_LIMIT_MAX || '100', 10),
-      timeWindow: parseInt(process.env.RATE_LIMIT_WINDOW || '60000', 10), // 1 minute
+      timeWindow,
+      // Use distributed cache store for horizontal scaling
+      store: createRateLimitStore(this.cacheService, timeWindow),
       errorResponseBuilder: () => ({
         error: 'Too Many Requests',
         message: 'Rate limit exceeded. Please try again later.',
-        statusCode: 429
-      })
+        statusCode: 429,
+      }),
     });
   }
 }

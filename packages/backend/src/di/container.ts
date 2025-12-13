@@ -47,6 +47,7 @@ import { OAuthService, OAuthStateService } from '../services/oauth';
 import { SecurityMiddleware, RateLimitMiddleware, GraphQLAuthMiddleware } from '../middleware';
 import { IdentityService } from '../services/identity.service';
 import { KeyRateLimiterService } from '../services/key-rate-limiter.service';
+import { OAuthRateLimiterService } from '../services/oauth-rate-limiter.service';
 import { MonitoringService } from '../services/monitoring.service';
 import { AISkillGenerationService } from '../services/ai-skill-generation.service';
 
@@ -119,8 +120,9 @@ const start = () => {
   // Init identity service
   container.bind(IdentityService).toSelf().inSingletonScope();
 
-  // Init key rate limiter service
+  // Init rate limiter services
   container.bind(KeyRateLimiterService).toSelf().inSingletonScope();
+  container.bind(OAuthRateLimiterService).toSelf().inSingletonScope();
 
   // Init AI provider core service (from @skilder-ai/common)
   container.bind(EncryptionService).toSelf().inSingletonScope();
