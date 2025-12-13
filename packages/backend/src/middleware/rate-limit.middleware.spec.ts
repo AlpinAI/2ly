@@ -1,20 +1,55 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import Fastify, { FastifyInstance } from 'fastify';
+import { NatsCacheService } from '@skilder-ai/common';
 import { RateLimitMiddleware } from './rate-limit.middleware';
+
+/**
+ * Mock CacheService for testing rate limiting.
+ */
+class CacheServiceMock {
+  private buckets: Map<string, Map<string, { value: unknown }>> = new Map();
+
+  async get<T>(bucket: string, key: string): Promise<{ value: T; revision: number } | null> {
+    const bucketMap = this.buckets.get(bucket);
+    if (!bucketMap) return null;
+    const entry = bucketMap.get(key);
+    if (!entry) return null;
+    return { value: entry.value as T, revision: 1 };
+  }
+
+  async put<T>(bucket: string, key: string, value: T): Promise<number> {
+    if (!this.buckets.has(bucket)) {
+      this.buckets.set(bucket, new Map());
+    }
+    this.buckets.get(bucket)!.set(key, { value });
+    return 1;
+  }
+
+  clear(): void {
+    this.buckets.clear();
+  }
+}
 
 describe('RateLimitMiddleware', () => {
   let fastify: FastifyInstance;
   let rateLimitMiddleware: RateLimitMiddleware;
+  let cacheService: CacheServiceMock;
 
   beforeEach(async () => {
+    // Silence console errors in tests
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+
     fastify = Fastify({ logger: false });
-    rateLimitMiddleware = new RateLimitMiddleware();
+    cacheService = new CacheServiceMock();
+    rateLimitMiddleware = new RateLimitMiddleware(cacheService as unknown as NatsCacheService);
   });
 
   afterEach(async () => {
     if (fastify) {
       await fastify.close();
     }
+    cacheService.clear();
+    vi.restoreAllMocks();
   });
 
   describe('Simple Rate Limiting', () => {

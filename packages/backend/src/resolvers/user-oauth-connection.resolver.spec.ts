@@ -4,22 +4,17 @@ import { GraphQLError } from 'graphql';
 import { createUserOAuthConnectionResolvers } from './user-oauth-connection.resolver';
 import { UserOAuthConnectionRepository, WorkspaceRepository } from '../repositories';
 import { OAuthService } from '../services/oauth/oauth.service';
+import { OAuthRateLimiterService } from '../services/oauth-rate-limiter.service';
 import { GraphQLContext } from '../types';
 import { apolloResolversTypes, dgraphResolversTypes } from '@skilder-ai/common';
 import * as authHelpers from '../database/authorization.helpers';
-
-// Mock the rate limiter module
-vi.mock('./user-oauth-connection.rate-limiter', () => ({
-  checkOAuthInitiationRateLimit: vi.fn(),
-}));
-
-import { checkOAuthInitiationRateLimit } from './user-oauth-connection.rate-limiter';
 
 describe('UserOAuthConnectionResolver', () => {
   let container: Container;
   let mockConnectionRepo: UserOAuthConnectionRepository;
   let mockWorkspaceRepo: WorkspaceRepository;
   let mockOAuthService: OAuthService;
+  let mockRateLimiter: OAuthRateLimiterService;
   let resolvers: ReturnType<typeof createUserOAuthConnectionResolvers>;
 
   const mockUserId = '0x123';
@@ -70,13 +65,18 @@ describe('UserOAuthConnectionResolver', () => {
       handleCallback: vi.fn(),
     } as unknown as OAuthService;
 
+    // Create mock rate limiter service
+    mockRateLimiter = {
+      checkAttempt: vi.fn().mockResolvedValue(true),
+      recordAttempt: vi.fn().mockResolvedValue(undefined),
+      destroy: vi.fn(),
+    } as unknown as OAuthRateLimiterService;
+
     // Bind mocks to container
     container.bind(UserOAuthConnectionRepository).toConstantValue(mockConnectionRepo);
     container.bind(WorkspaceRepository).toConstantValue(mockWorkspaceRepo);
     container.bind(OAuthService).toConstantValue(mockOAuthService);
-
-    // Reset rate limiter mock
-    vi.mocked(checkOAuthInitiationRateLimit).mockReturnValue(true);
+    container.bind(OAuthRateLimiterService).toConstantValue(mockRateLimiter);
 
     // Create resolvers with mocked container
     resolvers = createUserOAuthConnectionResolvers(container);
@@ -251,7 +251,7 @@ describe('UserOAuthConnectionResolver', () => {
       };
 
       vi.spyOn(authHelpers, 'requireAuthAndWorkspaceAccess').mockResolvedValue(mockUserId);
-      vi.mocked(checkOAuthInitiationRateLimit).mockReturnValue(true);
+      vi.mocked(mockRateLimiter.checkAttempt).mockResolvedValue(true);
       vi.spyOn(mockOAuthService, 'initiateOAuthConnection').mockResolvedValue(oauthResult);
 
       // Act
@@ -267,7 +267,8 @@ describe('UserOAuthConnectionResolver', () => {
         context,
         mockWorkspaceId,
       );
-      expect(checkOAuthInitiationRateLimit).toHaveBeenCalledWith(mockUserId);
+      expect(mockRateLimiter.checkAttempt).toHaveBeenCalledWith(mockUserId);
+      expect(mockRateLimiter.recordAttempt).toHaveBeenCalledWith(mockUserId);
       expect(mockOAuthService.initiateOAuthConnection).toHaveBeenCalledWith(
         mockUserId,
         mockWorkspaceId,
@@ -293,7 +294,7 @@ describe('UserOAuthConnectionResolver', () => {
       };
 
       vi.spyOn(authHelpers, 'requireAuthAndWorkspaceAccess').mockResolvedValue(mockUserId);
-      vi.mocked(checkOAuthInitiationRateLimit).mockReturnValue(true);
+      vi.mocked(mockRateLimiter.checkAttempt).mockResolvedValue(true);
       vi.spyOn(mockOAuthService, 'initiateOAuthConnection').mockResolvedValue(oauthResult);
 
       // Act
@@ -321,7 +322,7 @@ describe('UserOAuthConnectionResolver', () => {
       const provider = apolloResolversTypes.OAuthProviderType.Google;
 
       vi.spyOn(authHelpers, 'requireAuthAndWorkspaceAccess').mockResolvedValue(mockUserId);
-      vi.mocked(checkOAuthInitiationRateLimit).mockReturnValue(false);
+      vi.mocked(mockRateLimiter.checkAttempt).mockResolvedValue(false);
 
       // Act & Assert
       await expect(
@@ -355,7 +356,7 @@ describe('UserOAuthConnectionResolver', () => {
       const errorMessage = 'Invalid OAuth configuration';
 
       vi.spyOn(authHelpers, 'requireAuthAndWorkspaceAccess').mockResolvedValue(mockUserId);
-      vi.mocked(checkOAuthInitiationRateLimit).mockReturnValue(true);
+      vi.mocked(mockRateLimiter.checkAttempt).mockResolvedValue(true);
       vi.spyOn(mockOAuthService, 'initiateOAuthConnection').mockRejectedValue(new Error(errorMessage));
 
       // Act & Assert
@@ -379,7 +380,7 @@ describe('UserOAuthConnectionResolver', () => {
       const provider = apolloResolversTypes.OAuthProviderType.Google;
 
       vi.spyOn(authHelpers, 'requireAuthAndWorkspaceAccess').mockResolvedValue(mockUserId);
-      vi.mocked(checkOAuthInitiationRateLimit).mockReturnValue(true);
+      vi.mocked(mockRateLimiter.checkAttempt).mockResolvedValue(true);
       vi.spyOn(mockOAuthService, 'initiateOAuthConnection').mockRejectedValue('Unknown error');
 
       // Act & Assert
@@ -415,7 +416,7 @@ describe('UserOAuthConnectionResolver', () => {
         ),
       ).rejects.toThrow(GraphQLError);
 
-      expect(checkOAuthInitiationRateLimit).not.toHaveBeenCalled();
+      expect(mockRateLimiter.checkAttempt).not.toHaveBeenCalled();
       expect(mockOAuthService.initiateOAuthConnection).not.toHaveBeenCalled();
     });
   });

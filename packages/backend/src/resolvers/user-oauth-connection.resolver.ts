@@ -3,9 +3,9 @@ import { Container } from 'inversify';
 import { GraphQLError } from 'graphql';
 import { UserOAuthConnectionRepository, WorkspaceRepository } from '../repositories';
 import { OAuthService } from '../services/oauth';
+import { OAuthRateLimiterService } from '../services/oauth-rate-limiter.service';
 import { GraphQLContext } from '../types';
 import { requireAuth, requireAuthAndWorkspaceAccess } from '../database/authorization.helpers';
-import { checkOAuthInitiationRateLimit } from './user-oauth-connection.rate-limiter';
 
 /**
  * Factory function to create resolver functions for User OAuth Connection GraphQL schema.
@@ -14,6 +14,7 @@ export function createUserOAuthConnectionResolvers(container: Container) {
   const connectionRepo = container.get(UserOAuthConnectionRepository);
   const workspaceRepository = container.get(WorkspaceRepository);
   const oauthService = container.get(OAuthService);
+  const oauthRateLimiter = container.get(OAuthRateLimiterService);
 
   return {
     Query: {
@@ -57,12 +58,15 @@ export function createUserOAuthConnectionResolvers(container: Container) {
       ) => {
         const userId = await requireAuthAndWorkspaceAccess(workspaceRepository, context, workspaceId);
 
-        // Rate limit OAuth initiation to prevent abuse
-        if (!checkOAuthInitiationRateLimit(userId)) {
+        // Rate limit OAuth initiation to prevent abuse (distributed via NATS cache)
+        if (!(await oauthRateLimiter.checkAttempt(userId))) {
           throw new GraphQLError('Too many OAuth initiation attempts. Please try again later.', {
             extensions: { code: 'RATE_LIMITED' },
           });
         }
+
+        // Record the attempt
+        await oauthRateLimiter.recordAttempt(userId);
 
         try {
           const result = await oauthService.initiateOAuthConnection(
